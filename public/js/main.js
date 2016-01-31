@@ -238,7 +238,7 @@ $(function () {
 
 	});
 
-	$('.multiselect:not(#usage,#billrun,#source,#extra_columns select)').multiselect({});
+	$('.multiselect:not(#usage,#billrun,#source,#plan,#extra_columns select)').multiselect({});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
@@ -253,6 +253,15 @@ $(function () {
 		selectAllValue: 'all',
 		selectedClass: null
 	});
+
+  $('select[id="plan"]').multiselect({
+    maxHeight: 250,
+    enableFiltering: true,
+    enableCaseInsensitiveFiltering: true,
+    includeSelectAllOption: true,
+    selectAllValue: 'all',
+    selectedClass: null
+  });
 
 	$('#search-criteria').submit(function () {
 		if ($("#type").length && !$("#type :selected").length) {
@@ -408,6 +417,20 @@ function isAPIAvailable() {
 }
 $(document).ready(function () {
 	$(".config input[type='checkbox']").bootstrapSwitch();
+
+  $('table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
+  if (window.location.pathname.match(/rates/gi)) {
+    if ($('select[id="plan"]').length) {
+      $('a[data-type="update"]').each(function (i, el) {
+        var href = $(el).attr('href');
+        href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
+        $(el).attr('href', href);
+      });
+    }
+  }
+  $('#data_table tbody tr').on('click', function () {
+      $(this).toggleClass('highlight').siblings().removeClass('highlight');
+  });
 });
 
 /**

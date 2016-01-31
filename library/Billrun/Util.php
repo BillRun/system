@@ -325,7 +325,8 @@ class Billrun_Util {
 		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		return gmdate('i:s', $seconds);
+		//return gmdate('i:s', $seconds);
+		return $seconds;
 	}
 
 	/**
@@ -1085,4 +1086,28 @@ class Billrun_Util {
 		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
 	}
 
+
+	/**
+	 * Calculate the remaining months for an auto renew service
+	 * @param date $d1
+	 * @param date $d2
+	 * @return int
+	 * 
+	 */
+	public static function countMonths($d1, $d2) {
+		$min_date = min($d1, $d2);
+		$max_date = max($d1, $d2);
+		$i = 0;
+
+		$maxMonth = date('m', $max_date);
+		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
+			if(date('m', $min_date) == $maxMonth) {
+				break;
+			}
+			$i++;
+		}
+		
+		return $i;
+	}
+	
 }

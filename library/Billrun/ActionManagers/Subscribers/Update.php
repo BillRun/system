@@ -333,11 +333,18 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
+		
+		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 38;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		
+		$queryFields = $this->getQueryFields();		
+
 		// Initialize the query with date bounds
 		$this->query = Billrun_Util::getDateBoundQuery();
-		
-		$queryFields = $this->getQueryFields();
-		
+	
 		// Array of errors to report if any occurs.
 		$ret = false;
 		

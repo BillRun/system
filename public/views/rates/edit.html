@@ -2,7 +2,11 @@
 	<center>
 		<h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
 	</center>
-	<form class='form-inline' ng-submit='save()'>
+	<ul class="list-group" ng-show="err.data.summaryReport.length">
+      <li class="list-group-item h4 list-group-item-danger">Please resolve the problems below</li>
+			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
+		</ul>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class="row" ng-if="action === 'new'">
 				<div class="col-md-2">
@@ -92,7 +96,7 @@
 			<hr/>
 
 			<h2>Tariffs</h2>
-			<div class="row">
+			<div class="row row-indent">
 				<h3>Call</h3>
 				<div class="col-indent">
 					<select ng-model="newCallRate.name" class="form-control">
@@ -101,7 +105,7 @@
 					</select>
 					<a ng-click="addCallRate()" class="clickable">Add New Call Tariff</a>
 				</div>
-				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent">
+				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent" id="{{callRateName}}">
 					<h4>
 						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]"></i></small>
 						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]"></i></small>
@@ -115,14 +119,6 @@
 							</div>
 							<div class='col-md-6'>
 								<input type='number' class='form-control' ng-model="entity.rates.call[callRateName].access" />
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-1">
-								<label>Interconnect</label>
-							</div>
-							<div class='col-md-6'>
-								<input type='number' class='form-control' ng-model="entity.rates.call[callRateName].interconnect" />
 							</div>
 						</div>
 						<div class="row">
@@ -184,7 +180,7 @@
 
 			<hr/>
 			
-			<div class="row">
+			<div class="row row-indent">
 				<h3>Data</h3>
 				<div class="col-indent">
 					<select ng-model="newDataRate.name" class="form-control">
@@ -207,14 +203,6 @@
 							</div>
 							<div class='col-md-6'>
 								<input type='number' class='form-control' ng-model="entity.rates.data[dataRateName].access" />
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-1">
-								<label>Interconnect</label>
-							</div>
-							<div class='col-md-6'>
-								<input type='number' class='form-control' ng-model="entity.rates.data[dataRateName].interconnect" />
 							</div>
 						</div>
 						<div class="row">
@@ -276,7 +264,7 @@
 
 			<hr/>
 
-			<div class="row">
+			<div class="row row-indent">
 				<h3>SMS</h3>
 				<div class="col-indent">
 					<select ng-model="newSMSRate.name" class="form-control">
@@ -299,14 +287,6 @@
 							</div>
 							<div class='col-md-6'>
 								<input type='number' class='form-control' ng-model="entity.rates.sms[smsRateName].access" />
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-md-1">
-								<label>Interconnect</label>
-							</div>
-							<div class='col-md-6'>
-								<input type='number' class='form-control' ng-model="entity.rates.sms[smsRateName].interconnect" />
 							</div>
 						</div>
 						<div class="row">
@@ -371,7 +351,11 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn">
+			</button>
+			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
 		</div>
 	</form>
 </div>

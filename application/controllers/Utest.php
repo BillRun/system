@@ -27,6 +27,13 @@ class UtestController extends Yaf_Controller_Abstract {
 	protected $conf = '';
 
 	/**
+	 * Test
+	 *
+	 * @var utest object
+	 */
+	protected $utest = '';
+	
+	/**
 	 * unique ref for Data and API calls
 	 *
 	 * @var string
@@ -168,8 +175,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		//Create test by type
 		$tetsClassName = $type .'Model';
-		$utest = new $tetsClassName($this);
-		$result = $utest->getTestResults();//Get parts for results
+		$this->utest = new $tetsClassName($this);
+		$result = $this->utest->getTestResults();//Get parts for results
 		
 		
 		if(in_array('balance_before', $result)){
@@ -184,7 +191,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		$this->testStartTime = gettimeofday();
 		//Run test by type
-		$utest->doTest();
+		$this->utest->doTest();
 		$this->testEndTime = gettimeofday();
 		
 
@@ -212,7 +219,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			$balance['after'] = $this->getBalance($sid_after_test);
 		}
 
-		$this->getView()->test = $utest;
+		$this->getView()->test = $this->utest;
 		$this->getView()->sid = $sid;
 		$this->getView()->sid_after_test = $sid_after_test;
 		$this->getView()->baseUrl = $this->baseUrl;
@@ -301,6 +308,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			}
 			$balances[(string) $row['_id']] = array(
 				'amount' => -1 * $amount,
+				'pp_includes_name' => $row["pp_includes_name"],
 				'charging_by_usaget' => $row["charging_by_usaget"],
 				'charging_by_usaget_unit' => $row["charging_by_usaget_unit"],
 				'charging_by' => $row["charging_by"],
@@ -347,31 +355,54 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getLines($sid) {
 		$lines = array();
-		$amount = 0;
-		$searchQuery = array(
-			'sid' => $sid,
-			'urt' => array(
-				'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
-				'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
-			)
-		);
+		$total_aprice = $total_usagev = 0;
+        //Search lines by testID + sid (for test with configurable date)
+		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+			$searchQuery = array(
+				'sid' => $sid,
+				'call_reference' => (string)$this->reference
+			);
+		} else { //Search lines by test time + sid
+			$searchQuery = array(
+				'sid' => $sid,
+				'urt' => array(
+					'$gte' => new MongoDate($this->testStartTime['sec'], $this->testStartTime['usec']),
+					'$lte' => new MongoDate($this->testEndTime['sec'], $this->testEndTime['usec'])
+				)
+			);
+		}
 
 		$cursor = Billrun_Factory::db()->linesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['urt' => 1]);
 		foreach ($cursor as $row) {
-			$amount += $row['aprice'];
-			$lines['rows'][] = array(
-				'time_date' => date('d/m/Y H:i:s', $row['urt']->sec),
-				'record_type' => $row['record_type'],
-				'aprice' => $row['aprice'],
-				'usaget' => $row['usaget'],
-				'usagev' => $row['usagev'],
-				'balance_before' => number_format($row['balance_before'], 3),
-				'balance_after' => number_format($row['balance_after'], 3),
-				'arate' => (string) $row['arate']['$id']
+			$rowData = $row->getRawData();
+			$total_aprice += $rowData['aprice'];
+			$total_usagev += $rowData['usagev'];
+			$line = array(
+				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
+				'record_type' => $rowData['record_type'],
+				'aprice' => $rowData['aprice'],
+				'usaget' => $rowData['usaget'],
+				'usagev' => $rowData['usagev'],
+				'balance_before' => number_format($rowData['balance_before'], 3),
+				'balance_after' => number_format($rowData['balance_after'], 3),
 			);
+			$arate = Billrun_Factory::db()->ratesCollection()->getRef($rowData['arate']);
+			if(!empty($arate)){
+				$line['arate'] = array(
+					'id' => (string)$arate->get('_id'),
+					'key' => $arate->get('key')
+				);
+			}
+			$lines['rows'][] = $line;
 		}
-		$lines['total'] = $amount;
-		$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
+		
+		$lines['total_aprice'] = $total_aprice;
+		$lines['total_usagev'] = $total_usagev;
+		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+			$lines['ref'] = 'Lines that was created during test run, test ID : ' .  $this->reference;
+		} else {
+			$lines['ref'] = 'Lines that was created during test run, <strong>from ' . date('d/m/Y H:i:s', ($this->testStartTime['sec'])) .":".$this->testStartTime['usec'] . " to " . date('d/m/Y H:i:s', $this->testEndTime['sec']) .":".$this->testEndTime['usec'] .'</strong>, test ID : ' .  $this->reference;
+		}
 		return $lines;
 	}
 	
@@ -418,16 +449,16 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getTestFormData() {
 		$output = array();
-		$output['balance_types']['prepaidincludes'] = array();
+		$output['prepaidincludes'] = array();
 		$cursor = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['prepaidincludes'][] = $row['name'];
+			$output['prepaidincludes'][] = $row['name'];
 		}
-		$output['balance_types']['plans'] = array();
+		$output['charging_plans'] = array();
 		$searchQuery = array('type' => 'charging');
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
-			$output['balance_types']['plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
+			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
 		$output['customer_plans'] = array();
 		$searchQuery = array('type' => 'customer');
@@ -451,6 +482,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
 		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
+		$output['np_codes'] = $this->conf->getConfigValue('test.npCodes', array());
 		
 		$cardsConf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/cards/conf.ini'));
 		$output['card_statuses'] = $cardsConf->getConfigValue('cards.status', array());

@@ -4,51 +4,37 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 
     $controller('EditController', {$scope: $scope});
 
-    $scope.flash =  { 
-      message :"" ,
-      cls:""
-    };
-
     $scope.save = function (redirect) {
       var params = {
         entity: $scope.entity,
         coll: 'subscribers',
         type: $scope.action
       };
-      $scope.errorMessages = [];
+      $scope.err = {};
       Database.saveEntity(params).then(function (res) {
-        if(!_.isUndefined(res.data.errorMessages)) {
-           $scope.errorMessages = res.data.errorMessages;
-        }  else { 
-            if(redirect) { 
-              $window.location = baseUrl + '/admin/' + $routeParams.collection;
-            }
+        if (redirect) {
+          $window.location = baseUrl + '/admin/' + $routeParams.collection;
         }
       }, function (err) {
-        $scope.err=err;
+        $scope.err = err;
         console.log(err);
       });
     };
 
     $scope.addIMSI = function () {
-      
-
-      if($scope.entity.imsi.length >=2) { 
-       
-        $scope.flash.message ="Maximum 2 imsi for subscriber" ;
-        $scope.flash.cls ="alert alert-danger" ;
-        utils.flashMessage('flash',$scope);
-
-        return false ;
+      if ($scope.entity.imsi.length >= 2) {
+        $scope.flash.message = "Maximum 2 imsi for subscriber";
+        $scope.flash.cls = "alert alert-danger";
+        utils.flashMessage('flash', $scope);
+        return false;
       }
-
-      var idx = _.findIndex( $scope.entity.imsi , function(i) {
-          return ( _.trim(i) == '' || !_.trim(i) );
+      var idx = _.findIndex($scope.entity.imsi, function (i) {
+        return (_.trim(i) === '' || !_.trim(i));
       });
 
-      if(idx>0 ) {
-        return ;
-      } else { 
+      if (idx > 0) {
+        return;
+      } else {
         $scope.entity.imsi.push("");
       }
 
@@ -63,6 +49,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $scope.init = function () {
       $scope.action = $routeParams.action;
       $scope.entity = {imsi: []};
+      $scope.availableBalanceTypes = [];
       var params = {
         coll: $routeParams.collection,
         id: $routeParams.id,

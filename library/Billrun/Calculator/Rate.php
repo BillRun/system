@@ -45,6 +45,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
 	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 	protected $aprField = self::DEF_APR_DB_FIELD;
+	
+	/**
+	 * call offset
+	 * 
+	 * @param int $balance
+	 */
+	protected $call_offset = 0;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -134,12 +141,20 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return self::$calcs[$type];
 	}
+	
+	public function setCallOffset($val) {
+		$this->call_offset = $val;
+	}
+
+	public function getCallOffset() {
+		return $this->call_offset;
+	}
 
 	/**
 	 * make the calculation
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row->getRawData();
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
@@ -198,6 +213,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getRateByParams($row) {		
 		$query = $this->getRateQuery($row);
+		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll= Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
 		

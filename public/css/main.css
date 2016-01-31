@@ -1,3 +1,10 @@
+#data_table tbody tr.highlight td{
+	background-color: #80B3DF;
+}
+#data_table thead {
+	background-color: white;
+}
+
 .glyphicon-plus-sign {
 	color: green;
 	cursor: pointer;
@@ -45,6 +52,9 @@
 	width: 80%;
 }
 
+.row-indent{
+	margin-left: 20px;
+}
 .col-indent {
 	margin-left: 40px;
 }
@@ -358,3 +368,5 @@ float: left;
 }
 
 .errorMessage { color:red;}
+.danger { color:red;}
+.success { color:green;}

@@ -97,6 +97,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @param MongoDate $urt the time of the event
 	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
 	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 * @todo make same input as parent method
 	 */
 	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
 		$matchedRate = $this->rates['UNRATED'];

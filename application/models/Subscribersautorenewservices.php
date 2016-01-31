@@ -38,7 +38,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan',
@@ -57,7 +57,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
@@ -85,7 +85,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),			
 			'aid' => array(
@@ -143,5 +143,12 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
 						   array());
+	}
+	
+	public function update($params) {
+		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
+		if (is_string($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
+		else if (is_array($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate($params['last_renew_date']['sec']);
+		return parent::update($params);
 	}
 }

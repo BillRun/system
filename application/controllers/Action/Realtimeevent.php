@@ -97,10 +97,22 @@ class RealtimeeventAction extends ApiAction {
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
+		if ($this->usaget === 'call' && !isset($this->event['called_number'])) {
+			if (isset($this->event['connected_number'])) {
+				$this->event['called_number'] = $this->event['connected_number'];
+			} else if (isset($this->event['dialed_digits'])) {
+				$this->event['called_number'] = $this->event['dialed_digits'];
+			}
+		}
+
 				
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
-		// we are on real time -> the time is now
-		$this->event['urt'] = new MongoDate();
+		if (isset($this->event['time_date'])) {
+			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
+		} else {
+			// we are on real time -> the time is now
+			$this->event['urt'] = new MongoDate();
+		}
 	}
 	
 	protected function getSgsn($event) {

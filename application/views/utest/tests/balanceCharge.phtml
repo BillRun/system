@@ -22,8 +22,8 @@
 		<label for="balanceType" class="col-sm-4 control-label text-right">Charging Name</label>
 		<div class="col-sm-6">
 			<select class="form-control" name='balanceType'>
-				<?php foreach ($balance_types['plans'] as $balance_type) : ?>
-					<option value="<?php echo $balance_type['name'] ?>"><?php echo $balance_type['name'] . " | " . $balance_type['service_provider'] . " - " . $balance_type['desc'] ?></option>
+				<?php foreach ($charging_plans as $charging_plan) : ?>
+					<option value="<?php echo $charging_plan['name'] ?>"><?php echo $charging_plan['name'] . " | " . $charging_plan['service_provider'] . " - " . $charging_plan['desc'] ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>

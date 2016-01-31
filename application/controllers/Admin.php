@@ -27,6 +27,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $baseUrl = null;
 	protected $cssPaths = array();
 	protected $jsPaths = array();
+	protected $version = null;
 	protected $commit;
 	
 	/**
@@ -61,6 +62,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/bootstrap-multiselect.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
+		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
 		$this->addJs($this->baseUrl . '/js/main.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
@@ -389,12 +391,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
-		/*
+		
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+
+   
 		$v->validate($params,$coll) ;
 		if(!$v->isValid()) {	   	
 			return $this->responseError($v->getErrors());
 		}
-		*/
+		
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -492,6 +497,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+	public function recurringplansAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->_request->setParam('plan_type', 'recurring');
+		$this->forward('tabledate', array('table' => 'plans'));
+		return false;
+	}
 
 	public function plansAction() {
 		if (!$this->allowed('read'))
@@ -541,7 +553,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$session = $this->getSession("rates");
-		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 0);
+		$show_prefix = $this->getSetVar($session, 'showprefix', 'showprefix', 'off');
 		$this->forward("tabledate", array('table' => 'rates', 'showprefix' => $show_prefix));
 		return false;
 	}
@@ -686,8 +698,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
-
-		$this->getView()->component = $this->buildTableComponent('lines', $query);
+		
+		if ($this->getRequest()->isPost()) {
+			// redirect
+			$this->redirect($this->baseUrl . '/admin/lines');
+		} else {
+			$this->getView()->component = $this->buildTableComponent('lines', $query);
+		}
 	}
 
 	public function queueAction() {
@@ -875,7 +892,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($params as $key => $val) {
 			$view->assign($key, $val);
 		}
-
 		return $view->render($viewName . '.phtml', $params);
 	}
 
@@ -888,13 +904,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
-	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null) {
+	protected function getTableViewParams($filter_query = array(), $skip = null, $size = null, $session = null) {
 		if (isset($skip) && !empty($size)) {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
 		$data = $this->model->getData($filter_query);
-		$columns = $this->model->getTableColumns();
+		$table = strtolower(str_replace("Model", "", get_class($this->model)));
+		if ($this->getSetVar($this->getSession($table), 'sid', 'sid')) {
+			$columns = $this->model->getTableColumns(true);
+		} else {
+			$columns = $this->model->getTableColumns();
+		}
 		$edit_key = $this->model->getEditKey();
 		$pagination = $this->model->printPager();
 		$sizeList = $this->model->printSizeList();
@@ -1064,7 +1085,17 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 		}
 		if ($table === "plans") {
-			$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+			if ($this->_request->getParam('plan_type') == 'recurring') {
+				$query['$and'][] = array('type' => 'charging', 'recurring' => 1);
+			} else {
+				$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
+				if ($this->_request->getParam('plan_type') === 'charging') {
+					$query['$and'][] = array('$or' => array(
+						array('recurring' => array('$exists' => false)),
+						array('recurring' => 0), 
+					));
+				}
+			}
 		}
 		return $query;
 	}
@@ -1320,7 +1351,6 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$this->addJs('//www.google.com/jsapi');
 		$this->addJs('/js/graphs.js');
-		$this->addJs('/js/jquery.stickytableheaders.min.js');
 		$table = 'wholesale';
 		$group_by = $this->getSetVar($this->getSession($table), 'group_by', 'group_by', 'dayofmonth');
 		$from_day = $this->getSetVar($this->getSession($table), 'from_day', 'from_day', (new Zend_Date(strtotime('60 days ago'), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd'));
