@@ -462,7 +462,7 @@ class UtestController extends Yaf_Controller_Abstract {
 				array('recurring' => array('$exists' => 0)),
 			),
 		);
-		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
+		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['service_provider' => 1, 'name' => 1]);
 		foreach ($cursor as $row) {
 			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
 		}
