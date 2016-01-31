@@ -997,7 +997,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		if ($this->getRequest()->isPost()) {
-			$this->redirect($this->baseUrl . '/admin/' . $table);
+			$this->redirect($this->baseUrl . '/admin/' . str_replace('_', '', $table));
 			return;
 		}
 		$this->title = str_replace('_', ' ', ucfirst($table));
