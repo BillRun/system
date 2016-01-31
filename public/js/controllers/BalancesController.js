@@ -2,7 +2,7 @@ angular
   .module('BillrunApp')
   .controller('BalancesController', BalancesController);
 
-function BalancesController($controller, Utils, $http) {
+function BalancesController($controller, Utils, $http, $window) {
   'use strict';
 
   var vm = this;
