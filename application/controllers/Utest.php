@@ -455,7 +455,13 @@ class UtestController extends Yaf_Controller_Abstract {
 			$output['prepaidincludes'][] = $row['name'];
 		}
 		$output['charging_plans'] = array();
-		$searchQuery = array('type' => 'charging');
+		$searchQuery = array(
+			'type' => 'charging',
+			'$or' => array(
+				array('recurring' => 0),
+				array('recurring' => array('$exists' => 0)),
+			),
+		);
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['name' => 1]);
 		foreach ($cursor as $row) {
 			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
