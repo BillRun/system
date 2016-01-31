@@ -45,7 +45,6 @@ function BalancesController($controller, Utils, $http, $window, Database) {
       }
     });
     Database.getAvailablePPIncludes().then(function (res) {
-      console.log(res.data);
       vm.availableBalanceTypes = res.data;
     });
   };
