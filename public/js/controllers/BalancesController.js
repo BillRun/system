@@ -2,7 +2,7 @@ angular
   .module('BillrunApp')
   .controller('BalancesController', BalancesController);
 
-function BalancesController($controller, Utils, $http, $window) {
+function BalancesController($controller, Utils, $http, $window, Database) {
   'use strict';
 
   var vm = this;
@@ -44,8 +44,8 @@ function BalancesController($controller, Utils, $http, $window) {
         entity.from = new Date(entity.from.sec * 1000);
       }
     });
-    vm.availableBalanceTypes = ["CORE BALANCE", "Bonus Balance", "Local Calls Balance", "Local Calls Minutes",
-      "Internet and Data", "Pele in_net Time", "SMS Balance", "Data Package", "Monthly Bonus", "Special Monthly Re"];
-    vm.availableBalances = ["cost", "sms", "call", "data"];
+    Database.getAvailablePPIncludes().then(function (res) {
+      vm.availableBalanceTypes = res.data;
+    });
   };
 }
