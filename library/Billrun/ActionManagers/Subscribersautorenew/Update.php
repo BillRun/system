@@ -199,6 +199,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
+		$chargingPlanQuery['recurring'] = 1;
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if($planRecord->isEmpty()) {
