@@ -4,7 +4,7 @@
 	</center>
 	<form class='form-inline' ng-submit='vm.saveBalance()'>
 		<div ng-if='!vm.advancedMode'>
-			<div class="row">
+			<div class="row" ng-if="vm.action !== 'new'">
 				<div class="col-md-2">
 					{{vm.utils.getDisplayValue("aid", "balances")}}
 				</div>
@@ -20,7 +20,7 @@
 					<input ng-model="vm.entity.sid" ng-disabled='vm.action !== "new" && vm.utils.disabled("aid", "balances", vm.action)' type='number' class="form-control" />
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if="vm.action !== 'new'">
 				<div class="col-md-2">
 					{{vm.utils.getDisplayValue("pp_includes_external_id", "balances")}}
 				</div>
@@ -57,16 +57,6 @@
 			<hr/>
 			<h3>Total</h3>
 			<div ng-if='vm.action === "new"'>
-				<div class='row'>
-					<div class='col-md-2'>
-						Balance
-					</div>
-					<div class='col-md-6'>
-						<select class='form-control' ng-model='vm.newBalance'>
-							<option ng-repeat='balance in vm.availableBalances' value="balance">{{balance}}</option>
-						</select>
-					</div>
-				</div>
 				<div class='row'>
 					<div class='col-md-2'>
 						Amount
