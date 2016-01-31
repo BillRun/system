@@ -11,11 +11,16 @@ function BalancesController($controller, Utils, $http, $window) {
 
   vm.saveBalance = function () {
     if (vm.action === 'new') {
-      var postData = {method: 'update', sid: "" + vm.entity.sid, query: JSON.stringify({
+      var postData = {
+        method: 'update',
+        sid: "" + vm.entity.sid,
+        query: JSON.stringify({
           "pp_includes_name": vm.entity.pp_includes_name
         }),
         upsert: JSON.stringify({
-          value: vm.newBalanceAmount, expiration_date: vm.entity.to, operation: "set"
+          value: vm.newBalanceAmount, 
+          expiration_date: vm.entity.to,
+          operation: "set"
         })
       };
       $http.post(baseUrl + '/api/balances', postData).then(function (res) {
