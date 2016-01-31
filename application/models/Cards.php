@@ -125,13 +125,13 @@ class CardsModel extends TableModel {
 				'display' => 'Subscriber No',
 				'default' => '',
 			),
-			'to' => array(
-				'key' => 'to',
-				'db_key' => 'to',
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('creation_date', 'to'),
 				'input_type' => 'date',
-				'comparison' => '$lte',
-				'display' => 'Expiration',
-				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Active Date',
+				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -160,7 +160,7 @@ class CardsModel extends TableModel {
 				'sid' => array(
 					'width' => 2,
 				),
-				'to' => array(
+				'date' => array(
 					'width' => 2,
 				)
 			),
