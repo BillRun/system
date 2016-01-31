@@ -48,8 +48,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		foreach ($this->row['mscc_data'] as $msccData) {
 			$currUsagev = $usagev;
 			$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
-			if (in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
+			if (isset($msccData['rating_group']) && in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
 				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
+			} else {
+				$currUsagev = 0;
 			}
 			$retMsccData[] = array_merge(
 				Billrun_Util::parseBillrunConventionToCamelCase($msccData), 
@@ -71,7 +73,9 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	protected function getRealUsagev() {
 		$sum = 0;	
 		foreach ($this->row['mscc_data'] as $msccData) {
-			$sum += intval($msccData['used_units']);
+			if (isset($msccData['used_units'])) {
+				$sum += intval($msccData['used_units']);
+			}
 		}
 		return $sum;
 	}

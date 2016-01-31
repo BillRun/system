@@ -37,6 +37,57 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	/**
+	 * method to set call_offset
+	 * 
+	 * @param array $row the row we are running on
+	 * @param Billrun_Calculator $calculator the calculator trigger the event
+	 * 
+	 * @return void
+	 */
+	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if (!isset($row['call_offset']) && ($calculator->getType() == 'pricing' || stripos(get_class($calculator), 'rate') !== FALSE)) {
+			$row['call_offset'] = $this->getRowCurrentUsagev($row);
+		}
+		
+	}
+	
+	protected function getRowCurrentUsagev($row) {
+		try {
+			$lines_coll = Billrun_Factory::db()->linesCollection();
+			$query = $this->getRowCurrentUsagevQuery($row);
+			$line = $lines_coll->aggregate($query)->current();
+		} catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage());
+		}
+		return isset($line['sum']) ? $line['sum'] : 0;
+	}
+	
+	protected function getRowCurrentUsagevQuery($row) {
+		$query = array(
+			array(
+				'$match' => array(
+					"sid" => $row['sid'],
+				)
+			),
+			array(
+				'$group' => array(
+					'_id' => null,
+					'sum' => array('$sum' => '$usagev'),
+				)
+			)
+		);
+		if ($row['usaget'] == 'call') {
+			$query[0]['$match']['call_reference'] = $row['call_reference'];
+			$query[0]['$match']['api_name'] = array('$ne' => 'start_call');
+			$query[0]['$match']['stamp'] = array('$ne' => $row['stamp']);
+		} else {
+			$query[0]['$match']['session_id'] = $row['session_id'];
+		}
+		return $query;
+	}
+
+	
+	/**
 	 * Send a request of ClearCall
 	 * 
 	 * @param type $row
@@ -79,7 +130,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$balance_usage = $this->getBalanceUsage($balance, $row);
 			$pricingData["balance_before"] = $balance_before;
 			$pricingData["balance_after"] = $balance_before + $balance_usage;
-			$pricingData["usage_unit"] = Billrun_Util::getUsagetUnit($balance->get('charging_by_usaget'));
+			$pricingData["usage_unit"] = $balance->get('charging_by_usaget_unit');
 		} catch (Exception $ex) {
 			Billrun_Factory::log('prepaid plugin afterUpdateSubscriberBalance error', Zend_Log::ERR);
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
@@ -90,11 +141,15 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($balance->get('charging_by_usaget') == 'total_cost') {
 			return $balance->get('balance')['cost'];
 		}
-		return $balance->get('balance')['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
+		$charging_by_usaget = $balance->get('charging_by_usaget');
+		$charging_by = $balance->get('charging_by');
+		return $balance->get('balance')['totals'][$charging_by_usaget][$charging_by];
 	}
 	
 	protected function getBalanceUsage($balance, $row) {
-		if ($balance->get('charging_by_usaget') == 'total_cost' || $balance->get('charging_by_usaget') == 'cost') {
+		$charging_by_usaget = $balance->get('charging_by_usaget');
+		$charging_by = $balance->get('charging_by');
+		if ($charging_by_usaget == 'total_cost' || $charging_by_usaget == 'cost' || $charging_by == 'cost' || $charging_by == 'total_cost') {
 			return $row['aprice'];
 		}
 		return $row['usagev'];

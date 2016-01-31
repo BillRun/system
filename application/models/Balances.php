@@ -189,7 +189,7 @@ class BalancesModel extends TableModel {
 				$units = array();
 				if (isset($item['balance']['totals'])) {
 					foreach ($item['balance']['totals'] as $key => $val) {
-						$unit = Billrun_Util::getUsagetUnit($key);
+						$unit = $item['charging_by_usaget_unit'];
 						if (isset($val['cost'])) {
 							$totals[] = $val['cost'];
 							$units[] = $unit;

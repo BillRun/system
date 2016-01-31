@@ -2,8 +2,12 @@
 	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
 	<h3 class='subtitle'>{{capitalize(action)}} Charging Plan</h3>
 </center>
+<ul class="list-group" ng-show="err.data.summaryReport.length">
+      <li class="list-group-item h4 list-group-item-danger">Please resolve the problems below</li>
+			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
+</ul>
 <div>
-	<form class='form-inline' ng-submit='save()'>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
 			<div class='row' ng-if='action === "duplicate" || action === "new"'>
 				<div class='col-md-2'>
@@ -42,7 +46,7 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if="utils.display('recurring', 'plans')">
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("recurring", "plans")}}
 				</div>
@@ -75,7 +79,7 @@
 				</div>
 			</div>
 			
-			<div ng-hide="entity.include === undefined">
+			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
 				<select class='form-control' ng-model='newIncludeType.type'>
@@ -219,7 +223,11 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn" ng-if='1||authorized_write'>
+			</button>
+			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
 		</div>
 	</form>
 </div>

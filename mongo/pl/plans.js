@@ -1,5 +1,5 @@
 // migrate customer plans (COS)
-db.tmp_COS.find().forEach(
+db.tmp_COS_SERVICEPROVIDERS.find().forEach(
 	function(obj20) {
 		db.plans.insert({
 			name:obj20.COS_NAME,
@@ -8,6 +8,7 @@ db.tmp_COS.find().forEach(
 			type:'customer',
 			external_id: obj20.COS_ID,
 			external_code: obj20.COS_CODE,
+			service_provider:obj20.SP_NAME
 		});
 	}
 );

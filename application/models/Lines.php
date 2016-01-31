@@ -144,11 +144,17 @@ class LinesModel extends TableModel {
 		return $this->collection->distinct($field, $filter_query);
 	}
 
-	public function getTableColumns() {
+	public function getTableColumns($remove_info_columns = false) {
 		$columns = parent::getTableColumns();
 		if (!empty($this->extra_columns)) {
 			$extra_columns = array_intersect_key($this->getExtraColumns(), array_fill_keys($this->extra_columns, ""));
 			$columns = array_merge($columns, $extra_columns);
+		}
+		if ($remove_info_columns) {
+			$removable_fields = Billrun_Factory::config()->getConfigValue('admin_panel.lines.removable_columns', []);
+			foreach($removable_fields as $removable_field) {
+				unset($columns[$removable_field]);
+			}
 		}
 		return $columns;
 	}
@@ -169,13 +175,21 @@ class LinesModel extends TableModel {
 		}
 		arsort($billruns);
 
+		$planModel = new PlansModel();
+		$names = $planModel->getData(array('type' => 'customer'));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
+
+		
 		$filter_fields = array(
 			'sid' => array(
 				'key' => 'sid',
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber id',
+				'display' => 'Subscriber No',
 				'default' => '',
 			),
 			'aid' => array(
@@ -185,6 +199,15 @@ class LinesModel extends TableModel {
 				'comparison' => 'equals',
 				'display' => 'BAN',
 				'default' => '',
+			),
+			'plan' => array(
+				'key' => 'plan',
+				'db_key' => 'plan',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Plan',
+				'values' => $planNames,
+				'default' => array(),
 			),
 			'from' => array(
 				'key' => 'from',
@@ -199,7 +222,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
-				'display' => 'To',
+				'display' => 'Expiration',
 				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
@@ -271,14 +294,17 @@ class LinesModel extends TableModel {
 				'aid' => array(
 					'width' => 2,
 				),
+				'plan' => array(
+					'width' => 2,
+				)
+			),
+			1 => array(
 				'from' => array(
 					'width' => 2,
 				),
 				'to' => array(
 					'width' => 2,
 				),
-			),
-			1 => array(
 				'usage' => array(
 					'width' => 2,
 				),
@@ -297,7 +323,7 @@ class LinesModel extends TableModel {
 			'aprice' => 'Charge',
 			'plan' => 'Plan',
 			'process_time' => 'Process time',
-			'sid' => 'Subscriber id',
+			'sid' => 'Subscriber No',
 			'urt' => 'Time',
 			'type' => 'Type',
 			'usaget' => 'Usage type',

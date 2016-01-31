@@ -27,11 +27,11 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="balanceType" class="col-sm-4 control-label text-right">Balance Type</label>
+		<label for="balanceType" class="col-sm-4 control-label text-right">PP Includes</label>
 		<div class="col-sm-6">
 			<select class="form-control" name='balanceType'>
-				<?php foreach ($balance_types['prepaidincludes'] as $balance_type) : ?>
-					<option value="<?php echo $balance_type ?>" <?php if ('CORE BALANCE' == $balance_type) echo 'selected' ?>><?php echo $balance_type ?></option>
+				<?php foreach ($prepaidincludes as $prepaidinclude) : ?>
+					<option value="<?php echo $prepaidinclude ?>" <?php if ('CORE BALANCE' == $prepaidinclude) echo 'selected' ?>><?php echo $prepaidinclude ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>

@@ -106,9 +106,7 @@ class RatesModel extends TabledateModel {
 		if ($this->showprefix) {
 			$columns = array(
 				'key' => 'Key',
-				'prefix' => 'Prefix',
-				'from' => 'From',
-				'to' => 'To'
+				'prefix' => 'Prefix'
 			);
 		} else {
 			$columns = array(
@@ -116,9 +114,8 @@ class RatesModel extends TabledateModel {
 				't' => 'Type',
 				'tprice' => 'Price',
 				'tduration' => 'Interval',
-				'taccess' => 'Access',
-				'from' => 'From',
-				'to' => 'To'
+				'tunit' => 'Unit',
+				'taccess' => 'Access'
 			);
 		}
 		if (!empty($this->extra_columns)) {
@@ -175,7 +172,6 @@ class RatesModel extends TabledateModel {
 				'db_key' => array('rates.call', 'rates.sms'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
-				'singleselect' => true,
 				'display' => 'Plan',
 				'values' => $planNames,
 				'default' => array(array('BASE' => 'BASE')),
@@ -185,7 +181,7 @@ class RatesModel extends TabledateModel {
 				'db_key' => 'nofilter',
 				'input_type' => 'boolean',
 				'display' => 'Show prefix',
-				'default' => $this->showprefix ? 'on' : '',
+				'default' => $this->showprefix ? 'on' : 'off',
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -283,6 +279,7 @@ class RatesModel extends TabledateModel {
 							't' => $key,
 							'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
 							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
+							'tunit' => $rate[$filteredPlan]['unit']
 						);
 						if (strpos($key, 'call') !== FALSE) {
 							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);

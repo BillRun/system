@@ -22,7 +22,9 @@
 		<label for="scenario" class="col-sm-4 text-right">Scenario</label>
 		<div class="col-sm-6">
 			<textarea rows="6" name="scenario" class="form-control"><?php echo $data_scenario ?></textarea>
-			<small class="text-muted">[ACTION_NAME|USAGE] New line per action, Default data usage is 1000.</small>
+			<small class="text-muted"><strong>[ACTION_NAME|USED_BYTES]</strong> New line per action.
+				<br />* ACTION_NAME : init / update / final
+				<br />* USED_BYTES : bytes, default data usage is 1000000 bytes (1MB).</small>
 		</div>
 	</div>
 
@@ -31,7 +33,7 @@
 		<div class="col-sm-6">
 			<div class="checkbox">
 				<label>
-					<input type="checkbox" name="removeLines" value="remove" checked>Remove all existing lines for this imsi
+					<input type="checkbox" name="removeLines" value="remove" >Remove all existing lines for this imsi
 				</label>
 			</div>
 		</div>

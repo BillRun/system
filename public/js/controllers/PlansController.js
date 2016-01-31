@@ -63,8 +63,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         }
       };
       if (_.isUndefined($scope.entity.include[include_type])) {
-        if (include_type === "cost") $scope.entity.include.cost = [new_include_type];
-        else $scope.entity.include[include_type] = new_include_type;
+        if (include_type === "cost")
+          $scope.entity.include.cost = [new_include_type];
+        else
+          $scope.entity.include[include_type] = new_include_type;
       } else if (include_type === "cost") {
         $scope.entity.include.cost.push(new_include_type);
       }
@@ -72,11 +74,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.includeTypeExists = function (include_type) {
-      if (include_type === 'cost') return false;
+      if (include_type === 'cost')
+        return false;
       return !_.isUndefined($scope.entity.include[include_type]);
     };
 
-    $scope.save = function () {
+    $scope.save = function (redirect) {
+      $scope.err = {};
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -84,9 +88,11 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false)
       };
       Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $location.search().type + 'plans';
+        if (redirect) {
+          $window.location = baseUrl + '/admin/' + $location.search().type + 'plans';
+        }
       }, function (err) {
-        alert("Connection error!");
+        $scope.err = err;
       });
     };
     $scope.cancel = function () {
@@ -105,20 +111,21 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
-          if (_.isUndefined(entity.include)) entity.include = {};
+          if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
+            $scope.entity.include = {};
         } else if ($location.search().type === "charging") {
           $scope.entity = {
-            "name" : "",
-            "external_id" : "",
-            "service_provider" : "",
-            "desc" : "",
-            "type" : "charging",
-            "operation" : "",
-            "charging_type" : [],
-            "from" : new Date(),
-            "to" : new Date(),
-            "include" : {},
-            "priority" : "0"
+            "name": "",
+            "external_id": "",
+            "service_provider": "",
+            "desc": "",
+            "type": "charging",
+            "operation": "",
+            "charging_type": [],
+            "from": new Date(),
+            "to": new Date(),
+            "include": {},
+            "priority": "0"
           };
         } else if ($location.search().type === "customer") {
           $scope.entity = {

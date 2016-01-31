@@ -12,52 +12,28 @@
  * @package  Billrun
  * @since    4.0
  */
-final class Billrun_Version
+class Billrun_Version
 {
 	/** @var  string  Product name. */
-	public $PRODUCT = 'BillRun';
+	public static $PRODUCT = 'BillRun';
 
 	/** @var  string  Release version. */
-	public $RELEASE = '4.0';
+	public static $RELEASE = '4.0';
 
 	/** @var  string  Maintenance version. */
-	public $DEV_LEVEL = '0';
+	public static $DEV_LEVEL = '0';
 
 	/** @var  string  Development STATUS. */
-	public $DEV_STATUS = 'Alpha';
+	public static $DEV_STATUS = 'Alpha';
 
 	/** @var  string  Build number. */
-	public $BUILD = '';
+	public static $BUILD = '15';
 
 	/** @var  string  Release date. */
-	public $RELDATE = '01-December-2015';
-
-	/** @var  string  Release time. */
-	public $RELTIME = '20:30';
-
-	/** @var  string  Release timezone. */
-	public $RELTZ = 'GMT';
-
-	/** @var  string  Copyright Notice. */
-	public $COPYRIGHT = 'Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.';
+	public static $RELDATE = '31-January-2015';
 
 	/** @var  string  Link text. */
-	public $URL = '<a href="https://bill.run">BillRun</a>';
-
-	/**
-	 * Compares two a "PHP standardized" version number against the current Joomla version.
-	 *
-	 * @param   string  $minimum  The minimum version of the Joomla which is compatible.
-	 *
-	 * @return  bool    True if the version is compatible.
-	 *
-	 * @see     http://www.php.net/version_compare
-	 * @since   4.0
-	 */
-	public static function isCompatible($minimum)
-	{
-		return version_compare(JVERSION, $minimum, 'ge');
-	}
+	public static $URL = '<a href="https://bill.run">BillRun</a>';
 
 	/**
 	 * Gets a "PHP standardized" version string for the current Joomla.
@@ -68,7 +44,7 @@ final class Billrun_Version
 	 */
 	public static function getShortVersion()
 	{
-		return $this->RELEASE . '.' . $this->DEV_LEVEL;
+		return self::$RELEASE . '.' . self::$DEV_LEVEL;
 	}
 
 	/**
@@ -80,9 +56,8 @@ final class Billrun_Version
 	 */
 	public static function getLongVersion()
 	{
-		return $this->PRODUCT . ' ' . $this->RELEASE . '.' . $this->DEV_LEVEL . ' '
-			. $this->DEV_STATUS . ' [ ' . $this->CODENAME . ' ] ' . $this->RELDATE . ' '
-			. $this->RELTIME . ' ' . $this->RELTZ;
+		return self::$PRODUCT . '-' . self::$RELEASE . '.' . self::$DEV_LEVEL . '-'
+			. self::$DEV_STATUS . '-' . self::$BUILD;
 	}
 
 }
