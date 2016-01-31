@@ -699,12 +699,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 		
-		if ($this->getRequest()->isPost()) {
-			// redirect
-			$this->redirect($this->baseUrl . '/admin/lines');
-		} else {
-			$this->getView()->component = $this->buildTableComponent('lines', $query);
-		}
+		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
 
 	public function queueAction() {
@@ -1001,6 +996,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
+		if ($this->getRequest()->isPost()) {
+			$this->redirect($this->baseUrl . '/admin/' . str_replace('_', '', $table));
+			return;
+		}
 		$this->title = str_replace('_', ' ', ucfirst($table));
 		if ($table === 'plans') {
 			$this->title = ucfirst($this->_request->getParam('plan_type')) . ' ' . $this->title;
