@@ -43,7 +43,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$defaultRecord['interval'] = 'month';
 		$defaultRecord['operation'] = 'inc';
 		$defaultRecord['sid'] = $this->sid;
-		$defaultRecord['from'] = new MongoDate();
+		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);;
 		return $defaultRecord;
 	}
 	

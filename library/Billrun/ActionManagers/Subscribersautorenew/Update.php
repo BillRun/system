@@ -133,7 +133,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		// TODO INTERVAL IS ALWAYS MONTH
 		$set['interval'] = 'month';
 		
-		$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		if (isset($jsonUpdateData['to']['sec'])) {
+			$set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
+		} else if (is_string($jsonUpdateData['to'])) {
+			$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		} else {
+			$set['to'] = $jsonUpdateData['to'];
+		}
 		if (isset($jsonUpdateData['operation'])) {
 			$set['operation'] = $jsonUpdateData['operation'];
 		} else {
@@ -149,8 +155,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		
 		$set['creation_time'] = new MongoDate();
-		if(isset($this->query['from'])) {
-			$set['from'] = new MongoDate(strtotime($this->query['from']));
+		if (isset($this->query['from']['sec'])) {
+			$set['from'] = new MongoDate($this->query['from']['sec']);
+		} else if (is_string($this->query['from'])) {
+ 			$set['from'] = new MongoDate(strtotime($this->query['from']));
 		} else {
 			$set['from'] = $set['creation_time'];
 		}
@@ -158,7 +166,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['last_renew_date'] = $set['creation_time'];
 		
 		$set['remain'] = 
-			Billrun_Util::countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
+			Billrun_Util::countMonths(strtotime($this->query['from']->sec), strtotime($jsonUpdateData['to']->sec));
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 	}
