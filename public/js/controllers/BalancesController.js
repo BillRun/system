@@ -2,7 +2,7 @@ angular
   .module('BillrunApp')
   .controller('BalancesController', BalancesController);
 
-function BalancesController($controller, Utils) {
+function BalancesController($controller, Utils, $http, $window) {
   'use strict';
 
   var vm = this;
@@ -11,14 +11,28 @@ function BalancesController($controller, Utils) {
 
   vm.saveBalance = function () {
     if (vm.action === 'new') {
-      if (vm.newBalance && vm.newBalanceAmount) {
-        if (vm.newBalance !== 'cost')
-          vm.entity.balance = {totals: {usagev: vm.newBalanceAmount}};
+      var postData = {
+        method: 'update',
+        sid: "" + vm.entity.sid,
+        query: JSON.stringify({
+          "pp_includes_name": vm.entity.pp_includes_name
+        }),
+        upsert: JSON.stringify({
+          value: vm.newBalanceAmount, 
+          expiration_date: vm.entity.to,
+          operation: "set"
+        })
+      };
+      $http.post(baseUrl + '/api/balances', postData).then(function (res) {
+        if (res.data.status)
+          $window.location = baseUrl + '/admin/balances';
         else
-          vm.entity.balance = {cost: vm.newBalanceAmount};
-      }
+          // TODO: change to flash message
+          alert(res.data.desc + " - " + res.data.details);
+      });
+    } else {
+      vm.save(true);
     }
-    vm.save(true);
   };
 
   vm.init = function () {
