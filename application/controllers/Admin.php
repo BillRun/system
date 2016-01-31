@@ -34,15 +34,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
-		if (APPLICATION_ENV === 'prod') {
+		if (Billrun_Factory::config()->isProd()) {
 			// TODO: set the branch through config
 			$branch = 'production';
 			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
 				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
 			} else {
-				$this->commit = md5(date('ymd'));
+				$this->commit = md5(date('ymd')); // cache for 1 calendar day
 			}
-		} else {
+		} else { // all other envs do not cache
 			$this->commit = md5(time());
 		}
 
