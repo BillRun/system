@@ -127,7 +127,7 @@ class CardsModel extends TableModel {
 			),
 			'date' => array(
 				'key' => 'date',
-				'db_key' => array('creation_date', 'to'),
+				'db_key' => array('creation_time', 'to'),
 				'input_type' => 'date',
 				'comparison' => array('$lte', '$gte'),
 				'display' => 'Active Date',
