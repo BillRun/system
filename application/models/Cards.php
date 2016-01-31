@@ -125,13 +125,13 @@ class CardsModel extends TableModel {
 				'display' => 'Subscriber No',
 				'default' => '',
 			),
-			'to' => array(
-				'key' => 'to',
-				'db_key' => 'to',
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('creation_time', 'to'),
 				'input_type' => 'date',
-				'comparison' => '$lte',
-				'display' => 'Expiration',
-				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Active Date',
+				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
@@ -159,8 +159,9 @@ class CardsModel extends TableModel {
 				),
 				'sid' => array(
 					'width' => 2,
-				),
-				'to' => array(
+		
+					),
+				'date' => array(
 					'width' => 2,
 				)
 			),
@@ -183,5 +184,28 @@ class CardsModel extends TableModel {
 								"secret"
 							)
 						);
+	}
+
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
+			if (is_string($value)) {
+				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+				$ret = array(
+					'$and' => array(
+						array(
+							$filter_field['db_key'][0] => array(
+								$filter_field['comparison'][0] => $value
+							),
+							$filter_field['db_key'][1] => array(
+								$filter_field['comparison'][1] => $value
+							),
+						),
+					),
+				);
+				return $ret;
+			}
+		} else {
+			return parent::applyFilter($filter_field, $value);
+		}
 	}
 }
