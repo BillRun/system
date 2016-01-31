@@ -17,7 +17,6 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         }
       }, function (err) {
         $scope.err = err;
-        console.log(err);
       });
     };
 
