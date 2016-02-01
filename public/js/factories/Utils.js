@@ -2,7 +2,6 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
     'use strict';
 
     function getDisplayValue(str, coll) {
-<<<<<<< HEAD
       if ($rootScope.fields === undefined)
         return str.replace(/_/g, ' ');
       if ($rootScope.fields[coll] && $rootScope.fields[coll][str]
@@ -11,16 +10,13 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
       if ($rootScope.fields[str] && $rootScope.fields[str]['display_value'])
         return $rootScope.fields[str]['display_value'];
       return _.capitalize(str.replace(/_/g, ' '));
-=======
      
       var d1 = _.result($rootScope.fields, coll + '.' + str + '.display_value');
       var d2 = _.result($rootScope.fields, str + '.display_value');
-      console.log(d1,d2,d1||d2);
 
-      var returnStr  =  (d1 || d2) || str ;  ; 
+      var returnStr  =  (d1 || d2) || str ;
      
       return _.capitalize(returnStr.replace(/_/g, ' '));
->>>>>>> ae1537a4aca08f8f397d5f85f2e32019b7afb332
     }
 
     function display(field, coll) {
