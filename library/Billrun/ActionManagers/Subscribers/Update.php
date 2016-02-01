@@ -160,6 +160,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$success = true;
 
 		$updatedDocument = null;
+		$errorCode = 0;
 		try {
 			if($this->keepLines) {
 				$this->handleKeepLines();
@@ -204,6 +205,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
+				  'error_code'    => ($success) ? (0) : ($errorCode),
 				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}

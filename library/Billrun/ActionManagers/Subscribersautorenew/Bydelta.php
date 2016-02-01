@@ -43,7 +43,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$defaultRecord['interval'] = 'month';
 		$defaultRecord['operation'] = 'inc';
 		$defaultRecord['sid'] = $this->sid;
-		$defaultRecord['from'] = date(DATE_ISO8601, time());
+		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);;
 		return $defaultRecord;
 	}
 	
@@ -124,11 +124,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$isEmpty = true;
 		foreach ($jsonData as &$record) {
 			if (isset($record['from']) && $record['from'] != null) {
-				$record['from'] = new MongoDate($record['from']);
+				$record['from'] = new MongoDate(strtotime($record['from']));
 			}
 			
 			if (isset($record['to']) && $record['to'] != null) {
-				$record['to'] = new MongoDate($record['to']);
+				$record['to'] = new MongoDate(strtotime($record['to']));
 			}
 			
 			if(!empty($record)) {

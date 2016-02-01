@@ -35,6 +35,10 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
     }
 
+    function getAvailablePPIncludes() {
+      return $http.get(baseUrl + '/admin/getAvailablePPIncludes');
+    }
+
     function getCollectionItems(params) {
       return $http.get(baseUrl + '/admin/getCollectionItems', {params: params});
     }
@@ -50,6 +54,7 @@ app.factory('Database', ['$http', function ($http) {
       getAvailablePlans: getAvailablePlans,
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
-      filterCollectionItems: filterCollectionItems
+      filterCollectionItems: filterCollectionItems,
+      getAvailablePPIncludes: getAvailablePPIncludes
     };
   }]);

@@ -34,15 +34,15 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
-		if (APPLICATION_ENV === 'prod') {
+		if (Billrun_Factory::config()->isProd()) {
 			// TODO: set the branch through config
 			$branch = 'production';
 			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
 				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
 			} else {
-				$this->commit = md5(date('ymd'));
+				$this->commit = md5(date('ymd')); // cache for 1 calendar day
 			}
-		} else {
+		} else { // all other envs do not cache
 			$this->commit = md5(time());
 		}
 
@@ -205,6 +205,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailablePPIncludesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($collection));
+		$response->response();
+		return false;
+	}
+	
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -699,12 +709,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 		
-		if ($this->getRequest()->isPost()) {
-			// redirect
-			$this->redirect($this->baseUrl . '/admin/lines');
-		} else {
-			$this->getView()->component = $this->buildTableComponent('lines', $query);
-		}
+		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
 
 	public function queueAction() {
@@ -1001,6 +1006,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
+		if ($this->getRequest()->isPost()) {
+			$this->redirect($this->baseUrl . '/admin/' . str_replace('_', '', $table));
+			return;
+		}
 		$this->title = str_replace('_', ' ', ucfirst($table));
 		if ($table === 'plans') {
 			$this->title = ucfirst($this->_request->getParam('plan_type')) . ' ' . $this->title;
