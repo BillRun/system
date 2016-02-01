@@ -21,11 +21,8 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     };
 
     $scope.addIMSI = function () {
-      if ($scope.entity.imsi.length >= 2) {
-        $scope.flash.message = "Maximum 2 imsi for subscriber";
-        $scope.flash.cls = "alert alert-danger";
-        utils.flashMessage('flash', $scope);
-        return false;
+      if($scope.entity.imsi.length >=2) { 
+        return false ;
       }
       var idx = _.findIndex($scope.entity.imsi, function (i) {
         return (_.trim(i) === '' || !_.trim(i));
