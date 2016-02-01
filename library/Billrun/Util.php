@@ -93,11 +93,11 @@ class Billrun_Util {
 		$milliseconds = round(microtime(true) * 10000);
 		$l = strlen($milliseconds);
 		if ($l >= $length) {
-			return $milliseconds;
+			return substr($milliseconds, $l - $length, $length);
 		}
 		
 		$additional = rand(pow(10, $length - $l - 1), pow(10, $length - $l) - 1);
-		return $additional*pow(10, $l) + $milliseconds;
+		return $additional . $milliseconds;
 	}
 
 	/**
