@@ -22,7 +22,7 @@
 					<input ng-model="entity.aid" type="number" class="form-control" ng-disabled='action !== "new"' />
 				</div>
 			</div>
-			<div class="row" ng-if='utils.display("msisdn", "subscribers")'>
+			<div class="row" ng-if='utils.display("msisdn", "subscribers") || action === "new"'>
 				<div class="col-md-2">
 					{{utils.getDisplayValue('msisdn', 'subscribers')}}
 				</div>
