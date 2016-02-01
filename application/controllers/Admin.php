@@ -53,6 +53,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/bootstrap-multiselect.css');
 		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
 		$this->addCss($this->baseUrl . '/css/main.css');
+		$this->addCss($this->baseUrl . '/js/vendor/JSONedit/styles.css');
+		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
 		$this->addJs($this->baseUrl . '/js/moment.js');
