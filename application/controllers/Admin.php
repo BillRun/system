@@ -55,6 +55,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/main.css');
 		$this->addCss($this->baseUrl . '/js/vendor/JSONedit/styles.css');
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
+		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
 		$this->addJs($this->baseUrl . '/js/moment.js');
@@ -65,6 +66,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
+		
+		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
+		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
+		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
+		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
+
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
 		$this->addJs($this->baseUrl . '/js/factories/Database.js');

@@ -20,17 +20,7 @@
 		<script>
 			baseUrl = '<?php echo $this->baseUrl; ?>';
 		</script>
-		<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
-		<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"></script>
-
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/lodash.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular.min.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular-route.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/ui-bootstrap.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/jquery-ui.min.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/sortable.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/directives.js'></script>
-		<script src="<?php echo $this->baseUrl; ?>/js/vendor/xeditable.min.js"></script>
+		<?php echo $js ?>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
