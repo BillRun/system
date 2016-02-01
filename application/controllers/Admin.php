@@ -988,7 +988,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-
+		
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
 
@@ -1027,6 +1027,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'title' => $this->title,
 			'active' => $table,
 			'session' => $this->getSession($table),
+			'decimal_places' => Billrun_Config::getInstance()->getConfigValue('admin_panel.decimal_places', 0)
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
