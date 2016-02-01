@@ -1,5 +1,5 @@
 var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
-app.run(function ($rootScope, $location, $interval) {
+app.run(function ($rootScope, $interval) {
 
   var lastDigestRun = Date.now();
   var idleCheck = $interval(function () {
@@ -15,6 +15,10 @@ app.run(function ($rootScope, $location, $interval) {
 });
 
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
+  function twoDigit(n) {
+    return (n < 10) ? "0" + n : n.toString();
+  }
+
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
    * The workhorse; converts an object to x-www-form-urlencoded serialization.

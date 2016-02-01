@@ -1099,9 +1099,10 @@ class Billrun_Util {
 		$max_date = max($d1, $d2);
 		$i = 0;
 
-		$maxMonth = date('m', $max_date);
+		$year_month_format = 'Ym';
+		$maxMonth = date($year_month_format, $max_date);
 		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
-			if(date('m', $min_date) == $maxMonth) {
+			if(date($year_month_format, $min_date) >= $maxMonth) {
 				break;
 			}
 			$i++;

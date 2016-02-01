@@ -38,7 +38,6 @@ function ServiceProvidersController(Database, $uibModal) {
       ids: _.keys(vm.selectedServiceProviders)
     }).then(function () {
       _.forEach(_.keys(vm.selectedServiceProviders), function (spid) {
-        console.log(spid);
         //vm.serviceProviders = _.without(vm.serviceProviders, service_provider);
       });
     });

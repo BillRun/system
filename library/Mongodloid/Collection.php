@@ -62,6 +62,10 @@ class Mongodloid_Collection {
 	 * @return mongo update result.
 	 */
 	public function updateEntity($entity, $fields) {
+		if (empty($fields)) {
+			return false;
+		}
+		
 		$data = array(
 			'_id' => $entity->getId()->getMongoID()
 		);
