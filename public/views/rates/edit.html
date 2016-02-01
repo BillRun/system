@@ -186,7 +186,7 @@
 					</select>
 					<a ng-click="addDataRate()" class="clickable">Add New Data Tariff</a>
 				</div>
-				<div ng-repeat="(dataRateName, dataRate) in entity.rates.data" class="col-indent">
+				<div ng-repeat="(dataRateName, dataRate) in entity.rates.data" class="col-indent" id="{{dataRateName}}">
 					<h4>
 						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.dataRates[dataRateName]"></i></small>
 						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.dataRates[dataRateName]"></i></small>
@@ -270,7 +270,7 @@
 					</select>
 					<a ng-click="addSMSRate()" class="clickable">Add New SMS Tariff</a>
 				</div>
-				<div ng-repeat="(smsRateName, smsRate) in entity.rates.sms" class="col-indent">
+				<div ng-repeat="(smsRateName, smsRate) in entity.rates.sms" class="col-indent" id="{{smsRateName}}">
 					<h4>
 						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.smsRates[smsRateName]"></i></small>
 						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.smsRates[smsRateName]"></i></small>

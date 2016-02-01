@@ -228,6 +228,8 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
             });
             if (plans.length === 1) {
               $scope.shown.callRates[plans] = true;
+              $scope.shown.smsRates[plans] = true;
+              $scope.shown.dataRates[plans] = true;
               $location.hash(plans);
               $anchorScroll();
             }
