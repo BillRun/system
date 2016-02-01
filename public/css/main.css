@@ -5,6 +5,10 @@
 	background-color: white;
 }
 
+#data_table tbody td {
+	text-align: left;
+}
+
 .glyphicon-plus-sign {
 	color: green;
 	cursor: pointer;
