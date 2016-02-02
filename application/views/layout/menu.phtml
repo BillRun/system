@@ -30,7 +30,7 @@
 						</li>
 					<?php endif; ?>
 					<?php if (AdminController::authorized('read', 'rates') && AdminController::showInMenu('rates')) : ?>
-						<li class='menu-item-rates <?php echo ($active == 'rates' ? ' class="active"' : ''); ?>'>
+						<li class='menu-item-rates <?php echo ($active == 'rates' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a>
 						</li>
 					<?php endif; ?>

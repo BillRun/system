@@ -2,10 +2,7 @@
 	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
 	<h3 class='subtitle'>{{capitalize(action)}} Charging Plan</h3>
 </center>
-<ul class="list-group" ng-show="err.data.summaryReport.length">
-      <li class="list-group-item h4 list-group-item-danger">Please resolve the problems below</li>
-			<li class="errorMessage list-group-item" ng-repeat="m in err.data.summaryReport">{{m}}</li>
-</ul>
+<div pretty-error errors="err.data"></div>
 <div>
 	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
