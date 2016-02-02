@@ -96,7 +96,8 @@ class Billrun_Util {
 			return substr($milliseconds, $l - $length, $length);
 		}
 		
-		$additional = rand(pow(10, $length - $l - 1), pow(10, $length - $l) - 1);
+		$start = pow(10, $length - $l - 1);
+		$additional = rand($start, $start * 10 - 1);
 		return $additional . $milliseconds;
 	}
 
