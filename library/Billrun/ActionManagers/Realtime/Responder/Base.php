@@ -214,4 +214,24 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 
 		return "Success";
 	}
+	
+	/**
+	 * Gets error code number (if an error occured)
+	 * @return int ErrorCode
+	 */
+	protected function getErrorCode() {
+		if (isset($this->row['granted_return_code'])) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch($this->row['granted_return_code']) {
+				case ($returnCodes['no_available_balances']):
+					return Billrun_Factory::config()->getConfigValue("balances_error_base") + 34;
+				case ($returnCodes['no_rate']):
+					return ''; //TODO: what error code should be return?
+				case ($returnCodes['no_subscriber']):
+					return Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
+			} 
+		}
+
+		return NULL;
+	}
 }
