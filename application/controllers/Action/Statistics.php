@@ -28,14 +28,18 @@ class StatisticsAction extends ApiAction {
 		$statistics = json_decode($this->getRequest()->get('statistics'), true);
 		if (!$statistics || empty($statistics)) {
 			Billrun_Factory::log("No statistics specified for save!", Zend_Log::NOTICE);
-			return false;
+			$output = array(
+				'status' => 0,
+				'desc' => 'No statistics specified for save!'
+			);
+		} else {
+			$this->model->update($statistics);
+			$output = array(
+				'status' => 1,
+				'desc' => 'create',
+				'input' => $statistics
+			);
 		}
-		$this->model->update($statistics);
-		$output = array(
-			'status' => 1,
-			'desc' => 'create',
-			'input' => $statistics
-		);
 		$this->getController()->setOutput(array($output));
 	}
 }
