@@ -443,8 +443,6 @@ class TableModel {
 
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
-		Billrun_Factory::log(' search_key  ' .$this->search_key , Zend_log::INFO);
-		Billrun_Factory::log(' key  ' .$key , Zend_log::INFO);
 
 		if($key) { 
 			$count = $this->collection
