@@ -23,6 +23,22 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $name = 'prepaid';
 	
 	/**
+	 * Archive DB
+	 * @var Billrun_Db
+	 */
+	protected $db;
+
+
+	public function __construct() {
+		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+		if (in_array('unify', $calculators)) {
+			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		} else {
+			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('db', array()));
+		}
+	}
+	
+	/**
 	 * Method to trigger api outside of Billrun.
 	 * afterSubscriberBalanceNotFound trigger after the subscriber has no available balance (relevant only for prepaid subscribers)
 	 * 
@@ -35,7 +51,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false; // TODO: temporary, disable send of clear call
 		return self::sendClearCallRequest($row);
 	}
-	
+
 	/**
 	 * method to set call_offset
 	 * 
@@ -48,9 +64,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($row['call_offset']) && ($calculator->getType() == 'pricing' || stripos(get_class($calculator), 'rate') !== FALSE)) {
 			$row['call_offset'] = $this->getRowCurrentUsagev($row);
 		}
-		
 	}
-	
+
 	protected function getRowCurrentUsagev($row) {
 		try {
 			$lines_coll = Billrun_Factory::db()->linesCollection();
@@ -61,7 +76,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return isset($line['sum']) ? $line['sum'] : 0;
 	}
-	
+
 	protected function getRowCurrentUsagevQuery($row) {
 		$query = array(
 			array(
@@ -86,7 +101,6 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $query;
 	}
 
-	
 	/**
 	 * Send a request of ClearCall
 	 * 
@@ -95,13 +109,13 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected static function sendClearCallRequest($row) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-			'usaget' => $row['usaget']
+				'usaget' => $row['usaget']
 		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		$row['record_type'] = 'clear_call';
 		$responder = Billrun_ActionManagers_Realtime_Responder_Manager::getResponder($row);
 		if (!$responder) {
@@ -114,7 +128,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$requestUrl = Billrun_Factory::config()->getConfigValue('IN.request.url.realtimeevent');
 		return Billrun_Util::sendRequest($requestUrl, $request);
 	}
-	
+
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		try {
 			$pp_includes_name = $balance->get('pp_includes_name');
@@ -136,7 +150,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
 		}
 	}
-	
+
 	protected function getBalanceValue($balance) {
 		$charging_by_usaget = $balance->get('charging_by_usaget');
 		if ($charging_by_usaget == 'total_cost' || $charging_by_usaget == 'cost') {
@@ -145,7 +159,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$charging_by = $balance->get('charging_by');
 		return $balance->get('balance')['totals'][$charging_by_usaget][$charging_by];
 	}
-	
+
 	protected function getBalanceUsage($balance, $row) {
 		$charging_by_usaget = $balance->get('charging_by_usaget');
 		$charging_by = $balance->get('charging_by');
@@ -154,8 +168,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $row['usagev'];
 	}
-	
-	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery, $responder) {
+
+	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
 		try {
 			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
@@ -166,7 +180,175 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log('prepaid plugin beforeSubscriberRebalance error', Zend_Log::ERR);
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
 		}
+	}
 
+	public function afterCalculatorUpdateRow($row, Billrun_Calculator $calculator) {
+		if ($calculator->getType() == 'pricing') {
+			if ($this->isRebalanceRequired($row)) {
+				$this->rebalance($row);
+			}
+		}
+	}
+
+	protected function isRebalanceRequired($row) {
+		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request'))) || ($row['type'] == 'callrt' && in_array($row['api_name'], array('release_call')));
+	}
+
+	/**
+	 * Calculate balance leftovers and add it to the current balance (if were taken due to prepaid mechanism)
+	 */
+	protected function rebalance($row) {
+		$lineToRebalance = $this->getLineToUpdate($row)->current();
+		$realUsagev = $this->getRealUsagev($row);
+		$chargedUsagev = $this->getChargedUsagev($row);
+		if ($chargedUsagev !== null) {
+			if (($realUsagev - $chargedUsagev) < 0) {
+				$this->handleRebalanceRequired($realUsagev - $chargedUsagev, $lineToRebalance);
+			}
+		}
+	}
+
+	/**
+	 * Gets the Line that needs to be updated (on rebalance)
+	 */
+	protected function getLineToUpdate($row) {
+		$lines_archive_coll = $this->db->linesCollection();
+		if ($row['type'] == 'gy') {
+			$findQuery = array(
+				"sid" => $row['sid'],
+				"session_id" => $row['session_id'],
+				"request_num" => array('$lt' => $row['request_num'])
+			);
+
+			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
+			return $line;
+		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
+			$findQuery = array(
+				"sid" => $row['sid'],
+				"call_reference" => $row['call_reference'],
+				"api_name" => array('$ne' => "release_call"),
+			);
+			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('_id' => -1))->limit(1);
+			return $line;
+		}
+	}
+
+	/**
+	 * Gets the real usagev of the user (known only on the next API call)
+	 * Given in 10th of a second
+	 * 
+	 * @return type
+	 */
+	protected function getRealUsagev($row) {
+		if ($row['type'] == 'gy') {
+			$sum = 0;
+			foreach ($row['mscc_data'] as $msccData) {
+				if (isset($msccData['used_units'])) {
+					$sum += intval($msccData['used_units']);
+				}
+			}
+			return $sum;
+		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
+			$duration = (!empty($row['duration']) ? $row['duration'] : 0);
+			return $duration / 10;
+		}
+	}
+
+	/**
+	 * Gets the amount of usagev that was charged
+	 * 
+	 * @return type
+	 */
+	protected function getChargedUsagev($lineToRebalance) {
+		if ($lineToRebalance['type'] == 'callrt' && $lineToRebalance['api_name'] == 'release_call') {
+			$lines_archive_coll = $this->db->linesCollection();
+			$query = $this->getRebalanceQuery($lineToRebalance);
+			$line = $lines_archive_coll->aggregate($query)->current();
+			return $line['sum'];
+		}
+		return $lineToRebalance['usagev'];
+	}
+
+	/**
+	 * In case balance is in over charge (due to prepaid mechanism), 
+	 * adds a refund row to the balance.
+	 * 
+	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 */
+	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
+		// Update subscribers balance
+		$balanceRef = $lineToRebalance->get('balance_ref');
+		$balances_coll = Billrun_Factory::db()->balancesCollection();
+		$balance = $balances_coll->getRef($balanceRef);
+		if (is_array($balance['tx']) && empty($balance['tx'])) {
+			$balance['tx'] = new stdClass();
+		}
+		$balance->collection($balances_coll);
+		$usaget = $lineToRebalance['usaget'];
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+		$rebalance_offset = $call_offset + $rebalanceUsagev;
+		$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
+			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
+		} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
+			$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
+		} else {
+			$balance['balance.cost'] += $rebalanceCost;
+		}
+
+		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+
+		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
+
+		$balance->save();
+
+		// Update previous line
+		$lines_archive_coll = $this->db->linesCollection();
+		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
+	}
+
+	/**
+	 * Gets the update query to update subscriber's Line
+	 * 
+	 * @param type $rebalanceUsagev
+	 */
+	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost) {
+		return array(
+			'$inc' => array(
+				'usagev' => $rebalanceUsagev,
+				'aprice' => $cost,
+			),
+			'$set' => array(
+				'rebalance_usagev' => $rebalanceUsagev,
+				'rebalance_cost' => $cost,
+			)
+		);
+	}
+
+	/**
+	 * Gets a query to find amount of balance (usagev) calculated for a prepaid call
+	 * 
+	 * @return array
+	 */
+	protected function getRebalanceQuery($lineToRebalance) {
+		if ($lineToRebalance['type'] == 'callrt' && $lineToRebalance['api_name'] == 'release_call') {
+			return array(
+				array(
+					'$match' => array(
+						"sid" => $lineToRebalance['sid'],
+						"call_reference" => $lineToRebalance['call_reference']
+					)
+				),
+				array(
+					'$group' => array(
+						'_id' => '$call_reference',
+						'sum' => array('$sum' => '$usagev')
+					)
+				)
+			);
+		}
 	}
 
 }
