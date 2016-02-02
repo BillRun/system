@@ -32,6 +32,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
 		$source_system = Billrun_Util::filter_var($this->controller->getRequest()->get('source_system'), FILTER_SANITIZE_STRING);
 		$usaget = Billrun_Util::filter_var($this->controller->getRequest()->get('usaget'), FILTER_SANITIZE_STRING);
+		$send_faild_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_faild_request'), FILTER_SANITIZE_STRING);
 
 		//Run test scenario
 		$params = array(
@@ -42,7 +43,24 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		);
 		
 		$data = $this->getRequestData($params);
-		$this->controller->sendRequest($data);
+		$res = $this->controller->sendRequest($data);
+
+		if($send_faild_request == 'send_faild_request'){
+			sleep(1);
+			$xml = simplexml_load_string($res);
+			$transaction_id = (string)$xml->transaction_id;
+			
+			$params = array(
+				'calling_number' => $calling_number,
+				'called_number' => $called_number,
+				'source_system' => $source_system,
+				'usaget' => $usaget,
+				'transaction_id' => $transaction_id
+			);
+			$data = $this->getRequestData($params);
+			$this->controller->sendRequest($data);
+		}
+
 	}
 
 	/**
@@ -54,7 +72,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	protected function getRequestData($params) {
 
 		$request = array(
-			'request' => json_encode($params),
+			'request' => $this->array2xml($params, 'request'),
 			'usaget' => $params['usaget']
 		);
 
