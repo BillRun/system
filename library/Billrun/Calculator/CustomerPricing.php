@@ -576,6 +576,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
 		$tx = $this->balance->get('tx');
+		if (is_array($tx) && empty($tx)) {
+			$this->balance->set('tx', new stdClass());
+			$this->balance->save();
+		}
 		if (!empty($tx) && array_key_exists($row['stamp'], $tx)) { // we're after a crash
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
 			return $pricingData;

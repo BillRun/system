@@ -26,11 +26,16 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Archive DB
 	 * @var Billrun_Db
 	 */
-	protected $archiveDB;
+	protected $db;
 
 
 	public function __construct() {
-		$this->archiveDB = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+		if (in_array('unify', $calculators)) {
+			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		} else {
+			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('db', array()));
+		}
 	}
 	
 	/**
@@ -195,7 +200,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function rebalance($row) {
 		$lineToRebalance = $this->getLineToUpdate($row)->current();
 		$realUsagev = $this->getRealUsagev($row);
-		$chargedUsagev = $this->getChargedUsagev($lineToRebalance);
+		$chargedUsagev = $this->getChargedUsagev($row);
 		if ($chargedUsagev !== null) {
 			if (($realUsagev - $chargedUsagev) < 0) {
 				$this->handleRebalanceRequired($realUsagev - $chargedUsagev, $lineToRebalance);
@@ -207,7 +212,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Gets the Line that needs to be updated (on rebalance)
 	 */
 	protected function getLineToUpdate($row) {
-		$lines_archive_coll = $this->archiveDB->linesCollection();
+		$lines_archive_coll = $this->db->linesCollection();
 		if ($row['type'] == 'gy') {
 			$findQuery = array(
 				"sid" => $row['sid'],
@@ -256,7 +261,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getChargedUsagev($lineToRebalance) {
 		if ($lineToRebalance['type'] == 'callrt' && $lineToRebalance['api_name'] == 'release_call') {
-			$lines_archive_coll = $this->archiveDB->linesCollection();
+			$lines_archive_coll = $this->db->linesCollection();
 			$query = $this->getRebalanceQuery($lineToRebalance);
 			$line = $lines_archive_coll->aggregate($query)->current();
 			return $line['sum'];
@@ -299,7 +304,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$balance->save();
 
 		// Update previous line
-		$lines_archive_coll = $this->archiveDB->linesCollection();
+		$lines_archive_coll = $this->db->linesCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
 	}
