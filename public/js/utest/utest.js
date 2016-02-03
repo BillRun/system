@@ -11,7 +11,9 @@ $(document).ready(function () {
 		//show the last test form tab
 		$('.nav-tabs a[href="' + tetsId + '"]').tab('show');
 		//fill the form with saved submited values
-		$(tetsId).find('form').autofill($.parseJSON(localStorage.getItem(tetsId)));
+		if(localStorage.getItem(tetsId)){
+			$(tetsId).find('form').autofill($.parseJSON(localStorage.getItem(tetsId)));
+		}
 		//remove all form saved values
 		Object.keys(localStorage).forEach(function (key) {
 			if (/^#utest_/.test(key)) {

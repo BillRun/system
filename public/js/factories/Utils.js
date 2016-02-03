@@ -10,6 +10,13 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
       if ($rootScope.fields[str] && $rootScope.fields[str]['display_value'])
         return $rootScope.fields[str]['display_value'];
       return _.capitalize(str.replace(/_/g, ' '));
+     
+      var d1 = _.result($rootScope.fields, coll + '.' + str + '.display_value');
+      var d2 = _.result($rootScope.fields, str + '.display_value');
+
+      var returnStr  =  (d1 || d2) || str ;
+     
+      return _.capitalize(returnStr.replace(/_/g, ' '));
     }
 
     function display(field, coll) {
@@ -45,10 +52,13 @@ app.factory('Utils', ['$rootScope', function ($rootScope) {
       return $rootScope.fields[coll][field]['date_format'];
     }
 
+   
+
     return {
       getDisplayValue: getDisplayValue,
       display: display,
       disabled: disabled,
       getDateFormat: getDateFormat
+
     };
   }]);

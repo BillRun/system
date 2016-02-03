@@ -50,7 +50,7 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 	protected function getRequestData($params) {
 
 		$request = array(
-			'request' => json_encode($params),
+			'request' => $this->array2xml($params, 'request'),
 			'usaget' => 'service'
 		);
 
