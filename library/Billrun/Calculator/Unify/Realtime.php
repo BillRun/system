@@ -156,6 +156,39 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 						),
 					),
 				),
+				'gy' => array(
+					'required' => array(
+						'fields' => array('session_id', 'urt', 'request_num', 'request_type'),
+						'match' => array(
+							'request_type' => '/1|2|3/',
+						),
+					),
+					'date_seperation' => 'Ymd',
+					'stamp' => array(
+						'value' => array('session_id', 'usaget', 'imsi'), // no urt intentionally
+						'field' => array()
+					),
+					'fields' => array(
+						array(
+							'match' => array(
+								'request_type' => '/.*/',
+							),
+							'update' => array(
+								'$setOnInsert' => array('arate', 'usaget', 'imsi', 'session_id', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before'),
+								'$set' => array('process_time'),
+								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'aprice'),
+							),
+						),
+						array(
+							'match' => array(
+								'request_type' => '/^3$/',
+							),
+							'update' => array(
+								'$set' => array('balance_after'),
+							),
+						),
+					),
+				),
 			);
 		}
 	}
@@ -165,7 +198,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array('callrt','smsrt','mmsrt','service');
+		$types = array('callrt','smsrt','mmsrt','service', 'gy');
 		return $this->getQueuedLines(array('type' => array('$in' => $types)));
 	}
 	
