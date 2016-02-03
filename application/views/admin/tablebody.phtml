@@ -5,7 +5,7 @@ foreach ($this->data as $item) {
 	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
 		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
 	else:
-		print '<tr>';
+		print '<tr' . ($active == "lines" ? ' data-stamp="' . $item['stamp'] . '" ' : '') . '>';
 	endif;
 	$href = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
 	$onclick = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '' : 'update_current(this);';

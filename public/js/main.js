@@ -459,3 +459,29 @@ function exportRates() {
 	var show_prefix = $('#showprefix').is(':checked');
 	window.location.href = "/admin/exportrates?show_prefix=" + show_prefix;
 }
+
+function detailFormatter(index, row) {
+  $.ajax({
+    method: "GET",
+    url: baseUrl + "/admin/getLineDetailsFromArchive",
+    data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
+  })
+    .done(function (res) {
+      var lines = JSON.parse(res);
+      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
+      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></thead>");
+      $table.append($thead).append('<tbody>');
+      _.forEach(lines, function (line) {
+        var $tr = $("<tr>");
+        $tr.append("<td>" + line.pp_includes_external_id + "</td>");
+        $tr.append("<td>" + line.pp_includes_name + "</td>");
+        $tr.append("<td>" + line.api_name + "</td>");
+        $tr.append("<td>" + line.balance_before + "</td>");
+        $tr.append("<td>" + line.balance_after + "</td>");
+        $tr.append("<td>" + line.usage_unit + "</td>");
+        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY hh:mm:ss') + "</td>");
+        $table.append($tr);
+      });
+      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
+    });
+}

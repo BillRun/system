@@ -56,6 +56,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/js/vendor/JSONedit/styles.css');
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
+		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
+		
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
@@ -77,6 +79,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
 		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -136,6 +139,24 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function getLineDetailsFromArchiveAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$lines_coll = $this->archiveDb->linesCollection();
+		$stamp = $this->getRequest()->get('stamp');
+		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
+		$res = array();
+		foreach ($lines as $line) {
+			$l = $line->getRawData();
+			$res[] = $line->getRawData();
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($res));
+		$response->response();
+		return false;
+	}
+	
 	public function getEntityAction() {
 		if (!$this->allowed('read'))
 			return false;
