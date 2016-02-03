@@ -83,6 +83,23 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
+	
+	/**
+	 * generate a random number of reqested length based on microtime
+	 * @param int $length length of the random number
+	 * @return number
+	 */
+	public static function generateRandomNum($length = 19) {
+		$milliseconds = round(microtime(true) * 10000);
+		$l = strlen($milliseconds);
+		if ($l >= $length) {
+			return substr($milliseconds, $l - $length, $length);
+		}
+		
+		$start = pow(10, $length - $l - 1);
+		$additional = rand($start, $start * 10 - 1);
+		return $additional . $milliseconds;
+	}
 
 	/**
 	 * generate current time from the base time date format
@@ -1099,9 +1116,10 @@ class Billrun_Util {
 		$max_date = max($d1, $d2);
 		$i = 0;
 
-		$maxMonth = date('m', $max_date);
+		$year_month_format = 'Ym';
+		$maxMonth = date($year_month_format, $max_date);
 		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
-			if(date('m', $min_date) == $maxMonth) {
+			if(date($year_month_format, $min_date) >= $maxMonth) {
 				break;
 			}
 			$i++;

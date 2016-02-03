@@ -22,7 +22,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 */
 	public function parse() {
 		// real-time have only one event (currently)
-		$row = &$this->data['data'][0];
+		reset($this->data['data']);
+		$rowKey = key($this->data['data']);
+		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineVolume($row);
 		if(!isset($row['urt'])) {

@@ -113,6 +113,9 @@ class RealtimeeventAction extends ApiAction {
 			// we are on real time -> the time is now
 			$this->event['urt'] = new MongoDate();
 		}
+		
+		$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
+		$this->event['transaction_id'] = $this->getTransactionId($this->event);
 	}
 	
 	protected function getSgsn($event) {
@@ -185,7 +188,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
 		$processor->process();
-		return $processor->getData()['data'][0];
+		return current($processor->getAllLines());
 	}
 	
 	/**
@@ -220,12 +223,34 @@ class RealtimeeventAction extends ApiAction {
 	}
 	
 	/**
-	 * Checks if the row should really decrease balance from the subscriber's balance, or just prepend
+	 * Checks if the row should really decrease balance from the subscriber's balance, or just pretend
 	 * 
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
 		return ($this->usaget === 'call' && $event['record_type'] === 'start_call');
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function isReverseCharge($event) {
+		return (in_array($this->usaget, array('sms','mms','service')) && 
+			(isset($event['transaction_id']) && !empty($event['transaction_id'])));
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function getTransactionId($event) {
+		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
+			return $event['transaction_id'];
+		}
+		return Billrun_Util::generateRandomNum();
 	}
 
 }

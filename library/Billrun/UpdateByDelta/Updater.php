@@ -222,18 +222,18 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @param array expectedResults - Array of the expected results.
 	 * @return array of records that are expected but not found.
 	 */
-	protected function handleDeltaArrays($expectedReults, $existingRecords) {
+	protected function handleDeltaArrays($expectedResults, $existingRecords) {
 		$expectedMatched = array();
 		
 		// Go through the existing records.
 		foreach ($existingRecords as $existing) {
-			$matched = $this->handleSingleRecord($expectedReults, $existing);
+			$matched = $this->handleSingleRecord($expectedResults, $existing);
 			if($matched !== false) {
 				$expectedMatched[] = $matched;
 			}
 		}
 		
-		return array_diff($expectedReults, $expectedMatched);
+		return @array_diff($expectedResults, $expectedMatched);
 	}
 	
 	/**
