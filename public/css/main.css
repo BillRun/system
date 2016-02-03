@@ -374,3 +374,10 @@ float: left;
 .errorMessage { color:red;}
 .danger { color:red;}
 .success { color:green;}
+
+tr[data-index] label.checkbox {
+	display:inline-block;
+}
+tr[data-index] a.detail-icon {
+	margin-left:5px;
+}

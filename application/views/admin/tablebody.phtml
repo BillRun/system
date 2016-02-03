@@ -13,7 +13,9 @@ foreach ($this->data as $item) {
 		. '<label class="checkbox">'
 		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
 		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
-		. '</label></td>';
+		. '</label>'
+		. '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>'
+		. '</td>';
 	$c++;
 	foreach ($this->columns as $h => $columnName) {
 		$data = $item->get($h);
