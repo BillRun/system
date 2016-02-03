@@ -30,16 +30,22 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		//Get test params
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
-		$source_system = Billrun_Util::filter_var($this->controller->getRequest()->get('source_system'), FILTER_SANITIZE_STRING);
+		$discount = Billrun_Util::filter_var($this->controller->getRequest()->get('discount'), FILTER_SANITIZE_STRING);
 		$usaget = Billrun_Util::filter_var($this->controller->getRequest()->get('usaget'), FILTER_SANITIZE_STRING);
-		$send_faild_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_faild_request'), FILTER_SANITIZE_STRING);
+		$send_faild_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_failed_request'), FILTER_SANITIZE_STRING);
 
 		//Run test scenario
 		$params = array(
-			'calling_number' => $calling_number,
-			'called_number' => $called_number,
-			'source_system' => $source_system,
 			'usaget' => $usaget,
+			'request' => array(
+				'calling_number' => $calling_number,
+				'called_number' => $called_number,
+				'msc_id' => 'tmp1',
+				'pmt_subscriber_type' => 'tmp2',
+				'discount' => $discount,
+				'association_number' => $this->controller->getReference(),
+				'transaction_id' => ''
+			)
 		);
 		
 		$data = $this->getRequestData($params);
@@ -48,15 +54,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		if($send_faild_request == 'send_faild_request'){
 			sleep(1);
 			$xml = simplexml_load_string($res);
-			$transaction_id = (string)$xml->transaction_id;
-			
-			$params = array(
-				'calling_number' => $calling_number,
-				'called_number' => $called_number,
-				'source_system' => $source_system,
-				'usaget' => $usaget,
-				'transaction_id' => $transaction_id
-			);
+			$params['request']['transaction_id'] = (string)$xml->transaction_id;
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest($data);
 		}
@@ -70,12 +68,10 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	 * @return JSON string
 	 */
 	protected function getRequestData($params) {
-
 		$request = array(
-			'request' => $this->array2xml($params, 'request'),
+			'request' => $this->array2xml($params['request'], 'request'),
 			'usaget' => $params['usaget']
 		);
-
 		return $request;
 	}
 

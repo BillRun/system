@@ -6,7 +6,7 @@
 	<div class="form-group row">
 		<dl class="col-sm-12 text-center">
 			<dt><?php echo $label ?></dt>
-			<dd></dd>
+			<dd>Notify Billrun on prepaid SMS/MMS before SMS/MMS is sent to see whether or not the subscriber is eligible for sending the SMS/MMS. If the subscriber is eligible a SMS/MMS is added to Billrun lines, otherwise returns 0 in sms_reservation field.</dd>
 		</dl>
 	</div>
 	<hr/>
@@ -26,13 +26,9 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="source_system" class="col-sm-4 control-label text-right">Source System</label>
+		<label for="discount" class="col-sm-4 control-label text-right">Discount</label>
 		<div class="col-sm-6">
-			<select class="form-control" name='source_system'>
-				<option value="TMM">TMM</option>
-				<option value="SMSC">SMSC</option>
-				<option value=""></option>
-			</select>
+			<input type="text" name="discount" value='0' class="form-control">
 		</div>
 	</div>
 
@@ -51,7 +47,7 @@
 		<div class="col-sm-6">
 			<div class="checkbox">
 				<label>
-					<input type="checkbox" name="send_faild_request" value="send_faild_request">Check to simulate failed SMS
+					<input type="checkbox" name="send_failed_request" value="send_faild_request">Check to simulate failed SMS
 				</label>
 			</div>
 		</div>
