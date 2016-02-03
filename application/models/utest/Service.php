@@ -31,7 +31,7 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$discount = Billrun_Util::filter_var($this->controller->getRequest()->get('discount'), FILTER_SANITIZE_STRING);
 		$service_name = Billrun_Util::filter_var($this->controller->getRequest()->get('service_name'), FILTER_SANITIZE_STRING);
-		$send_faild_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_failed_request'), FILTER_SANITIZE_STRING);
+		$send_failed_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_failed_request'), FILTER_SANITIZE_STRING);
 
 		//Run test scenario
 		$params = array(
@@ -49,7 +49,7 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 		$data = $this->getRequestData($params);
 		$res = $this->controller->sendRequest($data);
 
-		if($send_faild_request == 'send_faild_request'){
+		if($send_failed_request == 'send_failed_request'){
 			sleep(1);
 			$xml = simplexml_load_string($res);
 			$params['request']['transaction_id'] = (string)$xml->transaction_id;
