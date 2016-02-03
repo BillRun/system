@@ -38,7 +38,7 @@
 			</li>
 		<?php endif ?>
 		<?php if(AdminController::authorized('read', 'subscribers') || AdminController::authorized('read', 'balances') || AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
-			<li class="menu-item-subscribers menu-item-balances menu-item-subscribers_auto_renew_services dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribersautorenewservices')) ? ' active' : ''); ?>">
+			<li class="menu-item-subscribers menu-item-balances menu-item-subscribers_auto_renew_services dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribers_auto_renew_services')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -57,7 +57,7 @@
 						</li>
 					<?php endif; ?>
 					<?php if(AdminController::authorized('read', 'subscribersautorenewservices') && AdminController::showInMenu('subscribersautorenewservices')) : ?>
-						<li class='menu-item-subscribers_auto_renew_services <?php echo ($active == 'subscribersautorenewservices' ? ' active' : ''); ?>'>
+						<li class='menu-item-subscribers_auto_renew_services <?php echo ($active == 'subscribers_auto_renew_services' ? ' active' : ''); ?>'>
 							<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Renew</a>
 						</li>
 					<?php endif; ?>
