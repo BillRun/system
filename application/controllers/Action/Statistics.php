@@ -8,12 +8,12 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * This class holds the api logic for the subscribers.
+ * This class holds the api logic for the statistics.
  *
  * @package     Controllers
  * @subpackage  Action
  * @since       4.0
- * @author Tom Feigin
+ * @author Spyes
 */
 class StatisticsAction extends ApiAction {
 
