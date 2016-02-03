@@ -489,7 +489,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (!isset(self::$calcs[$type])) {
 			// @TODO: use always the first condition for all types - it will load the config values by default
 			$class = 'Billrun_Calculator_Unify';
-			if ($type === 'callrt' || $type === 'gy') {
+			if (in_array($type, array('callrt','gy','smsrt','mmsrt','service'))) {
 				$configOptions = Billrun_Factory::config()->getConfigValue('Unify_' . ucfirst($type), array());
 				$options = array_merge($args[0], $configOptions);
 				$class .= '_Realtime';

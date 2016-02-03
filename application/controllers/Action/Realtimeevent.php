@@ -114,8 +114,10 @@ class RealtimeeventAction extends ApiAction {
 			$this->event['urt'] = new MongoDate();
 		}
 		
-		$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
-		$this->event['transaction_id'] = $this->getTransactionId($this->event);
+		if (in_array($this->usaget, array('sms','mms','service'))) {
+			$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
+			$this->event['transaction_id'] = $this->getTransactionId($this->event);
+		}
 	}
 	
 	protected function getSgsn($event) {
@@ -237,8 +239,7 @@ class RealtimeeventAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function isReverseCharge($event) {
-		return (in_array($this->usaget, array('sms','mms','service')) && 
-			(isset($event['transaction_id']) && !empty($event['transaction_id'])));
+		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
 	}
 	
 	/**
