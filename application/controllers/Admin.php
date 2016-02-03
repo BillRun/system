@@ -112,7 +112,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ? '?' . $this->commit : '') . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath .  '?' . $this->commit . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
