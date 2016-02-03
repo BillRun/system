@@ -29,16 +29,33 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 	public function doTest() {
 		//Get test params
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
+		$discount = Billrun_Util::filter_var($this->controller->getRequest()->get('discount'), FILTER_SANITIZE_STRING);
 		$service_name = Billrun_Util::filter_var($this->controller->getRequest()->get('service_name'), FILTER_SANITIZE_STRING);
+		$send_failed_request = Billrun_Util::filter_var($this->controller->getRequest()->get('send_failed_request'), FILTER_SANITIZE_STRING);
 
 		//Run test scenario
 		$params = array(
-			'calling_number' => $calling_number,
-			'service_name' => $service_name,
+			'usaget' => 'service',
+			'request' => array(
+				'calling_number' => $calling_number,
+				'service_name' => $service_name,
+				'pmt_subscriber_type' => 'tmp2',
+				'discount' => $discount,
+				'association_number' => $this->controller->getReference(),
+				'transaction_id' => ''
+			)
 		);
 		
 		$data = $this->getRequestData($params);
-		$this->controller->sendRequest($data);
+		$res = $this->controller->sendRequest($data);
+
+		if($send_failed_request == 'send_failed_request'){
+			sleep(1);
+			$xml = simplexml_load_string($res);
+			$params['request']['transaction_id'] = (string)$xml->transaction_id;
+			$data = $this->getRequestData($params);
+			$this->controller->sendRequest($data);
+		}
 	}
 
 	/**
@@ -48,12 +65,10 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 	 * @return JSON string
 	 */
 	protected function getRequestData($params) {
-
 		$request = array(
-			'request' => $this->array2xml($params, 'request'),
-			'usaget' => 'service'
+			'request' => $this->array2xml($params['request'], 'request'),
+			'usaget' => $params['usaget']
 		);
-
 		return $request;
 	}
 
