@@ -52,7 +52,7 @@ $(function () {
       data: {coll: 'rates', id: rate_id}
     }).done(function (res) {
       var entity = JSON.parse(res).entity;
-      var rate = entity.rates[usage][plan].rate;
+      var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
       var $tbody = $("#data-rates-tbody");
       $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
       _.forEach(rate, function (r) {
