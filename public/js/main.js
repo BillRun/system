@@ -1,6 +1,3 @@
-$('body').on('hidden.bs.modal', '.modal', function () {
-	$(this).removeData('bs.modal');
-});
 var checkItems = false;
 $(function () {
   $('#check_all').change(function () {
@@ -373,11 +370,7 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-    if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'balances' || active_collection === 'cards' || active_collection === 'subscribers')
-      //window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
-      return;
-    else
-      $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+    $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 
@@ -430,6 +423,9 @@ $(document).ready(function () {
   }
   $('#data_table tbody tr').on('click', function () {
       $(this).addClass('highlight').siblings().removeClass('highlight');
+  });
+  $('body').on('hidden.bs.modal', '.modal', function () {
+    $(this).removeData('bs.modal');
   });
 });
 
