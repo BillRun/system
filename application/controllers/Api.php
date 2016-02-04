@@ -32,6 +32,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		$this->apiLogAction();
 	}
 
 	/**
@@ -130,5 +131,21 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		header('Content-Type: application/json');
 	}
-
+	
+	/**
+	 * method to log api request
+	 * 
+	 * @todo log response
+	 */
+	protected function apiLogAction() {
+		$this->logColl = Billrun_Factory::db()->logCollection();
+		$request = $this->getRequest();
+		$saveData = array(
+			'source' => 'api',
+			'type' => $request->action,
+			'request' => $this->getRequest()->getRequest(),
+		);
+		$this->logColl->save(new Mongodloid_Entity($saveData));
+	}
+	
 }

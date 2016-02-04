@@ -67,15 +67,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	}
 	
 	protected function setIncludeValuesToAdd(&$includesToReturn, $root, $values) {
+		if (empty($includesToReturn)) {
+			return;
+		}
 		$toAdd = array();
 			
 		// Set the record values.
 		$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($root);			
 
-		if(isset($values['usagev'])) {
-			$toAdd['ammount'] = $values['usagev'];
-		} else {
-			$toAdd['ammount'] = $values['cost'];
+		if (isset($values['usagev'])) {
+			$toAdd['amount'] = $values['usagev'];
+		} else if (isset($values['cost'])) {
+			$toAdd['amount'] = $values['cost'];
+		} else if (isset($values[0]['value'])) {
+			$toAdd['amount'] = $values[0]['value'];
 		}
 		$includesToReturn [$values['pp_includes_name']] = $toAdd;
 	}
@@ -182,16 +187,21 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 * Parse the to and from parameters if exists. If not execute handling logic.
 	 */
 	protected function parseDateParameters() {
-		if (!isset($this->query['from'])){
+		if (isset($this->query['from']) && $this->query['from'] != '*'){
+			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
+		} else if (!isset($this->query['from'])) {
 			$this->query['from']['$lte'] = new MongoDate();
 		} else {
-			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
+			unset($this->query['from']);
 		}
-		if (!$this->query['to']) {
+		if (isset($this->query['to'])  && $this->query['to'] != '*') {
+			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
+		} else if (!isset($this->query['to'])) {
 			$this->query['to']['$gte'] = new MongoDate();
 		} else {
-			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
+			unset($this->query['to']);
 		}
+//		print_R($this->query);die;
 	}
 	
 	/**

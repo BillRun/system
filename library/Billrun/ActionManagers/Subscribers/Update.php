@@ -62,7 +62,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		return $balancesColl->update($balancesQuery, $update, $options);
+		$balancesColl->update($balancesQuery, $update, $options);
+		$autoRenewColl = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+		$autoRenewColl->update($balancesQuery, $update, $options);
 	}
 	
 	/**
