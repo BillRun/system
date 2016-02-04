@@ -40,8 +40,8 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 			'request' => array(
 				'calling_number' => $calling_number,
 				'called_number' => $called_number,
-				'msc_id' => 'tmp1',
-				'pmt_subscriber_type' => 'tmp2',
+				'msc_id' => 'tmp',
+				'pmt_subscriber_type' => 'tmp',
 				'discount' => $discount,
 				'association_number' => $this->controller->getReference(),
 				'transaction_id' => ''
@@ -68,8 +68,10 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	 * @return JSON string
 	 */
 	protected function getRequestData($params) {
+		$xmlParams = array('rootElement' => 'request');
+		$xmlRequest = Billrun_Util::arrayToXml($params['request'], $xmlParams);
 		$request = array(
-			'request' => $this->array2xml($params['request'], 'request'),
+			'request' => $xmlRequest,
 			'usaget' => $params['usaget']
 		);
 		return $request;

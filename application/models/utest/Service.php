@@ -39,7 +39,7 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 			'request' => array(
 				'calling_number' => $calling_number,
 				'service_name' => $service_name,
-				'pmt_subscriber_type' => 'tmp2',
+				'pmt_subscriber_type' => 'tmp',
 				'discount' => $discount,
 				'association_number' => $this->controller->getReference(),
 				'transaction_id' => ''
@@ -65,8 +65,10 @@ class utest_ServiceModel extends utest_AbstractUtestModel {
 	 * @return JSON string
 	 */
 	protected function getRequestData($params) {
+		$xmlParams = array('rootElement' => 'request');
+		$xmlRequest = Billrun_Util::arrayToXml($params['request'], $xmlParams);
 		$request = array(
-			'request' => $this->array2xml($params['request'], 'request'),
+			'request' => $xmlRequest,
 			'usaget' => $params['usaget']
 		);
 		return $request;
