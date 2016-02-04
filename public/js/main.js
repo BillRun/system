@@ -41,6 +41,27 @@ $(function () {
 		}
 	});
 
+    $("#ratePlanPopup").on('show.bs.modal', function (event) {
+    var rate_id = $(event.relatedTarget).data('rate-id');
+    var plan = $(event.relatedTarget).data('plan');
+    var usage = $(event.relatedTarget).data('usage');
+    $('#data-rates-tbody tr').remove();
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: 'rates', id: rate_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var rate = entity.rates[usage][plan].rate;
+      var $tbody = $("#data-rates-tbody");
+      $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
+      _.forEach(rate, function (r) {
+        var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
+        $tbody.append($row);
+      });
+    });
+  });
+
 	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
 			var reader = new FileReader();
