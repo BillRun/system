@@ -67,15 +67,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	}
 	
 	protected function setIncludeValuesToAdd(&$includesToReturn, $root, $values) {
+		if (empty($includesToReturn)) {
+			return;
+		}
 		$toAdd = array();
 			
 		// Set the record values.
 		$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($root);			
 
-		if(isset($values['usagev'])) {
-			$toAdd['ammount'] = $values['usagev'];
-		} else {
-			$toAdd['ammount'] = $values['cost'];
+		if (isset($values['usagev'])) {
+			$toAdd['amount'] = $values['usagev'];
+		} else if (isset($values['cost'])) {
+			$toAdd['amount'] = $values['cost'];
+		} else if (isset($values[0]['value'])) {
+			$toAdd['amount'] = $values[0]['value'];
 		}
 		$includesToReturn [$values['pp_includes_name']] = $toAdd;
 	}
