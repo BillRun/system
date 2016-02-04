@@ -83,7 +83,7 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
-	
+
 	/**
 	 * generate a random number of reqested length based on microtime
 	 * @param int $length length of the random number
@@ -95,7 +95,7 @@ class Billrun_Util {
 		if ($l >= $length) {
 			return substr($milliseconds, $l - $length, $length);
 		}
-		
+
 		$start = pow(10, $length - $l - 1);
 		$additional = rand($start, $start * 10 - 1);
 		return $additional . $milliseconds;
@@ -425,7 +425,7 @@ class Billrun_Util {
 			)
 		);
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Cli
 	 * 
@@ -1032,7 +1032,7 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
-	
+
 	/**
 	 * Convert array keys to camel case from Billrun convention
 	 * 
@@ -1051,7 +1051,7 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
-	
+
 	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
 
 		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
@@ -1070,7 +1070,7 @@ class Billrun_Util {
 		if($input === "UNLIMITED") {
 			return $input;
 		}
-		
+
 		// Check that the input is an integer.
 		if (is_int($input)) {
 			return $input;
@@ -1105,7 +1105,7 @@ class Billrun_Util {
 
 		return $record;
 	}
-	
+
 	public static function isAssoc($arr)
 	{
 		return array_keys($arr) !== range(0, count($arr) - 1);
@@ -1115,7 +1115,7 @@ class Billrun_Util {
 		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
 		return isset($units[$usaget]) ? $units[$usaget] : '';
 	}
-	
+
 	/**
 	 * Are two numbers equal (up to epsilon)
 	 * @param float $number1
@@ -1126,7 +1126,7 @@ class Billrun_Util {
 	public static function isEqual($number1, $number2, $epsilon = 0) {
 		return abs($number1 - $number2) < abs($epsilon);
 	}
-	
+
 	/**
 	 * Floor a decimal
 	 * @param float $num
@@ -1137,7 +1137,7 @@ class Billrun_Util {
 		$rounded = round($num);
 		return static::isEqual($num, $rounded, $epsilon) ? $rounded : floor($num);
 	}
-	
+
 	/**
 	 * Ceil a decimal
 	 * @param float $num
@@ -1149,29 +1149,31 @@ class Billrun_Util {
 		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
 	}
 
-
 	/**
 	 * Calculate the remaining months for an auto renew service
-	 * @param date $d1
-	 * @param date $d2
+	 * @param int $d1 unix timestamp
+	 * @param int $d2 unix timestamp
 	 * @return int
 	 * 
 	 */
 	public static function countMonths($d1, $d2) {
-		$min_date = min($d1, $d2);
-		$max_date = max($d1, $d2);
-		$i = 0;
-
-		$year_month_format = 'Ym';
-		$maxMonth = date($year_month_format, $max_date);
-		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
-			if(date($year_month_format, $min_date) >= $maxMonth) {
-				break;
+		$min_date = date_timestamp_set(new DateTime(), min($d1, $d2));
+		$max_date = date_timestamp_set(new DateTime(), max($d1, $d2));
+		$months = 1; /* the first day is always counted */
+		if (($min_date->format('m') != $max_date->format('m')) || ($min_date->format('Y') != $max_date->format('Y'))) {
+			if (($max_date->format('d') >= $min_date->format('d')) || ($max_date->format('d') == $max_date->format('t'))) {
+				$months += 1;
 			}
-			$i++;
+			$yearDiff = $max_date->format('Y') - $min_date->format('Y');
+			switch ($yearDiff) {
+				case 0:
+					$months += $max_date->format('m') - $min_date->format('m') - 1;
+					break;
+				default :
+					$months += $max_date->format('m') + 11 - $min_date->format('m') + ($yearDiff - 1) * 12;
+					break;
+			}
 		}
-		
-		return $i;
+		return $months;
 	}
-	
 }

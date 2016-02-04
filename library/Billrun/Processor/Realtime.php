@@ -90,11 +90,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 			case ('call'):
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
 			case ('sms'):
-				return 1;
 			case ('mms'):
-				return 1;
 			case ('service'):
-				return 1;
+				return (isset($row['reverse_charge']) && $row['reverse_charge'] === true ? -1 : 1);
 		}
 		return 0;
 	}
