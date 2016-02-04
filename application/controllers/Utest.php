@@ -263,6 +263,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			'request' => http_build_query($data),
 			'response' => $res
 		);
+		return $res;
 	}
 
 	/**

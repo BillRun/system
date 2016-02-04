@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller', '$location', '$anchorScroll',
-  function ($scope, $routeParams, Database, $controller, $location, $anchorScroll) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -228,8 +228,13 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
             });
             if (plans.length === 1) {
               $scope.shown.callRates[plans] = true;
+              $scope.shown.smsRates[plans] = true;
+              $scope.shown.dataRates[plans] = true;
               $location.hash(plans);
               $anchorScroll();
+              $timeout(function() {
+                angular.element('#' + plans).addClass('animated flash')}, 100);
+
             }
           }
         }
