@@ -30,10 +30,10 @@ class SubscribersAutoRenewAction extends ApiAction {
 			'api_name' => $apiName
 		);
 
-		$manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
+		$this->manager = new Billrun_ActionManagers_APIManager($apiManagerInput);
 
 		// This is the method which is going to be executed.
-		return $manager->getAction();
+		return $this->manager->getAction();
 	}
 
 	/**
@@ -50,10 +50,12 @@ class SubscribersAutoRenewAction extends ApiAction {
 			// TODO: Report failed action. What do i write to the output if this happens?
 			Billrun_Factory::log("Failed to get auto renew action instance for received input", Zend_Log::ALERT);
 
+			$errorCode = $this->manager->getErrorCode();
 			$output = array(
-				'status' => 0,
-				'desc' => $action,
-				'details' => 'Error'
+				'status'     => $errorCode == 0 ? 1 : 0,
+				'desc'       => $this->manager->getError(),
+				'error_code' => $errorCode,
+				'details'    => 'Error'
 			);
 		} else {
 			$output = $action->execute();
