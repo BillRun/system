@@ -149,7 +149,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$res = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
-			$res[] = $line->getRawData();
+			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
+			$res[] = $l;
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($res));

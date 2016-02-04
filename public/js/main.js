@@ -465,7 +465,7 @@ function detailFormatter(index, row) {
     .done(function (res) {
       var lines = JSON.parse(res);
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
-      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></thead>");
+      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></thead>");
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line) {
         var $tr = $("<tr>");
@@ -474,6 +474,7 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + line.api_name + "</td>");
         $tr.append("<td>" + line.balance_before + "</td>");
         $tr.append("<td>" + line.balance_after + "</td>");
+        $tr.append("<td>" + line.total + "</td>");
         $tr.append("<td>" + line.usage_unit + "</td>");
         $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY hh:mm:ss') + "</td>");
         $table.append($tr);
