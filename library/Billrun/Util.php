@@ -83,6 +83,23 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
+	
+	/**
+	 * generate a random number of reqested length based on microtime
+	 * @param int $length length of the random number
+	 * @return number
+	 */
+	public static function generateRandomNum($length = 19) {
+		$milliseconds = round(microtime(true) * 10000);
+		$l = strlen($milliseconds);
+		if ($l >= $length) {
+			return substr($milliseconds, $l - $length, $length);
+		}
+		
+		$start = pow(10, $length - $l - 1);
+		$additional = rand($start, $start * 10 - 1);
+		return $additional . $milliseconds;
+	}
 
 	/**
 	 * generate current time from the base time date format

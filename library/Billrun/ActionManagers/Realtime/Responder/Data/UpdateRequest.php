@@ -8,9 +8,5 @@ class Billrun_ActionManagers_Realtime_Responder_Data_UpdateRequest extends Billr
 	public function getResponsApiName() {
 		return 'update_request';
 	}
-	
-	public function isRebalanceRequired() {
-		return true;
-	}
 
 }
