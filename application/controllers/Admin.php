@@ -53,6 +53,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/bootstrap-multiselect.css');
 		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
 		$this->addCss($this->baseUrl . '/css/main.css');
+		$this->addCss($this->baseUrl . '/js/vendor/JSONedit/styles.css');
+		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
+		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
+		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
+		
+		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
 		$this->addJs($this->baseUrl . '/js/moment.js');
@@ -63,7 +69,36 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
+		
+		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
+		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
+		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
+		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
+
 		$this->addJs($this->baseUrl . '/js/main.js');
+		$this->addJs($this->baseUrl . '/js/app.js');
+		$this->addJs($this->baseUrl . '/js/factories/Database.js');
+		$this->addJs($this->baseUrl . '/js/factories/Utils.js');
+		$this->addJs($this->baseUrl . '/js/directives/inputField.js');
+		$this->addJs($this->baseUrl . '/js/directives/applyNotifier.js');
+		$this->addJs($this->baseUrl . '/js/directives/errorMessage.js');
+		$this->addJs($this->baseUrl . '/js/controllers/MenuController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/EditController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/ListController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/PlansController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/RatesController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/BalancesController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/CardsController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/BatchController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
@@ -80,7 +115,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath . (Billrun_Factory::config()->isProd() ? '?' . $this->commit : '') . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath .  '?' . $this->commit . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -104,6 +139,25 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function getLineDetailsFromArchiveAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$lines_coll = $this->archiveDb->linesCollection();
+		$stamp = $this->getRequest()->get('stamp');
+		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
+		$res = array();
+		foreach ($lines as $line) {
+			$l = $line->getRawData();
+			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
+			$res[] = $l;
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($res));
+		$response->response();
+		return false;
+	}
+	
 	public function getEntityAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -205,6 +259,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailablePPIncludesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($collection));
+		$response->response();
+		return false;
+	}
+	
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -380,7 +444,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data = @json_decode($flatData, true);
 
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
-				return $this->responseError("Data param is empty");
+
+				return $this->responseError($v->setReport(array("Data is empty !!!")));
 		}
 
 		if ($id) {
@@ -408,10 +473,11 @@ class AdminController extends Yaf_Controller_Abstract {
 				$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
-		  	$saveStatus = $model->closeAndNew($params);
+		  	 $model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-			$saveStatus = $model->duplicate($params);
+			 $model->duplicate($params);
 		}
+
 
 //		$ret = array(
 //			'status' => $saveStatus,
@@ -420,7 +486,13 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
-		return $this->responseSuccess(array("data" => $params , "status"=>true ));
+ 
+		if($errorMsg = $model->getError()) { 
+			return $this->responseError($errorMsg);
+		} else { 
+			return $this->responseSuccess(array("data" => $params , "status"=>true ));
+		}
+		
 	}
 
 
@@ -970,7 +1042,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-
+		
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
 
@@ -1009,6 +1081,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'title' => $this->title,
 			'active' => $table,
 			'session' => $this->getSession($table),
+			'decimal_places' => Billrun_Config::getInstance()->getConfigValue('admin_panel.decimal_places', 0)
 		);
 		$params = array_merge($options, $basic_params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
@@ -1414,7 +1487,7 @@ public function responseError($message,$statusCode = 400)
 		if(is_array($message)) { 
 			$resp->setBody(json_encode($message));
 		} else { 
-			$resp->setBody($message);
+			$resp->setBody(json_encode(array("message"=>$message)));
 		}
 		//$resp->response();
 		return false;

@@ -79,7 +79,10 @@
 					Call
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='vm.entity.balance.totals.call.usagev' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.totals.call.usagev' type='number' class='form-control' ng-if="vm.entity.balance.totals.call.usagev" />
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='vm.entity.balance.totals.call.cost' type='number' class='form-control' ng-if="vm.entity.balance.totals.call.cost" />
 				</div>
 			</div>
 			<div class='row' ng-if='vm.entity.balance.totals.sms'>

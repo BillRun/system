@@ -131,7 +131,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
 		// TODO INTERVAL IS ALWAYS MONTH
-		$set['interval'] = 'month';
+		$set = array(
+			'interval' => 'month'
+		);
 		
 		if (isset($jsonUpdateData['to']['sec'])) {
 			$set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
@@ -167,7 +169,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['last_renew_date'] = $set['creation_time'];
 		
 		$set['remain'] = 
-			Billrun_Util::countMonths(strtotime($this->query['from']->sec), strtotime($jsonUpdateData['to']->sec));
+			Billrun_Util::countMonths($this->query['from']['sec'], $jsonUpdateData['to']['sec']);
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 	}
@@ -198,6 +200,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
+		$chargingPlanQuery['recurring'] = 1;
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if($planRecord->isEmpty()) {

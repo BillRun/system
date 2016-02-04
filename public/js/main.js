@@ -1,6 +1,3 @@
-$('body').on('hidden.bs.modal', '.modal', function () {
-	$(this).removeData('bs.modal');
-});
 var checkItems = false;
 $(function () {
   $('#check_all').change(function () {
@@ -373,11 +370,7 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-    if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'balances' || active_collection === 'cards' || active_collection === 'subscribers')
-      //window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
-      return;
-    else
-      $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+    $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 
@@ -429,7 +422,10 @@ $(document).ready(function () {
     }
   }
   $('#data_table tbody tr').on('click', function () {
-      $(this).toggleClass('highlight').siblings().removeClass('highlight');
+      $(this).addClass('highlight').siblings().removeClass('highlight');
+  });
+  $('body').on('hidden.bs.modal', '.modal', function () {
+    $(this).removeData('bs.modal');
   });
 });
 
@@ -458,4 +454,31 @@ function openPopup(obj, direction) {
 function exportRates() {
 	var show_prefix = $('#showprefix').is(':checked');
 	window.location.href = "/admin/exportrates?show_prefix=" + show_prefix;
+}
+
+function detailFormatter(index, row) {
+  $.ajax({
+    method: "GET",
+    url: baseUrl + "/admin/getLineDetailsFromArchive",
+    data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
+  })
+    .done(function (res) {
+      var lines = JSON.parse(res);
+      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
+      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></thead>");
+      $table.append($thead).append('<tbody>');
+      _.forEach(lines, function (line) {
+        var $tr = $("<tr>");
+        $tr.append("<td>" + line.pp_includes_external_id + "</td>");
+        $tr.append("<td>" + line.pp_includes_name + "</td>");
+        $tr.append("<td>" + line.api_name + "</td>");
+        $tr.append("<td>" + line.balance_before + "</td>");
+        $tr.append("<td>" + line.balance_after + "</td>");
+        $tr.append("<td>" + line.total + "</td>");
+        $tr.append("<td>" + line.usage_unit + "</td>");
+        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY hh:mm:ss') + "</td>");
+        $table.append($tr);
+      });
+      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
+    });
 }
