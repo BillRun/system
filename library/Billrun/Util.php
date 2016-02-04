@@ -1130,4 +1130,4 @@ class Billrun_Util {
 		}
 		return $months;
 	}
-	
+}
