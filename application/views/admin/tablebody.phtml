@@ -52,7 +52,7 @@ foreach ($this->data as $item) {
 				print number_format($data, $this->decimal_places);
 			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($columnName, 'usage') !== FALSE && strpos($columnName, 'data') !== FALSE)) {
 				print Billrun_Util::byteFormat($data, null, 3, true);
-			} else if ($h !== 'pp_includes_external_id') {
+			} else if (!in_array($h, array('pp_includes_external_id', 'usagev'))) {
 				print number_format($data, $this->decimal_places);
 			} else {
 				print number_format($data, 0);
