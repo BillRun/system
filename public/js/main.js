@@ -497,7 +497,7 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + line.balance_after + "</td>");
         $tr.append("<td>" + line.total + "</td>");
         $tr.append("<td>" + line.usage_unit + "</td>");
-        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY hh:mm:ss') + "</td>");
+        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY HH:MM:SS') + "</td>");
         $table.append($tr);
       });
       $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
