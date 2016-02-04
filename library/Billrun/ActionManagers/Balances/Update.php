@@ -88,7 +88,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['urt'] = new MongoDate();
 		$balanceLine['process_time'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
-		$balanceLine['type'] = 'topup';
+		$balanceLine['type'] = 'balance';
 		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
