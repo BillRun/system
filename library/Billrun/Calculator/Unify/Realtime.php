@@ -32,7 +32,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 					'required' => array(
 						'fields' => array('urt', 'call_reference', 'api_name'),
 						'match' => array(
-							'api_name' => '/answer_call|reservation_time|release_call/',
+							'api_name' => '/start_call|answer_call|reservation_time|release_call/',
 						),
 					),
 					'date_seperation' => 'Ymd',
@@ -67,9 +67,6 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'$set' => array('balance_after'),
 							),
 						),
-					),
-					'archive_fallback' => array(
-						'api_name' => '/^start_call$/',
 					),
 				),
 				'smsrt' => array(
