@@ -1,13 +1,8 @@
-app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller', 'utils',
-  function ($scope, $window, $routeParams, Database, $controller, utils) {
+app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'Database', '$controller', 'utils', '$http',
+  function ($scope, $window, $routeParams, Database, $controller, utils, $http) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
-
-    $scope.flash =  { 
-      message :"" ,
-      cls:""
-    };
 
     $scope.save = function (redirect) {
       var params = {
@@ -15,40 +10,48 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
         coll: 'subscribers',
         type: $scope.action
       };
-      $scope.errorMessages =[];
-      Database.saveEntity(params).then(function (res) {
-        console.log(res)  ;
-        if(!_.isUndefined(res.data.errorMessages)) {
-           $scope.errorMessages = res.data.errorMessages;
-        }  else { 
-            if(redirect) { 
-              $window.location = baseUrl + '/admin/' + $routeParams.collection;
-            }
-        }
-      }, function (err) {
-        alert("Connection error!");
+      $scope.err = {};
+      var entData = {
+        imsi: $scope.entity.imsi,
+        msisdn: $scope.entity.msisdn,
+        aid: $scope.entity.aid,
+        sid: $scope.entity.sid,
+        plan: $scope.entity.plan,
+        language: $scope.entity.language,
+        service_provider: $scope.entity.service_provider,
+        charging_type: $scope.entity.charging_type
+      };
+      var postData = {
+        method: ($scope.action === "new" ? 'create' : 'update')
+      };
+      if ($scope.action === "new") postData.subscriber = JSON.stringify(entData);
+      else {
+        postData.query = JSON.stringify({
+          sid: $scope.entity.sid
+        });
+        postData.update = JSON.stringify(entData);
+      }
+      $http.post(baseUrl + '/api/subscribers', postData).then(function (res) {
+        if (res.data.status)
+          $window.location = baseUrl + '/admin/subscribers';
+        else
+          // TODO: change to flash message
+          alert(res.data.desc + " - " + res.data.details);
       });
     };
 
     $scope.addIMSI = function () {
-      
-
-      if($scope.entity.imsi.length >=2) { 
-       
-        $scope.flash.message ="Maximum 2 imsi for subscriber" ;
-        $scope.flash.cls ="alert alert-danger" ;
-        utils.flashMessage('flash',$scope);
-
+      if($scope.entity.imsi && $scope.entity.imsi.length >=2) {
         return false ;
       }
-
-      var idx = _.findIndex( $scope.entity.imsi , function(i) {
-          return ( _.trim(i) == '' || !_.trim(i) );
+      var idx = _.findIndex($scope.entity.imsi, function (i) {
+        return (_.trim(i) === '' || !_.trim(i));
       });
 
-      if(idx>0 ) {
-        return ;
-      } else { 
+      if (idx > 0) {
+        return;
+      } else {
+        if (_.isUndefined($scope.entity.imsi)) $scope.entity.imsi = [];
         $scope.entity.imsi.push("");
       }
 
@@ -63,21 +66,22 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $scope.init = function () {
       $scope.action = $routeParams.action;
       $scope.entity = {imsi: []};
-      if ($scope.action.toLowerCase() !== "new") {
-        var params = {
-          coll: $routeParams.collection,
-          id: $routeParams.id
-        };
-        Database.getEntity(params).then(function (res) {
-          $scope.entity = res.data.entity;
-          if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
-            $scope.entity.imsi = [$scope.entity.imsi];
-          }
-          $scope.authorized_write = res.data.authorized_write;
-        }, function (err) {
-          alert("Connection error!");
-        });
-      }
+      $scope.availableBalanceTypes = [];
+      var params = {
+        coll: $routeParams.collection,
+        id: $routeParams.id,
+        type: $routeParams.action
+      };
+      Database.getEntity(params).then(function (res) {
+        $scope.entity = res.data.entity;
+        $scope.autorized_write = res.data.authorized_write;
+        if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
+          $scope.entity.imsi = [$scope.entity.imsi];
+        }
+        $scope.authorized_write = res.data.authorized_write;
+      }, function (err) {
+        alert("Connection error!");
+      });
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });

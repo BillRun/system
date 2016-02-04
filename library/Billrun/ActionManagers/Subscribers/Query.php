@@ -38,7 +38,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	 */
 	protected function queryRangeSubscribers() {
 		try {
-			$cursor = $this->collection->query($this->subscriberQuery)->cursor();
+			$cursor = $this->collection->query($this->subscriberQuery)->cursor()->sort(array('_id'=>-1));
 			if(!$this->queryInRange) {
 				$cursor->limit(1);
 			}
@@ -70,7 +70,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
-			$this->reportError(1004);
+			$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 23);
 		}
 		
 		$outputResult = array(

@@ -1,5 +1,24 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap']);
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
+app.run(function ($rootScope, $interval) {
+
+  var lastDigestRun = Date.now();
+  var idleCheck = $interval(function () {
+    var now = Date.now();
+    if (now - lastDigestRun > 30 * 60 * 1000) {
+      window.location = '/admin/logout';
+    }
+  }, 15 * 60 * 1000);
+
+  $rootScope.$on('$routeChangeStart', function (evt) {
+    lastDigestRun = Date.now();
+  });
+});
+
 app.config(function ($httpProvider, $routeProvider, $locationProvider) {
+  function twoDigit(n) {
+    return (n < 10) ? "0" + n : n.toString();
+  }
+
   $httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
   /**
    * The workhorse; converts an object to x-www-form-urlencoded serialization.
@@ -44,22 +63,29 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
 
   // Override $http service's default transformRequest
   $httpProvider.defaults.transformRequest = [function (data) {
-    if (!data) data = {};
-    return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-  }];
+      if (!data)
+        data = {};
+      return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+    }];
 
-  $routeProvider.when('/:collection/list', {
+  $routeProvider.when('/service_providers', {
+    templateUrl: 'views/service_providers.html',
+    controller: 'ServiceProvidersController',
+    controllerAs: 'vm'
+  }).when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
-    controller: 'ListController'
+    controller: 'ListController',
+    controllerAs: 'vm'
   }).when('/:collection/:action/:id?', {
-	  templateUrl: function (urlattr) {
-		  return 'views/' + urlattr.collection + '/edit.html';
-	  }
+    templateUrl: function (urlattr) {
+      return 'views/' + urlattr.collection + '/edit.html';
+    }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', 'Utils', function ($http, $rootScope, Utils) {
+}).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
     'use strict';
+    editableOptions.theme = 'bs3';
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;
     });
-}]);
+  }]);

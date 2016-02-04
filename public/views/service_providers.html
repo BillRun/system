@@ -1,0 +1,76 @@
+<div class='container component' ng-init='vm.init()'>
+    <h2>
+        Service Providers
+    </h2>
+    <p>
+        <button type='button' ng-click='vm.newMode=1' class='btn btn-primary'>
+            Add Service Provider
+        </button>
+    </p>
+    <p>
+        <div pretty-error errors="vm.err.data">
+        </div>
+    </p>
+     <p>
+    <form  ng-show="vm.newMode" class="form-inline row" role="form">
+        <div class="form-group col-md-3">
+            <label for="">
+                Name
+            </label>
+            <input type="text" class="form-control" ng-model="vm.service_provider.name"/>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="">
+                Code
+            </label>
+            <input type="text" class="form-control" ng-model="vm.service_provider.code"/>
+        </div>
+        <div class="form-group col-md-3">
+            <label for="">
+                ID
+            </label>
+            <input type="text" class="form-control" ng-model="vm.service_provider.id"/>
+        </div>
+        <button ng-click="vm.saveNew()" class="btn btn-primary">
+            Add
+        </button>
+        <button ng-click="vm.newMode=false;vm.err={}"  class="btn btn-default">
+            Close
+        </button>
+    </form>
+   
+</p>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>
+                # No
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Code
+            </th>
+            <th>
+                ID
+            </th>
+        </thead>
+        <tbody>
+            <tr ng-repeat='service_provider in vm.serviceProviders track by $index'>
+                <td>
+                    {{$index + 1}}
+                </td>
+                <td>
+                    {{vm.serviceProviders[$index].name}}
+                </td>
+                <td>
+                    {{vm.serviceProviders[$index].code}}
+                </td>
+                <td>
+                    {{vm.serviceProviders[$index].id}}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -152,13 +152,25 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'to' => array('$gte' => $timeNow),
 		);
 
+		// @todo: make it configurable
+		$minCost = -0.5;
+		if ($usageType == 'call' || $usageType == 'video_call') {
+			$minUsage = -20;
+		} else if ($usageType == 'data') {
+			$minUsage = -51200;
+		} else {
+			$minUsage = -1;
+		}
+		
 		if ($chargingType === 'prepaid') {
 			$query['$or'] = array(
-				array("balance.totals.$usageType.usagev" => array('$lt' => 0)),
-				array("balance.totals.$usageType.cost" => array('$lt' => 0)),
-				array("balance.cost" => array('$lt' => 0)),
+				array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
+				array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
+				array("balance.cost" => array('$lte' => $minCost)),
 			);
 		}
+		
+		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $this));
 		
 		return $query;
 	}
@@ -204,7 +216,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
 		$output = $this->collection->findAndModify($query, $update, array(), $options, false);

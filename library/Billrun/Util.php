@@ -83,6 +83,23 @@ class Billrun_Util {
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
 	}
+	
+	/**
+	 * generate a random number of reqested length based on microtime
+	 * @param int $length length of the random number
+	 * @return number
+	 */
+	public static function generateRandomNum($length = 19) {
+		$milliseconds = round(microtime(true) * 10000);
+		$l = strlen($milliseconds);
+		if ($l >= $length) {
+			return substr($milliseconds, $l - $length, $length);
+		}
+		
+		$start = pow(10, $length - $l - 1);
+		$additional = rand($start, $start * 10 - 1);
+		return $additional . $milliseconds;
+	}
 
 	/**
 	 * generate current time from the base time date format
@@ -325,7 +342,8 @@ class Billrun_Util {
 		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		return gmdate('i:s', $seconds);
+		//return gmdate('i:s', $seconds);
+		return $seconds;
 	}
 
 	/**
@@ -1051,5 +1069,63 @@ class Billrun_Util {
 		$units = Billrun_Factory::config()->getConfigValue('usaget.unit');
 		return isset($units[$usaget]) ? $units[$usaget] : '';
 	}
+	
+	/**
+	 * Are two numbers equal (up to epsilon)
+	 * @param float $number1
+	 * @param float $number2
+	 * @param float $epsilon positive number
+	 * @return boolean
+	 */
+	public static function isEqual($number1, $number2, $epsilon = 0) {
+		return abs($number1 - $number2) < abs($epsilon);
+	}
+	
+	/**
+	 * Floor a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function floordec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : floor($num);
+	}
+	
+	/**
+	 * Ceil a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function ceildec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
+	}
 
+
+	/**
+	 * Calculate the remaining months for an auto renew service
+	 * @param date $d1
+	 * @param date $d2
+	 * @return int
+	 * 
+	 */
+	public static function countMonths($d1, $d2) {
+		$min_date = min($d1, $d2);
+		$max_date = max($d1, $d2);
+		$i = 0;
+
+		$year_month_format = 'Ym';
+		$maxMonth = date($year_month_format, $max_date);
+		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
+			if(date($year_month_format, $min_date) >= $maxMonth) {
+				break;
+			}
+			$i++;
+		}
+		
+		return $i;
+	}
+	
 }

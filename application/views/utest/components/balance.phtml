@@ -5,7 +5,7 @@
 			<table class="table table-striped">
 				<thead>
 					<tr>
-						<th>ID</th>
+						<th>Name (ID)</th>
 						<th>Amount</th>
 						<th>Charging by Usaget</th>
 						<th>Charging By</th>
@@ -16,7 +16,7 @@
 				<tbody>
 					<?php foreach ($balances as $balance_id => $balance) : ?>
 						<tr>
-							<td><?php echo $balance_id ?></td>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="<?php echo $balance_id ?>"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
 							<td><?php echo number_format($balance['amount'], 3) ?></td>
 							<td><?php echo $balance['charging_by_usaget'] ?> / <?php echo $balance['charging_by_usaget_unit'] ?></td>
 							<td><?php echo $balance['charging_by'] ?></td>

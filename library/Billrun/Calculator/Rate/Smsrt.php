@@ -12,7 +12,7 @@
  * @package  calculator
  * @since 4.0
  */
-class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Sms {
+class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Callrt {
 
 	static protected $type = 'smsrt';
 
@@ -23,6 +23,27 @@ class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Sms {
 	 */
 	protected function shouldLineBeRated($row) {
 		return true;
+	}
+	
+	/**
+	 * @see Billrun_Calculator::isLineLegitimate
+	 */
+	public function isLineLegitimate($line) {
+		return $line['type'] == 'smsrt';
+	}
+	
+	/**
+	 * @see Billrun_Calculator_Rate::getLineRate
+	 */
+	protected function getLineRate($row) {
+//		$called_number = $this->get_called_number($row);
+//		$line_time = $row->get('urt');
+//		$usage_type = $row->get('usaget');
+		$this->setRowDataForQuery($row);
+//		$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+		$matchedRate = $this->getRateByParams($row);
+
+		return $matchedRate;
 	}
 
 }

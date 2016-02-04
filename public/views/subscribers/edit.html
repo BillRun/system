@@ -2,6 +2,7 @@
 	<center>
 		<h2>{{capitalize(action)}} Subscriber {{entity.sid}}</h2>
 	</center>
+<div pretty-error errors="err.data"></div>
 	<div ng-show="flash.message" ng-class="flash.cls">{{flash.message}}</div>
 	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
@@ -10,7 +11,7 @@
 					{{utils.getDisplayValue('sid', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.sid" type="number" class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
+					<input ng-model="entity.sid"  class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("aid", "subscribers")'>
@@ -21,7 +22,7 @@
 					<input ng-model="entity.aid" type="number" class="form-control" ng-disabled='action !== "new"' />
 				</div>
 			</div>
-			<div class="row" ng-if='utils.display("msisdn", "subscribers")'>
+			<div class="row" ng-if='utils.display("msisdn", "subscribers") || action === "new"'>
 				<div class="col-md-2">
 					{{utils.getDisplayValue('msisdn', 'subscribers')}}
 				</div>
@@ -110,7 +111,10 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button ng-click="save(false)" class="btn btn-primary" ng-if='authorized_write'>Apply</button>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn" ng-if='authorized_write'>
+			</button>
 			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save & Exit</button>
 		</div>		
 	</form>

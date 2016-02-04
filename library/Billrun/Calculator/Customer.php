@@ -51,18 +51,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	protected $extraData = array();
 
-	/**
-	 * all international ggsn rates
-	 * @var array
-	 */
-	protected $intlGgsnRates = array();
-
-	/**
-	 *
-	 * @var type 
-	 */
-	protected $ratesModel;
-
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -79,9 +67,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
-
-		$this->loadIntlGgsnRates();
-		$this->ratesModel = new RatesModel();
 	}
 
 	/**
@@ -106,7 +91,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * make the  calculation
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$row->collection($this->lines_coll);
 		if ($this->isBulk()) {
 			$this->subscribersByStamp();
@@ -142,14 +127,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if ($this->isExtraDataRelevant($row, $key)) {
 				$subscriber_field = $subscriber->{$key};
 				$row[$key] = $subscriber_field;
-				if ($key == 'last_vlr') { // also it's possible to add alpha3 only if daily_ird_plan is true
-					if ($subscriber->{$key}) {
-						$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
-						if ($rate) {
-							$row['alpha3'] = $rate['alpha3'];
-						}
-					}
-				}
 			}
 		}
 		$row['subscriber_lang'] = $subscriber->language;
@@ -190,7 +167,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber = Billrun_Factory::subscriber();
 		$availableFileds = array_keys($subscriber->getAvailableFields());
 		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
-		$saveProperties = array_merge(array('last_vlr', 'alpha3'), $availableFileds, $customerExtraData);
+		$saveProperties = array_merge($availableFileds, $customerExtraData);
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;

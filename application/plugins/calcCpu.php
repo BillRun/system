@@ -62,7 +62,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-	protected function customerCalc($processor,&$data,$options) {
+	protected function customerCalc(Billrun_Processor $processor,&$data,$options) {
 		Billrun_Factory::log('Plugin calc cpu customer.', Zend_Log::INFO);
 		$customerAPISettings = Billrun_Factory::config()->getConfigValue('customer.calculator', array());
 		$customerOptions = array(
@@ -83,7 +83,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$garbage_counter++;
 					$processor->unsetQueueRow($line['stamp']);
 					unset($queue_data[$line['stamp']]);
-					unset($data['data'][$key]);
+					$processor->unsetRow($line['stamp']);
 				}
 			}
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == false) {
@@ -139,22 +139,16 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-	public function unifyCalc($processor,&$data) {
+	public function unifyCalc(Billrun_Processor $processor,&$data) {
 		if (in_array('unify', $this->queue_calculators)) {
-			$this->unifyCalc = Billrun_Calculator::getInstance(array('type' => 'unify', 'autoload' => false));
-			$this->unifyCalc->init();
 			$queue_data = $processor->getQueueData();
-			$sucessfulyUnified = array();
 			Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
-
 			foreach ($data['data'] as $key => &$line) {
+				$this->unifyCalc = Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
 					$entity = new Mongodloid_Entity($line);
 					if ($this->unifyCalc->isLineLegitimate($entity)) {
-						if ($this->unifyCalc->updateRow($entity) !== FALSE) {
-							//mark lines that were successfuly unified.						
-							$sucessfulyUnified[$entity['stamp']] = $key;
-						}
+						$this->unifyCalc->updateRow($entity);
 					} else {
 						//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
 						// if this is last calculator, remove from queue
@@ -169,17 +163,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 
-			//handle update errors unmark  lines that thier unified line failed to update.
-			foreach ($this->unifyCalc->updateUnifiedLines() as $failedLine) {
-				foreach ($failedLine['lines'] as $stamp) {
-					unset($sucessfulyUnified[$stamp]);
-				}
-			}
-
-			//remove lines that where succesfully unified.
-			foreach ($sucessfulyUnified as $stamp => $dataKey) {
+			$this->unifyCalc->updateUnifiedLines();
+		
+			//remove lines that where succesfully unified / needed archive only.
+			foreach (array_keys($this->unifyCalc->getArchiveLines()) as $stamp) {
 				$processor->unsetQueueRow($stamp);
-				unset($data['data'][$dataKey]);
+				$processor->unsetRow($stamp);
 			}
 			$this->unifyCalc->saveLinesToArchive();
 			//Billrun_Factory::log(count($data['data']), Zend_Log::INFO);
@@ -199,10 +188,22 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$data = &$processor->getData();
 
+		$before = microtime(true);
 		$this->customerCalc($processor, $data, $options);
+		$after = microtime(true);
+		Billrun_Factory::log('Customer calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->rateCalc($processor, $data, $options);
+		$after = microtime(true);
+		Billrun_Factory::log('Rate calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->customerPricingCalc($processor, $data, $realtime);
+		$after = microtime(true);
+		Billrun_Factory::log('CustomerPricing calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
+		$before = microtime(true);
 		$this->unifyCalc($processor, $data);
+		$after = microtime(true);
+		Billrun_Factory::log('Unify calculator time: ' . ($after - $before)*1000 . " ms", Zend_Log::DEBUG);
 		
 
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
@@ -219,7 +220,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	protected function removeDuplicates($processor) {
+	protected function removeDuplicates(Billrun_Processor $processor) {
 		Billrun_Factory::log('Plugin calc cpu remove duplicates', Zend_Log::INFO);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$data = &$processor->getData();
@@ -237,7 +238,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			foreach ($existing_lines as $line) {
 				$stamp = $line['stamp'];
 				Billrun_Factory::log('Plugin calc cpu skips duplicate line ' . $stamp, Zend_Log::ALERT);
-				unset($data['data'][$stamps[$stamp]]);
+				$processor->unsetRow($stamp);
 				$processor->unsetQueueRow($stamp);
 			}
 		}

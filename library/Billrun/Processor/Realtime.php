@@ -22,7 +22,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 */
 	public function parse() {
 		// real-time have only one event (currently)
-		$row = &$this->data['data'][0];
+		reset($this->data['data']);
+		$rowKey = key($this->data['data']);
+		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineVolume($row);
 		if(!isset($row['urt'])) {
@@ -88,9 +90,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 			case ('call'):
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
 			case ('sms'):
-				return 1;
+			case ('mms'):
 			case ('service'):
-				return 1;
+				return (isset($row['reverse_charge']) && $row['reverse_charge'] === true ? -1 : 1);
 		}
 		return 0;
 	}
@@ -111,6 +113,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		}
 		if (isset($row['record_type']) && $row['record_type'] === 'service') {
 			return 'service';
+		}
+		if (isset($row['record_type']) && $row['record_type'] === 'mms') {
+			return 'mms';
 		}
 		return '';
 	}

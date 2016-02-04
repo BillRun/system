@@ -22,6 +22,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @var type Array
 	 */
 	protected $cards = array();
+	protected $secrets = array();
 	protected $inner_hash;
 	
 	/**
@@ -44,6 +45,15 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 */
 	protected function getInitialStatus() {
 		return Billrun_Factory::config()->getConfigValue('cards.initialStatus', array());
+	}
+	
+	/**
+	 * Check if one of the secrets in the batch already exists in CARDS table.
+	 * @return boolean - true or false.
+	 */
+	protected function secretExists() {
+		$query = array('secret' => array('$in' => $this->secrets));
+		return !Billrun_Factory::db()->cardsCollection()->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
 	
 	/**
@@ -102,6 +112,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$oneCard['creation_time'] = new MongoDate(strtotime($oneCard['creation_time']));
 			$oneCard['inner_hash'] = $this->inner_hash;
 
+			$this->secrets[] = $oneCard['secret'];
 			$this->cards[] = $oneCard;
 		}
 
@@ -139,12 +150,15 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			'continueOnError' => true,
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
-			'w' => 1,
 		);
 		$exception = null;
 		try {
- 			$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
-			$count = $res['nInserted'];
+			if (!$this->secretExists()) {
+				$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
+			} else {
+				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 5;
+				$this->reportError($errorCode, Zend_Log::NOTICE);
+			}
 		} catch (\Exception $e) {
 			$exception = $e;
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 2;
@@ -169,7 +183,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			'error_code' => $this->errorCode,
 			'details' => (!$this->errorCode) ? 
 							 (json_encode($this->cards)) : 
-							 ('Failed storing cards in the data base : ' . $exception->getCode() . ' : ' . $exception->getMessage() . '. ' . $res['n'] . ' cards removed')
+							 ('Batch Cancelled')
 		);
 		return $outputResult;
 	}

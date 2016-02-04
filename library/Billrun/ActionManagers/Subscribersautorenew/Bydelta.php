@@ -43,7 +43,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$defaultRecord['interval'] = 'month';
 		$defaultRecord['operation'] = 'inc';
 		$defaultRecord['sid'] = $this->sid;
-		$defaultRecord['from'] = date(DATE_ISO8601, time());
+		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);;
 		return $defaultRecord;
 	}
 	
@@ -77,6 +77,23 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	}
 	
 	/**
+	 * Validate that expected is an actual array of records.
+	 */
+	protected function validateExpected($expected) {
+		if(!is_array($expected)) {
+			return false;
+		}
+		
+		foreach ($expected as $record) {
+			if(!is_array($record)) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
@@ -89,6 +106,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+
+		// If expected is not an array of records.
+		if(!$this->validateExpected($jsonData)) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
 		
 		$sid = $input->get('sid');
 		if(empty($sid)) {
@@ -97,6 +121,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			return false;
 		}
 
+		$isEmpty = true;
+		foreach ($jsonData as &$record) {
+			if (isset($record['from']) && $record['from'] != null) {
+				$record['from'] = new MongoDate(strtotime($record['from']));
+			}
+			
+			if (isset($record['to']) && $record['to'] != null) {
+				$record['to'] = new MongoDate(strtotime($record['to']));
+			}
+			
+			if(!empty($record)) {
+				$isEmpty = false;
+			}
+		}
+
+		if($isEmpty) {
+			$jsonData = array();
+		}
+		
 		$this->expected = $jsonData;
 		$this->sid = Billrun_Util::toNumber($sid);
 		

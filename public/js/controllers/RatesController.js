@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$controller',
-  function ($scope, $routeParams, Database, $controller) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -51,6 +51,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         $scope.entity.rates.call = {};
       var newPriceInterval = {
         access: 0,
+        interconnect: 0,
         unit: $scope.availableCallUnits[0],
         rate: [
           {
@@ -60,7 +61,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
           }
         ]
       };
-      $scope.entity.rates.call[$scope.newCallRate.name] = [newPriceInterval];
+      $scope.entity.rates.call[$scope.newCallRate.name] = newPriceInterval;
       $scope.shown.callRates[$scope.newCallRate.name] = true;
       $scope.newCallRate = {name: undefined};
     };
@@ -71,14 +72,15 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
       delete $scope.entity.rates.call[rateName];
     };
 
-    $scope.addSMSRate = function () {
-      if (!$scope.newSMSRate || !$scope.newSMSRate.name)
+    $scope.addDataRate = function () {
+      if (!$scope.newDataRate || !$scope.newDataRate.name)
         return;
-      if ($scope.entity.rates.sms === undefined)
-        $scope.entity.rates.sms = {};
+      if ($scope.entity.rates.data === undefined)
+        $scope.entity.rates.data = {};
       var newPriceInterval = {
-        unit: "counter",
         access: 0,
+        interconnect: 0,
+        unit: $scope.availableDataUnits[0],
         rate: [
           {
             interval: undefined,
@@ -87,7 +89,35 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
           }
         ]
       };
-      $scope.entity.rates.sms[$scope.newSMSRate.name] = [newPriceInterval];
+      $scope.entity.rates.data[$scope.newDataRate.name] = newPriceInterval;
+      $scope.shown.dataRates[$scope.newDataRate.name] = true;
+      $scope.newDataRate = {name: undefined};
+    };
+
+    $scope.deleteDataRate = function (rateName) {
+      if (!rateName)
+        return;
+      delete $scope.entity.rates.data[rateName];
+    };
+
+    $scope.addSMSRate = function () {
+      if (!$scope.newSMSRate || !$scope.newSMSRate.name)
+        return;
+      if ($scope.entity.rates.sms === undefined)
+        $scope.entity.rates.sms = {};
+      var newPriceInterval = {
+        unit: "counter",
+        access: 0,
+        interconnect: 0,
+        rate: [
+          {
+            interval: undefined,
+            price: undefined,
+            to: undefined
+          }
+        ]
+      };
+      $scope.entity.rates.sms[$scope.newSMSRate.name] = newPriceInterval;
       $scope.shown.smsRates[$scope.newSMSRate.name] = true;
       $scope.newSMSRate = {name: undefined};
     };
@@ -177,6 +207,11 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
     };
 
     $scope.init = function () {
+      $scope.shown = {prefix: false,
+        callRates: [],
+        smsRates: [],
+        dataRates: []
+      };
       $scope.advancedMode = false;
       $scope.initEdit(function (entity) {
         if (_.isEmpty(entity.rates)) {
@@ -185,8 +220,27 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
         if (_.isEmpty(entity.params)) {
           entity.params = {};
         }
+        if ($location.search().plans && $location.search().plans.length) {
+          var plans = JSON.parse($location.search().plans);
+          if (plans) {
+            _.remove(plans, function (e) {
+              return e === "BASE";
+            });
+            if (plans.length === 1) {
+              $scope.shown.callRates[plans] = true;
+              $scope.shown.smsRates[plans] = true;
+              $scope.shown.dataRates[plans] = true;
+              $location.hash(plans);
+              $anchorScroll();
+              $timeout(function() {
+                angular.element('#' + plans).addClass('animated flash')}, 100);
+
+            }
+          }
+        }
       });
       $scope.availableCallUnits = ['seconds', 'minutes'];
+      $scope.availableDataUnits = ['bytes'];
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
       });
@@ -196,10 +250,7 @@ app.controller('RatesController', ['$scope', '$routeParams', 'Database', '$contr
       $scope.newCallPlan = {value: undefined};
       $scope.newSMSRate = {name: undefined};
       $scope.newSMSPlan = {value: undefined};
-      $scope.shown = {prefix: false,
-        callRates: [],
-        smsRates: []
-      };
+      $scope.newDataRate = {name: undefined};
       if ($scope.action === "new") $scope.shown.prefix = true;
     };
   }]);

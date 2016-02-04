@@ -43,13 +43,6 @@ class Billrun_Factory {
 	protected static $cache = null;
 
 	/**
-	 * Dispatcher instance
-	 * 
-	 * @var Billrun_Billrun Dispatcher
-	 */
-	protected static $dispatcher = null;
-
-	/**
 	 * Chain instance
 	 * 
 	 * @var Billrun_Billrun Chain
@@ -246,16 +239,12 @@ class Billrun_Factory {
 	}
 
 	/**
-	 * method to retrieve the dispatcher instance
+	 * method to retrieve the dispatcher instance. Billrun_Dispatcher decides whether to create a new instance or not.
 	 * 
 	 * @return Billrun_Dispatcher
 	 */
 	static public function dispatcher() {
-		if (!self::$dispatcher) {
-			self::$dispatcher = Billrun_Dispatcher::getInstance();
-		}
-
-		return self::$dispatcher;
+		return Billrun_Dispatcher::getInstance();
 	}
 
 	/**

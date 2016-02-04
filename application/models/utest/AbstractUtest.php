@@ -49,4 +49,13 @@ abstract class utest_AbstractUtestModel{
 	public function  getTestResults(){
 		return $this->result;
 	}
+	
+	function array2xml($data, $root = "root") {
+		$data = array_flip($data);
+		$root_element = '<?xml version="1.0" encoding="utf-8" ?><' . $root . '></' . $root . '>';
+		$xml = new SimpleXMLElement($root_element);
+		array_walk_recursive($data, array ($xml, 'addChild'));
+		return $xml->asXML();
+	}
+
 }

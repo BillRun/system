@@ -48,6 +48,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function handleChargingPlan(&$query, &$updateQuery) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
+		$charging_plan_query = $query;
+		$charging_plan_query['$or'] = array(
+			array('recurring' => 0),
+			array('recurring' => array('$exists' => 0)),
+		);
 		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
@@ -303,7 +308,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 		
 		// Return the new document.

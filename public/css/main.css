@@ -1,4 +1,20 @@
+#data_table tbody tr.highlight td{
+	background-color: #80B3DF;
+}
+#data_table thead {
+	background-color: white;
+}
+
+#data_table tbody td {
+	text-align: left;
+}
+
 .glyphicon-plus-sign {
+	color: green;
+	cursor: pointer;
+}
+
+.glyphicon-edit {
 	color: green;
 	cursor: pointer;
 }
@@ -40,6 +56,9 @@
 	width: 80%;
 }
 
+.row-indent{
+	margin-left: 20px;
+}
 .col-indent {
 	margin-left: 40px;
 }
@@ -353,3 +372,12 @@ float: left;
 }
 
 .errorMessage { color:red;}
+.danger { color:red;}
+.success { color:green;}
+
+tr[data-index] label.checkbox {
+	display:inline-block;
+}
+tr[data-index] a.detail-icon {
+	margin-left:5px;
+}
