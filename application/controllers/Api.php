@@ -143,7 +143,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
-			'datetime' => new MongoDate(),
+			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
 		);
 		$this->logColl->save(new Mongodloid_Entity($saveData));
