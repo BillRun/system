@@ -98,7 +98,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine['source_ref'] = $balancePair['source'];
 			if (isset($balancePair['wallet'])) {
 				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = 'topup';
+				$insertLine["usaget"] = 'balance';
 				$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
 				$insertLine["usagev"] = $wallet->getValue();
 				$insertLine["pp_includes_name"] = $wallet->getPPName();
