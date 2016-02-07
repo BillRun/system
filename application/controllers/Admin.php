@@ -143,7 +143,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
-		$lines_coll = $this->archiveDb->linesCollection();
+		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		$res = array();
