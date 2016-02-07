@@ -468,5 +468,14 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			return null;
 		}
 	}
+	
+	/**
+	 * 
+	 * @return array
+	 * @todo change this one to be abstract
+	 */
+	public function getPossiblyUpdatedFields() {
+		return array();
+	}
 
 }

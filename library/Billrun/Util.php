@@ -188,8 +188,8 @@ class Billrun_Util {
 
 	public static function getPreviousBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
 		return $ret;
 	}
 
