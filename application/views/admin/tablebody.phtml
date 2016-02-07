@@ -14,7 +14,7 @@ foreach ($this->data as $item) {
 		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
 		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
 		. '</label>'
-		. '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>'
+		. ($active == 'lines' ? '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>' : '')
 		. '</td>';
 	$c++;
 	foreach ($this->columns as $h => $columnName) {
@@ -44,14 +44,15 @@ foreach ($this->data as $item) {
 				echo $zend_date->toString($dateFormat, 'php');
 			}
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
-			$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'];
-			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
+			print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';*/
+			print '<a href="#ratePlanPopup" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if (is_numeric($data) && (($active == 'balances' && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb')))) {
 			if (is_float($data) && strpos($h, 'usage') === FALSE) { // hack: is_float sometimes take long numbers as float
 				print number_format($data, $this->decimal_places);
 			} else if (($active == 'lines' && $item['usaget'] == 'data') || ($active == 'balances' && strpos($columnName, 'usage') !== FALSE && strpos($columnName, 'data') !== FALSE)) {
 				print Billrun_Util::byteFormat($data, null, 3, true);
-			} else if ($h !== 'pp_includes_external_id') {
+			} else if (!in_array($h, array('pp_includes_external_id', 'usagev'))) {
 				print number_format($data, $this->decimal_places);
 			} else {
 				print number_format($data, 0);

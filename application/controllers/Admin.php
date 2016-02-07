@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -149,7 +149,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$res = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
-			$res[] = $line->getRawData();
+			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
+			$res[] = $l;
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($res));
