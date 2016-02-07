@@ -30,30 +30,22 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		//Get test params
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
-		$dialedDigits = Billrun_Util::filter_var($this->controller->getRequest()->get('dialedDigits'), FILTER_SANITIZE_STRING);
-		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
+		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
 		$call_type = Billrun_Util::filter_var($this->controller->getRequest()->get('call_type'), FILTER_SANITIZE_STRING);
 		$time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('time_date'), FILTER_SANITIZE_STRING);
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
-
-		$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))
-			->cursor()
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
 		
 		//Run test scenario
 		foreach ($scenario as $index => $name) {
 			$nameAndUssage = explode("|", $name);
 			$params = array(
-				'msisdn' => $subscriber['msisdn'],
-				'imsi' => $imsi,
-				'type' => $nameAndUssage[0],
+				'msisdn' => $calling_number,
+				'dialedDigits' => $called_number,
 				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1]*10) : 4800, // default 8 minutes
-				'dialedDigits' => $dialedDigits,
+				'type' => $nameAndUssage[0],
 				'call_type' => $call_type
 			);
 			if($send_np_code === 'on'){
@@ -75,7 +67,6 @@ class utest_CallModel extends utest_AbstractUtestModel {
 	 * @return XML string
 	 */
 	protected function getRequestData($params) {
-		$imsi = $params['imsi'];
 		$type = $params['type'];
 		$msisdn = $params['msisdn'];
 		$duration = $params['duration'];
@@ -88,7 +79,8 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			'calling_number' => $msisdn,
 			'call_reference' => $this->controller->getReference(),
 			'call_id' => 'rm7xxxxxxxxx',
-			'time_date' => $time_date
+			'connected_number' =>  $dialedDigits,
+			'time_date' => $time_date,
 		);
 		
 		if (isset($params['np_code'])) {
@@ -97,9 +89,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 
 		switch ($type) {
 			case 'start_call':
-				$data['imsi'] = $imsi;
 				$data['dialed_digits'] = $dialedDigits;
-				$data['connected_number'] = $dialedDigits;
 				$data['event_type'] = 2;
 				$data['service_key'] = 61;
 				$data['vlr'] = 972500000701;
@@ -111,7 +101,6 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				break;
 			case 'answer_call':
 				$data['dialed_digits'] = $dialedDigits;
-				$data['connected_number'] = $dialedDigits;
 				$data['call_type'] = $call_type;
 				break;
 			case 'reservation_time':
@@ -123,7 +112,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$data['call_leg'] = 'x'; //(call party terminated the call: 0 – MSC, 1 – originator (Calling party), 2 – terminator (Called party), 3 – SCP, 4 - Billing)
 				break;
 			default:
-				$data = array(); // Case with Error
+				$data = array(); // Case with Error, not support API name
 				break;
 		}
 
