@@ -36,7 +36,7 @@ class SubscribersModel extends TabledateModel{
 		$this->search_key = "sid";
 	}
 	
-	public function getTableColumns() {
+	public function getTableColumns($remove_info_columns = false) {
 		$columns = array(
 			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
@@ -47,6 +47,14 @@ class SubscribersModel extends TabledateModel{
 			'from' => 'From',
 			'to' => 'Expiration'
 		);
+		
+		if ($remove_info_columns) {
+			$removable_fields = Billrun_Factory::config()->getConfigValue('admin_panel.subscribers.removable_columns', []);
+			foreach($removable_fields as $removable_field) {
+				unset($columns[$removable_field]);
+			}
+		}
+
 		return $columns;
 	}
 
@@ -138,7 +146,7 @@ class SubscribersModel extends TabledateModel{
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-
+	
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			array(

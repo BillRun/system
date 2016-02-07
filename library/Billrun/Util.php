@@ -760,6 +760,52 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Convert associative Array to XML
+	 * @param Array $data Associative Array
+	 * @param Array $parameters
+	 * @return mixed XML string or FALSE if failed
+	 */
+	public static function arrayToXml($data, $parameters = array()) {
+		if (!is_array($data)) {
+			return false;
+		}
+		//Defaults
+		$version = !empty($parameters['version']) ? $parameters['version'] : '1.0';
+		$encoding = !empty($parameters['encoding']) ? $parameters['encoding'] : 'UTF-8';
+		$indent = !empty($parameters['indent']) ? $parameters['indent'] : false;
+		$rootElement = !empty($parameters['rootElement']) ? $parameters['rootElement'] : 'root';
+		$childElement = !empty($parameters['childElement']) ? $parameters['childElement'] : 'node';
+
+		$xml = new XmlWriter();
+		$xml->openMemory();
+		$xml->setIndent($indent);
+		$xml->startDocument($version, $encoding);
+		$xml->startElement($rootElement);
+		self::recursiveWriteXmlBody($xml, $data, $childElement);
+		$xml->endElement(); //write end element
+		return $xml->outputMemory();
+	}
+
+	/**
+	 * Write XML body nodes
+	 * @param object $xml XMLWriter Object
+	 * @param array $data Associative Data Array
+	 */
+	public static function recursiveWriteXmlBody(XMLWriter $xml, $data, $childElement) {
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$key = is_numeric($key) ? $childElement : $key ;
+				$xml->startElement($key);
+				self::recursiveWriteXmlBody($xml, $value, $childElement);
+				$xml->endElement();
+				continue;
+			}
+			$key = is_numeric($key) ? $childElement : $key ;
+			$xml->writeElement($key, $value);
+		}
+	}
+
+	/**
 	 * Returns an array value if it is set
 	 * @param mixed $field the array value
 	 * @param mixed $defVal the default value to return if $field is not set
