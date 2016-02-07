@@ -41,6 +41,27 @@ $(function () {
 		}
 	});
 
+    $("#ratePlanPopup").on('show.bs.modal', function (event) {
+    var rate_id = $(event.relatedTarget).data('rate-id');
+    var plan = $(event.relatedTarget).data('plan');
+    var usage = $(event.relatedTarget).data('usage');
+    $('#data-rates-tbody tr').remove();
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: 'rates', id: rate_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
+      var $tbody = $("#data-rates-tbody");
+      $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
+      _.forEach(rate, function (r) {
+        var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
+        $tbody.append($row);
+      });
+    });
+  });
+
 	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
 			var reader = new FileReader();
@@ -476,7 +497,7 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + line.balance_after + "</td>");
         $tr.append("<td>" + line.total + "</td>");
         $tr.append("<td>" + line.usage_unit + "</td>");
-        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YY hh:mm:ss') + "</td>");
+        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:MM:SS') + "</td>");
         $table.append($tr);
       });
       $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
