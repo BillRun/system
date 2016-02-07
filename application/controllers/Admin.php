@@ -1112,6 +1112,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return type
 	 */
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		$global_session_vars = Billrun_Factory::config()->getConfigValue('admin_panel.global_session_vars', array());
+		if (in_array($source_name, $global_session_vars)) {
+			$getsetvar_session = $this->getSession('global');//Yaf_session::getInstance();
+		} else {
+			$getsetvar_session = $session;
+		}
 		if (is_null($target_name)) {
 			$target_name = $source_name;
 		}
@@ -1123,18 +1129,22 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
+		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+			$var = $getsetvar_session->$source_name;
+			$session->$source_name = $var;
+		}
 		if ($new_search) {
 			if (is_string($var) || is_array($var)) {
-				$session->$target_name = $var;
+				$getsetvar_session->$target_name = $var;
 			} else {
-				$session->$target_name = $default;
+				$getsetvar_session->$target_name = $default;
 			}
 		} else if (is_string($var) || is_array($var)) {
-			$session->$target_name = $var;
-		} else if (!isset($session->$target_name)) {
-			$session->$target_name = $default;
+			$getsetvar_session->$target_name = $var;
+		} else if (!isset($getsetvar_session->$target_name)) {
+			$getsetvar_session->$target_name = $default;
 		}
-		return $session->$target_name;
+		return $getsetvar_session->$target_name;
 	}
 
 	protected function applyFilters($table, $session = false) {
