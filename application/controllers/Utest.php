@@ -155,7 +155,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			if(!empty($imsi)){
 				$query = array('imsi' => $imsi);
 			} elseif(!empty($msisdn)) {
-				$query = array('msisdn' => $msisdn);
+				$query = array('msisdn' => Billrun_Util::msisdn($msisdn));
 			}
 			if (!empty($query)) {
 				$sid = $this->getSid($query);
@@ -358,10 +358,15 @@ class UtestController extends Yaf_Controller_Abstract {
 		$lines = array();
 		$total_aprice = $total_usagev = 0;
         //Search lines by testID + sid (for test with configurable date)
-		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+		if($this->utest->getTestName() == 'utest_Call'){
 			$searchQuery = array(
 				'sid' => $sid,
 				'call_reference' => (string)$this->reference
+			);
+		} else if(in_array($this->utest->getTestName(), array('utest_Sms', 'utest_Service'))){
+			$searchQuery = array(
+				'sid' => $sid,
+				'association_number' => (string)$this->reference
 			);
 		} else { //Search lines by test time + sid
 			$searchQuery = array(
