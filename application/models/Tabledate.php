@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -62,7 +62,8 @@ class TabledateModel extends TableModel {
 	public function isLast($entity) {
 		$to_date = new MongoDate(strtotime($entity['to']));
 		if (!$to_date) {
-			die("date error");
+			return $this->setError("date error") ;
+			
 		}
 		$result = $this->getLastItem($entity[$this->search_key]);
 		return strval($result['_id']) == strval($entity['_id']);

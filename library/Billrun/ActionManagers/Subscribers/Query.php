@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -70,7 +70,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if(!$returnData) {
 			$returnData = array();
-			$this->reportError(1004);
+			$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 23);
 		}
 		
 		$outputResult = array(

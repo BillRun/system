@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -63,36 +63,6 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			));
 		}
 		return $retMsccData;
-	}
-	
-	/**
-	 * Gets the real usagev of the user (known only on the next API call)
-	 * 
-	 * @return type
-	 */
-	protected function getRealUsagev() {
-		$sum = 0;	
-		foreach ($this->row['mscc_data'] as $msccData) {
-			if (isset($msccData['used_units'])) {
-				$sum += intval($msccData['used_units']);
-			}
-		}
-		return $sum;
-	}
-	
-	/**
-	 * Gets the Line that needs to be updated (on rebalance)
-	 */	
-	protected function getLineToUpdate() {
-		$findQuery = array(
-			"sid" => $this->row['sid'],
-			"session_id" => $this->row['session_id'],
-			"request_num" => array('$lt' => $this->row['request_num'])
-		);
-		
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$line = $lines_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
-		return $line;
 	}
 
 }

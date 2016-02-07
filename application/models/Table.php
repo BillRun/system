@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -67,6 +67,7 @@ class TableModel {
 	 */
 	public $extra_columns;
 
+	protected $error; 
 	/**
 	 * constructor
 	 * 
@@ -442,11 +443,14 @@ class TableModel {
 
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
-		$count = $this->collection
+
+		if($key) { 
+			$count = $this->collection
 			->query($this->search_key, $key)
 			->count();
-		if ($count) {
-			die(json_encode("key already exists"));
+			if ($count) {
+				return $this->setError("key already exists") ;
+			}
 		}
 		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
@@ -524,4 +528,12 @@ class TableModel {
 		return $row[$header];
 	}
 
+	protected function setError($str) {
+			$this->error = $str ;
+			return false;
+	}
+
+	public function getError($str) {
+			return $this->error;
+	}
 }

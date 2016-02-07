@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -34,6 +34,13 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * @var string
 	 */
 	protected $event;
+	
+	/**
+	 * used for nested running of dispatcher
+	 * 
+	 * @var int
+	 */
+	static protected $run = 0;
 
 	/**
 	 * Singleton/Bridge pattern
@@ -53,27 +60,31 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 			return self::$instance[$params['type']];
 		}
 
-		if (!isset(self::$instance['default'])) {
-			self::$instance['default'] = new Billrun_Dispatcher();
+		$instance_id = 'default' . self::$run;
+		if (!isset(self::$instance[$instance_id])) {
+			if (self::$run == 0) {
+				self::$instance[$instance_id] = new Billrun_Dispatcher();
+			} else {
+				self::$instance[$instance_id] = clone self::$instance['default0'];
+			}
 		}
-		return self::$instance['default'];
+		return self::$instance[$instance_id];
 	}
 
 	/**
 	 * Triggers an event by dispatching arguments to all observers that handle
 	 * the event and returning their return values.
 	 *
-	 * @param   string  $event  The event to trigger.
-	 * @param   array   $args   An array of arguments.
-	 *
 	 * @return  array  An array of results from each function call.
 	 *
 	 */
 	public function notify() {
 		$ret = array();
+		self::$run++;
 		foreach ($this->observers as $observer) {
 			$ret[$observer->getName()] = $observer->update($this);
 		}
+		self::$run--;
 		return $ret;
 	}
 

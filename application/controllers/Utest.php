@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -263,6 +263,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			'request' => http_build_query($data),
 			'response' => $res
 		);
+		return $res;
 	}
 
 	/**
