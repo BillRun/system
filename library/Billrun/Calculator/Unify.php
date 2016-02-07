@@ -171,7 +171,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow, $typeFields);
 		foreach ($typeFields as $key => $fields) {
 			foreach ($fields as $field) {
-				if ($key == '$inc' && isset($newRow[$field])) {
+				if ($key == '$inc' && isset($newRow[$field]) && !empty($newRow[$field])) {
 					$updatedRow[$field] += $newRow[$field];
 				} else if ($key == '$set' && isset($newRow[$field])) {
 					$updatedRow[$field] = $newRow[$field];
