@@ -33,6 +33,7 @@ class StatisticsAction extends ApiAction {
 				'desc' => 'No statistics specified for save!'
 			);
 		} else {
+			$statistics['creation_date'] = new MongoDate();
 			$this->model->update($statistics);
 			$output = array(
 				'status' => 1,
