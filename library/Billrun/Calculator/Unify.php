@@ -202,7 +202,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function saveLinesToArchive() {
 		$failedArchived = array();
 		$linesArchivedStamps = array();
-		$archLinesColl = $this->archiveDb->linesCollection();
+		$archLinesColl = $this->archiveDb->archiveCollection();
 		$localLines = Billrun_Factory::db()->linesCollection();
 
 		$archivedLinesCount = count($this->archivedLines);
@@ -405,7 +405,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesArchived($lineStamps) {
 		$lineQuery = array('stamp' => array('$in' => $lineStamps));
-		return !$this->archiveDb->linesCollection()->query($lineQuery)->cursor()->limit(1)->current()->isEmpty();
+		return !$this->archiveDb->archiveCollection()->query($lineQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
