@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -98,7 +98,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine['source_ref'] = $balancePair['source'];
 			if (isset($balancePair['wallet'])) {
 				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = 'topup';
+				$insertLine["usaget"] = 'balance';
 				$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
 				$insertLine["usagev"] = $wallet->getValue();
 				$insertLine["pp_includes_name"] = $wallet->getPPName();

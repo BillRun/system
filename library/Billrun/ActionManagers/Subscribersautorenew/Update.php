@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -78,11 +78,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
-		
+
 		if(!$updateResult) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
 			$this->reportError($errorCode);
 		}
+		
 		$outputResult = array(
 			'status'        => $this->errorCode == 0 ? 1 : 0,
 			'desc'          => $this->error,
@@ -136,9 +137,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		);
 		
 		if (isset($jsonUpdateData['to']['sec'])) {
-			$set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
+			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
-			$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+			$jsonUpdateData['to'] = $set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
 		} else {
 			$set['to'] = $jsonUpdateData['to'];
 		}
@@ -158,17 +159,29 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		$set['creation_time'] = new MongoDate();
 		if (isset($this->query['from']['sec'])) {
-			$set['from'] = new MongoDate($this->query['from']['sec']);
+			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
 		} else if (is_string($this->query['from'])) {
- 			$set['from'] = new MongoDate(strtotime($this->query['from']));
+ 			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
 		} else {
-			$set['from'] = $set['creation_time'];
+			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
 		
 		$set['last_renew_date'] = $set['creation_time'];
 		
-		$set['remain'] = 
-			Billrun_Util::countMonths($this->query['from']['sec'], $jsonUpdateData['to']['sec']);
+		if (isset($this->query['from']->sec)) {
+			$from = $this->query['from']->sec;
+		} else {
+			$from = $this->query['from']['sec'];
+		}
+		
+		if (isset($jsonUpdateData['to']->sec)) {
+			$to = $jsonUpdateData['to']->sec;
+		} else {
+			$to = $jsonUpdateData['to']['sec'];
+		}
+		
+		
+		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 	}
@@ -294,6 +307,19 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
+		if (!$this->handleDuplicates()) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	protected function handleDuplicates() {
+		if (!$this->collection->query($this->query)->cursor()->limit(1)->current()->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
 		return true;
 	}
 
