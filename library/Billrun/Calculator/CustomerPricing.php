@@ -300,7 +300,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return Array the 
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
-	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan) {
+	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan, $row = null) {
+		if ($this->isFreeLine($row)) {
+			return array(
+				'in_plan' => 0,
+				'over_plan' => 0,
+				'out_plan' => 0,
+				'in_group' => 0,
+				'over_group' => 0,
+				$this->pricingField => 0,
+			);
+		}
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
 			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
@@ -537,6 +547,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		
 		return 0;
 	}
+	
+	protected function isFreeLine($row) {
+		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
+			return ($row['type'] === 'gy' && isset($row['in_data_slowness']) && $row['in_data_slowness']);
+		}
+		return false;
+	}
 
 	/**
 	 * Update the subscriber balance for a given usage
@@ -560,8 +577,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($row['charging_type'] === 'prepaid') {
 				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
-			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
-			return false;
+			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
+			if ($row['usagev'] === 0) { // Can be changed in case a plugin gave the subscriber value even though he has no balance
+				return false;
+			}
 		}
 		$balanceRaw = $this->balance->getRawData();
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
@@ -584,7 +603,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
 			return $pricingData;
 		}
-		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 			return $pricingData;

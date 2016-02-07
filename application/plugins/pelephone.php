@@ -62,6 +62,73 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
 	
+	protected function canSubscriberEnterDataSlowness($row) {
+		return isset($row['subscriber_soc']) && !empty($row['subscriber_soc']);
+	}
+	
+	protected function isSubscriberInDataSlowness($row) {
+		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
+	}
+	
+	/**
+	 * Gets data slowness speed and SOC according to plan or default 
+	 * 
+	 * @return int slowness speed in Kb/s and SOC code
+	 * @todo Check if plan has a value for slowness
+	 */
+	protected function getDataSlownessParams($row) {
+		// TODO: Check first if it's set in plan
+		$slownessParams = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness');
+		$socKey = $row['subscriber_soc'];
+		if (!isset($slownessParams[$socKey])) {
+			$socKey = "DEFAULT";
+		}
+		return array(
+			'speed' => $slownessParams[$socKey]['speed'],
+			'soc' => $slownessParams[$socKey]['SOC'],
+			'command' => $slownessParams['command'],
+			'applicationId' => $slownessParams['applicationId'],
+			'requestUrl' => $slownessParams['requestUrl'],
+		);
+	}
+	
+	public function afterSubscriberBalanceNotFound(&$row) {
+		if ($row['type'] === 'gy') {
+			if ($this->isSubscriberInDataSlowness($row)) {
+				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10*1024*1024);
+			} else if ($this->canSubscriberEnterDataSlowness($row)) {
+				$this->enterSubscriberToDataSlowness($row);
+				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10*1024*1024);
+			}
+		}
+	}
+		
+	protected function enterSubscriberToDataSlowness($row) {
+		// Update subscriber in DB
+		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
+		$updateQuery = array('$set' => array('in_data_slowness' => true));
+		$subscribersColl->update($findQuery, $updateQuery);
+		
+		//Send request to slowdown the subscriber
+		$encoder = new Billrun_Encoder_Xml();
+		$slownessParams = $this->getDataSlownessParams($row);
+		$requestBody = array(
+			'HEADER' => array(
+				'APPLICATION_ID' => $slownessParams['applicationId'],
+				'COMMAND' => $slownessParams['command'],
+			),
+			'PARAMS' => array(
+				'MSISDN' => $row['msisdn'],
+				'SLOWDOWN_SPEED' => $slownessParams['speed'],
+				'SOC' => $slownessParams['soc'],
+			)
+		);
+		$request = array($encoder->encode($requestBody, "REQUEST"));
+		$requestUrl = $slownessParams['requestUrl'];
+		Billrun_Util::sendRequest($requestUrl, $request);
+	}
+	
 	/**
 	 * method to check if billing row is interconnect (not under PL network)
 	 * 
