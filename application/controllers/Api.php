@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -143,6 +143,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
+			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
 		);
 		$this->logColl->save(new Mongodloid_Entity($saveData));
