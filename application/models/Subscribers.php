@@ -167,7 +167,22 @@ class SubscribersModel extends TabledateModel{
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}
 
-  
+	public function getBySid($sid) {
+		$entity = $this->subscribers_coll->query(array('sid' => intval($sid)))->cursor()->current();
+		// convert mongo values into javascript values
+		$entity['_id'] = (string) $entity['_id'];
+		if ($entity['from'] && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['to'] && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
+			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if (is_array($entity['from']) && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if (is_array($entity['to']) && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		return $entity;
+	}
 
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);

@@ -222,7 +222,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
-				'display' => 'Expiration',
+				'display' => 'Time',
 				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
