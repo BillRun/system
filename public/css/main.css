@@ -1,3 +1,12 @@
+.left-panel {
+	position: fixed;
+	left: 0;
+	left: 10px;
+	top: 60px;
+	width: 300px;
+	border: 1px solid black;
+}
+
 #data_table tbody tr.highlight td{
 	background-color: #80B3DF;
 }

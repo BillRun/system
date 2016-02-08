@@ -47,6 +47,10 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getCollectionItems', {params: params});
     }
 
+    function getSubscriberDetails() {
+      return $http.get(baseUrl + '/admin/getSubscriberDetails');
+    }
+
     return {
       getEntity: getEntity,
       saveEntity: saveEntity,
@@ -55,6 +59,7 @@ app.factory('Database', ['$http', function ($http) {
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems,
-      getAvailablePPIncludes: getAvailablePPIncludes
+      getAvailablePPIncludes: getAvailablePPIncludes,
+      getSubscriberDetails: getSubscriberDetails
     };
   }]);

@@ -99,6 +99,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
@@ -182,6 +183,28 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
+		$response->response();
+		return false;
+	}
+	
+	public function getSubscriberDetailsAction() {
+		$global_session = $this->getSession('global');
+		if (isset($global_session->sid)) {
+			$response = new Yaf_Response_Http();
+			$model = self::initModel('subscribers');
+			$entity = $model->getBySid($global_session->sid);
+			if (!$entity) {
+				$response->setBody(json_encode(array('error' => 'Could not find entity')));
+				$response->response();
+				return false;
+			}
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, 'update') as $key) {
+				unset($entity[$key]);
+			}
+			unset($entity['_id']);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'subscriber' => $entity)));
 		$response->response();
 		return false;
 	}
