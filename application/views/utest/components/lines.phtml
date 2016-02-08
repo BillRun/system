@@ -1,7 +1,7 @@
 <?php if (!empty($lines['rows'])) : ?>
 	<div class="panel panel-default">
-		<div class="panel-heading down" data-toggle="collapse" data-target="#lines"><?php echo $lines['ref'] ?>,  SID : <?php echo $sid ?></div>
-		<div class="panel-body collapse in" id='lines'>
+		<div class="panel-heading down" data-toggle="collapse" data-target="#<?php echo $id ?>"><?php echo $lines['ref'] ?>,  SID : <?php echo $sid ?></div>
+		<div class="panel-body collapse in" id='<?php echo $id ?>'>
 			<table class="table table-striped">
 				<thead>
 					<tr>
@@ -35,10 +35,19 @@
 								<?php endif; ?>
 							</td>
 						</tr>
+						<?php if (!empty($line['archive_lines']['rows'])) : ?>
+							<tr>
+								<td colspan="9">
+									<?php print $this->render('utest/components/lines.phtml', array('lines' => $line['archive_lines'], 'sid' => $sid_after_test, 'id' => 'archive_lines')); ?>
+								</td>
+							</tr>
+						<?php endif; ?>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
 		</div>
-		<div class="panel-footer">Totals : <strong>aprice</strong> = <?php echo $lines['total_aprice'] ?> / <strong>usagev</strong> = <?php echo $lines['total_usagev'] ?></div>
+		<?php if(!empty($lines['total_aprice']) || !empty($lines['total_usagev'])) : ?>
+			<div class="panel-footer">Totals : <strong>aprice</strong> = <?php echo $lines['total_aprice'] ?> / <strong>usagev</strong> = <?php echo $lines['total_usagev'] ?></div>
+		<?php endif; ?>
 	</div>
 <?php endif; ?>
