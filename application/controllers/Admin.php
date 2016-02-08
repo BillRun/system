@@ -646,7 +646,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// set the model
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
-		
+
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
 
@@ -976,22 +976,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->model->setSize($size);
 			$this->model->setPage($skip);
 		}
-		$table = strtolower(str_replace("Model", "", get_class($this->model)));
-		if (empty($session)) $session = $this->getSession($table);
 		$data = $this->model->getData($filter_query);
-		$related_filter_fields = Billrun_Factory::config()->getConfigValue('admin_panel.related_filter_fields', array());
-		if (!empty($data)) {
-			foreach ($related_filter_fields as $related_name => $related) {
-				foreach ($related as $r) {
-					if (!empty($session->$related_name) && empty($session->$r)) {
-						if (is_array($data)) $session->$r = $data[0]->get($r);
-						else if (strtolower(get_class($data)) == "mongodloid_cursor")
-							$session->$r = $data->current()->get($r);
-					}
-				}
-			}
-		}
-		if ($this->getSetVar($session, 'sid', 'sid')) {
+		$table = strtolower(str_replace("Model", "", get_class($this->model)));
+		if ($this->getSetVar($this->getSession($table), 'sid', 'sid')) {
 			$columns = $this->model->getTableColumns(true);
 		} else {
 			$columns = $this->model->getTableColumns();
