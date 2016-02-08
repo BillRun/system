@@ -172,7 +172,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($typeFields as $key => $fields) {
 			foreach ($fields as $field) {
 				if ($key == '$inc' && isset($newRow[$field])) {
-					$updatedRow[$field] += $newRow[$field] && is_numeric($newRow[$field]) ? $newRow[$field] : 0;
+					$updatedRow[$field] += ($newRow[$field] && is_numeric($newRow[$field])) ? $newRow[$field] : 0;
 				} else if ($key == '$set' && isset($newRow[$field])) {
 					$updatedRow[$field] = $newRow[$field];
 				}
