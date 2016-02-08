@@ -1,18 +1,33 @@
-app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
-  function ($scope, $window, $routeParams, Database, $controller) {
+app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$http',
+  function ($scope, $window, $routeParams, Database, $controller, $http) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
 
     $scope.save = function (redirect) {
       $scope.entity.to = $scope.entity.to / 1000;
-      var params = {
-        entity: $scope.entity,
-        coll: 'cards',
-        type: $routeParams.action
-      };
       $scope.err = {};
-      Database.saveEntity(params).then(function (res) {
+      //Database.saveEntity(params).then(function (res) {
+      var postData = {
+        method: ($scope.action === "new" ? 'create' : 'update')
+      };
+      var entData = {
+        status: $scope.entity.status,
+        batch_number: $scope.entity.batch_number,
+        serial_number: $scope.entity.serial_number,
+        charging_plan_name: $scope.entity.charging_plan_name,
+        service_provider: $scope.entity.service_provider,
+        to: $scope.entity.to
+      };
+      if ($scope.action === "new") postData.cards = [JSON.stringify(entData)];
+      else {
+        postData.query = JSON.stringify({
+          serial_number: $scope.entity.serial_number,
+          batch_number: $scope.entity.batch_number
+        });
+        postData.update = JSON.stringify(entData);
+      }
+      $http.post(baseUrl + '/api/cards', postData).then(function (res) {
         if (redirect) {
           $window.location = baseUrl + '/admin/' + $routeParams.collection;
         }
