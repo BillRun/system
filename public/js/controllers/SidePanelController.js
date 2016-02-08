@@ -6,9 +6,10 @@ function SidePanelController(Database) {
   'use strict';
 
   var vm = this;
+  vm.showSidePanel = false;
 
   vm.init = function () {
-    vm.showSidePanel = false;
+    if (_.isEmpty(angular.element('.show-side-panel'))) return;
     Database.getSubscriberDetails().then(function (res) {
       if (res.data.subscriber) {
         vm.subscriber = res.data.subscriber;
