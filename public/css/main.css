@@ -1,16 +1,21 @@
 .left-panel {
-	position: fixed;
-	left: 0;
-	left: 10px;
-	top: 60px;
-	width: 300px;
+	background-color: white;
+}
+
+.left-panel.opened {
 	border: 1px solid black;
 }
 
-.panel-toggle {
+.toggle-panel-opened {
 	position: absolute;
-	top: 0;
-	float: right;
+    left: 310px;
+    margin-top: 10px;
+}
+
+.toggle-panel-closed {
+	position: absolute;
+	left: 10px;
+	margin-top: 10px;
 }
 
 #data_table tbody tr.highlight td{
