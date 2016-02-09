@@ -105,16 +105,18 @@ class CronController extends Yaf_Controller_Abstract {
 	}		
 	public function autoRenewServices() {		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
-		
-		$queryDate = array('creation_time' => strtotime('-1 month'));
+
+		$lastmonth = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
+		$queryDate = array('creation_time' => new MongoDate($lastmonth));
 		$queryDate['remain'] = array('$gt' => 0);
 		
 		// Check if last day.
 		if(date('d') == date('t')) {
 			$queryDate = array('$or' => $queryDate);
 			$queryDate['$or']['$and']['eom'] = 1;
-			$queryDate['$or']['$and']['creation_time']['$gt'] = strtotime('-1 month');
-			$queryDate['$or']['$and']['creation_time']['$lt'] = strtotime('first day of this month');
+			$queryDate['$or']['$and']['creation_time']['$gt'] = new MongoDate($lastmonth);
+			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
+			$queryDate['$or']['$and']['creation_time']['$lt'] = new MongoDate($firstday);
 		}
 		
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
