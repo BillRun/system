@@ -1,9 +1,11 @@
 .left-panel {
-	background-color: white;
+	background-color: #222;
+	color: white;
 }
 
 .left-panel.opened {
 	border: 1px solid black;
+	padding-left: 10px;
 }
 
 .toggle-panel-opened {
