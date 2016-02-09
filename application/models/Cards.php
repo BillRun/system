@@ -76,7 +76,8 @@ class CardsModel extends TableModel {
 			'batch_number' => array(
 				'key' => 'batch_number',
 				'db_key' => 'batch_number',
-				'input_type' => 'text',
+				'input_type' => 'number',
+				'comparison' => 'equals',
 				'comparison' => 'contains',
 				'display' => 'Batch Number',
 				'default' => '',
@@ -84,8 +85,8 @@ class CardsModel extends TableModel {
 			'serial_number' => array(
 				'key' => 'serial_number',
 				'db_key' => 'serial_number',
-				'input_type' => 'text',
-				'comparison' => 'contains',
+				'input_type' => 'number',
+				'comparison' => 'equals',
 				'display' => 'Serial Number',
 				'default' => '',				
 			),

@@ -392,12 +392,33 @@ class UtestController extends Yaf_Controller_Abstract {
 				'balance_before' => number_format($rowData['balance_before'], 3),
 				'balance_after' => number_format($rowData['balance_after'], 3),
 			);
+			
+			//Get Line rates
 			$arate = Billrun_Factory::db()->ratesCollection()->getRef($rowData['arate']);
 			if(!empty($arate)){
 				$line['arate'] = array(
 					'id' => (string)$arate->get('_id'),
 					'key' => $arate->get('key')
 				);
+			}
+			
+			//Get Archive lines
+			$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+			$lines_coll = $this->archiveDb->archiveCollection();
+			$archive_lines = $lines_coll->query(array('u_s' => $rowData['stamp']))->cursor()->sort(array('urt' => 1));
+			foreach ($archive_lines as $archive_line) {
+				$archive_line_data = $archive_line->getRawData();
+				$arate = Billrun_Factory::db()->ratesCollection()->getRef($archive_line_data['arate']);
+				if(!empty($arate)){
+					$archive_line_data['arate'] = array(
+						'id' => (string)$arate->get('_id'),
+						'key' => $arate->get('key')
+					);
+				}
+				$line['archive_lines']['rows'][] = $archive_line_data;
+			}
+			if(isset($line['archive_lines'])){
+				$line['archive_lines']['ref'] = "Archive line details";
 			}
 			$lines['rows'][] = $line;
 		}
