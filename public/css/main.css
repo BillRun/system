@@ -9,13 +9,13 @@
 }
 
 .toggle-panel-opened {
-	position: absolute;
+	position: fixed;
     left: 310px;
     margin-top: 10px;
 }
 
 .toggle-panel-closed {
-	position: absolute;
+	position: fixed;
 	left: 10px;
 	margin-top: 10px;
 }
