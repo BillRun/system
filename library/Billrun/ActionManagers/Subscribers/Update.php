@@ -13,7 +13,7 @@
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	
-	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider, Billrun_FieldValidator_SOC;
 	
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
@@ -418,6 +418,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!$this->validateServiceProvider($this->recordToSet['service_provider'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 35;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service_provider']));
+			return false;
+		}
+		
+		if(!$this->validateSOC($this->recordToSet['subscriber_soc'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 39;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['subscriber_soc']));
 			return false;
 		}
 		
