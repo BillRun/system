@@ -418,10 +418,10 @@ class Billrun_Util {
 	public static function getDateBoundQuery() {
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate()
+				'$gte' => new MongoDate()
 			),
 			'from' => array(
-				'$lt' => new MongoDate()
+				'$lte' => new MongoDate()
 			)
 		);
 	}
