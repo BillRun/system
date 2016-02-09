@@ -1066,7 +1066,8 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-		
+		$parameters['show_side_panel'] = !empty($this->getRequest()->get('sid'));
+
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
 

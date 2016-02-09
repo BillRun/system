@@ -46,7 +46,7 @@
       </div>
     </div>
 
-	<?php if(in_array($active, array('lines', 'subscribers', 'subscribers_auto_renew_services', 'balances'))) : ?>
+	<?php if(in_array($active, array('lines', 'subscribers', 'subscribers_auto_renew_services', 'balances')) && $show_side_panel) : ?>
 		<div ng-controller='SidePanelController as vm' ng-init='vm.init()' ng-cloak>
 		<pageslide ps-side='left' ps-open='vm.showSidePanel' ps-custom-top='50px' ps-class='left-panel' ps-custom-bottom='10px' ng-class='{opened: vm.showSidePanel, closed: vm.showSidePanel}'>
 			<h4>Subscriber Details</h4>

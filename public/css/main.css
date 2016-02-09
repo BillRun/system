@@ -12,12 +12,14 @@
 	position: fixed;
     left: 310px;
     margin-top: 10px;
+	cursor: pointer;
 }
 
 .toggle-panel-closed {
 	position: fixed;
 	left: 10px;
 	margin-top: 10px;
+	cursor: pointer;
 }
 
 #data_table tbody tr.highlight td{
