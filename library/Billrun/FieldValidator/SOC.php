@@ -18,10 +18,9 @@ trait Billrun_FieldValidator_SOC {
 	 * @param $SOC string - The SOC to validate
 	 * @return boolean
 	 */
-	protected function validateSOC(&$SOC) {
-		// If the update doesn't affect the plan there is no reason to validate it.
-		if(!isset($SOC)) {
-			return TRUE;
+	protected function validateSOC($SOC) {
+		if ($SOC === '') {
+			return true;
 		}
 		$dataSlowness = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
 		return isset($dataSlowness[$SOC]);

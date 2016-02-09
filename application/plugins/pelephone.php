@@ -21,7 +21,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $name = 'pelephone';
-	
+
 	/**
 	 * billing row to handle
 	 * use to pre-fetch the billing line if the line is not passed in the requested event
@@ -29,7 +29,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var array
 	 */
 	protected $row;
-	
+
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
 			return;
@@ -42,11 +42,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			($weektime >= '5-160000' && $weektime <= '6-200000') ||
 			($day_type == HEBCAL_SHORTDAY && $current_time >= '160000' && $current_time <= '235959') ||
 			(
-				$day_type == HEBCAL_HOLIDAY && 
-				(
-					($current_time >= '000000' && $current_time <= '195959') || 
-					(Billrun_HebrewCal::getDayType($nextday = strtotime('+1 day', $current_datetime)) == HEBCAL_HOLIDAY || date('w', $nextday) == 6)
-				)
+			$day_type == HEBCAL_HOLIDAY &&
+			(
+			($current_time >= '000000' && $current_time <= '195959') ||
+			(Billrun_HebrewCal::getDayType($nextday = strtotime('+1 day', $current_datetime)) == HEBCAL_HOLIDAY || date('w', $nextday) == 6)
+			)
 			)
 		) {
 			$shabbat = true;
@@ -61,15 +61,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.shabbat'] = $shabbat;
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
-	
+
 	protected function canSubscriberEnterDataSlowness($row) {
 		return isset($row['subscriber_soc']) && !empty($row['subscriber_soc']);
 	}
-	
+
 	protected function isSubscriberInDataSlowness($row) {
 		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
 	}
-	
+
 	/**
 	 * Gets data slowness speed and SOC according to plan or default 
 	 * 
@@ -91,25 +91,25 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'requestUrl' => $slownessParams['requestUrl'],
 		);
 	}
-	
+
 	public function afterSubscriberBalanceNotFound(&$row) {
 		if ($row['type'] === 'gy') {
 			if ($this->isSubscriberInDataSlowness($row)) {
-				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10*1024*1024);
+				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
 			} else if ($this->canSubscriberEnterDataSlowness($row)) {
 				$this->enterSubscriberToDataSlowness($row);
-				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10*1024*1024);
+				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
 			}
 		}
 	}
-		
+
 	protected function enterSubscriberToDataSlowness($row) {
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
 		$updateQuery = array('$set' => array('in_data_slowness' => true));
 		$subscribersColl->update($findQuery, $updateQuery);
-		
+
 		//Send request to slowdown the subscriber
 		$encoder = new Billrun_Encoder_Xml();
 		$slownessParams = $this->getDataSlownessParams($row);
@@ -128,7 +128,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$requestUrl = $slownessParams['requestUrl'];
 		Billrun_Util::sendRequest($requestUrl, $request);
 	}
-	
+
 	/**
 	 * method to check if billing row is interconnect (not under PL network)
 	 * 
@@ -139,7 +139,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isInterconnect($row) {
 		return isset($row['np_code']) && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
 	}
-
 
 	/**
 	 * use to store the row to extend balance query (method extendGetBalanceQuery)
@@ -152,7 +151,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->row = $row;
 		}
 	}
-	
+
 	/**
 	 * method to extend the balance
 	 * 
@@ -182,6 +181,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
-	
+
+	/**
+	 * 
+	 * @param Mongodloid_Entity $record
+	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
+	 */
+	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
+		if (isset($record['subscriber_soc']) && empty($record['subscriber_soc'])) {
+			$record['in_data_slowness'] = FALSE;
+		}
+	}
 
 }
