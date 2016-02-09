@@ -188,8 +188,8 @@ class Billrun_Util {
 
 	public static function getPreviousBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
 		return $ret;
 	}
 
@@ -757,6 +757,52 @@ class Billrun_Util {
 			}
 		}
 		return $query;
+	}
+
+	/**
+	 * Convert associative Array to XML
+	 * @param Array $data Associative Array
+	 * @param Array $parameters
+	 * @return mixed XML string or FALSE if failed
+	 */
+	public static function arrayToXml($data, $parameters = array()) {
+		if (!is_array($data)) {
+			return false;
+		}
+		//Defaults
+		$version = !empty($parameters['version']) ? $parameters['version'] : '1.0';
+		$encoding = !empty($parameters['encoding']) ? $parameters['encoding'] : 'UTF-8';
+		$indent = !empty($parameters['indent']) ? $parameters['indent'] : false;
+		$rootElement = !empty($parameters['rootElement']) ? $parameters['rootElement'] : 'root';
+		$childElement = !empty($parameters['childElement']) ? $parameters['childElement'] : 'node';
+
+		$xml = new XmlWriter();
+		$xml->openMemory();
+		$xml->setIndent($indent);
+		$xml->startDocument($version, $encoding);
+		$xml->startElement($rootElement);
+		self::recursiveWriteXmlBody($xml, $data, $childElement);
+		$xml->endElement(); //write end element
+		return $xml->outputMemory();
+	}
+
+	/**
+	 * Write XML body nodes
+	 * @param object $xml XMLWriter Object
+	 * @param array $data Associative Data Array
+	 */
+	public static function recursiveWriteXmlBody(XMLWriter $xml, $data, $childElement) {
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$key = is_numeric($key) ? $childElement : $key ;
+				$xml->startElement($key);
+				self::recursiveWriteXmlBody($xml, $value, $childElement);
+				$xml->endElement();
+				continue;
+			}
+			$key = is_numeric($key) ? $childElement : $key ;
+			$xml->writeElement($key, $value);
+		}
 	}
 
 	/**

@@ -143,7 +143,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
-		$lines_coll = $this->archiveDb->linesCollection();
+		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		$res = array();
@@ -562,6 +562,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+
 	public function customerplansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -569,6 +570,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+
 	public function recurringplansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -1160,21 +1162,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ((!empty($value) || $value === 0 || $value === "0") &&
-				is_array($filter_field) && isset($filter_field['db_key']) && 
+				is_array($filter_field) && isset($filter_field['db_key']) &&
 				$filter_field['db_key'] != 'nofilter' &&
 				($filter = $model->applyFilter($filter_field, $value))) {
-					$query['$and'][] = $filter;
+				$query['$and'][] = $filter;
 			}
 		}
 		if ($table === "plans") {
-			if ($this->_request->getParam('plan_type') == 'recurring') {
+			$plan_type = $this->getSetVar($session, 'plan_type');
+			if ($plan_type == 'recurring') {
 				$query['$and'][] = array('type' => 'charging', 'recurring' => 1);
 			} else {
-				$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
-				if ($this->_request->getParam('plan_type') === 'charging') {
+				$query['$and'][] = array('type' => $plan_type);
+				if ($plan_type == 'charging') {
 					$query['$and'][] = array('$or' => array(
-						array('recurring' => array('$exists' => false)),
-						array('recurring' => 0), 
+							array('recurring' => array('$exists' => false)),
+							array('recurring' => 0),
 					));
 				}
 			}

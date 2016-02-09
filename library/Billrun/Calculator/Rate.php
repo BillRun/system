@@ -52,12 +52,24 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @param int $balance
 	 */
 	protected $call_offset = 0;
+	
+	/**
+	 * Should the rating field be overriden if it already exists?
+	 * @var boolean
+	 */
+	protected $overrideRate = TRUE;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['calculator']['rate_mapping'])) {
 			$this->rateMapping = $options['calculator']['rate_mapping'];
 			//Billrun_Factory::log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
+		}
+		if (isset($options['realtime'])) {
+			$this->overrideRate = !boolval($options['realtime']);
+		}
+		if (isset($options['calculator']['override_rate'])) {
+			$this->overrideRate = boolval($options['calculator']['override_rate']);
 		}
 	}
 
@@ -105,7 +117,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->ratingField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		$saveProperties = $this->getPossiblyUpdatedFields();
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -119,12 +131,17 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			unset($this->lines[$line['stamp']]);
 		}
 	}
+	
+	public function getPossiblyUpdatedFields() {
+		return array($this->ratingField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+	}
 
 	/**
 	 * load calculator rate by line type
 	 * 
 	 * @param array $line the line properties
 	 * @param array $options options to load
+	 * @todo Create one calculator instance per line type
 	 * 
 	 * @return Billrun calculator rate class
 	 */
@@ -189,10 +206,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
 	protected function getLineRate($row) {
-		$this->setRowDataForQuery($row);
-		return $this->getRateByParams($row);
+		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
+			$this->setRowDataForQuery($row);
+			$rate = $this->getRateByParams($row);
+		}
+		else {
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($row[$this->getRatingField()]);
+		}
+		return $rate;
 	}
-	
+
 	/**
 	 * Set data used in inner function to find the rate of the line
 	 * 
@@ -279,6 +302,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getToTimeQuery() {
 		return array('$gte' => $this->rowDataForQuery['line_time']);
+	}
+	
+	public function getRatingField() {
+		return $this->ratingField;
 	}
 
 }

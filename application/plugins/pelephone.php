@@ -11,7 +11,7 @@
  *
  * @package  Application
  * @subpackage Plugins
- * @since    0.5
+ * @since    4.0
  */
 class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
