@@ -46,15 +46,20 @@
       </div>
     </div>
 
-	<div ng-controller='SidePanelController as vm' ng-init='vm.init()'>
-		<div class='left-panel' ng-show='vm.showSidePanel'>
-			<h4>Subscriber Details</h4>
-			<div class='row' ng-repeat='(key, val) in vm.subscriber'>
-				<div class='col-md-5'><b>{{key}}</b></div>
-				<div class='col-md-6'>{{val}}</div>
+	<?php if(in_array($active, array('lines', 'subscribers', 'subscribers_auto_renew_services', 'balances'))) : ?>
+		<div ng-controller='SidePanelController as vm' ng-init='vm.init()' ng-cloak>
+			<pageslide ps-side='left' ps-open='vm.showSidePanel' ps-custom-top='50px' ps-class='left-panel' ps-custom-bottom='10px' ng-class='{opened: vm.showSidePanel, closed: vm.showSidePanel}'>
+				<h4>Subscriber Details</h4>
+				<div class='row' ng-repeat='(key, val) in vm.subscriber'>
+					<div class='col-md-6'><b>{{key}}</b></div>
+					<div class='col-md-6'>{{val}}</div>
+				</div>
+			</pageslide>
+			<div ng-class='{"toggle-panel-closed": !vm.showSidePanel, "toggle-panel-opened": vm.showSidePanel}' ng-click='vm.togglePanel()'>
+				<i class='glyphicon' ng-class='{"glyphicon-chevron-right": !vm.showSidePanel, "glyphicon-chevron-left": vm.showSidePanel}'></i>
 			</div>
 		</div>
-	</div>
+	<?php endif ?>
 
 		
 	<!-- main component -->
@@ -81,7 +86,7 @@
 	</script>
 	<!-- end of hackitty hack hack -->
 
-	<div ng-view></div>
+	<div ng-view ng-cloak></div>
 
 		<script type="text/javascript">
 			if (typeof google !== 'undefined') {
