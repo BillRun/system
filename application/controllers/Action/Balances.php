@@ -7,8 +7,6 @@
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/balances/conf.ini');
-		
 /**
  * This class holds the balances logic for the subscribers.
  *
@@ -17,12 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class BalancesAction extends ApiAction {
-
-	public function __construct() {
-		// TODO: WHY IS THIS HERE AND NOT IN THE CONFIG FILE?
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/balances/conf.ini');
-	}
-
+	
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action
