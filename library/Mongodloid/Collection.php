@@ -61,9 +61,10 @@ class Mongodloid_Collection {
 	 * @param array $fields - Array of keys and values to be updated in the entity.
 	 * @return mongo update result.
 	 */
-	public function updateEntity($entity, $fields) {
+	public function updateEntity($entity, $fields=array()) {
 		if (empty($fields)) {
-			return false;
+			$fields = $entity->getRawData();
+			unset($fields['_id']);
 		}
 		
 		$data = array(
