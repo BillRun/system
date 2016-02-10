@@ -140,7 +140,7 @@ class CronController extends Yaf_Controller_Abstract {
 		foreach ($autoRenewCursor as $autoRenewRecord) {
 			$this->updateBalanceByAutoRenew($autoRenewRecord);
 			
-			$this->updateAutoRenewRecord($collection);
+			$this->updateAutoRenewRecord($collection, $autoRenewRecord);
 		}
 	}
 	
@@ -165,9 +165,10 @@ class CronController extends Yaf_Controller_Abstract {
 	/**
 	 * Update the auto renew record after usage.
 	 * @param type $collection
+	 * @param Entity Auto renew record to update.
 	 * @return type
 	 */
-	protected function updateAutoRenewRecord($collection) {
+	protected function updateAutoRenewRecord($collection, $autoRenewRecord) {
 		$autoRenewRecord['remain'] = $autoRenewRecord['remain'] - 1;
 		
 		if($autoRenewRecord['eom'] == 1) {
