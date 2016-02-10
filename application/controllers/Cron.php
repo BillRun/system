@@ -103,22 +103,37 @@ class CronController extends Yaf_Controller_Abstract {
 	public function autoRenewServicesAction() {
 		$this->autoRenewServices();
 	}		
-	public function autoRenewServices() {		
-		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
-
-		$lastmonth = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
-		$queryDate = array('creation_time' => new MongoDate($lastmonth));
+	
+	/**
+	 * Get the auto renew services query.
+	 * @return array - Query date.
+	 */
+	protected function getAutoRenewServicesQuery() {
+		$lastmonthLower = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
+		$lastmonthUpper = mktime(23, 59, 59, date("m")-1, date("d"), date("Y"));
+		
+		$or = array();
+		$or[] = array('creation_time' => array('$gte' => new MongoDate($lastmonthLower)));
+		$or[] = array('creation_time' => array('$lte' => new MongoDate($lastmonthUpper)));
+		$queryDate = array('$or' => $or);
 		$queryDate['remain'] = array('$gt' => 0);
 		
 		// Check if last day.
 		if(date('d') == date('t')) {
 			$queryDate = array('$or' => $queryDate);
 			$queryDate['$or']['$and']['eom'] = 1;
-			$queryDate['$or']['$and']['creation_time']['$gt'] = new MongoDate($lastmonth);
+			$queryDate['$or']['$and']['creation_time']['$gt'] = new MongoDate($lastmonthUpper);
 			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
 			$queryDate['$or']['$and']['creation_time']['$lt'] = new MongoDate($firstday);
 		}
 		
+		return $queryDate;
+	}
+	
+	public function autoRenewServices() {				
+		$queryDate = $this->getAutoRenewServicesQuery();
+		
+		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		
 		// Go through the records.
@@ -158,8 +173,7 @@ class CronController extends Yaf_Controller_Abstract {
 		if($autoRenewRecord['eom'] == 1) {
 			$autoRenewRecord['last_renew_date'] = new MongoDate(strtotime('last day of this month'));
 		} else {
-			$today = mktime(0, 0, 0, date("m"), date("d"), date("Y"));
-			$autoRenewRecord['last_renew_date'] = new MongoDate($today);
+			$autoRenewRecord['last_renew_date'] = new MongoDate();
 		}
 		$autoRenewRecord['done'] = $autoRenewRecord['done'] + 1;
 
