@@ -259,8 +259,6 @@ class TableModel {
 		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
 			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
-
-		return $entity;
 	}
 
 	public function remove($params) {
