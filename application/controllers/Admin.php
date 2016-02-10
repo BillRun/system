@@ -182,6 +182,38 @@ class AdminController extends Yaf_Controller_Abstract {
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
 				if ($key !== '_id') unset($entity[$key]);
 			}
+			if ($coll == 'plans') {
+				$plan_name = $entity['name'];
+				$query = array(
+					'$or' => array(
+						array("rates.calls.$plan_name" => array('$exists' => 1)),
+						array("rates.data.$plan_name" => array('$exists' => 1)),
+						array("rates.sms.$plan_name" => array('$exists' => 1))
+					)
+				);
+				$plan_rates = array();
+				$id = '$id';
+				foreach (Billrun_Factory::db()->ratesCollection()->query($query)->cursor() as $rate) {
+					$r = $rate->getRawData();
+					$data = (!empty($r['rates']['data'][$plan_name]) ? $r['rates']['data'][$plan_name] : array());
+					$call = (!empty($r['rates']['call'][$plan_name]) ? $r['rates']['call'][$plan_name] : array());
+					$sms = (!empty($r['rates']['sms'][$plan_name]) ? $r['rates']['sms'][$plan_name] : array());
+					$cur_rate = array(
+						'id' => $r['_id']->$id,
+						'key' => $r['key'],
+						'price' => array(
+							'calls' => $call,
+							'data' => $data,
+							'sms' => $sms
+						)
+					);
+					$plan_rates[] = $cur_rate;
+				}
+				
+			}
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates)));
+			$response->response();
+			return false;			
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
@@ -1066,7 +1098,6 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-		$parameters['show_side_panel'] = !empty($this->getRequest()->get('sid'));
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();

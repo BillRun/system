@@ -137,6 +137,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "external_code": ""
           };
         }
+        $scope.plan_rates = res.data.plan_rates;
         $scope.authorized_write = res.data.authorized_write;
       }, function (err) {
         alert("Connection error!");
