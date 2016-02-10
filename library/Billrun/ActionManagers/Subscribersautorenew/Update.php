@@ -143,6 +143,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$set['to'] = $jsonUpdateData['to'];
 		}
+		
 		if (isset($jsonUpdateData['operation'])) {
 			$set['operation'] = $jsonUpdateData['operation'];
 		} else {
@@ -159,12 +160,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		$set['creation_time'] = new MongoDate();
 		if (isset($this->query['from']['sec'])) {
-			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
+			$this->query['from'] = $set['from'] = $this->query['from']['sec'];
 		} else if (is_string($this->query['from'])) {
- 			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
+ 			$this->query['from'] = $set['from'] = strtotime($this->query['from']);
 		} else {
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
+		
+		$dateTime = new DateTime($this->query['from']);
+		$dateTime->setTime(0, 0, 0);
+		$this->query['from'] = new MongoDate($dateTime->getOffset());
 		
 		$set['last_renew_date'] = $set['creation_time'];
 		
