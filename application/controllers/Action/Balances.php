@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class BalancesAction extends ApiAction {
-
+	
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action
@@ -41,7 +41,6 @@ class BalancesAction extends ApiAction {
 	 * to a more generic class.
 	 */
 	public function execute() {
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/balances/conf.ini');
 		// TODO: Not using Balances model here. Should it be used? and what for?
 		// There is an already existing Balances model, is this the right one?
 		// This is the method which is going to be executed.
