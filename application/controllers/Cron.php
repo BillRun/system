@@ -158,7 +158,8 @@ class CronController extends Yaf_Controller_Abstract {
 		if($autoRenewRecord['eom'] == 1) {
 			$autoRenewRecord['last_renew_date'] = new MongoDate(strtotime('last day of this month'));
 		} else {
-			$autoRenewRecord['last_renew_date'] = new MongoDate();
+			$today = mktime(0, 0, 0, date("m"), date("d"), date("Y"));
+			$autoRenewRecord['last_renew_date'] = new MongoDate($today);
 		}
 		$autoRenewRecord['done'] = $autoRenewRecord['done'] + 1;
 
