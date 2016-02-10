@@ -104,28 +104,53 @@ class CronController extends Yaf_Controller_Abstract {
 		$this->autoRenewServices();
 	}		
 	
+	protected function getMonthAutoRenewQuery() {
+		$lastmonthLower = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
+		$lastmonthUpper = mktime(23, 59, 59, date("m")-1, date("d"), date("Y"));
+		
+		$or = array();
+		$or[] = array('last_renew_date' => array('$gte' => new MongoDate($lastmonthLower)));
+		$or[] = array('last_renew_date' => array('$lte' => new MongoDate($lastmonthUpper)));
+		
+		// Check if last day.
+		if(date('d') == date('t')) {
+			$or = array('$or' => $or);
+			$or['$or']['$and']['eom'] = 1;
+			$or['$or']['$and']['last_renew_date']['$gt'] = new MongoDate($lastmonthUpper);
+			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
+			$or['$or']['$and']['last_renew_date']['$lt'] = new MongoDate($firstday);
+		}
+		
+		$and = array();
+		$and[] = array('$or' => $or);
+		$and[] = array("interval" => "month");
+		
+		return $and;
+	}
+	
+	protected function getDayAutoRenewQuery() {
+		$lastdayLower = mktime(0, 0, 0, date("m"), date("d") - 1, date("Y"));
+		$lastdayUpper = mktime(23, 59, 59, date("m"), date("d") - 1, date("Y"));
+		
+		$or = array();
+		$or[] = array('last_renew_date' => array('$gte' => new MongoDate($lastdayLower)));
+		$or[] = array('last_renew_date' => array('$lte' => new MongoDate($lastdayUpper)));
+		
+		$and = array();
+		$and[] = array('$or' => $or);
+		$and[] = array("interval" => "day");
+		
+		return $and;
+	}
+	
 	/**
 	 * Get the auto renew services query.
 	 * @return array - Query date.
 	 */
 	protected function getAutoRenewServicesQuery() {
-		$lastmonthLower = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
-		$lastmonthUpper = mktime(23, 59, 59, date("m")-1, date("d"), date("Y"));
-		
-		$or = array();
-		$or[] = array('creation_time' => array('$gte' => new MongoDate($lastmonthLower)));
-		$or[] = array('creation_time' => array('$lte' => new MongoDate($lastmonthUpper)));
-		$queryDate = array('$or' => $or);
+		$andQuery = array_merge($this->getDayAutoRenewQuery(), $this->getMonthAutoRenewQuery());
+		$queryDate = array('$and' => $andQuery);
 		$queryDate['remain'] = array('$gt' => 0);
-		
-		// Check if last day.
-		if(date('d') == date('t')) {
-			$queryDate = array('$or' => $queryDate);
-			$queryDate['$or']['$and']['eom'] = 1;
-			$queryDate['$or']['$and']['creation_time']['$gt'] = new MongoDate($lastmonthUpper);
-			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			$queryDate['$or']['$and']['creation_time']['$lt'] = new MongoDate($firstday);
-		}
 		
 		return $queryDate;
 	}
