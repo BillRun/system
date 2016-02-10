@@ -107,7 +107,7 @@ class RealtimeeventAction extends ApiAction {
 				}
 			}
 			
-			if (!empty($this->event['called_number']) && substr($this->event['called_number'], 0, 3) == '972') {
+			if (!empty($this->event['called_number']) && strlen($this->event['called_number']) > 3 && substr($this->event['called_number'], 0, 3) == '972') {
 				$called_number = $this->event['called_number'];
 				if (substr($this->event['called_number'], 0, 4) == '9721') {
 					$prefix = '';
