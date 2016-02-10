@@ -64,9 +64,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$subscriber = $this->getSubscriber($subscriberId);
 
 		// Subscriber was not found.
-		if (!$subscriber) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 9;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		if ($subscriber===false) {
 			return false;
 		}
 
