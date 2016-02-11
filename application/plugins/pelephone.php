@@ -94,11 +94,20 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterSubscriberBalanceNotFound(&$row) {
 		if ($row['type'] === 'gy') {
+			$in_slowness = FALSE;
 			if ($this->isSubscriberInDataSlowness($row)) {
-				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
+				$in_slowness = TRUE;
 			} else if ($this->canSubscriberEnterDataSlowness($row)) {
 				$this->enterSubscriberToDataSlowness($row);
-				$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
+				$row['in_data_slowness'] = TRUE;
+				$in_slowness = TRUE;
+			}
+			if ($in_slowness) {
+				if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'))) {
+					$row['usagev'] = 1;
+				} else {
+					$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
+				}
 			}
 		}
 	}

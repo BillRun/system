@@ -289,6 +289,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
 		return Billrun_Factory::plan(array('data' => $subscriber_current_plan));
 	}
+	
+	/**
+	 * 
+	 * @return array
+	 */
+	protected function getFreeRowPricingData() {
+		return array(
+				'in_plan' => 0,
+				'over_plan' => 0,
+				'out_plan' => 0,
+				'in_group' => 0,
+				'over_group' => 0,
+				$this->pricingField => 0,
+			);
+	}
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
@@ -302,14 +317,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan, $row = null) {
 		if ($this->isFreeLine($row)) {
-			return array(
-				'in_plan' => 0,
-				'over_plan' => 0,
-				'out_plan' => 0,
-				'in_group' => 0,
-				'over_group' => 0,
-				$this->pricingField => 0,
-			);
+			return $this->getFreeRowPricingData();
 		}
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
@@ -582,19 +590,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
 			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
-			if ($row['usagev'] === 0) { // Can be changed in case a plugin gave the subscriber value even though he has no balance
+			if ($row['usagev'] === 0) {
 				return false;
 			}
 		}
-		$balanceRaw = $this->balance->getRawData();
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 			$row['apr'] = self::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
+			if (!$this->balance && $this->isFreeLine($row)) {
+				return $this->getFreeRowPricingData();
+			}
 			$row['balance_ref'] = $this->balance->createRef();
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 		} else {
 			$volume = $row['usagev'];
 		}
+		$balanceRaw = $this->balance->getRawData();
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
