@@ -135,7 +135,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			// This throws an exception if fails.
 			$this->handleKeepHistory($record, $track_time);
 			unset($record['_id']);
-			$this->recordToSet['from'] = new MongoDate($track_time+1);
+			
+			$this->recordToSet['from'] = new MongoDate($track_time);
 		}
 
 		$record->collection($this->collection);

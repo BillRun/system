@@ -97,14 +97,27 @@ class RealtimeeventAction extends ApiAction {
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
-		if ($this->usaget === 'call' && !isset($this->event['called_number'])) {
-			if (isset($this->event['connected_number'])) {
-				$this->event['called_number'] = $this->event['connected_number'];
-			} else if (isset($this->event['dialed_digits'])) {
-				$this->event['called_number'] = $this->event['dialed_digits'];
+		
+		if ($this->usaget === 'call' || $this->usaget === 'video_call' || $this->usaget === 'forward_call') {
+			if (!isset($this->event['called_number'])) {
+				if (isset($this->event['connected_number'])) {
+					$this->event['called_number'] = $this->event['connected_number'];
+				} else if (isset($this->event['dialed_digits'])) {
+					$this->event['called_number'] = $this->event['dialed_digits'];
+				}
+			}
+			
+			if (!empty($this->event['called_number']) && strlen($this->event['called_number']) > 3 && substr($this->event['called_number'], 0, 3) == '972') {
+				$called_number = $this->event['called_number'];
+				if (substr($this->event['called_number'], 0, 4) == '9721') {
+					$prefix = '';
+				} else {
+					$prefix = '0';
+				}
+				$this->event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number)+3);
 			}
 		}
-
+		
 				
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		if (isset($this->event['time_date'])) {

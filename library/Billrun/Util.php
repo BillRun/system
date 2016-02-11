@@ -421,7 +421,7 @@ class Billrun_Util {
 				'$gt' => new MongoDate()
 			),
 			'from' => array(
-				'$lt' => new MongoDate()
+				'$lte' => new MongoDate()
 			)
 		);
 	}
