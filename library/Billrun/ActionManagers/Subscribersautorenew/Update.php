@@ -158,6 +158,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		
 		$set['creation_time'] = new MongoDate();
+		
+		// TODO: Is it possible that we will receive a date here with hours minutes and seconds?
+		// if so we will have to strip them somehow.
 		if (isset($this->query['from']['sec'])) {
 			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
 		} else if (is_string($this->query['from'])) {
