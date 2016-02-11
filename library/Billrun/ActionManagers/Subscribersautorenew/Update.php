@@ -121,9 +121,33 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
-		$this->populateUpdateQuery($jsonUpdateData);
+		if(!$this->populateUpdateQuery($jsonUpdateData)) {
+			return false;
+		}
 
 		return true;
+	}
+	
+	/**
+	 * Get the interval value from the json data
+	 * @param type $jsonUpdateData
+	 * @return Interval or false if error.
+	 */
+	protected function getInterval($jsonUpdateData) {
+		if (!isset($jsonUpdateData['interval'])) {
+			$interval = 'month';
+		} else {
+			$interval = strtolower($jsonUpdateData['interval']);
+			
+			$intervals = Billrun_Factory::config()->getConfigValue('autorenew.interval');
+
+			if(in_array($interval, $intervals)) {
+				
+				return false;
+			}
+		}
+		
+		return $interval;
 	}
 	
 	/**
@@ -131,11 +155,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @param type $jsonUpdateData
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
-		// TODO INTERVAL IS ALWAYS MONTH
-		$set = array(
-			'interval' => 'month'
-		);
+		$interval = $this->getInterval($jsonUpdateData);
+		if($interval === false) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
+			return false;
+		}
 		
+		$set = array(
+			'interval' => $interval);
+			
 		if (isset($jsonUpdateData['to']['sec'])) {
 			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
@@ -187,6 +216,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
+		
+		return true;
 	}
 	
 	protected function fillWithSubscriberValues() {
