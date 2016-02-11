@@ -66,7 +66,7 @@
 					</div>
 				</div>
 			</div>
-			<div class='row' ng-if='vm.entity.balance.cost'>
+			<div class='row' ng-if='!vm._.isUndefined(vm.entity.balance.cost)'>
 				<div class='col-md-2'>
 					Cost
 				</div>
@@ -79,10 +79,10 @@
 					Call
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='vm.entity.balance.totals.call.usagev' type='number' class='form-control' ng-if="vm.entity.balance.totals.call.usagev" />
+					<input ng-model='vm.entity.balance.totals.call.usagev' type='number' class='form-control' ng-if="!vm._.isUndefined(vm.entity.balance.totals.call.usagev)" />
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='vm.entity.balance.totals.call.cost' type='number' class='form-control' ng-if="vm.entity.balance.totals.call.cost" />
+					<input ng-model='vm.entity.balance.totals.call.cost' type='number' class='form-control' ng-if="!vm._.isUndefined(vm.entity.balance.totals.call.cost)" />
 				</div>
 			</div>
 			<div class='row' ng-if='vm.entity.balance.totals.sms'>
@@ -98,7 +98,10 @@
 					Data
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='vm.entity.balance.totals.data.usagev' type='number' class='form-control' />
+					<input ng-model='vm.entity.balance.totals.data.usagev' type='number' class='form-control' ng-if="!vm._.isUndefined(vm.entity.balance.totals.data.usagev)" />
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='vm.entity.balance.totals.data.cost' type='number' class='form-control' ng-if="!vm._.isUndefined(vm.entity.balance.totals.data.cost)" />
 				</div>
 			</div>
 		</div>

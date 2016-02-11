@@ -72,9 +72,6 @@
 		} else if ($('h1').length && $('h1').text().match(/(charging|customer|recurring)/gi)) {
 			var href = $("#new").attr('href');
 			var match = $("h1").text().match(/(charging|customer|recurring)/gi)[0].toLowerCase();
-			if ($('h1').text().match(/recurring/gi)) {
-				match = 'charging';
-			}
 			href += '?type=' + match;
 			$('#new').attr('href', href);
 			$(".checkbox").find('[data-type="update"]').each(function (e) {
