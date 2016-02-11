@@ -73,19 +73,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	/**
 	 * Gets data slowness speed and SOC according to plan or default 
 	 * 
-	 * @return int slowness speed in Kb/s and SOC code
+	 * @param string $socKey
+	 * @return array slowness speed in Kb/s and SOC code
 	 * @todo Check if plan has a value for slowness
 	 */
-	protected function getDataSlownessParams($row) {
+	protected function getDataSlownessParams($socKey = NULL) {
 		// TODO: Check first if it's set in plan
 		$slownessParams = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness');
-		$socKey = $row['subscriber_soc'];
-		if (!isset($slownessParams[$socKey])) {
-			$socKey = "DEFAULT";
+		if (!is_null($socKey) && !isset($slownessParams[$socKey])) {
+			$socKey = NULL;
 		}
 		return array(
-			'speed' => $slownessParams[$socKey]['speed'],
-			'soc' => $slownessParams[$socKey]['SOC'],
+			'speed' => is_null($socKey) ? '' : $slownessParams[$socKey]['speed'],
+			'soc' => is_null($socKey) ? '' : $slownessParams[$socKey]['SOC'],
 			'command' => $slownessParams['command'],
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
@@ -118,24 +118,31 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
 		$updateQuery = array('$set' => array('in_data_slowness' => true));
 		$subscribersColl->update($findQuery, $updateQuery);
-
-		//Send request to slowdown the subscriber
+		$this->sendSlownessStateToProv($row['msisdn'], $row['subscriber_soc']);
+	}
+	
+	/**
+	 * Send request to slowdown / cancel slowdown of the subscriber
+	 * @param string $msisdn
+	 * @param string $subscriberSoc
+	 */
+	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL) {
 		$encoder = new Billrun_Encoder_Xml();
-		$slownessParams = $this->getDataSlownessParams($row);
+		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		$requestBody = array(
 			'HEADER' => array(
 				'APPLICATION_ID' => $slownessParams['applicationId'],
 				'COMMAND' => $slownessParams['command'],
 			),
 			'PARAMS' => array(
-				'MSISDN' => $row['msisdn'],
+				'MSISDN' => $msisdn,
 				'SLOWDOWN_SPEED' => $slownessParams['speed'],
-				'SOC' => $slownessParams['soc'],
+				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
 		);
 		$request = array($encoder->encode($requestBody, "REQUEST"));
 		$requestUrl = $slownessParams['requestUrl'];
-		Billrun_Util::sendRequest($requestUrl, $request);
+		return Billrun_Util::sendRequest($requestUrl, $request);
 	}
 
 	/**
