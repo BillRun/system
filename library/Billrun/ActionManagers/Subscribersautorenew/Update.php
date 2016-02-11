@@ -135,19 +135,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 */
 	protected function getInterval($jsonUpdateData) {
 		if (!isset($jsonUpdateData['interval'])) {
-			$interval = 'month';
-		} else {
-			$interval = strtolower($jsonUpdateData['interval']);
-			
-			$intervals = Billrun_Factory::config()->getConfigValue('autorenew.interval');
-
-			if(in_array($interval, $intervals)) {
-				
-				return false;
-			}
-		}
+			return 'month';
+		} 
 		
-		return $interval;
+		return $this->normalizeInterval($jsonUpdateData['interval']);
 	}
 	
 	/**
