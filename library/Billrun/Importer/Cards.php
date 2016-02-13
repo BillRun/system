@@ -29,6 +29,8 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 
 	protected function getSecret($rowData) {
 		$formatted = number_format($rowData[$this->fields['secret']], 0, '', '');
+		$codeLength = Billrun_Factory::config()->getConfigValue('importer.Cards.code_length');
+		$padded = str_pad($formatted, $codeLength, "0", STR_PAD_LEFT);
 		$secret = hash('sha512',$formatted);
 		return $secret;
 	}
