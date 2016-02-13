@@ -302,7 +302,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$searchQuery = ["sid" => $sid];
 		$cursor = Billrun_Factory::db()->balancesCollection()->query($searchQuery)->cursor()->limit(100000);
 		foreach ($cursor as $row) {
-			if ($row['charging_by_usaget'] == 'total_cost') {
+			if ($row['charging_by_usaget'] == 'total_cost' ||  $row['charging_by_usaget'] == 'cost') {
 				$amount = floatval($row['balance']['cost']);
 			} else {
 				$amount = $row['balance']['totals'][$row["charging_by_usaget"]][$row["charging_by"]];

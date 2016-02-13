@@ -31,22 +31,33 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
+		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
 		$call_type = Billrun_Util::filter_var($this->controller->getRequest()->get('call_type'), FILTER_SANITIZE_STRING);
+		$call_tech = Billrun_Util::filter_var($this->controller->getRequest()->get('call_tech'), FILTER_SANITIZE_STRING);
 		$time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('time_date'), FILTER_SANITIZE_STRING);
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
 		
+		if($call_tech == 'UMTS'){
+			$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
+			$msisdn = $subscriber['msisdn'];
+		} else {
+			$msisdn = $calling_number;
+		}
+		
 		//Run test scenario
 		foreach ($scenario as $index => $name) {
 			$nameAndUssage = explode("|", $name);
 			$params = array(
-				'msisdn' => $calling_number,
+				'msisdn' => $msisdn,
+				'imsi' => $imsi,
 				'dialedDigits' => $called_number,
 				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1]*10) : 4800, // default 8 minutes
 				'type' => $nameAndUssage[0],
-				'call_type' => $call_type
+				'call_type' => $call_type,
+				'call_tech' => $call_tech
 			);
 			if($send_np_code === 'on'){
 				$params['np_code'] = $np_code;
@@ -69,8 +80,10 @@ class utest_CallModel extends utest_AbstractUtestModel {
 	protected function getRequestData($params) {
 		$type = $params['type'];
 		$msisdn = $params['msisdn'];
+		$imsi = $params['imsi'];
 		$duration = $params['duration'];
 		$call_type = $params['call_type'];
+		$call_tech = $params['call_tech'];
 		$dialedDigits = $params['dialedDigits'];
 		$time_date = isset($params['time_date']) ? $params['time_date'] : date_format(date_create(), 'Y/m/d H:i:s.000');
 
@@ -83,6 +96,10 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			'time_date' => $time_date,
 		);
 		
+		if($call_tech == 'UMTS') {
+			$data['imsi'] = $imsi;
+		}
+		
 		if (isset($params['np_code'])) {
 			$data['np_code'] = $params['np_code'];
 		}
@@ -92,11 +109,13 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$data['dialed_digits'] = $dialedDigits;
 				$data['event_type'] = 2;
 				$data['service_key'] = 61;
-				$data['vlr'] = 972500000701;
-				$data['location_mcc'] = 425;
-				$data['location_mnc'] = 03;
-				$data['location_area'] = 7201;
-				$data['location_cell'] = 53643;
+				if($call_tech == 'UMTS') {
+					$data['vlr'] = 972500000701;
+					$data['location_mcc'] = 425;
+					$data['location_mnc'] = 03;
+					$data['location_area'] = 7201;
+					$data['location_cell'] = 53643;
+				}
 				$data['call_type'] = $call_type;
 				break;
 			case 'answer_call':
