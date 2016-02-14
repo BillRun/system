@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -36,11 +36,12 @@ class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Callrt {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row) {
-		$called_number = $this->get_called_number($row);
-		$line_time = $row->get('urt');
-		$usage_type = $row->get('usaget');
+//		$called_number = $this->get_called_number($row);
+//		$line_time = $row->get('urt');
+//		$usage_type = $row->get('usaget');
 		$this->setRowDataForQuery($row);
-		$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+//		$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time);
+		$matchedRate = $this->getRateByParams($row);
 
 		return $matchedRate;
 	}

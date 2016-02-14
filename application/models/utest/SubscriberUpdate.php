@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -18,7 +18,7 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after', 'lines');
-		$this->label = 'Update Subscriber';
+		$this->label = 'Subscriber | Update';
 	}
 
 	public function doTest() {
@@ -49,7 +49,7 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 		$enable_charging_type = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-charging_type'), FILTER_SANITIZE_STRING);
 
 		$language = Billrun_Util::filter_var($this->controller->getRequest()->get('language'), FILTER_SANITIZE_STRING);
-		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-enable-language'), FILTER_SANITIZE_STRING);
+		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-language'), FILTER_SANITIZE_STRING);
 
 
 		$track_history = (bool) Billrun_Util::filter_var($this->controller->getRequest()->get('track_history'), FILTER_SANITIZE_STRING);

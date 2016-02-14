@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -66,6 +66,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		return true;
 	}
 	
+	protected function setIncludeValuesToAdd(&$includesToReturn, $root, $values) {
+		if (empty($includesToReturn)) {
+			return;
+		}
+		$toAdd = array();
+			
+		// Set the record values.
+		$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($root);			
+
+		if (isset($values['usagev'])) {
+			$toAdd['amount'] = $values['usagev'];
+		} else if (isset($values['cost'])) {
+			$toAdd['amount'] = $values['cost'];
+		} else if (isset($values[0]['value'])) {
+			$toAdd['amount'] = $values[0]['value'];
+		}
+		$includesToReturn [$values['pp_includes_name']] = $toAdd;
+	}
+	
 	/**
 	 * Get the 'includes' array to return for the plan record.
 	 * @param Mongodloid_Entity $planRecord - Record for the current used plan
@@ -84,16 +103,27 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// TODO: Is this filtered by priority?
 		// TODO: Should this include the total_cost??
 		foreach ($includeList as $includeRoot => $includeValues) {
-			if(!isset($includeValues['pp_includes_name'])) {
+			if($includeRoot == 'cost') {
+				if(is_numeric($includeValues)) {
+					$includeValues = array('usagev' => $includeValues);
+					$includeValues['pp_includes_name'] = $planRecord['pp_includes_name'];
+				} else {
+					foreach ($includeValues as $value) {
+						if(!is_array($value)) {
+							continue;
+						}
+						
+						if(isset($value['value'])) {
+							$value['usagev'] = $value['value'];
+						}
+						$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $value);
+					}
+				}
+			} else if(!isset($includeValues['pp_includes_name'])) {
 				continue;
 			}
 			
-			$toAdd = array();
-			
-			// Set the record values.
-			$toAdd['unit_type'] = Billrun_Util::getUsagetUnit($includeRoot);			
-			$toAdd['ammount'] = $includeValues['usagev'];
-			$includesToReturn [$includeValues['pp_includes_name']] = $toAdd;
+			$this->setIncludeValuesToAdd($includesToReturn, $includeRoot, $includeValues);
 		}
 		
 		return $includesToReturn;
@@ -157,16 +187,21 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 * Parse the to and from parameters if exists. If not execute handling logic.
 	 */
 	protected function parseDateParameters() {
-		if (!isset($this->query['from'])){
+		if (isset($this->query['from']) && $this->query['from'] != '*'){
+			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
+		} else if (!isset($this->query['from'])) {
 			$this->query['from']['$lte'] = new MongoDate();
 		} else {
-			$this->query['from'] = new MongoDate(strtotime($this->query['from']));
+			unset($this->query['from']);
 		}
-		if (!$this->query['to']) {
+		if (isset($this->query['to'])  && $this->query['to'] != '*') {
+			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
+		} else if (!isset($this->query['to'])) {
 			$this->query['to']['$gte'] = new MongoDate();
 		} else {
-			$this->query['to'] = new MongoDate(strtotime($this->query['to']));
+			unset($this->query['to']);
 		}
+//		print_R($this->query);die;
 	}
 	
 	/**

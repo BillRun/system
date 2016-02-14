@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -90,6 +90,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var string SHould the bluk inserted lines be ordered before  the actuall  insert is done.
 	 */
 	protected $orderLinesBeforeInsert = false;
+	
+	/**
+	 * Lines that were processed but are not to be saved
+	 * @var array
+	 */
+	protected $doNotSaveLines = array();
 
 	/**
 	 * constructor - load basic options
@@ -149,7 +155,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		if (!isset($this->data['data'])) {
 			$this->data['data'] = array();
 		}
-		$this->data['data'][] = $row;
+		$this->data['data'][$row['stamp']] = $row;
 		return true;
 	}
 
@@ -470,7 +476,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -478,7 +483,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 1,
 				);
 			}
 			$offset = 0;
@@ -516,7 +520,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
-					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -524,7 +527,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
-					'w' => 1,
 				);
 			}
 			$offset = 0;
@@ -710,4 +712,22 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param $row the CDR line  to get the usage for.
 	 */
 	abstract protected function getLineUsageType($row);
+
+	/**
+	 * Mark a line as unneeded to be saved to the DB
+	 * @param stamp $stamp
+	 */
+	public function unsetRow($stamp) {
+		$this->doNotSaveLines[$stamp] = $this->data['data'][$stamp];
+		unset($this->data['data'][$stamp]);
+	}
+	
+	/**
+	 * Get all lines processed by the processor
+	 * @return array
+	 */
+	public function getAllLines() {
+		return $this->data['data'] + $this->doNotSaveLines;
+	}
+	
 }

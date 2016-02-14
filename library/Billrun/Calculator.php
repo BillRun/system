@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -247,7 +247,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		$query = array_merge($query, array('stamp' => array('$in' => $stamps), 'hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)); //array('stamp' => $item['stamp']);
 		$update = array_merge($update, array('$set' => array('calc_name' => $calculator_tag, 'calc_time' => false)));
-		$this->queue_coll->update($query, $update, array('multiple' => true, 'w' => 1));
+		$this->queue_coll->update($query, $update, array('multiple' => true));
 	}
 
 	/**
@@ -396,7 +396,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->workHash = md5(time() . rand(0, PHP_INT_MAX));
 			$update['$set']['hash'] = $this->workHash;
 			//Billrun_Factory::log(print_r($query,1),Zend_Log::DEBUG);
-			$queue->update($query, $update, array('multiple' => true, 'w' => 1));
+			$queue->update($query, $update, array('multiple' => true));
 
 			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
 
@@ -467,6 +467,15 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * 
+	 * @return array
+	 * @todo change this one to be abstract
+	 */
+	public function getPossiblyUpdatedFields() {
+		return array();
 	}
 
 }

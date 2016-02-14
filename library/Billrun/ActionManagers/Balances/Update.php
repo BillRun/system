@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -88,7 +88,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['urt'] = new MongoDate();
 		$balanceLine['process_time'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
-		$balanceLine['type'] = 'charging';
+		$balanceLine['type'] = 'balance';
 		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
@@ -98,7 +98,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine['source_ref'] = $balancePair['source'];
 			if (isset($balancePair['wallet'])) {
 				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = $wallet->getChargingByUsaget();
+				$insertLine["usaget"] = 'balance';
+				$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
 				$insertLine["usagev"] = $wallet->getValue();
 				$insertLine["pp_includes_name"] = $wallet->getPPName();
 				$insertLine["pp_includes_external_id"] = $wallet->getPPID();

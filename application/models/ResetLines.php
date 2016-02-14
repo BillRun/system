@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -58,7 +58,7 @@ class ResetLinesModel {
 					'$in' => $sids,
 				),
 			);
-			$ret = $balances_coll->remove($query, array('w' => 1)); // ok ==1 && n>0
+			$ret = $balances_coll->remove($query); // ok ==1 && n>0
 		}
 		return $ret;
 	}
@@ -241,7 +241,7 @@ class ResetLinesModel {
 		$update = $this->getUpdateQuery();
 		$stamps_query = $this->getStampsQuery($stamps);
 		
-		$ret = $queue_coll->remove($stamps_query, array('w' => 1)); // ok == 1, err null
+		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
@@ -251,19 +251,19 @@ class ResetLinesModel {
 			return FALSE;
 		} 
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-			$ret = $queue_coll->batchInsert($queue_lines, array('w' => 1)); // ok==true, nInserted==0 if w was 0
+			$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
 			if (isset($ret['err']) && !is_null($ret['err'])) {
 				return FALSE;
 			}
 		} else {
 			foreach ($queue_lines as $qline) {
-				$ret = $queue_coll->insert($qline, array('w' => 1)); // ok==1, err null
+				$ret = $queue_coll->insert($qline); // ok==1, err null
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
 			}
 		}
-		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => 1, 'w' => 1)); // err null
+		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => 1)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -97,6 +97,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	 * @param MongoDate $urt the time of the event
 	 * @param string $ocg the out circuit group of the event. If not supplied, ocg will be ignored in the search.
 	 * @return Mongodloid_Entity the matched rate or UNRATED rate if none found
+	 * @todo make same input as parent method
 	 */
 	protected function getRateByParams($called_number, $usage_type, $urt, $ocg = null) {
 		$matchedRate = $this->rates['UNRATED'];

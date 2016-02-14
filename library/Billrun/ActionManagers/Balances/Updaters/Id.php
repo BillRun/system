@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -133,7 +133,6 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			// We do not want to upsert if trying to update by ID.
 			'upsert' => false,
 			'new' => true,
-			'w' => 1,
 		);
 		
 		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];

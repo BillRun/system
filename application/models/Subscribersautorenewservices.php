@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -38,32 +38,34 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	
 	public function getTableColumns() {
 		$columns = array(
-			'aid' => 'Account',
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'interval' => 'Interval',
-			'charging_plan_name' => 'Charging Plan Name',
-			'charging_plan_external_id' => "Charging Plan External ID",
+			'charging_plan_name' => 'Charging Plan',
+			'charging_plan_external_id' => "Charging Plan ID",
 			'service_provider' => "Service Provider",
 			'done' => 'Done',
-			'remain' => 'Remain',
+			'remain' => 'Remaining',
 			'operators' => 'Operation',
+			'initial_renew_date' => "Initial Renew Date",
 			'last_renew_date' => 'Last Renew Date',
-			'from' => 'From',
-			'to' => 'To'
+			'from' => 'Start',
+			'to' => 'Expiration'
 		);
 		return $columns;
 	}
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'aid' => 'Account',
-			'sid' => 'Subscriber',
+			'sid' => 'Subscriber No',
+			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
 			'charging_plan_external_id' => "Charging Plan External ID",
 			'done' => 'Done',
-			'remain' => 'Remain',
+			'remain' => 'Remaining',
 			'operators' => 'Operation',
+			'initial_renew_date' => 'Initial Renew Date',
 			'last_renew_date' => 'Last Renew Date'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
@@ -83,7 +85,15 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'db_key' => 'sid',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'display' => 'Subscriber',
+				'display' => 'Subscriber No',
+				'default' => '',
+			),			
+			'aid' => array(
+				'key' => 'aid',
+				'db_key' => 'aid',
+				'input_type' => 'number',
+				'comparison' => 'equals',
+				'display' => 'BAN',
 				'default' => '',
 			),			
 			'charging_plan_name' => array(
@@ -97,6 +107,14 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'values' => $planNames,
 				'default' => array(),
 			),
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'text',
+				'comparison' => 'contains',
+				'display' => 'Service Provider',
+				'default' => '',
+			)
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -107,9 +125,15 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'sid' => array(
 					'width' => 2,
 				),
+				'aid' => array(
+					'width' => 2,
+				),
 				'charging_plan_name' => array(
 					'width' => 2,
-				)
+				),
+				'service_provider' => array(
+					'width' => 2
+				),
 			)
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
@@ -119,5 +143,12 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, 
 						   array());
+	}
+	
+	public function update($params) {
+		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
+		if (is_string($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
+		else if (is_array($params['last_renew_date'])) $params['last_renew_date'] = new MongoDate($params['last_renew_date']['sec']);
+		return parent::update($params);
 	}
 }

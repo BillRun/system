@@ -2,7 +2,7 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Collection {
@@ -61,7 +61,12 @@ class Mongodloid_Collection {
 	 * @param array $fields - Array of keys and values to be updated in the entity.
 	 * @return mongo update result.
 	 */
-	public function updateEntity($entity, $fields) {
+	public function updateEntity($entity, $fields=array()) {
+		if (empty($fields)) {
+			$fields = $entity->getRawData();
+			unset($fields['_id']);
+		}
+		
 		$data = array(
 			'_id' => $entity->getId()->getMongoID()
 		);

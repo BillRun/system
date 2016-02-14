@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -67,8 +67,9 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			}
 		}
 
+		$diff = @array_diff($expected, $existing);
 		// Update the record.
-		return $this->updateRecordByDiff($existing, array_diff($expected, $existing));
+		return $this->updateRecordByDiff($existing, $diff);
 	}
 	
 	/**

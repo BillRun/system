@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -96,7 +96,6 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			'continueOnError' => true,
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
-			'w' => 1,
 			'multiple' => 1
 		);
 		try {

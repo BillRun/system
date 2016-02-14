@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -103,27 +103,69 @@ class CronController extends Yaf_Controller_Abstract {
 	public function autoRenewServicesAction() {
 		$this->autoRenewServices();
 	}		
-	public function autoRenewServices() {		
-		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+	
+	protected function getMonthAutoRenewQuery() {
+		$lastmonthLower = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
+		$lastmonthUpper = mktime(23, 59, 59, date("m")-1, date("d"), date("Y"));
 		
-		$queryDate = array('creation_time' => strtotime('-1 month'));
-		$queryDate['remain'] = array('$gt' => 0);
+		$or = array();
+		$or[] = array('last_renew_date' => array('$gte' => new MongoDate($lastmonthLower)));
+		$or[] = array('last_renew_date' => array('$lte' => new MongoDate($lastmonthUpper)));
 		
 		// Check if last day.
 		if(date('d') == date('t')) {
-			$queryDate = array('$or' => $queryDate);
-			$queryDate['$or']['$and']['eom'] = 1;
-			$queryDate['$or']['$and']['creation_time']['$gt'] = strtotime('-1 month');
-			$queryDate['$or']['$and']['creation_time']['$lt'] = strtotime('first day of this month');
+			$or = array('$or' => $or);
+			$or['$or']['$and']['eom'] = 1;
+			$or['$or']['$and']['last_renew_date']['$gt'] = new MongoDate($lastmonthUpper);
+			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
+			$or['$or']['$and']['last_renew_date']['$lt'] = new MongoDate($firstday);
 		}
 		
+		$and = array();
+		$and[] = array('$or' => $or);
+		$and[] = array("interval" => "month");
+		
+		return $and;
+	}
+	
+	protected function getDayAutoRenewQuery() {
+		$lastdayLower = mktime(0, 0, 0, date("m"), date("d") - 1, date("Y"));
+		$lastdayUpper = mktime(23, 59, 59, date("m"), date("d") - 1, date("Y"));
+		
+		$or = array();
+		$or[] = array('last_renew_date' => array('$gte' => new MongoDate($lastdayLower)));
+		$or[] = array('last_renew_date' => array('$lte' => new MongoDate($lastdayUpper)));
+		
+		$and = array();
+		$and[] = array('$or' => $or);
+		$and[] = array("interval" => "day");
+		
+		return $and;
+	}
+	
+	/**
+	 * Get the auto renew services query.
+	 * @return array - Query date.
+	 */
+	protected function getAutoRenewServicesQuery() {
+		$andQuery = array_merge($this->getDayAutoRenewQuery(), $this->getMonthAutoRenewQuery());
+		$queryDate = array('$and' => $andQuery);
+		$queryDate['remain'] = array('$gt' => 0);
+		
+		return $queryDate;
+	}
+	
+	public function autoRenewServices() {				
+		$queryDate = $this->getAutoRenewServicesQuery();
+		
+		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
 			$this->updateBalanceByAutoRenew($autoRenewRecord);
 			
-			$this->updateAutoRenewRecord($collection);
+			$this->updateAutoRenewRecord($collection, $autoRenewRecord);
 		}
 	}
 	
@@ -148,9 +190,10 @@ class CronController extends Yaf_Controller_Abstract {
 	/**
 	 * Update the auto renew record after usage.
 	 * @param type $collection
+	 * @param Entity Auto renew record to update.
 	 * @return type
 	 */
-	protected function updateAutoRenewRecord($collection) {
+	protected function updateAutoRenewRecord($collection, $autoRenewRecord) {
 		$autoRenewRecord['remain'] = $autoRenewRecord['remain'] - 1;
 		
 		if($autoRenewRecord['eom'] == 1) {

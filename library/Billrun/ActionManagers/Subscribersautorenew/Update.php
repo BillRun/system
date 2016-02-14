@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -56,8 +56,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		return array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
-			);
+		);
 	}
 	
 	/**
@@ -79,11 +78,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
-		
+
 		if(!$updateResult) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
 			$this->reportError($errorCode);
 		}
+		
 		$outputResult = array(
 			'status'        => $this->errorCode == 0 ? 1 : 0,
 			'desc'          => $this->error,
@@ -121,9 +121,24 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
-		$this->populateUpdateQuery($jsonUpdateData);
+		if(!$this->populateUpdateQuery($jsonUpdateData)) {
+			return false;
+		}
 
 		return true;
+	}
+	
+	/**
+	 * Get the interval value from the json data
+	 * @param type $jsonUpdateData
+	 * @return Interval or false if error.
+	 */
+	protected function getInterval($jsonUpdateData) {
+		if (!isset($jsonUpdateData['interval'])) {
+			return 'month';
+		} 
+		
+		return $this->normalizeInterval($jsonUpdateData['interval']);
 	}
 	
 	/**
@@ -131,10 +146,23 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @param type $jsonUpdateData
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
-		// TODO INTERVAL IS ALWAYS MONTH
-		$set['interval'] = 'month';
+		$interval = $this->getInterval($jsonUpdateData);
+		if($interval === false) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
+			return false;
+		}
 		
-		$set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		$set = array(
+			'interval' => $interval);
+			
+		if (isset($jsonUpdateData['to']['sec'])) {
+			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
+		} else if (is_string($jsonUpdateData['to'])) {
+			$jsonUpdateData['to'] = $set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+		} else {
+			$set['to'] = $jsonUpdateData['to'];
+		}
 		if (isset($jsonUpdateData['operation'])) {
 			$set['operation'] = $jsonUpdateData['operation'];
 		} else {
@@ -150,18 +178,37 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		
 		$set['creation_time'] = new MongoDate();
-		if(isset($this->query['from'])) {
-			$set['from'] = new MongoDate(strtotime($this->query['from']));
+		
+		// TODO: Is it possible that we will receive a date here with hours minutes and seconds?
+		// if so we will have to strip them somehow.
+		if (isset($this->query['from']['sec'])) {
+			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
+		} else if (is_string($this->query['from'])) {
+ 			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
 		} else {
-			$set['from'] = $set['creation_time'];
+			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
 		
 		$set['last_renew_date'] = $set['creation_time'];
 		
-		$set['remain'] = 
-			$this->countMonths(strtotime($this->query['from']), strtotime($jsonUpdateData['to']));
+		if (isset($this->query['from']->sec)) {
+			$from = $this->query['from']->sec;
+		} else {
+			$from = $this->query['from']['sec'];
+		}
+		
+		if (isset($jsonUpdateData['to']->sec)) {
+			$to = $jsonUpdateData['to']->sec;
+		} else {
+			$to = $jsonUpdateData['to']['sec'];
+		}
+		
+		
+		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
+		
+		return true;
 	}
 	
 	protected function fillWithSubscriberValues() {
@@ -190,6 +237,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
+		$chargingPlanQuery['recurring'] = 1;
 		
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if($planRecord->isEmpty()) {
@@ -220,23 +268,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 //		
 		return true;
 	}
-	
-	protected function countMonths($d1, $d2) {
-		$min_date = min($d1, $d2);
-		$max_date = max($d1, $d2);
-		$i = 0;
 
-		$maxMonth = date('m', $max_date);
-		while (($min_date = strtotime("first day of next month", $min_date)) <= $max_date) {
-			if(date('m', $min_date) == $maxMonth) {
-				break;
-			}
-			$i++;
-		}
-		
-		return $i;
-	}
-	
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -300,6 +332,21 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
+		if (!$this->handleDuplicates()) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	protected function handleDuplicates() {
+		if (!$this->collection->query($this->query)->cursor()->limit(1)->current()->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			
+			// TODO: Pelephone does not want this to return a failure indication.
+			// return false;
+		}
 		return true;
 	}
 

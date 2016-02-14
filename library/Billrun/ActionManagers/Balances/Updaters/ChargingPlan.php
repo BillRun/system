@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -48,14 +48,19 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function handleChargingPlan(&$query, &$updateQuery) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
+		$charging_plan_query = $query;
+		$charging_plan_query['$or'] = array(
+			array('recurring' => 0),
+			array('recurring' => array('$exists' => 0)),
+		);
+		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
-		$this->setPlanToQuery($query, $chargingPlansCollection, $chargingPlanRecord);
+		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
 
 		// Get the priority from the plan.
 		if (isset($chargingPlanRecord['priority'])) {
@@ -247,6 +252,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'charging_plan_name' => 'name',
 			'charging_plan_external_id' => 'external_id',
 			'service_provider' => 'service_provider',
+			'$or' => '$or',
 		);
 	}
 
@@ -303,7 +309,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 		
 		// Return the new document.

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -48,8 +48,10 @@ class TabledateModel extends TableModel {
 
 	public function getItem($id) {
 		$entity = parent::getItem($id);
-		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
-		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
+		if (is_array($entity['from']) && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if (is_array($entity['to']) && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
 	}
 
@@ -60,7 +62,8 @@ class TabledateModel extends TableModel {
 	public function isLast($entity) {
 		$to_date = new MongoDate(strtotime($entity['to']));
 		if (!$to_date) {
-			die("date error");
+			return $this->setError("date error") ;
+			
 		}
 		$result = $this->getLastItem($entity[$this->search_key]);
 		return strval($result['_id']) == strval($entity['_id']);

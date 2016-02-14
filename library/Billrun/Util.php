@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -82,6 +82,23 @@ class Billrun_Util {
 	 */
 	public static function generateArrayStamp($ar) {
 		return md5(serialize($ar));
+	}
+
+	/**
+	 * generate a random number of reqested length based on microtime
+	 * @param int $length length of the random number
+	 * @return number
+	 */
+	public static function generateRandomNum($length = 19) {
+		$milliseconds = round(microtime(true) * 10000);
+		$l = strlen($milliseconds);
+		if ($l >= $length) {
+			return substr($milliseconds, $l - $length, $length);
+		}
+
+		$start = pow(10, $length - $l - 1);
+		$additional = rand($start, $start * 10 - 1);
+		return $additional . $milliseconds;
 	}
 
 	/**
@@ -171,8 +188,8 @@ class Billrun_Util {
 
 	public static function getPreviousBillrunKey($billrun_key) {
 		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
 		return $ret;
 	}
 
@@ -325,7 +342,8 @@ class Billrun_Util {
 		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		return gmdate('i:s', $seconds);
+		//return gmdate('i:s', $seconds);
+		return $seconds;
 	}
 
 	/**
@@ -403,11 +421,11 @@ class Billrun_Util {
 				'$gt' => new MongoDate()
 			),
 			'from' => array(
-				'$lt' => new MongoDate()
+				'$lte' => new MongoDate()
 			)
 		);
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Cli
 	 * 
@@ -742,6 +760,52 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Convert associative Array to XML
+	 * @param Array $data Associative Array
+	 * @param Array $parameters
+	 * @return mixed XML string or FALSE if failed
+	 */
+	public static function arrayToXml($data, $parameters = array()) {
+		if (!is_array($data)) {
+			return false;
+		}
+		//Defaults
+		$version = !empty($parameters['version']) ? $parameters['version'] : '1.0';
+		$encoding = !empty($parameters['encoding']) ? $parameters['encoding'] : 'UTF-8';
+		$indent = !empty($parameters['indent']) ? $parameters['indent'] : false;
+		$rootElement = !empty($parameters['rootElement']) ? $parameters['rootElement'] : 'root';
+		$childElement = !empty($parameters['childElement']) ? $parameters['childElement'] : 'node';
+
+		$xml = new XmlWriter();
+		$xml->openMemory();
+		$xml->setIndent($indent);
+		$xml->startDocument($version, $encoding);
+		$xml->startElement($rootElement);
+		self::recursiveWriteXmlBody($xml, $data, $childElement);
+		$xml->endElement(); //write end element
+		return $xml->outputMemory();
+	}
+
+	/**
+	 * Write XML body nodes
+	 * @param object $xml XMLWriter Object
+	 * @param array $data Associative Data Array
+	 */
+	public static function recursiveWriteXmlBody(XMLWriter $xml, $data, $childElement) {
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$key = is_numeric($key) ? $childElement : $key ;
+				$xml->startElement($key);
+				self::recursiveWriteXmlBody($xml, $value, $childElement);
+				$xml->endElement();
+				continue;
+			}
+			$key = is_numeric($key) ? $childElement : $key ;
+			$xml->writeElement($key, $value);
+		}
+	}
+
+	/**
 	 * Returns an array value if it is set
 	 * @param mixed $field the array value
 	 * @param mixed $defVal the default value to return if $field is not set
@@ -968,7 +1032,7 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
-	
+
 	/**
 	 * Convert array keys to camel case from Billrun convention
 	 * 
@@ -987,7 +1051,7 @@ class Billrun_Util {
 
 		return $parsedData;
 	}
-	
+
 	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
 
 		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
@@ -1006,7 +1070,7 @@ class Billrun_Util {
 		if($input === "UNLIMITED") {
 			return $input;
 		}
-		
+
 		// Check that the input is an integer.
 		if (is_int($input)) {
 			return $input;
@@ -1041,7 +1105,7 @@ class Billrun_Util {
 
 		return $record;
 	}
-	
+
 	public static function isAssoc($arr)
 	{
 		return array_keys($arr) !== range(0, count($arr) - 1);
@@ -1052,4 +1116,64 @@ class Billrun_Util {
 		return isset($units[$usaget]) ? $units[$usaget] : '';
 	}
 
+	/**
+	 * Are two numbers equal (up to epsilon)
+	 * @param float $number1
+	 * @param float $number2
+	 * @param float $epsilon positive number
+	 * @return boolean
+	 */
+	public static function isEqual($number1, $number2, $epsilon = 0) {
+		return abs($number1 - $number2) < abs($epsilon);
+	}
+
+	/**
+	 * Floor a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function floordec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : floor($num);
+	}
+
+	/**
+	 * Ceil a decimal
+	 * @param float $num
+	 * @param float $epsilon positive number
+	 * @return float
+	 */
+	public static function ceildec($num, $epsilon) {
+		$rounded = round($num);
+		return static::isEqual($num, $rounded, $epsilon) ? $rounded : ceil($num);
+	}
+
+	/**
+	 * Calculate the remaining months for an auto renew service
+	 * @param int $d1 unix timestamp
+	 * @param int $d2 unix timestamp
+	 * @return int
+	 * 
+	 */
+	public static function countMonths($d1, $d2) {
+		$min_date = date_timestamp_set(new DateTime(), min($d1, $d2));
+		$max_date = date_timestamp_set(new DateTime(), max($d1, $d2));
+		$months = 1; /* the first day is always counted */
+		if (($min_date->format('m') != $max_date->format('m')) || ($min_date->format('Y') != $max_date->format('Y'))) {
+			if (($max_date->format('d') >= $min_date->format('d')) || ($max_date->format('d') == $max_date->format('t'))) {
+				$months += 1;
+			}
+			$yearDiff = $max_date->format('Y') - $min_date->format('Y');
+			switch ($yearDiff) {
+				case 0:
+					$months += $max_date->format('m') - $min_date->format('m') - 1;
+					break;
+				default :
+					$months += $max_date->format('m') + 11 - $min_date->format('m') + ($yearDiff - 1) * 12;
+					break;
+			}
+		}
+		return $months;
+	}
 }

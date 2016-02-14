@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -18,7 +18,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
-		$this->label = 'Data';
+		$this->label = 'Data | Real-time event';
 	}
 	
 	/**
@@ -40,10 +40,11 @@ class utest_DataModel extends utest_AbstractUtestModel {
 				'requestNum' => ($index + 1),
 				'type' => $nameAndUssage[0],
 				'sessionId' => $this->controller->getReference(),
-				'usedUnits' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 1000
+				'usedUnits' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 1048576
 			);
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'data', 'request' => $data));
+			sleep(1);
 		}
 	}
 
@@ -75,7 +76,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 					"serviceId" => "400700",
 					"ratingGroup" => "92",
 					"requestedUnits" => 1000,
-				//"usedUnits" => 1000
+				    //"usedUnits" => 1000
 				),
 				"Service" => array(
 					"PdnConnectionId" => "0",
@@ -105,16 +106,16 @@ class utest_DataModel extends utest_AbstractUtestModel {
 		switch ($type) {
 			case 'init':
 				$request['requestType'] = "1";
-				$request['requestNum'] = $requestNum; //"1";
+				$request['requestNum'] = $requestNum;
 				break;
 			case 'update':
 				$request['requestType'] = "2";
-				$request['requestNum'] = $requestNum; //"2";
+				$request['requestNum'] = $requestNum;
 				$request['msccData'][0]['usedUnits'] = $usedUnits;
 				break;
 			case 'final':
 				$request['requestType'] = "3";
-				$request['requestNum'] = $requestNum; //"3";
+				$request['requestNum'] = $requestNum;
 				$request['msccData'][0]['usedUnits'] = $usedUnits;
 				break;
 			default: return NULL;

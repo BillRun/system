@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -83,7 +83,7 @@ class CreditAction extends ApiAction {
 					'urt' => $entity['urt'],
 					'calc_name' => false,
 					'calc_time' => false,
-			), array('w' => 1));
+			));
 		}
 	}
 

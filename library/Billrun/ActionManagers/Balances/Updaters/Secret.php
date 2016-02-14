@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -12,6 +12,12 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
+	
+	/**
+	 * Reference to the card being used.
+	 * @var type Reference
+	 */
+	protected $cardRef;
 	
 	/**
 	 * Get the card record according to the received query
@@ -54,6 +60,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			return false;
 		}
 		
+		$this->setSourceForLineRecord($cardRecord);
+		
 		// Build the plan query from the card plan and service provider field.
 		$planQuery = array(
 			'charging_plan_name' => $cardRecord['charging_plan_name'],
@@ -86,9 +94,25 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		);
 		$options = array(
 			'upsert' => false,
-			'w' => 1,
 		);
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);
+	}
+	
+	/**
+	 * Set the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function setSourceForLineRecord($card) {
+		$collection = Billrun_Factory::db()->cardsCollection();
+		$this->cardRef = $collection->createRefByEntity($card);
+	}
+	
+	/**
+	 * Get the 'Source' value to put in the record of the lines collection.
+	 * @return object The value to set.
+	 */
+	protected function getSourceForLineRecord($chargingPlanRecord) {
+		return $this->cardRef;
 	}
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -50,18 +50,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $extraData = array();
-
+	
 	/**
-	 * all international ggsn rates
-	 * @var array
+	 * Should the mandatory customer fields be overriden if they exist
+	 * @var boolean
 	 */
-	protected $intlGgsnRates = array();
-
-	/**
-	 *
-	 * @var type 
-	 */
-	protected $ratesModel;
+	protected $overrideMandatoryFields = TRUE;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -75,13 +69,16 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (isset($options['calculator']['extra_data'])) {
 			$this->extraData = $options['calculator']['extra_data'];
 		}
+		if (isset($options['realtime'])) {
+			$this->overrideMandatoryFields = !boolval($options['realtime']);
+		}
+		if (isset($options['calculator']['override_mandatory_fields'])) {
+			$this->overrideMandatoryFields = boolval($options['calculator']['override_mandatory_fields']);
+		}
 
 		$this->subscriber = Billrun_Factory::subscriber();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
-
-		$this->loadIntlGgsnRates();
-		$this->ratesModel = new RatesModel();
 	}
 
 	/**
@@ -106,7 +103,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * make the  calculation
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$row->collection($this->lines_coll);
 		if ($this->isBulk()) {
 			$this->subscribersByStamp();
@@ -133,7 +130,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
 			if (is_numeric($subscriber->{$key})) {
-				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when Vitali changes the output of the CRM to integers
+				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
 			}
 			$subscriber_field = $subscriber->{$key};
 			$row[$key] = $subscriber_field;
@@ -142,14 +139,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			if ($this->isExtraDataRelevant($row, $key)) {
 				$subscriber_field = $subscriber->{$key};
 				$row[$key] = $subscriber_field;
-				if ($key == 'last_vlr') { // also it's possible to add alpha3 only if daily_ird_plan is true
-					if ($subscriber->{$key}) {
-						$rate = $this->ratesModel->getRateByVLR($subscriber->{$key});
-						if ($rate) {
-							$row['alpha3'] = $rate['alpha3'];
-						}
-					}
-				}
 			}
 		}
 		$row['subscriber_lang'] = $subscriber->language;
@@ -187,10 +176,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$save = array(
 			'$set' => array(),
 		);
-		$subscriber = Billrun_Factory::subscriber();
-		$availableFileds = array_keys($subscriber->getAvailableFields());
-		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
-		$saveProperties = array_merge(array('last_vlr', 'alpha3'), $availableFileds, $customerExtraData);
+		$saveProperties = $this->getPossiblyUpdatedFields();
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -208,6 +194,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+	}
+	
+	public function getPossiblyUpdatedFields() {
+		return array_merge($this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
+	}
+	
+	public function getCustomerPossiblyUpdatedFields() {
+		$subscriber = Billrun_Factory::subscriber();
+		$availableFileds = array_keys($subscriber->getAvailableFields());
+		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang'));
 	}
 
 	/**
@@ -334,6 +331,18 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function isLineLegitimate($line) {
 		if ( $this->isCustomerable($line)) {
+			if (!$this->overrideMandatoryFields) {
+				$validSubscriber = TRUE;
+				foreach ($this->subscriber->getAvailableFields() as $requiredField) {
+					if (!isset($line[$requiredField]) || is_null($line[$requiredField])) {
+						$validSubscriber = FALSE;
+						break;
+					}
+				}
+				if ($validSubscriber) {
+					return FALSE;
+				}
+			}
 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];

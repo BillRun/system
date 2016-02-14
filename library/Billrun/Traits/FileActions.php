@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -110,7 +110,7 @@ trait Billrun_Traits_FileActions {
 		);
 		$log = Billrun_Factory::db()->logCollection();
 		try {
-			$result = $log->update($query, $update, array('upsert' => 1, 'w' => 1));
+			$result = $log->update($query, $update, array('upsert' => 1));
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);

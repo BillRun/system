@@ -45,12 +45,31 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
 	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 	protected $aprField = self::DEF_APR_DB_FIELD;
+	
+	/**
+	 * call offset
+	 * 
+	 * @param int $balance
+	 */
+	protected $call_offset = 0;
+	
+	/**
+	 * Should the rating field be overriden if it already exists?
+	 * @var boolean
+	 */
+	protected $overrideRate = TRUE;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['calculator']['rate_mapping'])) {
 			$this->rateMapping = $options['calculator']['rate_mapping'];
 			//Billrun_Factory::log("receive options : ".print_r($this->rateMapping,1),  Zend_Log::DEBUG);
+		}
+		if (isset($options['realtime'])) {
+			$this->overrideRate = !boolval($options['realtime']);
+		}
+		if (isset($options['calculator']['override_rate'])) {
+			$this->overrideRate = boolval($options['calculator']['override_rate']);
 		}
 	}
 
@@ -98,7 +117,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->ratingField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		$saveProperties = $this->getPossiblyUpdatedFields();
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -112,12 +131,17 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			unset($this->lines[$line['stamp']]);
 		}
 	}
+	
+	public function getPossiblyUpdatedFields() {
+		return array($this->ratingField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+	}
 
 	/**
 	 * load calculator rate by line type
 	 * 
 	 * @param array $line the line properties
 	 * @param array $options options to load
+	 * @todo Create one calculator instance per line type
 	 * 
 	 * @return Billrun calculator rate class
 	 */
@@ -134,16 +158,25 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return self::$calcs[$type];
 	}
+	
+	public function setCallOffset($val) {
+		$this->call_offset = $val;
+	}
+
+	public function getCallOffset() {
+		return $this->call_offset;
+	}
 
 	/**
 	 * make the calculation
 	 */
 	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row->getRawData();
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			$row['usagev'] = 0;
 			return false;
 		}
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
@@ -173,10 +206,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
 	protected function getLineRate($row) {
-		$this->setRowDataForQuery($row);
-		return $this->getRateByParams();
+		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
+			$this->setRowDataForQuery($row);
+			$rate = $this->getRateByParams($row);
+		}
+		else {
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($row[$this->getRatingField()]);
+		}
+		return $rate;
 	}
-	
+
 	/**
 	 * Set data used in inner function to find the rate of the line
 	 * 
@@ -195,12 +234,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams() {		
-		$query = $this->getRateQuery();
+	protected function getRateByParams($row) {		
+		$query = $this->getRateQuery($row);
+		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll= Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
 		
-		if (empty($matchedRate)) {
+		if ($matchedRate->isEmpty()) {
 			return false;
 		}
 		
@@ -213,7 +253,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery() {
+	protected function getRateQuery($row) {
 		$pipelines = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . self::$type, array()) +
 			Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type, array());
 		$query = array();
@@ -225,11 +265,12 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$pipelineValue = '';
 				if (is_array($pipeline)) {
 					foreach ($pipeline as $key => $value) {
+						$key = str_replace('__', '.', $key);
 						if (isset($value['classMethod'])) {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$pipelineValue[$key] = $this->{$value['classMethod']}();
+							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
@@ -261,6 +302,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function getToTimeQuery() {
 		return array('$gte' => $this->rowDataForQuery['line_time']);
+	}
+	
+	public function getRatingField() {
+		return $this->ratingField;
 	}
 
 }

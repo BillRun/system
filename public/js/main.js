@@ -1,6 +1,3 @@
-$('body').on('hidden.bs.modal', '.modal', function () {
-	$(this).removeData('bs.modal');
-});
 var checkItems = false;
 $(function () {
   $('#check_all').change(function () {
@@ -43,6 +40,27 @@ $(function () {
 			}
 		}
 	});
+
+    $("#ratePlanPopup").on('show.bs.modal', function (event) {
+    var rate_id = $(event.relatedTarget).data('rate-id');
+    var plan = $(event.relatedTarget).data('plan');
+    var usage = $(event.relatedTarget).data('usage');
+    $('#data-rates-tbody tr').remove();
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: 'rates', id: rate_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
+      var $tbody = $("#data-rates-tbody");
+      $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
+      _.forEach(rate, function (r) {
+        var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
+        $tbody.append($row);
+      });
+    });
+  });
 
 	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
@@ -238,7 +256,7 @@ $(function () {
 
 	});
 
-	$('.multiselect:not(#usage,#billrun,#source,#extra_columns select)').multiselect({});
+	$('.multiselect:not(#usage,#billrun,#source,#plan,#extra_columns select)').multiselect({});
 
 	$('#usage,#billrun,#source').multiselect({
 		selectAllValue: 'all',
@@ -253,6 +271,15 @@ $(function () {
 		selectAllValue: 'all',
 		selectedClass: null
 	});
+
+  $('select[id="plan"]').multiselect({
+    maxHeight: 250,
+    enableFiltering: true,
+    enableCaseInsensitiveFiltering: true,
+    includeSelectAllOption: true,
+    selectAllValue: 'all',
+    selectedClass: null
+  });
 
 	$('#search-criteria').submit(function () {
 		if ($("#type").length && !$("#type :selected").length) {
@@ -364,11 +391,7 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-    if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'balances' || active_collection === 'cards' || active_collection === 'subscribers')
-      //window.location = '#/' + active_collection + '/edit/' + item_checked.eq(0).val();
-      return;
-    else
-      $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+    $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 
@@ -408,6 +431,23 @@ function isAPIAvailable() {
 }
 $(document).ready(function () {
 	$(".config input[type='checkbox']").bootstrapSwitch();
+
+  $('table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
+  if (window.location.pathname.match(/rates/gi)) {
+    if ($('select[id="plan"]').length) {
+      $('a[data-type="update"]').each(function (i, el) {
+        var href = $(el).attr('href');
+        href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
+        $(el).attr('href', href);
+      });
+    }
+  }
+  $('#data_table tbody tr').on('click', function () {
+      $(this).addClass('highlight').siblings().removeClass('highlight');
+  });
+  $('body').on('hidden.bs.modal', '.modal', function () {
+    $(this).removeData('bs.modal');
+  });
 });
 
 /**
@@ -435,4 +475,31 @@ function openPopup(obj, direction) {
 function exportRates() {
 	var show_prefix = $('#showprefix').is(':checked');
 	window.location.href = "/admin/exportrates?show_prefix=" + show_prefix;
+}
+
+function detailFormatter(index, row) {
+  $.ajax({
+    method: "GET",
+    url: baseUrl + "/admin/getLineDetailsFromArchive",
+    data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
+  })
+    .done(function (res) {
+      var lines = JSON.parse(res);
+      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
+      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></thead>");
+      $table.append($thead).append('<tbody>');
+      _.forEach(lines, function (line) {
+        var $tr = $("<tr>");
+        $tr.append("<td>" + line.pp_includes_external_id + "</td>");
+        $tr.append("<td>" + line.pp_includes_name + "</td>");
+        $tr.append("<td>" + line.api_name + "</td>");
+        $tr.append("<td>" + line.balance_before + "</td>");
+        $tr.append("<td>" + line.balance_after + "</td>");
+        $tr.append("<td>" + line.total + "</td>");
+        $tr.append("<td>" + line.usage_unit + "</td>");
+        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') + "</td>");
+        $table.append($tr);
+      });
+      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
+    });
 }

@@ -20,40 +20,7 @@
 		<script>
 			baseUrl = '<?php echo $this->baseUrl; ?>';
 		</script>
-		<script src="<?php echo $this->baseUrl; ?>/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-		<script>window.jQuery || document.write('<script src="<?php echo $this->baseUrl; ?>/js/vendor/jquery-1.11.0.min.js"><\/script>')</script>
-
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/lodash.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular.min.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/angular-route.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/ui-bootstrap.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/jquery-ui.min.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/sortable.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/directives.js'></script>
-
-		<link href='<?php echo $this->baseUrl; ?>/js/vendor/JSONedit/styles.css' rel="stylesheet" type='text/css'/>
-
-		<script src='<?php echo $this->baseUrl; ?>/js/app.js'></script>
-
-		<!-- factoreis & services -->
-		<script src='<?php echo $this->baseUrl; ?>/js/factories/Database.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/factories/Utils.js'></script>
-
-		<!-- directives -->
-		<script src='<?php echo $this->baseUrl; ?>/js/directives/inputField.js'></script>
-
-		<!-- controllers -->
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/MenuController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/EditController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/ListController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/PlansController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/RatesController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BalancesController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/CardsController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/BatchController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersController.js'></script>
-		<script src='<?php echo $this->baseUrl; ?>/js/controllers/SubscribersAutoRenewController.js'></script>
+		<?php echo $js ?>
     </head>
     <body ng-app="BillrunApp">
         <!--[if lt IE 7]>
@@ -69,7 +36,7 @@
 				<span class="icon-bar"></span>
 			</button>
 			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin/">
-				<img src="http://www.billrun.net/images/billrun/web-logo.png" alt="BillRun"/>
+				<img src="<?php echo $this->baseUrl; ?>/img/web-logo.png" alt="BillRun"/>
 			</a>
         </div>
 		<div ng-include="'views/partials/menu.html'" ng-if='false'></div>
@@ -84,15 +51,27 @@
 	<!-- end of main component -->
 	<!-- hackitty hack hack! -->
 	<script>
-		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new)(\/)*/)) {
+		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new|service_providers)(\/)*/)) {
 			$('.component').remove();
+		} else if ($('h1').length && $('h1').text().match(/(charging|customer|recurring)/gi)) {
+			var href = $("#new").attr('href');
+			var match = $("h1").text().match(/(charging|customer|recurring)/gi)[0].toLowerCase();
+			if ($('h1').text().match(/recurring/gi)) {
+				match = 'charging';
+			}
+			href += '?type=' + match;
+			$('#new').attr('href', href);
+			$(".checkbox").find('[data-type="update"]').each(function (e) {
+				href = $(this).attr('href');
+				href += '?type=' + match;
+				$(this).attr('href', href);
+			});
 		}
 	</script>
 	<!-- end of hackitty hack hack -->
 
 	<div ng-view></div>
 
-		<?php echo $js; ?>
 		<script type="text/javascript">
 			if (typeof google !== 'undefined') {
 				google.load('visualization', '1', {packages: ["corechart", "annotatedtimeline", "controls"]});

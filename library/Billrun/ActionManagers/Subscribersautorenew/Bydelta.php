@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -43,7 +43,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$defaultRecord['interval'] = 'month';
 		$defaultRecord['operation'] = 'inc';
 		$defaultRecord['sid'] = $this->sid;
-		$defaultRecord['from'] = date(DATE_ISO8601, time());
+		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);
 		return $defaultRecord;
 	}
 	
@@ -77,6 +77,33 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	}
 	
 	/**
+	 * Validate that expected is an actual array of records.
+	 */
+	protected function validateExpected(&$expected) {
+		if(!is_array($expected)) {
+			return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
+		}
+		
+		foreach ($expected as &$record) {
+			if(!is_array($record)) {
+				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
+			}
+			
+			if(!isset($record['interval'])) {
+				continue;
+			}
+			$norm = $this->normalizeInterval($record['interval']);
+			if($norm === false) {
+				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			}
+
+			$record['interval'] = $norm;
+		}
+		
+		return 0;
+	}
+	
+	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
@@ -89,6 +116,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+
+		// If expected is not an array of records.
+		$validateError = $this->validateExpected($jsonData);
+		if($validateError != 0) {
+			$this->reportError($validateError, Zend_Log::NOTICE);
+			return false;
+		}
 		
 		$sid = $input->get('sid');
 		if(empty($sid)) {
@@ -97,6 +131,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			return false;
 		}
 
+		$isEmpty = true;
+		foreach ($jsonData as &$record) {
+			if (isset($record['from']) && $record['from'] != null) {
+				$record['from'] = new MongoDate(strtotime($record['from']));
+			}
+			
+			if (isset($record['to']) && $record['to'] != null) {
+				$record['to'] = new MongoDate(strtotime($record['to']));
+			}
+			
+			if(!empty($record)) {
+				$isEmpty = false;
+			}
+		}
+
+		if($isEmpty) {
+			$jsonData = array();
+		}
+		
 		$this->expected = $jsonData;
 		$this->sid = Billrun_Util::toNumber($sid);
 		

@@ -1,11 +1,12 @@
 <center>
 	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
-	<h3>{{capitalize(action)}} Charging Plan</h3>
+	<h3 class='subtitle'>{{capitalize(action)}} Charging Plan</h3>
 </center>
+<div pretty-error errors="err.data"></div>
 <div>
-	<form class='form-inline' ng-submit='save()'>
+	<form class='form-inline'>
 		<div ng-if='!advancedMode'>
-			<div class='row' ng-if='action === "duplicate"'>
+			<div class='row' ng-if='action === "duplicate" || action === "new"'>
 				<div class='col-md-2'>
 					Name
 				</div>
@@ -42,7 +43,7 @@
 					</select>				
 				</div>
 			</div>
-			<div class="row">
+			<div class="row" ng-if="utils.display('recurring', 'plans')">
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("recurring", "plans")}}
 				</div>
@@ -75,9 +76,18 @@
 				</div>
 			</div>
 			
-			<div ng-hide="entity.include === undefined">
+			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
+				<select class='form-control' ng-model='newIncludeType.type'>
+					<option value='' disabled>Select Rate Type</option>
+					<option ng-repeat='include_type in availableIncludeTypes'
+							ng-disabled='includeTypeExists(include_type)'
+							value='{{include_type}}'>
+						{{include_type}}
+					</option>
+				</select>
+				<a href='' ng-click='addIncludeType()'>Add Rate</a>
 				<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>
 					<div class="col-md-2">
 						Cost
@@ -88,7 +98,7 @@
 				</div>
 				<div class="row cost" ng-repeat='cost in entity.include.cost track by $index' ng-if='isObject(entity.include.cost)'>
 					<fieldset>
-						<legend>Cost</legend>
+						<legend>Cost  <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeCost($index)"></i></small></legend>
 						<div class='row'>
 							<div class='col-md-2'>
 								Value
@@ -140,7 +150,7 @@
 				<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
 					<div ng-if="isObject(includeType)">
 						<fieldset>
-							<legend>{{includeTypeName}}</legend>
+							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName)"></i></small></legend>
 							<div class="row">
 								<div class="col-md-2">
 									Cost
@@ -210,7 +220,11 @@
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
+			<button apply-notifier 
+							onerr="err" 
+							text="Apply" ng-click="save(false)" class="btn" ng-if='1||authorized_write'>
+			</button>
+			<button ng-click="save(true)" class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
 		</div>
 	</form>
 </div>

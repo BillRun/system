@@ -1,34 +1,59 @@
-app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database', '$controller',
-  function ($scope, $window, $routeParams, Database, $controller) {
+app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$http',
+  function ($scope, $window, $routeParams, Database, $controller, $http) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
 
-    $scope.save = function () {
+    $scope.save = function (redirect) {
       $scope.entity.to = $scope.entity.to / 1000;
-      var params = {
-        entity: $scope.entity,
-        coll: 'cards',
-        type: $routeParams.action
+      $scope.err = {};
+      //Database.saveEntity(params).then(function (res) {
+      var postData = {
+        method: ($scope.action === "new" ? 'create' : 'update')
       };
-      Database.saveEntity(params).then(function (res) {
-        $window.location = baseUrl + '/admin/' + $routeParams.collection;
+      var entData = {
+        status: $scope.entity.status,
+        batch_number: $scope.entity.batch_number,
+        serial_number: $scope.entity.serial_number,
+        charging_plan_name: $scope.entity.charging_plan_name,
+        service_provider: $scope.entity.service_provider,
+        to: $scope.entity.to
+      };
+      if ($scope.action === "new") postData.cards = [JSON.stringify(entData)];
+      else {
+        postData.query = JSON.stringify({
+          serial_number: $scope.entity.serial_number,
+          batch_number: $scope.entity.batch_number
+        });
+        postData.update = JSON.stringify(entData);
+      }
+      $http.post(baseUrl + '/api/cards', postData).then(function (res) {
+        if (redirect) {
+          $window.location = baseUrl + '/admin/' + $routeParams.collection;
+        }
       }, function (err) {
-        alert("Connection error!");
+        $scope.err = err;
+
       });
     };
 
     $scope.isStatusDisabled = function (status) {
       var curr_card_status = $scope.card_status.toLowerCase();
-      if (status === undefined) return true;
-      if ($scope.card_status === undefined) return false;
+      if (status === undefined)
+        return true;
+      if ($scope.card_status === undefined)
+        return false;
       status = status.toLowerCase();
       // idle -> (active optional) -> [expired,stolen,disqualified,used]
       // don't allow going backwards
-      if (curr_card_status === "idle") return false;
-      if (curr_card_status === "active" && status === "idle") return true;
-      if (curr_card_status === "active") return false;
-      if (status === "idle" || status === "active") return true;
+      if (curr_card_status === "idle")
+        return false;
+      if (curr_card_status === "active" && status === "idle")
+        return true;
+      if (curr_card_status === "active")
+        return false;
+      if (status === "idle" || status === "active")
+        return true;
       return true;
     };
 
@@ -43,7 +68,7 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
         $scope.card_status = $scope.entity.status;
         $scope.authorized_write = res.data.authorized_write;
         if (_.isObject($scope.entity.to)) {
-          $scope.entity.to = $scope.entity.to.sec * 1000;
+          $scope.entity.to = new Date($scope.entity.to.sec * 1000);
         }
         $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
       }, function (err) {

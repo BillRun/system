@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -64,9 +64,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$subscriber = $this->getSubscriber($subscriberId);
 
 		// Subscriber was not found.
-		if (!$subscriber) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 9;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		if ($subscriber===false) {
 			return false;
 		}
 
@@ -158,7 +156,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$options = array(
 			'upsert' => true,
 			'new' => true,
-			'w' => 1,
 		);
 
 		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);

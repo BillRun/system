@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -48,6 +48,7 @@ class SubscribersAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/subscribers/conf.ini');
 		$this->initializeModel();
 
 		// This is the method which is going to be executed.

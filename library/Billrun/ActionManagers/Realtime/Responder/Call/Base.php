@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -71,8 +71,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 				case ($returnCodes['no_rate']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.insufficient_credit");
+					break;
 				case ($returnCodes['no_subscriber']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.subscriber_not_found");
+					break;
 			} 
 		}
 		

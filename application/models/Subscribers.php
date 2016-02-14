@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -45,7 +45,7 @@ class SubscribersModel extends TabledateModel{
 			'service_provider' => 'Service Provider',
 			'language' => 'Language',
 			'from' => 'From',
-			'to' => 'To'
+			'to' => 'Expiration'
 		);
 		return $columns;
 	}

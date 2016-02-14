@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -76,7 +76,6 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 				'continueOnError' => true,
 				'socketTimeoutMS' => 300000,
 				'wTimeoutMS' => 300000,
-				'w' => 1,
 			);
 			$collectionName = $this->getCollectionName();
 			$collection = Billrun_Factory::db()->getCollection($collectionName);

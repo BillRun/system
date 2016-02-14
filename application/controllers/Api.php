@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -32,6 +32,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		$this->apiLogAction();
 	}
 
 	/**
@@ -128,6 +129,24 @@ class ApiController extends Yaf_Controller_Abstract {
 		}
 		Billrun_Factory::log('No output method defined; set to json encode', Zend_Log::DEBUG);
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
+		header('Content-Type: application/json');
 	}
-
+	
+	/**
+	 * method to log api request
+	 * 
+	 * @todo log response
+	 */
+	protected function apiLogAction() {
+		$this->logColl = Billrun_Factory::db()->logCollection();
+		$request = $this->getRequest();
+		$saveData = array(
+			'source' => 'api',
+			'type' => $request->action,
+			'process_time' => new MongoDate(),
+			'request' => $this->getRequest()->getRequest(),
+		);
+		$this->logColl->save(new Mongodloid_Entity($saveData));
+	}
+	
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class BalancesAction extends ApiAction {
-
+	
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action

@@ -9,10 +9,6 @@ class Billrun_ActionManagers_Realtime_Responder_Data_FinalRequest extends Billru
 		return 'final_request';
 	}
 	
-	public function isRebalanceRequired() {
-		return true;
-	}
-	
 	protected function getReturnCode() {
 		return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 	}

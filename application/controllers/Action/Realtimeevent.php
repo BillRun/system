@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -97,10 +97,45 @@ class RealtimeeventAction extends ApiAction {
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
+		
+		// some hack for PL (@TODO - move to plugin)
+		if ($this->event['call_type'] == '3') {
+			$this->usaget = 'video_call';
+		}
+		
+		if ($this->usaget === 'call' || $this->usaget === 'video_call' || $this->usaget === 'forward_call') {
+			if (!isset($this->event['called_number'])) {
+				if (isset($this->event['connected_number'])) {
+					$this->event['called_number'] = $this->event['connected_number'];
+				} else if (isset($this->event['dialed_digits'])) {
+					$this->event['called_number'] = $this->event['dialed_digits'];
+				}
+			}
+			
+			if (!empty($this->event['called_number']) && strlen($this->event['called_number']) > 3 && substr($this->event['called_number'], 0, 3) == '972') {
+				$called_number = $this->event['called_number'];
+				if (substr($this->event['called_number'], 0, 4) == '9721') {
+					$prefix = '';
+				} else {
+					$prefix = '0';
+				}
+				$this->event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number)+3);
+			}
+		}
+		
 				
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
-		// we are on real time -> the time is now
-		$this->event['urt'] = new MongoDate();
+		if (isset($this->event['time_date'])) {
+			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
+		} else {
+			// we are on real time -> the time is now
+			$this->event['urt'] = new MongoDate();
+		}
+		
+		if (in_array($this->usaget, array('sms','mms','service'))) {
+			$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
+			$this->event['transaction_id'] = $this->getTransactionId($this->event);
+		}
 	}
 	
 	protected function getSgsn($event) {
@@ -112,7 +147,7 @@ class RealtimeeventAction extends ApiAction {
 		} else if(isset ($event['sgsnaddress'])) {
 			$sgsn = $event['sgsnaddress'];
 		}
-		return long2ip(hexdec($sgsn));
+		return $sgsn;
 	}
 	
 	protected function getDataRecordType($usaget, $data) {
@@ -173,7 +208,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
 		$processor->process();
-		return $processor->getData()['data'][0];
+		return current($processor->getAllLines());
 	}
 	
 	/**
@@ -208,12 +243,33 @@ class RealtimeeventAction extends ApiAction {
 	}
 	
 	/**
-	 * Checks if the row should really decrease balance from the subscriber's balance, or just prepend
+	 * Checks if the row should really decrease balance from the subscriber's balance, or just pretend
 	 * 
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
 		return ($this->usaget === 'call' && $event['record_type'] === 'start_call');
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function isReverseCharge($event) {
+		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function getTransactionId($event) {
+		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
+			return $event['transaction_id'];
+		}
+		return Billrun_Util::generateRandomNum();
 	}
 
 }

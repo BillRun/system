@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -18,7 +18,7 @@ class utest_SubscriberDeleteModel extends utest_AbstractUtestModel {
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('subscriber_after', 'subscriber_before', 'balance_before', 'balance_after');
-		$this->label = 'Dalete Subscriber';
+		$this->label = 'Subscriber | Delete';
 	}
 
 	public function doTest() {

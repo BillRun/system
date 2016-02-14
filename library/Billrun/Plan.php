@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -39,7 +39,7 @@ class Billrun_Plan {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else {
-			self::initPlans();
+//			self::initPlans();
 			if (isset($params['id'])) {
 				$id = $params['id'];
 				if ($id instanceof Mongodloid_Id) {

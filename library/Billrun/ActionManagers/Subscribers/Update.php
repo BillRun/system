@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -35,47 +35,36 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * U[date all the balances for a subscriber.
+	 * Close all the open balances for a subscriber.
 	 * 
-	 * @param integer $sid - The sid of the user to update to.
-	 * @param integer $aid - The aid of the user to update to.
+	 * @param array $update array for update (collection update convention)
+	 * 
+	 * @return mixed false if failed else array of mongo update results
 	 */
-	protected function updateBalances($sid, $aid) {
+	protected function handleBalances(array $update = array()) {
 		// Find all balances.
-		$balancesUpdate['sid'] = $sid;
-		$balancesUpdate['aid'] = $aid;
-		$balancesQuery = Billrun_Util::getDateBoundQuery();
-		$balancesQuery['sid'] = $this->query['sid'];
-		$balancesQuery['aid'] = $this->query['aid'];
-			
+		$balancesQuery = array();
+		if (isset($this->query['sid'])) {
+			$balancesQuery['sid'] = $this->query['sid'];
+		}
+		if (isset($this->query['aid'])) {
+			$balancesQuery['aid'] = $this->query['aid'];
+		}
+		
+		if (empty($balancesQuery)) {
+			return false;
+		}
+
 		$options = array(
 			'upsert' => false,
+			'new' => false,
 			'multiple' => true,
 		);
 		// TODO: Use balances DB/API proxy class.
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->update($balancesQuery, array('$set' => $balancesUpdate), $options);
-	}
-	
-	/**
-	 * Update balances.
-	 * 
-	 * @param integer $sid - The sid of the user to close the balance for.
-	 * @param integer $aid - The aid of the user to close the balance for.
-	 */
-	protected function closeBalances($sid, $aid) {
-		// Find all balances.
-		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
-		$balancesQuery = 
-			array('sid' => $sid, 
-				  'aid' => $aid);
-		$options = array(
-			'upsert' => false,
-			'multiple' => 1
-		);
-		// TODO: Use balances DB/API proxy class.
-		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->update($balancesQuery, $balancesUpdate, $options);
+		$balancesColl->update($balancesQuery, $update, $options);
+		$autoRenewColl = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
+		$autoRenewColl->update($balancesQuery, $update, $options);
 	}
 	
 	/**
@@ -117,8 +106,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'w' => 1,
-			'multiple' =>true,
+			'multiple' =>1,
 		);
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		return $linesColl->update($keepLinesQuery, array('$set' => $keepLinesUpdate),$options);
@@ -147,13 +135,15 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			// This throws an exception if fails.
 			$this->handleKeepHistory($record, $track_time);
 			unset($record['_id']);
-			$this->recordToSet['from'] = new MongoDate($track_time+1);
+			
+			$this->recordToSet['from'] = new MongoDate($track_time);
 		}
 
 		$record->collection($this->collection);
 		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
+				$error = "Failed to set values to entity";
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 				return false;
 			}
@@ -166,32 +156,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	/**
-	 * Handle all balance logic related to the subscriber update
-	 */
-	protected function handleBalances() {
-		$sid = $this->query['sid']; 
-		$aid = $this->query['aid']; 
-		// Check if needed to update the balances.
-		if((isset($this->recordToSet['sid']) && ($this->query['sid'] != $this->recordToSet['sid'])) ||
-			(isset($this->recordToSet['aid']) && ($this->query['aid'] != $this->recordToSet['aid']))) {
-
-			if(isset($this->recordToSet['sid'])) {
-				$sid = $this->recordToSet['sid'];
-			}
-
-			if(isset($this->recordToSet['aid'])) {
-				$aid = $this->recordToSet['aid'];
-			}
-			$this->updateBalances($sid, $aid);
-		}
-
-		if($this->keepBalances === FALSE) {
-			// Close balances.
-			$this->closeBalances($sid, $aid);
-		} 
-	}
-	
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -199,6 +163,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$success = true;
 
 		$updatedDocument = null;
+		$errorCode = 0;
 		try {
 			if($this->keepLines) {
 				$this->handleKeepLines();
@@ -214,7 +179,20 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updatedDocument[] = Billrun_Util::convertRecordMongoDatetimeFields($record->getRawData());
 			}
 			
-			$this->handleBalances();
+			if($this->keepBalances === FALSE) {
+				// Close balances.
+				$updateArray = array('$set' => array('to' => new MongoDate()));
+				$this->handleBalances($updateArray);
+			} else if (isset($this->recordToSet['sid']) || $this->recordToSet['aid']) {
+				$updateArray = array('$set' => array());
+				if (isset($this->recordToSet['sid'])) {
+					$updateArray['$set']['sid'] = $this->recordToSet['sid'];
+				}
+				if (isset($this->recordToSet['aid'])) {
+					$updateArray['$set']['aid'] = $this->recordToSet['aid'];
+				}
+				$this->handleBalances($updateArray);
+			}
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 31;
@@ -230,6 +208,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$outputResult = 
 			array('status'  => ($success) ? (1) : (0),
 				  'desc'    => $this->error,
+				  'error_code'    => ($success) ? (0) : ($errorCode),
 				  'details' => ($updatedDocument) ? $updatedDocument : 'No results');
 		return $outputResult;
 	}
@@ -343,7 +322,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($subCol->exists($subscriberValidationQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-				$parameters = http_build_query($this->query, '', ', ');
+				$cleaned = Billrun_Util::array_remove_compound_elements($this->query);
+				$parameters = http_build_query($cleaned, '', ', ');
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 				return false;
 			}
@@ -358,11 +338,18 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
+		
+		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 38;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		
+		$queryFields = $this->getQueryFields();		
+
 		// Initialize the query with date bounds
 		$this->query = Billrun_Util::getDateBoundQuery();
-		
-		$queryFields = $this->getQueryFields();
-		$queryFields = array_merge($queryFields, Billrun_Factory::config()->getConfigValue('subscribers.extra_fields'));
+	
 		// Array of errors to report if any occurs.
 		$ret = false;
 		
@@ -378,14 +365,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$this->query[$field] = $queryDataValue;
 				$ret = true;
 			}
-		}
-		
-		$count = count($this->query) - 2;
-		
-		if(($count >0) && ($count < count($queryFields))) {
-			$rawData = 
-				$this->collection->query($this->query)->cursor()->current()->getRawData();
-			return $this->setQueryFields($rawData);
 		}
 		
 		return $ret;
@@ -430,7 +409,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 			
-		$validateOutput = $this->validateCustomerPlan(@$this->recordToSet['plan']);
+		$validateOutput = $this->validateCustomerPlan($this->recordToSet['plan']);
 		if($validateOutput !== true) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 36;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['plan']));
@@ -444,10 +423,13 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it.
-		$this->trackHistory = $input->get('track_history', $this->trackHistory);
+		$this->trackHistory = Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
-		$this->keepBalances = $input->get('keep_balances', $this->keepBalances);
+		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		
+		// If keep_lines is set take it.
+		$this->keepLines = Billrun_Util::filter_var($input->get('keep_lines', $this->keepLines), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		return true;
 	}

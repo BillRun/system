@@ -2,7 +2,7 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2015 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Entity implements ArrayAccess {
@@ -229,7 +229,7 @@ class Mongodloid_Entity implements ArrayAccess {
 				$collection = $this->collection();
 				// TODO: Report error if collection is null?
 				if($collection) {
-					$result[$key] = $collection->getRef($result[$key]);					
+					$result[$key] = $collection->getRef($result[$key]);
 				}
 			}
 		}
