@@ -24,12 +24,14 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$name = Billrun_Util::filter_var($this->controller->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);
-		$amount = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('amount'), FILTER_SANITIZE_NUMBER_INT);
+		$amount = Billrun_Util::filter_var($this->controller->getRequest()->get('amount'), FILTER_SANITIZE_STRING);
+		$expiration = Billrun_Util::filter_var($this->controller->getRequest()->get('expiration'), FILTER_SANITIZE_STRING);
 
 		$params = array(
 			'sid' => $sid,
 			'name' => $name,
-			'amount' => $amount
+			'amount' => $amount,
+			'expiration' => $expiration
 		);
 
 		$data = $this->getRequestData($params);
@@ -47,8 +49,8 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 		$request = array(
 			'method' => 'update',
 			'sid' => $params['sid'],
-			'query' => json_encode(["pp_includes_name" => $params['name']]),
-			'upsert' => json_encode(["value" => $amount, "expiration_date" => "2016-07-01T00:00:00+02:00"])
+			'query' => json_encode(array("pp_includes_name" => $params['name'])),
+			'upsert' => json_encode(array("value" => $amount, "expiration_date" => $params['expiration']))
 		);
 		return $request;
 	}
