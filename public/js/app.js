@@ -1,4 +1,4 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'pageslide-directive']);
 app.run(function ($rootScope, $interval) {
 
   var lastDigestRun = Date.now();
@@ -82,9 +82,8 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
+}).run(['$http', '$rootScope', function ($http, $rootScope) {
     'use strict';
-    editableOptions.theme = 'bs3';
     $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
       $rootScope.fields = res.data;
     });

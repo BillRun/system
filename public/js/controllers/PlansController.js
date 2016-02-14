@@ -40,7 +40,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.plansTemplate = function () {
-      return 'views/plans/' + $location.search().type + 'edit.html';
+      var type = $routeParams.type;
+      if (type === 'recurring') type = 'charging';
+      return 'views/plans/' + type + 'edit.html';
     };
 
     $scope.removeIncludeType = function (include_type_name) {
@@ -113,7 +115,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity = res.data.entity;
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
-        } else if ($location.search().type === "charging") {
+        } else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
           $scope.entity = {
             "name": "",
             "external_id": "",
@@ -127,7 +129,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "include": {},
             "priority": "0"
           };
-        } else if ($location.search().type === "customer") {
+          if ($routeParams.type === "recurring") {
+            $scope.entity.recurring = 1;
+          }
+        } else if ($routeParams.type === "customer") {
           $scope.entity = {
             "name": "",
             "from": new Date(),
@@ -137,6 +142,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "external_code": ""
           };
         }
+        $scope.plan_rates = res.data.plan_rates;
         $scope.authorized_write = res.data.authorized_write;
       }, function (err) {
         alert("Connection error!");
@@ -150,6 +156,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         $scope.availableServiceProviders = res.data;
       });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
+      $scope.plan_type = $routeParams.type;
       $scope.duplicate_rates = {on: ($scope.action === 'duplicate')};
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
       $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];

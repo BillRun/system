@@ -14,12 +14,24 @@
  */
 class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	
+	// TODO: Move the field columns to the 
+	// importer_csv and add a 'get fields' abstract function.
+	protected $fields = null;
+	
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->fields = Billrun_Factory::config()->getConfigValue('importer.Cards.fields', array());
+	}
+	
 	protected function getCollectionName() {
 		return 'cards';
 	}
 
 	protected function getSecret($rowData) {
-		$secret = hash('sha512',$rowData[2]);
+		$formatted = number_format($rowData[$this->fields['secret']], 0, '', '');
+		$codeLength = Billrun_Factory::config()->getConfigValue('importer.Cards.code_length');
+		$padded = str_pad($formatted, $codeLength, "0", STR_PAD_LEFT);
+		$secret = hash('sha512',$formatted);
 		return $secret;
 	}
 	
@@ -28,8 +40,18 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 		return $from;
 	}
 	
+	protected function getSerial($rowData) {
+		$serial = (int)$rowDate[$this->fields['serial_number']];
+		return $serial;
+	}
+	
+	protected function getBatch($rowData) {
+		$batch = (int)$rowDate[$this->fields['batch_number']];
+		return $batch;
+	}
+	
 	protected function getTo($rowData) {
-		$to = new MongoDate(strtotime($rowData[6]));
+		$to = new MongoDate(strtotime($rowData[$this->fields['to']]));
 		return $to;
 	}
 	

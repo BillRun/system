@@ -30,31 +30,34 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		//Get test params
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
-		$dialedDigits = Billrun_Util::filter_var($this->controller->getRequest()->get('dialedDigits'), FILTER_SANITIZE_STRING);
+		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
+		$call_type = Billrun_Util::filter_var($this->controller->getRequest()->get('call_type'), FILTER_SANITIZE_STRING);
+		$call_tech = Billrun_Util::filter_var($this->controller->getRequest()->get('call_tech'), FILTER_SANITIZE_STRING);
 		$time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('time_date'), FILTER_SANITIZE_STRING);
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
-
-		$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))
-			->cursor()
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
 		
+		if($call_tech == 'UMTS'){
+			$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
+			$msisdn = $subscriber['msisdn'];
+		} else {
+			$msisdn = $calling_number;
+		}
 		
 		//Run test scenario
 		foreach ($scenario as $index => $name) {
 			$nameAndUssage = explode("|", $name);
 			$params = array(
-				'msisdn' => $subscriber['msisdn'],
+				'msisdn' => $msisdn,
 				'imsi' => $imsi,
-				'type' => $nameAndUssage[0],
+				'dialedDigits' => $called_number,
 				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1]*10) : 4800, // default 8 minutes
-				'dialedDigits' => $dialedDigits,
-				'call_reference' => $this->controller->getReference(),
+				'type' => $nameAndUssage[0],
+				'call_type' => $call_type,
+				'call_tech' => $call_tech
 			);
 			if($send_np_code === 'on'){
 				$params['np_code'] = $np_code;
@@ -65,7 +68,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'call', 'request' => $data));
 			sleep(1);
-		};
+		}
 	}
 
 	/**
@@ -76,28 +79,65 @@ class utest_CallModel extends utest_AbstractUtestModel {
 	 */
 	protected function getRequestData($params) {
 		$type = $params['type'];
+		$msisdn = $params['msisdn'];
 		$imsi = $params['imsi'];
 		$duration = $params['duration'];
+		$call_type = $params['call_type'];
+		$call_tech = $params['call_tech'];
 		$dialedDigits = $params['dialedDigits'];
-		$call_reference = $params['call_reference'];
 		$time_date = isset($params['time_date']) ? $params['time_date'] : date_format(date_create(), 'Y/m/d H:i:s.000');
-		$msisdn = $params['msisdn'];
-		$np_code = isset($params['np_code']) ? '<np_code>' . $params['np_code'] . '</np_code>' : '';
+
+		$data = array(
+			'api_name' => $type,
+			'calling_number' => $msisdn,
+			'call_reference' => $this->controller->getReference(),
+			'call_id' => 'rm7xxxxxxxxx',
+			'connected_number' =>  $dialedDigits,
+			'time_date' => $time_date,
+		);
 		
-		$request = '<?xml version = "1.0" encoding = "UTF-8"?>';
+		if($call_tech == 'UMTS') {
+			$data['imsi'] = $imsi;
+		}
+		
+		if (isset($params['np_code'])) {
+			$data['np_code'] = $params['np_code'];
+		}
+
 		switch ($type) {
-			case 'start_call': $request .= '<request><api_name>start_call</api_name><calling_number>' . $msisdn . '</calling_number>' . $np_code . '<call_reference>' . $call_reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>' . $dialedDigits . '</dialed_digits><connected_number>' . $dialedDigits . '</connected_number><event_type>2</event_type><service_key>61</service_key><vlr>972500000701</vlr><location_mcc>425</location_mcc><location_mnc>03</location_mnc><location_area>7201</location_area><location_cell>53643</location_cell><time_date>' . $time_date . '</time_date><call_type>x</call_type></request>';
+			case 'start_call':
+				$data['dialed_digits'] = $dialedDigits;
+				$data['event_type'] = 2;
+				$data['service_key'] = 61;
+				if($call_tech == 'UMTS') {
+					$data['vlr'] = 972500000701;
+					$data['location_mcc'] = 425;
+					$data['location_mnc'] = 03;
+					$data['location_area'] = 7201;
+					$data['location_cell'] = 53643;
+				}
+				$data['call_type'] = $call_type;
 				break;
-			case 'answer_call': $request .= '<request><api_name>answer_call</api_name><calling_number>' . $msisdn . '</calling_number>' . $np_code . '<call_reference>' . $call_reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><dialed_digits>' . $dialedDigits . '</dialed_digits><connected_number>' . $dialedDigits . '</connected_number><time_date>' . $time_date . '</time_date><call_type>x</call_type></request>';
+			case 'answer_call':
+				$data['dialed_digits'] = $dialedDigits;
+				$data['call_type'] = $call_type;
 				break;
-			case 'reservation_time': $request .= '<request><api_name>reservation_time</api_name><calling_number>' . $msisdn . '</calling_number>' . $np_code . '<call_reference>' . $call_reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>' . $dialedDigits . '</connected_number><time_date>' . $time_date .'</time_date></request>';
+			case 'reservation_time':
 				break;
-			case 'release_call': $request .= '<request><api_name>release_call</api_name><calling_number>' . $msisdn . '</calling_number>' . $np_code . '<call_reference>' . $call_reference . '</call_reference><call_id>rm7123123123</call_id><imsi>' . $imsi . '</imsi><connected_number>' . $dialedDigits . '</connected_number><time_date>' . $time_date . '</time_date><duration>' . $duration . '</duration><scp_release_cause>mmm</scp_release_cause><isup_release_cause>nnn</isup_release_cause><call_leg>x</call_leg></request>';
+			case 'release_call':
+				$data['duration'] = $duration;
+				$data['scp_release_cause'] = 'tmp';
+				$data['isup_release_cause'] = 'tmp';
+				$data['call_leg'] = 'x'; //(call party terminated the call: 0 – MSC, 1 – originator (Calling party), 2 – terminator (Called party), 3 – SCP, 4 - Billing)
 				break;
-			default: $request = NULL;
+			default:
+				$data = array(); // Case with Error, not support API name
 				break;
 		}
-		return $request;
+
+		$xmlParams = array('rootElement' => 'request');
+		$xmlRequest = Billrun_Util::arrayToXml($data, $xmlParams);
+		return $xmlRequest;
 	}
-	
+
 }

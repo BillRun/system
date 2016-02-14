@@ -121,9 +121,24 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
-		$this->populateUpdateQuery($jsonUpdateData);
+		if(!$this->populateUpdateQuery($jsonUpdateData)) {
+			return false;
+		}
 
 		return true;
+	}
+	
+	/**
+	 * Get the interval value from the json data
+	 * @param type $jsonUpdateData
+	 * @return Interval or false if error.
+	 */
+	protected function getInterval($jsonUpdateData) {
+		if (!isset($jsonUpdateData['interval'])) {
+			return 'month';
+		} 
+		
+		return $this->normalizeInterval($jsonUpdateData['interval']);
 	}
 	
 	/**
@@ -131,11 +146,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @param type $jsonUpdateData
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
-		// TODO INTERVAL IS ALWAYS MONTH
-		$set = array(
-			'interval' => 'month'
-		);
+		$interval = $this->getInterval($jsonUpdateData);
+		if($interval === false) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
+			return false;
+		}
 		
+		$set = array(
+			'interval' => $interval);
+			
 		if (isset($jsonUpdateData['to']['sec'])) {
 			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
@@ -158,6 +178,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		
 		$set['creation_time'] = new MongoDate();
+		
+		// TODO: Is it possible that we will receive a date here with hours minutes and seconds?
+		// if so we will have to strip them somehow.
 		if (isset($this->query['from']['sec'])) {
 			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
 		} else if (is_string($this->query['from'])) {
@@ -184,6 +207,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
+		
+		return true;
 	}
 	
 	protected function fillWithSubscriberValues() {
@@ -315,10 +340,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	protected function handleDuplicates() {
-		if (!$this->collection->query($this->query)->cursor()->limit(1)->current()->isEmpty()) {
+		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
+		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
+			
+			// TODO: Pelephone does not want this to return a failure indication.
+			// return false;
 		}
 		return true;
 	}

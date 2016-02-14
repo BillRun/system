@@ -11,7 +11,7 @@
 					{{utils.getDisplayValue('sid', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.sid"  class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
+					<input ng-model="entity.sid" type="number"  class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("aid", "subscribers")'>

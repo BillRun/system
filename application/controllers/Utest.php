@@ -155,7 +155,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			if(!empty($imsi)){
 				$query = array('imsi' => $imsi);
 			} elseif(!empty($msisdn)) {
-				$query = array('msisdn' => $msisdn);
+				$query = array('msisdn' => Billrun_Util::msisdn($msisdn));
 			}
 			if (!empty($query)) {
 				$sid = $this->getSid($query);
@@ -182,6 +182,11 @@ class UtestController extends Yaf_Controller_Abstract {
 		if(in_array('balance_before', $result)){
 			// Get balance before scenario
 			$balance['before'] = $this->getBalance($sid);
+		}
+		
+		if(in_array('autorenew_before', $result)){
+			// Get balance after scenario
+			$autorenew['before'] = $this->getAutorenew($sid);
 		}
 		
 		if(in_array('subscriber_before', $result)){
@@ -218,6 +223,10 @@ class UtestController extends Yaf_Controller_Abstract {
 			// Get balance after scenario
 			$balance['after'] = $this->getBalance($sid_after_test);
 		}
+		if(in_array('autorenew_after', $result)){
+			// Get balance after scenario
+			$autorenew['after'] = $this->getAutorenew($sid_after_test);
+		}
 
 		$this->getView()->test = $this->utest;
 		$this->getView()->sid = $sid;
@@ -227,6 +236,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$this->getView()->lines = isset($lines) ? $lines : null;
 		$this->getView()->balances = $balance;
 		$this->getView()->subscribers = isset($subscriber) ? $subscriber : null;
+		$this->getView()->autorenew = isset($autorenew) ? $autorenew : null;
 		$this->getView()->apiCalls = $this->apiCalls;
 		$this->getView()->test_collection = $test_collection;
 		$this->getView()->test_collection_label = $this->cleanLabel($test_collection);
@@ -302,7 +312,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$searchQuery = ["sid" => $sid];
 		$cursor = Billrun_Factory::db()->balancesCollection()->query($searchQuery)->cursor()->limit(100000);
 		foreach ($cursor as $row) {
-			if ($row['charging_by_usaget'] == 'total_cost') {
+			if ($row['charging_by_usaget'] == 'total_cost' ||  $row['charging_by_usaget'] == 'cost') {
 				$amount = floatval($row['balance']['cost']);
 			} else {
 				$amount = $row['balance']['totals'][$row["charging_by_usaget"]][$row["charging_by"]];
@@ -349,6 +359,36 @@ class UtestController extends Yaf_Controller_Abstract {
 		}
 		return $subscribers;
 	}
+	
+	/**
+	 * Find Auto renew by SID
+	 * @param type $sid
+	 */
+	protected function getAutorenew($sid) {
+		$output = array();
+		$searchQuery = array("sid" => (int)$sid);
+		$cursor = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['to' => 1]);
+		foreach ($cursor as $row) {
+			$rowData = $row->getRawData();
+			ksort($rowData);
+			$id = (string)$rowData['_id'];
+			foreach ($rowData as $key => $value) {
+				if(get_class ($value) == 'MongoId'){
+					$subscribers[$id][$key] = $id;
+				}
+				else if(get_class ($value) == 'MongoDate'){
+					$subscribers[$id][$key] = date('d/m/Y H:i:s', $value->sec);
+				}
+				else if(is_array($value)){
+					$output[$id][$key] = json_encode ($value);
+				}
+				else {
+					$output[$id][$key] = $value;
+				}
+			}	
+		}
+		return $output;
+	}
 
 	/**
 	 * Find all lines by SID during the test
@@ -358,10 +398,15 @@ class UtestController extends Yaf_Controller_Abstract {
 		$lines = array();
 		$total_aprice = $total_usagev = 0;
         //Search lines by testID + sid (for test with configurable date)
-		if(in_array($this->utest->getTestName(), array('utest_Call'))){
+		if($this->utest->getTestName() == 'utest_Call'){
 			$searchQuery = array(
 				'sid' => $sid,
 				'call_reference' => (string)$this->reference
+			);
+		} else if(in_array($this->utest->getTestName(), array('utest_Sms', 'utest_Service'))){
+			$searchQuery = array(
+				'sid' => $sid,
+				'association_number' => (string)$this->reference
 			);
 		} else { //Search lines by test time + sid
 			$searchQuery = array(
@@ -387,12 +432,33 @@ class UtestController extends Yaf_Controller_Abstract {
 				'balance_before' => number_format($rowData['balance_before'], 3),
 				'balance_after' => number_format($rowData['balance_after'], 3),
 			);
+			
+			//Get Line rates
 			$arate = Billrun_Factory::db()->ratesCollection()->getRef($rowData['arate']);
 			if(!empty($arate)){
 				$line['arate'] = array(
 					'id' => (string)$arate->get('_id'),
 					'key' => $arate->get('key')
 				);
+			}
+			
+			//Get Archive lines
+			$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+			$lines_coll = $this->archiveDb->archiveCollection();
+			$archive_lines = $lines_coll->query(array('u_s' => $rowData['stamp']))->cursor()->sort(array('urt' => 1));
+			foreach ($archive_lines as $archive_line) {
+				$archive_line_data = $archive_line->getRawData();
+				$arate = Billrun_Factory::db()->ratesCollection()->getRef($archive_line_data['arate']);
+				if(!empty($arate)){
+					$archive_line_data['arate'] = array(
+						'id' => (string)$arate->get('_id'),
+						'key' => $arate->get('key')
+					);
+				}
+				$line['archive_lines']['rows'][] = $archive_line_data;
+			}
+			if(isset($line['archive_lines'])){
+				$line['archive_lines']['ref'] = "Archive line details";
 			}
 			$lines['rows'][] = $line;
 		}
@@ -466,6 +532,16 @@ class UtestController extends Yaf_Controller_Abstract {
 		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['service_provider' => 1, 'name' => 1]);
 		foreach ($cursor as $row) {
 			$output['charging_plans'][] = array('name' => $row['name'], 'desc' => $row['desc'], 'service_provider' => $row['service_provider']);
+		}
+		$output['autorenew_plans'] = array();
+		$searchQuery = array(
+			'type' => 'charging',
+			'recurring' => 1,
+			'include' => array('$exists' => 1),
+		);
+		$cursor = Billrun_Factory::db()->plansCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['service_provider' => 1, 'name' => 1]);
+		foreach ($cursor as $row) {
+			$output['autorenew_plans'][] = array('name' => $row['name'], 'service_provider' => $row['service_provider'], 'exp' => date('d/m/Y', $row["to"]->sec));
 		}
 		$output['customer_plans'] = array();
 		$searchQuery = array('type' => 'customer');

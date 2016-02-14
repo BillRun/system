@@ -222,7 +222,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'urt',
 				'input_type' => 'date',
 				'comparison' => '$lte',
-				'display' => 'Expiration',
+				'display' => 'To',
 				'default' => (new Zend_Date(strtotime("next month"), null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 			'usage' => array(
@@ -380,7 +380,7 @@ class LinesModel extends TableModel {
 		if ($include_sms) {
 			$query['usaget']['$in'][] = 'sms';
 		}
-		
+
 		$query['urt'] = array(
 			'$lte' => new MongoDate($to_date),
 			'$gte' => new MongoDate($from_date),
