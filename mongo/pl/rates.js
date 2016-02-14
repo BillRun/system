@@ -158,7 +158,17 @@ function getUniqueArray(arr) {
 	return result;
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/012_URU/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+function isEmpty(obj) {
+//   for(var key in obj) {
+//      if (obj.hasOwnProperty(key)) {
+//         return false;
+//      }
+//   }
+//   return true;
+	return Object.keys(obj).length == 0;
+}
+
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/FreeCall/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;
@@ -235,6 +245,15 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 		}
 		_prefixes = getUniqueArray(_prefixes);
 
+		if (isEmpty(_tariffs_interconnect)) {
+			_tariffs_interconnect = _tariffs;
+		}
+		if (isEmpty(_tariffs_shabbat)) {
+			_tariffs_shabbat = _tariffs;
+		}
+		if (isEmpty(_tariffs_shabbat_interconnect)) {
+			_tariffs_shabbat_interconnect = _tariffs;
+		}
 		_rate = {
 			'from':    ISODate('2016-01-01'),
 			'to':      ISODate('2099-12-31 23:59:59'),
