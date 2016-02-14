@@ -6,10 +6,11 @@ function SidePanelController(Database) {
   'use strict';
 
   var vm = this;
-  vm.showSidePanel = false;
+  vm.showSidePanel = (localStorage.getItem('showSidePanel') === "true");
 
   vm.togglePanel = function () {
     vm.showSidePanel = !vm.showSidePanel;
+    localStorage.setItem('showSidePanel', vm.showSidePanel);
   };
 
   vm.init = function () {
@@ -17,7 +18,7 @@ function SidePanelController(Database) {
       if (res.data.subscriber) {
         if (_.isEmpty(res.data.subscriber)) return;
         vm.subscriber = res.data.subscriber;
-        vm.showSidePanel = true;
+//        vm.showSidePanel = true;
       } else {
         vm.showSidePanel = false;
       }
