@@ -100,6 +100,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
@@ -318,8 +319,19 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response = new Yaf_Response_Http();
+		if ($this->getRequest()->get('full_objects')) {
+			$collection = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor();
+			$ppincludes = array();
+			foreach ($collection as $ppinclude) {
+				$pp = $ppinclude->getRawData();
+				$ppincludes[] = $pp;
+			}
+			$response->setBody(json_encode($ppincludes));
+			$response->response();
+			return false;
+		}
+		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response->setBody(json_encode($collection));
 		$response->response();
 		return false;

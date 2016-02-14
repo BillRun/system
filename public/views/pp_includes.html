@@ -1,0 +1,24 @@
+<div class='container component' ng-init='vm.init()'>
+    <h2>
+        Pre-paid Includes
+    </h2>
+	
+	<table class="table table-bordered">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Name</th>
+				<th>Charging by</th>
+				<th>Charging by usage type</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="pp_include in vm.pp_includes">
+				<td>{{pp_include.external_id}}</td>
+				<td>{{pp_include.name}}</td>
+				<td>{{pp_include.charging_by}}</td>
+				<td>{{pp_include.charging_by_usaget}}</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
