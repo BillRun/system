@@ -259,8 +259,6 @@ class TableModel {
 		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
 			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
-
-		return $entity;
 	}
 
 	public function remove($params) {
@@ -371,6 +369,14 @@ class TableModel {
 				}
 			}
 		} else if ($filter_field['input_type'] == 'date') {
+			if ($filter_field['key'] == 'to') {
+				$split = explode(' ', $value);
+				$value = $split[0] . ' 23:59:59';
+			} else if ($filter_field['key'] == 'from') {
+				$split = explode(' ', $value);
+				$value = $split[0] . ' 00:00:00';
+			}
+			Billrun_Factory::log($value);
 			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				return array(

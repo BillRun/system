@@ -228,7 +228,7 @@ class Billrun_Factory {
 	 */
 	static public function smser($options = array()) {
 		if (empty($options)) {
-			$options = Billrun_Factory::config()->getConfigValue('smser');
+			$options = Billrun_Factory::config()->getConfigValue('smser', array());
 		}
 		$stamp = Billrun_Util::generateArrayStamp($options);
 		if (!isset(self::$smser[$stamp])) {

@@ -229,7 +229,7 @@ class Mongodloid_Entity implements ArrayAccess {
 				$collection = $this->collection();
 				// TODO: Report error if collection is null?
 				if($collection) {
-					$result[$key] = $collection->getRef($result[$key]);					
+					$result[$key] = $collection->getRef($result[$key]);
 				}
 			}
 		}

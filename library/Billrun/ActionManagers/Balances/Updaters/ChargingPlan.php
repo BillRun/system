@@ -53,14 +53,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			array('recurring' => 0),
 			array('recurring' => array('$exists' => 0)),
 		);
-		$chargingPlanRecord = $this->getRecord($query, $chargingPlansCollection, $this->getTranslateFields());
+		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
-		$this->setPlanToQuery($query, $chargingPlansCollection, $chargingPlanRecord);
+		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
 
 		// Get the priority from the plan.
 		if (isset($chargingPlanRecord['priority'])) {
@@ -252,6 +252,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'charging_plan_name' => 'name',
 			'charging_plan_external_id' => 'external_id',
 			'service_provider' => 'service_provider',
+			'$or' => '$or',
 		);
 	}
 

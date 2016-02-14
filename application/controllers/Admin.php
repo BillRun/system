@@ -80,6 +80,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -99,6 +100,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
@@ -143,7 +145,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
-		$lines_coll = $this->archiveDb->linesCollection();
+		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		$res = array();
@@ -180,8 +182,62 @@ class AdminController extends Yaf_Controller_Abstract {
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
 				if ($key !== '_id') unset($entity[$key]);
 			}
+			if ($coll == 'plans') {
+				$plan_name = $entity['name'];
+				$query = array(
+					'$or' => array(
+						array("rates.calls.$plan_name" => array('$exists' => 1)),
+						array("rates.data.$plan_name" => array('$exists' => 1)),
+						array("rates.sms.$plan_name" => array('$exists' => 1))
+					)
+				);
+				$plan_rates = array();
+				$id = '$id';
+				foreach (Billrun_Factory::db()->ratesCollection()->query($query)->cursor() as $rate) {
+					$r = $rate->getRawData();
+					$data = (!empty($r['rates']['data'][$plan_name]) ? $r['rates']['data'][$plan_name] : array());
+					$call = (!empty($r['rates']['call'][$plan_name]) ? $r['rates']['call'][$plan_name] : array());
+					$sms = (!empty($r['rates']['sms'][$plan_name]) ? $r['rates']['sms'][$plan_name] : array());
+					$cur_rate = array(
+						'id' => $r['_id']->$id,
+						'key' => $r['key'],
+						'price' => array(
+							'calls' => $call,
+							'data' => $data,
+							'sms' => $sms
+						)
+					);
+					$plan_rates[] = $cur_rate;
+				}
+				
+			}
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates)));
+			$response->response();
+			return false;			
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
+		$response->response();
+		return false;
+	}
+	
+	public function getSubscriberDetailsAction() {
+		$global_session = $this->getSession('global');
+		if (isset($global_session->sid)) {
+			$response = new Yaf_Response_Http();
+			$model = self::initModel('subscribers');
+			$entity = $model->getBySid($global_session->sid);
+			if (!$entity) {
+				$response->setBody(json_encode(array('error' => 'Could not find entity')));
+				$response->response();
+				return false;
+			}
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, 'update') as $key) {
+				unset($entity[$key]);
+			}
+			unset($entity['_id']);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'subscriber' => $entity)));
 		$response->response();
 		return false;
 	}
@@ -562,6 +618,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+
 	public function customerplansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -569,6 +626,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
 	}
+
 	public function recurringplansAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -1042,7 +1100,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-		
+
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
 
@@ -1112,6 +1170,12 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @return type
 	 */
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
+		$global_session_vars = Billrun_Factory::config()->getConfigValue('admin_panel.global_session_vars', array());
+		if (in_array($source_name, $global_session_vars)) {
+			$getsetvar_session = $this->getSession('global');//Yaf_session::getInstance();
+		} else {
+			$getsetvar_session = $session;
+		}
 		if (is_null($target_name)) {
 			$target_name = $source_name;
 		}
@@ -1123,18 +1187,22 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
+		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+			$var = $getsetvar_session->$source_name;
+			$session->$source_name = $var;
+		}
 		if ($new_search) {
 			if (is_string($var) || is_array($var)) {
-				$session->$target_name = $var;
+				$getsetvar_session->$target_name = $var;
 			} else {
-				$session->$target_name = $default;
+				$getsetvar_session->$target_name = $default;
 			}
 		} else if (is_string($var) || is_array($var)) {
-			$session->$target_name = $var;
-		} else if (!isset($session->$target_name)) {
-			$session->$target_name = $default;
+			$getsetvar_session->$target_name = $var;
+		} else if (!isset($getsetvar_session->$target_name)) {
+			$getsetvar_session->$target_name = $default;
 		}
-		return $session->$target_name;
+		return $getsetvar_session->$target_name;
 	}
 
 	protected function applyFilters($table, $session = false) {
@@ -1150,21 +1218,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
 			if ((!empty($value) || $value === 0 || $value === "0") &&
-				is_array($filter_field) && isset($filter_field['db_key']) && 
+				is_array($filter_field) && isset($filter_field['db_key']) &&
 				$filter_field['db_key'] != 'nofilter' &&
 				($filter = $model->applyFilter($filter_field, $value))) {
-					$query['$and'][] = $filter;
+				$query['$and'][] = $filter;
 			}
 		}
 		if ($table === "plans") {
-			if ($this->_request->getParam('plan_type') == 'recurring') {
+			$plan_type = $this->getSetVar($session, 'plan_type');
+			if ($plan_type == 'recurring') {
 				$query['$and'][] = array('type' => 'charging', 'recurring' => 1);
 			} else {
-				$query['$and'][] = array('type' => $this->_request->getParam('plan_type'));
-				if ($this->_request->getParam('plan_type') === 'charging') {
+				$query['$and'][] = array('type' => $plan_type);
+				if ($plan_type == 'charging') {
 					$query['$and'][] = array('$or' => array(
-						array('recurring' => array('$exists' => false)),
-						array('recurring' => 0), 
+							array('recurring' => array('$exists' => false)),
+							array('recurring' => 0),
 					));
 				}
 			}

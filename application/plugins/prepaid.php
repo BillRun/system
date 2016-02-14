@@ -11,7 +11,7 @@
  *
  * @package  Application
  * @subpackage Plugins
- * @since    0.5
+ * @since    4.0
  */
 class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
@@ -218,7 +218,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Gets the Line that needs to be updated (on rebalance)
 	 */
 	protected function getLineToUpdate($row) {
-		$lines_archive_coll = $this->db->linesCollection();
+		$lines_archive_coll = $this->db->archiveCollection();
 		if ($row['type'] == 'gy') {
 			$findQuery = array(
 				"sid" => $row['sid'],
@@ -267,7 +267,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getChargedUsagev($row, $lineToRebalance) {
 		if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
-			$lines_archive_coll = $this->db->linesCollection();
+			$lines_archive_coll = $this->db->archiveCollection();
 			$query = $this->getRebalanceQuery($row);
 			$line = $lines_archive_coll->aggregate($query)->current();
 			return $line['sum'];
@@ -312,20 +312,19 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// Update previous line
 		
 		// Update line in archive
-		$lines_archive_coll = $this->db->linesCollection();
+		$lines_archive_coll = $this->db->archiveCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 		
 		// Update line in Lines collection
 		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
 		if (in_array('unify', $calculators)) {
-			$findQuery = array(
-				"sid" => $lineToRebalance['sid'],
-				"call_reference" => $lineToRebalance['call_reference'],
-			);
+			$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());
+			$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields[$lineToRebalance['type']]));
+			$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 			$lines_coll = Billrun_Factory::db()->linesCollection();
 			$lines_coll->update($findQuery, $updateQuery);
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
 	}
 

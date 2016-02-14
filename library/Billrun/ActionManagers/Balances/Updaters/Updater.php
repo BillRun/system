@@ -107,7 +107,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 				'$gt' => new MongoDate()
 			),
 			'from' => array(
-				'$lt' => new MongoDate()
+				'$lte' => new MongoDate()
 			)
 		);
 
@@ -151,7 +151,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$nowTime = new MongoDate();
 		$plansQuery = array("name" => $planName,
 			"to" => array('$gt', $nowTime),
-			"from" => array('$lt', $nowTime));
+			"from" => array('$lte', $nowTime));
 		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 
 		return $plansCollection->createRefByEntity($planRecord);
