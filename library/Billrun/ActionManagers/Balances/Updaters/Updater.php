@@ -299,9 +299,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
-	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($chargingPlan, $toTime) {
+	protected function getSetQuery($chargingPlan) {
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
@@ -309,7 +308,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
-		$valueUpdateQuery['$set']['to'] = $toTime;
 		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
 			
