@@ -79,18 +79,28 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	/**
 	 * Validate that expected is an actual array of records.
 	 */
-	protected function validateExpected($expected) {
+	protected function validateExpected(&$expected) {
 		if(!is_array($expected)) {
-			return false;
+			return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
 		}
 		
-		foreach ($expected as $record) {
+		foreach ($expected as &$record) {
 			if(!is_array($record)) {
-				return false;
+				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
 			}
+			
+			if(!isset($record['interval'])) {
+				continue;
+			}
+			$norm = $this->normalizeInterval($record['interval']);
+			if($norm === false) {
+				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			}
+
+			$record['interval'] = $norm;
 		}
 		
-		return true;
+		return 0;
 	}
 	
 	/**
@@ -108,9 +118,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		}
 
 		// If expected is not an array of records.
-		if(!$this->validateExpected($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		$validateError = $this->validateExpected($jsonData);
+		if($validateError != 0) {
+			$this->reportError($validateError, Zend_Log::NOTICE);
 			return false;
 		}
 		
