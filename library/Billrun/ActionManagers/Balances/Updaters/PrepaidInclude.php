@@ -146,6 +146,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
+		// TODO: Move the $max functionality to a trait
 		$update['$max']['to'] = $toTime;
 		
 		$options = array(
