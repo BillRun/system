@@ -29,7 +29,7 @@ class BalanceAction extends ApiAction {
 		} else {
 			settype($aid, 'int');
 		}
-		if (is_string($subscribers)) {
+		if (is_string($subscribers) && $subscribers != '0') {
 			$subscribers = explode(",", $subscribers);
 		} else {
 			$subscribers = array();

@@ -7,9 +7,8 @@
  */
 
 /**
- * Billing generator ilds class
- * require to generate xml for each account
- * require to generate csv contain how much to credit each account
+ * Billing generator balance class
+ * require to generate xml for specific account for balance api
  *
  * @package  Billing
  * @since    1.0

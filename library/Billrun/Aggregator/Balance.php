@@ -8,7 +8,8 @@
 //require_once __DIR__ . '/../../../application/golan/' . 'subscriber.php';
 require_once __DIR__ . '/../../../application/helpers/Subscriber/' . 'Golan.php';
 /**
- * Billing aggregator class for ilds records
+ * Billing aggregator class balance
+ * used to aggregate ilds lines for balance generator
  *
  * @package  calculator
  * @since    1.0
@@ -23,10 +24,12 @@ class Billrun_Aggregator_Balance extends Billrun_Aggregator_Ilds {
 	static protected $type = 'balance';
 	protected $subscriber_billrun;
 	protected $aid;
-	
+	protected $subscribers;
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$this->aid = $options['aid'];
+		$this->subscribers = $options['subscribers'];
 		
 	}
 
@@ -146,16 +149,18 @@ class Billrun_Aggregator_Balance extends Billrun_Aggregator_Ilds {
 		$min_time = (string) date('Ymd000000', strtotime('3 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
 		$count = $lines->count();	
-		$this->data = $lines->query(
-			array(
+		$query = array(
 					'$or' => array(
 						array('source' => array('$in' => array('ilds', 'premium'))), //premium or ilds!!!
 						array('source' => 'api', 'type' => 'refund', 'reason' => 'ILDS_DEPOSIT')
 					),
 					'call_start_dt' => array('$gte' => $min_time),
-						'account_id' => "$this->aid",	
-				)
-			)
+					'account_id' => "$this->aid",	
+				);
+		if(!empty($this->subscribers)) {
+			$query['subscriber_id'] = array('$in' => $this->subscribers);
+		}
+		$this->data = $lines->query($query)
 				->notExists('billrun')
 				->exists('price_provider')
 				->exists('price_customer')
