@@ -24,7 +24,7 @@
 
 			<?php print $this->render('utest/components/cards.phtml', array('cards' => $cards['rows'], 'label' => $cards['label'])); ?>
 
-			<?php print $this->render('utest/components/lines.phtml', array('lines' => $lines, 'sid' => $sid_after_test)); ?>
+			<?php print $this->render('utest/components/lines.phtml', array('lines' => $lines, 'sid' => $sid_after_test, 'id' => 'lines')); ?>
 
 			<?php print $this->render('utest/components/balance.phtml', array('balances' => $balances['after'], 'label' => 'Balances After Test SID : ' . $sid_after_test, 'id' => 'balance-after')); ?>
 

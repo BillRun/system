@@ -102,8 +102,13 @@ class CronController extends Yaf_Controller_Abstract {
 
 	public function autoRenewServicesAction() {
 		$this->autoRenewServices();
-	}		
-	public function autoRenewServices() {		
+	}
+
+	public function nonRecurringAction() {
+		$this->cancelSlownessByEndedNonRecurringPlans();
+	}
+	
+	public function autoRenewServices() {
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		
 		$queryDate = array('creation_time' => strtotime('-1 month'));
@@ -125,6 +130,44 @@ class CronController extends Yaf_Controller_Abstract {
 			
 			$this->updateAutoRenewRecord($collection);
 		}
+	}
+	
+	/**
+	 * @todo Not completed
+	 */
+	public function cancelSlownessByEndedNonRecurringPlans() {
+		$balancesCollection = Billrun_Factory::db()->balancesCollection();
+		$sort = array(
+			'$sort' => array(
+				'to' => -1,
+			),
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => '$sid',
+				'to' => array(
+					'$first' => '$to',
+				),
+				'charging_type' => array(
+					'$first' => '$charging_type',
+				)
+			),
+		);
+		$match = array(
+			'$match' => array(
+				'charging_type' => 'prepaid',
+				'to' => array('$lt' => new MongoDate()),
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'sid' => '$_id',
+			),
+		);
+		$balances = $balancesCollection->aggregate($sort, $group, $match, $project);
+		$sids = array_map(function($doc) {
+			return $doc['sid'];
+		}, iterator_to_array($balances));
 	}
 	
 	/**

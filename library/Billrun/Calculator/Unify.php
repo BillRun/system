@@ -55,7 +55,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		// archive connection setting
 		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
 	}
-	
+
 	protected function getMergedUpdateFields($unificationFields) {
 		$updateFields = array();
 		foreach ($unificationFields as $type => $settings) {
@@ -172,7 +172,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		foreach ($typeFields as $key => $fields) {
 			foreach ($fields as $field) {
 				if ($key == '$inc' && isset($newRow[$field])) {
-					$updatedRow[$field] += $newRow[$field];
+					$updatedRow[$field] += ($newRow[$field] && is_numeric($newRow[$field])) ? $newRow[$field] : 0;
 				} else if ($key == '$set' && isset($newRow[$field])) {
 					$updatedRow[$field] = $newRow[$field];
 				}
@@ -184,7 +184,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		return true;
 	}
-	
+
 	protected function getLineSpecificUpdateFields($line) {
 		$fields = array();
 		foreach ($this->unificationFields[$line['type']]['fields'] as $field) {
@@ -202,7 +202,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function saveLinesToArchive() {
 		$failedArchived = array();
 		$linesArchivedStamps = array();
-		$archLinesColl = $this->archiveDb->linesCollection();
+		$archLinesColl = $this->archiveDb->archiveCollection();
 		$localLines = Billrun_Factory::db()->linesCollection();
 
 		$archivedLinesCount = count($this->archivedLines);
@@ -405,7 +405,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	 */
 	protected function isLinesArchived($lineStamps) {
 		$lineQuery = array('stamp' => array('$in' => $lineStamps));
-		return !$this->archiveDb->linesCollection()->query($lineQuery)->cursor()->limit(1)->current()->isEmpty();
+		return !$this->archiveDb->archiveCollection()->query($lineQuery)->cursor()->limit(1)->current()->isEmpty();
 	}
 
 	/**
@@ -465,7 +465,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		parent::removeFromQueue();
 		$this->releaseAllLines();
 	}
-	
+
 	/**
 	 * Return the lines that need(ed) archive
 	 * @param arra $param
@@ -473,7 +473,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function getArchiveLines() {
 		return $this->archivedLines;
 	}
-	
+
 	public static function getInstance() {
 		$args = func_get_args();
 
@@ -484,12 +484,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		$line = $args[0]['line'];
 		unset($args[0]['line']);
-		
+
 		$type = $line['type'];
 		if (!isset(self::$calcs[$type])) {
 			// @TODO: use always the first condition for all types - it will load the config values by default
 			$class = 'Billrun_Calculator_Unify';
-			if (in_array($type, array('callrt','gy','smsrt','mmsrt','service'))) {
+			if (in_array($type, array('callrt', 'gy', 'smsrt', 'mmsrt', 'service'))) {
 				$configOptions = Billrun_Factory::config()->getConfigValue('Unify_' . ucfirst($type), array());
 				$options = array_merge($args[0], $configOptions);
 				$class .= '_Realtime';
