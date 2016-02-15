@@ -304,8 +304,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
-		// TODO: Move the $max functionality to a trait
-		$update['$max']['to'] = $toTime;
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -318,10 +322,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
-	 * @param type $chargingPlanRecord
-	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
+	protected function getDefaultBalance($subscriber) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -349,7 +351,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.
-		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
+//		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 //		if($planRecord->isEmpty()) {
 //			$this->reportError("Inactive plan for t", $errorLevel);
 //			// TODO: What error should be reported here?
