@@ -131,7 +131,7 @@ class Billrun_Util {
 	 */
 	public static function getBillrunKey($timestamp, $dayofmonth = null) {
 		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('ilds.billrun.charging_day', 0);
 		}
 		$format = "Ym";
 		if (date("d", $timestamp) < $dayofmonth) {
