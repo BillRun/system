@@ -122,5 +122,23 @@ class Billrun_Util {
 		return ltrim($number, "0");
 	}
 
-
+/**
+	 * method to receive billrun key by date
+	 * 
+	 * @param int $timestamp a unix timestamp
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getBillrunKey($timestamp, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('ilds.billrun.charging_day', 0);
+		}
+		$format = "Ym";
+		if (date("d", $timestamp) < $dayofmonth) {
+			$key = date($format, $timestamp);
+		} else {
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
+		}
+		return $key;
+	}
 }
