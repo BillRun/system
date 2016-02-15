@@ -30,7 +30,8 @@ function create_tariff(tariff, interconnect) {
 		}
 	} 
 	if (typeof interconnect.PP_TARIFF_NAME != 'undefined') {
-		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME);	
+		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME);
+		print("Interconnect: " + _interconnect_name);
 	} else {
 		print("No interconnect!!!");
 		_interconnect_name = null;
@@ -104,23 +105,15 @@ function getUsageType(app_id) {
 	return _usaget;
 }
 
-function _plan(plan_id, plan_name, usaget, shabbat, tariffs) {
+function _plan(plan_id, plan_name, usaget, tariffs) {
 	var unit_type
-	if (shabbat) {
-		unit_type = "13";
-	} else {
-		unit_type = "7";
-	}
+	unit_type = "7";
 	var _tariff_ids = [];
 	db.tmp_PP_PLAN.aggregate({$match:{"PP_PLAN_ID" : plan_id, TIME_TYPE:{$in:[unit_type]}}}, {$group:{_id:null, tariff_ids:{$addToSet:"$PP_TARIFF_ID"}}}).forEach(function(objx) {_tariff_ids = objx.tariff_ids;});
 	_interconnect = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_tariff_ids}, "CHARGE_TYPE" : "1"})[0];
 	obj10 = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_tariff_ids}, "CHARGE_TYPE" : "0"})[0];
 	if (typeof obj10 == 'undefined') {
-		if (shabbat) {
-			return;
-		} else {
-			obj10 = {PP_TARIFF_NAME: "FAKE", INITIAL_CHARGE:0, INITIAL_AMOUNT:1, ADD_CHARGE:0, ADD_AMOUNT:1};
-		}
+		obj10 = {PP_TARIFF_NAME: "FAKE", INITIAL_CHARGE:0, INITIAL_AMOUNT:1, ADD_CHARGE:0, ADD_AMOUNT:1};
 	}
 	if (typeof _interconnect != 'undefined') {
 		print('tariffs ids: ' + _tariff_ids.join());
@@ -143,19 +136,19 @@ function _plan(plan_id, plan_name, usaget, shabbat, tariffs) {
 	}
 }
 
-function activity_and_plan(subtype, appid, usaget, shabbat, tariffs) {
+function activity_and_plan(subtype, appid, usaget, tariffs) {
 	db.tmp_ACTIVITY_AND_PP_PLAN.find({"NEW_SUBTYPE_ID":subtype, "APPLICATION_ID" : appid, PP_PLAN_ID:{$exists:1, $ne:''}}).forEach(
 		function(obj8) {
-			_plan(obj8.PP_PLAN_ID, 'BASE', usaget, shabbat, tariffs);
+			_plan(obj8.PP_PLAN_ID, 'BASE', usaget, tariffs);
 		}
 	);
 }
 
-function cos_plans(subtype, appid, usaget, shabbat, tariffs) {
+function cos_plans(subtype, appid, usaget, tariffs) {
 	db.tmp_COS_PLANS.find({"SUBTYPE_ID":subtype, "APPLICATION_ID" : appid, PP_PLAN_ID:{$exists:1, $ne:''}}).forEach(
 		function(obj4) {
 			db.tmp_COS.find({"COS_ID" : obj4.COS_ID}).forEach(function(obj5) {_plan_name = obj5.COS_NAME;});
-			_plan(obj4.PP_PLAN_ID, _plan_name, usaget, shabbat, tariffs);
+			_plan(obj4.PP_PLAN_ID, _plan_name, usaget, tariffs);
 		}
 	);
 }
@@ -211,8 +204,8 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 						print("app id: " + _appid);
 						print("usaget: " + _usaget);
 						
-						activity_and_plan(_subtype, _appid, _usaget, false, _tariffs);
-						cos_plans(_subtype, _appid, _usaget, false, _tariffs);
+						activity_and_plan(_subtype, _appid, _usaget, _tariffs);
+						cos_plans(_subtype, _appid, _usaget, _tariffs);
 				
 					}
 				);
