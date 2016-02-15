@@ -318,14 +318,13 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// Update line in Lines collection
 		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
 		if (in_array('unify', $calculators)) {
-			$findQuery = array(
-				"sid" => $lineToRebalance['sid'],
-				"call_reference" => $lineToRebalance['call_reference'],
-			);
+			$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());
+			$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields[$lineToRebalance['type']]));
+			$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 			$lines_coll = Billrun_Factory::db()->linesCollection();
 			$lines_coll->update($findQuery, $updateQuery);
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
 	}
 

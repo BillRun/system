@@ -98,6 +98,11 @@ class RealtimeeventAction extends ApiAction {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
 		
+		// some hack for PL (@TODO - move to plugin)
+		if ($this->event['call_type'] == '3') {
+			$this->usaget = 'video_call';
+		}
+		
 		if ($this->usaget === 'call' || $this->usaget === 'video_call' || $this->usaget === 'forward_call') {
 			if (!isset($this->event['called_number'])) {
 				if (isset($this->event['connected_number'])) {

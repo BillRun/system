@@ -24,7 +24,20 @@ abstract class Billrun_ActionManagers_Subscribersautorenew_Action extends Billru
 		parent::__construct($params);
 	}
 	
-	/**
+	protected function normalizeInterval($interval) {
+		$normalized = strtolower($interval);
+
+		$intervals = Billrun_Factory::config()->getConfigValue('autorenew.interval');
+
+		if(in_array($normalized, $intervals)) {
+
+			return false;
+		}
+		
+		return $normalized;
+	}
+
+		/**
 	 * Parse a request to build the action logic.
 	 * 
 	 * @param request $request The received request in the API.
