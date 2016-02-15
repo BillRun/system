@@ -39,7 +39,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
@@ -156,7 +156,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'upsert' => true,
 			'new' => true,
 		);
-//		
+
 		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
 
 		// Return the new document.
