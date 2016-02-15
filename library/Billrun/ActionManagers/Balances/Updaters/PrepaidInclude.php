@@ -154,7 +154,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'new' => true,
 		);
 
-//		print_R($update);die;
 		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
 
 		// Return the new document.
@@ -176,7 +175,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance = array();
 		$defaultBalance['from'] = new MongoDate();
 
-//		$defaultBalance['to'] = $recordToSet['to'];
+		$defaultBalance['to'] = $recordToSet['to'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
