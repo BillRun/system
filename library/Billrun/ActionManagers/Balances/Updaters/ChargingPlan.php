@@ -12,7 +12,7 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
-	
+
 	/**
 	 * Get the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.
@@ -273,9 +273,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
@@ -283,7 +284,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
-			$update = $this->getSetQuery($wallet);
+			$update = $this->getSetQuery($wallet, $toTime);
 		}
 
 		return $update;
@@ -303,9 +304,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Get the balance with the current value field.
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
-		// TODO: Move the $max functionality to a trait
-		$update['$max']['to'] = $toTime;
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance);
+
 		$options = array(
 			'upsert' => true,
 			'new' => true,

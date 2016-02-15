@@ -39,7 +39,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
@@ -110,10 +110,11 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $chargingPlan
+	 * @param MongoDate $toTime - Expiration date.
 	 * @param array $defaultBalance - Default balance to set.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance) {
 		$update = array();
 		$balance = $balancesColl->query($query)->cursor()->current();
 
@@ -124,7 +125,12 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
 
-			$update = $this->getSetQuery($chargingPlan);
+			// Take the largest expiration date.
+			if (time($balance['to']) > time($toTime)) {
+				$toTime = $balance['to'];
+			}
+
+			$update = $this->getSetQuery($chargingPlan,$toTime);
 		}
 
 		return $update;
@@ -145,9 +151,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
-		// TODO: Move the $max functionality to a trait
-		$update['$max']['to'] = $toTime;
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance);
 		
 		$options = array(
 			'upsert' => true,
