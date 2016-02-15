@@ -63,6 +63,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
+			header("Location: " . $this->siteUrl . "/admin/login");
 			die();
 		}
 		
