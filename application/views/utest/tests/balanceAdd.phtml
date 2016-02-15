@@ -40,7 +40,7 @@
 		<label for="expiration" class="col-sm-4 control-label text-right">Expiration Date</label>
 		<div class="col-sm-6">
 			<div class='input-group datetimepicker'>
-				<input type='text' class="form-control" value='<?php echo date('d-m-Y H:i', strtotime('+1 month')); ?>' name='expiration'/>
+				<input type='text' class="form-control" value='<?php echo date('d/m/Y H:i', strtotime('+1 month')); ?>' name='expiration'/>
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
