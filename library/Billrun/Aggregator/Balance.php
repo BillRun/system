@@ -148,7 +148,6 @@ class Billrun_Aggregator_Balance extends Billrun_Aggregator_Ilds {
 
 		$min_time = (string) date('Ymd000000', strtotime('3 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
-		$count = $lines->count();	
 		$query = array(
 					'$or' => array(
 						array('source' => array('$in' => array('ilds', 'premium'))), //premium or ilds!!!
