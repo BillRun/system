@@ -52,7 +52,7 @@ class Billrun_HebrewCal {
 		'04/15' => HEBCAL_WORKDAY, // Tu besvaht
 		// Purim
 		'06/13' => HEBCAL_WORKDAY, // Purim evening
-		'06/14' => HEBCAL_HOLIDAY, // Purim or...
+		'06/14' => HEBCAL_WORKDAY, // Purim or...
 		// Pesaach
 		'08/14' => HEBCAL_SHORTDAY, // Pesaach evening
 		'08/15' => HEBCAL_HOLIDAY, // Pesaach
