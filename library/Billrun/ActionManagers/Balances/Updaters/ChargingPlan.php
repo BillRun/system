@@ -273,10 +273,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
@@ -284,7 +283,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
-			$update = $this->getSetQuery($wallet, $toTime);
+			$update = $this->getSetQuery($wallet);
 		}
 
 		return $update;
@@ -304,8 +303,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Get the balance with the current value field.
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance);
-
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -318,10 +322,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
-	 * @param type $chargingPlanRecord
-	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
+	protected function getDefaultBalance($subscriber) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -349,7 +351,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.
-		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
+//		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 //		if($planRecord->isEmpty()) {
 //			$this->reportError("Inactive plan for t", $errorLevel);
 //			// TODO: What error should be reported here?

@@ -1,6 +1,5 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'xeditable']);
-app.run(function ($rootScope, $interval) {
-
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'pageslide-directive']);
+app.run(function ($rootScope, $interval, $http) {
   var lastDigestRun = Date.now();
   var idleCheck = $interval(function () {
     var now = Date.now();
@@ -12,9 +11,15 @@ app.run(function ($rootScope, $interval) {
   $rootScope.$on('$routeChangeStart', function (evt) {
     lastDigestRun = Date.now();
   });
-});
 
-app.config(function ($httpProvider, $routeProvider, $locationProvider) {
+  $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
+    $rootScope.fields = res.data;
+  });
+
+  $rootScope.$on("$routeChangeStart", function () {
+    angular.element('.component.container').remove();
+  });
+}).config(function ($httpProvider, $routeProvider, $locationProvider) {
   function twoDigit(n) {
     return (n < 10) ? "0" + n : n.toString();
   }
@@ -82,10 +87,4 @@ app.config(function ($httpProvider, $routeProvider, $locationProvider) {
     }
   });
   $locationProvider.html5Mode({enabled: false, requireBase: false});
-}).run(['$http', '$rootScope', 'editableOptions', function ($http, $rootScope, editableOptions) {
-    'use strict';
-    editableOptions.theme = 'bs3';
-    $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
-      $rootScope.fields = res.data;
-    });
-  }]);
+});

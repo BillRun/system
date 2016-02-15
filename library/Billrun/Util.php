@@ -1177,4 +1177,32 @@ class Billrun_Util {
 		}
 		return $months;
 	}
+	
+	/**
+	 * Check if a key exists in a multidimantional array.
+	 * @param array $arr - Array to search for the key.
+	 * @param type $key - Value of key to be found.
+	 * @return boolean - true if the key is found.
+	 */
+	public static function multiKeyExists(array $arr, $key) {
+		// is in base array?
+		if (array_key_exists($key, $arr)) {
+			return true;
+		}
+
+		// check arrays contained in this array
+		foreach ($arr as $element) {
+			if (!is_array($element)) {
+				continue;
+			}
+			
+			// Recursively check if the key exists.
+			if (self::multiKeyExists($element, $key)) {
+				return true;
+			}
+
+		}
+
+		return false;
+	}
 }

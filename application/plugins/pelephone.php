@@ -153,7 +153,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if not under PL network else false
 	 */
 	protected function isInterconnect($row) {
-		return isset($row['np_code']) && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
+		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2 && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
 	}
 
 	/**

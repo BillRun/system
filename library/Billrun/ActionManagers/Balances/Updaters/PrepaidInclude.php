@@ -64,9 +64,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$subscriber = $this->getSubscriber($subscriberId);
 
 		// Subscriber was not found.
-		if (!$subscriber) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 9;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		if ($subscriber===false) {
 			return false;
 		}
 
@@ -112,11 +110,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $chargingPlan
-	 * @param MongoDate $toTime - Expiration date.
 	 * @param array $defaultBalance - Default balance to set.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
 		$update = array();
 		$balance = $balancesColl->query($query)->cursor()->current();
 
@@ -127,12 +124,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
 
-			// Take the largest expiration date.
-			if (time($balance['to']) > time($toTime)) {
-				$toTime = $balance['to'];
-			}
-
-			$update = $this->getSetQuery($chargingPlan,$toTime);
+			$update = $this->getSetQuery($chargingPlan);
 		}
 
 		return $update;
@@ -153,7 +145,12 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance);
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
 		
 		$options = array(
 			'upsert' => true,

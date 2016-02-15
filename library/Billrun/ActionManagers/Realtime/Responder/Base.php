@@ -129,11 +129,11 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
-					return Billrun_Factory::config()->getConfigValue("balances_error_base") + 34;
+					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 2;
 				case ($returnCodes['no_rate']):
-					return ''; //TODO: what error code should be return?
+					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 1;
 				case ($returnCodes['no_subscriber']):
-					return Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
+					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 3;
 			} 
 		}
 
