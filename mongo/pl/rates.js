@@ -132,7 +132,9 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 					_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
 					
 					obj = {
-						'key': standardKey(_interconnect.PP_TARIFF_NAME),
+						'key':	   standardKey(_interconnect.PP_TARIFF_NAME),
+						'from':    ISODate('2016-02-01'),
+						'to':      ISODate('2099-12-31 23:59:59'),
 						'params' : {
 							'interconnect' : true
 						},
