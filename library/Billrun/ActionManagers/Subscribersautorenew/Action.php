@@ -29,8 +29,7 @@ abstract class Billrun_ActionManagers_Subscribersautorenew_Action extends Billru
 
 		$intervals = Billrun_Factory::config()->getConfigValue('autorenew.interval');
 
-		if(in_array($normalized, $intervals)) {
-
+		if(!in_array($normalized, $intervals)) {
 			return false;
 		}
 		
