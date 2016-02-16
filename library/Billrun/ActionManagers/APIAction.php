@@ -12,6 +12,7 @@
  * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_APIAction {
+	// TODO: Remove all this logic and replace with the ErrorReporter trait.
 	
 	/**
 	 * This members holds the error message to be reported.
@@ -35,6 +36,10 @@ abstract class Billrun_ActionManagers_APIAction {
 		return $this->error;
 	}
 	
+	/**
+	 * Get the current error code of the action.
+	 * @return numeric value of the current error code.
+	 */
 	public function getErrorCode() {
 		return $this->errorCode;
 	}
