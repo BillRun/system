@@ -136,6 +136,7 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 						'from':    ISODate('2016-02-01'),
 						'to':      ISODate('2099-12-31 23:59:59'),
 						'params' : {
+							'prefix': _prefixes,
 							'interconnect' : true
 						},
 						'rates': {}
@@ -218,6 +219,11 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 		_tariffs = {}; 
 		_tariffs_interconnect = {};
 
+		for (var i = 0; i < _prefixes.length; i++) {
+			_prefixes[i] = _prefixes[i].replace(/^0000/g, "A");
+		}
+		_prefixes = getUniqueArray(_prefixes);
+
 //		======================================================================================================================================================
 //		non shabbat
 		db.tmp_Prefix_Allocation_ID_clear.find({ALLOCATION_B: _rate_name}).forEach(
@@ -248,11 +254,6 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 				);
 			}
 		);
-
-		for (var i = 0; i < _prefixes.length; i++) {
-			_prefixes[i] = _prefixes[i].replace(/^0000/g, "A");
-		}
-		_prefixes = getUniqueArray(_prefixes);
 
 		_rate = {
 			'from':    ISODate('2016-02-01'),
