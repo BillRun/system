@@ -63,7 +63,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return isset($row['subscriber_soc']) && !empty($row['subscriber_soc']);
+		return isset($row['service']['code']) && !empty($row['service']['code']);
 	}
 
 	protected function isSubscriberInDataSlowness($row) {
@@ -118,7 +118,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
 		$updateQuery = array('$set' => array('in_data_slowness' => true));
 		$subscribersColl->update($findQuery, $updateQuery);
-		$this->sendSlownessStateToProv($row['msisdn'], $row['subscriber_soc']);
+		$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code']);
 	}
 	
 	/**
@@ -204,7 +204,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
 	 */
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
-		if (isset($record['subscriber_soc']) && empty($record['subscriber_soc'])) {
+		if (isset($record['service']['code']) && empty($record['service']['code'])) {
 			$record['in_data_slowness'] = FALSE;
 		}
 	}

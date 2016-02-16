@@ -51,8 +51,8 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 		$language = Billrun_Util::filter_var($this->controller->getRequest()->get('language'), FILTER_SANITIZE_STRING);
 		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-language'), FILTER_SANITIZE_STRING);
 
-		$subscriber_soc = Billrun_Util::filter_var($this->controller->getRequest()->get('subscriber_soc'), FILTER_SANITIZE_STRING);
-		$enable_subscriber_soc = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-subscriber_soc'), FILTER_SANITIZE_STRING);
+		$service_code = Billrun_Util::filter_var($this->controller->getRequest()->get('service_code'), FILTER_SANITIZE_STRING);
+		$enable_service_code = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-service_code'), FILTER_SANITIZE_STRING);
 
 		$track_history = (bool) Billrun_Util::filter_var($this->controller->getRequest()->get('track_history'), FILTER_SANITIZE_STRING);
 		$enable_track_history = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-track_history'), FILTER_SANITIZE_STRING);
@@ -108,10 +108,12 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 					'value' => $language,
 					'enable' => $enable_lang
 				),
-				'subscriber_soc' => array(
-					'value' => $subscriber_soc,
-					'enable' => $enable_subscriber_soc
-				),
+				'service' => array(
+					'value' => array(
+						'code' => $service_code
+					),
+					'enable' => $enable_service_code
+				)
 			),
 			'track_history' => array(
 				'value' => $track_history,

@@ -422,9 +422,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		if(isset($this->recordToSet['subscriber_soc']) && !$this->validateSOC($this->recordToSet['subscriber_soc'])) {
+		if(isset($this->recordToSet['service']['code']) && !$this->validateSOC($this->recordToSet['service']['code'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 39;
-			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['subscriber_soc']));
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service']['code']));
 			return false;
 		}
 		
