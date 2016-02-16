@@ -7,7 +7,7 @@ var utest_JS = {
 	},
 	registerOnPageLoad: function () {
 		//init datepicker fields
-		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD-MM-YYYY HH:mm', });
+		$('.datetimepicker').datetimepicker({locale: 'en', format: 'DD/MM/YYYY HH:mm', });
 		//Init hierarchical firleds
 		$("input.hierarchical, input.hierarchical").on("change", this.applyHierarchicalFields);
 		$("input.hierarchical:checked, input.hierarchical:checked").trigger("change");

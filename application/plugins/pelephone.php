@@ -31,6 +31,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $row;
 	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
+		return;
 		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
 			return;
 		}

@@ -46,11 +46,16 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 	 */
 	protected function getRequestData($params) {
 		$amount = (-1) * $params['amount'];
+		$query = array("pp_includes_name" => $params['name']);
+		$upsert = array(
+			"value" => $amount,
+			"expiration_date" => date_format(date_create_from_format('d/m/Y H:i', $params['expiration']), 'c')
+		);
 		$request = array(
 			'method' => 'update',
 			'sid' => $params['sid'],
-			'query' => json_encode(array("pp_includes_name" => $params['name'])),
-			'upsert' => json_encode(array("value" => $amount, "expiration_date" => $params['expiration']))
+			'query' => json_encode($query),
+			'upsert' => json_encode($upsert)
 		);
 		return $request;
 	}

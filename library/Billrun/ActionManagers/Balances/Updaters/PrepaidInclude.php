@@ -39,7 +39,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
@@ -146,15 +146,17 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
-		// TODO: Move the $max functionality to a trait
-		$update['$max']['to'] = $toTime;
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
 		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
 		);
 
-//		print_R($update);die;
 		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
 
 		// Return the new document.
@@ -176,7 +178,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance = array();
 		$defaultBalance['from'] = new MongoDate();
 
-//		$defaultBalance['to'] = $recordToSet['to'];
+		$defaultBalance['to'] = $recordToSet['to'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
