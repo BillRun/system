@@ -40,7 +40,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 				'requestNum' => ($index + 1),
 				'type' => $nameAndUssage[0],
 				'sessionId' => $this->controller->getReference(),
-				'usedUnits' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 1000000
+				'usedUnits' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 1048576
 			);
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'data', 'request' => $data));

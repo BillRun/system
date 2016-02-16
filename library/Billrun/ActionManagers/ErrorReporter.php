@@ -28,6 +28,10 @@ trait Billrun_ActionManagers_ErrorReporter {
 		return $this->error;
 	}
 	
+	/**
+	 * Get the current error code of the action.
+	 * @return numeric value of the current error code.
+	 */
 	public function getErrorCode() {
 		return $this->errorCode;
 	}

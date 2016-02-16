@@ -340,10 +340,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	protected function handleDuplicates() {
-		if (!$this->collection->query($this->query)->cursor()->limit(1)->current()->isEmpty()) {
+		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
+		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
+			
+			// TODO: Pelephone does not want this to return a failure indication.
+			// return false;
 		}
 		return true;
 	}
