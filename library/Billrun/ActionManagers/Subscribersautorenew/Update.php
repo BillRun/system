@@ -230,6 +230,28 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		return true;
 	}
 	
+	protected function fillWithChargingPlanValues() {
+		// Get the charging plan.
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
+		$chargingPlanQuery['type'] = 'charging';
+		$chargingPlanQuery['name'] = $this->query['charging_plan'];
+		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
+		$chargingPlanQuery['recurring'] = 1;
+		
+		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
+		if($planRecord->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
+			return false;
+		}
+		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
+		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
+		$this->handlePlanInclude($planRecord);
+//		
+		return true;
+	}
+
 	protected function handlePlanInclude($planRecord) {
 		if(!isset($planRecord['include'])) {
 			return;
@@ -254,28 +276,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$this->updateQuery['$set']['include'] = $include;
 	}
 	
-	protected function fillWithChargingPlanValues() {
-		// Get the charging plan.
-		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
-		$chargingPlanQuery['type'] = 'charging';
-		$chargingPlanQuery['name'] = $this->query['charging_plan'];
-		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
-		$chargingPlanQuery['recurring'] = 1;
-		
-		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
-		if($planRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
-		}
-		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
-		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
-		$this->handlePlanInclude($planRecord);
-//		
-		return true;
-	}
-
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
