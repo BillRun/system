@@ -157,8 +157,17 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	protected function getAutoRenewServicesQuery() {
 		$orQuery = array();
-		$orQuery[] = $this->getDayAutoRenewQuery();
-		$orQuery[] = $this->getMonthAutoRenewQuery();
+		$dayQuery = $this->getDayAutoRenewQuery();
+		$monthQuery = $this->getMonthAutoRenewQuery();
+		
+		// Convert the times
+		// TODO: The array of time fields should be in the conf (the hardcoded 'last_renew_date' is not good).
+		$converted = Billrun_Util::recursiveConvertRecordMongoDatetimeFields($monthQuery, array('$gte', '$lte'));
+		
+		print_r(json_encode($converted));
+		
+		$orQuery[] = $dayQuery;
+		$orQuery[] = $monthQuery;
 		$queryDate = array('$or' => $orQuery);
 		$queryDate['remain'] = array('$gt' => 0);
 		return $queryDate;
@@ -169,7 +178,7 @@ class CronController extends Yaf_Controller_Abstract {
 		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
-		
+
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
 			$this->updateBalanceByAutoRenew($autoRenewRecord);
