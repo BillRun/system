@@ -1,24 +1,76 @@
 <div class='container component' ng-init='vm.init()'>
     <h2>
-        Pre-paid Includes
+        Prepaid Includes
     </h2>
-	
-	<table class="table table-bordered">
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Name</th>
-				<th>Charging by</th>
-				<th>Charging by usage type</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr ng-repeat="pp_include in vm.pp_includes">
-				<td>{{pp_include.external_id}}</td>
-				<td>{{pp_include.name}}</td>
-				<td>{{pp_include.charging_by}}</td>
-				<td>{{pp_include.charging_by_usaget}}</td>
-			</tr>
-		</tbody>
-	</table>
+    <p>
+        <button type='button' ng-click='vm.newPPInclude()' class='btn btn-primary' ng-if='!vm.edit_mode'>
+            Add PP Include
+        </button>
+    </p>
+	<div ng-if="!vm.edit_mode">
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Charging by</th>
+					<th>Charging by usage type</th>
+					<th>From</th>
+					<th>To</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr ng-repeat="pp_include in vm.pp_includes track by $index">
+					<td><a ng-click='vm.edit(pp_include.external_id)' href=''>{{pp_include.external_id}}</a></td>
+					<td>{{pp_include.name}}</td>
+					<td>{{pp_include.charging_by}}</td>
+					<td>{{pp_include.charging_by_usaget}}</td>
+					<td>{{pp_include.from}}</td>
+					<td>{{pp_include.to}}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div ng-if="vm.edit_mode">
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>External ID</label>
+			</div>
+			<div class='col-md-3'>
+				<input type='number' ng-model='vm.current_entity.external_id' class='form-control' />
+			</div>
+		</div>
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>Name</label>
+			</div>
+			<div class='col-md-3'>
+				<input ng-model='vm.current_entity.name' class='form-control' />
+			</div>
+		</div>
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>Charging By</label>
+			</div>
+			<div class='col-md-3'>
+				<select ng-model='vm.current_entity.charging_by' class='form-control'>
+					<option ng-repeat='charging_by in vm.availableChargingBy'>{{charging_by}}</option>
+				</select>
+			</div>
+		</div>
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>Charging By Usage Type</label>
+			</div>
+			<div class='col-md-3'>
+				<select ng-model='vm.current_entity.charging_by_usaget' class='form-control'>
+					<option ng-repeat='charging_by in vm.availableChargingByType'>{{charging_by}}</option>
+				</select>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
+			<button type='submit' class="btn btn-primary" ng-if='vm.authorized_write' ng-click='vm.save()'>Save changes</button>
+		</div>
+	</div>
 </div>

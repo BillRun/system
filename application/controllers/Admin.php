@@ -327,13 +327,32 @@ class AdminController extends Yaf_Controller_Abstract {
 				$pp = $ppinclude->getRawData();
 				$ppincludes[] = $pp;
 			}
-			$response->setBody(json_encode($ppincludes));
+			$response->setBody(json_encode(array('ppincludes' => $ppincludes,
+				'authorized_write' => AdminController::authorized('write'))));
 			$response->response();
 			return false;
 		}
 		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response->setBody(json_encode($collection));
 		$response->response();
+		return false;
+	}
+	
+	public function savePPIncludesAction() {
+		if (!AdminController::authorized('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		$data['external_id'] = intval($data['external_id']);
+		$data['to'] = new MongoDate(strtotime('+100 years'));
+		$data['from'] = new MongoDate(strtotime($data['from']));
+		if ($this->getRequest()->get('new_entity') == 'true') {
+			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
+		} else {
+			$id = new MongoId($data['_id']['$id']);
+			unset($data['_id']);
+			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
+		}
+		$this->responseSuccess(array("data" => $data , "status"=>true ));
 		return false;
 	}
 	
