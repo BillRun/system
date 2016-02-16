@@ -230,6 +230,30 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		return true;
 	}
 	
+	protected function handlePlanInclude($planRecord) {
+		if(!isset($planRecord['include'])) {
+			return;
+		}
+		
+		$include = $planRecord['include'];
+		foreach ($include as $key => &$val) {
+			if (isset($val['usagev'])) {
+				$val['unit_type'] = Billrun_Util::getUsagetUnit($key);
+			} else if (isset($val['cost'])) {
+				$val['unit_type'] = 'NIS';
+			} else if ($key == 'cost') {
+				if (Billrun_Util::isAssoc($val)) {
+					$val['unit_type'] = 'NIS';
+				} else {
+					foreach ($val as &$v) {
+						$v['unit_type'] = 'NIS';
+					}
+				}
+			}
+		}
+		$this->updateQuery['$set']['include'] = $include;
+	}
+	
 	protected function fillWithChargingPlanValues() {
 		// Get the charging plan.
 		$plansCollection = Billrun_Factory::db()->plansCollection();
@@ -247,24 +271,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
-		$include = $planRecord['include'];
-		foreach ($include as $key => &$val) {
-			if (isset($val['usagev'])) {
-				$val['unit_type'] = Billrun_Util::getUsagetUnit($key);
-			} else if (isset($val['cost'])) {
-				$val['unit_type'] = 'NIS';
-			} else if ($key == 'cost') {
-				if (Billrun_Util::isAssoc($val)) {
-					$val['unit_type'] = 'NIS';
-				} else {
-					foreach ($val as &$v) {
-						$v['unit_type'] = 'NIS';
-					}
-				}
-			}
-		}
-
-		$this->updateQuery['$set']['include'] = $include;
+		$this->handlePlanInclude($planRecord);
 //		
 		return true;
 	}
