@@ -160,6 +160,24 @@
 			</div>
 		</div>
 	</div>
+	
+	<div class="form-group row">
+		<label for="subscriber_soc" class="col-sm-4 control-label text-right">Subscriber SOC</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-subscriber_soc">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='subscriber_soc'>
+					<?php foreach ($subscriber_socs as $subscriber_soc) : ?>
+						<option value="<?php echo $subscriber_soc ?>"><?php echo $subscriber_soc ?></option>
+					<?php endforeach; ?>
+					<option value=""></option>
+				</select>
+			</div>
+		</div>
+	</div>
 
 	<div class="form-group row">
 		<label class="col-sm-4 control-label text-right" >Track History</label>
