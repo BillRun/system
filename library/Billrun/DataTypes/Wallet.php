@@ -77,6 +77,10 @@ class Billrun_DataTypes_Wallet {
 	public function __construct($chargingBy, $chargingByValue, $ppPair) {
 		$chargingByUsaget = $chargingBy;
 
+		if(isset($ppPair['priority'])) {
+			$this->priority = $ppPair['priority'];
+		}
+		
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
 		

@@ -99,6 +99,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$chargingByValue = array($chargingBy => $recordToSet['value']);
 		}
 
+		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
 		
