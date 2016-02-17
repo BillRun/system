@@ -78,6 +78,10 @@ app.run(function ($rootScope, $interval, $http) {
     templateUrl: 'views/service_providers.html',
     controller: 'ServiceProvidersController',
     controllerAs: 'vm'
+  }).when('/pp_includes', {
+    templateUrl: 'views/pp_includes.html',
+    controller: 'PrepaidIncludesController',
+    controllerAs: 'vm'
   }).when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
     controller: 'ListController',
