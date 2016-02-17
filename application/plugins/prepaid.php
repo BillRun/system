@@ -289,26 +289,30 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (is_array($balance['tx']) && empty($balance['tx'])) {
 			$balance['tx'] = new stdClass();
 		}
-		$balance->collection($balances_coll);
-		$usaget = $lineToRebalance['usaget'];
-		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
-		$rebalance_offset = $call_offset + $rebalanceUsagev;
-		$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
-		if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
-			$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
-		} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
-			$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
+		if (!empty($balance)) {
+			$balance->collection($balances_coll);
+			$usaget = $lineToRebalance['usaget'];
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+			$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+			$rebalance_offset = $call_offset + $rebalanceUsagev;
+			$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+			if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
+				$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
+			} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
+				$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
+			} else {
+				$balance['balance.cost'] += $rebalanceCost;
+			}
+			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+
+			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
+	//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
+
+			$balance->save();
 		} else {
-			$balance['balance.cost'] += $rebalanceCost;
+			$rebalanceCost = 0;
 		}
 
-		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
-
-		$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
-//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
-
-		$balance->save();
 
 		// Update previous line
 		
