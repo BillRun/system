@@ -91,6 +91,26 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'requestUrl' => $slownessParams['requestUrl'],
 		);
 	}
+	
+	protected function getSubscriber($subscriberId) {
+		// Get subscriber query.
+		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $subscriberId));
+		
+		$coll = Billrun_Factory::db()->subscribersCollection();
+		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return false;
+		}
+		return $results->getRawData();
+	}
+	
+	public function afterSubscriberBalanceAutoRenewUpdate(&$autoRenewRecord) {
+		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
+		if (!$subscriber) {
+			return false;
+		}
+		$this->updateSubscriberToDataSlowness($subscriber, false);
+	}
 
 	public function afterSubscriberBalanceNotFound(&$row) {
 		if ($row['type'] === 'gy') {
@@ -98,7 +118,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($this->isSubscriberInDataSlowness($row)) {
 				$in_slowness = TRUE;
 			} else if ($this->canSubscriberEnterDataSlowness($row)) {
-				$this->enterSubscriberToDataSlowness($row);
+				$this->updateSubscriberToDataSlowness($row, true);
 				$row['in_data_slowness'] = TRUE;
 				$in_slowness = TRUE;
 			}
@@ -112,13 +132,23 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	protected function enterSubscriberToDataSlowness($row) {
+	/**
+	 * Enter and exit subscriber from data_slowness mode
+	 * 
+	 * @param type $row
+	 * @param bool $enterToDataSlowness true - enter to data slowness, false - exit from data slowness
+	 */
+	protected function updateSubscriberToDataSlowness($row, $enterToDataSlowness = true) {
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
-		$updateQuery = array('$set' => array('in_data_slowness' => true));
+		if ($enterToDataSlowness) {
+			$updateQuery = array('$set' => array('in_data_slowness' => true));
+		} else {
+			$updateQuery = array('$unset' => array('in_data_slowness' => 1));		
+		}
 		$subscribersColl->update($findQuery, $updateQuery);
-		$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code']);
+		$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code'], $enterToDataSlowness);
 	}
 	
 	/**
@@ -126,7 +156,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $msisdn
 	 * @param string $subscriberSoc
 	 */
-	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL) {
+	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
 		$encoder = new Billrun_Encoder_Xml();
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		$requestBody = array(
@@ -136,7 +166,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 			'PARAMS' => array(
 				'MSISDN' => $msisdn,
-				'SLOWDOWN_SPEED' => $slownessParams['speed'],
+				'SLOWDOWN_SPEED' => ($enterToDataSlowness ? $slownessParams['speed'] : ''),
 				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
 		);
