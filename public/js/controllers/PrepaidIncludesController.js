@@ -16,6 +16,7 @@ function PrepaidIncludesController(Database, Utils, $http) {
       id: undefined,
       charging_by: "",
       charging_by_usaget: "",
+      priority: 0,
       from: new Date(),
       to: moment().add(100, 'years')
     };
