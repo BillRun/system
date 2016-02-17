@@ -290,6 +290,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
 		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
 		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
+		$defaultBalance['priority'] = $wallet->getPriority();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
 		return array(
 			'$setOnInsert' => $defaultBalance,
@@ -310,6 +311,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// The TO time is always set.
 		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+		$valueUpdateQuery['$set']['priority'] = $chargingPlan->getPriority();
 			
 		return $valueUpdateQuery;
 	}
