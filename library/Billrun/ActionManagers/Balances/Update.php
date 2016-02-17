@@ -363,6 +363,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
 		
+		// Check for recurring.
+		$recurring = $input->get('recurring');
+		if($recurring) {
+			$this->updaterOptions['recurring'] = 1;
+		}
+		
 		return true;
 	}
 	

@@ -46,12 +46,15 @@ abstract class Billrun_Autorenew_Record {
 		$updaterInput['method'] = 'update';
 		$updaterInput['sid'] = $this->data['sid'];
 
+		// Set the recurring flag for the balance update.
+		$updaterInput['recurring'] = 1;
+		
 		// Build the query
 		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
 		$updaterInputUpdate['from'] = $this->data['from'];
 		$updaterInputUpdate['to'] = $this->data['to'];
 		$updaterInputUpdate['operation'] = $this->data['operation'];
-
+		
 		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
 		$updaterInput['upsert'] = json_encode($updaterInputUpdate,JSON_FORCE_OBJECT);
 		
