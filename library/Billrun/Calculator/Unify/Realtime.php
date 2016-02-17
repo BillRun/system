@@ -47,7 +47,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							),
 							'update' => array(
 								'$setOnInsert' => array('arate', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name'),
-								'$set' => array('process_time'),
+								'$set' => array('process_time', 'np_code', 'call_type'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'aprice'),
 							),
 						),
