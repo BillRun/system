@@ -20,9 +20,10 @@ function create_tariff(tariff, interconnect) {
 	tariff.ADD_CHARGE     = Number(tariff.ADD_CHARGE);
 	tariff.ADD_AMOUNT     = Number(tariff.ADD_AMOUNT);
 	if (typeof interconnect.PP_TARIFF_NAME != 'undefined') {
-		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME);
+		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME + '_INTERCONNECT');
 		print("Interconnect: " + _interconnect_name);
 		if (interconnect.PP_TARIFF_NAME.substring(0, 2) == '01') { 
+			tariff = interconnect;
 			_interconnect_name = null;
 		}
 	} else {
@@ -132,11 +133,11 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 					_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
 					
 					obj = {
-						'key':	   standardKey(_interconnect.PP_TARIFF_NAME),
+						'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
 						'from':    ISODate('2016-02-01'),
 						'to':      ISODate('2099-12-31 23:59:59'),
 						'params' : {
-							'prefix': _prefixes,
+//							'prefix': _prefixes,
 							'interconnect' : true
 						},
 						'rates': {}
@@ -170,7 +171,6 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 		if (tariffs[usaget] === undefined)
 			tariffs[usaget] = {};
 		tariffs[usaget][plan_name] = _t;
-		
 	}
 }
 
@@ -210,7 +210,7 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Bezeq144/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/013_UNITED_ARAB_EMIR/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;

@@ -109,8 +109,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
 
-		// TODO: What if empty?
-		$balancesArray = $chargingPlanRecord['include'];
+		$balancesArray = array();
+		if(isset($chargingPlanRecord['include'])) {
+			$balancesArray = $chargingPlanRecord['include'];
+		}
 		$balancesToReturn = array();
 		
 		// Go through all charging possibilities. 
@@ -144,6 +146,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			}
 		}
 
+		// Set the charging plan record
+		$balancesToReturn['charging_plan'] = $chargingPlanRecord;
 		return $balancesToReturn;
 	}
 
@@ -364,10 +368,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		} else {
 			$defaultBalance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
 		}
-		// This is being set outside of this function!!!
-		//$defaultBalance['charging_by_usaget'] = 
-		// TODO: This is not the correct way, priority needs to be calculated.
-		$defaultBalance['priority'] = 1;
 
 		return $defaultBalance;
 	}

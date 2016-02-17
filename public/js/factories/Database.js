@@ -35,8 +35,9 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
     }
 
-    function getAvailablePPIncludes() {
-      return $http.get(baseUrl + '/admin/getAvailablePPIncludes');
+    function getAvailablePPIncludes(params) {
+      if (params === undefined) params = {};
+      return $http.get(baseUrl + '/admin/getAvailablePPIncludes', {params: params});
     }
 
     function getCollectionItems(params) {

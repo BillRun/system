@@ -188,14 +188,23 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
-		
-		$set['last_renew_date'] = $set['creation_time'];
-		
+				
 		if (isset($this->query['from']->sec)) {
 			$from = $this->query['from']->sec;
 		} else {
 			$from = $this->query['from']['sec'];
 		}
+
+		// Check if the from is in the past.
+		if($from < strtotime("today midnight")) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 42;
+			$this->reportError($errorCode, Zend_Log::ALERT);
+			return false;
+		}
+		
+		$set['next_renew_date'] = $set['from'];
+		$set['last_renew_date'] = 0;
+
 		
 		if (isset($jsonUpdateData['to']->sec)) {
 			$to = $jsonUpdateData['to']->sec;
