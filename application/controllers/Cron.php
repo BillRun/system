@@ -280,6 +280,8 @@ class CronController extends Yaf_Controller_Abstract {
 			return false;
 		}
 		
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
+				
 		return true;
 	}
 	
