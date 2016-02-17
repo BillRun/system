@@ -177,7 +177,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
 		try {
-			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
+			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
@@ -305,7 +305,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
 
-		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
+		$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
+//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
 
 		$balance->save();
 
@@ -325,7 +326,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$lines_coll->update($findQuery, $updateQuery);
 		}
 
-		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
+//		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
 	}
 
 	/**
