@@ -61,6 +61,12 @@ class Billrun_DataTypes_Wallet {
 	 * @var integer
 	 */
 	protected $ppID = null;
+	
+	/**
+	 * The wallet priority.
+	 * @var number - priority.
+	 */
+	protected $priority = null;
 
 	/**
 	 * Create a new instance of the wallet type.
@@ -71,6 +77,10 @@ class Billrun_DataTypes_Wallet {
 	public function __construct($chargingBy, $chargingByValue, $ppPair) {
 		$chargingByUsaget = $chargingBy;
 
+		if(isset($ppPair['priority'])) {
+			$this->priority = $ppPair['priority'];
+		}
+		
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
 		
@@ -108,6 +118,27 @@ class Billrun_DataTypes_Wallet {
 		settype($this->value, 'float');
 	}
 
+	/**
+	 * Get the wallet priority
+	 * @return numeric
+	 */
+	public function getPriority() {
+		if($this->priority) {
+			return $this->priority;
+		}
+		
+		$col = Billrun_Factory::db()->prepaidincludesCollection();
+		$query = array("external_id" => $this->ppID);
+		$prepaid = $col->query($query)->cursor()->current();
+		if(isset($prepaid['priority'])) {
+			$this->priority = $prepaid['priority'];
+		} else {
+			Billrun_Factory::log("Faild to retrieve PP include. ID: " . $this->ppID, Zend_Log::WARN);
+			$this->priority = 0;
+		} 
+		return $this->priority;
+	}
+	
 	/**
 	 * Get the value for the current wallet.
 	 * @return The current wallet value.
