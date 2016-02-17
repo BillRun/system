@@ -99,6 +99,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$chargingByValue = array($chargingBy => $recordToSet['value']);
 		}
 
+		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
 		
@@ -185,8 +186,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord['charging_by_usaget'];
-		// TODO: This is not the correct way, priority needs to be calculated.
-		$defaultBalance['priority'] = 1;
 
 		return $defaultBalance;
 	}
