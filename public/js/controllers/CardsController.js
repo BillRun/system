@@ -12,13 +12,13 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
         method: ($scope.action === "new" ? 'create' : 'update')
       };
       var entData = {
-        status: $scope.entity.status,
         batch_number: $scope.entity.batch_number,
         serial_number: $scope.entity.serial_number,
         charging_plan_name: $scope.entity.charging_plan_name,
         service_provider: $scope.entity.service_provider,
         to: $scope.entity.to
       };
+      if ($scope.card_status !== $scope.entity.status) entData.status = $scope.entity.status;
       if ($scope.action === "new") postData.cards = [JSON.stringify(entData)];
       else {
         postData.query = JSON.stringify({

@@ -88,7 +88,7 @@
 				}
 				echo "</select>
 			<label class=\"radio inline\">
-                                <input name=\"order\" value=\"desc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") || (!isset($this->session->order) && $active == 'subscribers')  ? " checked=\"checked\"" : "") . "> Descending order
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") || (!isset($this->session->order) && $active == 'subscribers' || $active == 'lines')  ? " checked=\"checked\"" : "") . "> Descending order
 			</label>
 			<label class=\"radio inline\">
                                 <input name=\"order\" value=\"asc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "asc") ? "checked=\"checked\"" : "") . "> Ascending order
