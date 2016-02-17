@@ -16,8 +16,6 @@
  */
 class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_Updater {
 	
-	use Billrun_ActionManagers_ErrorReporter;
-	
 	/**
 	 * Array of the mendatory fields.
 	 * @var array
