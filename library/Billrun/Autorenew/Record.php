@@ -86,7 +86,7 @@ abstract class Billrun_Autorenew_Record {
 	 */
 	protected function updateAutorenew() {
 		$this->data['last_renew_date'] = new MongoDate();
-		$this->data['renew_date'] = $this->getNextRenewDate();
+		$this->data['next_renew_date'] = $this->getNextRenewDate();
 		$this->data['remain'] = $this->data['remain'] - 1;
 		
 		$this->data['done'] = $this->data['done'] + 1;

@@ -137,7 +137,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 			$cursor = $this->collection->query($this->query)->cursor();
 			$returnData = array();
 			// TODO: Move this to config file.
-			$date_fields = array('from', 'to', 'last_renew_date','renew_date','creation_time');
+			$date_fields = array('from', 'to', 'last_renew_date','next_renew_date','creation_time');
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();

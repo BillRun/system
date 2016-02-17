@@ -189,7 +189,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
 		
-		$set['renew_date'] = $set['from'];
+		$set['next_renew_date'] = $set['from'];
 		$set['last_renew_date'] = 0;
 		
 		if (isset($this->query['from']->sec)) {

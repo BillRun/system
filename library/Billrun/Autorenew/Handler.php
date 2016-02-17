@@ -24,7 +24,7 @@ class Billrun_Autorenew_Handler {
 		$monthLower = mktime(0, 0, 0, date("n"), date("j"), date("Y"));
 		$monthUpper = mktime(23, 59, 59, date("n"), date("j"), date("Y"));
 
-		$or['renew_date'] = array('$gte' => new MongoDate($monthLower),'$lte' => new MongoDate($monthUpper));
+		$or['next_renew_date'] = array('$gte' => new MongoDate($monthLower),'$lte' => new MongoDate($monthUpper));
 			
 		return $or;
 	}
@@ -38,7 +38,7 @@ class Billrun_Autorenew_Handler {
 		$dayUpper = mktime(23, 59, 59, date("n"), date("j"), date("Y"));
 		
 		$or = array();
-		$or['renew_date'] = array('$gte' => new MongoDate($dayLower),'$lte' => new MongoDate($dayUpper));
+		$or['next_renew_date'] = array('$gte' => new MongoDate($dayLower),'$lte' => new MongoDate($dayUpper));
 		$or['interval'] = 'day';
 
 		return $or;
@@ -52,12 +52,6 @@ class Billrun_Autorenew_Handler {
 		$orQuery = array();
 		$dayQuery = $this->getDayAutoRenewQuery();
 		$monthQuery = $this->getMonthAutoRenewQuery();
-		
-		// Convert the times
-		// TODO: The array of time fields should be in the conf (the hardcoded 'renew_date' is not good).
-//		$converted = Billrun_Util::recursiveConvertRecordMongoDatetimeFields($monthQuery, array('$gte', '$lte', '$gt', '$lt'));
-		
-//		print_r(json_encode($converted));
 		
 		$orQuery[] = $dayQuery;
 		$orQuery[] = $monthQuery;
