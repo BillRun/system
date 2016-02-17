@@ -202,7 +202,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param type $dataRecord
 	 */
 	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
-		if (!$recordToSet['to']) {
+		if (!isset($recordToSet['to'])) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
 	}

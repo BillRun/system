@@ -1099,13 +1099,43 @@ class Billrun_Util {
 	 */
 	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($fields as $timeField) {
-			if (isset($record[$timeField]->sec))
+			if (isset($record[$timeField]->sec)) {
 				$record[$timeField] = date($format, $record[$timeField]->sec);
+			}
 		}
 
 		return $record;
 	}
+	
+	/**
+	 * Change the times of a mongo record
+	 * 
+	 * @param array $row - Record to change the times of.
+	 * @param array $fields - date time fields array list
+	 * @param string $format - format datetime (based on php date function)
+	 * 
+	 * @return The record with translated time.
+	 */
+	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		foreach ($record as $key => $subRecord) {
+			if(is_array($subRecord)) {
+				$record[$key] = self::recursiveConvertRecordMongoDatetimeFields($subRecord, $fields, $format);
+			}
+		}
+		
+		return self::convertRecordMongoDatetimeFields($record, $fields, $format);
+	}
 
+	/**
+	 * Check if an array is multidimentional.
+	 * @param $arr - Array to check.
+	 * @return boolean true if multidimentional array.
+	 */
+	public static function isMultidimentionalArray($arr) {
+		return count($arr) != count($arr, COUNT_RECURSIVE);
+	}
+	
+	
 	public static function isAssoc($arr)
 	{
 		return array_keys($arr) !== range(0, count($arr) - 1);

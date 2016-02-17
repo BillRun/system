@@ -109,8 +109,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
 
-		// TODO: What if empty?
-		$balancesArray = $chargingPlanRecord['include'];
+		$balancesArray = array();
+		if(isset($chargingPlanRecord['include'])) {
+			$balancesArray = $chargingPlanRecord['include'];
+		}
 		$balancesToReturn = array();
 		
 		// Go through all charging possibilities. 
@@ -144,6 +146,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			}
 		}
 
+		// Set the charging plan record
+		$balancesToReturn['charging_plan'] = $chargingPlanRecord;
 		return $balancesToReturn;
 	}
 
