@@ -432,6 +432,7 @@ class UtestController extends Yaf_Controller_Abstract {
 				'usagev' => $rowData['usagev'],
 				'balance_before' => number_format($rowData['balance_before'], 3),
 				'balance_after' => number_format($rowData['balance_after'], 3),
+				'pp_includes_name' => $rowData['pp_includes_name'],
 			);
 			
 			//Get Line rates
