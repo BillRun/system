@@ -23,6 +23,7 @@ function create_tariff(tariff, interconnect) {
 		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME + '_INTERCONNECT');
 		print("Interconnect: " + _interconnect_name);
 		if (interconnect.PP_TARIFF_NAME.substring(0, 2) == '01') { 
+			tariff = interconnect;
 			_interconnect_name = null;
 		}
 	} else {
