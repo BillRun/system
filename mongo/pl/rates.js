@@ -11,7 +11,7 @@ db.tmp_PP_PLAN.ensureIndex({"PP_PLAN_ID": 1}, { unique: false , sparse: false, b
 
 // long script to migrate the rates pricing
 var _rate, _plan, _plan_name, _usaget, _appid, _prefixes = [], _tariffs = {}, _cos_id, _unit;
-var _location_id, _subtype, _t, _find_tariff, _interconnect,_tariff_ids;
+var _location_id, _subtype, _t, _find_tariff, _interconnect,_tariff_ids, _interconnect_ar = {};
 
 function create_tariff(tariff, interconnect) {
 	var _access = 0; var _amount, _amount2;
@@ -19,19 +19,12 @@ function create_tariff(tariff, interconnect) {
 	tariff.INITIAL_AMOUNT = Number(tariff.INITIAL_AMOUNT);
 	tariff.ADD_CHARGE     = Number(tariff.ADD_CHARGE);
 	tariff.ADD_AMOUNT     = Number(tariff.ADD_AMOUNT);
-	if (typeof interconnect == 'object' && (interconnect.INITIAL_CHARGE != "0" || interconnect.ADD_CHARGE != "0")) {
-		if (interconnect.ADD_CHARGE == "0") {
-			_access = Number(interconnect.INITIAL_CHARGE);
-		} else {
-			_access = 0;
-//			_interconnect = interconnect.ADD_CHARGE;
-//			tariff.INITIAL_CHARGE += Number(interconnect.INITIAL_CHARGE);
-//			tariff.ADD_CHARGE     += Number(interconnect.ADD_CHARGE);
-		}
-	} 
 	if (typeof interconnect.PP_TARIFF_NAME != 'undefined') {
 		_interconnect_name = standardKey(interconnect.PP_TARIFF_NAME);
 		print("Interconnect: " + _interconnect_name);
+		if (interconnect.PP_TARIFF_NAME.substring(0, 2) == '01') { 
+			_interconnect_name = null;
+		}
 	} else {
 		print("No interconnect!!!");
 		_interconnect_name = null;
@@ -46,8 +39,8 @@ function create_tariff(tariff, interconnect) {
 		_amount = tariff.INITIAL_AMOUNT;
 		_amount2 = tariff.ADD_AMOUNT;
 	}
-
-	if (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE) {
+	
+	if (_usaget == 'sms' || (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE)) {
 		return {
 			'access': _access,
 			'unit' : _unit,
@@ -58,7 +51,7 @@ function create_tariff(tariff, interconnect) {
 				'interval': Number(_amount2)
 			}]
 		};
-	}	
+	}
 	return {
 		'access':   _access,
 		'unit' : _unit,
@@ -124,6 +117,51 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 		if (tariffs[usaget] === undefined)
 			tariffs[usaget] = {};
 		tariffs[usaget][plan_name] = _t;
+				if (_interconnect.PP_TARIFF_NAME.substring(0, 2) != '01' && 
+						(
+						typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined' 
+						|| 
+						typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] == 'undefined'
+						)
+					) {
+
+					if (typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined') {
+						_interconnect_ar[_interconnect.PP_TARIFF_NAME] = {};
+					}
+					
+					_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
+					
+					obj = {
+						'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
+						'from':    ISODate('2016-02-01'),
+						'to':      ISODate('2099-12-31 23:59:59'),
+						'params' : {
+//							'prefix': _prefixes,
+							'interconnect' : true
+						},
+						'rates': {}
+					};
+					obj['rates'][usaget] = {
+						'BASE' : {
+							"access": 0,
+							"unit": "seconds",
+							"rate": [
+								{
+									"to": Number(_interconnect.INITIAL_AMOUNT),
+									"price": Number(_interconnect.INITIAL_CHARGE),
+									"interval": Number(_interconnect.INITIAL_AMOUNT)
+								},
+								{
+									"to": 2147483647,
+									"price": Number(_interconnect.ADD_CHARGE),
+									"interval": Number(_interconnect.ADD_AMOUNT)
+								},
+							]
+
+						}
+					};
+					db.rates.insert(obj);
+				}
 	} else {
 		print('tariffs ids: ' + _tariff_ids.join());
 		print("plan id: " + plan_id);
@@ -132,7 +170,6 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 		if (tariffs[usaget] === undefined)
 			tariffs[usaget] = {};
 		tariffs[usaget][plan_name] = _t;
-		
 	}
 }
 
@@ -172,7 +209,7 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Bezeq144/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/013_UNITED_ARAB_EMIR/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;
@@ -180,6 +217,11 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 		_prefixes = obj1.prefixes;
 		_tariffs = {}; 
 		_tariffs_interconnect = {};
+
+		for (var i = 0; i < _prefixes.length; i++) {
+			_prefixes[i] = _prefixes[i].replace(/^0000/g, "A");
+		}
+		_prefixes = getUniqueArray(_prefixes);
 
 //		======================================================================================================================================================
 //		non shabbat
@@ -212,11 +254,6 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 			}
 		);
 
-		for (var i = 0; i < _prefixes.length; i++) {
-			_prefixes[i] = _prefixes[i].replace(/^0000/g, "A");
-		}
-		_prefixes = getUniqueArray(_prefixes);
-
 		_rate = {
 			'from':    ISODate('2016-02-01'),
 			'to':      ISODate('2099-12-31 23:59:59'),
@@ -233,8 +270,9 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 
 // insert data manually (only 1 rates, 2 plans inside - BASE and one plan)
 db.rates.insert({
-	"from" : ISODate("2012-06-01T00:00:00Z"),
 	"key" : "INTERNET_BILL_BY_VOLUME",
+	"from" : ISODate("2012-06-01T00:00:00Z"),
+	"to" : ISODate("2099-08-28T17:23:55Z"),
 	"params" : {
 		"sgsn_addresses" : /^(?=91\.135\.)/
 	},
@@ -261,6 +299,5 @@ db.rates.insert({
 				"unit" : "bytes"
 			}
 		}
-	},
-	"to" : ISODate("2099-08-28T17:23:55Z")
+	}
 })

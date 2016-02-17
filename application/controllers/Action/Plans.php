@@ -96,6 +96,7 @@ class PlansAction extends ApiAction {
 	 * Change the times of a mongo record
 	 * @param record - Record to change the times of.
 	 * @return The record with translated time.
+	 * @deprecated There isw a function in the util module.
 	 */
 	protected function setTimeToReadable($record) {
 		foreach (array('from', 'to') as $timeField) {

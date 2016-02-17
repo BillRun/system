@@ -1,5 +1,6 @@
 var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'pageslide-directive']);
 app.run(function ($rootScope, $interval, $http) {
+  /*
   var lastDigestRun = Date.now();
   var idleCheck = $interval(function () {
     var now = Date.now();
@@ -7,10 +8,10 @@ app.run(function ($rootScope, $interval, $http) {
       window.location = '/admin/logout';
     }
   }, 15 * 60 * 1000);
-
   $rootScope.$on('$routeChangeStart', function (evt) {
     lastDigestRun = Date.now();
   });
+  */
 
   $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
     $rootScope.fields = res.data;

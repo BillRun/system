@@ -189,7 +189,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
 		
-		$set['last_renew_date'] = $set['creation_time'];
+		$set['next_renew_date'] = $set['from'];
+		$set['last_renew_date'] = 0;
 		
 		if (isset($this->query['from']->sec)) {
 			$from = $this->query['from']->sec;
@@ -247,6 +248,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
+		$this->handlePlanInclude($planRecord);
+//		
+		return true;
+	}
+
+	protected function handlePlanInclude($planRecord) {
+		if(!isset($planRecord['include'])) {
+			return;
+		}
+		
 		$include = $planRecord['include'];
 		foreach ($include as $key => &$val) {
 			if (isset($val['usagev'])) {
@@ -263,12 +274,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 				}
 			}
 		}
-
 		$this->updateQuery['$set']['include'] = $include;
-//		
-		return true;
 	}
-
+	
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
