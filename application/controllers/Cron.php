@@ -105,50 +105,66 @@ class CronController extends Yaf_Controller_Abstract {
 	}		
 	
 	protected function getMonthAutoRenewQuery() {
-		$lastmonthLower = mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
-		$lastmonthUpper = mktime(23, 59, 59, date("m")-1, date("d"), date("Y"));
+//		$lastmonthLower = date("Y-m-d 00:00:00+P",strtotime("-1 month")); //mktime(0, 0, 0, date("m")-1, date("d"), date("Y"));
+
 		
 		$or = array();
-		$or['$and'][] = array('last_renew_date' => array('$gte' => new MongoDate($lastmonthLower)));
-		$or['$and'][] = array('last_renew_date' => array('$lte' => new MongoDate($lastmonthUpper)));
-		
+		$or['interval'] = 'month';
+		$lastDayPrevMonth = date('d', strtotime('last day of previous month'));
+			
 		// Check if last day.
 		if(date('d') != date('t')) {
 			// If it is not the last day, update only the non EOM records.
-			$or['$and'][] = array('eom' => false);
+			$or['eom'] = false;
+			
+			$lastmonthLower = mktime(0, 0, 0, date("n")-1, date("j"), date("Y"));
+			$lastmonthUpper = mktime(23, 59, 59, date("n")-1, date("j"), date("Y"));
+			
+			if($lastDayPrevMonth < date('d')){
+				return array("dummy"=>array('$gt'=>0,'$lt'=>0));
+			}	
+			
+			$or['last_renew_date'] = array('$gte' => new MongoDate($lastmonthLower),'$lte' => new MongoDate($lastmonthUpper));
+		
 		} else {
-			$additionalOr = array();
-			$additionalOr['$and'][] = array('last_renew_date' => array('$gt' => new MongoDate($lastmonthUpper)));
-			$firstday = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			$additionalOr['$and'][] = array('last_renew_date' => array('$lt' => new MongoDate($firstday)));
+//			$additionalOr = array();
+			$someArray = (array($lastDayPrevMonth,date('t')));
+			$dayofUpper = min($someArray);
+			$firstday = mktime(0, 0, 0, date("n"), 1, date("Y"));
+			$upper = mktime(0, 0, 0, date("n")-1, $dayofUpper, date("Y"));
+			$or['last_renew_date'] = array('$gte' => new MongoDate($upper), '$lt' => new MongoDate($firstday));
+//			$additionalOr['last_renew_date'] = array('$gte' => new MongoDate($upper), '$lt' => new MongoDate($firstday));
 			
-			$merged = array();
-			$merged['$or'][] = $or;
-			$merged['$or'][] = $additionalOr;
+//			$merged = array();
+//			$merged['$or'][] = $or;
+//			$merged['$or'][] = $additionalOr;
 			
-			$or = $merged;
+//			$or = $merged;
 		}
 		
-		$and = array();
-		$and[] = $or;
-		$and[] = array("interval" => "month");
+//		$and = array();
+//		$and[] = $or;
+//		$and[] = array("interval" => "month");
 		
-		return array('$and' => $and);
+//		return array('$and' => $and);
+		return $or;
 	}
 	
 	protected function getDayAutoRenewQuery() {
-		$lastdayLower = mktime(0, 0, 0, date("m"), date("d") - 1, date("Y"));
-		$lastdayUpper = mktime(23, 59, 59, date("m"), date("d") - 1, date("Y"));
+		$lastdayLower = mktime(0, 0, 0, date("n"), date("j") - 1, date("Y"));
+		$lastdayUpper = mktime(23, 59, 59, date("n"), date("j") - 1, date("Y"));
 		
 		$or = array();
-		$or['$and'][] = array('last_renew_date' => array('$gte' => new MongoDate($lastdayLower)));
-		$or['$and'][] = array('last_renew_date' => array('$lte' => new MongoDate($lastdayUpper)));
+		$or['last_renew_date'] = array('$gte' => new MongoDate($lastdayLower),'$lte' => new MongoDate($lastdayUpper));
+		$or['interval'] = 'day';
+		//$or['$and'][] = array('last_renew_date' => array());
 		
-		$and = array();
-		$and[] = $or;
-		$and[] = array("interval" => "day");
+//		$and = array();
+//		$and[] = $or;
+//		$and[] = array("interval" => "day");
 		
-		return array('$and' => $and);
+//		return array('$and' => $and);
+		return $or;
 	}
 	
 	/**
@@ -157,8 +173,17 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	protected function getAutoRenewServicesQuery() {
 		$orQuery = array();
-		$orQuery[] = $this->getDayAutoRenewQuery();
-		$orQuery[] = $this->getMonthAutoRenewQuery();
+		$dayQuery = $this->getDayAutoRenewQuery();
+		$monthQuery = $this->getMonthAutoRenewQuery();
+		
+		// Convert the times
+		// TODO: The array of time fields should be in the conf (the hardcoded 'last_renew_date' is not good).
+		$converted = Billrun_Util::recursiveConvertRecordMongoDatetimeFields($monthQuery, array('$gte', '$lte', '$gt', '$lt'));
+		
+		print_r(json_encode($converted));
+		
+		$orQuery[] = $dayQuery;
+		$orQuery[] = $monthQuery;
 		$queryDate = array('$or' => $orQuery);
 		$queryDate['remain'] = array('$gt' => 0);
 		return $queryDate;
@@ -169,7 +194,7 @@ class CronController extends Yaf_Controller_Abstract {
 		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
-		
+
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
 			$this->updateBalanceByAutoRenew($autoRenewRecord);
