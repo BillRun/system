@@ -41,12 +41,12 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	}
 	
 	protected function getSerial($rowData) {
-		$serial = (int)$rowDate[$this->fields['serial_number']];
+		$serial = (int)$rowData[$this->fields['serial_number']];
 		return $serial;
 	}
 	
 	protected function getBatch($rowData) {
-		$batch = (int)$rowDate[$this->fields['batch_number']];
+		$batch = (int)$rowData[$this->fields['batch_number']];
 		return $batch;
 	}
 	

@@ -69,7 +69,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     $scope.deleteCallRate = function (rateName) {
       if (!rateName)
         return;
-      delete $scope.entity.rates.call[rateName];
+      var r = confirm("Are you sure you want to remove " + rateName + "?");
+      if (r) delete $scope.entity.rates.call[rateName];
     };
 
     $scope.addDataRate = function () {
@@ -97,7 +98,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     $scope.deleteDataRate = function (rateName) {
       if (!rateName)
         return;
-      delete $scope.entity.rates.data[rateName];
+      var r = confirm("Are you sure you want to remove " + rateName + "?");
+      if (r) delete $scope.entity.rates.data[rateName];
     };
 
     $scope.addSMSRate = function () {
@@ -125,7 +127,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     $scope.deleteSMSRate = function (rateName) {
       if (!rateName)
         return;
-      delete $scope.entity.rates.sms[rateName];
+      var r = confirm("Are you sure you want to remove " + rateName + "?");
+      if (r) delete $scope.entity.rates.sms[rateName];
     };
 
     $scope.addCallIntervalPrice = function (rate) {
