@@ -31,6 +31,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $row;
 	
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
+		if ($this->isInterconnect($row)) {
+			$query[0]['$match']['params.prefix']['$in'] = array($row['np_code']);
+			$query[3]['$match']['params_prefix']['$in'] = array($row['np_code']);
+		}
+		return;
 		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
 			return;
 		}
@@ -70,7 +75,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if not under PL network else false
 	 */
 	protected function isInterconnect($row) {
-		return isset($row['np_code']) && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
+		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2 && substr($row['np_code'], 0, 3) != '831'; // 831 np prefix of PL; @todo: move it to configuration
 	}
 
 

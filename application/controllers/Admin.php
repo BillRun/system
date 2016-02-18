@@ -100,6 +100,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
@@ -318,10 +319,40 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response = new Yaf_Response_Http();
+		if ($this->getRequest()->get('full_objects')) {
+			$collection = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor();
+			$ppincludes = array();
+			foreach ($collection as $ppinclude) {
+				$pp = $ppinclude->getRawData();
+				$ppincludes[] = $pp;
+			}
+			$response->setBody(json_encode(array('ppincludes' => $ppincludes,
+				'authorized_write' => AdminController::authorized('write'))));
+			$response->response();
+			return false;
+		}
+		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response->setBody(json_encode($collection));
 		$response->response();
+		return false;
+	}
+	
+	public function savePPIncludesAction() {
+		if (!AdminController::authorized('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		$data['external_id'] = intval($data['external_id']);
+		$data['to'] = new MongoDate(strtotime('+100 years'));
+		$data['from'] = new MongoDate(strtotime($data['from']));
+		if ($this->getRequest()->get('new_entity') == 'true') {
+			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
+		} else {
+			$id = new MongoId($data['_id']['$id']);
+			unset($data['_id']);
+			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
+		}
+		$this->responseSuccess(array("data" => $data , "status"=>true ));
 		return false;
 	}
 	

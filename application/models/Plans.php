@@ -23,7 +23,7 @@ class PlansModel extends TabledateModel {
 
 	public function getTableColumns() {
 		$columns = array(
-			'name' => 'Name',
+			'name' => 'Plan',
 			'service_provider' => 'Service Provider'
 		);
 		if ($this->type === 'charging') {

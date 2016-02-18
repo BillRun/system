@@ -18,7 +18,6 @@ function SidePanelController(Database) {
       if (res.data.subscriber) {
         if (_.isEmpty(res.data.subscriber)) return;
         vm.subscriber = res.data.subscriber;
-//        vm.showSidePanel = true;
       } else {
         vm.showSidePanel = false;
       }

@@ -33,6 +33,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	protected $ignoreOveruse = true;
 
 	/**
+	 * Indicator for updating a balance by periodic charge.
+	 * @var boolean indication
+	 */
+	protected $recurring = false;
+	
+	/**
 	 * Create a new instance of the updater class.
 	 * @param array $options - Holding:
 	 * 						   increment - If true then the values in mongo are updated by incrementation,
@@ -54,6 +60,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Get the balances errors.
 		if (isset($options['errors'])) {
 			$this->errors = $options['errors'];
+		}
+		
+		// Check for recurring.
+		if(isset($options['recurring'])) {
+			$this->recurring = true;
 		}
 	}
 	
@@ -202,7 +213,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param type $dataRecord
 	 */
 	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
-		if (!$recordToSet['to']) {
+		if (!isset($recordToSet['to'])) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
 	}
@@ -290,7 +301,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
 		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
 		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
+		$defaultBalance['priority'] = $wallet->getPriority();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
+		
+		// Check if recurring.
+		if($this->recurring) {
+			$defaultBalance['$set']['recurring'] = 1;
+		}	
+		
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
@@ -299,9 +317,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
-	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($chargingPlan, $toTime) {
+	protected function getSetQuery($chargingPlan) {
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
@@ -309,9 +326,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
-		$valueUpdateQuery['$set']['to'] = $toTime;
 		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+		$valueUpdateQuery['$set']['priority'] = $chargingPlan->getPriority();
+		
+		// Check if recurring.
+		if($this->recurring) {
+			$valueUpdateQuery['$set']['recurring'] = 1;
+		}	
 			
 		return $valueUpdateQuery;
 	}

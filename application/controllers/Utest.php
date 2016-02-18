@@ -63,6 +63,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
+			header("Location: " . $this->siteUrl . "/admin/login");
 			die();
 		}
 		
@@ -431,6 +432,7 @@ class UtestController extends Yaf_Controller_Abstract {
 				'usagev' => $rowData['usagev'],
 				'balance_before' => number_format($rowData['balance_before'], 3),
 				'balance_after' => number_format($rowData['balance_after'], 3),
+				'pp_includes_name' => $rowData['pp_includes_name'],
 			);
 			
 			//Get Line rates

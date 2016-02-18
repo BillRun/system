@@ -560,15 +560,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
 		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
+				// check first if this free call and allow it if so
+				$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
+				$granted_cost = $this->getPriceByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				if ($granted_cost == '0') {
+					return array(
+						$this->pricingField => $granted_cost,
+						'usagev' => $granted_volume,
+					);
+				}
 				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
 			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
 			return false;
 		}
 		$balanceRaw = $this->balance->getRawData();
-		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 			$row['apr'] = self::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
