@@ -118,6 +118,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 				$balance_after = $this->getBalanceValue($balance);
 				$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
 				$insertLine["balance_after"] = $balance_after;
+				// TODO: Move this logic to a updater_balance class.
+				if(isset($balance['normalized'])) {
+					$insertLine['normalized'] = $balance['normalized'];
+				}
 				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
 
 			}
