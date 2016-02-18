@@ -491,8 +491,8 @@ function detailFormatter(index, row) {
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr>");
         var idx = i + 1;
-        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
-        $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='update' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
+        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
+        $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + line.pp_includes_external_id + "</td>");
         $tr.append("<td>" + line.pp_includes_name + "</td>");
         $tr.append("<td>" + line.api_name + "</td>");
