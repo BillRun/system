@@ -486,10 +486,13 @@ function detailFormatter(index, row) {
     .done(function (res) {
       var lines = JSON.parse(res);
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
-      var $thead = $("<thead><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></thead>");
+      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></tr></thead>");
       $table.append($thead).append('<tbody>');
-      _.forEach(lines, function (line) {
+      _.forEach(lines, function (line, i) {
         var $tr = $("<tr>");
+        var idx = i + 1;
+        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
+        $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='update' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + line.pp_includes_external_id + "</td>");
         $tr.append("<td>" + line.pp_includes_name + "</td>");
         $tr.append("<td>" + line.api_name + "</td>");
