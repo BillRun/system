@@ -3,6 +3,11 @@
 	overflow-y: inherit!important;
 }
 
+.glyphicon-chevron-right,
+.glyphicon-chevron-down {
+	cursor: pointer;
+}
+
 .left-panel {
 	background-color: #222;
 	color: white;
