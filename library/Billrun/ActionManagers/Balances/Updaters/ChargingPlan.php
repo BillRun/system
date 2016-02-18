@@ -128,7 +128,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 					return false;
 				}
 				
-				if(!isset($returnPair['_updated']) || $returnPair['_updated']) {
+				if(isset($returnPair['_updated']) && $returnPair['_updated']) {
 					$balancesToReturn['_updated'] = true;
 				}
 				
