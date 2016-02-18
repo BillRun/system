@@ -489,7 +489,7 @@ function detailFormatter(index, row) {
       var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></tr></thead>");
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
-        var $tr = $("<tr>");
+        var $tr = $("<tr></tr>");
         var idx = i + 1;
         var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
