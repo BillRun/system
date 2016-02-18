@@ -69,16 +69,23 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 
 		// Set subscriber to query.
-		$updateQuery['aid'] = $subscriber['aid'];
-		$updateQuery['sid'] = $subscriber['sid'];
+		$findQuery['aid'] = $subscriber['aid'];
+		$findQuery['sid'] = $subscriber['sid'];
 
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord, $recordToSet);
 
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 
-		$updateResult = $this->updateBalance($chargingPlan, $updateQuery, $defaultBalance, $recordToSet['to']);
-
+		// Get the balance with the current value field.
+		$findQuery[$chargingPlan->getFieldName()]['$exists'] = 1;
+		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
+		
+		$updateResult = $this->updateBalance($chargingPlan, $findQuery, $defaultBalance, $recordToSet['to']);
+		if($this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan) === false) {
+			return false;
+		}
+		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
 		$updateResult[0]['subscriber'] = $subscriber;
 		return $updateResult;
@@ -141,10 +148,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 */
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-
-		// Get the balance with the current value field.
-		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
-		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
 		

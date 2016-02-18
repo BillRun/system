@@ -183,7 +183,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'subscriber' => $subscriber
 		);
 		
-		return $this->goThroughBalanceWallets($params);	
+		$returnPair = $this->goThroughBalanceWallets($params);	
+		
+		if($this->normalizeBalance($returnPair['query'], $subscriber['plan'], $returnPair['wallet']) === false) {
+			return false;
+		}
+		unset($returnPair['query']);
+		return $returnPair;
 	}
 	
 	/**
@@ -235,14 +241,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function updateBalanceByWallet($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
 		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
-
+		
+		$updateQuery['pp_includes_external_id'] = $wallet->getPPID();
+		
+		// Get the balance with the current value field.
+		$updateQuery[$wallet->getFieldName()]['$exists'] = 1;
+		
 		$to = $this->getExpirationTime($wallet, $recordToSet);
 
 		$currentBalance = $this->updateBalance($wallet, $updateQuery, $defaultBalance, $to);
-
+		
 		return array(
 			'balance' => $currentBalance,
-			'wallet' => $wallet
+			'wallet' => $wallet,
+			'query' => $updateQuery
 		);
 	}
 
@@ -302,10 +314,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
 		// HOTFIX: remove priority and use pp_external_id instead
 		unset($query['priority']);
-		$query['pp_includes_external_id'] = $wallet->getPPID();
-		
-		// Get the balance with the current value field.
-		$query[$wallet->getFieldName()]['$exists'] = 1;
+
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
 		
