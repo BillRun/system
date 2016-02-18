@@ -11,6 +11,7 @@
 						<th>Type</th>
 						<th>aPrice</th>
 						<th>Usage V</th>
+						<th>Balance Name</th>
 						<th>Balance Before</th>
 						<th>Balance After</th>
 						<th>aRate</th>
@@ -25,19 +26,20 @@
 							<td><?php echo $line['record_type'] ?> </td>
 							<td><?php echo $line['aprice'] ?></td>
 							<td><?php echo $line['usagev'] ?></td>
+							<td><?php echo $line['pp_includes_name'] ?></td>
 							<td><?php echo $line['balance_before'] ?></td>
 							<td><?php echo $line['balance_after'] ?></td>
 							<td>
 								<?php if (!empty($line['arate'])) : ?>
 									<a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate']['id'] ?>" target="_blank"><?php echo $line['arate']['key'] ?></a>
 								<?php else : ?>
-									Rate Not Found
+									<!--Rate Not Found-->
 								<?php endif; ?>
 							</td>
 						</tr>
 						<?php if (!empty($line['archive_lines']['rows'])) : ?>
 							<tr>
-								<td colspan="9">
+								<td colspan="10">
 									<?php print $this->render('utest/components/lines.phtml', array('lines' => $line['archive_lines'], 'sid' => $sid_after_test, 'id' => 'archive_lines')); ?>
 								</td>
 							</tr>

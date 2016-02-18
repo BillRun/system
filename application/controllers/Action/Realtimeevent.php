@@ -99,7 +99,7 @@ class RealtimeeventAction extends ApiAction {
 		}
 		
 		// some hack for PL (@TODO - move to plugin)
-		if ($this->event['call_type'] == '3') {
+		if (isset($this->event['call_type']) && $this->event['call_type'] == '3') {
 			$this->usaget = 'video_call';
 		}
 		

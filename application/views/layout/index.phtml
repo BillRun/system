@@ -67,9 +67,7 @@
 	<!-- end of main component -->
 	<!-- hackitty hack hack! -->
 	<script>
-		if (window.location.hash.match(/\/(update|list|duplicate|close_and_new|new|service_providers)(\/)*/)) {
-			$('.component').remove();
-		} else if ($('h1').length && $('h1').text().match(/(charging|customer|recurring)/gi)) {
+		if ($('h1').length && $('h1').text().match(/(charging|customer|recurring)/gi)) {
 			var href = $("#new").attr('href');
 			var match = $("h1").text().match(/(charging|customer|recurring)/gi)[0].toLowerCase();
 			href += '?type=' + match;

@@ -101,7 +101,8 @@
 				<select class="form-control" name='np_code'>
 					<option value=""></option>
 					<?php foreach ($np_codes as $np_code) : ?>
-						<option value="<?php echo $np_code ?>"><?php echo $np_code ?></option>
+						<?php $npcode = explode("|", $np_code)?>
+						<option value="<?php echo $npcode[0] ?>">(<?php echo $npcode[0] ?>) <?php echo $npcode[1] ?> </option>
 					<?php endforeach; ?>
 				</select>
 			</div>

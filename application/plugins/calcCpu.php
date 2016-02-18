@@ -241,7 +241,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($data['data'] as &$line) {
 			$customerCalc = $this->getCalculator('customer', $options, $line);
 			$rateCalc = $this->getCalculator('rate', $options, $line);
-			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()));
+			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), array('np_code', 'call_type'));
 			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
 			if ($query) {
 				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->current();

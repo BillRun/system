@@ -205,6 +205,15 @@ class BalancesModel extends TableModel {
 				}
 				$item['totals'] = implode(',', $totals);
 				$item['units'] = implode(',', $units);
+				$subscriber = Billrun_Factory::db()->subscribersCollection()
+					->query(array('sid' => $item['sid'],
+						'from' => array('$lte' => $item['from']),
+						'to' => array('$gte' => $item['from'])))
+					->cursor()
+					->limit(1)
+					->current()
+					->getRawData();
+				$item['service_provider'] = $subscriber['service_provider'];
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];

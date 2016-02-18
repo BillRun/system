@@ -47,7 +47,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							),
 							'update' => array(
 								'$setOnInsert' => array('arate', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name'),
-								'$set' => array('process_time'),
+								'$set' => array('process_time', 'np_code', 'call_type'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'aprice'),
 							),
 						),
@@ -69,90 +69,90 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 						),
 					),
 				),
-				'smsrt' => array(
-					'required' => array(
-						'fields' => array('urt', 'association_number'),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-						'field' => array()
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-								'$set' => array('process_time'),
-								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-							),
-						),
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$set' => array('balance_after'),
-							),
-						),
-					),
-				),
-				'mmsrt' => array(
-					'required' => array(
-						'fields' => array('urt', 'association_number'),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-						'field' => array()
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-								'$set' => array('process_time'),
-								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-							),
-						),
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$set' => array('balance_after'),
-							),
-						),
-					),
-				),
-				'service' => array(
-					'required' => array(
-						'fields' => array('urt', 'association_number', 'service_name'),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-						'field' => array()
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'service_name', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-								'$set' => array('process_time'),
-								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-							),
-						),
-						array(
-							'match' => array(
-							),
-							'update' => array(
-								'$set' => array('balance_after'),
-							),
-						),
-					),
-				),
+//				'smsrt' => array(
+//					'required' => array(
+//						'fields' => array('urt', 'association_number'),
+//					),
+//					'date_seperation' => 'Ymd',
+//					'stamp' => array(
+//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
+//						'field' => array()
+//					),
+//					'fields' => array(
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
+//								'$set' => array('process_time'),
+//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
+//							),
+//						),
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$set' => array('balance_after'),
+//							),
+//						),
+//					),
+//				),
+//				'mmsrt' => array(
+//					'required' => array(
+//						'fields' => array('urt', 'association_number'),
+//					),
+//					'date_seperation' => 'Ymd',
+//					'stamp' => array(
+//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
+//						'field' => array()
+//					),
+//					'fields' => array(
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
+//								'$set' => array('process_time'),
+//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
+//							),
+//						),
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$set' => array('balance_after'),
+//							),
+//						),
+//					),
+//				),
+//				'service' => array(
+//					'required' => array(
+//						'fields' => array('urt', 'association_number', 'service_name'),
+//					),
+//					'date_seperation' => 'Ymd',
+//					'stamp' => array(
+//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
+//						'field' => array()
+//					),
+//					'fields' => array(
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'service_name', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
+//								'$set' => array('process_time'),
+//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
+//							),
+//						),
+//						array(
+//							'match' => array(
+//							),
+//							'update' => array(
+//								'$set' => array('balance_after'),
+//							),
+//						),
+//					),
+//				),
 				'gy' => array(
 					'required' => array(
 						'fields' => array('session_id', 'urt', 'request_num', 'request_type'),
