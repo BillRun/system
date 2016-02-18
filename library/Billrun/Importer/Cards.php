@@ -28,7 +28,7 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	}
 
 	protected function getSecret($rowData) {
-		$formatted = number_format($rowData[$this->fields['secret']], 0, '', '');
+		$formatted = number_format($rowData[$this->fields['secret']['i']], 0, '', '');
 		$codeLength = Billrun_Factory::config()->getConfigValue('importer.Cards.code_length');
 		$padded = str_pad($formatted, $codeLength, "0", STR_PAD_LEFT);
 		$secret = hash('sha512',$formatted);
@@ -41,17 +41,17 @@ class Billrun_Importer_Cards extends Billrun_Importer_Csv {
 	}
 	
 	protected function getSerial($rowData) {
-		$serial = (int)$rowData[$this->fields['serial_number']];
+		$serial = (int)$rowData[$this->fields['serial_number']['i']];
 		return $serial;
 	}
 	
 	protected function getBatch($rowData) {
-		$batch = (int)$rowData[$this->fields['batch_number']];
+		$batch = (int)$rowData[$this->fields['batch_number']['i']];
 		return $batch;
 	}
 	
 	protected function getTo($rowData) {
-		$to = new MongoDate(strtotime($rowData[$this->fields['to']]));
+		$to = new MongoDate(strtotime($rowData[$this->fields['to']['i']]));
 		return $to;
 	}
 	
