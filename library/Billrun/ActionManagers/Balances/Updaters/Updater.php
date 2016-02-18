@@ -184,7 +184,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return false if error, or the max value on success.
 	 */
 	protected function getBalanceMaxValue($plan, $prepaidID) {
-		$plansColl = Billrun_Factory::db()->planssCollection();
+		$plansColl = Billrun_Factory::db()->plansCollection();
 		$maxQuery = array("type" => "customer", "name"=>$plan);
 		$maxRecord = $plansColl->query($maxQuery)->cursor()->current();
 		
