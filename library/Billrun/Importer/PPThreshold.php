@@ -44,7 +44,7 @@ class Billrun_Importer_PPThreshold extends Billrun_Importer_Csv {
 	}
 	
 	protected function getMax($rowData) {
-		$this->thresholdTable[$this->cos][$this->ppID] = $rowData[$this->fields['Max']['i']];
+		$this->thresholdTable[$this->cos][$this->ppID] = (int)(($rowData[$this->fields['Max']['i']]) *-1);
 		return null;
 	}
 	
