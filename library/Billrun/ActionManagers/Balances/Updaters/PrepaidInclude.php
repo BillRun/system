@@ -92,8 +92,9 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$valueName = $chargingPlan->getFieldName();
 			$beforeNormalizing = $updateResult[0]['balance'][$valueName];
 			$updateResult[0]['balance'][$valueName] = $normalizeResult['max'];
-			$updateResult[0]['balance']['normalized'] = $beforeNormalizing + $chargingPlan->getValue() . "=>" . $beforeNormalizing . '=>' . $normalizeResult['max'];
-			
+			$updateResult[0]['normalized']['before'] = $beforeNormalizing - $chargingPlan->getValue();
+			$updateResult[0]['normalized']['after'] = $beforeNormalizing;
+			$updateResult[0]['normalized']['normalized'] = $normalizeResult['max'];
 		}
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);

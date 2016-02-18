@@ -102,6 +102,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			unset($outputDocuments['charging_plan']);
 		}
 		
+		unset($outputDocuments['updated']);
+		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
@@ -118,13 +120,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 				$balance_after = $this->getBalanceValue($balance);
 				$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
 				$insertLine["balance_after"] = $balance_after;
-				// TODO: Move this logic to a updater_balance class.
-				if(isset($balance['normalized'])) {
-					$insertLine['normalized'] = $balance['normalized'];
-				}
 				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
 
 			}
+			
+			// TODO: Move this logic to a updater_balance class.
+			if(isset($balancePair['normalized'])) {
+				$insertLine['normalized'] = $balancePair['normalized'];
+			}
+			
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
 			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
 			$linesCollection->insert($insertLine);

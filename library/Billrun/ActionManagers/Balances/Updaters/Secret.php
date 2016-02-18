@@ -74,10 +74,10 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			return false;
 		}
 		
-		if($ret['_updated']) {
+		if($ret['updated']) {
 			$this->signalCardAsUsed($cardRecord, $subscriberId);
 		}
-		unset($ret['_updated']);
+		unset($ret['updated']);
 		return $ret;
 	}
 	

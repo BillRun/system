@@ -108,7 +108,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if(isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-		$balancesToReturn = array('_updated' => false);
+		$balancesToReturn = array('updated' => false);
 		
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
@@ -128,8 +128,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 					return false;
 				}
 				
-				if(isset($returnPair['_updated']) && $returnPair['_updated']) {
-					$balancesToReturn['_updated'] = true;
+				if(isset($returnPair['updated']) && $returnPair['updated']) {
+					$balancesToReturn['updated'] = true;
 				}
 				
 				$balancesToReturn[] = $returnPair;
@@ -186,8 +186,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$valueName = $wallet->getFieldName();
 			$beforeNormalizing = $returnPair['balance'][$valueName];
 			$returnPair['balance'][$valueName] = $normalizeResult['max'];
-			$returnPair['balance']['normalized'] = $beforeNormalizing + $wallet->getValue() . "=>" . $beforeNormalizing . '=>' . $normalizeResult['max'];
-			$returnPair['_updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+			$returnPair['normalized']['before'] = $beforeNormalizing - $wallet->getValue();
+			$returnPair['normalized']['after'] = $beforeNormalizing;
+			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
+			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
 		}
 		
 		unset($returnPair['query']);
