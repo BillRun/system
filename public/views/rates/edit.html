@@ -76,8 +76,8 @@
 			</div>
 			
 			<h3>
-				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
-				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
+				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
+				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
 				<span ng-click="shown.prefix = !shown.prefix" class="clickable">Prefix</span>
 			</h3>
 			<div id='rate-prefixes' ng-if="shown.prefix">
