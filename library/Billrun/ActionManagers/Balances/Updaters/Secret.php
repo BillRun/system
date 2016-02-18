@@ -69,9 +69,15 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		);
 		
 		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
-		if ($ret !== FALSE) {
+		
+		if ($ret === FALSE) {
+			return false;
+		}
+		
+		if($ret['_updated']) {
 			$this->signalCardAsUsed($cardRecord, $subscriberId);
 		}
+		unset($ret['_updated']);
 		return $ret;
 	}
 	
