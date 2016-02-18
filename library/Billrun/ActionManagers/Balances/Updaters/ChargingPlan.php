@@ -62,11 +62,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
 
-		// Get the priority from the plan.
-		if (isset($chargingPlanRecord['priority'])) {
-			$updateQuery['priority'] = $chargingPlanRecord['priority'];
-		}
-
 		return $chargingPlanRecord;
 	}
 
@@ -113,36 +108,31 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if(isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-		$balancesToReturn = array();
+		$balancesToReturn = array('_updated' => false);
 		
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
 			if (Billrun_Util::isAssoc($chargingByValue)) {
-				$returnPair = 
-					$this->getReturnPair($chargingByValue, 
-										 $chargingBy, 
-										 $subscriber, 
-								 		 $chargingPlanRecord, 
-										 $recordToSet, 
-										 $updateQuery);
+				$chargingByValue = array($chargingByValue);
+			}
+			
+			// There is more than one value pair in the wallet.
+			foreach ($chargingByValue as $chargingByValueValue) {
+				$returnPair = $this->getReturnPair($chargingByValueValue, 
+												   $chargingBy, 
+												   $subscriber, 
+												   $chargingPlanRecord, 
+												   $recordToSet,
+												   $updateQuery);
 				if($returnPair === false) {
 					return false;
 				}
-				$balancesToReturn[] = $returnPair;
-			} else {
-				// There is more than one value pair in the wallet.
-				foreach ($chargingByValue as $chargingByValueValue) {
-					$returnPair = $this->getReturnPair($chargingByValueValue, 
-											 		   $chargingBy, 
-											 		   $subscriber, 
-													   $chargingPlanRecord, 
-													   $recordToSet,
-													   $updateQuery);
-					if($returnPair === false) {
-						return false;
-					}
-					$balancesToReturn[] = $returnPair;
+				
+				if(!isset($returnPair['_updated']) || $returnPair['_updated']) {
+					$balancesToReturn['_updated'] = true;
 				}
+				
+				$balancesToReturn[] = $returnPair;
 			}
 		}
 
@@ -185,9 +175,21 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		$returnPair = $this->goThroughBalanceWallets($params);	
 		
-		if($this->normalizeBalance($returnPair['query'], $subscriber['plan'], $returnPair['wallet']) === false) {
+		$wallet = $returnPair['wallet'];
+		$normalizeResult = $this->normalizeBalance($returnPair['query'], $subscriber['plan'], $wallet);
+		if($normalizeResult === false) {
 			return false;
 		}
+		
+		// Report on changes
+		if($normalizeResult['nModified'] > 0) {
+			$valueName = $wallet->getFieldName();
+			$beforeNormalizing = $returnPair['balance'][$valueName];
+			$returnPair['balance'][$valueName] = $normalizeResult['max'];
+			$returnPair['balance']['normalized'] = $beforeNormalizing + $wallet->getValue() . "=>" . $beforeNormalizing . '=>' . $normalizeResult['max'];
+			$returnPair['_updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+		}
+		
 		unset($returnPair['query']);
 		return $returnPair;
 	}
@@ -312,9 +314,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongoldoid_Entity
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		// HOTFIX: remove priority and use pp_external_id instead
-		unset($query['priority']);
-
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
 		
