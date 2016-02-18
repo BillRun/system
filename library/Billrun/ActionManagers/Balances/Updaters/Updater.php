@@ -211,6 +211,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return true if successful.
 	 */
 	protected function normalizeBalance($query, $plan, $wallet) {
+		// Check if the value to set is negative, if so, nothing to check.
+		if($wallet->getValue() >= 0) {
+			return true;
+		}
+		
 		$maxValue = $this->getBalanceMaxValue($plan, $wallet->getPPID());
 		if($maxValue === false) {
 			return false;
@@ -222,7 +227,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			'multi' => 1
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$updateQuery = array('$min' => array($wallet->getFieldName() =>$maxValue));
+		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
 		return $balancesColl->update($query, $updateQuery, $options);
 	}
 	
