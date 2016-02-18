@@ -82,8 +82,18 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
 		
 		$updateResult = $this->updateBalance($chargingPlan, $findQuery, $defaultBalance, $recordToSet['to']);
-		if($this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan) === false) {
+		$normalizeResult = $this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan);
+		if($normalizeResult === false) {
 			return false;
+		}
+		
+		// Report on changes
+		if($normalizeResult['nModified'] > 0) {
+			$valueName = $chargingPlan->getFieldName();
+			$beforeNormalizing = $updateResult[0]['balance'][$valueName];
+			$updateResult[0]['balance'][$valueName] = $normalizeResult['max'];
+			$updateResult[0]['balance']['normalized'] = $beforeNormalizing + $chargingPlan->getValue() . "=>" . $beforeNormalizing . '=>' . $normalizeResult['max'];
+			
 		}
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
