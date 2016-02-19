@@ -26,7 +26,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     $scope.deletePrefix = function (prefixIndex) {
       if (prefixIndex === undefined)
         return;
-      $scope.entity.params.prefix.splice(prefixIndex, 1);
+      var r = confirm("Are you sure you want to remove prefix " + $scope.entity.params.prefix[prefixIndex]);
+      if (r) $scope.entity.params.prefix.splice(prefixIndex, 1);
     };
 
     $scope.addRecordType = function () {
