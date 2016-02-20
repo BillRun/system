@@ -395,24 +395,34 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return int the calculated price
 	 */
 	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0) {
-		if ($offset) {
-			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
+		if ($offset == 0) { // add access price only on the first offset
+			$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
+		} else {
+			$accessPrice = 0;
 		}
-		$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
-//		$interconnect = self::getInterConnectPrice($rate, $usage_type, $plan);
-		
 		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
 		
-		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
-		$price = 0;
-		foreach ($rates_arr as $currRate) {
+		$ratesArray = self::getRatesArray($rate, $usage_type, $plan);
+		$price = 0; // init the price
+		$from = 0;
+		foreach ($ratesArray as $currRate) {
 			if (isset($currRate['rate'])) {
 				$currRate = $currRate['rate'];
 			}
 			if (0 == $volume) { // volume could be negative if it's a refund amount
-				break;
-			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+				break; //break if no volume left to price.
+			}
+			if ($offset > $currRate['to']) {
+				continue;
+			}
+			if ($offset >= $from) {
+				$volumeToPriceCurrentRating = (($volume + $offset) < $currRate['to']) ? ($volume + $offset): ($currRate['to'] - $offset); // get the volume that needed to be priced for the current rating
+				if ($offset != $from && $currRate['interval'] > $volumeToPriceCurrentRating) {
+					continue; // we already charged this interval on the previous iteration
+				}
+			} else {
+				$volumeToPriceCurrentRating = ($volume < $currRate['to']) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			}
 			if (isset($currRate['ceil'])) {
 				$ceil = $currRate['ceil'];
 			} else {
@@ -424,8 +434,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
+			$from = $currRate['to'] + 1;
 		}
 		return $accessPrice + $price;
+	}
+	
+	protected static function getInterconnect($rate, $usage_type, $plan) {
+		if (isset($rate['rates'][$usage_type][$plan]['interconnect'])) {
+			return $rate['rates'][$usage_type][$plan]['interconnect'];
+		}
+		if (isset($rate['rates'][$usage_type]['BASE']['interconnect'])) {
+			return $rate['rates'][$usage_type]['BASE']['interconnect'];
+		}
+		
+		if (isset($rate['rates'][$usage_type]['interconnect'])) {
+			return $rate['rates'][$usage_type]['interconnect'];
+		}
 	}
 	
 	/**
