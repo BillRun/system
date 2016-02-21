@@ -183,6 +183,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
 				if ($key !== '_id') unset($entity[$key]);
 			}
+			$plan_rates = array();
 			if ($coll == 'plans') {
 				$plan_name = $entity['name'];
 				$query = array(
@@ -192,7 +193,6 @@ class AdminController extends Yaf_Controller_Abstract {
 						array("rates.sms.$plan_name" => array('$exists' => 1))
 					)
 				);
-				$plan_rates = array();
 				$id = '$id';
 				foreach (Billrun_Factory::db()->ratesCollection()->query($query)->cursor() as $rate) {
 					$r = $rate->getRawData();
@@ -1325,6 +1325,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	protected function translateValueByType($option, $inputValue) {
 		// TODO: Change this switch case to OOP classes.
+		$returnValue = '';
 		switch ($option) {
 			case 'number':
 				$returnValue = floatval($inputValue);
@@ -1458,7 +1459,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				continue;
 			}
 			$operator = $operators[$i];
-			$this->setManualFilterForKey($query, $key, $value, $operator);
+			$this->setManualFilterForKey($query, $key, $value, $operator, $advanced_options);
 		}
 		return $query;
 	}
