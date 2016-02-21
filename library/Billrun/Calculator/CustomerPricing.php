@@ -424,6 +424,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$interconnect_flag && !empty($interconnect = self::getInterConnect($rate, $usage_type, $plan))) {
 			$query = array(
 				'key' => $interconnect,
+				'params.interconnect' => TRUE,
 				'from' => array('$lte' => new MongoDate()),
 				'to' => array('$gte' => new MongoDate()),
 			);
