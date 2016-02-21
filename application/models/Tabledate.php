@@ -154,6 +154,8 @@ class TabledateModel extends TableModel {
 	}
 
 	public function getFilterFields() {
+		$date = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+		$date->set('00:00:00', Zend_Date::TIMES);
 		$filter_fields = array(
 			'date' => array(
 				'key' => 'date',
@@ -161,7 +163,7 @@ class TabledateModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => array('$lte', '$gte'),
 				'display' => 'Date',
-				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => $date->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());

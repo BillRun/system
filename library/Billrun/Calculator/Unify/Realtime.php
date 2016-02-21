@@ -46,7 +46,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'api_name' => '/.*/',
 							),
 							'update' => array(
-								'$setOnInsert' => array('arate', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name'),
+								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name'),
 								'$set' => array('process_time', 'np_code', 'call_type'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'aprice'),
 							),
@@ -171,7 +171,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'request_type' => '/.*/',
 							),
 							'update' => array(
-								'$setOnInsert' => array('arate', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before'),
+								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn'),
 								'$set' => array('process_time'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'aprice'),
 							),
