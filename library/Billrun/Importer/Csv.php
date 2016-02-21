@@ -19,7 +19,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	protected $fieldToImport = null;
 	protected $dataToImport = null;
 	protected $importerName = null;
-	protected $fields = null;
+	protected $fieldsColumns = null;
 	protected $handle = null;
 	protected $delimiter = null;
 	protected $limit = null;
@@ -46,7 +46,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 			$this->limit = $this->getLimit();
 			$rowsIndexesToSkip = $this->getRowsIndexesToSkip();
 			$this->dataToImport = array();
-			$this->fields = $this->getImporterFields();
+			$this->fieldsColumns = $this->getImporterFields();
 			$rowIndex = 0;
 			while (($data = fgetcsv($this->handle, $this->limit, $this->delimiter)) !== FALSE) {
 				if (in_array($rowIndex, $rowsIndexesToSkip)) {
@@ -139,7 +139,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	 */
 	protected function getDataToSave($rowData) {
 		$ret = array();
-		foreach ($this->fields as $field => $rowFieldIndex) {
+		foreach ($this->fieldsColumns as $field => $rowFieldIndex) {
 			if (is_array($rowFieldIndex)) {  // The value needs to be calculated from an inner function
 				$ret[$field] = (isset($rowFieldIndex['classMethod']) ? call_user_method($rowFieldIndex['classMethod'], $this, $rowData) : '');
 			} else if (is_numeric($rowFieldIndex)) { // This is an index in the row's data

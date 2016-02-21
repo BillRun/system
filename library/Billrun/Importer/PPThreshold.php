@@ -24,7 +24,7 @@ class Billrun_Importer_PPThreshold extends Billrun_Importer_Csv {
 	
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->fields = Billrun_Factory::config()->getConfigValue('importer.PPThreshold.fields', array());
+		$this->fieldsColumns = Billrun_Factory::config()->getConfigValue('importer.PPThreshold.columns', array());
 	}
 	
 	protected function getCollectionName() {
@@ -33,18 +33,18 @@ class Billrun_Importer_PPThreshold extends Billrun_Importer_Csv {
 
 	
 	protected function getCOS($rowData) {
-		$field = $this->fields['COS']['i'];
+		$field = $this->fieldsColumns['COS'];
 		$this->cos = $rowData[$field];
 		return null;
 	}
 	
 	protected function getPPId($rowData) {
-		$this->ppID =  $rowData[$this->fields['PP_Id']['i']];
+		$this->ppID =  $rowData[$this->fieldsColumns['PP_Id']];
 		return null;
 	}
 	
 	protected function getMax($rowData) {
-		$this->thresholdTable[$this->cos][$this->ppID] = (int)(($rowData[$this->fields['Max']['i']]) *-1);
+		$this->thresholdTable[$this->cos][$this->ppID] = (int)(($rowData[$this->fieldsColumns['Max']]) *-1);
 		return null;
 	}
 	
