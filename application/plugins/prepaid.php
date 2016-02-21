@@ -74,6 +74,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getRowCurrentUsagev($row) {
 		try {
+			if ($row['type'] != "callrt") {
+				return 0;
+			}
 			$lines_coll = Billrun_Factory::db()->linesCollection();
 			$query = $this->getRowCurrentUsagevQuery($row);
 			$line = $lines_coll->aggregate($query)->current();
