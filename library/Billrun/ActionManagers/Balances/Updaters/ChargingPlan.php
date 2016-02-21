@@ -62,11 +62,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
 
-		// Get the priority from the plan.
-		if (isset($chargingPlanRecord['priority'])) {
-			$updateQuery['priority'] = $chargingPlanRecord['priority'];
-		}
-
 		return $chargingPlanRecord;
 	}
 
@@ -312,9 +307,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongoldoid_Entity
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		// HOTFIX: remove priority and use pp_external_id instead
-		unset($query['priority']);
-
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
 		
