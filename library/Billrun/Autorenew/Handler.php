@@ -77,6 +77,7 @@ class Billrun_Autorenew_Handler {
 			}
 			$record->update();
 		}
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
 	}
 	
 	/**
