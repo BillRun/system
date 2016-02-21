@@ -177,7 +177,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
 		try {
-			if ($balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
+			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
@@ -197,7 +197,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
-		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request'))) || ($row['type'] == 'callrt' && in_array($row['api_name'], array('release_call')));
+		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request')) && (!isset($row['in_data_slowness']) || !$row['in_data_slowness'])) || 
+			($row['type'] == 'callrt' && in_array($row['api_name'], array('release_call')));
 	}
 
 	/**
@@ -282,20 +283,24 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
+		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+		$rebalance_offset = $call_offset + $rebalanceUsagev;
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$usaget = $lineToRebalance['usaget'];
+		if (empty($lineToRebalance['in_data_slowness'])) {
+			$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+		} else {
+			$rebalanceCost = 0;
+		}
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
-		$balances_coll = Billrun_Factory::db()->balancesCollection();
-		$balance = $balances_coll->getRef($balanceRef);
-		if (is_array($balance['tx']) && empty($balance['tx'])) {
-			$balance['tx'] = new stdClass();
-		}
-		if (!empty($balance)) {
+		if ($balanceRef) {
+			$balances_coll = Billrun_Factory::db()->balancesCollection();
+			$balance = $balances_coll->getRef($balanceRef);
+			if (is_array($balance['tx']) && empty($balance['tx'])) {
+				$balance['tx'] = new stdClass();
+			}
 			$balance->collection($balances_coll);
-			$usaget = $lineToRebalance['usaget'];
-			$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-			$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
-			$rebalance_offset = $call_offset + $rebalanceUsagev;
-			$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
 			if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
 				$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
 			} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
@@ -303,18 +308,20 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
-			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+		} else {
+			$balance = null;
+		}
+		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
 
-			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
+		$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 	//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
 
+		if ($balance) {
 			$balance->save();
 		} else {
 			$rebalanceCost = 0;
 		}
 
-
-		// Update previous line
 		
 		// Update line in archive
 		$lines_archive_coll = $this->db->archiveCollection();

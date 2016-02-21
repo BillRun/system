@@ -103,8 +103,50 @@ class CronController extends Yaf_Controller_Abstract {
 	public function autoRenewServicesAction() {
 		$handler = new Billrun_Autorenew_Handler();
 		$handler->autoRenewServices();
-	}		
-	
+	}
+
+	public function nonRecurringAction() {
+		$this->cancelSlownessByEndedNonRecurringPlans();
+	}
+
+	/**
+	 * @todo Not completed
+	 */
+	public function cancelSlownessByEndedNonRecurringPlans() {
+		$balancesCollection = Billrun_Factory::db()->balancesCollection();
+		$sort = array(
+			'$sort' => array(
+				'to' => -1,
+			),
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => '$sid',
+				'to' => array(
+					'$first' => '$to',
+				),
+				'charging_type' => array(
+					'$first' => '$charging_type',
+				)
+			),
+		);
+		$match = array(
+			'$match' => array(
+				'charging_type' => 'prepaid',
+				'to' => array('$lt' => new MongoDate()),
+			),
+		);
+		$project = array(
+			'$project' => array(
+				'sid' => '$_id',
+			),
+		);
+		$balances = $balancesCollection->aggregate($sort, $group, $match, $project);
+		$sids = array_map(function($doc) {
+			return $doc['sid'];
+		}, iterator_to_array($balances));
+	}
+
 	/**
 	 * method to add output to the stream and log
 	 * 
