@@ -28,7 +28,9 @@ class Billrun_Subscriber_Query_Manager {
 	 */
 	public static function handle($params) {
 		$result = false;
-		
+		if (!isset($params['time'])) {
+			return FALSE;
+		}
 		// Go through the handlers.
 		foreach (self::$queryHandlers as $handler) {
 			
@@ -37,6 +39,9 @@ class Billrun_Subscriber_Query_Manager {
 			if($result !== false) {
 				break;
 			}
+		}
+		if ($result) {
+			$result = array_merge($result, Billrun_Util::getDateBoundQuery(strtotime($params['time'])));
 		}
 		
 		return $result;

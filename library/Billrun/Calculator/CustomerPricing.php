@@ -291,6 +291,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
+	 * 
+	 * @return array
+	 */
+	protected function getFreeRowPricingData() {
+		return array(
+				'in_plan' => 0,
+				'over_plan' => 0,
+				'out_plan' => 0,
+				'in_group' => 0,
+				'over_group' => 0,
+				$this->pricingField => 0,
+			);
+	}
+
+	/**
 	 * Get pricing data for a given rate / subcriber.
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param string $usageType The type  of the usage (call/sms/data)
@@ -300,7 +315,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return Array the 
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 */
-	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan) {
+	protected function getLinePricingData($volume, $usageType, $rate, $sub_balance, $plan, $row = null) {
+		if ($this->isFreeLine($row)) {
+			return $this->getFreeRowPricingData();
+		}
 		$ret = array();
 		if ($plan->isRateInBasePlan($rate, $usageType)) {
 			$planVolumeLeft = $plan->usageLeftInBasePlan($sub_balance, $rate, $usageType);
@@ -566,6 +584,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return 0;
 	}
 
+	protected function isFreeLine($row) {
+		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
+			return ($row['type'] === 'gy' && isset($row['in_data_slowness']) && $row['in_data_slowness']);
+		}
+		return false;
+	}
+
 	/**
 	 * Update the subscriber balance for a given usage
 	 * Method is recursive - it tries to update subscriber balances with value=oldValue tactic
@@ -598,17 +623,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				}
 				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
 			}
-			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array($row->getRawData()));
-			return false;
+			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
+			if ($row['usagev'] === 0) {
+				return false;
+			}
 		}
-		$balanceRaw = $this->balance->getRawData();
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 			$row['apr'] = self::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
+			if (!$this->balance && $this->isFreeLine($row)) {
+				return $this->getFreeRowPricingData();
+			}
 			$row['balance_ref'] = $this->balance->createRef();
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
 		} else {
 			$volume = $row['usagev'];
 		}
+		$balanceRaw = $this->balance->getRawData();
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
@@ -621,7 +651,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
 			return $pricingData;
 		}
-		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan);
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 			return $pricingData;

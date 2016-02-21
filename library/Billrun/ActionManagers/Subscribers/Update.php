@@ -13,7 +13,7 @@
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action{
 	
-	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
+	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider, Billrun_FieldValidator_SOC;
 	
 	// TODO: Create a generic update action class. This class shares some logic with the cards and balances update action. The setUpdateRecord function is shared.
 	
@@ -149,7 +149,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 		}
 
-			// This throws an exception if fails.
+		Billrun_Factory::dispatcher()->trigger('beforeSubscriberSave', array(&$record, $this));
+		// This throws an exception if fails.
 		$this->collection->save($record);
 				
 		return true;
@@ -244,8 +245,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
-			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+			if(isset($jsonUpdateData[$field])) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
@@ -419,6 +419,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if(!$this->validateServiceProvider($this->recordToSet['service_provider'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 35;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service_provider']));
+			return false;
+		}
+		
+		if(isset($this->recordToSet['service']['code']) && !$this->validateSOC($this->recordToSet['service']['code'])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 39;
+			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service']['code']));
 			return false;
 		}
 		
