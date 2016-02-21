@@ -16,7 +16,7 @@ function BalancesController($controller, Utils, $http, $window, Database) {
         if (total.usagev) total.usagev = parseFloat(total.usagev);
       });
     }
-    if (vm.entity.to) vm.entity.to = vm.entity.to.toISOString();
+    if (vm.entity.to && _.isObject(vm.entity.to)) vm.entity.to = vm.entity.to.toISOString();
     if (vm.action === 'new') {
       var postData = {
         method: 'update',
