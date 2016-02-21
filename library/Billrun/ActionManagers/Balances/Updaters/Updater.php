@@ -221,6 +221,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			return false;
 		}
 		
+		$query['priority'] = $wallet->getPriority();
+		
 		$options = array(
 			'upsert' => false,
 			'new' => false,
