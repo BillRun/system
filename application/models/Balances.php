@@ -90,7 +90,8 @@ class BalancesModel extends TableModel {
 			'gt' => '>',
 			'gte' => '>=',
 		);
-
+		$date = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+		$date->set('00:00:00', Zend_Date::TIMES);
 		$filter_fields = array(
 			'sid' => array(
 				'key' => 'sid',
@@ -144,6 +145,14 @@ class BalancesModel extends TableModel {
 				'values' => $planNames,
 				'default' => array(),
 			),
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('from', 'to'),
+				'input_type' => 'date',
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Date',
+				'default' => $date->toString('YYYY-MM-dd HH:mm:ss'),
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -160,6 +169,9 @@ class BalancesModel extends TableModel {
 			),
 			2 => array(
 				'plan' => array(
+					'width' => 2,
+				),
+				'date' => array(
 					'width' => 2,
 				),
 			),

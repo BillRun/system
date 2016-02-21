@@ -76,8 +76,8 @@
 			</div>
 			
 			<h3>
-				<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
-				<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
+				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
+				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
 				<span ng-click="shown.prefix = !shown.prefix" class="clickable">Prefix</span>
 			</h3>
 			<div id='rate-prefixes' ng-if="shown.prefix">
@@ -104,8 +104,8 @@
 				</div>
 				<div ng-repeat="(callRateName, callRate) in entity.rates.call" class="col-indent" id="{{callRateName}}">
 					<h4>
-						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]"></i></small>
-						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.callRates[callRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.callRates[callRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
 						<span ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]" class="clickable">{{callRateName}}</span>
 						<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteCallRate(callRateName)"></i></small>
 					</h4>
@@ -196,8 +196,8 @@
 				</div>
 				<div ng-repeat="(dataRateName, dataRate) in entity.rates.data" class="col-indent" id="{{dataRateName}}">
 					<h4>
-						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.dataRates[dataRateName]"></i></small>
-						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.dataRates[dataRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.dataRates[dataRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.dataRates[dataRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
 						<span ng-click="shown.dataRates[dataRateName] = !shown.dataRates[dataRateName]" class="clickable">{{dataRateName}}</span>
 						<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteDataRate(dataRateName)"></i></small>
 					</h4>
@@ -280,8 +280,8 @@
 				</div>
 				<div ng-repeat="(smsRateName, smsRate) in entity.rates.sms" class="col-indent" id="{{smsRateName}}">
 					<h4>
-						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.smsRates[smsRateName]"></i></small>
-						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.smsRates[smsRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-down" ng-show="shown.smsRates[smsRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
+						<small><i class="glyphicon glyphicon-chevron-right" ng-hide="shown.smsRates[smsRateName]" ng-click="shown.callRates[callRateName] = !shown.callRates[callRateName]"></i></small>
 						<span ng-click="shown.smsRates[smsRateName] = !shown.smsRates[smsRateName]" class="clickable">{{smsRateName}}</span>
 						<small><i class='glyphicon glyphicon-minus-sign' ng-click="deleteSMSRate(smsRateName)"></i></small>
 					</h4>
