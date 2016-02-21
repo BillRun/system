@@ -178,6 +178,60 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	public abstract function update($query, $recordToSet, $subscriberId);
 
 	/**
+	 * Get the max value for the balance
+	 * @param string $plan - Plan name
+	 * @param numeric $prepaidID - PP ID
+	 * @return false if error, or the max value on success.
+	 */
+	protected function getBalanceMaxValue($plan, $prepaidID) {
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$maxQuery = array("type" => "customer", "name"=>$plan);
+		$maxRecord = $plansColl->query($maxQuery)->cursor()->current();
+		
+		if($maxRecord->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 23;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($plan));
+			return false;
+		}
+		
+		if(!isset($maxRecord['pp_threshold'][$prepaidID])) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 24;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($prepaidID));
+			return false;
+		}
+		
+		return $maxRecord['pp_threshold'][$prepaidID];
+	}
+	
+	/**
+	 * Normalize the balance ensuring the max charge
+	 * @param array $query - Query to get the balance.
+	 * @param string $plan - Plan name.
+	 * @param Billrun_DataTypes_Wallet $wallet - Wallet of the current update
+	 * @return true if successful.
+	 */
+	protected function normalizeBalance($query, $plan, $wallet) {
+		// Check if the value to set is negative, if so, nothing to check.
+		if($wallet->getValue() >= 0) {
+			return true;
+		}
+		
+		$maxValue = $this->getBalanceMaxValue($plan, $wallet->getPPID());
+		if($maxValue === false) {
+			return false;
+		}
+		
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'multi' => 1
+		);
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
+		return $balancesColl->update($query, $updateQuery, $options);
+	}
+	
+	/**
 	 * Get billrun subscriber instance.
 	 * @param type $subscriberId If of the subscriber to load.
 	 */
