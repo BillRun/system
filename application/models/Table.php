@@ -374,9 +374,6 @@ class TableModel {
 				return array(
 					'$and' => array(
 						array(
-							$filter_field['db_key'][0] => array(
-								$filter_field['comparison'][0] => $value
-							),
 							$filter_field['db_key'][1] => array(
 								$filter_field['comparison'][1] => $value
 							),
