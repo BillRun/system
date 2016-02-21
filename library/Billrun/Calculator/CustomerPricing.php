@@ -433,7 +433,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($offset > $currRate['to']) {
 				continue;
 			}
-			if ($offset >= $from) {
+			if ($offset + $volume >= $currRate['to']) {
 				$volumeToPriceCurrentRating = (($volume + $offset) < $currRate['to']) ? ($volume + $offset): ($currRate['to'] - $offset); // get the volume that needed to be priced for the current rating
 				if ($offset != $from && $currRate['interval'] > $volumeToPriceCurrentRating) {
 					continue; // we already charged this interval on the previous iteration
