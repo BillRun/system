@@ -408,20 +408,32 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
 	 * @param int $offset call start offset in seconds
+	 * @param boolean $interconnect_flag interconnect flag to mark if we are using interconnect rate (used mostly to avoid infinite loop)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return int the calculated price
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0) {
+	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0, $interconnect_flag = false) {
 		if ($offset == 0) { // add access price only on the first offset
 			$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
 		} else {
 			$accessPrice = 0;
 		}
 		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
-		
+
+		if (!$interconnect_flag && !empty($interconnect = self::getInterConnect($rate, $usage_type, $plan))) {
+			$query = array(
+				'key' => $interconnect,
+				'from' => array('$lte' => new MongoDate()),
+				'to' => array('$gte' => new MongoDate()),
+			);
+			$interconnect_rate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
+			$price = self::getPriceByRate($interconnect_rate, $usage_type, $volume, $plan, $offset, true);
+		} else {
+			$price = 0;
+		}
+
 		$ratesArray = self::getRatesArray($rate, $usage_type, $plan);
-		$price = 0; // init the price
 		$from = 0;
 		foreach ($ratesArray as $currRate) {
 			if (isset($currRate['rate'])) {
