@@ -206,9 +206,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $row['plan']), $this->getCallOffset());
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset()));
 				} else if ($row['type'] == 'service') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name), $this->getCallOffset());
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset()));
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) {
