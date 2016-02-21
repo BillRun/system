@@ -376,7 +376,6 @@ class TableModel {
 				$split = explode(' ', $value);
 				$value = $split[0] . ' 00:00:00';
 			}
-			Billrun_Factory::log($value);
 			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				return array(
