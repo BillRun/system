@@ -150,6 +150,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
