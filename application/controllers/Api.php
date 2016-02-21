@@ -145,7 +145,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			'type' => $request->action,
 			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
-			'request_body' => file_get_contents("PHP://input"),
+			'request_php_input' => file_get_contents("PHP://input"),
 		);
 		$this->logColl->save(new Mongodloid_Entity($saveData));
 	}
