@@ -495,7 +495,10 @@ function detailFormatter(index, row) {
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + line.pp_includes_external_id + "</td>");
         $tr.append("<td>" + line.pp_includes_name + "</td>");
-        $tr.append("<td>" + line.api_name + "</td>");
+        if (line.usaget === "data")
+          $tr.append("<td>" + line.record_type + "</td>");
+        else
+          $tr.append("<td>" + line.api_name + "</td>");
         $tr.append("<td>" + line.balance_before + "</td>");
         $tr.append("<td>" + line.balance_after + "</td>");
         $tr.append("<td>" + line.total + "</td>");

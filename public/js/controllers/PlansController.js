@@ -101,6 +101,14 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 
+    $scope.balanceName = function (id) {
+      var found = _.find($scope.ppIncludes, function (bal) {
+        return bal.external_id === parseInt(id, 10);
+      });
+      if (found) return found.name;
+      return "";
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {
@@ -155,6 +163,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
+      });
+      Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+        $scope.ppIncludes = res.data.ppincludes;
       });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
       $scope.plan_type = $routeParams.type;
