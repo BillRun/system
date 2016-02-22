@@ -408,22 +408,33 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
 	 * @param int $offset call start offset in seconds
+	 * @param int $time start of the call (unix timestamp)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return int the calculated price
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0) {
-		if ($offset) {
-			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
+	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0, $time = NULL) {
+		if (!empty($interconnect = self::getInterConnect($rate, $usage_type, $plan))) {
+			$query = array_merge(
+				array(
+				'key' => $interconnect,
+				'params.interconnect' => TRUE,
+				), Billrun_Util::getDateBoundQuery($time)
+			);
+			$rate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
 		}
-		$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
-//		$interconnect = self::getInterConnectPrice($rate, $usage_type, $plan);
-		
 		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
-		
-		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
+		$tariff = static::getTariff($rate, $usage_type, $plan);
+		if ($offset) {
+			return static::getPriceByVolume($tariff, $offset + $volume) - static::getPriceByVolume($tariff, $offset);
+		}
+		return static::getPriceByVolume($tariff, $volume);
+	}
+	
+	public static function getPriceByVolume($tariff, $volume) {
+		$accessPrice = self::getAccessPrice($tariff);
 		$price = 0;
-		foreach ($rates_arr as $currRate) {
+		foreach ($tariff['rate'] as $currRate) {
 			if (isset($currRate['rate'])) {
 				$currRate = $currRate['rate'];
 			}
@@ -445,7 +456,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		return $accessPrice + $price;
 	}
-	
+
 	/**
 	 * Calculates the volume for the given price
 	 * 
@@ -462,12 +473,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$offsetPrice = static::getPriceByRate($rate, $usage_type, $offset, $plan);
 			return static::getVolumeByRate($rate, $usage_type, $price + $offsetPrice, $plan) - $offset;
 		}
-		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
+		$tariff = static::getTariff($rate, $usage_type, $plan);
 		$volume = 0;
 		$lastRateFrom = 0;
-		$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
+		$accessPrice = static::getAccessPrice($tariff);
 		$price = max(0, $price - $accessPrice);
-		foreach ($rates_arr as $currRate) {
+		foreach ($tariff as $currRate) {
 			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
 				break;
 			}
@@ -493,43 +504,27 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $volume;
 	}
 	
-	protected static function getRatesArray($rate, $usage_type, $plan = null) {
-		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
-			return $rate['rates'][$usage_type][$plan]['rate'];
+	protected static function getTariff($rate, $usage_type, $planName = null) {
+		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
+			return $rate['rates'][$usage_type][$planName];
 		}
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
-			return $rate['rates'][$usage_type]['BASE']['rate'];
+			return $rate['rates'][$usage_type]['BASE'];
 		}
-		return $rate['rates'][$usage_type]['rate'];
+		return $rate['rates'][$usage_type];
 	}
 	
 	/**
-	 * Gets correct access price from rate by priority order: 
-	 *	1. Access for the customer plan.
-	 *	2. Base plan
-	 *	3. Numeric value
-	 *	4. Return 0
-	 * 
-	 * @param type $rate pricing rate row
-	 * @param type $usageType
-	 * @param type $planName
-	 * @return int Access price
+	 * Gets correct access price from tariff
+	 * @param array $tariff the tariff structure
+	 * @return float Access price
 	 */
-	static protected function getAccessPrice($rate, $usageType, $planName = null) {
-		if (isset($rate['rates'][$usageType][$planName]['access'])) {
-			return $rate['rates'][$usageType][$planName]['access'];
+	static protected function getAccessPrice($tariff) {
+		if (isset($tariff['access'])) {
+			return $tariff['access'];
 		}
-		
-		if (isset($rate['rates'][$usageType]['BASE']['access'])) {
-			return $rate['rates'][$usageType]['BASE']['access'];
-		}
-		
-		if (isset($rate['rates'][$usageType]['access'])) {
-			return $rate['rates'][$usageType]['access'];
-			}
-		
 		return 0;
-			}
+	}
 
 	/**
 	 * Gets correct interconnect price from rate by priority order: 
@@ -937,5 +932,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		
 		return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $this->getCallOffset());
 	}
-
+	
+	protected static function getInterconnect($rate, $usage_type, $plan) {
+		if (isset($rate['rates'][$usage_type][$plan]['interconnect'])) {
+			return $rate['rates'][$usage_type][$plan]['interconnect'];
+		}
+		if (isset($rate['rates'][$usage_type]['BASE']['interconnect'])) {
+			return $rate['rates'][$usage_type]['BASE']['interconnect'];
+		}
+		
+		if (isset($rate['rates'][$usage_type]['interconnect'])) {
+			return $rate['rates'][$usage_type]['interconnect'];
+		}
+	}
 }
