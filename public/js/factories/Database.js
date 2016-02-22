@@ -34,6 +34,9 @@ app.factory('Database', ['$http', function ($http) {
       if (type === undefined) type = 'customer';
       return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
     }
+    function getAvailableInterconnect() {
+      return $http.get(baseUrl + '/admin/getAvailableInterconnect');
+    }
 
     function getAvailablePPIncludes(params) {
       if (params === undefined) params = {};
@@ -57,6 +60,7 @@ app.factory('Database', ['$http', function ($http) {
       saveEntity: saveEntity,
       removeEntity: removeEntity,
       getAvailablePlans: getAvailablePlans,
+      getAvailableInterconnect: getAvailableInterconnect,
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems,

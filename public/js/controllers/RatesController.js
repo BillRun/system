@@ -264,6 +264,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return _.capitalize(str);
     };
 
+    $scope.displayFutureForInterconnect = function (ic) {
+      if (ic.future) return "(future)";
+      return "";
+    };
+
     $scope.init = function () {
       $scope.shown = {prefix: false,
         callRates: [],
@@ -301,6 +306,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       $scope.availableDataUnits = ['bytes'];
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
+      });
+      Database.getAvailableInterconnect().then(function (res) {
+        $scope.availableInterconnect = res.data;
       });
       $scope.newOutCircuitGroup = {from: undefined, to: undefined};
       $scope.newRecordType = {value: undefined};

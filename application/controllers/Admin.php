@@ -316,6 +316,26 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailableInterconnectAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$query = array(
+			'params.interconnect' => TRUE,
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor();
+		$availableInterconnect = array();
+		foreach ($interconnect_rates as $interconnect) {
+			$future = $interconnect->from->sec > new DateTime();
+			$ic = $interconnect->getRawData();
+			$availableInterconnect[] = array('key' => $ic['key'], 'future' => $future);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($availableInterconnect));
+		$response->response();
+		return false;
+	}
+	
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
