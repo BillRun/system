@@ -1,3 +1,35 @@
+div.table div.thead div.th {
+	display: inline-block;
+	font-weight: bold;
+	border: 1px solid #ddd;
+	padding: 10px;
+}
+
+div.table div.thead div.th.no-border {
+	border: none;
+}
+div.table div.tbody div.tr div.table-fix {
+    display: inline-block;
+    vertical-align: top;
+}
+
+div.table div.tbody div.tr div.td {
+	display: inline-block;
+	/*border: 1px solid #ddd;*/
+	padding: 3px;
+}
+div.table div.tbody div.tr div.td.double {
+	height: 75px;
+}
+
+div.table div.tbody div.tr.parent {
+    border: 1px solid gray;
+}
+
+div.table div.tbody div.tr div.inner-table {
+	display: inline-block;
+}
+
 .fixed-table-body {
 	overflow-x: inherit!important;
 	overflow-y: inherit!important;
@@ -54,6 +86,10 @@
 }
 
 .glyphicon-minus-sign {
+	color: #bc2328;
+	cursor: pointer;
+}
+.glyphicon-trash {
 	color: #bc2328;
 	cursor: pointer;
 }
