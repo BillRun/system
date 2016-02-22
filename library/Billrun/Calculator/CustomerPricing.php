@@ -435,13 +435,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$accessPrice = self::getAccessPrice($tariff);
 		$price = 0;
 		foreach ($tariff['rate'] as $currRate) {
+			if (!isset($currRate['from'])) {
+				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
+			}
 			if (isset($currRate['rate'])) {
 				$currRate = $currRate['rate'];
 			}
 			if (0 == $volume) { // volume could be negative if it's a refund amount
 				break;
 			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			$maxVolumeInRate = $currRate['to'] - $currRate['from'];
+			$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate; // get the volume that needed to be priced for the current rating
 			if (isset($currRate['ceil'])) {
 				$ceil = $currRate['ceil'];
 			} else {
@@ -453,6 +457,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
+			$lastRate = $currRate;
 		}
 		return $accessPrice + $price;
 	}
