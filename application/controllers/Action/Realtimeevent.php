@@ -162,6 +162,7 @@ class RealtimeeventAction extends ApiAction {
 				}
 				return false;
 			case('call'):
+			case('video_call'):
 				return $data['api_name'];
 			case('sms'):
 				return 'sms';
@@ -188,6 +189,7 @@ class RealtimeeventAction extends ApiAction {
 			case ('data'):
 				return 'gy';
 			case ('call'):
+			case ('video_call'):
 				return 'callrt'; //TODO: change name of rate calculator
 			case ('service'):
 				return 'service';

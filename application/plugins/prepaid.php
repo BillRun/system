@@ -308,12 +308,11 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
+			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 		} else {
 			$balance = null;
 		}
-		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
-
-		$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 	//		Billrun_Factory::dispatcher()->trigger('beforeSubscriberRebalance', array());
 
 		if ($balance) {
