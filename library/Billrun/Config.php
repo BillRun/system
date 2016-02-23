@@ -61,10 +61,12 @@ class Billrun_Config {
 			return $moreImportantConf;
 		}
 
-		foreach (array_keys($moreImportantConf) as $key) {
+		foreach (array_merge(array_keys($lessImportentConf), array_keys($moreImportantConf)) as $key) {
+			if(!isset($moreImportantConf[$key])) { continue; }
+			
 			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
-				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
-				$moreImportantConf[$key];
+						$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
+						$moreImportantConf[$key];
 		}
 
 		return $lessImportentConf;
@@ -108,7 +110,7 @@ class Billrun_Config {
 
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
-				$this->config = new Yaf_Config_Simple(array_merge($iniConfig, $dbConfig));
+				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);

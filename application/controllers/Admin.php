@@ -257,6 +257,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function saveBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$cap_name = $data['cap_name'];
+		unset($data['cap_name']);
+		unset($data['service']);
+		$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
+		$this->responseSuccess(array("data" => $data, "status" => true));
+		return false;
+	}
+	
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))
 			return false;

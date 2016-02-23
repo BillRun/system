@@ -7,6 +7,7 @@ function BandwidthCapController(Database) {
   var vm = this;
 
   vm.edit_mode = false;
+  vm.newent = false;
 
   vm.newBandwidthCap = function () {
     vm.current_entity = {
@@ -14,16 +15,25 @@ function BandwidthCapController(Database) {
       service: "",
       speed: 0
     };
+    vm.newent = true;
     vm.edit_mode = true;
   };
   vm.save = function () {
-
+    Database.saveBandwidthCap({data: vm.current_entity, newent: vm.newent}).then(function (res) {
+      console.log(res);
+      if (res.data.status) {
+        vm.newent = false;
+        vm.edit_mode = false;
+      }
+    });
   };
   vm.cancel = function () {
     vm.edit_mode = false;
+    vm.newent = false;
   };
   vm.edit = function (cap_name) {
     vm.edit_mode = true;
+    vm.newent = false;
     vm.current_entity = vm.bandwidthCaps[cap_name];
     vm.current_entity.cap_name = cap_name;
   };
