@@ -357,9 +357,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$price = self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
 
-		// check if interconnect required
-//		$ret['interconnect'] = $this->getInterConnectPrice($rate, $usageType, $plan->getName()) * $volume;
-		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
 		$ret[$this->pricingField] = $price;
 		return $ret;
 	}
@@ -414,7 +411,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return int the calculated price
 	 */
 	public static function getPriceByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		$interconnectPrice = 0;
 		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
 			$query = array_merge(
 				array(
@@ -424,6 +420,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			);
 			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
 			$interconnectPrice += static::getPriceByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
+		} else {
+			$interconnectPrice = 0;
 		}
 		if ($usageType == 'mms') {$usageType = 'sms';} //TODO: should be changed as soon as we will add mms to rates
 		$tariff = static::getTariff($rate, $usageType, $plan);
@@ -530,35 +528,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($tariff['access'])) {
 			return $tariff['access'];
 		}
-		return 0;
-	}
-
-	/**
-	 * Gets correct interconnect price from rate by priority order: 
-	 *	1. Interconnect for the customer plan.
-	 *	2. Base plan
-	 *	3. Numeric value
-	 *	4. Return 0
-	 * 
-	 * @param type $rate pricing rate row
-	 * @param type $usageType
-	 * @param type $planName
-	 * @return int Access price
-	 */
-	static protected function getInterConnectPrice($rate, $usageType, $planName) {
-		// @todo check if interconnect available and related to the row handled
-		if (isset($rate['rates'][$usageType][$planName]['interconnect'])) {
-			return $rate['rates'][$usageType][$planName]['interconnect'];
-			}
-		
-		if (isset($rate['rates'][$usageType]['BASE']['interconnect'])) {
-			return $rate['rates'][$usageType]['BASE']['interconnect'];
-		}
-		
-		if (isset($rate['rates'][$usageType]['interconnect'])) {
-			return $rate['rates'][$usageType]['interconnect'];
-		}
-		
 		return 0;
 	}
 
