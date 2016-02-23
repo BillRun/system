@@ -265,7 +265,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $data['cap_name'];
 		unset($data['cap_name']);
 		unset($data['service']);
-		$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
+		$configColl->insert($allCaps);
+		//$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
