@@ -10,11 +10,13 @@ function BalancesController($controller, Utils, $http, $window, Database) {
   vm.utils = Utils;
 
   vm.saveBalance = function () {
-    _.forEach(vm.entity.balance.totals, function (total) {
-      if (total.cost) total.cost = parseFloat(total.cost);
-      if (total.usagev) total.usagev = parseFloat(total.usagev);
-    });
-    if (vm.entity.to) vm.entity.to = vm.entity.to.toISOString();
+    if (vm.action !== 'new') {
+      _.forEach(vm.entity.balance.totals, function (total) {
+        if (total.cost) total.cost = parseFloat(total.cost);
+        if (total.usagev) total.usagev = parseFloat(total.usagev);
+      });
+    }
+    if (vm.entity.to && _.isObject(vm.entity.to)) vm.entity.to = vm.entity.to.toISOString();
     if (vm.action === 'new') {
       var postData = {
         method: 'update',

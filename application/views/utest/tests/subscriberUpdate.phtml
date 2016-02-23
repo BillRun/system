@@ -160,6 +160,24 @@
 			</div>
 		</div>
 	</div>
+	
+	<div class="form-group row">
+		<label for="service_code" class="col-sm-4 control-label text-right">Service Code</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-service_code">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='service_code'>
+					<?php foreach ($service_codes as $service_code) : ?>
+						<option value="<?php echo $service_code ?>"><?php echo $service_code ?></option>
+					<?php endforeach; ?>
+					<option value=""></option>
+				</select>
+			</div>
+		</div>
+	</div>
 
 	<div class="form-group row">
 		<label class="col-sm-4 control-label text-right" >Track History</label>

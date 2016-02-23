@@ -49,6 +49,15 @@
 					</span>
 				</div>
 			</div>
+			<h3>Thresholds</h3>
+			<div class='row' ng-repeat='(pp, threshold) in entity.pp_threshold'>
+				<div class='col-md-2'>
+					{{balanceName(pp)}}
+				</div>
+				<div class='col-md-6'>
+					<input type='number' class='form-control' ng-model='entity.pp_threshold[pp]' />
+				</div>
+			</div>
 
 			<div id='plan-include-groups-div' ng-if="entity.include.groups !== undefined">
 				<h3>Groups</h3>

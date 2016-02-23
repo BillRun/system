@@ -22,7 +22,7 @@ class Admin_MongoOperatorTranslators_Manager {
 			  'gt'			=> 'GreaterThan',
 			  'gte'			=> 'GreaterThanEqual',
 			  'ne'			=> 'NotEqual',
-			  'equals'		=> 'Equals');
+			  'equals'		=> 'Equal');
 	
 	/**
 	 * This function receives oprator name and returns an updater.
@@ -37,7 +37,7 @@ class Admin_MongoOperatorTranslators_Manager {
 		
 		$updater = self::$updaterTranslator[$operator];
 		 
-		$actionClass = str_replace('_Manager', $updater, __CLASS__);
+		$actionClass = str_replace('_Manager', "_$updater", __CLASS__);
 		$action = new $actionClass();
 		
 		if(!$action) {
