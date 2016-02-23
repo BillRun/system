@@ -74,6 +74,14 @@
 					</p>
 				</div>
 			</div>
+			<div class='row' ng-if='utils.display("interconnect", "rates")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("interconnect", "rates")}}
+				</div>
+				<div class='col-md-6'>
+					<input type="checkbox" ng-model="entity.params.interconnect" class="form-control" />
+				</div>
+			</div>
 			
 			<h3>
 				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
@@ -122,7 +130,7 @@
 									<input type='number' class='form-control' ng-model='entity.rates[type][rateName].access' style='width: 75px;' />
 								</div>
 								<div class='td' style='width: 330px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
-									<select ng-model='entity.rates[type][rateName].interconnect' class='form-control' style='width: 320px;'>
+									<select ng-model='entity.rates[type][rateName].interconnect' class='form-control' style='width: 320px;' ng-disabled="isInterconnect()">
 										<option value="" disabled>Select Interconnect</option>
 										<option ng-repeat="ic in availableInterconnect" value='{{ic.key}}'>{{ic.key}}{{displayFutureForInterconnect(ic)}}</option>
 									</select>

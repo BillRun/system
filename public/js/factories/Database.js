@@ -55,6 +55,14 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getSubscriberDetails');
     }
 
+    function getBandwidthCapDetails() {
+      return $http.get(baseUrl + '/admin/getBandwidthCapDetails');
+    }
+
+    function saveBandwidthCap(params) {
+      return $http.post(baseUrl + '/admin/saveBandwidthCap', params);
+    }
+
     return {
       getEntity: getEntity,
       saveEntity: saveEntity,
@@ -65,6 +73,8 @@ app.factory('Database', ['$http', function ($http) {
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems,
       getAvailablePPIncludes: getAvailablePPIncludes,
-      getSubscriberDetails: getSubscriberDetails
+      getSubscriberDetails: getSubscriberDetails,
+      getBandwidthCapDetails: getBandwidthCapDetails,
+      saveBandwidthCap: saveBandwidthCap
     };
   }]);
