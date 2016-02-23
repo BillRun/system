@@ -112,6 +112,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
+			// TODO: Shouldn't we check using Billrun_Util::isMultidimentionalArray 
+			// instead of Billrun_Util::isAssoc? (The last checks if it is an associated array,
+			// the second checks if it is an array of arrays).
 			if (Billrun_Util::isAssoc($chargingByValue)) {
 				$chargingByValue = array($chargingByValue);
 			}
