@@ -156,6 +156,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$options = array_merge($options, $configOptions);
 			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
+			if(!class_exists($class, true)) {
+				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line,true), Zend_Log::ERR);
+				// TODO: How to handle error?
+				return false;
+			}
 			self::$calcs[$type] = new $class($options);
 		}
 		return self::$calcs[$type];

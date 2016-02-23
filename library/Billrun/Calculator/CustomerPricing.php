@@ -626,10 +626,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 		} else {
+			$cost = $pricingData[$this->pricingField];
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
-				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+				if ($cost > 0) { // If it's a free of charge, no need to reduce usagev
+					$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+				}
 			} else {
-				$cost = $pricingData[$this->pricingField];
 				if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 					$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 				} else {
