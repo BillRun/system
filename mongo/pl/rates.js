@@ -33,15 +33,10 @@ function create_tariff(tariff, interconnect) {
 
 	print("create_tariff usaget : " + _usaget);
 	print("create_tariff tariff : " + tariff.PP_TARIFF_NAME);
-	if (_usaget == 'sms') {
-		_amount = 1;
-		_amount2 = 1;
-	} else {
-		_amount = tariff.INITIAL_AMOUNT;
-		_amount2 = tariff.ADD_AMOUNT;
-	}
+	_amount = tariff.INITIAL_AMOUNT;
+	_amount2 = tariff.ADD_AMOUNT;
 	
-	if (_usaget == 'sms' || (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE)) {
+	if (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE) {
 		return {
 			'access': _access,
 			'unit' : _unit,
@@ -210,7 +205,7 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/013_UNITED_ARAB_EMIR/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/SMS_APP/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 		_rate_name = obj1._id;
