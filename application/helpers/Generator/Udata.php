@@ -25,17 +25,15 @@ class Generator_Udata extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	protected $preProject = array();
 	protected $unwind = array();
 	
+	
 	public function generate() {
-		$fileData = $this->getNextFileData();		
-		foreach($this->data as $line) {
-			$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			$this->markLines($line['stamps']);
-		}
+		$fileData = $this->getNextFileData();
+		$this->writeRows();
 		$this->logDB($fileData);
 	}
 	
 	public function getNextFileData() {
-		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source'=>'udata'))->cursor()->sort(array('seq'=>-1))->limit(1)->current();
+		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source'=>static::$type))->cursor()->sort(array('seq'=>-1))->limit(1)->current();
 		$seq = (empty($lastFile['seq']) ? 0 : $lastFile['seq']);
 		$seq++;
 		
@@ -44,6 +42,12 @@ class Generator_Udata extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	
 	//--------------------------------------------  Protected ------------------------------------------------
 
+	protected function writeRows() {
+		foreach($this->data as $line) {
+			$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+			$this->markLines($line['stamps']);
+		}
+	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 

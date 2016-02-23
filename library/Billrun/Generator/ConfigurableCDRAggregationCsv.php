@@ -297,7 +297,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $dateFormat
 	 * @return type
 	 */
-	protected function transalteUrt($value, $dateFormat) {
+	protected function translateUrt($value, $dateFormat) {
 		return date($dateFormat,$value->sec);
 	}
 
