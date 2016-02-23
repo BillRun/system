@@ -404,7 +404,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * Calculates the price for the given volume
 	 * 
 	 * @param array $rate the rate entry
-	 * @param string $usage_type the usage type
+	 * @param string $usageType the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
 	 * @param int $offset call start offset in seconds
@@ -413,22 +413,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 * @return int the calculated price
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0, $time = NULL) {
-		if (!empty($interconnect = self::getInterConnect($rate, $usage_type, $plan))) {
+	public static function getPriceByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
+		$interconnectPrice = 0;
+		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
 			$query = array_merge(
 				array(
 				'key' => $interconnect,
 				'params.interconnect' => TRUE,
 				), Billrun_Util::getDateBoundQuery($time)
 			);
-			$rate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
+			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
+			$interconnectPrice += static::getPriceByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
 		}
-		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
-		$tariff = static::getTariff($rate, $usage_type, $plan);
+		if ($usageType == 'mms') {$usageType = 'sms';} //TODO: should be changed as soon as we will add mms to rates
+		$tariff = static::getTariff($rate, $usageType, $plan);
 		if ($offset) {
-			return static::getPriceByVolume($tariff, $offset + $volume) - static::getPriceByVolume($tariff, $offset);
+			return $interconnectPrice + static::getPriceByVolume($tariff, $offset + $volume) - static::getPriceByVolume($tariff, $offset);
 		}
-		return static::getPriceByVolume($tariff, $volume);
+		return $interconnectPrice + static::getPriceByVolume($tariff, $volume);
 	}
 	
 	public static function getPriceByVolume($tariff, $volume) {
@@ -483,7 +485,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$lastRateFrom = 0;
 		$accessPrice = static::getAccessPrice($tariff);
 		$price = max(0, $price - $accessPrice);
-		foreach ($tariff as $currRate) {
+		foreach ($tariff['rate'] as $currRate) {
 			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
 				break;
 			}
