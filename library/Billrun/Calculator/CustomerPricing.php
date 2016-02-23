@@ -657,7 +657,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$cost = $pricingData[$this->pricingField];
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
-				if ($row['type'] != 'gy' && $cost > 0) { // If it's a free of charge, no need to reduce usagev
+				if ($row['type'] == 'gy' || $cost > 0) { // If it's a free of charge, no need to reduce usagev
 					$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
 				}
 			} else {
