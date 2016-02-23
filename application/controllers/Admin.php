@@ -274,7 +274,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($allCaps['_id']);
 		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
 		$configColl->insert($allCaps);
-		//$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
