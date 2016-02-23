@@ -20,10 +20,10 @@ function BandwidthCapController(Database) {
   };
   vm.save = function () {
     Database.saveBandwidthCap({data: vm.current_entity, newent: vm.newent}).then(function (res) {
-      console.log(res);
       if (res.data.status) {
         vm.newent = false;
         vm.edit_mode = false;
+        vm.bandwidthCaps[vm.current_entity.cap_name] = res.data.data;
       }
     });
   };
