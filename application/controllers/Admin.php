@@ -102,6 +102,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
@@ -243,6 +244,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 	
+	public function getBandwidthCapDetailsAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$config = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
+		unset($config['requestUrl']);
+		unset($config['command']);
+		unset($config['applicationId']);
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode(array('caps' => $config, 'authorized_write' => AdminController::authorized('write'))));
+		$response->response();
+		return false;
+	}
+
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -307,6 +321,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$planModel = new PlansModel();
 		$names = $planModel->getData(array('type' => $type));
 		$availablePlans = array();
+		$availablePlans['BASE'] = 'BASE';
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];
 		}
