@@ -51,8 +51,12 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$queue_data = $processor->getQueueData();
 		foreach ($data['data'] as &$line) {
 			if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'customer') {
-				$entity = new Mongodloid_Entity($line);
 				$rateCalc = $this->getCalculator('rate', $options, $line);
+				if (!$rateCalc) {
+					continue;
+				}
+				$entity = new Mongodloid_Entity($line);
+
 				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
 					$processor->unsetQueueRow($entity['stamp']);
 				} else if ($rateCalc->isLineLegitimate($entity)) {
@@ -241,6 +245,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($data['data'] as &$line) {
 			$customerCalc = $this->getCalculator('customer', $options, $line);
 			$rateCalc = $this->getCalculator('rate', $options, $line);
+			if (!$rateCalc) {
+				continue;
+			}
 			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), array('np_code', 'call_type'));
 			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
 			if ($query) {
