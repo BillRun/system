@@ -269,6 +269,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return "";
     };
 
+    $scope.isInterconnect = function () {
+      if (!_.result($scope.entity, "params.interconnect")) return false;
+      return $scope.entity.params.interconnect;
+    };
+
     $scope.init = function () {
       $scope.shown = {prefix: false,
         callRates: [],
