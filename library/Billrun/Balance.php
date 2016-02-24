@@ -153,20 +153,14 @@ class Billrun_Balance extends Mongodloid_Entity {
 		);
 
 		// @todo: make it configurable
-		$minCost = -0.5;
-		if ($usageType == 'call' || $usageType == 'video_call') {
-			$minUsage = -20;
-		} else if ($usageType == 'data') {
-			$minUsage = -51200;
-		} else {
-			$minUsage = -1;
-		}
+		$minCost = Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0));
+		$minUsage = Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0));
 		
 		if ($chargingType === 'prepaid') {
 			$query['$or'] = array(
-				array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
-				array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
-				array("balance.cost" => array('$lte' => $minCost)),
+				array("balance.totals.$usageType.usagev" => array('$lt' => $minUsage)),
+				array("balance.totals.$usageType.cost" => array('$lt' => $minCost)),
+				array("balance.cost" => array('$lt' => $minCost)),
 			);
 		}
 		
