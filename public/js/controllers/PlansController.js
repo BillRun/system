@@ -109,6 +109,28 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return "";
     };
 
+    $scope.getTDHeight = function (rate) {
+      var height = 32;
+      if (rate.price.calls && !_.isEmpty(rate.price.calls) && !_.isEmpty(rate.price.calls.rate)) {
+        height *= rate.price.calls.rate.length;
+      }
+      if (rate.price.sms && !_.isEmpty(rate.price.sms) && !_.isEmpty(rate.price.sms.rate)) {
+        height *= rate.price.sms.rate.length;
+      }
+      if (rate.price.data && !_.isEmpty(rate.price.data) && !_.isEmpty(rate.price.data.rate)) {
+        height *= rate.price.data.rate.length;
+      }
+      return {
+        height: height,
+        width: "260px",
+        padding: "6px"
+      };
+    };
+
+    $scope.showTableForType = function (type) {
+      
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {

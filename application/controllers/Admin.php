@@ -278,6 +278,24 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 	
+	public function removeBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$cap_name = $this->getRequest()->get('cap_name');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		unset($allCaps[$cap_name]);
+		$configColl->insert($allCaps);
+		$this->responseSuccess(array("data" => $data, "status" => true));
+		return false;
+	}
+	
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))
 			return false;
