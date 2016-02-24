@@ -233,6 +233,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 				return false;
 			}
+			
+			$interconnect_arate_key = self::getInterconnect($rate, $row['usaget'], $row['plan']);
+			if (!empty($interconnect_arate_key)) {
+				$row['interconnect_arate_key'] = $interconnect_arate_key;
+			}
 
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 			foreach ($pricingData as $key => $value) {
