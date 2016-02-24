@@ -336,7 +336,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields[$lineToRebalance['type']]));
 			$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 			$lines_coll = Billrun_Factory::db()->linesCollection();
-			$lines_coll->update($findQuery, $updateQuery);
+			$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
+			$lines_coll->update($findQuery, $updateQuery, $options);
 		}
 
 //		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
