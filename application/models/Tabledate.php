@@ -155,7 +155,7 @@ class TabledateModel extends TableModel {
 
 	public function getFilterFields() {
 		$date = new Zend_Date(null, null, new Zend_Locale('he_IL'));
-		$date->set('00:00:00', Zend_Date::TIMES);
+//		$date->set('00:00:00', Zend_Date::TIMES);
 		$filter_fields = array(
 			'date' => array(
 				'key' => 'date',
