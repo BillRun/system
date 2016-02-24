@@ -290,9 +290,9 @@ class AdminController extends Yaf_Controller_Abstract {
 					->current()
 					->getRawData();
 		unset($allCaps['_id']);
-		unset($allCaps[$cap_name]);
+		unset($allCaps["realtimeevent"]["data"]["slowness"][$cap_name]);
 		$configColl->insert($allCaps);
-		$this->responseSuccess(array("data" => $data, "status" => true));
+		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
 	
