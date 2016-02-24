@@ -91,6 +91,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 				);
 	
 		} 
+
 	}
 	
 	/**
@@ -107,6 +108,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected function setCollection() {
 		$collName =  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.collection','archive').'Collection';
 		$this->collection = $this->db->{$collName}();
+	}
+	
+	protected function getNextSequenceData($type) {
+		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source'=>$type))->cursor()->sort(array('seq'=>-1))->limit(1)->current();
+		$seq = empty($lastFile['seq']) ? 0 : $lastFile['seq'];
+		
+		return (++$seq) % 10000;		
 	}
 	
 	/**

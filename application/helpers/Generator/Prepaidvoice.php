@@ -17,11 +17,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 
 	
 	static $type = 'prepaidvoice';
-	
 
-	public function __construct($options) {
-		parent::__construct($options);		
-	}
 	
 	public function generate() {
 		$fileData = $this->getNextFileData();
@@ -30,11 +26,9 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	}
 	
 	public function getNextFileData() {
-		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source'=>static::$type))->cursor()->sort(array('seq'=>-1))->limit(1)->current();
-		$seq = empty($lastFile['seq']) ? 0 : $lastFile['seq'];
-		$seq++;
+		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'Brun_PN_'.sprintf('%05d',$seq).'_'.date('YmdHis'), 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'Brun_PN_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------

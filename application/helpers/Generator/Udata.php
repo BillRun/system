@@ -33,11 +33,9 @@ class Generator_Udata extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	}
 	
 	public function getNextFileData() {
-		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source'=>static::$type))->cursor()->sort(array('seq'=>-1))->limit(1)->current();
-		$seq = (empty($lastFile['seq']) ? 0 : $lastFile['seq']);
-		$seq++;
+		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array( 'seq' => $seq , 'filename' =>  'SASN_PREP_'.sprintf('%05d',$seq).'_'.date('YmdHis') , 'source' => static::$type);
+		return array( 'seq' => $seq , 'filename' =>  'SASN_PREP_'.sprintf('%05.5d',$seq).'_'.date('YmdHis') , 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------
