@@ -219,7 +219,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
-			if ($this->isInterconnect($this->row) && $this->row['np_code'] != '831') {
+			if (($this->isInterconnect($this->row) && $this->row['np_code'] != '831') || (isset($this->row['call_type']) && $this->row['call_type'] == '2')) {
 				// we are out of PL network
 				array_push($pp_includes_external_ids, 6);
 			}
