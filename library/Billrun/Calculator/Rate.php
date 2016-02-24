@@ -202,7 +202,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
+			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);

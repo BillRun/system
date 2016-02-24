@@ -17,6 +17,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	const DEF_CALC_DB_FIELD = 'aprice';
 
 	public $pricingField = self::DEF_CALC_DB_FIELD;
+	public $interconnectChargeField = 'interconnect_aprice';
 	static protected $type = "pricing";
 	static protected $precision = 0.00001;
 
@@ -206,9 +207,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset()));
+					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
+					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
 				} else if ($row['type'] == 'service') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset()));
+					$charges = self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset());
+					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) {
@@ -302,6 +305,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'in_group' => 0,
 				'over_group' => 0,
 				$this->pricingField => 0,
+				$this->interconnectChargeField => 0,
 			);
 	}
 
@@ -355,9 +359,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
 
-		$ret[$this->pricingField] = $price;
+		$ret[$this->pricingField] = $charges['total'];
+		$ret[$this->interconnectChargeField] = $charges['interconnect'];
 		return $ret;
 	}
 
@@ -394,11 +399,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 	
 	public function getPossiblyUpdatedFields() {
-		return array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate');
+		return array($this->pricingField, $this->interconnectChargeField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate');
 	}
 
 	/**
-	 * Calculates the price for the given volume
+	 * Calculates the charges for the given volume
 	 * 
 	 * @param array $rate the rate entry
 	 * @param string $usageType the usage type
@@ -408,9 +413,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $time start of the call (unix timestamp)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
-	 * @return int the calculated price
+	 * @return array the calculated charges
 	 */
-	public static function getPriceByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
+	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
 			$query = array_merge(
 				array(
@@ -419,19 +424,29 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				), Billrun_Util::getDateBoundQuery($time)
 			);
 			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
-			$interconnectPrice += static::getPriceByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
+			$interconnectCharge = static::getTotalChargeByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
 		} else {
-			$interconnectPrice = 0;
+			$interconnectCharge = 0;
 		}
 		if ($usageType == 'mms') {$usageType = 'sms';} //TODO: should be changed as soon as we will add mms to rates
 		$tariff = static::getTariff($rate, $usageType, $plan);
 		if ($offset) {
-			return $interconnectPrice + static::getPriceByVolume($tariff, $offset + $volume) - static::getPriceByVolume($tariff, $offset);
+			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
 		}
-		return $interconnectPrice + static::getPriceByVolume($tariff, $volume);
+		else {
+			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
+		}
+		return array(
+			'interconnect' => $interconnectCharge,
+			'total' => $interconnectCharge + $chargeWoIC,
+		);
 	}
 	
-	public static function getPriceByVolume($tariff, $volume) {
+	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
+		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
+	}
+
+	public static function getChargeByVolume($tariff, $volume) {
 		$accessPrice = self::getAccessPrice($tariff);
 		$price = 0;
 		foreach ($tariff['rate'] as $currRate) {
@@ -475,7 +490,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
 		if ($offset) {
-			$offsetPrice = static::getPriceByRate($rate, $usage_type, $offset, $plan);
+			$offsetPrice = static::getTotalChargeByRate($rate, $usage_type, $offset, $plan);
 			return static::getVolumeByRate($rate, $usage_type, $price + $offsetPrice, $plan) - $offset;
 		}
 		$tariff = static::getTariff($rate, $usage_type, $plan);
@@ -561,10 +576,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
 				$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
-				$granted_cost = $this->getPriceByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				$granted_cost = $charges['total'];
 				if ($granted_cost == '0') {
 					return array(
 						$this->pricingField => $granted_cost,
+						$this->interconnectChargeField => $charges['interconnect'],
 						'usagev' => $granted_volume,
 					);
 				}
@@ -576,7 +593,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['apr'] = self::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
+			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
 			}
