@@ -154,65 +154,42 @@
 			</div>
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<h3>Rates</h3>
-				<div ng-repeat='rate in plan_rates'>
-					<a href='#/rates/update/{{rate.id}}?plans=["{{entity.name}}"]'><b>{{rate.key}}</b></a>
-					<table class='table table-striped table-bordered table-no-more-tables table-hover' ng-if='!_.isEmpty(rate.price.call)'>
-						<thead>
-							<tr>
-								<th>Call</th>
-							</tr>
-							<tr>
-								<th>Interval</th>
-								<th>Price</th>
-								<th>To</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat='call in rate.price.call.rate'>
-								<td>{{call.interval}}</td>
-								<td>{{call.price}}</td>
-								<td>{{call.to}}</td>
-							</tr>
-						</tbody>
-					</table>
-					<table class='table table-striped table-bordered table-no-more-tables table-hover' ng-if='!_.isEmpty(rate.price.data)'>
-						<thead>
-							<tr>
-								<th>Data</th>
-							</tr>
-							<tr>
-								<th>Interval</th>
-								<th>Price</th>
-								<th>To</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat='data in rate.price.data.rate'>
-								<td>{{data.interval}}</td>
-								<td>{{data.price}}</td>
-								<td>{{data.to}}</td>
-							</tr>
-						</tbody>
-					</table>
-					<table class='table table-striped table-bordered table-no-more-tables table-hover' ng-if='!_.isEmpty(rate.price.sms)'>
-						<thead>
-							<tr>
-								<th>SMS</th>
-							</tr>
-							<tr>
-								<th>Interval</th>
-								<th>Price</th>
-								<th>To</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat='sms in rate.price.sms.rate'>
-								<td>{{sms.interval}}</td>
-								<td>{{sms.price}}</td>
-								<td>{{sms.to}}</td>
-							</tr>
-						</tbody>
-					</table>
+				<div ng-repeat='type in ["calls", "data", "sms"]'>
+					<label>{{capitalize(type)}}</label>
+					<div class='table'>
+						<div class='thead'>
+							<div class='th' style='width: 260px;'>Plan</div>
+							<div class='th' style='width: 100px;'>Interval</div>
+							<div class='th' style='width: 130px;'>Price</div>
+							<div class='th' style='width: 130px;'>To</div>
+							<div class='th' style='width: 130px;'>Type</div>
+						</div>
+						<div class='tbody'>
+							<div class='tr parent' ng-repeat='rate in plan_rates' ng-if='rate.price[type].rate'>
+								<div class='table-fix'>
+									<div class='td' style='width: 260px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
+										<a href='#/rates/update/{{rate.id}}?plans=["{{entity.name}}"]'><b>{{rate.key}}</b></a>
+									</div>								
+								</div>
+								<div class='inner-table'>
+									<div class='tr' ng-repeat='t in rate.price[type].rate'>
+										<div class='td' style='width: 100px;'>
+											{{t.interval}}
+										</div>
+										<div class='td' style='width: 130px;'>
+											{{t.price}}
+										</div>
+										<div class='td' style='width: 130px;'>
+											{{t.to}}
+										</div>
+										<div class='td' style='width: 130px;'>
+											{{type}}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

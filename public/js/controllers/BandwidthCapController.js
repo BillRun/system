@@ -38,6 +38,12 @@ function BandwidthCapController(Database) {
     vm.current_entity.cap_name = cap_name;
   };
 
+  vm.removeBandwidthCap = function (cap_name) {
+    Database.removeBandwidthCap({cap_name: cap_name}).then(function (res) {
+      delete vm.bandwidthCaps[cap_name];
+    });
+  };
+
   vm.init = function () {
     Database.getBandwidthCapDetails().then(function (res) {
       vm.bandwidthCaps = res.data.caps;

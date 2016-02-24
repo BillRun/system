@@ -35,7 +35,7 @@ function BalancesController($controller, Utils, $http, $window, Database) {
           $window.location = baseUrl + '/admin/balances';
         else
           // TODO: change to flash message
-          alert(res.data.desc + " - " + res.data.details);
+          alert("Error saving balance! Please refresh and try again!");
       });
     } else {
       vm.save(true);

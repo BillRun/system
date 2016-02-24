@@ -150,14 +150,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
-		$res = array();
+		//$pp_aggregated = $lines_coll->aggregate();
+		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
 			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
-			$res[] = $l;
+			$detailed[] = $l;
+		}
+		$aggregated = array();
+		$pp_aggregated = $lines_coll->aggregate($match, $group);
+		foreach($pp_aggregated as $ppagg) {
+			$aggregated[] = $ppagg->getRawData();
 		}
 		$response = new Yaf_Response_Http();
-		$response->setBody(json_encode($res));
+		$response->setBody(json_encode(array('detailed' => $detailed, 'aggregated' => $aggregated)));
 		$response->response();
 		return false;
 	}
@@ -265,8 +273,34 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $data['cap_name'];
 		unset($data['cap_name']);
 		unset($data['service']);
-		$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
+		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $data, "status" => true));
+		return false;
+	}
+	
+	public function removeBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$cap_name = $this->getRequest()->get('cap_name');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		unset($allCaps["realtimeevent"]["data"]["slowness"][$cap_name]);
+		$configColl->insert($allCaps);
+		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
 	
