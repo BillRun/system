@@ -69,6 +69,12 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$this->reportError($errorCode);
 		}
 		
+		foreach ($returnData as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+		
 		$outputResult = array(
 			'status'      => $this->errorCode == 0 ? 1 : 0,
 			'desc'        => $this->error,

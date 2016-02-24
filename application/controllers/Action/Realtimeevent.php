@@ -171,6 +171,9 @@ class RealtimeeventAction extends ApiAction {
 			case('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No record type found. Params: " . print_R($usaget) . "," . print_R($data), Zend_Log::ERR);
+		return false;
 	}
 	
 	/**
@@ -194,6 +197,8 @@ class RealtimeeventAction extends ApiAction {
 			case ('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No event type found. Usaget: " . print_R($this->usaget), Zend_Log::ERR);
 		return false;
 	}
 	
