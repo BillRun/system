@@ -48,7 +48,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							'update' => array(
 								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name'),
 								'$set' => array('process_time', 'np_code', 'call_type'),
-								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice'),
+								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
 						),
 						array(
@@ -173,7 +173,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							'update' => array(
 								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn'),
 								'$set' => array('process_time'),
-								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice'),
+								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
 						),
 						array(
