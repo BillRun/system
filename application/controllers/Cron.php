@@ -127,6 +127,9 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 				'charging_type' => array(
 					'$first' => '$charging_type',
+				),
+				'recurring' => array(
+					'$first' => '$recurring',
 				)
 			),
 		);
@@ -134,6 +137,10 @@ class CronController extends Yaf_Controller_Abstract {
 			'$match' => array(
 				'charging_type' => 'prepaid',
 				'to' => array('$lt' => new MongoDate()),
+				'$or' => array(
+					array('recurring' => array('$exists' => 0)),
+					array('recurring' => 0),
+				),
 			),
 		);
 		$project = array(
