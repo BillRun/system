@@ -152,6 +152,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			'request_php_input' => file_get_contents("php://input"),
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'rand' => rand(1,1000000),
 		);
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		$this->logColl->save(new Mongodloid_Entity($saveData));
