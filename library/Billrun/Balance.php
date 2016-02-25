@@ -152,10 +152,9 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'to' => array('$gte' => $timeNow),
 		);
 
-		// @todo: make it configurable
-		$minCost = Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0));
-		$minUsage = Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0));
-		
+		$minCost = (float) Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')); // float avoid set type to int
+		$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+
 		if ($chargingType === 'prepaid') {
 			$query['$or'] = array(
 				array("balance.totals.$usageType.usagev" => array('$lt' => $minUsage)),
