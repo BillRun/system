@@ -6,10 +6,10 @@ div.table div.thead {
 	position: absolute;
 	top: 0;
 }
-div.tbody {
+/*div.tbody {
 	overflow-y: auto;
 	max-height: 650px;
-}
+}*/
 
 
 div.table div.thead div.th {

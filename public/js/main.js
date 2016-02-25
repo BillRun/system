@@ -488,8 +488,9 @@ function detailFormatter(index, row) {
       var lines = res.detailed;
       var aggregated = res.aggregated;
       // aggregated
+      var $title = $("<strong>Breakdown By Balance</strong>");
       var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Rate Price</th></tr></thead>");
+      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Balance Before</th><th>Balance After</th><th>Usage</th><th>Price</th></tr></thead>");
       $aggregated_table.append($thead).append('<tbody>');
       _.forEach(aggregated, function (aggregate, i) {
         var $tr = $("<tr></tr>");
@@ -504,9 +505,10 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + aggregate.s_price + "</td>");
         $aggregated_table.append($tr);
       });
-      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($aggregated_table);
+      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
 
       // lines
+      $title = $("<strong>Breakdown By Intervals</strong>");
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
       $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></tr></thead>");
       $table.append($thead).append('<tbody>');
@@ -528,6 +530,6 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') + "</td>");
         $table.append($tr);
       });
-      $aggregated_table.after("<br/>", $table);
+      $aggregated_table.after("<br/>", $title, "<br/>", $table);
     });
 }
