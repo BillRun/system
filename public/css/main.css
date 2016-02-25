@@ -6,6 +6,15 @@ div.table div.thead {
 	position: absolute;
 	top: 0;
 }
+
+.fixed-title {
+	position: fixed;
+	left: 0;
+	right: 0;
+	background-color: white;
+	z-index: 100;
+}
+
 .sticky {
     position: fixed!important;
     width: 100%;
