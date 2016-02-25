@@ -79,8 +79,8 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$outputResult = 
 			array(
 				'status'       => $errorCode == 0 ? 1 : 0,
-				'desc'         => $this->error ,
-				'error_code'   => $errorCode
+				'desc'         => $this->error,
+				'error_code'   => $errorCode,
 			);
 		
 		return $outputResult;
