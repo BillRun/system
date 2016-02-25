@@ -97,7 +97,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			return false;
 		}
 		 
-		$this->keepBalances = $input->get('keep_balances');
+		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances'), FILTER_VALIDATE_BOOLEAN);
 		
 		return true;
 	}
