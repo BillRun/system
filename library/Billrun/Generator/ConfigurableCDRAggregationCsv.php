@@ -75,13 +75,18 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 		
 		if(!empty($fields)) {
-			$this->aggregation_array =	array( array('$match' => $this->match ),
-						array('$project'=> array_merge($fields, $this->preProject ) ),
-						//array('$unwind' => $this->unwind),
-						array('$sort'=>array('urt'=> 1)),
-						array('$group'=> $this->grouping)
-					//	array('$match' => array('helper.record_type' => 'final_request'))
-			);
+			$this->aggregation_array =	array(
+												array('$match' => $this->match ),
+												array('$project'=> array_merge($fields, $this->preProject ) ),
+											);
+			if(!empty($this->unwind)) {
+				$this->aggregation_array[] = array('$unwind' => $this->unwind);
+			}
+			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
+			$this->aggregation_array[] = array('$group'=> $this->grouping);
+			if(!empty($this->postFilter)) {
+				$this->aggregation_array[] = array('$match' => $this->postFilter);
+			}
 		} else {
 			$this->aggregation_array = 	array( array('$match' => $this->match ),					
 						//array('$unwind' => $this->unwind),
@@ -305,8 +310,17 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $dateFormat
 	 * @return type
 	 */
-	protected function translateUrt($value, $dateFormat) {
-		return date($dateFormat,$value->sec);
+	protected function translateUrt($value, $parameters) {
+		$dateFormat = is_array($parameters) ?  $parameters['date_format'] : $parameters;
+		$retDate = date($dateFormat,$value->sec);
+		
+		if(!empty($parameters['regex']) && is_array($parameters['regex'])) {
+			foreach($parameters['regex'] as  $regex => $substitute) {
+				$retDate = preg_replace($regex, $substitute, $retDate);
+			}
+		}
+		
+		return $retDate;
 	}
 
 	/**
