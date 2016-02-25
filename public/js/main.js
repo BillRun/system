@@ -525,7 +525,7 @@ function detailFormatter(index, row) {
         else
           $tr.append("<td>" + line.api_name + "</td>");
         $tr.append("<td>" + line.aprice + "</td>");
-        $tr.append("<td>" + line.usagev + "</td>");
+        $tr.append("<td>" + line.usagev.toFixed(6) + "</td>");
         $tr.append("<td>" + line.balance_before + "</td>");
         $tr.append("<td>" + line.balance_after + "</td>");
         $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') + "</td>");
