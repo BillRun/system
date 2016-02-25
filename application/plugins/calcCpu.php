@@ -57,7 +57,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				$entity = new Mongodloid_Entity($line);
 
-				if (!isset($entity['usagev']) || $entity['usagev'] === 0) {
+				if (!$this->shouldUsagevBeZero($entity) && (!isset($entity['usagev']) || $entity['usagev'] === 0)) {
 					$processor->unsetQueueRow($entity['stamp']);
 				} else if ($rateCalc->isLineLegitimate($entity)) {
 					if ($rateCalc->updateRow($entity) !== FALSE) {
@@ -70,6 +70,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$processor->addAdvancedPropertiesToQueueRow($line);
 			}
 		}
+	}
+	
+	protected function shouldUsagevBeZero($entity) {
+		return $entity['type'] === 'gy' && 
+			$entity['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'));
 	}
 	
 	protected function customerCalc(Billrun_Processor $processor,&$data,$options) {
@@ -232,6 +237,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			case 'unify':
 				return Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
 		}
+		
+		Billrun_Factory::log('Cannot find ' . $type . ' calculator for line: ' . $line, Zend_Log::ERR);
 	}
 
 	/**
