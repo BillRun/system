@@ -73,6 +73,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 11;
+			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
