@@ -32,7 +32,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
-		$this->apiLogAction();
 	}
 
 	/**
@@ -84,16 +83,20 @@ class ApiController extends Yaf_Controller_Abstract {
 			foreach ($args[0] as $key => $value) {
 				$this->setOutput($key, $value);
 			}
+			$this->apiLogAction();
 			return true;
 		} else if ($num_args == 1) {
 			$this->output = $args[0];
+			$this->apiLogAction();
 			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
 			$this->output->$key = $value;
+			$this->apiLogAction();
 			return true;
 		}
+		$this->apiLogAction();
 		return false;
 	}
 
@@ -145,9 +148,12 @@ class ApiController extends Yaf_Controller_Abstract {
 			'type' => $request->action,
 			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
-			'request_php_input' => file_get_contents("PHP://input"),
+			'response' => $this->output,
+			'request_php_input' => file_get_contents("php://input"),
 			'server_host' => gethostname(),
+			'request_host' => $_SERVER['REMOTE_ADDR'],
 		);
+		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		$this->logColl->save(new Mongodloid_Entity($saveData));
 	}
 	
