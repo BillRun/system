@@ -242,7 +242,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 		
 		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -257,7 +257,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
 		$query['sid'] = $subscriberId;
 		
 		return $query;
