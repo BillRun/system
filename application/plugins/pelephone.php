@@ -228,8 +228,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				array_push($pp_includes_external_ids, 3, 4);
 			}
 
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($this->row->get('arate'));
+			if (isset($rate['params']['premium']) && $rate['params']['premium']) {
+				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
+			}
+
 			if (count($pp_includes_external_ids)) {
-				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
+				$query['pp_includes_external_id'] = array('$nin' => array_unique($pp_includes_external_ids));
 			}
 		}
 	}
