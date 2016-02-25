@@ -510,7 +510,7 @@ function detailFormatter(index, row) {
       // lines
       $title = $("<strong>Breakdown By Intervals</strong>");
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Unit</th><th>API Name</th><th>Charge Title</th><th>Usage Title</th><th>Balance Before</th><th>Balance After</th><th>Time</th></tr></thead>");
+      $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Unit</th><th>API Name</th><th>Charge</th><th>Usage</th><th>Balance Before</th><th>Balance After</th><th>Time</th></tr></thead>");
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr></tr>");
