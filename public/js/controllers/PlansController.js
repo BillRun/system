@@ -83,6 +83,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.save = function (redirect) {
       $scope.err = {};
+      if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -125,10 +126,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         width: "260px",
         padding: "6px"
       };
-    };
-
-    $scope.showTableForType = function (type) {
-      
     };
 
     $scope.init = function () {
