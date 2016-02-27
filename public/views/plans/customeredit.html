@@ -155,14 +155,15 @@
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<h3>Rates</h3>
 				<div ng-repeat='type in ["calls", "data", "sms"]'>
-					<label>{{capitalize(type)}}</label>
+					<label ng-if="type === 'cals'">Call</label>
+					<label ng-if="type === 'data'">Data</label>
+					<label ng-if="type === 'sms'">SMS</label>
 					<div class='table'>
 						<div class='thead'>
 							<div class='th' style='width: 260px;'>Plan</div>
 							<div class='th' style='width: 100px;'>Interval</div>
 							<div class='th' style='width: 130px;'>Price</div>
 							<div class='th' style='width: 130px;'>To</div>
-							<div class='th' style='width: 130px;'>Type</div>
 						</div>
 						<div class='tbody'>
 							<div class='tr parent' ng-repeat='rate in plan_rates' ng-if='rate.price[type].rate'>
@@ -181,9 +182,6 @@
 										</div>
 										<div class='td' style='width: 130px;'>
 											{{t.to}}
-										</div>
-										<div class='td' style='width: 130px;'>
-											{{type}}
 										</div>
 									</div>
 								</div>
