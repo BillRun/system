@@ -82,6 +82,10 @@ app.run(function ($rootScope, $interval, $http) {
     templateUrl: 'views/pp_includes.html',
     controller: 'PrepaidIncludesController',
     controllerAs: 'vm'
+  }).when('/bandwidth_cap', {
+    templateUrl: 'views/bandwidth_cap.html',
+    controller: 'BandwidthCapController',
+    controllerAs: 'vm'
   }).when('/:collection/list', {
     templateUrl: 'views/partials/collectionList.html',
     controller: 'ListController',

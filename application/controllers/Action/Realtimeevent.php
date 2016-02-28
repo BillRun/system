@@ -162,6 +162,7 @@ class RealtimeeventAction extends ApiAction {
 				}
 				return false;
 			case('call'):
+			case('video_call'):
 				return $data['api_name'];
 			case('sms'):
 				return 'sms';
@@ -170,6 +171,9 @@ class RealtimeeventAction extends ApiAction {
 			case('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No record type found. Params: " . print_R($usaget) . "," . print_R($data), Zend_Log::ERR);
+		return false;
 	}
 	
 	/**
@@ -188,10 +192,13 @@ class RealtimeeventAction extends ApiAction {
 			case ('data'):
 				return 'gy';
 			case ('call'):
+			case ('video_call'):
 				return 'callrt'; //TODO: change name of rate calculator
 			case ('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No event type found. Usaget: " . print_R($this->usaget), Zend_Log::ERR);
 		return false;
 	}
 	
