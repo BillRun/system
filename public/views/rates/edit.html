@@ -135,7 +135,7 @@
 									<div class='td' style='width: 330px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
 										<select ng-model='entity.rates[type][rateName].interconnect' class='form-control' style='width: 320px;' 
 												ng-disabled="isInterconnect()"
-												ng-options="ic.key as ic.key for ic in availableInterconnect track by $index">
+												ng-options="ic.key as ic.key for ic in availableInterconnect">
 										</select>
 									</div>
 								</div>
