@@ -23,22 +23,59 @@ class StatisticsAction extends ApiAction {
 		$this->model = new StatisticsModel();
 	}
 	
-	public function execute() {
+	protected function create($request) {
 		$this->initializeModel();
-		$statistics = json_decode($this->getRequest()->get('statistics'), true);
+		$statistics = json_decode($request->get('statistics'), true);
 		if (!$statistics || empty($statistics)) {
 			Billrun_Factory::log("No statistics specified for save!", Zend_Log::NOTICE);
-			$output = array(
+			return array(
 				'status' => 0,
 				'desc' => 'No statistics specified for save!'
 			);
 		} else {
 			$statistics['creation_date'] = new MongoDate();
 			$this->model->update($statistics);
-			$output = array(
+			return array(
 				'status' => 1,
 				'desc' => 'create',
 				'input' => $statistics
+			);
+		}
+	}
+	
+	protected function query($request) {
+		$this->initializeModel();
+		$from = $this->getRequest()->get('from');
+		$to = $this->getRequest()->get('to');
+		$query = array("creation_date" => array());
+		if ($from) $query["creation_date"]['$gte'] = new MongoDate(strtottime($from));
+		if ($to) $query["creation_date"]['$lte'] = new MongoDate(strtotime($to));
+		$data = $this->model->getData($query);
+		$statistics = array();
+		foreach($data as $statistic) {
+			$statistics[] = $statistic->getRawData();
+		}
+		return array(
+			'status' => 1,
+			'desc' => $statistics
+		);
+	}
+	
+	public function execute() {
+		$method = $this->getRequest()->get('method');
+		if (empty($method)) {
+			$output = array(
+				'status' => 0,
+				'desc' => "No method supplied"
+			);
+		} else if ($method === "create") {
+			$output = $this->create($this->getRequest());
+		} else if ($method === "query") {
+			$output = $this->query($this->getRequest());
+		} else {
+			$output = array(
+				'status' => 0,
+				'desc' => 'Unsupported method'
 			);
 		}
 		$this->getController()->setOutput(array($output));
