@@ -85,6 +85,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
