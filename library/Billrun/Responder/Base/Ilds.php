@@ -38,7 +38,6 @@ abstract class Billrun_Responder_Base_Ilds extends Billrun_Responder_Base_LocalD
 
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		$dbLines = $linesCollection->query()->equals('file', $this->getFilenameFromLogLine($logLine));
-
 		//run only after the lines were processed by the billrun.
 		if ($dbLines->count() == 0 || /* TODO fix this db query  find a way to query the $dbLines results insted */ 
 			$linesCollection->query()->equals('file',$this->getFilenameFromLogLine($logLine))->exists('account_id')->count() == 0) {

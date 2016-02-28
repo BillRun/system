@@ -228,7 +228,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 	 */
 	public function load() {
 
-		$min_time = (string) date('Ymd000000', strtotime('3 months ago')); //was 3 months
+		$min_time = (string) date('Ymd000000', strtotime('7 months ago')); //was 3 months
 		$lines = Billrun_Factory::db()->linesCollection();
 		$this->data = $lines->query(array(
 					'$or' => array(
