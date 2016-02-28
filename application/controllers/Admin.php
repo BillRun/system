@@ -35,12 +35,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		if (Billrun_Factory::config()->isProd()) {
-			$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
-			$branch = rtrim(end(explode('/', $HEAD)));
-			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
+				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
+				$branch = rtrim(end(explode('/', $HEAD)));
+				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				} else {
+					$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				}
 			} else {
-				$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				$this->commit = md5(date('ymd'));
 			}
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
