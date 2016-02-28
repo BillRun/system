@@ -8,7 +8,9 @@
 
 class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 
-	public function encode($elem, $root = "root", $addHeader = true) {
+	public function encode($elem, $params = array()) {
+		$addHeader = !isset($params['addHeader']) || $params['addHeader'];
+		$root = (isset($params['root']) ? $params['root'] : 'root');
 		return $this->arrayToXML((array) $elem, $root, $addHeader);
 	}
 

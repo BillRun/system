@@ -8,7 +8,8 @@
 
 class Billrun_Encoder_Json extends Billrun_Encoder_Base {
 
-	public function encode($elem, $addHeader = true) {
+	public function encode($elem, $params = array()) {
+		$addHeader = !isset($params['addHeader']) || $params['addHeader'];
 		if ($addHeader) {
 			header('Content-Type: application/json');
 		}

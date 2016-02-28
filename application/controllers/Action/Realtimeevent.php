@@ -239,7 +239,8 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$response = $encoder->encode($responder->getResponse(), "response");
+		$params = array('root' => 'response');
+		$response = $encoder->encode($responder->getResponse(), $params);
 		$this->getController()->setOutput(array($response, 1));
 //		$this->getView()->outputMethod = 'print_r';
 

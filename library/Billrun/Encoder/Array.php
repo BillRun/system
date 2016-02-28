@@ -8,7 +8,7 @@
 
 class Billrun_Encoder_Array extends Billrun_Encoder_Base {
 
-	public function encode($elem) {
+	public function encode($elem, $params = array()) {
 		return (array) $elem;
 	}
 

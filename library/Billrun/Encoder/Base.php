@@ -17,5 +17,5 @@ abstract class Billrun_Encoder_Base {
 	 * @param type $elem the element to encode
 	 * @return string the encoded value
 	 */
-	public abstract function encode($elem);
+	public abstract function encode($elem, $params = array());
 }
