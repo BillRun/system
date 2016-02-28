@@ -208,7 +208,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$offset += 2;
 		$data['record_type'] = $this->parseField(substr($line, $offset, 1), array('bcd_encode' => 1));
 		$offset += 1;
-		//Billrun_Factory::log("Record_type : {$data['record_type']}",Zend_log::DEBUG);
+		//Billrun_Factory::log("Record_type : {$data['record_type']}",Zend_Log::DEBUG);
 		if (isset($this->nsnConfig[$data['record_type']])) {
 			foreach ($this->nsnConfig[$data['record_type']] as $key => $fieldDesc) {
 				if ($fieldDesc) {
@@ -216,7 +216,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 						$length = intval(current($this->nsnConfig['fields'][$fieldDesc]), 10);
 						$data[$key] = $this->parseField(substr($line, $offset, $length), $this->nsnConfig['fields'][$fieldDesc]);
 						/* if($data['record_type'] == "12") {//DEBUG...
-						  Billrun_Factory::log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_log::DEBUG);
+						  Billrun_Factory::log("Data $key : {$data[$key]} , offset: ".  dechex($offset),Zend_Log::DEBUG);
 						  } */
 						$offset += $length;
 					} else {
@@ -257,7 +257,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$data['usaget'] = $this->getLineUsageType($data);
 			$data['usagev'] = $this->getLineVolume($data);
 		} else {
-//			Billrun_Factory::log("unsupported NSN record type : {$data['record_type']}",Zend_log::DEBUG);
+//			Billrun_Factory::log("unsupported NSN record type : {$data['record_type']}",Zend_Log::DEBUG);
 		}
 
 		$parser->setLastParseLength($data['record_length']);
@@ -290,7 +290,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
 			$header[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//Billrun_Factory::log("Header $key : {$header[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log("Header $key : {$header[$key]}",Zend_Log::DEBUG);
 		}
 
 		return $header;
@@ -309,7 +309,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$fieldStruct = $this->nsnConfig['fields'][$fieldDesc];
 			$trailer[$key] = $this->parseField($data, $fieldStruct);
 			$data = substr($data, current($fieldStruct));
-			//Billrun_Factory::log("Trailer $key : {$trailer[$key]}",Zend_log::DEBUG);
+			//Billrun_Factory::log("Trailer $key : {$trailer[$key]}",Zend_Log::DEBUG);
 		}
 		return $trailer;
 	}
@@ -459,7 +459,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
 		} else {
 			$msg  = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
-			Billrun_Factory::log($msg, Zend_log::CRIT);
+			Billrun_Factory::log($msg, Zend_Log::CRIT);
 			throw new Exception($msg);
 		}
 
