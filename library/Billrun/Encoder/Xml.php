@@ -8,8 +8,8 @@
 
 class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 
-	public function encode($elem, $root = "root") {
-		return $this->arrayToXML((array) $elem, $root);
+	public function encode($elem, $root = "root", $addHeader = true) {
+		return $this->arrayToXML((array) $elem, $root, $addHeader);
 	}
 
 	/**
@@ -19,8 +19,10 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 	 * @param string $root name of the root node in the xml
 	 * @return string xml
 	 */
-	protected function arrayToXML($array, $root = 'root') {
-		header ("Content-Type:text/xml");
+	protected function arrayToXML($array, $root = 'root', $addHeader = true) {
+		if ($addHeader) {
+			header ("Content-Type:text/xml");
+		}
 		return '<?xml version="1.0" encoding="UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
 	}
 

@@ -176,7 +176,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
 		);
-		$request = array($encoder->encode($requestBody, "REQUEST"));
+		$request = array($encoder->encode($requestBody, "REQUEST",false));
 		$requestUrl = $slownessParams['requestUrl'];
 		return Billrun_Util::sendRequest($requestUrl, $request);
 	}
