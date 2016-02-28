@@ -130,25 +130,25 @@
 										<i class='glyphicon glyphicon-trash' ng-click="deleteRate(type, rateName)"></i>&nbsp;&nbsp;{{rateName}}
 									</div>
 									<div class='td' style='width: 85px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
-										<input type='number' class='form-control' ng-model='entity.rates[type][rateName].access' style='width: 75px;' />
+										<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].access' style='width: 75px;' />
 									</div>
 									<div class='td' style='width: 330px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
-										<select ng-model='entity.rates[type][rateName].interconnect' class='form-control' style='width: 320px;' ng-disabled="isInterconnect()">
-											<option value="" disabled>Select Interconnect</option>
-											<option ng-repeat="ic in availableInterconnect" value='{{ic.key}}'>{{ic.key}}{{displayFutureForInterconnect(ic)}}</option>
+										<select ng-model='entity.rates[type][rateName].interconnect' class='form-control' style='width: 320px;' 
+												ng-disabled="isInterconnect()"
+												ng-options="ic.key as ic.key for ic in availableInterconnect track by $index">
 										</select>
 									</div>
 								</div>
 								<div class='inner-table'>
 									<div class='tr' ng-repeat='interval_price in entity.rates[type][rateName].rate track by $index'>
 										<div class='td' style='width: 100px;'>
-											<input type='number' class='form-control' ng-model='entity.rates[type][rateName].rate[$index].interval' style='width: 81px;'/>
+											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].interval' style='width: 81px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
-											<input type='number' class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 100px;'/>
+											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 100px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
-											<input type='number' class='form-control' ng-model='entity.rates[type][rateName].rate[$index].to' style='width: 120px;'/>
+											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].to' style='width: 120px;'/>
 										</div>
 									</div>
 								</div>
