@@ -35,8 +35,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		if (Billrun_Factory::config()->isProd()) {
-			// TODO: set the branch through config
-			$branch = 'production';
+			$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
+			$branch = rtrim(end(explode('/', $HEAD)));
 			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
 				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
 			} else {
