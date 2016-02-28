@@ -299,10 +299,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
               $scope.shown.smsRates[plans] = true;
               $scope.shown.dataRates[plans] = true;
               $location.hash(plans);
+              $anchorScroll.yOffset = 120;
               $anchorScroll();
               $timeout(function() {
-                angular.element('#' + plans).addClass('animated flash')}, 100);
-
+                angular.element('#' + plans).addClass('animated flash');
+              }, 100);
             }
           }
         }
