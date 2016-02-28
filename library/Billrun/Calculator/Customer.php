@@ -75,9 +75,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
 			return false;
 		}
+		
+		if (empty($subscriber['plan'])) {
+			Billrun_Factory::log()->log("subscriber is not active. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
+			return false;
+		}
 
 		Billrun_Factory::log()->log("update line: " . $row->get('stamp') . " subscriber_id: " . $subscriber['subscriber_id'] . ", account_id: " . $subscriber['account_id'], Zend_Log::INFO);
-		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id']);
+		$added_values = array('subscriber_id' => $subscriber['subscriber_id'], 'account_id' => $subscriber['account_id'], 'plan' => $subscriber['plan']);
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 		return true;
