@@ -1,9 +1,9 @@
 <?php
 
 /**
- * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @package         Mongodloid
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Query implements IteratorAggregate {
 
@@ -48,8 +48,8 @@ class Mongodloid_Query implements IteratorAggregate {
 				$func = $this->_operators[$matches['operator']];
 				if ($matches['operator'] == '%') {
 					$right = array_map(function($v) {
-							return (int) trim($v);
-						}, explode('==', $right));
+						return (int) trim($v);
+					}, explode('==', $right));
 				} else if ($matches['operator'] == 'EXISTS') {
 					$right = true;
 				} else if ($matches['operator'] == 'NOT EXISTS') {
@@ -84,18 +84,18 @@ class Mongodloid_Query implements IteratorAggregate {
 			$param[1] = true;
 		else if ($name == 'notExists')
 			$param[1] = false;
-		else if ($name == 'mod' && $param[2])
+		else if ($name == 'mod' && isset($param[2]))
 			$param[1] = array($param[1], $param[2]);
 
 
 		if ($this->_mongoOperators[$name]) {
 			if (is_string($param[1])) {
 				$param[1] = array_map(function($v) {
-						$v = trim($v);
-						if (is_numeric($v))
-							return (float) $v;
-						return $v;
-					}, explode(',', trim($param[1], '()')));
+					$v = trim($v);
+					if (is_numeric($v))
+						return (float) $v;
+					return $v;
+				}, explode(',', trim($param[1], '()')));
 			}
 			return $this->query(array(
 					$param[0] => array(
@@ -111,7 +111,7 @@ class Mongodloid_Query implements IteratorAggregate {
 	}
 
 	public function cursor() {
-		return new Mongodloid_Cursor($this->_collection->find($this->_params));
+		return new Mongodloid_Cursor($this->_collection->find($this->_params), $this->_collection->getWriteConcern('wtimeout'));
 	}
 
 	public function query($key, $value = null) {
