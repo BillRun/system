@@ -17,6 +17,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	const DEF_CALC_DB_FIELD = 'aprice';
 
 	public $pricingField = self::DEF_CALC_DB_FIELD;
+	public $interconnectChargeField = 'interconnect_aprice';
 	static protected $type = "pricing";
 	static protected $precision = 0.00001;
 
@@ -206,9 +207,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset()));
+					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
+					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
 				} else if ($row['type'] == 'service') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset()));
+					$charges = self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset());
+					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) {
@@ -229,6 +232,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else {
 				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
 				return false;
+			}
+			
+			$interconnect_arate_key = self::getInterconnect($rate, $row['usaget'], $row['plan']);
+			if (!empty($interconnect_arate_key)) {
+				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
 
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
@@ -302,6 +310,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'in_group' => 0,
 				'over_group' => 0,
 				$this->pricingField => 0,
+				$this->interconnectChargeField => 0,
 			);
 	}
 
@@ -355,12 +364,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$price = self::getPriceByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
 
-		// check if interconnect required
-//		$ret['interconnect'] = $this->getInterConnectPrice($rate, $usageType, $plan->getName()) * $volume;
-		//Billrun_Factory::log("Rate : ".print_r($typedRates,1),  Zend_Log::DEBUG);
-		$ret[$this->pricingField] = $price;
+		$ret[$this->pricingField] = $charges['total'];
+		$ret[$this->interconnectChargeField] = $charges['interconnect'];
 		return $ret;
 	}
 
@@ -397,40 +404,68 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 	
 	public function getPossiblyUpdatedFields() {
-		return array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate');
+		return array($this->pricingField, $this->interconnectChargeField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate');
 	}
 
 	/**
-	 * Calculates the price for the given volume
+	 * Calculates the charges for the given volume
 	 * 
 	 * @param array $rate the rate entry
-	 * @param string $usage_type the usage type
+	 * @param string $usageType the usage type
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
 	 * @param object $plan The plan the line is associate to
 	 * @param int $offset call start offset in seconds
+	 * @param int $time start of the call (unix timestamp)
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
-	 * @return int the calculated price
+	 * @return array the calculated charges
 	 */
-	public static function getPriceByRate($rate, $usage_type, $volume, $plan = null, $offset = 0) {
-		if ($offset) {
-			return static::getPriceByRate($rate, $usage_type, $offset + $volume, $plan) - static::getPriceByRate($rate, $usage_type, $offset, $plan);
+	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
+		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
+			$query = array_merge(
+				array(
+				'key' => $interconnect,
+				'params.interconnect' => TRUE,
+				), Billrun_Util::getDateBoundQuery($time)
+			);
+			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
+			$interconnectCharge = static::getTotalChargeByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
+		} else {
+			$interconnectCharge = 0;
 		}
-		$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
-//		$interconnect = self::getInterConnectPrice($rate, $usage_type, $plan);
-		
-		if ($usage_type == 'mms') {$usage_type = 'sms';} //TODO: should be changed as soon as we will add mms to rates
-		
-		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
+		if ($usageType == 'mms') {$usageType = 'sms';} //TODO: should be changed as soon as we will add mms to rates
+		$tariff = static::getTariff($rate, $usageType, $plan);
+		if ($offset) {
+			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
+		}
+		else {
+			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
+		}
+		return array(
+			'interconnect' => $interconnectCharge,
+			'total' => $interconnectCharge + $chargeWoIC,
+		);
+	}
+	
+	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
+		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
+	}
+
+	public static function getChargeByVolume($tariff, $volume) {
+		$accessPrice = self::getAccessPrice($tariff);
 		$price = 0;
-		foreach ($rates_arr as $currRate) {
+		foreach ($tariff['rate'] as $currRate) {
+			if (!isset($currRate['from'])) {
+				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
+			}
 			if (isset($currRate['rate'])) {
 				$currRate = $currRate['rate'];
 			}
 			if (0 == $volume) { // volume could be negative if it's a refund amount
 				break;
 			}//break if no volume left to price.
-			$volumeToPriceCurrentRating = ($volume - $currRate['to'] < 0) ? $volume : $currRate['to']; // get the volume that needed to be priced for the current rating
+			$maxVolumeInRate = $currRate['to'] - $currRate['from'];
+			$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate; // get the volume that needed to be priced for the current rating
 			if (isset($currRate['ceil'])) {
 				$ceil = $currRate['ceil'];
 			} else {
@@ -442,10 +477,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
+			$lastRate = $currRate;
 		}
 		return $accessPrice + $price;
 	}
-	
+
 	/**
 	 * Calculates the volume for the given price
 	 * 
@@ -459,15 +495,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
 		if ($offset) {
-			$offsetPrice = static::getPriceByRate($rate, $usage_type, $offset, $plan);
+			$offsetPrice = static::getTotalChargeByRate($rate, $usage_type, $offset, $plan);
 			return static::getVolumeByRate($rate, $usage_type, $price + $offsetPrice, $plan) - $offset;
 		}
-		$rates_arr = self::getRatesArray($rate, $usage_type, $plan);
+		$tariff = static::getTariff($rate, $usage_type, $plan);
 		$volume = 0;
 		$lastRateFrom = 0;
-		$accessPrice = self::getAccessPrice($rate, $usage_type, $plan);
+		$accessPrice = static::getAccessPrice($tariff);
 		$price = max(0, $price - $accessPrice);
-		foreach ($rates_arr as $currRate) {
+		foreach ($tariff['rate'] as $currRate) {
 			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
 				break;
 			}
@@ -493,70 +529,25 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $volume;
 	}
 	
-	protected static function getRatesArray($rate, $usage_type, $plan = null) {
-		if (!is_null($plan) && isset($rate['rates'][$usage_type][$plan])) {
-			return $rate['rates'][$usage_type][$plan]['rate'];
+	protected static function getTariff($rate, $usage_type, $planName = null) {
+		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
+			return $rate['rates'][$usage_type][$planName];
 		}
 		if (isset($rate['rates'][$usage_type]['BASE'])) {
-			return $rate['rates'][$usage_type]['BASE']['rate'];
+			return $rate['rates'][$usage_type]['BASE'];
 		}
-		return $rate['rates'][$usage_type]['rate'];
+		return $rate['rates'][$usage_type];
 	}
 	
 	/**
-	 * Gets correct access price from rate by priority order: 
-	 *	1. Access for the customer plan.
-	 *	2. Base plan
-	 *	3. Numeric value
-	 *	4. Return 0
-	 * 
-	 * @param type $rate pricing rate row
-	 * @param type $usageType
-	 * @param type $planName
-	 * @return int Access price
+	 * Gets correct access price from tariff
+	 * @param array $tariff the tariff structure
+	 * @return float Access price
 	 */
-	static protected function getAccessPrice($rate, $usageType, $planName = null) {
-		if (isset($rate['rates'][$usageType][$planName]['access'])) {
-			return $rate['rates'][$usageType][$planName]['access'];
+	static protected function getAccessPrice($tariff) {
+		if (isset($tariff['access'])) {
+			return $tariff['access'];
 		}
-		
-		if (isset($rate['rates'][$usageType]['BASE']['access'])) {
-			return $rate['rates'][$usageType]['BASE']['access'];
-		}
-		
-		if (isset($rate['rates'][$usageType]['access'])) {
-			return $rate['rates'][$usageType]['access'];
-			}
-		
-		return 0;
-			}
-
-	/**
-	 * Gets correct interconnect price from rate by priority order: 
-	 *	1. Interconnect for the customer plan.
-	 *	2. Base plan
-	 *	3. Numeric value
-	 *	4. Return 0
-	 * 
-	 * @param type $rate pricing rate row
-	 * @param type $usageType
-	 * @param type $planName
-	 * @return int Access price
-	 */
-	static protected function getInterConnectPrice($rate, $usageType, $planName) {
-		// @todo check if interconnect available and related to the row handled
-		if (isset($rate['rates'][$usageType][$planName]['interconnect'])) {
-			return $rate['rates'][$usageType][$planName]['interconnect'];
-			}
-		
-		if (isset($rate['rates'][$usageType]['BASE']['interconnect'])) {
-			return $rate['rates'][$usageType]['BASE']['interconnect'];
-		}
-		
-		if (isset($rate['rates'][$usageType]['interconnect'])) {
-			return $rate['rates'][$usageType]['interconnect'];
-		}
-		
 		return 0;
 	}
 
@@ -590,10 +581,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
 				$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
-				$granted_cost = $this->getPriceByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				$granted_cost = $charges['total'];
 				if ($granted_cost == '0') {
 					return array(
 						$this->pricingField => $granted_cost,
+						$this->interconnectChargeField => $charges['interconnect'],
 						'usagev' => $granted_volume,
 					);
 				}
@@ -605,7 +598,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['apr'] = self::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
+			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
 			}
@@ -655,10 +648,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 		} else {
+			$cost = $pricingData[$this->pricingField];
 			if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
-				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+				if ($cost > 0) { // If it's a free of charge, no need to reduce usagev
+					$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
+				}
 			} else {
-				$cost = $pricingData[$this->pricingField];
 				if (!is_null($this->balance->get('balance.totals.' . $balance_totals_key . '.cost'))) {
 					$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 				} else {
@@ -937,5 +932,17 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		
 		return Billrun_Calculator_CustomerPricing::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $this->getCallOffset());
 	}
-
+	
+	protected static function getInterconnect($rate, $usage_type, $plan) {
+		if (isset($rate['rates'][$usage_type][$plan]['interconnect'])) {
+			return $rate['rates'][$usage_type][$plan]['interconnect'];
+		}
+		if (isset($rate['rates'][$usage_type]['BASE']['interconnect'])) {
+			return $rate['rates'][$usage_type]['BASE']['interconnect'];
+		}
+		
+		if (isset($rate['rates'][$usage_type]['interconnect'])) {
+			return $rate['rates'][$usage_type]['interconnect'];
+		}
+	}
 }

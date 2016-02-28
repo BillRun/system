@@ -484,9 +484,33 @@ function detailFormatter(index, row) {
     data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
   })
     .done(function (res) {
-      var lines = JSON.parse(res);
-      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'>");
-      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Balance Before</th><th>Balance After</th><th>Total</th><th>Unit</th><th>Time</th></tr></thead>");
+      res = JSON.parse(res);
+      var lines = res.detailed;
+      var aggregated = res.aggregated;
+      // aggregated
+      var $title = $("<strong>Breakdown By Balance</strong>");
+      var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
+      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th></tr></thead>");
+      $aggregated_table.append($thead).append('<tbody>');
+      _.forEach(aggregated, function (aggregate, i) {
+        var $tr = $("<tr></tr>");
+        var idx = i + 1;
+        //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
+        $tr.append("<td>" + idx + "</td>");
+        $tr.append("<td>" + aggregate._id.pp_includes_external_id + "</td>");
+        $tr.append("<td>" + aggregate._id.pp_includes_name + "</td>");
+        $tr.append("<td>" + aggregate.s_usagev + "</td>");
+        $tr.append("<td>" + aggregate.s_price.toFixed(6) + "</td>");
+        $tr.append("<td>" + aggregate.balance_before + "</td>");
+        $tr.append("<td>" + aggregate.balance_after + "</td>");
+        $aggregated_table.append($tr);
+      });
+      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
+
+      // lines
+      $title = $("<strong>Breakdown By Intervals</strong>");
+      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
+      $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Unit</th><th>API Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Time</th></tr></thead>");
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr></tr>");
@@ -495,14 +519,18 @@ function detailFormatter(index, row) {
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + line.pp_includes_external_id + "</td>");
         $tr.append("<td>" + line.pp_includes_name + "</td>");
-        $tr.append("<td>" + line.api_name + "</td>");
-        $tr.append("<td>" + line.balance_before + "</td>");
-        $tr.append("<td>" + line.balance_after + "</td>");
-        $tr.append("<td>" + line.total + "</td>");
         $tr.append("<td>" + line.usage_unit + "</td>");
+        if (line.usaget === "data")
+          $tr.append("<td>" + line.record_type + "</td>");
+        else
+          $tr.append("<td>" + line.api_name + "</td>");
+        $tr.append("<td>" + line.usagev + "</td>");
+        $tr.append("<td>" + line.aprice.toFixed(6) + "</td>");
+        $tr.append("<td>" + line.balance_before.toFixed(6) + "</td>");
+        $tr.append("<td>" + line.balance_after.toFixed(6) + "</td>");
         $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') + "</td>");
         $table.append($tr);
       });
-      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($table);
+      $aggregated_table.after("<br/>", $title, "<br/>", $table);
     });
 }

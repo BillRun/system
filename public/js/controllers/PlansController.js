@@ -83,6 +83,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.save = function (redirect) {
       $scope.err = {};
+      if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -99,6 +100,32 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
+    };
+
+    $scope.balanceName = function (id) {
+      var found = _.find($scope.ppIncludes, function (bal) {
+        return bal.external_id === parseInt(id, 10);
+      });
+      if (found) return found.name;
+      return "";
+    };
+
+    $scope.getTDHeight = function (rate) {
+      var height = 32;
+      if (rate.price.calls && !_.isEmpty(rate.price.calls) && !_.isEmpty(rate.price.calls.rate)) {
+        height *= rate.price.calls.rate.length;
+      }
+      if (rate.price.sms && !_.isEmpty(rate.price.sms) && !_.isEmpty(rate.price.sms.rate)) {
+        height *= rate.price.sms.rate.length;
+      }
+      if (rate.price.data && !_.isEmpty(rate.price.data) && !_.isEmpty(rate.price.data.rate)) {
+        height *= rate.price.data.rate.length;
+      }
+      return {
+        height: height,
+        width: "260px",
+        padding: "6px"
+      };
     };
 
     $scope.init = function () {
@@ -150,10 +177,14 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
+      });
+      Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+        $scope.ppIncludes = res.data.ppincludes;
       });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
       $scope.plan_type = $routeParams.type;

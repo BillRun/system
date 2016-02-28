@@ -156,6 +156,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$options = array_merge($options, $configOptions);
 			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
+			if(!class_exists($class, true)) {
+				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line,true), Zend_Log::ERR);
+				// TODO: How to handle error?
+				return false;
+			}
 			self::$calcs[$type] = new $class($options);
 		}
 		return self::$calcs[$type];
@@ -197,7 +202,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
+			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);

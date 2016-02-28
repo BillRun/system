@@ -73,12 +73,16 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 11;
+			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = 
-			array('status' => $this->errorCode,
-				  'desc'   => $this->error);
+			array(
+				'status'       => $errorCode == 0 ? 1 : 0,
+				'desc'         => $this->error,
+				'error_code'   => $errorCode,
+			);
 		
 		return $outputResult;
 	}
@@ -93,7 +97,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 			return false;
 		}
 		 
-		$this->keepBalances = $input->get('keep_balances');
+		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances'), FILTER_VALIDATE_BOOLEAN);
 		
 		return true;
 	}
