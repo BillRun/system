@@ -9,7 +9,7 @@
         <title>BillRun<?php echo $title ? ' | ' . $title : ''; ?></title>
         <meta name="description" content="BillRun Admin Panel">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-		<link href="http://www.billrun.net/templates/meet_gavern/images/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+		<link href="<?php echo $this->baseUrl; ?>/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
         <style>
             body {
                 padding-top: 50px;
@@ -36,7 +36,7 @@
 				<span class="icon-bar"></span>
 			</button>
 			<a class="brand" href="<?php echo $this->baseUrl; ?>/admin/">
-				<img src="<?php echo $this->baseUrl; ?>/img/web-logo.png" alt="BillRun"/>
+				<img src="<?php echo $this->baseUrl; ?>/img/billrun-logo-tm.png" alt="BillRun"/>
 			</a>
         </div>
 		<div ng-include="'views/partials/menu.html'" ng-if='false'></div>

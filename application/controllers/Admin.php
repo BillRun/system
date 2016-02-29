@@ -631,7 +631,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		
-		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
    
 		$v->validate($params,$coll) ;
@@ -849,7 +849,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
 //				if (empty($ret_action)) {
@@ -1305,7 +1305,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
-		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+		if (in_array($source_name, $global_session_vars) && !isset($var) && isset($getsetvar_session->$source_name)) {
 			$var = $getsetvar_session->$source_name;
 			$session->$source_name = $var;
 		}
