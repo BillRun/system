@@ -135,6 +135,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			return false;
 		}
 		
+		$this->subscriberQuery = array_merge($this->subscriberQuery, Billrun_Util::getDateBoundQuery());
+		
 		return true;
 	}
 	
