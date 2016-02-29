@@ -10,11 +10,16 @@ function BalancesController($controller, Utils, $http, $window, Database) {
   vm.utils = Utils;
 
   vm.saveBalance = function () {
-    _.forEach(vm.entity.balance.totals, function (total) {
-      if (total.cost) total.cost = parseFloat(total.cost);
-      if (total.usagev) total.usagev = parseFloat(total.usagev);
-    });
-    if (vm.entity.to) vm.entity.to = vm.entity.to.toISOString();
+    if (vm.action !== 'new') {
+      if (vm.entity.balance && vm.entity.balance.totals) {
+        _.forEach(vm.entity.balance.totals, function (total) {
+          if (total.cost) total.cost = parseFloat(total.cost);
+          if (total.usagev) total.usagev = parseFloat(total.usagev);
+        });
+      }
+      if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost)) vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
+    }
+    if (vm.entity.to && _.isObject(vm.entity.to)) vm.entity.to = vm.entity.to.toISOString();
     if (vm.action === 'new') {
       var postData = {
         method: 'update',
@@ -23,7 +28,7 @@ function BalancesController($controller, Utils, $http, $window, Database) {
           "pp_includes_name": vm.entity.pp_includes_name
         }),
         upsert: JSON.stringify({
-          value: vm.newBalanceAmount, 
+          value: parseFloat(vm.newBalanceAmount),
           expiration_date: vm.entity.to,
           operation: "set"
         })
@@ -33,7 +38,7 @@ function BalancesController($controller, Utils, $http, $window, Database) {
           $window.location = baseUrl + '/admin/balances';
         else
           // TODO: change to flash message
-          alert(res.data.desc + " - " + res.data.details);
+          alert("Error saving balance! Please refresh and try again!");
       });
     } else {
       vm.save(true);

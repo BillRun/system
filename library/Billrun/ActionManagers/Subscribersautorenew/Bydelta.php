@@ -142,6 +142,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				$record['to'] = new MongoDate(strtotime($record['to']));
 			}
 			
+			if(isset($record['to']) && isset($record['from'])) {
+				$record['migrated'] = true; 
+			}
+			
 			if(!empty($record)) {
 				$isEmpty = false;
 			}

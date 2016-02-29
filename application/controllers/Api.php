@@ -20,6 +20,8 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @var mixed
 	 */
 	protected $output;
+	
+	protected $start_time = 0;
 
 	/**
 	 * initialize method for yaf controller (instead of constructor)
@@ -32,7 +34,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
-		$this->apiLogAction();
+		$this->start_time = microtime(1);
 	}
 
 	/**
@@ -84,16 +86,20 @@ class ApiController extends Yaf_Controller_Abstract {
 			foreach ($args[0] as $key => $value) {
 				$this->setOutput($key, $value);
 			}
+			$this->apiLogAction();
 			return true;
 		} else if ($num_args == 1) {
 			$this->output = $args[0];
+			$this->apiLogAction();
 			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
 			$this->output->$key = $value;
+			$this->apiLogAction();
 			return true;
 		}
+		$this->apiLogAction();
 		return false;
 	}
 
@@ -145,8 +151,15 @@ class ApiController extends Yaf_Controller_Abstract {
 			'type' => $request->action,
 			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
+			'response' => $this->output,
+			'request_php_input' => file_get_contents("php://input"),
+			'server_host' => gethostname(),
+			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'rand' => rand(1,1000000),
+			'time' => (microtime(1) - $this->start_time)*1000,
 		);
-		$this->logColl->save(new Mongodloid_Entity($saveData));
+		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
+		$this->logColl->save(new Mongodloid_Entity($saveData), 0);
 	}
 	
 }

@@ -171,7 +171,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billruns_count = 0;
 		$skipped_billruns_count = 0;
 		if ($this->bulkAccountPreload) {
-			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_log::INFO);
+			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_Log::INFO);
 			$dataKeys = array_keys($this->data);
 			//$existingAccounts = array();			
 			foreach ($dataKeys as $key => $aid) {
@@ -184,7 +184,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				// [tom] TODO: Memory limit should not be here as magic number.
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_log::ALERT);
+				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_Log::ALERT);
 				break;
 			}
 			//pre-load  account lines 
@@ -193,7 +193,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
 			}
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
-			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_log::INFO);
+			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_Log::INFO);
 //			if (!Billrun_Factory::config()->isProd()) {
 //				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
 //					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
@@ -235,9 +235,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 				} else {
 					$subscriber_status = "open";
-					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
+					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_Log::INFO);
 					$flat_price = $subscriber->getFlatPrice();
-					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
+					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_Log::INFO);
 					if (is_null($flat_price)) {
 						Billrun_Factory::log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
 						continue;
@@ -270,9 +270,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::INFO);
 
 			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
-			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_log::INFO);
+			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_Log::INFO);
 			$account_billrun->close($this->min_invoice_id);
-			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_log::INFO);
+			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_Log::INFO);
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 			if ($this->bulkAccountPreload) {
 				Billrun_Billrun::clearPreLoadedLines(array($accid));
@@ -281,7 +281,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if ($billruns_count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
-			Billrun_Factory::log($end_msg, Zend_log::INFO);
+			Billrun_Factory::log($end_msg, Zend_Log::INFO);
 			$this->sendEndMail($end_msg);
 		}
 
@@ -309,9 +309,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->lines->insert($flat_entry->getRawData(), array("w" => 1));
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
 			} else {
-				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+				Billrun_Factory::log("Problem inserting flat line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_Log::ALERT);
 				Billrun_Util::logFailedCreditRow($flat_entry->getRawData());
 			}
 		}
@@ -333,10 +333,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$this->lines->insert($rawData, array("w" => 1));
 			} catch (Exception $e) {
 				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_log::ALERT);
+					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_Log::ALERT);
 				} else {
 					Billrun_Factory::log("Problem inserting service for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_log::ALERT);
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_Log::ALERT);
 					Billrun_Util::logFailedServiceRow($rawData);
 				}
 			}
@@ -360,10 +360,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$this->lines->insert($rawData, array("w" => 1));
 			} catch (Exception $e) {
 				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_log::ALERT);
+					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_Log::ALERT);
 				} else {
 					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_log::ALERT);
+						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_Log::ALERT);
 					Billrun_Util::logFailedCreditRow($rawData);
 				}
 			}

@@ -195,16 +195,15 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$from = $this->query['from']['sec'];
 		}
 
-		// Check if the from is in the past.
-		if($from < strtotime("today midnight")) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 42;
-			$this->reportError($errorCode, Zend_Log::ALERT);
-			return false;
-		}
-		
-		$set['next_renew_date'] = $set['from'];
 		$set['last_renew_date'] = 0;
-
+		
+		// Check if the from is in the past.
+		if($from >= strtotime("today midnight")) {
+			$set['next_renew_date'] = $set['from'];
+		} else {
+			// TODO: Move the migrated logic to some "migrated handler"
+			$set['last_renew_date'] = -1;
+		}
 		
 		if (isset($jsonUpdateData['to']->sec)) {
 			$to = $jsonUpdateData['to']->sec;
@@ -215,15 +214,58 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
+		if(isset($jsonUpdateData['migrated'])) {
+			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
+		}
+		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 		
 		return true;
 	}
 	
+	/**
+	 * Handle a migrated auto renew record.
+	 * @param type $jsonUpdateData
+	 * @param type $set
+	 * @param type $from
+	 * @param type $to
+	 */
+	protected function handleMigrated(&$jsonUpdateData, &$set, $from, $to) {
+		$months = $set['remain'];
+		$remainingMonths = Billrun_Util::countMonths(time(), $to);
+		$doneMonths = $months - $remainingMonths;
+
+		$set['remain'] = $remainingMonths;
+		$set['done'] = $doneMonths;
+
+		$nextRenewMonth = (date('m', $from) + $remainingMonths) % 12;
+		if(!$nextRenewMonth) {
+			$nextRenewMonth = 12;
+		}
+
+		$nextRenewYear = date('y', $from) + (int)($remainingMonths / 12);
+		$nextRenewDay = date('d', $from);
+
+		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
+
+		// Check if last day
+		if($nextRenewDay === date('t', $from)) {
+			$this->data['eom'] = 1;
+			$nextRenewDay = date('t', $renewDateInitial);
+		} else if($nextRenewDay > date('t', $renewDateInitial)){
+			$nextRenewDay = date('t', $renewDateInitial);
+		}
+
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
+		$set['next_renew_date'] = $renewDate;
+
+		unset($jsonUpdateData['migrated']);
+	}
+	
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = Billrun_Util::getDateBoundQuery();
+		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		

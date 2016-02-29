@@ -118,11 +118,9 @@ class SubscribersModel extends TabledateModel{
 			),
 			'plan' => array(
 				'key' => 'plan',
-				'db_key' => 'current_plan',
+				'db_key' => 'plan',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
-				'ref_coll' => 'plans',
-				'ref_key' => 'name',
 				'display' => 'Plan',
 				'values' => $planNames,
 				'default' => array(),

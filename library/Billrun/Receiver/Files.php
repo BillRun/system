@@ -84,16 +84,16 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		$processor = Billrun_Processor::getInstance($options);
 		if (!$processor) {
-			Billrun_Factory::log("error with loading processor", Zend_log::ERR);
+			Billrun_Factory::log("error with loading processor", Zend_Log::ERR);
 			return false;
 		}
 		
 		$processor->process_files();
 		$data = $processor->getData();
 
-		Billrun_Factory::log("Process type: " . $type, Zend_log::INFO);
-		//	Billrun_Factory::log("file path: " . $filePath, Zend_log::INFO);
-		Billrun_Factory::log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_log::INFO);
+		Billrun_Factory::log("Process type: " . $type, Zend_Log::INFO);
+		//	Billrun_Factory::log("file path: " . $filePath, Zend_Log::INFO);
+		Billrun_Factory::log((isset($data['data']) ? "import lines: " . count($data['data']) : "no data received"), Zend_Log::INFO);
 	}
 
 	/**

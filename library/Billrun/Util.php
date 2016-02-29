@@ -415,13 +415,21 @@ class Billrun_Util {
 	 * @return type
 	 * @todo This is generic enough to be moved to anoter location.
 	 */
-	public static function getDateBoundQuery() {
+	public static function getDateBoundQuery($sec = NULL, $onlyFuture = false) {
+		$sec = is_null($sec) ? time() : $sec;
+		if ($onlyFuture) {
+			return array(
+				'to' => array(
+					'$gt' => new MongoDate($sec),
+				),
+			);
+		}
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate()
+				'$gt' => new MongoDate($sec),
 			),
 			'from' => array(
-				'$lte' => new MongoDate()
+				'$lte' => new MongoDate($sec),
 			)
 		);
 	}
