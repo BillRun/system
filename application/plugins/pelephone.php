@@ -95,6 +95,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'command' => $slownessParams['command'],
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
+			'sendRequestToProv' => $slownessParams['sendRequestToProv'],
 		);
 	}
 	
@@ -163,8 +164,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $subscriberSoc
 	 */
 	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
-		$encoder = new Billrun_Encoder_Xml();
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
+		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
+			return;
+		}
+		$encoder = new Billrun_Encoder_Xml();
 		$requestBody = array(
 			'HEADER' => array(
 				'APPLICATION_ID' => $slownessParams['applicationId'],
