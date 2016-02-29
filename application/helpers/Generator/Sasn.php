@@ -13,9 +13,9 @@
  * @since    2.1
  */
 
-class Generator_Udata extends Billrun_Generator_ConfigurableCDRAggregationCsv {
+class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	
-	static $type = 'udata';
+	static $type = 'sasn';
 	
 	protected $data = null;
 	protected $grouping = array();
@@ -110,16 +110,5 @@ class Generator_Udata extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 		//}		
 	}
 	
-	protected function lacTranslation($param) {
-		//if ( RecIn.isgppUserLocationInfoSet() )
-		// if (RecIn.getgppUserLocationInfo().length() >4 )
-		// {
-		// Record.setLocationAreaCode( RecIn.getgppUserLocationInfo().substring(0,5 ) ) ;
-		// Record.setCellIdentifier(RecIn.getgppUserLocationInfo().substring(0,5 ) ) ;
-		// } else {
-		// Record.setLocationAreaCode(RecIn.getgppUserLocationInfo() ) ;
-		// Record.setCellIdentifier(RecIn.getgppUserLocationInfo() ) 
-		// }		
-	}
 
 }
