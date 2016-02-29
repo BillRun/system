@@ -14,6 +14,8 @@
  * @since    4.0
  */
 class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
+	
+	use Billrun_FieldValidator_SOC;
 
 	/**
 	 * plugin name
@@ -69,7 +71,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return isset($row['service']['code']) && !empty($row['service']['code']);
+		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
 	}
 
 	protected function isSubscriberInDataSlowness($row) {
