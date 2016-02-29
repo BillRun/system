@@ -78,7 +78,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-route.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap-1.2.1.minjs');
+		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
 		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
