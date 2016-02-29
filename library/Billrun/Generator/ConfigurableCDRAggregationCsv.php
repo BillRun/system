@@ -26,6 +26,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $unwind = array();
 
 	public function __construct($options) {
+		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
+		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.configuration.include',array()) as  $path ) {
+			Billrun_Factory::config()->addConfig($path);
+		}
 		
 		$config = Billrun_Factory::config()->getConfigValue(static::$type.'.generator',array());
 		
