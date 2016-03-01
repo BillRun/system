@@ -68,10 +68,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @return type
 	 */
 	protected function buildAggregationQuery() {
-		
+		$collName =  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.collection','archive').'Collection';
 		$fields = array();
 		//sample 100 lines  and get all the  fields  from these lines.
-		$fieldExamples =  $this->db->archiveCollection()->query( $this->match )->cursor()->limit(100);
+		$fieldExamples =  $this->db->{$collName}()->query( $this->match )->cursor()->limit(100);
 		foreach( $fieldExamples as $doc ) {
 			foreach( $doc->getRawData() as $key => $val ) {
 				$fields[$key] = 1;
