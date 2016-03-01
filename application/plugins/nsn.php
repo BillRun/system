@@ -260,6 +260,35 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		return $linesCol->aggregate($aggregateQuery);
 	}
+	
+	protected function postProcessEventResults($allEventsResults, $eventResults, $eventQuery, $ruleName) {
+		if(!empty($this->fraudConfig['events'][$ruleName]['starting_subscriber_period'])) {
+			$subscribersApi= Billrun_Factory::subscriber() ;
+			$subscribersQuery = array(); 
+			foreach($eventResults as $key => &$event) {
+				$subscribersQuery[] = array(
+									'NDC_SN'=>$event['msisdn'],
+									'time' => date(Billrun_Base::base_dateformat),
+									'stamp' => $key,
+									'EXTRAS' => 1,
+					);
+			}
+			$subscribersCache = $subscribersApi->getSubscribersByParams($subscribersQuery, $subscribersApi->getAvailableFields());
+			foreach($eventResults as $key => &$event) {
+				if( isset($subscribersCache[$key]) ) {
+					$subStartTime = strtotime($subscribersCache[$key]->activation_date);
+					if( $subStartTime > strtotime($this->fraudConfig['events'][$ruleName]['starting_subscriber_period']) ) {
+						//Skip removing the current line as it relevant
+						continue;
+					}
+				}
+									//remove events that thier subscriber are older then starting subscriber period window
+				unset($eventResults[$key]);
+				
+			}
+		}
+		return $eventResults;
+	}
 
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData 

@@ -69,7 +69,7 @@ trait Billrun_Traits_FraudAggregation {
 					
 					$ret = $this->fraudCollection->aggregate( array($query['base_match'], $query['where'], $query['group_match'], $query['group'], $query['translate'], $query['project'], $ruleMatch), array("allowDiskUse" => true) );
 
-					if ($this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
+					if ($ret = $this->postProcessEventResults($events, $ret, $eventQuery, $key)) {
 						$events = array_merge($events, $ret);
 					}
 
@@ -141,8 +141,8 @@ trait Billrun_Traits_FraudAggregation {
 	 * (stab function)
 	 */
 	protected function postProcessEventResults($allEventsResults, $eventResults, $eventQuery, $ruleName) {
-		// abstrct function doesn't alter anything
-		return true;
+		// abstract function doesn't alter anything
+		return $eventResults;
 	}
 
 	/**
