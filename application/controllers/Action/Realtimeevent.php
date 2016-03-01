@@ -277,7 +277,7 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
 			return $event['transaction_id'];
 		}
-		return Billrun_Util::generateRandomNum();
+		return Billrun_Util::generateRandomNum(18);
 	}
 
 }
