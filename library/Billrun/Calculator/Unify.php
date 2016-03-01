@@ -29,6 +29,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //	protected $activeBillrun;
 	protected $dbConcurrentPref = 'RP_PRIMARY';
 	protected static $calcs = array();
+	protected $writeConcern = 0;
 
 	/**
 	 * Create a new instance of the unify caclulator object.
@@ -207,33 +208,18 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 		$archivedLinesCount = count($this->archivedLines);
 		if ($archivedLinesCount > 0) {
+			$saveOptions = array('w' => $this->writeConcern);
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
-				$archLinesColl->batchInsert($this->archivedLines);
+				$archLinesColl->batchInsert($this->archivedLines, $saveOptions);
 				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
 				Billrun_Factory::log("Failed to insert to archive. " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
 				// todo: dump lines into file
 			}
-//			foreach ($this->archivedLines as $line) {
-//				try {
-//					$archLinesColl->insert($line);
-//					$linesArchivedStamps[] = $line['stamp'];
-//					unset($this->data[$line['stamp']]);
-//				} catch (\Exception $e) {
-//					if ($e->getCode() == 'Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR') {
-//						Billrun_Factory::log("got duplicate line when trying to save line {$line['stamp']} to archive.", Zend_Log::ALERT);
-//						$linesArchivedStamps[] = $line['stamp'];
-//						unset($this->data[$line['stamp']]);
-//					} else {
-//						Billrun_Factory::log("Failed when trying to save a line {$line['stamp']} to the archive failed with: " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ALERT);
-//						$failedArchived[] = $line;
-//					}
-//				}
-//			}
 			Billrun_Factory::log('Removing Lines from the lines collection....', Zend_Log::INFO);
-			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)));
+			$localLines->remove(array('stamp' => array('$in' => $linesArchivedStamps)), $saveOptions);
 		}
 		return $failedArchived;
 	}
@@ -266,9 +252,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$update['$inc']['lcount'] = $row['lcount'];
 
 			$linesCollection = $db->linesCollection();
-			$ret = $linesCollection->update($query, $update, array('upsert' => true));
-			$success = isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0;
-			if (!$success) {//TODO add support for w => 0 it should  not  enter the if
+			$ret = $linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
+			$success = ($this->writeConcern == 0 && $ret) || (($this->writeConcern > 0 || $this->writeConcern = 'majority') && isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0);
+			if (!$success) {
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
 				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {
 					unset($this->archivedLines[$lstamp]);
