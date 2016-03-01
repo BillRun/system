@@ -20,6 +20,7 @@ app.run(function ($rootScope, $interval, $http) {
   $rootScope.$on("$routeChangeStart", function () {
     angular.element('.component.container').remove();
   });
+  $rootScope.spinner = 0;
 }).config(function ($httpProvider, $routeProvider, $locationProvider) {
   function twoDigit(n) {
     return (n < 10) ? "0" + n : n.toString();

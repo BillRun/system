@@ -65,7 +65,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
-		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/moment.min.js');
 		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
@@ -75,9 +75,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');

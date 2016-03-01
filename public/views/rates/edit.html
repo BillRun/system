@@ -1,10 +1,10 @@
 <div class="container component" ng-controller='RatesController' ng-init="init()">
-	<div class="fixed-title">
-		<center>
-			<h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
-		</center>
-	</div>
-<div pretty-error errors="err.data"></div>
+    <div class="fixed-title">
+            <center>
+                    <h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
+            </center>
+    </div>
+    <div pretty-error errors="err.data"></div>
 	<form class='form-inline' style="margin-top: 60px;">
 		<div ng-if='!advancedMode'>
 			<div class="row" ng-if="action === 'new'">
@@ -105,7 +105,7 @@
 			<h2>Tariffs</h2>
 			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms"]'>
 				<h3>{{capitalize(type)}}</h3>
-				<div>
+				<div style="margin-bottom: 10px;">
 					<select ng-model="newRate[type].name" class="form-control">
 						<option value="" disabled>Select Plan</option>
 						<option ng-repeat="plan in availablePlans" ng-disabled='planExists(type, plan)'>{{plan}}</option>
