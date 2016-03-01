@@ -11,3 +11,4 @@ logs/debug.log*
 cache
 crontab
 conf/dori.ini
+/nbproject/

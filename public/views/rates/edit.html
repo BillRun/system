@@ -105,7 +105,7 @@
 			<h2>Tariffs</h2>
 			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms"]'>
 				<h3>{{capitalize(type)}}</h3>
-				<div>
+				<div style="margin-bottom: 10px;">
 					<select ng-model="newRate[type].name" class="form-control">
 						<option value="" disabled>Select Plan</option>
 						<option ng-repeat="plan in availablePlans" ng-disabled='planExists(type, plan)'>{{plan}}</option>
