@@ -149,6 +149,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param bool $sendToProv true - send to provisioning, false - don't send to provisioning
 	 */
 	protected function updateSubscriberInDataSlowness($row, $enterToDataSlowness = true, $sendToProv = true) {
+		return false; //TODO: temporarily disable data_slowness
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
