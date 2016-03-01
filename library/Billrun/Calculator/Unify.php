@@ -53,7 +53,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 
 		// archive connection setting
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$this->archiveDb = Billrun_Factory::db();
 	}
 
 	protected function getMergedUpdateFields($unificationFields) {
