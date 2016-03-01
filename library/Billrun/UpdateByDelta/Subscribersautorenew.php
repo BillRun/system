@@ -161,13 +161,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 	 * @param string $field - Field to check
 	 * @return true if the field is mendatory.
 	 */
-	protected function isMendatoryField($field) {
-		// TODO: This is to "fix" the weird empty fields in the config file.
-		if(empty($field)) {
-			Billrun_Factory::log("Received empty values from the config file", Zend_Log::NOTICE);
-			return false;
-		}
-		
+	protected function isMendatoryField($field) {		
 		if(empty($this->mendatoryFields)) {
 			$this->mendatoryFields = Billrun_Factory::config()->getConfigValue('autorenew.mendatory', array());
 		}
