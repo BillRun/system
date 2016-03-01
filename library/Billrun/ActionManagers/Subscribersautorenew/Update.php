@@ -202,14 +202,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$set['next_renew_date'] = $set['from'];
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
-			if(isset($jsonUpdateData['migrated'])) {
-				// Indicating that the last renew date is unknown.
-				$set['last_renew_date'] = -1;
-			} else {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 42;
-				$this->reportError($errorCode, Zend_Log::ALERT);
-				return false;	
-			}
+			$set['last_renew_date'] = -1;
 		}
 		
 		if (isset($jsonUpdateData['to']->sec)) {
@@ -272,7 +265,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = Billrun_Util::getDateBoundQuery();
+		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		

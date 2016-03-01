@@ -15,6 +15,7 @@
 					<th>Subscriber Data Service</th>
 					<th>Bandwidth Cap Service</th>
 					<th>Speed</th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -22,7 +23,8 @@
 					<td><a ng-click='vm.edit(cap_name)' href=''>{{$index+1}}</a></td>
 					<td>{{cap_name}}</td>
 					<td>{{cap.SOC}}</td>
-					<td>{{cap.speed}} Kb/second</td>
+					<td>{{cap.speed}}</td>
+					<td><i class="glyphicon glyphicon-trash" ng-click="vm.removeBandwidthCap(cap_name)"></i></td>
 				</tr>
 			</tbody>
 		</table>
@@ -46,10 +48,10 @@
 		</div>
 		<div class='row'>
 			<div class='col-md-3'>
-				<label>Charging By</label>
+				<label>Speed</label>
 			</div>
 			<div class='col-md-3'>
-				<input type='text' ng-model='vm.current_entity.speed' class='form-control' /> Kb/second
+				<input type='text' ng-model='vm.current_entity.speed' class='form-control' />
 			</div>
 		</div>
 		<div class="modal-footer">

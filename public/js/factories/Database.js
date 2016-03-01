@@ -62,6 +62,9 @@ app.factory('Database', ['$http', function ($http) {
     function saveBandwidthCap(params) {
       return $http.post(baseUrl + '/admin/saveBandwidthCap', params);
     }
+    function removeBandwidthCap(params) {
+      return $http.post(baseUrl + '/admin/removeBandwidthCap', params);
+    }
 
     return {
       getEntity: getEntity,
@@ -75,6 +78,7 @@ app.factory('Database', ['$http', function ($http) {
       getAvailablePPIncludes: getAvailablePPIncludes,
       getSubscriberDetails: getSubscriberDetails,
       getBandwidthCapDetails: getBandwidthCapDetails,
-      saveBandwidthCap: saveBandwidthCap
+      saveBandwidthCap: saveBandwidthCap,
+      removeBandwidthCap: removeBandwidthCap
     };
   }]);

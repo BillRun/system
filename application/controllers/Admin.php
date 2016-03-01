@@ -35,12 +35,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		if (Billrun_Factory::config()->isProd()) {
-			// TODO: set the branch through config
-			$branch = 'production';
-			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
+				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
+				$branch = rtrim(end(explode('/', $HEAD)));
+				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				} else {
+					$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				}
 			} else {
-				$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				$this->commit = md5(date('ymd'));
 			}
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
@@ -81,6 +85,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -150,14 +155,22 @@ class AdminController extends Yaf_Controller_Abstract {
 		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
-		$res = array();
+		//$pp_aggregated = $lines_coll->aggregate();
+		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
 			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
-			$res[] = $l;
+			$detailed[] = $l;
+		}
+		$aggregated = array();
+		$pp_aggregated = $lines_coll->aggregate($match, $group);
+		foreach($pp_aggregated as $ppagg) {
+			$aggregated[] = $ppagg->getRawData();
 		}
 		$response = new Yaf_Response_Http();
-		$response->setBody(json_encode($res));
+		$response->setBody(json_encode(array('detailed' => $detailed, 'aggregated' => $aggregated)));
 		$response->response();
 		return false;
 	}
@@ -265,8 +278,34 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $data['cap_name'];
 		unset($data['cap_name']);
 		unset($data['service']);
-		$configColl->update(array('realtimeevent.data.slowness' => array('$exists' => 1)), array('$set' => array("realtimeevent.data.slowness.$cap_name" => $data)), array('upsert' => true));
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
+		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $data, "status" => true));
+		return false;
+	}
+	
+	public function removeBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$cap_name = $this->getRequest()->get('cap_name');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		unset($allCaps["realtimeevent"]["data"]["slowness"][$cap_name]);
+		$configColl->insert($allCaps);
+		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
 	
@@ -592,7 +631,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		
-		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
    
 		$v->validate($params,$coll) ;
@@ -810,7 +849,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
 //				if (empty($ret_action)) {
@@ -1266,7 +1305,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
-		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+		if (in_array($source_name, $global_session_vars) && !isset($var) && isset($getsetvar_session->$source_name)) {
 			$var = $getsetvar_session->$source_name;
 			$session->$source_name = $var;
 		}

@@ -23,7 +23,7 @@ abstract class Billrun_Importer_Abstract implements Billrun_Importer {
 	}
 	
 	public function setPath($path) {
-		Billrun_Factory::log("Importer path: " . $path, Zend_log::INFO);
+		Billrun_Factory::log("Importer path: " . $path, Zend_Log::INFO);
 		$this->path = $path;
 	}
 	

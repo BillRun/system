@@ -132,7 +132,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 
-		$request = array($encoder->encode($responder->getResponse(), "request"));
+		$params = array('root' => 'request');
+		$request = array($encoder->encode($responder->getResponse(), $params));
 		// Sends request
 		$requestUrl = Billrun_Factory::config()->getConfigValue('IN.request.url.realtimeevent');
 		return Billrun_Util::sendRequest($requestUrl, $request);
@@ -291,7 +292,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
 		if (empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+			$rebalanceCost = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
 		} else {
 			$rebalanceCost = 0;
 		}
@@ -336,7 +337,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields[$lineToRebalance['type']]));
 			$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 			$lines_coll = Billrun_Factory::db()->linesCollection();
-			$lines_coll->update($findQuery, $updateQuery);
+			$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
+			$lines_coll->update($findQuery, $updateQuery, $options);
 		}
 
 //		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
