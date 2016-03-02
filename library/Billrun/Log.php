@@ -152,5 +152,18 @@ class Billrun_Log extends Zend_Log {
 			}
 		}
 	}
+	
+    protected function _packEvent($message, $priority)
+    {
+        return array_merge(array(
+            'timestamp'    => date($this->_timestampFormat) . ':' . (substr(($microtime = microtime(0)), 0, strpos($microtime,' ')) * 1000),
+            'message'      => $message,
+            'priority'     => $priority,
+            'priorityName' => $this->_priorities[$priority]
+            ),
+            $this->_extras
+        );
+    }
+
 
 }

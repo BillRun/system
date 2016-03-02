@@ -68,7 +68,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			"eventTimeStamp" => "20151122", // ??????
 			"imsi" => $imsi,
 			"imei" => "3542010614744704",
-			"msisdn" => "9725050500",
+			"msisdn" => "972505050092",
 			"msccData" => array(
 				array(
 					"event" => "initial",
