@@ -224,9 +224,17 @@ class AdminController extends Yaf_Controller_Abstract {
 					);
 					$plan_rates[] = $cur_rate;
 				}
+                                $ppincludes = array();
+                                if ($entity['type'] === "customer") {
+                                    foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
+                                        $pp = $ppinclude->getRawData();
+                                        $ppincludes[] = (string)$pp['external_id'];
+                                    }
+                                    sort($ppincludes);
+                                }
 				
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates)));
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes)));
 			$response->response();
 			return false;			
 		}
