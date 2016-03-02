@@ -171,7 +171,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'request_type' => '/.*/',
 							),
 							'update' => array(
-								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn', 'interconnect_arate_key'),
+								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn', 'interconnect_arate_key', 'in_data_slowness'),
 								'$set' => array('process_time'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
