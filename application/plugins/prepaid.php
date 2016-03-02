@@ -292,7 +292,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
 		if (empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], (-1) * $rebalance_offset);
 		} else {
 			$rebalanceCost = 0;
 		}
