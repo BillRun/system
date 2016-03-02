@@ -23,19 +23,11 @@ class Billrun_ActionManagers_Realtime_Responder_Service_Service extends Billrun_
 		return parent::getErrorCode();
 	}
 	
-	protected function getStatus() {
-		if ($this->row['usagev'] === 0) {
-			return 0;
-		}
-
-		return parent::getStatus();
-	}
-	
-	protected function getStatus() {
+	protected function getDesc() {
 		if ($this->row['usagev'] === 0) {
 			return "Not enough balance";
 		}
 
-		return parent::getStatus();
+		return parent::getDesc();
 	}
 }

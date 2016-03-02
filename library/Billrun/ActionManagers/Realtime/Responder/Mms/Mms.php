@@ -23,11 +23,11 @@ class Billrun_ActionManagers_Realtime_Responder_Mms_Mms extends Billrun_ActionMa
 		return parent::getErrorCode();
 	}
 	
-	protected function getStatus() {
+	protected function getDesc() {
 		if ($this->row['usagev'] === 0) {
 			return "Not enough balance";
 		}
 
-		return parent::getStatus();
+		return parent::getDesc();
 	}
 }
