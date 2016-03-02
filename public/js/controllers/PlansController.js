@@ -142,6 +142,12 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity = res.data.entity;
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
+            if ($routeParams.type === "customer") {
+                if (!$scope.entity.pp_threshold) $scope.entity.pp_threshold = {};
+                _.forEach(res.data.ppincludes, function (ppinclude) {
+                    if (!$scope.entity.pp_threshold[ppinclude]) $scope.entity.pp_threshold[ppinclude] = 0;
+                });
+            }
         } else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
           $scope.entity = {
             "name": "",
