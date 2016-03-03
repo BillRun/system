@@ -42,8 +42,17 @@ foreach ($this->data as $item) {
 				$zend_date->setTimezone('UTC');
 				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 			} else {
-				$zend_date = new Zend_Date($data->sec);
-				echo $zend_date->toString($dateFormat, 'php');
+				if(is_numeric($data)) {
+					if($data == -1) {
+						echo "Migrated service";
+					} else {
+						$zend_date = new Zend_Date($data);
+						echo $zend_date->toString($dateFormat, 'php');
+					}
+				} else {
+					$zend_date = new Zend_Date($data->sec);
+					echo $zend_date->toString($dateFormat, 'php');
+				}
 			}
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
 			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
