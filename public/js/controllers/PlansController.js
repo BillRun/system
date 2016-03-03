@@ -40,7 +40,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.plansTemplate = function () {
-      return 'views/plans/' + $location.search().type + 'edit.html';
+      var type = $routeParams.type;
+      if (type === 'recurring') type = 'charging';
+      return 'views/plans/' + type + 'edit.html';
     };
 
     $scope.removeIncludeType = function (include_type_name) {
@@ -81,6 +83,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.save = function (redirect) {
       $scope.err = {};
+      if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -99,6 +102,32 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 
+    $scope.balanceName = function (id) {
+      var found = _.find($scope.ppIncludes, function (bal) {
+        return bal.external_id === parseInt(id, 10);
+      });
+      if (found) return found.name;
+      return "";
+    };
+
+    $scope.getTDHeight = function (rate) {
+      var height = 32;
+      if (rate.price.calls && !_.isEmpty(rate.price.calls) && !_.isEmpty(rate.price.calls.rate)) {
+        height *= rate.price.calls.rate.length;
+      }
+      if (rate.price.sms && !_.isEmpty(rate.price.sms) && !_.isEmpty(rate.price.sms.rate)) {
+        height *= rate.price.sms.rate.length;
+      }
+      if (rate.price.data && !_.isEmpty(rate.price.data) && !_.isEmpty(rate.price.data.rate)) {
+        height *= rate.price.data.rate.length;
+      }
+      return {
+        height: height,
+        width: "260px",
+        padding: "6px"
+      };
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {
@@ -113,7 +142,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity = res.data.entity;
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
-        } else if ($location.search().type === "charging") {
+            if ($routeParams.type === "customer") {
+                if (!$scope.entity.pp_threshold) $scope.entity.pp_threshold = {};
+                _.forEach(res.data.ppincludes, function (ppinclude) {
+                    if (!$scope.entity.pp_threshold[ppinclude]) $scope.entity.pp_threshold[ppinclude] = 0;
+                });
+            }
+        } else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
           $scope.entity = {
             "name": "",
             "external_id": "",
@@ -127,7 +162,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "include": {},
             "priority": "0"
           };
-        } else if ($location.search().type === "customer") {
+          if ($routeParams.type === "recurring") {
+            $scope.entity.recurring = 1;
+          }
+        } else if ($routeParams.type === "customer") {
           $scope.entity = {
             "name": "",
             "from": new Date(),
@@ -137,6 +175,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "external_code": ""
           };
         }
+        $scope.plan_rates = res.data.plan_rates;
         $scope.authorized_write = res.data.authorized_write;
       }, function (err) {
         alert("Connection error!");
@@ -144,12 +183,17 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
       $scope.availableCostUnits = ['days', 'months'];
       $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
       });
+      Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+        $scope.ppIncludes = res.data.ppincludes;
+      });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
+      $scope.plan_type = $routeParams.type;
       $scope.duplicate_rates = {on: ($scope.action === 'duplicate')};
       $scope.includeTypes = ['call', 'data', 'sms', 'mms'];
       $scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];

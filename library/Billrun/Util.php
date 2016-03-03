@@ -415,13 +415,21 @@ class Billrun_Util {
 	 * @return type
 	 * @todo This is generic enough to be moved to anoter location.
 	 */
-	public static function getDateBoundQuery() {
+	public static function getDateBoundQuery($sec = NULL, $onlyFuture = false) {
+		$sec = is_null($sec) ? time() : $sec;
+		if ($onlyFuture) {
+			return array(
+				'to' => array(
+					'$gt' => new MongoDate($sec),
+				),
+			);
+		}
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate()
+				'$gt' => new MongoDate($sec),
 			),
 			'from' => array(
-				'$lte' => new MongoDate()
+				'$lte' => new MongoDate($sec),
 			)
 		);
 	}
@@ -1099,13 +1107,43 @@ class Billrun_Util {
 	 */
 	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($fields as $timeField) {
-			if (isset($record[$timeField]->sec))
+			if (isset($record[$timeField]->sec)) {
 				$record[$timeField] = date($format, $record[$timeField]->sec);
+			}
 		}
 
 		return $record;
 	}
+	
+	/**
+	 * Change the times of a mongo record
+	 * 
+	 * @param array $row - Record to change the times of.
+	 * @param array $fields - date time fields array list
+	 * @param string $format - format datetime (based on php date function)
+	 * 
+	 * @return The record with translated time.
+	 */
+	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
+		foreach ($record as $key => $subRecord) {
+			if(is_array($subRecord)) {
+				$record[$key] = self::recursiveConvertRecordMongoDatetimeFields($subRecord, $fields, $format);
+			}
+		}
+		
+		return self::convertRecordMongoDatetimeFields($record, $fields, $format);
+	}
 
+	/**
+	 * Check if an array is multidimentional.
+	 * @param $arr - Array to check.
+	 * @return boolean true if multidimentional array.
+	 */
+	public static function isMultidimentionalArray($arr) {
+		return count($arr) != count($arr, COUNT_RECURSIVE);
+	}
+	
+	
 	public static function isAssoc($arr)
 	{
 		return array_keys($arr) !== range(0, count($arr) - 1);
@@ -1175,5 +1213,33 @@ class Billrun_Util {
 			}
 		}
 		return $months;
+	}
+	
+	/**
+	 * Check if a key exists in a multidimantional array.
+	 * @param array $arr - Array to search for the key.
+	 * @param type $key - Value of key to be found.
+	 * @return boolean - true if the key is found.
+	 */
+	public static function multiKeyExists(array $arr, $key) {
+		// is in base array?
+		if (array_key_exists($key, $arr)) {
+			return true;
+		}
+
+		// check arrays contained in this array
+		foreach ($arr as $element) {
+			if (!is_array($element)) {
+				continue;
+			}
+			
+			// Recursively check if the key exists.
+			if (self::multiKeyExists($element, $key)) {
+				return true;
+			}
+
+		}
+
+		return false;
 	}
 }

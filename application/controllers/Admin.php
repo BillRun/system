@@ -35,12 +35,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		if (Billrun_Factory::config()->isProd()) {
-			// TODO: set the branch through config
-			$branch = 'production';
-			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
+				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
+				$branch = rtrim(end(explode('/', $HEAD)));
+				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				} else {
+					$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				}
 			} else {
-				$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				$this->commit = md5(date('ymd'));
 			}
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
@@ -61,7 +65,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
-		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/moment.min.js');
 		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
@@ -71,15 +75,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
 		$this->addJs($this->baseUrl . '/js/vendor/JSONedit/directives.js');
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -99,6 +105,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SubscribersAutoRenewController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/ServiceProvidersController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
@@ -142,18 +151,26 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getLineDetailsFromArchiveAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$this->archiveDb = Billrun_Factory::db();
 		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
-		$res = array();
+		//$pp_aggregated = $lines_coll->aggregate();
+		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
 			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
-			$res[] = $l;
+			$detailed[] = $l;
+		}
+		$aggregated = array();
+		$pp_aggregated = $lines_coll->aggregate($match, $group);
+		foreach($pp_aggregated as $ppagg) {
+			$aggregated[] = $ppagg->getRawData();
 		}
 		$response = new Yaf_Response_Http();
-		$response->setBody(json_encode($res));
+		$response->setBody(json_encode(array('detailed' => $detailed, 'aggregated' => $aggregated)));
 		$response->response();
 		return false;
 	}
@@ -180,9 +197,123 @@ class AdminController extends Yaf_Controller_Abstract {
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
 				if ($key !== '_id') unset($entity[$key]);
 			}
+			$plan_rates = array();
+			if ($coll == 'plans') {
+				$plan_name = $entity['name'];
+				$query = array(
+					'$or' => array(
+						array("rates.calls.$plan_name" => array('$exists' => 1)),
+						array("rates.data.$plan_name" => array('$exists' => 1)),
+						array("rates.sms.$plan_name" => array('$exists' => 1))
+					)
+				);
+				$id = '$id';
+				foreach (Billrun_Factory::db()->ratesCollection()->query($query)->cursor() as $rate) {
+					$r = $rate->getRawData();
+					$data = (!empty($r['rates']['data'][$plan_name]) ? $r['rates']['data'][$plan_name] : array());
+					$call = (!empty($r['rates']['call'][$plan_name]) ? $r['rates']['call'][$plan_name] : array());
+					$sms = (!empty($r['rates']['sms'][$plan_name]) ? $r['rates']['sms'][$plan_name] : array());
+					$cur_rate = array(
+						'id' => $r['_id']->$id,
+						'key' => $r['key'],
+						'price' => array(
+							'calls' => $call,
+							'data' => $data,
+							'sms' => $sms
+						)
+					);
+					$plan_rates[] = $cur_rate;
+				}
+                                $ppincludes = array();
+                                if ($entity['type'] === "customer") {
+                                    foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
+                                        $pp = $ppinclude->getRawData();
+                                        $ppincludes[] = (string)$pp['external_id'];
+                                    }
+                                    sort($ppincludes);
+                                }
+				
+			}
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes)));
+			$response->response();
+			return false;			
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
+		return false;
+	}
+	
+	public function getSubscriberDetailsAction() {
+		$global_session = $this->getSession('global');
+		if (isset($global_session->sid)) {
+			$response = new Yaf_Response_Http();
+			$model = self::initModel('subscribers');
+			$entity = $model->getBySid($global_session->sid);
+			if (!$entity) {
+				$response->setBody(json_encode(array('error' => 'Could not find entity')));
+				$response->response();
+				return false;
+			}
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, 'update') as $key) {
+				unset($entity[$key]);
+			}
+			unset($entity['_id']);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'subscriber' => $entity)));
+		$response->response();
+		return false;
+	}
+	
+	public function getBandwidthCapDetailsAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$config = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
+		unset($config['requestUrl']);
+		unset($config['command']);
+		unset($config['applicationId']);
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode(array('caps' => $config, 'authorized_write' => AdminController::authorized('write'))));
+		$response->response();
+		return false;
+	}
+
+	public function saveBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$cap_name = $data['cap_name'];
+		unset($data['cap_name']);
+		unset($data['service']);
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
+		$configColl->insert($allCaps);
+		$this->responseSuccess(array("data" => $data, "status" => true));
+		return false;
+	}
+	
+	public function removeBandwidthCapAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$cap_name = $this->getRequest()->get('cap_name');
+		$configColl = Billrun_Factory::db()->configCollection();
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+					->cursor()->setReadPreference('RP_PRIMARY')
+					->sort(array('_id' => -1))
+					->limit(1)
+					->current()
+					->getRawData();
+		unset($allCaps['_id']);
+		unset($allCaps["realtimeevent"]["data"]["slowness"][$cap_name]);
+		$configColl->insert($allCaps);
+		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
 	
@@ -250,6 +381,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$planModel = new PlansModel();
 		$names = $planModel->getData(array('type' => $type));
 		$availablePlans = array();
+		$availablePlans['BASE'] = 'BASE';
 		foreach($names as $name) {
 			$availablePlans[$name['name']] = $name['name'];
 		}
@@ -259,13 +391,63 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 
+	public function getAvailableInterconnectAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$query = array(
+			'params.interconnect' => TRUE,
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor();
+		$availableInterconnect = array();
+		foreach ($interconnect_rates as $interconnect) {
+			$future = $interconnect->from->sec > new DateTime();
+			$ic = $interconnect->getRawData();
+			$availableInterconnect[] = array('key' => $ic['key'], 'future' => $future);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($availableInterconnect));
+		$response->response();
+		return false;
+	}
+	
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response = new Yaf_Response_Http();
+		if ($this->getRequest()->get('full_objects')) {
+			$collection = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor();
+			$ppincludes = array();
+			foreach ($collection as $ppinclude) {
+				$pp = $ppinclude->getRawData();
+				$ppincludes[] = $pp;
+			}
+			$response->setBody(json_encode(array('ppincludes' => $ppincludes,
+				'authorized_write' => AdminController::authorized('write'))));
+			$response->response();
+			return false;
+		}
+		$collection = Billrun_Factory::db()->prepaidincludesCollection()->distinct('name');
 		$response->setBody(json_encode($collection));
 		$response->response();
+		return false;
+	}
+	
+	public function savePPIncludesAction() {
+		if (!AdminController::authorized('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		$data['external_id'] = intval($data['external_id']);
+		$data['to'] = new MongoDate(strtotime('+100 years'));
+		$data['from'] = new MongoDate(strtotime($data['from']));
+		if ($this->getRequest()->get('new_entity') == 'true') {
+			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
+		} else {
+			$id = new MongoId($data['_id']['$id']);
+			unset($data['_id']);
+			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
+		}
+		$this->responseSuccess(array("data" => $data , "status"=>true ));
 		return false;
 	}
 	
@@ -457,7 +639,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		
-		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
    
 		$v->validate($params,$coll) ;
@@ -675,7 +857,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
 //				if (empty($ret_action)) {
@@ -1044,7 +1226,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
-		
+
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
 
@@ -1131,7 +1313,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
-		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+		if (in_array($source_name, $global_session_vars) && !isset($var) && isset($getsetvar_session->$source_name)) {
 			$var = $getsetvar_session->$source_name;
 			$session->$source_name = $var;
 		}
@@ -1238,6 +1420,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	protected function translateValueByType($option, $inputValue) {
 		// TODO: Change this switch case to OOP classes.
+		$returnValue = '';
 		switch ($option) {
 			case 'number':
 				$returnValue = floatval($inputValue);
@@ -1371,7 +1554,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				continue;
 			}
 			$operator = $operators[$i];
-			$this->setManualFilterForKey($query, $key, $value, $operator);
+			$this->setManualFilterForKey($query, $key, $value, $operator, $advanced_options);
 		}
 		return $query;
 	}

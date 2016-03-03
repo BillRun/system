@@ -63,6 +63,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
+			header("Location: " . $this->siteUrl . "/admin/login");
 			die();
 		}
 		
@@ -431,6 +432,7 @@ class UtestController extends Yaf_Controller_Abstract {
 				'usagev' => $rowData['usagev'],
 				'balance_before' => number_format($rowData['balance_before'], 3),
 				'balance_after' => number_format($rowData['balance_after'], 3),
+				'pp_includes_name' => $rowData['pp_includes_name'],
 			);
 			
 			//Get Line rates
@@ -443,7 +445,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			}
 			
 			//Get Archive lines
-			$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+			$this->archiveDb = Billrun_Factory::db();
 			$lines_coll = $this->archiveDb->archiveCollection();
 			$archive_lines = $lines_coll->query(array('u_s' => $rowData['stamp']))->cursor()->sort(array('urt' => 1));
 			foreach ($archive_lines as $archive_line) {
@@ -559,6 +561,7 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['data_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.data_scenario', ""));
 		$output['charging_types'] = $this->conf->getConfigValue('test.charging_type', array());
 		$output['languages'] = $this->conf->getConfigValue('test.language', array());
+		$output['service_codes'] = $this->conf->getConfigValue('test.service_codes', array());
 		$output['imsi'] = $this->conf->getConfigValue('test.imsi', '');
 		$output['msisdn'] = $this->conf->getConfigValue('test.msisdn', '');
 		$output['sid'] = $this->conf->getConfigValue('test.sid', '');

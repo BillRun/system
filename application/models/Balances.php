@@ -90,7 +90,8 @@ class BalancesModel extends TableModel {
 			'gt' => '>',
 			'gte' => '>=',
 		);
-
+		$date = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+		$date->set('00:00:00', Zend_Date::TIMES);
 		$filter_fields = array(
 			'sid' => array(
 				'key' => 'sid',
@@ -144,6 +145,14 @@ class BalancesModel extends TableModel {
 				'values' => $planNames,
 				'default' => array(),
 			),
+			'date' => array(
+				'key' => 'date',
+				'db_key' => array('from', 'to'),
+				'input_type' => 'date',
+				'comparison' => array('$lte', '$gte'),
+				'display' => 'Date',
+				'default' => $date->toString('YYYY-MM-dd HH:mm:ss'),
+			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
@@ -160,6 +169,9 @@ class BalancesModel extends TableModel {
 			),
 			2 => array(
 				'plan' => array(
+					'width' => 2,
+				),
+				'date' => array(
 					'width' => 2,
 				),
 			),
@@ -205,6 +217,15 @@ class BalancesModel extends TableModel {
 				}
 				$item['totals'] = implode(',', $totals);
 				$item['units'] = implode(',', $units);
+				$subscriber = Billrun_Factory::db()->subscribersCollection()
+					->query(array('sid' => $item['sid'],
+						'from' => array('$lte' => $item['from']),
+						'to' => array('$gte' => $item['from'])))
+					->cursor()
+					->limit(1)
+					->current()
+					->getRawData();
+				$item['service_provider'] = $subscriber['service_provider'];
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];

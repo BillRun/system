@@ -1,3 +1,133 @@
+.fa-spin-custom, .glyphicon-spin {
+    -webkit-animation: spin 1000ms infinite linear;
+    animation: spin 1000ms infinite linear;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 1001;
+}
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+}
+@keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+}
+
+div.table {
+	position: relative;
+	padding-top: 45px;
+}
+div.table div.thead {
+	position: absolute;
+	top: 0;
+}
+
+.fixed-title {
+	position: fixed;
+	left: 0;
+	right: 0;
+	background-color: white;
+	z-index: 100;
+}
+
+.sticky {
+    position: fixed!important;
+    width: 100%;
+    top: 51px!important;
+    z-index: 100;
+    border-top: 0;
+	background: white;
+}
+/*div.tbody {
+	overflow-y: auto;
+	max-height: 650px;
+}*/
+
+
+div.table div.thead div.th {
+	display: inline-block;
+	font-weight: bold;
+	border: 1px solid #ddd;
+	padding: 10px;
+}
+
+div.table div.thead div.th.no-border {
+	border: none;
+}
+div.table div.tbody div.tr div.table-fix {
+    display: inline-block;
+    vertical-align: top;
+}
+
+div.table div.tbody div.tr div.td {
+	display: inline-block;
+	/*border: 1px solid #ddd;*/
+	padding: 3px;
+}
+
+div.table div.tbody div.td.small-double {
+	height: 55px;
+}
+div.table div.tbody div.tr div.td.double {
+	height: 75px;
+}
+
+div.table div.tbody div.tr.parent {
+    border: 1px solid gray;
+}
+
+div.table div.tbody div.tr div.inner-table {
+	display: inline-block;
+}
+
+.fixed-table-body {
+	overflow-x: inherit!important;
+	overflow-y: inherit!important;
+}
+
+.glyphicon-chevron-right,
+.glyphicon-chevron-down {
+	cursor: pointer;
+}
+
+.left-panel {
+	background-color: #222;
+	color: white;
+}
+
+.left-panel.opened {
+	border: 1px solid black;
+	padding-left: 10px;
+}
+
+.toggle-panel-opened {
+	position: fixed;
+    left: 310px;
+    margin-top: 10px;
+	cursor: pointer;
+}
+
+.toggle-panel-closed {
+	position: fixed;
+	left: 10px;
+	margin-top: 10px;
+	cursor: pointer;
+}
+
 #data_table tbody tr.highlight td{
 	background-color: #80B3DF;
 }
@@ -20,6 +150,10 @@
 }
 
 .glyphicon-minus-sign {
+	color: #bc2328;
+	cursor: pointer;
+}
+.glyphicon-trash {
 	color: #bc2328;
 	cursor: pointer;
 }

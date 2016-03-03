@@ -16,7 +16,7 @@ class Billrun_AnObj
 	 * @return type
 	 */
 	public function get($prop, $default=null) {
-		if(!isset($this->date[$prop])) {
+		if(!isset($this->data[$prop])) {
 			return $default;
 		}
 		return $this->data[$prop];

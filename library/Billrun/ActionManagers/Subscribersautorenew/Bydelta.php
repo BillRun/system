@@ -54,7 +54,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	public function execute() {
 		$deltaUpdater = new Billrun_UpdateByDelta_Subscribersautorenew();
 			
-		$query = Billrun_Util::getDateBoundQuery();
+		// Check only the to field, enabling update of future records.
+		$query = array('to' => array('$gt' => new MongoDate()));
 		$query['sid'] = $this->sid;
 		
 		$defaultRecord = $this->getDefaultRecord();
@@ -139,6 +140,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			
 			if (isset($record['to']) && $record['to'] != null) {
 				$record['to'] = new MongoDate(strtotime($record['to']));
+			}
+			
+			if(isset($record['to']) && isset($record['from'])) {
+				$record['migrated'] = true; 
 			}
 			
 			if(!empty($record)) {

@@ -33,6 +33,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	protected $ignoreOveruse = true;
 
 	/**
+	 * Indicator for updating a balance by periodic charge.
+	 * @var boolean indication
+	 */
+	protected $recurring = false;
+	
+	/**
 	 * Create a new instance of the updater class.
 	 * @param array $options - Holding:
 	 * 						   increment - If true then the values in mongo are updated by incrementation,
@@ -54,6 +60,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Get the balances errors.
 		if (isset($options['errors'])) {
 			$this->errors = $options['errors'];
+		}
+		
+		// Check for recurring.
+		if(isset($options['recurring'])) {
+			$this->recurring = true;
 		}
 	}
 	
@@ -167,6 +178,60 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	public abstract function update($query, $recordToSet, $subscriberId);
 
 	/**
+	 * Get the max value for the balance
+	 * @param string $plan - Plan name
+	 * @param numeric $prepaidID - PP ID
+	 * @return false if error, or the max value on success.
+	 */
+	protected function getBalanceMaxValue($plan, $prepaidID) {
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$maxQuery = array("type" => "customer", "name"=>$plan);
+		$maxRecord = $plansColl->query($maxQuery)->cursor()->current();
+		
+		if($maxRecord->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 23;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($plan));
+			return false;
+		}
+		
+		if(!isset($maxRecord['pp_threshold'][$prepaidID])) {
+			return 0;
+		}
+		
+		return $maxRecord['pp_threshold'][$prepaidID];
+	}
+	
+	/**
+	 * Normalize the balance ensuring the max charge
+	 * @param array $query - Query to get the balance.
+	 * @param string $plan - Plan name.
+	 * @param Billrun_DataTypes_Wallet $wallet - Wallet of the current update
+	 * @return true if successful.
+	 */
+	protected function normalizeBalance($query, $plan, $wallet) {
+		// Check if the value to set is negative, if so, nothing to check.
+		if($wallet->getValue() >= 0) {
+			return true;
+		}
+		
+		$maxValue = $this->getBalanceMaxValue($plan, $wallet->getPPID());
+		if($maxValue === false) {
+			return false;
+		}
+		
+		$query['priority'] = $wallet->getPriority();
+		
+		$options = array(
+			'upsert' => false,
+			'new' => false,
+			'multiple' => 1
+		);
+		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
+		return $balancesColl->update($query, $updateQuery, $options);
+	}
+	
+	/**
 	 * Get billrun subscriber instance.
 	 * @param type $subscriberId If of the subscriber to load.
 	 */
@@ -175,7 +240,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 		
 		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -190,7 +255,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
 		$query['sid'] = $subscriberId;
 		
 		return $query;
@@ -202,7 +267,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param type $dataRecord
 	 */
 	protected function handleExpirationDate(&$recordToSet, $dataRecord) {
-		if (!$recordToSet['to']) {
+		if (!isset($recordToSet['to'])) {
 			$recordToSet['to'] = $this->getDateFromDataRecord($dataRecord);
 		}
 	}
@@ -290,7 +355,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
 		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
 		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
+		$defaultBalance['priority'] = $wallet->getPriority();
 		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
+		
+		// Check if recurring.
+		if($this->recurring) {
+			$defaultBalance['$set']['recurring'] = 1;
+		}	
+		
 		return array(
 			'$setOnInsert' => $defaultBalance,
 		);
@@ -299,9 +371,8 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
-	 * @param MongoDate $toTime - Expiration date.
 	 */
-	protected function getSetQuery($chargingPlan, $toTime) {
+	protected function getSetQuery($chargingPlan) {
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
@@ -309,9 +380,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
 		
 		// The TO time is always set.
-		$valueUpdateQuery['$set']['to'] = $toTime;
 		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
+		$valueUpdateQuery['$set']['priority'] = $chargingPlan->getPriority();
+		
+		// Check if recurring.
+		if($this->recurring) {
+			$valueUpdateQuery['$set']['recurring'] = 1;
+		}	
 			
 		return $valueUpdateQuery;
 	}

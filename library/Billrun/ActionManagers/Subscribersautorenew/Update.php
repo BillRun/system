@@ -188,13 +188,21 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
-		
-		$set['last_renew_date'] = $set['creation_time'];
-		
+				
 		if (isset($this->query['from']->sec)) {
 			$from = $this->query['from']->sec;
 		} else {
 			$from = $this->query['from']['sec'];
+		}
+
+		$set['last_renew_date'] = 0;
+		
+		// Check if the from is in the past.
+		if($from >= strtotime("today midnight")) {
+			$set['next_renew_date'] = $set['from'];
+		} else {
+			// TODO: Move the migrated logic to some "migrated handler"
+			$set['last_renew_date'] = -1;
 		}
 		
 		if (isset($jsonUpdateData['to']->sec)) {
@@ -206,15 +214,58 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		$set['remain'] = Billrun_Util::countMonths($from, $to);
 		
+		if(isset($jsonUpdateData['migrated'])) {
+			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
+		}
+		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 		
 		return true;
 	}
 	
+	/**
+	 * Handle a migrated auto renew record.
+	 * @param type $jsonUpdateData
+	 * @param type $set
+	 * @param type $from
+	 * @param type $to
+	 */
+	protected function handleMigrated(&$jsonUpdateData, &$set, $from, $to) {
+		$months = $set['remain'];
+		$remainingMonths = Billrun_Util::countMonths(time(), $to);
+		$doneMonths = $months - $remainingMonths;
+
+		$set['remain'] = $remainingMonths;
+		$set['done'] = $doneMonths;
+
+		$nextRenewMonth = (date('m', $from) + $remainingMonths) % 12;
+		if(!$nextRenewMonth) {
+			$nextRenewMonth = 12;
+		}
+
+		$nextRenewYear = date('y', $from) + (int)($remainingMonths / 12);
+		$nextRenewDay = date('d', $from);
+
+		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
+
+		// Check if last day
+		if($nextRenewDay === date('t', $from)) {
+			$this->data['eom'] = 1;
+			$nextRenewDay = date('t', $renewDateInitial);
+		} else if($nextRenewDay > date('t', $renewDateInitial)){
+			$nextRenewDay = date('t', $renewDateInitial);
+		}
+
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
+		$set['next_renew_date'] = $renewDate;
+
+		unset($jsonUpdateData['migrated']);
+	}
+	
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = Billrun_Util::getDateBoundQuery();
+		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 		
@@ -247,6 +298,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
+		$this->handlePlanInclude($planRecord);
+//		
+		return true;
+	}
+
+	protected function handlePlanInclude($planRecord) {
+		if(!isset($planRecord['include'])) {
+			return;
+		}
+		
 		$include = $planRecord['include'];
 		foreach ($include as $key => &$val) {
 			if (isset($val['usagev'])) {
@@ -263,12 +324,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 				}
 			}
 		}
-
 		$this->updateQuery['$set']['include'] = $include;
-//		
-		return true;
 	}
-
+	
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -340,7 +398,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	protected function handleDuplicates() {
-		if (!$this->collection->query($this->query)->cursor()->limit(1)->current()->isEmpty()) {
+		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
+		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			

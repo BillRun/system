@@ -1,6 +1,6 @@
 <center>
 	<h2 ng-if='action !== "duplicate"'>{{entity.name}}</h2>
-	<h3 class='subtitle'>{{capitalize(action)}} Charging Plan</h3>
+	<h3 class='subtitle'>{{capitalize(action)}} {{capitalize(plan_type)}} Plan</h3>
 </center>
 <div pretty-error errors="err.data"></div>
 <div>
@@ -49,6 +49,16 @@
 				</div>
 				<div class='col-md-6'>
 					<input ng-model='entity.recurring' type='number' class='form-control' />
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("charging_type", "plans")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("charging_type", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<select ng-model='entity.charging_type' class='form-control' style='height: 55px' multiple>
+						<option ng-repeat='type in availableChargingTypes'>{{type}}</option>
+					</select>
 				</div>
 			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>

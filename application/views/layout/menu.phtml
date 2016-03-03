@@ -99,7 +99,7 @@
 			</li>	
 		<?php endif; ?>
 		<?php if (AdminController::authorized('admin')) : ?>
-			<li class="menu-item-service_providers dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
+			<li class="menu-item-service_providers menu-item-pp_includes dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
 				<a class="dropdown-toggle"
 				   data-toggle="dropdown"
 				   href="">
@@ -118,6 +118,12 @@
 					</li>
 					<li class='menu-item-service_providers'>
 						<a href='<?php echo $this->baseUrl; ?>/admin#/service_providers'>Service Providers</a>
+					</li>
+					<li class='menu-item-pp_includes'>
+						<a href='<?php echo $this->baseUrl; ?>/admin#/pp_includes'>Prepaid Includes</a>
+					</li>
+					<li class='menu-item-bandwidth_cap'>
+						<a href='<?php echo $this->baseUrl; ?>/admin#/bandwidth_cap'>Bandwidth Cap</a>
 					</li>
 				</ul>
 			</li>

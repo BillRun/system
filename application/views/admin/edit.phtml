@@ -103,7 +103,7 @@ print '</div>';
 	</div>
 	<?php endif; ?>
 	<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-	<?php if (AdminController::authorized('write')) : ?>
+	<?php if (AdminController::authorized('write') && $this->type == 'update' ) : ?>
 	<button id="save" class="btn btn-primary">Save changes</button>
 	<?php endif; ?>
 </div>

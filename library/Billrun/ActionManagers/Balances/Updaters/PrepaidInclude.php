@@ -69,16 +69,23 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 
 		// Set subscriber to query.
-		$updateQuery['aid'] = $subscriber['aid'];
-		$updateQuery['sid'] = $subscriber['sid'];
+		$findQuery['aid'] = $subscriber['aid'];
+		$findQuery['sid'] = $subscriber['sid'];
 
 		// Create a default balance record.
 		$defaultBalance = $this->getDefaultBalance($subscriber, $prepaidRecord, $recordToSet);
 
 		$chargingPlan = $this->getPlanObject($prepaidRecord, $recordToSet);
 
-		$updateResult = $this->updateBalance($chargingPlan, $updateQuery, $defaultBalance, $recordToSet['to']);
-
+		// Get the balance with the current value field.
+		$findQuery[$chargingPlan->getFieldName()]['$exists'] = 1;
+		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
+		
+		$updateResult = $this->updateBalance($chargingPlan, $findQuery, $defaultBalance, $recordToSet['to']);
+		if($this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan) === false) {
+			return false;
+		}
+		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
 		$updateResult[0]['subscriber'] = $subscriber;
 		return $updateResult;
@@ -99,6 +106,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$chargingByValue = array($chargingBy => $recordToSet['value']);
 		}
 
+		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
 		
@@ -110,11 +118,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $chargingPlan
-	 * @param MongoDate $toTime - Expiration date.
 	 * @param array $defaultBalance - Default balance to set.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
 		$update = array();
 		$balance = $balancesColl->query($query)->cursor()->current();
 
@@ -125,12 +132,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
 
-			// Take the largest expiration date.
-			if (time($balance['to']) > time($toTime)) {
-				$toTime = $balance['to'];
-			}
-
-			$update = $this->getSetQuery($chargingPlan,$toTime);
+			$update = $this->getSetQuery($chargingPlan);
 		}
 
 		return $update;
@@ -147,11 +149,12 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
-		// Get the balance with the current value field.
-		$query[$chargingPlan->getFieldName()]['$exists'] = 1;
-		$query['pp_includes_external_id'] = $chargingPlan->getPPID();
-
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $toTime, $defaultBalance);
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
 		
 		$options = array(
 			'upsert' => true,
@@ -186,8 +189,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord['charging_by_usaget'];
-		// TODO: This is not the correct way, priority needs to be calculated.
-		$defaultBalance['priority'] = 1;
 
 		return $defaultBalance;
 	}

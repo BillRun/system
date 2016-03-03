@@ -19,7 +19,6 @@ trait Billrun_ActionManagers_ErrorReporter {
 	protected $errorCode = 0;
 	protected $errors = array();
 	
-	
 	/**
 	 * Get the current error of the action.
 	 * @return string the description for the current error.
@@ -28,10 +27,13 @@ trait Billrun_ActionManagers_ErrorReporter {
 		return $this->error;
 	}
 	
+	/**
+	 * Get the current error code of the action.
+	 * @return numeric value of the current error code.
+	 */
 	public function getErrorCode() {
 		return $this->errorCode;
 	}
-
 	
 	/**
 	 * Report an error.
@@ -39,6 +41,10 @@ trait Billrun_ActionManagers_ErrorReporter {
 	 * @param Zend_Log_Filter_Priority $errorLevel
 	 */
 	protected function reportError($errorCode, $errorLevel=Zend_Log::INFO, array $args = array()) {
+		if(empty($this->errors)) {
+			$this->errors = Billrun_Factory::config()->getConfigValue('errors', array());
+		}
+		
 		if (!is_numeric($errorCode)) {
 			$this->error = $errorCode;
 			$this->errorCode = -1;
@@ -47,7 +53,7 @@ trait Billrun_ActionManagers_ErrorReporter {
 				$this->error = $this->errors[$errorCode];
 				
 				if(!empty($args)) {
-					$this->error=vsprintf($this->error, $args);
+ 					$this->error=vsprintf($this->error, $args);
 				}
 				
 				$this->errorCode = $errorCode;

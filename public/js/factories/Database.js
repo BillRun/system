@@ -34,9 +34,13 @@ app.factory('Database', ['$http', function ($http) {
       if (type === undefined) type = 'customer';
       return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
     }
+    function getAvailableInterconnect() {
+      return $http.get(baseUrl + '/admin/getAvailableInterconnect');
+    }
 
-    function getAvailablePPIncludes() {
-      return $http.get(baseUrl + '/admin/getAvailablePPIncludes');
+    function getAvailablePPIncludes(params) {
+      if (params === undefined) params = {};
+      return $http.get(baseUrl + '/admin/getAvailablePPIncludes', {params: params});
     }
 
     function getCollectionItems(params) {
@@ -47,14 +51,34 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getCollectionItems', {params: params});
     }
 
+    function getSubscriberDetails() {
+      return $http.get(baseUrl + '/admin/getSubscriberDetails');
+    }
+
+    function getBandwidthCapDetails() {
+      return $http.get(baseUrl + '/admin/getBandwidthCapDetails');
+    }
+
+    function saveBandwidthCap(params) {
+      return $http.post(baseUrl + '/admin/saveBandwidthCap', params);
+    }
+    function removeBandwidthCap(params) {
+      return $http.post(baseUrl + '/admin/removeBandwidthCap', params);
+    }
+
     return {
       getEntity: getEntity,
       saveEntity: saveEntity,
       removeEntity: removeEntity,
       getAvailablePlans: getAvailablePlans,
+      getAvailableInterconnect: getAvailableInterconnect,
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems,
-      getAvailablePPIncludes: getAvailablePPIncludes
+      getAvailablePPIncludes: getAvailablePPIncludes,
+      getSubscriberDetails: getSubscriberDetails,
+      getBandwidthCapDetails: getBandwidthCapDetails,
+      saveBandwidthCap: saveBandwidthCap,
+      removeBandwidthCap: removeBandwidthCap
     };
   }]);

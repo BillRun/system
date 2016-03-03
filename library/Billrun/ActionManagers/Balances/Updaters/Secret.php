@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		if (isset($query['secret'])) {
 			$query['secret'] = hash('sha512',$query['secret']);
 		} else {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 22;
 			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
@@ -83,7 +83,9 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		$query = array(
 			'_id' => array(
 				'$eq' => $cardRecord['_id']->getMongoID()
-			)
+			), // next fields added because of the sharding (cluster env)
+			'batch_number' => $cardRecord['batch_number'],
+			'serial_number' => $cardRecord['serial_number'],
 		);
 		$update = array(
 			'$set' => array(

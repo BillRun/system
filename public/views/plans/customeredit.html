@@ -49,6 +49,15 @@
 					</span>
 				</div>
 			</div>
+			<h3>Thresholds</h3>
+			<div class='row' ng-repeat='(pp, threshold) in entity.pp_threshold'>
+				<div class='col-md-2'>
+					{{balanceName(pp)}}
+				</div>
+				<div class='col-md-6'>
+					<input type='number' step="any" class='form-control' ng-model='entity.pp_threshold[pp]' />
+				</div>
+			</div>
 
 			<div id='plan-include-groups-div' ng-if="entity.include.groups !== undefined">
 				<h3>Groups</h3>
@@ -139,6 +148,44 @@
 						<div class='col-md-6'>
 							<input type='text' class='form-control' ng-model='newGroupParam[group_name].value' ng-disabled='!newGroupParam[group_name].type' />
 							<i class="add-plan-param glyphicon glyphicon-plus-sign" ng-click='addGroupParam(group_name)'></i>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div ng-if='!_.isEmpty(plan_rates)'>
+				<h3>Rates</h3>
+				<div ng-repeat='type in ["calls", "data", "sms"]'>
+					<label ng-if="type === 'calls'">Call</label>
+					<label ng-if="type === 'data'">Data</label>
+					<label ng-if="type === 'sms'">SMS</label>
+					<div class='table'>
+						<div class='thead'>
+							<div class='th' style='width: 260px;'>Plan</div>
+							<div class='th' style='width: 100px;'>Interval</div>
+							<div class='th' style='width: 130px;'>Price</div>
+							<div class='th' style='width: 130px;'>To</div>
+						</div>
+						<div class='tbody'>
+							<div class='tr parent' ng-repeat='rate in plan_rates' ng-if='rate.price[type].rate'>
+								<div class='table-fix'>
+									<div class='td' style='width: 260px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
+										<a href='#/rates/update/{{rate.id}}?plans=["{{entity.name}}"]'><b>{{rate.key}}</b></a>
+									</div>								
+								</div>
+								<div class='inner-table'>
+									<div class='tr' ng-repeat='t in rate.price[type].rate'>
+										<div class='td' style='width: 100px;'>
+											{{t.interval}}
+										</div>
+										<div class='td' style='width: 130px;'>
+											{{t.price}}
+										</div>
+										<div class='td' style='width: 130px;'>
+											{{t.to}}
+										</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

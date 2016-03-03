@@ -64,7 +64,7 @@
 		<label for="created" class="col-sm-4 control-label text-right">Created Date</label>
 		<div class="col-sm-6">
 			<div class='input-group datetimepicker'>
-				<input type='text' class="form-control" value="<?php echo date('d/m/Y H:i') ?>" name='created'/>
+				<input type='text' class="form-control" value="<?php echo date('d-m-Y H:i') ?>" name='created'/>
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
@@ -76,7 +76,7 @@
 		<label for="expiration" class="col-sm-4 control-label text-right">Expiration Date</label>
 		<div class="col-sm-6">
 			<div class='input-group datetimepicker'>
-				<input type='text' class="form-control" value='<?php echo date('d/m/Y H:i', strtotime('+1 year')); ?>' name='expiration'/>
+				<input type='text' class="form-control" value='<?php echo date('d-m-Y H:i', strtotime('+1 year')); ?>' name='expiration'/>
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>

@@ -90,6 +90,18 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
 		
+		// Handle charging plan values.
+		if(isset($outputDocuments['charging_plan'])) {
+			$chargingPlan = $outputDocuments['charging_plan'];
+			$balanceLine['service_provider'] = $chargingPlan['service_provider'];
+			$chargingType = array();
+			if(isset($chargingPlan['charging_type'])) {
+				$chargingType = $chargingPlan['charging_type'];
+			}
+			$balanceLine['charging_type'] = implode(",",$chargingType);
+			unset($outputDocuments['charging_plan']);
+		}
+		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
@@ -119,7 +131,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	protected function getBalanceValue($balance) {
-		if ($balance['charging_by_usaget'] == 'total_cost') {
+		// TODO: The indicator was 'total_cost' but seems to have changed to 'cost',
+		// to preserve legacy I will now accept both, but we should consider normalizing the logic.
+		if (in_array($balance['charging_by_usaget'], array('cost', 'total_cost'))) {
 			return $balance['balance']['cost'];
 		}
 		return $balance['balance']['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
@@ -153,6 +167,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			if($updaterError) {
 				$this->error = $updaterError;
 				$this->errorCode = $updater->getErrorCode();
+			}
+		}
+		
+		foreach ($outputDocuments as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
 			}
 		}
 		
@@ -348,6 +368,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
+		
+		// Check for recurring.
+		$recurring = $input->get('recurring');
+		if($recurring) {
+			$this->updaterOptions['recurring'] = 1;
+		}
 		
 		return true;
 	}

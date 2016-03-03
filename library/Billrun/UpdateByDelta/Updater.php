@@ -20,6 +20,8 @@
  */
 abstract class Billrun_UpdateByDelta_Updater {
 	
+	use Billrun_ActionManagers_ErrorReporter;
+		
 	/**
 	 * Update the collection by an entity.
 	 * @param array $entity - Entity to update the mongo with.
@@ -92,7 +94,8 @@ abstract class Billrun_UpdateByDelta_Updater {
 		$query = array();
 		foreach ($translateFields as $field=>$translate) {
 			if($this->isMendatoryField($field) && !isset($entity[$translate])) {
-				// TODO: REPORT ERROR.
+				$errorCode = Billrun_Factory::config()->getConfigValue('autorenew_error_base') + 16;
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($translate));
 				return false;
 			}
 			

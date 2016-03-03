@@ -99,7 +99,7 @@ class RealtimeeventAction extends ApiAction {
 		}
 		
 		// some hack for PL (@TODO - move to plugin)
-		if ($this->event['call_type'] == '3') {
+		if (isset($this->event['call_type']) && $this->event['call_type'] == '3') {
 			$this->usaget = 'video_call';
 		}
 		
@@ -162,6 +162,7 @@ class RealtimeeventAction extends ApiAction {
 				}
 				return false;
 			case('call'):
+			case('video_call'):
 				return $data['api_name'];
 			case('sms'):
 				return 'sms';
@@ -170,6 +171,9 @@ class RealtimeeventAction extends ApiAction {
 			case('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No record type found. Params: " . print_R($usaget) . "," . print_R($data), Zend_Log::ERR);
+		return false;
 	}
 	
 	/**
@@ -188,10 +192,13 @@ class RealtimeeventAction extends ApiAction {
 			case ('data'):
 				return 'gy';
 			case ('call'):
+			case ('video_call'):
 				return 'callrt'; //TODO: change name of rate calculator
 			case ('service'):
 				return 'service';
 		}
+		
+		Billrun_Factory::log("No event type found. Usaget: " . print_R($this->usaget), Zend_Log::ERR);
 		return false;
 	}
 	
@@ -232,7 +239,8 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$response = $encoder->encode($responder->getResponse(), "response");
+		$params = array('root' => 'response');
+		$response = $encoder->encode($responder->getResponse(), $params);
 		$this->getController()->setOutput(array($response, 1));
 //		$this->getView()->outputMethod = 'print_r';
 
@@ -269,7 +277,7 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
 			return $event['transaction_id'];
 		}
-		return Billrun_Util::generateRandomNum();
+		return Billrun_Util::generateRandomNum(18);
 	}
 
 }

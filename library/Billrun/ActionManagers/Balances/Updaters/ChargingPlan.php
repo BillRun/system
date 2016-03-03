@@ -62,11 +62,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
 
-		// Get the priority from the plan.
-		if (isset($chargingPlanRecord['priority'])) {
-			$updateQuery['priority'] = $chargingPlanRecord['priority'];
-		}
-
 		return $chargingPlanRecord;
 	}
 
@@ -109,8 +104,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
 
-		// TODO: What if empty?
-		$balancesArray = $chargingPlanRecord['include'];
+		$balancesArray = array();
+		if(isset($chargingPlanRecord['include'])) {
+			$balancesArray = $chargingPlanRecord['include'];
+		}
 		$balancesToReturn = array();
 		
 		// Go through all charging possibilities. 
@@ -144,6 +141,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			}
 		}
 
+		// Set the charging plan record
+		$balancesToReturn['charging_plan'] = $chargingPlanRecord;
 		return $balancesToReturn;
 	}
 
@@ -179,7 +178,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'subscriber' => $subscriber
 		);
 		
-		return $this->goThroughBalanceWallets($params);	
+		$returnPair = $this->goThroughBalanceWallets($params);	
+		
+		if($this->normalizeBalance($returnPair['query'], $subscriber['plan'], $returnPair['wallet']) === false) {
+			return false;
+		}
+		unset($returnPair['query']);
+		return $returnPair;
 	}
 	
 	/**
@@ -231,14 +236,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function updateBalanceByWallet($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
 		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
-
+		
+		$updateQuery['pp_includes_external_id'] = $wallet->getPPID();
+		
+		// Get the balance with the current value field.
+		$updateQuery[$wallet->getFieldName()]['$exists'] = 1;
+		
 		$to = $this->getExpirationTime($wallet, $recordToSet);
 
 		$currentBalance = $this->updateBalance($wallet, $updateQuery, $defaultBalance, $to);
-
+		
 		return array(
 			'balance' => $currentBalance,
-			'wallet' => $wallet
+			'wallet' => $wallet,
+			'query' => $updateQuery
 		);
 	}
 
@@ -273,10 +284,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
 	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @param MongoDate $toTime - Expiration date.
 	 * @return array Query for set updating the balance.
 	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance) {
+	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
@@ -284,7 +294,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
-			$update = $this->getSetQuery($wallet, $toTime);
+			$update = $this->getSetQuery($wallet);
 		}
 
 		return $update;
@@ -297,15 +307,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongoldoid_Entity
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		// HOTFIX: remove priority and use pp_external_id instead
-		unset($query['priority']);
-		$query['pp_includes_external_id'] = $wallet->getPPID();
-		
-		// Get the balance with the current value field.
-		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $toTime, $defaultBalance);
-
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -318,10 +327,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	/**
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
-	 * @param type $chargingPlanRecord
-	 * @param type $recordToSet
 	 */
-	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
+	protected function getDefaultBalance($subscriber) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -349,7 +356,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.
-		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
+//		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
 //		if($planRecord->isEmpty()) {
 //			$this->reportError("Inactive plan for t", $errorLevel);
 //			// TODO: What error should be reported here?
@@ -362,10 +369,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		} else {
 			$defaultBalance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
 		}
-		// This is being set outside of this function!!!
-		//$defaultBalance['charging_by_usaget'] = 
-		// TODO: This is not the correct way, priority needs to be calculated.
-		$defaultBalance['priority'] = 1;
 
 		return $defaultBalance;
 	}
