@@ -29,7 +29,7 @@ abstract class Billrun_Autorenew_Record {
 		if(!is_a($record, "Mongodloid_Entity")) {
 			throw new Exception;
 		}
-		$this->data = $record;
+		$this->data = clone $record;
 	}
 	
 	/**
