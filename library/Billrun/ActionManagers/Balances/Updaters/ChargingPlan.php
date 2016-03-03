@@ -39,6 +39,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		return $recordToSet['to'];
 	}
 
+	protected function getChargingPlanQuery($query) {
+		$charging_plan_query = $query;
+		if($this->recurring) {
+			$charging_plan_query['recurring'] = 1;
+		} else {
+			$charging_plan_query['$or'] = array(
+				array('recurring' => 0),
+				array('recurring' => array('$exists' => 0)),
+			);	
+		}
+		
+		return $charging_plan_query;
+	}
+	
 	/**
 	 * Get the charging plan record and apply values on the queries.
 	 * @param array $query Query to get the balances.
@@ -48,11 +62,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function handleChargingPlan(&$query, &$updateQuery) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
-		$charging_plan_query = $query;
-		$charging_plan_query['$or'] = array(
-			array('recurring' => 0),
-			array('recurring' => array('$exists' => 0)),
-		);
+		$charging_plan_query = $this->getChargingPlanQuery($query);
+		
 		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
@@ -60,7 +71,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
-		$this->setPlanToQuery($charging_plan_query, $chargingPlansCollection, $chargingPlanRecord);
+		$this->setPlanToQuery($query, $chargingPlansCollection, $chargingPlanRecord);
 
 		return $chargingPlanRecord;
 	}
@@ -276,6 +287,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'charging_plan_external_id' => 'external_id',
 			'service_provider' => 'service_provider',
 			'$or' => '$or',
+			'recurring' => 'recurring',
 		);
 	}
 
