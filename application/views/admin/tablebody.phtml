@@ -52,8 +52,7 @@ foreach ($this->data as $item) {
 						$zend_date = new Zend_Date($data);
 						echo $zend_date->toString($dateFormat, 'php');
 					} else {
-						// TODO: How do I report an error here?
-						echo "Error parsing data";
+						echo "";
 					}
 				} 
 			}
