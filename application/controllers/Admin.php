@@ -641,12 +641,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
-   
+                /*
 		$v->validate($params,$coll) ;
 		if(!$v->isValid()) {	   	
 			return $this->responseError($v->getErrors());
 		}
-		
+		*/
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
