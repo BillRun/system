@@ -170,17 +170,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
-		if(!$success) {
+		if($success) {
+			$this->stripTx($outputDocuments);
+		} else {
 			$updaterError = $updater->getError();
 			if($updaterError) {
 				$this->error = $updaterError;
 				$this->errorCode = $updater->getErrorCode();
-			}
-		}
-		
-		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx']);
 			}
 		}
 		
@@ -193,6 +189,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $outputResult;
 	}
 
+	/**
+	 * TODO: THIS IS A PATCH
+	 * Strip the result from the tx values.
+	 * @param type $outputDocuments - output result to strip.
+	 */
+	protected function stripTx(&$outputDocuments) {
+		foreach ($outputDocuments as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+	}
+	
 	/**
 	 * Get the array of fields to be set in the update record from the user input.
 	 * @return array - Array of fields to set.
