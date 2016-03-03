@@ -71,6 +71,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
+		return false; //TODO: temporarely disable data slowness
 		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
 	}
 
