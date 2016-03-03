@@ -113,7 +113,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $results->getRawData();
 	}
 	
-	public function afterSubscriberBalanceAutoRenewUpdate(&$autoRenewRecord) {
+	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
 		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
 		if (!$subscriber) {
 			return false;
