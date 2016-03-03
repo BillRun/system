@@ -178,6 +178,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 		}
 		
+		foreach ($outputDocuments as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+		
 		$outputResult = array(
 			'status'      => $this->errorCode == 0 ? 1 : 0,
 			'desc'        => $this->error,

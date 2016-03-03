@@ -195,9 +195,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 		
 		if(!isset($maxRecord['pp_threshold'][$prepaidID])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 24;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($prepaidID));
-			return false;
+			return 0;
 		}
 		
 		return $maxRecord['pp_threshold'][$prepaidID];
@@ -226,7 +224,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'multi' => 1
+			'multiple' => 1
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
@@ -244,7 +242,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 		
 		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
+		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -259,7 +257,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
 		$query['sid'] = $subscriberId;
 		
 		return $query;

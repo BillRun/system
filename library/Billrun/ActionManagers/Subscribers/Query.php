@@ -90,12 +90,18 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if there is a to field.
 		$to = $input->get('to');
 		$from = $input->get('from');
-		if($to && $from) {
-			$this->subscriberQuery['to'] =
-				array('$lte' => new MongoTimestamp($to));
-			$this->subscriberQuery['from'] = 
-				array('$gte' => new MongoTimestamp($from));
-			$this->queryInRange = true;
+		$this->queryInRange = true;
+		if ($from){
+			$this->subscriberQuery['from'] = array('$lte' => new MongoDate(strtotime($from)));
+		} else {
+			$this->subscriberQuery['from']['$lte'] = new MongoDate();
+			$this->queryInRange = false;
+		}
+		if ($to) {
+			$this->subscriberQuery['to'] = array('$gte' => new MongoDate(strtotime($to)));
+		} else {
+			$this->subscriberQuery['to']['$gte'] = new MongoDate();
+			$this->queryInRange = false;
 		}
 	}
 	
@@ -134,6 +140,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
+		
+		$this->parseDateParameters($input);
 		
 		return true;
 	}

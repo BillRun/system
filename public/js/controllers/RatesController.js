@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout',
-  function ($scope, Database, $controller, $location, $anchorScroll, $timeout) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -269,7 +269,13 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return "";
     };
 
+    $scope.isInterconnect = function () {
+      if (!_.result($scope.entity, "params.interconnect")) return false;
+      return $scope.entity.params.interconnect;
+    };
+
     $scope.init = function () {
+      $rootScope.spinner++;
       $scope.shown = {prefix: false,
         callRates: [],
         smsRates: [],
@@ -294,10 +300,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
               $scope.shown.smsRates[plans] = true;
               $scope.shown.dataRates[plans] = true;
               $location.hash(plans);
+              $anchorScroll.yOffset = 120;
               $anchorScroll();
               $timeout(function() {
-                angular.element('#' + plans).addClass('animated flash')}, 100);
-
+                angular.element('#' + plans).addClass('animated flash');
+              }, 100);
             }
           }
         }
@@ -306,6 +313,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       $scope.availableDataUnits = ['bytes'];
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
+        $timeout(function () { $rootScope.spinner--; }, 0);
       });
       Database.getAvailableInterconnect().then(function (res) {
         $scope.availableInterconnect = res.data;

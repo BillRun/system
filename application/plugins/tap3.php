@@ -324,7 +324,7 @@ use Billrun_Traits_FileSequenceChecking;
 		$processorData['header'] = $processor->buildHeader($parsedData);
 		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 		if (!isset($this->tap3Config[$this->fileVersion])) {
-			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}", Zend_log::NOTICE);
+			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}", Zend_Log::NOTICE);
 			throw new Exception("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}");
 		}
 		$trailer = $processor->buildTrailer($parsedData);

@@ -83,6 +83,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.save = function (redirect) {
       $scope.err = {};
+      if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -109,6 +110,24 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return "";
     };
 
+    $scope.getTDHeight = function (rate) {
+      var height = 32;
+      if (rate.price.calls && !_.isEmpty(rate.price.calls) && !_.isEmpty(rate.price.calls.rate)) {
+        height *= rate.price.calls.rate.length;
+      }
+      if (rate.price.sms && !_.isEmpty(rate.price.sms) && !_.isEmpty(rate.price.sms.rate)) {
+        height *= rate.price.sms.rate.length;
+      }
+      if (rate.price.data && !_.isEmpty(rate.price.data) && !_.isEmpty(rate.price.data.rate)) {
+        height *= rate.price.data.rate.length;
+      }
+      return {
+        height: height,
+        width: "260px",
+        padding: "6px"
+      };
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {
@@ -123,6 +142,12 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity = res.data.entity;
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
+            if ($routeParams.type === "customer") {
+                if (!$scope.entity.pp_threshold) $scope.entity.pp_threshold = {};
+                _.forEach(res.data.ppincludes, function (ppinclude) {
+                    if (!$scope.entity.pp_threshold[ppinclude]) $scope.entity.pp_threshold[ppinclude] = 0;
+                });
+            }
         } else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
           $scope.entity = {
             "name": "",

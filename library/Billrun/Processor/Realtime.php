@@ -84,7 +84,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 				}
 				return $sum;*/
 				if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'))) {
-					return 1;
+					return 0;
 				}
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
 			case ('call'):

@@ -33,7 +33,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin) {
-				Billrun_Log::getInstance()->log("Load plugin " . $plugin, Zend_log::DEBUG);
 				$dispatcher->attach(new $plugin);
 			}
 		}
@@ -43,7 +42,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			$dispatcherChain = Billrun_Dispatcher::getInstance(array('type' => 'chain'));
 
 			foreach ($chains as $chain) {
-				Billrun_Log::getInstance()->log("Load plugin " . $chain, Zend_log::DEBUG);
 				$dispatcherChain->attach(new $chain);
 			}
 		}

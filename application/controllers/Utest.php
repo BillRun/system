@@ -445,7 +445,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			}
 			
 			//Get Archive lines
-			$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+			$this->archiveDb = Billrun_Factory::db();
 			$lines_coll = $this->archiveDb->archiveCollection();
 			$archive_lines = $lines_coll->query(array('u_s' => $rowData['stamp']))->cursor()->sort(array('urt' => 1));
 			foreach ($archive_lines as $archive_line) {

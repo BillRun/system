@@ -19,9 +19,6 @@ trait Billrun_FieldValidator_SOC {
 	 * @return boolean
 	 */
 	protected function validateSOC($SOC) {
-		if ($SOC === '') {
-			return true;
-		}
 		$dataSlowness = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
 		return isset($dataSlowness[$SOC]);
 	}

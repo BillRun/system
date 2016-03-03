@@ -69,6 +69,12 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$this->reportError($errorCode);
 		}
 		
+		foreach ($returnData as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+		
 		$outputResult = array(
 			'status'      => $this->errorCode == 0 ? 1 : 0,
 			'desc'        => $this->error,
@@ -105,7 +111,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @param type $query - Query to set the date in.
 	 * @todo this function should move to a more generic location.
 	 */
-	protected function setDateParameters($dateParameters, $query) {
+	protected function setDateParameters($dateParameters, &$query) {
 		// Go through the date parameters.
 		foreach ($dateParameters as $fieldName => $fieldValue) {
 			list($condition, $value) = each($fieldValue);
@@ -162,7 +168,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		// Set to and from if exists.
 		if(isset($this->balancesQuery['to']) && isset($this->balancesQuery['from'])) {
-			$this->setDateParameters($this->balancesQuery['to'], $this->balancesQuery['from'], $prepaidQuery);
+			$this->setDateParameters(array('to' => $this->balancesQuery['to'], 'from' => $this->balancesQuery['from']), $prepaidQuery);
 		}
 		
 		if(!$this->setPrepaidDataToQuery($prepaidQuery)) {

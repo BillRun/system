@@ -114,11 +114,6 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	public function cancelSlownessByEndedNonRecurringPlans() {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
-		$sort = array(
-			'$sort' => array(
-				'to' => -1,
-			),
-		);
 		$group = array(
 			'$group' => array(
 				'_id' => '$sid',
@@ -127,13 +122,25 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 				'charging_type' => array(
 					'$first' => '$charging_type',
+				),
+				'recurring' => array(
+					'$first' => '$recurring',
 				)
 			),
 		);
+		$beginOfDay = strtotime("midnight", time());
+		$beginOfYesterday = strtotime("yesterday midnight", time());
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
-				'to' => array('$lt' => new MongoDate()),
+				'to' => array(
+					'$gte' => new MongoDate($beginOfYesterday),
+					'$lt' => new MongoDate($beginOfDay),
+				),
+				'$or' => array(
+					array('recurring' => array('$exists' => 0)),
+					array('recurring' => 0),
+				),
 			),
 		);
 		$project = array(
@@ -141,10 +148,25 @@ class CronController extends Yaf_Controller_Abstract {
 				'sid' => '$_id',
 			),
 		);
-		$balances = $balancesCollection->aggregate($sort, $group, $match, $project);
+		$balances = $balancesCollection->aggregate($group, $match, $project);
 		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
+		
+		$this->cancelSubscribersDataSlowness($sids);
+	}
+	
+	/**
+	 * Exit subscribers from data slowness mode
+	 * 
+	 * @param type $sids
+	 */
+	protected function cancelSubscribersDataSlowness($sids = array()) {
+		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => array('$in' => $sids)));
+		$updateQuery = array('$set' => array('in_data_slowness' => FALSE));		
+		$params = array('multiple' => 1);
+		$subscribersColl->update($findQuery, $updateQuery, $params);
 	}
 
 	/**
