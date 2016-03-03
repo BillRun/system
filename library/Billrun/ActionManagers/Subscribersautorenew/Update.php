@@ -238,12 +238,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['remain'] = $remainingMonths;
 		$set['done'] = $doneMonths;
 
-		$nextRenewMonth = (date('m', $from) + $remainingMonths) % 12;
+		$nextRenewMonth = (date('m', $from) + $doneMonths + 1) % 12;
 		if(!$nextRenewMonth) {
 			$nextRenewMonth = 12;
 		}
 
-		$nextRenewYear = date('y', $from) + (int)($remainingMonths / 12);
+		$nextRenewYear = date('y', $to) - (int)($remainingMonths / 12);
 		$nextRenewDay = date('d', $from);
 
 		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
@@ -257,7 +257,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
-		$set['next_renew_date'] = $renewDate;
+		$set['next_renew_date'] = new MongoDate($renewDate);
 
 		unset($jsonUpdateData['migrated']);
 	}
