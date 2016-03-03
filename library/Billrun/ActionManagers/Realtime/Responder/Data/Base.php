@@ -17,6 +17,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	}
 
 	protected function getReturnCode() {
+		if (isset($this->row['in_data_slowness']) && $this->row['in_data_slowness']) {
+			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
+		}
+		
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch($this->row['granted_return_code']) {

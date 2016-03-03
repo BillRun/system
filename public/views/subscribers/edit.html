@@ -49,9 +49,9 @@
 					{{utils.getDisplayValue('plan', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<select ng-model='entity.plan' class='form-control' ng-disabled='utils.disabled("plan", "subscribers")'>
+					<select ng-model='entity.plan' class='form-control' ng-disabled='utils.disabled("plan", "subscribers")'
+							ng-options="plan as plan for plan in availablePlans">
 						<option value='' disabled>Select Plan</option>
-						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
 					</select>
 				</div>
 			</div>
