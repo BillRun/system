@@ -32,7 +32,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function __construct() {
 		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
 		if (in_array('unify', $calculators)) {
-			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+			$this->db = Billrun_Factory::db();
 		} else {
 			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('db', array()));
 		}
@@ -292,7 +292,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
 		if (empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $rebalance_offset);
+			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], (-1) * $rebalance_offset);
 		} else {
 			$rebalanceCost = 0;
 		}

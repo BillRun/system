@@ -52,7 +52,7 @@ class Billrun_Importer_PPThreshold extends Billrun_Importer_Csv {
 		try {
 			$error = '';
 			$updateOptions = array(
-				'multi' => true,
+				'multiple' => true,
 				'upsert' => false
 			);
 			$collectionName = $this->getCollectionName();
