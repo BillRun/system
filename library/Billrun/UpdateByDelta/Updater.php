@@ -93,6 +93,12 @@ abstract class Billrun_UpdateByDelta_Updater {
 	protected function translateEntityToQuery($entity, $translateFields) {
 		$query = array();
 		foreach ($translateFields as $field=>$translate) {
+			// TODO: This is to "fix" the weird empty fields in the config file.
+			if(empty($field)) {
+				Billrun_Factory::log("Received empty values from the config file", Zend_Log::NOTICE);
+				continue;
+			}
+			
 			if($this->isMendatoryField($field) && !isset($entity[$translate])) {
 				$errorCode = Billrun_Factory::config()->getConfigValue('autorenew_error_base') + 16;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($translate));
