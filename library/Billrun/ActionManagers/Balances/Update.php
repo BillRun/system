@@ -303,7 +303,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "Update action does not have a query field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -312,7 +311,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if($this->query===null){
-			$error = "Balances Update: Received more than one filter field";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -320,7 +318,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// No filter found.
 		else if(empty($this->query)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
-			$error = "Balances Update: Did not receive a filter field!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
