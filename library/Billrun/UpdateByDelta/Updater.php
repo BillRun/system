@@ -146,7 +146,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @param array $toBeAdded - Array of records to be added.
 	 * @param array $defaultRecord - The default record to use.
 	 */
-	protected function meltWithDefault($toBeAdded, $defaultRecord) {
+	protected function meltWith($toBeAdded, $defaultRecord) {
 		$melted = array();
 		foreach ($toBeAdded as $record) {
 			$temp = $defaultRecord;
@@ -175,7 +175,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		$toBeAdded = 
 			$this->handleDeltaArrays($expectedReults, $existingRecords);
 		
-		$valuesToAdd = $this->meltWithDefault($toBeAdded, $defaultRecord);
+		$valuesToAdd = $this->meltWith($toBeAdded, $defaultRecord);
 		
 		// Add all the values.
 		return $this->addValues($valuesToAdd);
@@ -242,7 +242,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 			}
 		}
 		
-		return @array_diff($expectedResults, $expectedMatched);
+		return $expectedMatched;
 	}
 	
 	/**
@@ -290,7 +290,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		}
 
 		// Update the record.
-		return $this->updateRecordByDiff($existing, array_diff($expected, $existing));
+		return $this->updateRecordByDiff($existing, array_diff_assoc($expected, $existing));
 	}
 	
 	/**
