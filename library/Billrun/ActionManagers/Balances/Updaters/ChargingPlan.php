@@ -108,36 +108,34 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if(isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-		$balancesToReturn = array();
+		$balancesToReturn = array('updated' => false);
 		
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
+			// TODO: Shouldn't we check using Billrun_Util::isMultidimentionalArray 
+			// instead of Billrun_Util::isAssoc? (The last checks if it is an associated array,
+			// the second checks if it is an array of arrays).
 			if (Billrun_Util::isAssoc($chargingByValue)) {
-				$returnPair = 
-					$this->getReturnPair($chargingByValue, 
-										 $chargingBy, 
-										 $subscriber, 
-								 		 $chargingPlanRecord, 
-										 $recordToSet, 
-										 $updateQuery);
+				$chargingByValue = array($chargingByValue);
+			}
+			
+			// There is more than one value pair in the wallet.
+			foreach ($chargingByValue as $chargingByValueValue) {
+				$returnPair = $this->getReturnPair($chargingByValueValue, 
+												   $chargingBy, 
+												   $subscriber, 
+												   $chargingPlanRecord, 
+												   $recordToSet,
+												   $updateQuery);
 				if($returnPair === false) {
 					return false;
 				}
-				$balancesToReturn[] = $returnPair;
-			} else {
-				// There is more than one value pair in the wallet.
-				foreach ($chargingByValue as $chargingByValueValue) {
-					$returnPair = $this->getReturnPair($chargingByValueValue, 
-											 		   $chargingBy, 
-											 		   $subscriber, 
-													   $chargingPlanRecord, 
-													   $recordToSet,
-													   $updateQuery);
-					if($returnPair === false) {
-						return false;
-					}
-					$balancesToReturn[] = $returnPair;
+				
+				if(isset($returnPair['updated']) && $returnPair['updated']) {
+					$balancesToReturn['updated'] = true;
 				}
+				
+				$balancesToReturn[] = $returnPair;
 			}
 		}
 
@@ -180,9 +178,23 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		$returnPair = $this->goThroughBalanceWallets($params);	
 		
-		if($this->normalizeBalance($returnPair['query'], $subscriber['plan'], $returnPair['wallet']) === false) {
+		$wallet = $returnPair['wallet'];
+		$normalizeResult = $this->normalizeBalance($returnPair['query'], $subscriber['plan'], $wallet);
+		if($normalizeResult === false) {
 			return false;
 		}
+		
+		// Report on changes
+		if($normalizeResult['nModified'] > 0) {
+			$valueName = $wallet->getFieldName();
+			$beforeNormalizing = $returnPair['balance'][$valueName];
+			$returnPair['balance'][$valueName] = $normalizeResult['max'];
+			$returnPair['normalized']['before'] = $beforeNormalizing - $wallet->getValue();
+			$returnPair['normalized']['after'] = $beforeNormalizing;
+			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
+			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+		}
+		
 		unset($returnPair['query']);
 		return $returnPair;
 	}

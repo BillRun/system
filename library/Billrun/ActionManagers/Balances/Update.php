@@ -102,6 +102,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			unset($outputDocuments['charging_plan']);
 		}
 		
+		unset($outputDocuments['updated']);
+		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
@@ -121,6 +123,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
 
 			}
+			
+			// TODO: Move this logic to a updater_balance class.
+			if(isset($balancePair['normalized'])) {
+				$insertLine['normalized'] = $balancePair['normalized'];
+			}
+			
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
 			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
 			$linesCollection->insert($insertLine);
@@ -162,17 +170,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$outputDocuments = $this->reportInLines($outputDocuments);
 		}
 		
-		if(!$success) {
+		if($success) {
+			$this->stripTx($outputDocuments);
+		} else {
 			$updaterError = $updater->getError();
 			if($updaterError) {
 				$this->error = $updaterError;
 				$this->errorCode = $updater->getErrorCode();
-			}
-		}
-		
-		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx']);
 			}
 		}
 		
@@ -185,6 +189,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $outputResult;
 	}
 
+	/**
+	 * TODO: THIS IS A PATCH
+	 * Strip the result from the tx values.
+	 * @param type $outputDocuments - output result to strip.
+	 */
+	protected function stripTx(&$outputDocuments) {
+		foreach ($outputDocuments as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+	}
+	
 	/**
 	 * Get the array of fields to be set in the update record from the user input.
 	 * @return array - Array of fields to set.
@@ -295,7 +312,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "Update action does not have a query field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -304,7 +320,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if($this->query===null){
-			$error = "Balances Update: Received more than one filter field";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -312,7 +327,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// No filter found.
 		else if(empty($this->query)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
-			$error = "Balances Update: Did not receive a filter field!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

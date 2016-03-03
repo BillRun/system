@@ -69,9 +69,22 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		);
 		
 		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
-		if ($ret !== FALSE) {
+		
+		if ($ret === FALSE) {
+			return false;
+		}
+		
+		// TODO: To the request of Pelephone, we always singal a card as used after
+		// being loaded into a balance EVEN IF NON IS ACTUALLY LOADED INTO THE BALANCE!
+		// To prevent the latter from happening, remove the 'true' in the following if 
+		// statement. The $ret['updated'] is an indication for a change in the balance 
+		// wallet, which means that the card was loaded, even if partially, and should be 
+		// signaled as used.  If the $ret['updated'] is false, nothing was actually loaded
+		// into the account.
+		if(true || $ret['updated']) {
 			$this->signalCardAsUsed($cardRecord, $subscriberId);
 		}
+		unset($ret['updated']);
 		return $ret;
 	}
 	

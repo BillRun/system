@@ -161,7 +161,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 	 * @param string $field - Field to check
 	 * @return true if the field is mendatory.
 	 */
-	protected function isMendatoryField($field) {
+	protected function isMendatoryField($field) {		
 		if(empty($this->mendatoryFields)) {
 			$this->mendatoryFields = Billrun_Factory::config()->getConfigValue('autorenew.mendatory', array());
 		}
