@@ -157,6 +157,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		//$pp_aggregated = $lines_coll->aggregate();
 		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$sort = json_decode('{"$sort": {"urt": 1}}');
 		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
 		foreach ($lines as $line) {
@@ -165,7 +166,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$detailed[] = $l;
 		}
 		$aggregated = array();
-		$pp_aggregated = $lines_coll->aggregate($match, $group);
+		$pp_aggregated = $lines_coll->aggregate($match, $sort, $group);
 		foreach($pp_aggregated as $ppagg) {
 			$aggregated[] = $ppagg->getRawData();
 		}
