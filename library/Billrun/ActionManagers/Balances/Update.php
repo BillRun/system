@@ -86,7 +86,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
 			$insertLine["balance_after"] = $balance_after;
 		}
-		$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
+		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
 	
 	/**
