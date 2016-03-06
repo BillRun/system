@@ -74,6 +74,21 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 	
+	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet) {
+		$insertLine["usaget"] = 'balance';
+		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
+		$insertLine["usagev"] = $wallet->getValue();
+		$insertLine["pp_includes_name"] = $wallet->getPPName();
+		$insertLine["pp_includes_external_id"] = $wallet->getPPID();
+
+		if(!isset($insertLine['normalized'])) {
+			$balance_after = $this->getBalanceValue($balance);
+			$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
+			$insertLine["balance_after"] = $balance_after;
+		}
+		$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
+	}
+	
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
@@ -110,23 +125,16 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine = $balanceLine;
 			$insertLine['aid'] = $subscriber['aid'];
 			$insertLine['source_ref'] = $balancePair['source'];
-			if (isset($balancePair['wallet'])) {
-				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = 'balance';
-				$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
-				$insertLine["usagev"] = $wallet->getValue();
-				$insertLine["pp_includes_name"] = $wallet->getPPName();
-				$insertLine["pp_includes_external_id"] = $wallet->getPPID();
-				$balance_after = $this->getBalanceValue($balance);
-				$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
-				$insertLine["balance_after"] = $balance_after;
-				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
-
-			}
 			
 			// TODO: Move this logic to a updater_balance class.
 			if(isset($balancePair['normalized'])) {
-				$insertLine['normalized'] = $balancePair['normalized'];
+				$insertLine['normalized'] = $balancePair['normalized']['normalized'];
+				$insertLine["balance_before"] = $balancePair['normalized']['before'];
+				$insertLine["balance_after"] = $balancePair['normalized']['after'];
+			}
+			
+			if (isset($balancePair['wallet'])) {
+				$this->reportInLinesHandleWallet($insertLine, $balance, $balancePair['wallet']);
 			}
 			
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
