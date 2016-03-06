@@ -251,10 +251,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			
 			// Only certain subscribers can use data from CORE BALANCE
 			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
-			if ($plan){
-				if (!isset($plan['data_from_core']) || !$plan['data_from_core']) {
-					array_push($pp_includes_external_ids, 1,2,9,10);
-				}
+			if ($plan && !isset($plan['data_from_currency']) || !$plan['data_from_currency']) {
+				array_push($pp_includes_external_ids, 1, 2, 9, 10);
 			}
 
 			if (count($pp_includes_external_ids)) {
