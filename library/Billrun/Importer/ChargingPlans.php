@@ -236,5 +236,9 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	protected function getTo() {
 		return new MongoDate(strtotime('2099-12-31'));
 	}
+	
+	protected function getDataFromCoreBalance($rowData) {
+		return ($rowData[$this->fieldsColumns['service_provider']] === 'Pelephone');
+	}
 
 }

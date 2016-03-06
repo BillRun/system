@@ -248,6 +248,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($rate['params']['premium']) && $rate['params']['premium']) {
 				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
 			}
+			
+			// Only certain subscribers can use data from CORE BALANCE
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
+			if ($plan){
+				if (!isset($plan['data_from_core']) || !$plan['data_from_core']) {
+					array_push($pp_includes_external_ids, 1,2,9,10);
+				}
+			}
 
 			if (count($pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
