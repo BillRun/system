@@ -71,7 +71,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return false; //TODO: temporarely disable data slowness
 		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
 	}
 
@@ -150,7 +149,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param bool $sendToProv true - send to provisioning, false - don't send to provisioning
 	 */
 	protected function updateSubscriberInDataSlowness($row, $enterToDataSlowness = true, $sendToProv = true) {
-		return false; //TODO: temporarily disable data_slowness
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
@@ -191,9 +189,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'root' => 'REQUEST',
 			'addHeader' => false,
 		);
-		$request = array($encoder->encode($requestBody, $params));
+		$request = $encoder->encode($requestBody, $params);
 		$requestUrl = $slownessParams['requestUrl'];
-		return Billrun_Util::sendRequest($requestUrl, $request);
+		Billrun_Factory::log('Sending request to prov. Details: ' . $request,  Zend_Log::DEBUG);
+		$response = Billrun_Util::sendRequest($requestUrl, $request);
+		Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
+		return $response;
 	}
 
 	/**
