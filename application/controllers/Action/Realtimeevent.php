@@ -239,7 +239,8 @@ class RealtimeeventAction extends ApiAction {
 			return false;
 		}
 
-		$response = $encoder->encode($responder->getResponse(), "response");
+		$params = array('root' => 'response');
+		$response = $encoder->encode($responder->getResponse(), $params);
 		$this->getController()->setOutput(array($response, 1));
 //		$this->getView()->outputMethod = 'print_r';
 
@@ -276,7 +277,7 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
 			return $event['transaction_id'];
 		}
-		return Billrun_Util::generateRandomNum();
+		return Billrun_Util::generateRandomNum(18);
 	}
 
 }

@@ -71,6 +71,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
+		return false; //TODO: temporarely disable data slowness
 		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
 	}
 
@@ -97,6 +98,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'command' => $slownessParams['command'],
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
+			'sendRequestToProv' => $slownessParams['sendRequestToProv'],
 		);
 	}
 	
@@ -112,12 +114,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $results->getRawData();
 	}
 	
-	public function afterSubscriberBalanceAutoRenewUpdate(&$autoRenewRecord) {
+	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
 		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
 		if (!$subscriber) {
 			return false;
 		}
-		$this->updateSubscriberToDataSlowness($subscriber, false);
+		$this->updateSubscriberInDataSlowness($subscriber, false, true);
 	}
 
 	public function afterSubscriberBalanceNotFound(&$row) {
@@ -126,7 +128,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($this->isSubscriberInDataSlowness($row)) {
 				$in_slowness = TRUE;
 			} else if ($this->canSubscriberEnterDataSlowness($row)) {
-				$this->updateSubscriberToDataSlowness($row, true);
+				$this->updateSubscriberInDataSlowness($row, true, true);
 				$row['in_data_slowness'] = TRUE;
 				$in_slowness = TRUE;
 			}
@@ -145,8 +147,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $row
 	 * @param bool $enterToDataSlowness true - enter to data slowness, false - exit from data slowness
+	 * @param bool $sendToProv true - send to provisioning, false - don't send to provisioning
 	 */
-	protected function updateSubscriberToDataSlowness($row, $enterToDataSlowness = true) {
+	protected function updateSubscriberInDataSlowness($row, $enterToDataSlowness = true, $sendToProv = true) {
+		return false; //TODO: temporarily disable data_slowness
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
@@ -156,7 +160,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$updateQuery = array('$unset' => array('in_data_slowness' => 1));		
 		}
 		$subscribersColl->update($findQuery, $updateQuery);
-		$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code'], $enterToDataSlowness);
+		if ($sendToProv) {
+			$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code'], $enterToDataSlowness);
+		}
 	}
 	
 	/**
@@ -164,9 +170,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $msisdn
 	 * @param string $subscriberSoc
 	 */
-	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
-		$encoder = new Billrun_Encoder_Xml();
+	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
+		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
+			return;
+		}
+		$encoder = new Billrun_Encoder_Xml();
 		$requestBody = array(
 			'HEADER' => array(
 				'APPLICATION_ID' => $slownessParams['applicationId'],
@@ -178,7 +187,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
 		);
-		$request = array($encoder->encode($requestBody, "REQUEST"));
+		$params = array(
+			'root' => 'REQUEST',
+			'addHeader' => false,
+		);
+		$request = array($encoder->encode($requestBody, $params));
 		$requestUrl = $slownessParams['requestUrl'];
 		return Billrun_Util::sendRequest($requestUrl, $request);
 	}

@@ -166,7 +166,7 @@ class SubscribersModel extends TabledateModel{
 	}
 
 	public function getBySid($sid) {
-		$entity = $this->subscribers_coll->query(array('sid' => intval($sid)))->cursor()->current();
+		$entity = $this->subscribers_coll->query(array('sid' => intval($sid)))->cursor()->sort(array('_id' => -1))->limit(1)->current();
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
 		if ($entity['from'] && isset($entity['from']->sec))

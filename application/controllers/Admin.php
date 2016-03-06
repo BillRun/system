@@ -35,12 +35,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		if (Billrun_Factory::config()->isProd()) {
-			// TODO: set the branch through config
-			$branch = 'version_40';
-			if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-				$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
+				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
+				$branch = rtrim(end(explode('/', $HEAD)));
+				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
+					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
+				} else {
+					$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				}
 			} else {
-				$this->commit = md5(date('ymd')); // cache for 1 calendar day
+				$this->commit = md5(date('ymd'));
 			}
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
@@ -61,7 +65,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
-		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/moment.min.js');
 		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
@@ -71,9 +75,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
@@ -81,6 +85,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/xeditable.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -146,7 +151,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getLineDetailsFromArchiveAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$this->archiveDb = Billrun_Factory::db();
 		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
@@ -219,9 +224,17 @@ class AdminController extends Yaf_Controller_Abstract {
 					);
 					$plan_rates[] = $cur_rate;
 				}
+                                $ppincludes = array();
+                                if ($entity['type'] === "customer") {
+                                    foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
+                                        $pp = $ppinclude->getRawData();
+                                        $ppincludes[] = (string)$pp['external_id'];
+                                    }
+                                    sort($ppincludes);
+                                }
 				
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates)));
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes)));
 			$response->response();
 			return false;			
 		}
@@ -626,14 +639,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
 		
-		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_log::INFO);
+		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
-   
+                /*
 		$v->validate($params,$coll) ;
 		if(!$v->isValid()) {	   	
 			return $this->responseError($v->getErrors());
 		}
-		
+		*/
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -844,7 +857,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 			if ($result->isValid()) {
 				$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_log::INFO);
+				Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 				// TODO: stringify to url encoding (A-Z,a-z,0-9)
 				$ret_action = $this->getRequest()->get('ret_action');
 //				if (empty($ret_action)) {
@@ -1300,7 +1313,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$key = $source_name;
 		}
 		$var = $request->get($key);
-		if (in_array($source_name, $global_session_vars) && !isset($var)) {
+		if (in_array($source_name, $global_session_vars) && !isset($var) && isset($getsetvar_session->$source_name)) {
 			$var = $getsetvar_session->$source_name;
 			$session->$source_name = $var;
 		}

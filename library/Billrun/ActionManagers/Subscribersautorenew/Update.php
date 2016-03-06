@@ -202,14 +202,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$set['next_renew_date'] = $set['from'];
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
-			if(isset($jsonUpdateData['migrated'])) {
-				// Indicating that the last renew date is unknown.
-				$set['last_renew_date'] = -1;
-			} else {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 42;
-				$this->reportError($errorCode, Zend_Log::ALERT);
-				return false;	
-			}
+			$set['last_renew_date'] = -1;
 		}
 		
 		if (isset($jsonUpdateData['to']->sec)) {
@@ -230,6 +223,19 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		return true;
 	}
 	
+	protected function getBaseTime($to, $from) {
+		$baseTime = time();
+		if($baseTime < $from) {
+			$baseTime = $from;
+		}
+		
+		if($baseTime > $to) {
+			$baseTime = $to;
+		}
+		
+		return $baseTime;
+	}
+	
 	/**
 	 * Handle a migrated auto renew record.
 	 * @param type $jsonUpdateData
@@ -239,18 +245,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 */
 	protected function handleMigrated(&$jsonUpdateData, &$set, $from, $to) {
 		$months = $set['remain'];
-		$remainingMonths = Billrun_Util::countMonths(time(), $to);
-		$doneMonths = $months - $remainingMonths;
+		$baseTime = $this->getBaseTime($to, $from);
+		
+		$doneMonths = Billrun_Util::countMonths($from, $baseTime);
+		if($from > time()) {
+			$doneMonths -= 1;
+		}
+		
+		$remainingMonths = $months - $doneMonths;
 
 		$set['remain'] = $remainingMonths;
 		$set['done'] = $doneMonths;
 
-		$nextRenewMonth = (date('m', $from) + $remainingMonths) % 12;
+		$fromMonth = date('m', $from);
+		$nextRenewMonth = ($fromMonth + $doneMonths) % 12;
 		if(!$nextRenewMonth) {
 			$nextRenewMonth = 12;
 		}
 
-		$nextRenewYear = date('y', $from) + (int)($remainingMonths / 12);
+		$nextRenewYear = date('y', $from) + (int)(($fromMonth + $doneMonths) / 12);
 		$nextRenewDay = date('d', $from);
 
 		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
@@ -264,7 +277,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
-		$set['next_renew_date'] = $renewDate;
+		$set['next_renew_date'] = new MongoDate($renewDate);
 
 		unset($jsonUpdateData['migrated']);
 	}

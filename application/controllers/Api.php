@@ -20,6 +20,8 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @var mixed
 	 */
 	protected $output;
+	
+	protected $start_time = 0;
 
 	/**
 	 * initialize method for yaf controller (instead of constructor)
@@ -32,6 +34,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		$this->start_time = microtime(1);
 	}
 
 	/**
@@ -153,9 +156,10 @@ class ApiController extends Yaf_Controller_Abstract {
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1,1000000),
+			'time' => (microtime(1) - $this->start_time)*1000,
 		);
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
-		$this->logColl->save(new Mongodloid_Entity($saveData));
+		$this->logColl->save(new Mongodloid_Entity($saveData), 0);
 	}
 	
 }

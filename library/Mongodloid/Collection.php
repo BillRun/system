@@ -13,7 +13,7 @@ class Mongodloid_Collection {
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
 
-	protected $w = 'majority';
+	protected $w = 1;
 	protected $j = false;
 
 	/**

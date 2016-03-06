@@ -2,20 +2,20 @@ PERIODIC_CHARGE,COUNT(*),סוג ההטבה,SP_Name,שם מסלול,חשבון ר
 DATA13GB12M,1263,Set,Pelephone,PP_Netstick_Talk,,,12.5,,,,
 DATA25GB24M,600,Set,Pelephone,PP_Netstick_Talk,,,12.5,,,,
 DATA37GB36M,1779,Set,Pelephone,PP_Netstick_Talk,,,12.5,,,,
-DATA3GB12M,305,Set,Pelephone,PP_Netstick_Talk,,,,,,3GB,
-PREPOST_0,46418,Set,Z_prepost,Z_Prepost_1,,10,,10,,,
-PREPOST_1,16,Set,Z_prepost,Z_Prepost_1,,100,3,100,,,
-PREPOST_1B,22,Set,Z_prepost,Z_Prepost_1,,100,3,100,,,
-PREPOST_2,3,Set,Z_prepost,Z_Prepost_1,,250,3,1000,,,
-PREPOST_3,7,Set,Z_prepost,Z_Prepost_1,,250,3,,1000,,
-PREPOST_30_1,16,Set,Z_prepost,Z_Prepost_1,,,,,,,30
-PREPOST_30_1B,22,Set,Z_prepost,Z_Prepost_1,,,,,,,30
-PREPOST_30_2,3,Set,Z_prepost,Z_Prepost_1,,,,,,,30
-PREPOST_30_3,7,Set,Z_prepost,Z_Prepost_1,,,,,,,30
-PREPOST_5,5,Set,Z_prepost,Z_Prepost_1,,150,3,150,150,,
-PREPOST_50_5,5,Set,Z_prepost,Z_Prepost_1,,,,,,,50
-PREPOST_50_6,3,Set,Z_prepost,Z_Prepost_1,,,,,,,50
-PREPOST_6,3,Set,Z_prepost,Z_Prepost_1,,250,3,,1000,,
+DATA3GB12M,305,Set,Pelephone,PP_Netstick_Talk,,,,,,3221225472,
+PREPOST_0,46418,Set,Z_Prepost,Z_Prepost_1,,600,,10,,,
+PREPOST_1,16,Set,Z_Prepost,Z_Prepost_1,,6000,3,100,,,
+PREPOST_1B,22,Set,Z_Prepost,Z_Prepost_1,,6000,3,100,,,
+PREPOST_2,3,Set,Z_Prepost,Z_Prepost_1,,15000,3,1000,,,
+PREPOST_3,7,Set,Z_Prepost,Z_Prepost_1,,15000,3,,60000,,
+PREPOST_30_1,16,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_1B,22,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_2,3,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_3,7,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_5,5,Set,Z_Prepost,Z_Prepost_1,,9000,3,150,9000,,
+PREPOST_50_5,5,Set,Z_Prepost,Z_Prepost_1,,,,,,,50
+PREPOST_50_6,3,Set,Z_Prepost,Z_Prepost_1,,,,,,,50
+PREPOST_6,3,Set,Z_Prepost,Z_Prepost_1,,15000,3,,60000,,
 REG_BONUS_11,1,Set,Pelephone,שאר המסלולים,,,,,,,20
 REG_BONUS_16,1,Set,Pelephone,שאר המסלולים,,,,,,,10
 REG_BONUS_18,446,Set,Pelephone,שאר המסלולים,,,,,,,15
