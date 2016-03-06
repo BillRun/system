@@ -497,12 +497,12 @@ function detailFormatter(index, row) {
         var idx = i + 1;
         //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
         $tr.append("<td>" + idx + "</td>");
-        $tr.append("<td>" + aggregate._id.pp_includes_external_id + "</td>");
-        $tr.append("<td>" + aggregate._id.pp_includes_name + "</td>");
-        $tr.append("<td>" + aggregate.s_usagev + "</td>");
-        $tr.append("<td>" + aggregate.s_price.toFixed(6) + "</td>");
-        $tr.append("<td>" + aggregate.balance_before + "</td>");
-        $tr.append("<td>" + aggregate.balance_after + "</td>");
+        $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
+        $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
+        $tr.append("<td>" + (aggregate.s_usagev ? aggregate.s_usagev : "") + "</td>");
+        $tr.append("<td>" + (aggregate.s_price ? aggregate.s_price.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + (aggregate.balance_before ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
+        $tr.append("<td>" + (aggregate.balance_after ? aggregate.balance_after.toFixed(6) : "") + "</td>");
         $aggregated_table.append($tr);
       });
       $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
@@ -517,18 +517,18 @@ function detailFormatter(index, row) {
         var idx = i + 1;
         var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
-        $tr.append("<td>" + line.pp_includes_external_id + "</td>");
-        $tr.append("<td>" + line.pp_includes_name + "</td>");
-        $tr.append("<td>" + line.usage_unit + "</td>");
+        $tr.append("<td>" + (line.pp_includes_external_id ? line.pp_includes_external_id : "") + "</td>");
+        $tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");
+        $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
         if (line.usaget === "data")
-          $tr.append("<td>" + line.record_type + "</td>");
+          $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
         else
-          $tr.append("<td>" + line.api_name + "</td>");
-        $tr.append("<td>" + line.usagev + "</td>");
-        $tr.append("<td>" + line.aprice.toFixed(6) + "</td>");
-        $tr.append("<td>" + line.balance_before.toFixed(6) + "</td>");
-        $tr.append("<td>" + line.balance_after.toFixed(6) + "</td>");
-        $tr.append("<td>" + moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') + "</td>");
+          $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
+        $tr.append("<td>" + (line.usagev ? line.usagev : "") + "</td>");
+        $tr.append("<td>" + (line.aprice ? line.aprice.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + (line.balance_before ? line.balance_before.toFixed(6) : "" ) + "</td>");
+        $tr.append("<td>" + (line.balance_after ? line.balance_after.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + ((line.urt && line.urt.sec) ? moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') : "") + "</td>");
         $table.append($tr);
       });
       $aggregated_table.after("<br/>", $title, "<br/>", $table);

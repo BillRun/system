@@ -71,6 +71,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
+		return false; //TODO: temporarely disable data slowness
 		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
 	}
 
@@ -113,7 +114,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $results->getRawData();
 	}
 	
-	public function afterSubscriberBalanceAutoRenewUpdate(&$autoRenewRecord) {
+	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
 		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
 		if (!$subscriber) {
 			return false;

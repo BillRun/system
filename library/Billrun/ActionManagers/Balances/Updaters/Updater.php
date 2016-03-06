@@ -228,7 +228,9 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
-		return $balancesColl->update($query, $updateQuery, $options);
+		$updateResult = $balancesColl->update($query, $updateQuery, $options);
+		$updateResult['max'] = $maxValue;
+		return $updateResult;
 	}
 	
 	/**
@@ -243,7 +245,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriberId));
 			return false;
 		}
 		return $results->getRawData();
@@ -360,7 +362,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		
 		// Check if recurring.
 		if($this->recurring) {
-			$defaultBalance['$set']['recurring'] = 1;
+			$defaultBalance['recurring'] = 1;
 		}	
 		
 		return array(
