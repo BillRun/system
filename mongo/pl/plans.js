@@ -13,3 +13,4 @@ db.tmp_COS_SERVICEPROVIDERS.find().forEach(
 	}
 );
 
+db.plans.update({"name":{$in:["PP_Class1_Int","PP_Class1","PP_Class2","PP_Class2_Int","PP_Class3_Int","PP_Class3","PP_Dat_Int","PP_Peak_59","PP_ESC","PP_ESC_Int","PP_Mango_Pro","PP_Mango_Card","PP_Flat_Rate","PP_ESC_Minute","PP_IZI_Minute_1","PP_IZI_12_1","PP_Pele_Hul_1","PP_IZI49","PP_IZI75","PP_Flat_Rate_69","PP_Fix_72","PP_Flat_55","PP_Flat_84","PP_UMTS_1","TEST_1","PP_Pele_Hul_2","PP_UMTS_2","PP_Fix_49","PP_Block"]}},{$set:{"data_from_core":true}},{multi:1});
