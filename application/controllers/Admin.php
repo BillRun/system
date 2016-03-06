@@ -65,7 +65,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
-		$this->addJs($this->baseUrl . '/js/moment.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/moment.min.js');
 		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
