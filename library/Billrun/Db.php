@@ -39,7 +39,8 @@ class Billrun_Db extends Mongodloid_Db {
 			// see also bugs: 
 			// https://jira.mongodb.org/browse/PHP-1099
 			// https://jira.mongodb.org/browse/PHP-1080
-			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
+			$wc = $db->getWriteConcern();
+			$db->setWriteConcern($wc['w'], $timeout);
 		}
 	}
 
