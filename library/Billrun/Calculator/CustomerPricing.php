@@ -263,7 +263,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 * @todo Add compatiblity to prepaid
 	 */
-	public function loadSubscriberBalance($row) {
+	public function loadSubscriberBalance($row, $granted_volume = 0, $granted_cost = 0) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -274,7 +274,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$row['plan_ref'] = $plan_ref;
-		$balance = new Billrun_Balance($row);
+		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
+		$balance = new Billrun_Balance($instanceOptions);
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
@@ -578,12 +579,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
 		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
-		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
+		$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
+		$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+		$granted_cost = $charges['total'];
+		if (!$this->loadSubscriberBalance($row, $granted_volume, $granted_cost)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
-				$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
-				$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
-				$granted_cost = $charges['total'];
 				if ($granted_cost == '0') {
 					return array(
 						$this->pricingField => $granted_cost,

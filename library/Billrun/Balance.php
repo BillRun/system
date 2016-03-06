@@ -30,6 +30,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	protected $data = array();
 	protected $collection = null;
+	
+	protected $granted = array();
 
 	/**
 	 * Saves the name of the selected balance type cost/usagev/total_cost.
@@ -46,6 +48,14 @@ class Billrun_Balance extends Mongodloid_Entity {
 		if (!isset($options['sid']) || !isset($options['aid'])) {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return false;
+		}
+		
+		if (isset($options['granted_usagev'])) {
+			$this->granted['usagev'] = (-1) * $options['granted_usagev'];
+		}
+
+		if (isset($options['granted_cost'])) {
+			$this->granted['cost'] = (-1) * $options['granted_cost'];
 		}
 
 		if (!isset($options['charging_type'])) {
@@ -152,8 +162,17 @@ class Billrun_Balance extends Mongodloid_Entity {
 			'to' => array('$gte' => $timeNow),
 		);
 
-		$minCost = (float) Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')); // float avoid set type to int
-		$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+		if (isset($this->granted['usagev'])) {
+			$minUsage = $this->granted['usagev'];
+		} else {
+			$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+		}
+		
+		if (isset($this->granted['cost'])) {
+			$minCost = $this->granted['cost'];
+		} else {
+			$minCost = (float) Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')); // float avoid set type to int
+		}
 
 		if ($chargingType === 'prepaid') {
 			$query['$or'] = array(
