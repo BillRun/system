@@ -128,9 +128,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 			// TODO: Move this logic to a updater_balance class.
 			if(isset($balancePair['normalized'])) {
-				$insertLine['normalized'] = $balancePair['normalized']['normalized'];
 				$insertLine["balance_before"] = $balancePair['normalized']['before'];
-				$insertLine["balance_after"] = $balancePair['normalized']['after'];
+				$insertLine["balance_after"] = $balancePair['normalized']['normalized'];
+				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
+				$insertLine['normalized'] = $reducted;
 			}
 			
 			if (isset($balancePair['wallet'])) {
