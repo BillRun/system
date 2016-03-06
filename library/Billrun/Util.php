@@ -980,7 +980,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1002,10 +1002,14 @@ class Billrun_Util {
 		$client->setMethod($method);
 
 		if (!empty($data)) {
-			if ($zendMethod == Zend_Http_Client::POST) {
-				$client->setParameterPost($data);
+			if (!is_array($data)) {	
+				$client->setRawData($data);
 			} else {
-				$client->setParameterGet($data);
+				if ($zendMethod == Zend_Http_Client::POST) {
+					$client->setParameterPost($data);
+				} else {
+					$client->setParameterGet($data);
+				}
 			}
 		}
 		try {
