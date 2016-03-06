@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout',
-  function ($scope, Database, $controller, $location, $anchorScroll, $timeout) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -275,6 +275,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     };
 
     $scope.init = function () {
+      $rootScope.spinner++;
       $scope.shown = {prefix: false,
         callRates: [],
         smsRates: [],
@@ -312,6 +313,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       $scope.availableDataUnits = ['bytes'];
       Database.getAvailablePlans().then(function (res) {
         $scope.availablePlans = res.data;
+        $timeout(function () { $rootScope.spinner--; }, 0);
       });
       Database.getAvailableInterconnect().then(function (res) {
         $scope.availableInterconnect = res.data;

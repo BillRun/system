@@ -253,11 +253,11 @@ class TableModel {
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
 		if ($entity['from'] && isset($entity['from']->sec))
-			$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->getIso();
 		if ($entity['to'] && isset($entity['to']->sec))
-			$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->getIso();
 		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
-			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
 		return $entity;
 	}
 

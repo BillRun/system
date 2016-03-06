@@ -46,8 +46,12 @@ class Billrun_Config {
 	}
 
 	public function addConfig($path) {
-		$addedConf = new Yaf_Config_Ini($path);
-		$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
+		if(file_exists($path)) {
+			$addedConf = new Yaf_Config_Ini($path);
+			$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
+		} else {
+			error_log ("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
+		}
 	}
 
 	/**

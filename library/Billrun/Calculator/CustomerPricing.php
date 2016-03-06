@@ -215,7 +215,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) {
-						return false;
+						return ($row['charging_type'] == 'prepaid' ? TRUE : FALSE);
 					}
 				}
 
