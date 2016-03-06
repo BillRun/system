@@ -50,12 +50,19 @@
 				</div>
 			</div>
 			<h3>Thresholds</h3>
+			<div style="margin-bottom: 15px">
+				<select ng-model="newPPIncludeThreshold.id" class="form-control">
+					<option ng-repeat="pp in ppIncludes" ng-value="pp.external_id" ng-disabled="thresholdExists(pp)">{{pp.name}}</option>
+				</select>
+				<a href="" ng-click="addPPIncludeThreshold()">Add Threshold</a>
+			</div>
 			<div class='row' ng-repeat='(pp, threshold) in entity.pp_threshold'>
 				<div class='col-md-2'>
 					{{balanceName(pp)}}
 				</div>
 				<div class='col-md-6'>
 					<input type='number' step="any" class='form-control' ng-model='entity.pp_threshold[pp]' />
+					<i class="glyphicon glyphicon-minus-sign" ng-click="removePPIncludeThreshold(pp)"></i>
 				</div>
 			</div>
 

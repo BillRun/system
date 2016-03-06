@@ -499,8 +499,8 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + idx + "</td>");
         $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
         $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
-        $tr.append("<td>" + (aggregate.s_usagev ? aggregate.s_usagev : "") + "</td>");
-        $tr.append("<td>" + (aggregate.s_price ? aggregate.s_price.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + ((aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "") + "</td>");
+        $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (aggregate.balance_before ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (aggregate.balance_after ? aggregate.balance_after.toFixed(6) : "") + "</td>");
         $aggregated_table.append($tr);
@@ -524,8 +524,8 @@ function detailFormatter(index, row) {
           $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
         else
           $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
-        $tr.append("<td>" + (line.usagev ? line.usagev : "") + "</td>");
-        $tr.append("<td>" + (line.aprice ? line.aprice.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
+        $tr.append("<td>" + ((line.aprice || line.aprice == 0)  ? line.aprice.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (line.balance_before ? line.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (line.balance_after ? line.balance_after.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + ((line.urt && line.urt.sec) ? moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') : "") + "</td>");
