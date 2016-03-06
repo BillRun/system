@@ -135,6 +135,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.addPPIncludeThreshold = function () {
       if ($scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id]) return;
       $scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id] = 0;
+      $scope.newPPIncludeThreshold.id = null;
     };
 
     $scope.removePPIncludeThreshold = function (pp) {
