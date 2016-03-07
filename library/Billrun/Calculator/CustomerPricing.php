@@ -273,6 +273,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return false;
 		}
 
+		$row['plan_ref'] = $plan_ref;
 		$balance = new Billrun_Balance($row);
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);

@@ -66,7 +66,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 		}
 
 		// Update the record.
-		return 0;
+		return  $this->updateRecordByDiff($existing, @array_diff_assoc($expected, $existing));
 	}
 	
 	/**
