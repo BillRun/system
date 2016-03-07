@@ -1425,6 +1425,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		switch ($option) {
 			case 'number':
 				$returnValue = floatval($inputValue);
+				break;
 			case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
@@ -1432,6 +1433,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				} else {
 					return false;
 				}
+				break;
 			default:
 				break;
 		}
@@ -1515,7 +1517,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $operator - Operator for filter.
 	 * @param array $advancedOptions - Array of advanced options for this action
 	 */
-	protected function setManualFilterForKey($query, $key, $inputValue, $operator, $advancedOptions) {
+	protected function setManualFilterForKey(&$query, $key, $inputValue, $operator, $advancedOptions) {
 			$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
 			if($convertedValue === false) {
 				return;
