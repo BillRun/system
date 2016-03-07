@@ -39,7 +39,7 @@
 				</div>
 				<div class='col-md-6'>
 					<select ng-model="entity.operation" class="form-control"
-                                                ng-options="operation as operation for operation in availableOperations">
+                                                ng-options="operation.value as operation.label for operation in availableOperations">
 					</select>				
 				</div>
 			</div>
@@ -83,6 +83,29 @@
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					</span>
+				</div>
+			</div>
+			
+			<hr/>
+			<div>
+				<h3>Period</h3>
+				<div class="row">
+					<div class="col-md-2">
+						Duration
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.period.duration' class='form-control' />
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						Unit
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.period.unit'>
+							<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+						</select>
+					</div>
 				</div>
 			</div>
 			
