@@ -433,6 +433,31 @@ class Billrun_Util {
 			)
 		);
 	}
+	
+	/**
+	 * Get start time by period given:
+	 * "day" - begin of day
+	 * "week" - begin of week
+	 * "month" - begin of month
+	 * "year" - begin of year
+	 * 
+	 * @param type $period
+	 * @return type
+	 */
+	public static function getStartTimeByPeriod($period = 'day') {
+		switch ($period) {
+			case ('day'):
+				return strtotime("midnight");
+			case ('week'):
+				return strtotime("last sunday");
+			case ('month'):
+				return strtotime(date('01-m-Y'));
+			case ('year'):
+				return strtotime(date('01-01-Y'));
+		}
+		
+		return time();
+	}
 
 	/**
 	 * method to fork process of PHP-Cli
