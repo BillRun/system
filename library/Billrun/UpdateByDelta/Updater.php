@@ -242,7 +242,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 			}
 		}
 		
-		return $expectedMatched;
+		return @array_diff_assoc($expectedResults, $expectedMatched);
 	}
 	
 	/**
