@@ -1,4 +1,4 @@
-db.plans.find({"type": "charging"}).forEach(function (plan) { 
+db.plans.find({"type": "charging", "$or": [{"recurring": 0}, {"recurring": {"$exists": 0}}]}).forEach(function (plan) {
   db.plans.update({"_id": plan._id},
                   {"$set":
                    {
