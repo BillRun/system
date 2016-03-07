@@ -552,9 +552,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return 0;
 	}
 
-	protected function isFreeLine($row) {
+	protected function isFreeLine(&$row) {
 		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
-			return ($row['type'] === 'gy' && isset($row['in_data_slowness']) && $row['in_data_slowness']);
+			$isFreeLine = false;
+			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row,&$isFreeLine));
+			return $isFreeLine;
 		}
 		return false;
 	}

@@ -77,6 +77,38 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isSubscriberInDataSlowness($row) {
 		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
 	}
+	
+	protected function isSubscriberInMaxCurrency($row) {
+		$maxCurrency = Billrun_Factory::config()->getConfigValue('realtimeevent.data.maxCurrency');
+		$query = $this->getSubscriberCurrencyUsageQuery($row, $maxCurrency['period']);
+		$archiveDb = Billrun_Factory::db();
+		$lines_archive_coll = $archiveDb->archiveCollection();
+		$res = $lines_archive_coll->aggregate($query)->current();
+		$totalPrice = $res->get('total_price');
+		return ($totalPrice > $maxCurrency['cost']);
+	}
+	
+	protected function getSubscriberCurrencyUsageQuery($row, $period) {
+		$startTime = Billrun_Util::getStartTimeByPeriod($period);
+		$match = array(
+			'type' => 'gy',
+			'sid' => $row['sid'],
+			'pp_includes_external_id' => array(
+				'$in' => array(1,2,9,10)
+			),
+			'urt' => array(
+				'$gte' => new MongoDate($startTime),
+			),
+		);
+		$group = array(
+			'_id' => '$sid',
+			'total_price' => array(
+				'$sum' => '$aprice'
+			),
+		);
+		
+		return array(array('$match' => $match),array('$group' => $group));
+	}
 
 	/**
 	 * Gets data slowness speed and SOC according to plan or default 
@@ -271,6 +303,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
 		if (isset($record['service']['code']) && empty($record['service']['code'])) {
 			$record['in_data_slowness'] = FALSE;
+		}
+	}
+	
+	public function isFreeLine(&$row, &$isFreeLine) {
+		$isFreeLine = false;
+		if ($row['type'] === 'gy') {
+			$isFreeLine = $this->isSubscriberInDataSlowness($row)|| 
+				$this->isSubscriberInMaxCurrency($row);
 		}
 	}
 
