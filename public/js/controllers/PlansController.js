@@ -172,7 +172,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "service_provider": "",
             "desc": "",
             "type": "charging",
-            "operation": "",
+            "operation": "inc",
             "charging_type": [],
             "from": new Date(),
             "to": new Date(),
