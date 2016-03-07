@@ -172,7 +172,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "service_provider": "",
             "desc": "",
             "type": "charging",
-            "operation": "",
+            "operation": "inc",
             "charging_type": [],
             "from": new Date(),
             "to": new Date(),
@@ -199,7 +199,16 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
 
       $scope.availableCostUnits = ['days', 'months'];
-      $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.availableOperations = {
+        set: {
+          value: 'set',
+          label: 'set'
+        },
+        inc: {
+          value: 'inc',
+          label: 'increment'
+        }
+      };
       $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.newPPIncludeThreshold = {id: null};
