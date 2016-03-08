@@ -256,7 +256,7 @@ class RealtimeeventAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
-		return ($this->usaget === 'call' && $event['record_type'] === 'start_call');
+		return (($this->usaget === 'call' || $this->usaget === 'video_call') && $event['record_type'] === 'start_call');
 	}
 	
 	/**

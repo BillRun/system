@@ -53,6 +53,14 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 						),
 						array(
 							'match' => array(
+								'api_name' => '/^start_call$/',
+							),
+							'update' => array(
+								'$set' => array('urt'),
+							),
+						),
+						array(
+							'match' => array(
 								'api_name' => '/^answer_call$/',
 							),
 							'update' => array(
