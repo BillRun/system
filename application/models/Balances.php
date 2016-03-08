@@ -225,8 +225,9 @@ class BalancesModel extends TableModel {
 					->limit(1)
 					->current()
 					->getRawData();
-				if (isset($subscriber['service_provider']))
+				if (isset($subscriber['service_provider'])) {
 					$item['service_provider'] = $subscriber['service_provider'];
+				}
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
