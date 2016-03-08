@@ -219,9 +219,8 @@ class BalancesModel extends TableModel {
 				$item['units'] = implode(',', $units);
 				$subscriber = Billrun_Factory::db()->subscribersCollection()
 					->query(array('sid' => $item['sid'],
-						'to' => array('$gte' => $item['from'])))
+						'to' => array('$gte' => new MongoDate())))
 					->cursor()
-					->sort(array('from' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
