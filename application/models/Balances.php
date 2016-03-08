@@ -219,13 +219,14 @@ class BalancesModel extends TableModel {
 				$item['units'] = implode(',', $units);
 				$subscriber = Billrun_Factory::db()->subscribersCollection()
 					->query(array('sid' => $item['sid'],
-						'from' => array('$lte' => $item['from']),
 						'to' => array('$gte' => $item['from'])))
 					->cursor()
+					->sort(array('from' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
-				$item['service_provider'] = $subscriber['service_provider'];
+				if (isset($subscriber['service_provider']))
+					$item['service_provider'] = $subscriber['service_provider'];
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
