@@ -180,7 +180,7 @@ class RatesModel extends TabledateModel {
 				'comparison' => '$exists',
 				'display' => 'Plan',
 				'values' => $planNames,
-				'default' => array(array('BASE' => 'BASE')),
+				'default' => array('BASE'),
 			),
 			'showprefix' => array(
 				'key' => 'showprefix',
