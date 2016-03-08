@@ -198,7 +198,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         alert("Connection error!");
       });
 
-      $scope.availableCostUnits = ['days', 'months'];
+      $scope.availableCostUnits = ['days', 'month'];
       $scope.availableOperations = {
         set: {
           value: 'set',
