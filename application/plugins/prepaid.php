@@ -213,10 +213,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$realUsagev = $this->getRealUsagev($row);
 		$chargedUsagev = $this->getChargedUsagev($row, $lineToRebalance);
 		if ($chargedUsagev !== null) {
-			$rebalanceUsagev = $chargedUsagev - $realUsagev;
-								//540           480
-								//180           79
-			if (($rebalanceUsagev) > 0) {
+			$rebalanceUsagev = $realUsagev - $chargedUsagev;
+			if (($rebalanceUsagev) < 0) {
 				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance);
 			}
 		}
@@ -295,7 +293,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
 		if ($lineToRebalance['type'] !== 'gy' || empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
 		} else {
 			$rebalanceCost = 0;
 		}
