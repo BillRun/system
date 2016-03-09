@@ -88,6 +88,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 				}
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
 			case ('call'):
+			case ('video_call'):
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
 			case ('sms'):
 			case ('mms'):
@@ -106,7 +107,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 			return 'data';
 		}
 		if (isset($row['call_reference'])) {
-			return 'call';
+			return ($row['call_type'] === '3' ? 'video_call' : 'call');
 		}
 		if (isset($row['record_type']) && $row['record_type'] === 'sms') {
 			return 'sms';
