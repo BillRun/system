@@ -213,8 +213,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$realUsagev = $this->getRealUsagev($row);
 		$chargedUsagev = $this->getChargedUsagev($row, $lineToRebalance);
 		if ($chargedUsagev !== null) {
-			$rebalanceUsagev = $chargedUsagev - $realUsagev;
-			if (($rebalanceUsagev) > 0) {
+			$rebalanceUsagev = $realUsagev - $chargedUsagev;
+			if (($rebalanceUsagev) < 0) {
 				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance);
 			}
 		}
@@ -306,8 +306,13 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
-		$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
+		if ($lineToRebalance['type'] !== 'gy' || empty($lineToRebalance['in_data_slowness'])) {
+			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		} else {
+			$rebalanceCost = 0;
+		}
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
