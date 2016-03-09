@@ -78,8 +78,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
 	}
 	
+	protected function getMaxCurrencyValues($row) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		if ($plan && isset($plan['max_currency'])) {
+			$maxCurrency = $plan['max_currency'];
+		} else {
+			$maxCurrency = Billrun_Factory::config()->getConfigValue('realtimeevent.data.maxCurrency', array());
+		}
+		
+		return $maxCurrency;
+	}
+	
 	protected function isSubscriberInMaxCurrency($row) {
-		$maxCurrency = Billrun_Factory::config()->getConfigValue('realtimeevent.data.maxCurrency');
+		$maxCurrency = $this->getMaxCurrencyValues($row);
 		$query = $this->getSubscriberCurrencyUsageQuery($row, $maxCurrency['period']);
 		$archiveDb = Billrun_Factory::db();
 		$lines_archive_coll = $archiveDb->archiveCollection();
