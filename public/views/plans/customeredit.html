@@ -160,10 +160,11 @@
 			</div>
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<h3>Rates</h3>
-				<div ng-repeat='type in ["calls", "data", "sms"]'>
+				<div ng-repeat='type in ["calls", "data", "sms", "video_call"]'>
 					<label ng-if="type === 'calls'">Call</label>
 					<label ng-if="type === 'data'">Data</label>
 					<label ng-if="type === 'sms'">SMS</label>
+					<label ng-if="type === 'video_call'">Video Call</label>
 					<div class='table'>
 						<div class='thead'>
 							<div class='th' style='width: 320px;'>Plan</div>

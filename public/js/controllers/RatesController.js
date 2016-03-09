@@ -260,8 +260,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return false;
     };
 
-    $scope.capitalize = function (str) {
-      return _.capitalize(str);
+    $scope.titlize = function (str) {
+      return _.capitalize(str.replace(/_/g, ' '));
     };
 
     $scope.displayFutureForInterconnect = function (ic) {
