@@ -366,6 +366,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges));
 
 		$ret[$this->pricingField] = $charges['total'];
 		$ret[$this->interconnectChargeField] = $charges['interconnect'];
@@ -556,6 +557,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
 			$isFreeLine = false;
 			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row,&$isFreeLine));
+			if ($isFreeLine) {
+				$row['free_line'] = true;
+			}
 			return $isFreeLine;
 		}
 		return false;

@@ -280,6 +280,24 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $lineToRebalance['usagev'];
 	}
 
+	protected function getRebalanceCost($lineToRebalance, $rebalanceUsagev) {
+		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
+			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
+			return 0;
+		}
+		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+		$rebalance_offset = $call_offset + $rebalanceUsagev;
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$rebalanceCost = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], (-1) * $rebalance_offset);
+		if (isset($lineToRebalance['over_max_currency'])) {
+			$rebalanceCost -= $lineToRebalance['over_max_currency'];
+			if ($rebalanceCost < 0) {
+				$rebalanceCost = 0;
+			}
+		}
+		return (-1) * $rebalanceCost;
+	}
+
 	/**
 	 * In case balance is in over charge (due to prepaid mechanism), 
 	 * adds a refund row to the balance.
@@ -287,15 +305,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
-		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
-		$rebalance_offset = $call_offset + $rebalanceUsagev;
-		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
 		$usaget = $lineToRebalance['usaget'];
-		if (empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], (-1) * $rebalance_offset);
-		} else {
-			$rebalanceCost = 0;
-		}
+		$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $rebalanceUsagev);
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {

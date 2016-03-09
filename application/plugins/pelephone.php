@@ -89,15 +89,20 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $maxCurrency;
 	}
 	
-	protected function isSubscriberInMaxCurrency($row) {
+	protected function getSubscriberDiffFromMaxCurrency($row) {
 		$maxCurrency = $this->getMaxCurrencyValues($row);
 		$query = $this->getSubscriberCurrencyUsageQuery($row, $maxCurrency['period']);
 		$archiveDb = Billrun_Factory::db();
 		$lines_archive_coll = $archiveDb->archiveCollection();
 		$res = $lines_archive_coll->aggregate($query)->current();
-		$totalPrice = $res->get('total_price');
-		return ($totalPrice > $maxCurrency['cost']);
+		return $maxCurrency['cost'] - $res->get('total_price');
 	}
+	
+	protected function isSubscriberInMaxCurrency($row) {
+		$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+		return ($diff <= 0);
+	}
+			
 	
 	protected function getSubscriberCurrencyUsageQuery($row, $period) {
 		$startTime = Billrun_Util::getStartTimeByPeriod($period);
@@ -320,8 +325,27 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function isFreeLine(&$row, &$isFreeLine) {
 		$isFreeLine = false;
 		if ($row['type'] === 'gy') {
-			$isFreeLine = $this->isSubscriberInDataSlowness($row)|| 
-				$this->isSubscriberInMaxCurrency($row);
+			if ($this->isSubscriberInDataSlowness($row)) {
+				$row['free_line_reason'] = 'In data slowness';
+				$isFreeLine = true;
+				return;
+			} 
+			if ($this->isSubscriberInMaxCurrency($row)) {
+				$row['free_line_reason'] = 'Passed max currency';
+				$isFreeLine = true;
+				return;
+			} 
+		}
+	}
+
+	public function afterChargesCalculation(&$row, &$charges) {
+		if ($row['type'] === 'gy') {
+			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+			
+			if ($charges['total'] > $diff) {
+				$row['over_max_currency'] = $charges['total'] - $diff;
+				$charges['total'] = $diff;
+			}
 		}
 	}
 
