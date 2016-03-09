@@ -67,12 +67,12 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			);
 		}
 
-		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
+		if ($rowData[$this->fieldsColumns['monthly_bonus']] > 0) {
 			$ret[] = array(
-				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['bonus_account']]),
+				'value' => (-1) * doubleval($rowData[$this->fieldsColumns['monthly_bonus']]),
 				'period' => $this->getDuration($rowData),
-				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.bonus_account', NULL),
-				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.bonus_account', NULL)
+				'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.monthly_bonus', NULL),
+				'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.monthly_bonus', NULL)
 			);
 		}
 
@@ -92,7 +92,7 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 	}
 	
 	protected function getPeriod($rowData) {
-		if ($rowData[$this->fieldsColumns['bonus_account']] > 0 ||
+		if ($rowData[$this->fieldsColumns['monthly_bonus']] > 0 ||
 			$rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {
 			return $this->getDuration($rowData);
 		}
@@ -172,8 +172,8 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.main_account', NULL);
 		}
 
-		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
-			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.bonus_account', NULL);
+		if ($rowData[$this->fieldsColumns['monthly_bonus']] > 0) {
+			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_name.monthly_bonus', NULL);
 		}
 
 //		if ($rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {
@@ -188,8 +188,8 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.main_account', NULL);
 		}
 
-		if ($rowData[$this->fieldsColumns['bonus_account']] > 0) {
-			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.bonus_account', NULL);
+		if ($rowData[$this->fieldsColumns['monthly_bonus']] > 0) {
+			return Billrun_Factory::config()->getConfigValue('importer.RecurringChargingPlans.pp_includes_external_id.monthly_bonus', NULL);
 		}
 		
 //		if ($rowData[$this->fieldsColumns['special_monthly_reward']] > 0) {

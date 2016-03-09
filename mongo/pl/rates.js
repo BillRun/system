@@ -95,6 +95,7 @@ function getUsageType(app_id) {
 }
 
 function _plan(plan_id, plan_name, usaget, tariffs) {
+	print("===============");
 	var unit_type
 	unit_type = "7";
 	var _tariff_ids = [];
@@ -110,54 +111,86 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 		print("plan : " + plan_name);
 		print("interconnect name: " + _interconnect.PP_TARIFF_NAME);
 		_t = create_tariff(obj10, _interconnect);
-		if (tariffs[usaget] === undefined)
+		if (tariffs[usaget] === undefined) {
 			tariffs[usaget] = {};
+		}
 		tariffs[usaget][plan_name] = _t;
-				if (_interconnect.PP_TARIFF_NAME.substring(0, 2) != '01' && 
-						(
-						typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined' 
-						|| 
-						typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] == 'undefined'
-						)
-					) {
+		if (_interconnect.PP_TARIFF_NAME.substring(0, 2) != '01' && 
+				(
+				typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined' 
+				|| 
+				typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] == 'undefined'
+				)
+			) {
 
-					if (typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined') {
-						_interconnect_ar[_interconnect.PP_TARIFF_NAME] = {};
-					}
-					
-					_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
-					
-					obj = {
+			if (typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined') {
+				_interconnect_ar[_interconnect.PP_TARIFF_NAME] = {};
+			}
+
+			_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
+
+			obj = {
+				'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
+				'from':    ISODate('2016-02-01'),
+				'to':      ISODate('2099-12-31 23:59:59'),
+				'params' : {
+//							'prefix': _prefixes,
+					'interconnect' : true
+				},
+				'rates': {}
+			};
+			obj['rates'][usaget] = {
+				'BASE' : {
+					"access": 0,
+					"unit": "seconds",
+					"rate": [
+						{
+							"to": Number(_interconnect.INITIAL_AMOUNT),
+							"price": Number(_interconnect.INITIAL_CHARGE),
+							"interval": Number(_interconnect.INITIAL_AMOUNT)
+						},
+						{
+							"to": 2147483647,
+							"price": Number(_interconnect.ADD_CHARGE),
+							"interval": Number(_interconnect.ADD_AMOUNT)
+						},
+					]
+
+				}
+			};
+			
+			_upsert = {
+					'$setOnInsert' : {
 						'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
 						'from':    ISODate('2016-02-01'),
 						'to':      ISODate('2099-12-31 23:59:59'),
 						'params' : {
-//							'prefix': _prefixes,
+		//							'prefix': _prefixes,
 							'interconnect' : true
 						},
-						'rates': {}
-					};
-					obj['rates'][usaget] = {
-						'BASE' : {
-							"access": 0,
-							"unit": "seconds",
-							"rate": [
-								{
-									"to": Number(_interconnect.INITIAL_AMOUNT),
-									"price": Number(_interconnect.INITIAL_CHARGE),
-									"interval": Number(_interconnect.INITIAL_AMOUNT)
-								},
-								{
-									"to": 2147483647,
-									"price": Number(_interconnect.ADD_CHARGE),
-									"interval": Number(_interconnect.ADD_AMOUNT)
-								},
-							]
+					},
+					'$set' : {}
+			};
+			_upsert['$set'] = {};
+			_upsert['$set']['rates.' + usaget + '.BASE'] = {
+				"access": 0,
+				"unit": "seconds",
+				"rate": [
+					{
+						"to": Number(_interconnect.INITIAL_AMOUNT),
+						"price": Number(_interconnect.INITIAL_CHARGE),
+						"interval": Number(_interconnect.INITIAL_AMOUNT)
+					},
+					{
+						"to": 2147483647,
+						"price": Number(_interconnect.ADD_CHARGE),
+						"interval": Number(_interconnect.ADD_AMOUNT)
+					},
+				]
 
-						}
-					};
-					db.rates.insert(obj);
-				}
+			};
+			db.rates.update({'key':standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT')} , _upsert, {upsert:1});
+		}
 	} else {
 		print('tariffs ids: ' + _tariff_ids.join());
 		print("plan id: " + plan_id);
@@ -205,9 +238,10 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/SMS_APP/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Vatania/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
+	print("==========================================");
 		_rate_name = obj1._id;
 		print("rate name: " + _rate_name);
 		_prefixes = obj1.prefixes;
@@ -300,4 +334,4 @@ db.rates.insert({
 
 // set premium rates (exclude from some wallets)
 var _premium_rates = ["1700","1ST_CLASS_VPN","BEZEQ1","FOREIGN_DISCOUNT_2","FOREIGNERS","GPRS_LOCATION","INTERNET_BILL_BY_VOLUME","JFC_FREE_CALLS","NEPAL-VPN","PELEPHONE","PHIL-VPN","PROGENYB","PROGENYO","RL_FREE_CALLS_B","RL_FREE_CALLS_PEL","SHARON_VPN","SMS_BEZEQ","SMS_OTHER","SMS_PELE","TALK_VPN","VOICE_BEZEQ","VOICE_CELLCOM","VOICE_MIRS","VOICE_PARTNER","VOICE_RAMI_LEVY","VOICE_CELLULAR_ISRAEL","VOICEMAIL"];
-db.rates.update({key:{$nin:_premium_rates}}, {$set:{"params.premium": true}}, {multi:1});
+db.rates.update({key:{$nin:_premium_rates}, "params.interconnect": {$exists:0}}, {$set:{"params.premium": true}}, {multi:1});

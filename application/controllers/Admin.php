@@ -1344,6 +1344,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ($table === "rates" && $filter_name == "plan" && is_array($value)) {
+				$model->setFilteredPlans($value);
+			}
 			if ((!empty($value) || $value === 0 || $value === "0") &&
 				is_array($filter_field) && isset($filter_field['db_key']) &&
 				$filter_field['db_key'] != 'nofilter' &&
@@ -1433,6 +1436,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				} else {
 					return false;
 				}
+				break;
 			default:
 				break;
 		}
