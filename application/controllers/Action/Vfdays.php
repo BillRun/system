@@ -29,7 +29,7 @@ class VfdaysAction extends Action_Base {
 			$year = date("Y");
 		}
 		$max_datetime = $request->get("max_datetime");
-		$this->plans = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.events.NRTRDE1_B.target_plans');
+		$this->plans = Billrun_Factory::config()->getConfigValue('vfdays.target_plans');
 		$results = $this->count_days($sid, $year, $max_datetime);
 		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
 		if (isset($results[0]["count"])) {
