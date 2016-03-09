@@ -155,6 +155,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
 				$options = array_merge($options, $configOptions);
 			}
+			
+			if ($type === 'callrt') {
+				$options = array_merge($options, array('usaget' => $line['usaget']));
+			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
 			if(!class_exists($class, true)) {
 				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line,true), Zend_Log::ERR);
@@ -282,7 +286,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
+							$val = $this->{$value['classMethod']}($row);
+							if (!is_null($val)) {
+								$pipelineValue[$key] = $val;
+							}
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}

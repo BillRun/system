@@ -50,12 +50,18 @@
 				</div>
 			</div>
 			<h3>Thresholds</h3>
+			<div style="margin-bottom: 15px">
+				<select ng-model="newPPIncludeThreshold.id" class="form-control">
+					<option ng-repeat="pp in ppIncludes" ng-value="pp.external_id" ng-disabled="thresholdExists(pp)">{{pp.name}}</option>
+				</select>
+				<a href="" ng-click="addPPIncludeThreshold()">Add Threshold</a>
+			</div>
 			<div class='row' ng-repeat='(pp, threshold) in entity.pp_threshold'>
 				<div class='col-md-2'>
 					{{balanceName(pp)}}
 				</div>
 				<div class='col-md-6'>
-					<input type='number' class='form-control' ng-model='entity.pp_threshold[pp]' />
+					<input type='number' step="any" class='form-control' ng-model='entity.pp_threshold[pp]' />
 				</div>
 			</div>
 
@@ -154,13 +160,14 @@
 			</div>
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<h3>Rates</h3>
-				<div ng-repeat='type in ["calls", "data", "sms"]'>
+				<div ng-repeat='type in ["calls", "data", "sms", "video_call"]'>
 					<label ng-if="type === 'calls'">Call</label>
 					<label ng-if="type === 'data'">Data</label>
 					<label ng-if="type === 'sms'">SMS</label>
+					<label ng-if="type === 'video_call'">Video Call</label>
 					<div class='table'>
 						<div class='thead'>
-							<div class='th' style='width: 260px;'>Plan</div>
+							<div class='th' style='width: 320px;'>Plan</div>
 							<div class='th' style='width: 100px;'>Interval</div>
 							<div class='th' style='width: 130px;'>Price</div>
 							<div class='th' style='width: 130px;'>To</div>
@@ -168,7 +175,7 @@
 						<div class='tbody'>
 							<div class='tr parent' ng-repeat='rate in plan_rates' ng-if='rate.price[type].rate'>
 								<div class='table-fix'>
-									<div class='td' style='width: 260px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
+									<div class='td' style='width: 320px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
 										<a href='#/rates/update/{{rate.id}}?plans=["{{entity.name}}"]'><b>{{rate.key}}</b></a>
 									</div>								
 								</div>

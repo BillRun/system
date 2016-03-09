@@ -78,7 +78,6 @@ class CardsModel extends TableModel {
 				'db_key' => 'batch_number',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'comparison' => 'contains',
 				'display' => 'Batch Number',
 				'default' => '',
 			),

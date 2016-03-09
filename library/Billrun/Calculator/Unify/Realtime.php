@@ -47,24 +47,16 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							),
 							'update' => array(
 								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name', 'interconnect_arate_key'),
-								'$set' => array('process_time', 'np_code', 'call_type'),
+								'$set' => array('process_time', 'np_code', 'call_type','balance_after'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
 						),
 						array(
 							'match' => array(
-								'api_name' => '/^answer_call$/',
+								'api_name' => '/^start_call$|^answer_call$/',
 							),
 							'update' => array(
 								'$set' => array('urt', 'balance_before'),
-							),
-						),
-						array(
-							'match' => array(
-								'api_name' => '/^release_call$/',
-							),
-							'update' => array(
-								'$set' => array('balance_after'),
 							),
 						),
 					),
@@ -172,13 +164,13 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							),
 							'update' => array(
 								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn', 'interconnect_arate_key'),
-								'$set' => array('process_time'),
+								'$set' => array('process_time', 'in_data_slowness'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
 						),
 						array(
 							'match' => array(
-								'request_type' => '/^3$/',
+								'classMethod' => 'isNotInDataSlowness',
 							),
 							'update' => array(
 								'$set' => array('balance_after'),
@@ -204,6 +196,13 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 	
 	protected function getDateSeparation($line, $typeData) {
 		return FALSE;
+	}
+	
+	public function isNotInDataSlowness($line) {
+		if (!isset($line['in_data_slowness']) || !$line['in_data_slowness']) {
+			return true;
+		}
+		return false;
 	}
 
 }

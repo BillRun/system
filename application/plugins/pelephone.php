@@ -113,7 +113,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $results->getRawData();
 	}
 	
-	public function afterSubscriberBalanceAutoRenewUpdate(&$autoRenewRecord) {
+	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
 		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
 		if (!$subscriber) {
 			return false;
@@ -168,7 +168,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $msisdn
 	 * @param string $subscriberSoc
 	 */
-	protected function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
+	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
 			return;
@@ -189,9 +189,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'root' => 'REQUEST',
 			'addHeader' => false,
 		);
-		$request = array($encoder->encode($requestBody, $params));
+		$request = $encoder->encode($requestBody, $params);
 		$requestUrl = $slownessParams['requestUrl'];
-		return Billrun_Util::sendRequest($requestUrl, $request);
+		Billrun_Factory::log('Sending request to prov. Details: ' . $request,  Zend_Log::DEBUG);
+		$response = Billrun_Util::sendRequest($requestUrl, $request);
+		Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
+		return $response;
 	}
 
 	/**
@@ -244,6 +247,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($this->row->get('arate'));
 			if (isset($rate['params']['premium']) && $rate['params']['premium']) {
 				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
+			}
+			
+			// Only certain subscribers can use data from CORE BALANCE
+			if ($this->row['type'] === 'gy') {
+				$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
+				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
+					array_push($pp_includes_external_ids, 1, 2, 9, 10);
+				}
 			}
 
 			if (count($pp_includes_external_ids)) {

@@ -39,9 +39,12 @@ function BandwidthCapController(Database) {
   };
 
   vm.removeBandwidthCap = function (cap_name) {
-    Database.removeBandwidthCap({cap_name: cap_name}).then(function (res) {
-      delete vm.bandwidthCaps[cap_name];
-    });
+    var r = confirm("Are you sure you want to remove " + cap_name);
+    if (r) {
+      Database.removeBandwidthCap({cap_name: cap_name}).then(function (res) {
+        delete vm.bandwidthCaps[cap_name];
+      });
+    }
   };
 
   vm.init = function () {

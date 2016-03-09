@@ -18,34 +18,64 @@ function BalancesController($controller, Utils, $http, $window, Database) {
         });
       }
       if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost)) vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
+      // save via Admin.php if only date was changed UNLESS it's CORE BALANCE (id: 1)
+      if (vm.entity.pp_includes_external_id != 1 && !angular.equals(vm.original_entity, vm.entity)) {
+        vm.original_entity.to = vm.entity.to;
+        if (angular.equals(vm.original_entity, vm.entity)) {
+          var params = {
+            entity: vm.entity,
+            coll: 'balances',
+            type: 'update',
+            data: vm.entity
+          };
+          Database.saveEntity(params).then(function (res) {
+            if (res.status === 200) $window.location = baseUrl + '/admin/balances';
+            else alert("Error saving balance! Please refresh and try again!");
+          });
+          return;
+        }
+      }
     }
     if (vm.entity.to && _.isObject(vm.entity.to)) vm.entity.to = vm.entity.to.toISOString();
-    if (vm.action === 'new') {
-      var postData = {
-        method: 'update',
-        sid: "" + vm.entity.sid,
-        query: JSON.stringify({
-          "pp_includes_name": vm.entity.pp_includes_name
-        }),
-        upsert: JSON.stringify({
-          value: parseFloat(vm.newBalanceAmount),
-          expiration_date: vm.entity.to,
-          operation: "set"
-        })
-      };
-      $http.post(baseUrl + '/api/balances', postData).then(function (res) {
-        if (res.data.status)
-          $window.location = baseUrl + '/admin/balances';
-        else
-          // TODO: change to flash message
-          alert("Error saving balance! Please refresh and try again!");
+    var postData = {
+      method: 'update',
+      sid: parseInt(vm.entity.sid, 10),
+      query: JSON.stringify({
+        "pp_includes_name": vm.entity.pp_includes_name
+      })
+    };
+    if (vm.action === "new") {
+      postData.upsert = JSON.stringify({
+        value: vm.newBalanceAmount,
+        expiration_date: vm.entity.to,
+        operation: "set"
       });
     } else {
-      vm.save(true);
+      var value = 0;
+      if (vm.entity.balance.cost) value = vm.entity.balance.cost;
+      else if (_.result(vm.entity.balance, "totals.call.usagev")) value = vm.entity.balance.totals.call.usagev;
+      else if (_.result(vm.entity.balance, "totals.call.cost")) value = vm.entity.balance.totals.call.cost;
+      else if (_.result(vm.entity.balance, "totals.sms.usagev")) value = vm.entity.balance.totals.sms.usagev;
+      else if (_.result(vm.entity.balance, "totals.sms.cost")) value = vm.entity.balance.totals.sms.cost;
+      else if (_.result(vm.entity.balance, "totals.data.usagev")) value = vm.entity.balance.totals.data.usagev;
+      else if (_.result(vm.entity.balance, "totals.data.cost")) value = vm.entity.balance.totals.data.cost;
+      postData.upsert = JSON.stringify({
+        value: value,
+        expiration_date: vm.entity.to,
+        operation: (vm.entity.operation ? vm.entity.operation : "")
+      });
     }
+    $http.post(baseUrl + '/api/balances', postData).then(function (res) {
+      if (res.data.status)
+        $window.location = baseUrl + '/admin/balances';
+      else
+        // TODO: change to flash message
+        alert("Error saving balance! Please refresh and try again!");
+    });
   };
 
   vm.init = function () {
+    vm.original_entity = undefined;
     vm.initEdit(function (entity) {
       if (entity.to && _.result(entity.to, 'sec')) {
         entity.to = new Date(entity.to.sec * 1000);
@@ -53,7 +83,9 @@ function BalancesController($controller, Utils, $http, $window, Database) {
       if (entity.from && _.result(entity.from, 'sec')) {
         entity.from = new Date(entity.from.sec * 1000);
       }
+      vm.original_entity = _.cloneDeep(entity);
     });
+
     Database.getAvailablePPIncludes().then(function (res) {
       vm.availableBalanceTypes = res.data;
     });

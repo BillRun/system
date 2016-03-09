@@ -65,7 +65,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
-		$this->addJs($this->baseUrl . '/js/moment.js');
+		$this->addJs($this->baseUrl . '/js/vendor/moment.min.js');
 		$this->addJs($this->baseUrl . '/js/moment-with-locales.min.js');
 		$this->addJs($this->baseUrl . '/js/bootstrap-datetimepicker.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.jsoneditor.js');
@@ -75,9 +75,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/lodash.js');
+		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
-		$this->addJs($this->baseUrl . '/js/vendor/angular-route.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-route.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/ui-bootstrap.js');
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-ui.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/sortable.js');
@@ -151,12 +151,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getLineDetailsFromArchiveAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$this->archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db', array()));
+		$this->archiveDb = Billrun_Factory::db();
 		$lines_coll = $this->archiveDb->archiveCollection();
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		//$pp_aggregated = $lines_coll->aggregate();
 		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$sort = json_decode('{"$sort": {"urt": 1}}');
 		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
 		foreach ($lines as $line) {
@@ -165,7 +166,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$detailed[] = $l;
 		}
 		$aggregated = array();
-		$pp_aggregated = $lines_coll->aggregate($match, $group);
+		$pp_aggregated = $lines_coll->aggregate($match, $sort, $group);
 		foreach($pp_aggregated as $ppagg) {
 			$aggregated[] = $ppagg->getRawData();
 		}
@@ -224,9 +225,17 @@ class AdminController extends Yaf_Controller_Abstract {
 					);
 					$plan_rates[] = $cur_rate;
 				}
+                                $ppincludes = array();
+                                if ($entity['type'] === "customer") {
+                                    foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
+                                        $pp = $ppinclude->getRawData();
+                                        $ppincludes[] = (string)$pp['external_id'];
+                                    }
+                                    sort($ppincludes);
+                                }
 				
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates)));
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes)));
 			$response->response();
 			return false;			
 		}
@@ -633,12 +642,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
-   
+                /*
 		$v->validate($params,$coll) ;
 		if(!$v->isValid()) {	   	
 			return $this->responseError($v->getErrors());
 		}
-		
+		*/
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -1335,6 +1344,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ($table === "rates" && $filter_name == "plan" && is_array($value)) {
+				$model->setFilteredPlans($value);
+			}
 			if ((!empty($value) || $value === 0 || $value === "0") &&
 				is_array($filter_field) && isset($filter_field['db_key']) &&
 				$filter_field['db_key'] != 'nofilter' &&
@@ -1416,6 +1428,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		switch ($option) {
 			case 'number':
 				$returnValue = floatval($inputValue);
+				break;
 			case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
@@ -1423,6 +1436,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				} else {
 					return false;
 				}
+				break;
 			default:
 				break;
 		}
@@ -1506,7 +1520,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $operator - Operator for filter.
 	 * @param array $advancedOptions - Array of advanced options for this action
 	 */
-	protected function setManualFilterForKey($query, $key, $inputValue, $operator, $advancedOptions) {
+	protected function setManualFilterForKey(&$query, $key, $inputValue, $operator, $advancedOptions) {
 			$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
 			if($convertedValue === false) {
 				return;

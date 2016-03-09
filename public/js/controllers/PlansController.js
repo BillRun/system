@@ -128,6 +128,27 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       };
     };
 
+    $scope.thresholdExists = function (pp) {
+      return !_.isUndefined($scope.entity.pp_threshold[pp.external_id]);
+    };
+
+    $scope.addPPIncludeThreshold = function () {
+      if ($scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id]) return;
+      $scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id] = 0;
+      $scope.newPPIncludeThreshold.id = null;
+    };
+
+    $scope.removePPIncludeThreshold = function (pp) {
+      var found = _.find($scope.ppIncludes, function (pp_include) {
+        return parseInt(pp_include.external_id, 10) === parseInt(pp, 10);
+      });
+      if (!found) return;
+      var r = confirm("Are you sure you want to remove threshold for " + found.name + "?");
+      if (r) {
+        delete $scope.entity.pp_threshold[pp];
+      }
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {
@@ -142,6 +163,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity = res.data.entity;
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
+            if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
+              $scope.entity.pp_threshold = {};
         } else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
           $scope.entity = {
             "name": "",
@@ -149,7 +172,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "service_provider": "",
             "desc": "",
             "type": "charging",
-            "operation": "",
+            "operation": "inc",
             "charging_type": [],
             "from": new Date(),
             "to": new Date(),
@@ -175,10 +198,20 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         alert("Connection error!");
       });
 
-      $scope.availableCostUnits = ['days', 'months'];
-      $scope.availableOperations = ['set', 'accumulated', 'charge'];
+      $scope.availableCostUnits = ['days', 'month'];
+      $scope.availableOperations = {
+        set: {
+          value: 'set',
+          label: 'set'
+        },
+        inc: {
+          value: 'inc',
+          label: 'increment'
+        }
+      };
       $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
+      $scope.newPPIncludeThreshold = {id: null};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
