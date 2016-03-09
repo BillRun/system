@@ -50,11 +50,11 @@ class Billrun_Balance extends Mongodloid_Entity {
 			return false;
 		}
 		
-		if (isset($options['granted_usagev'])) {
+		if (isset($options['granted_usagev']) && is_numeric($options['granted_usagev'])) {
 			$this->granted['usagev'] = (-1) * $options['granted_usagev'];
 		}
 
-		if (isset($options['granted_cost'])) {
+		if (isset($options['granted_cost']) && is_numeric($options['granted_cost'])) {
 			$this->granted['cost'] = (-1) * $options['granted_cost'];
 		}
 
