@@ -35,7 +35,8 @@ class Billrun_ActionManagers_Realtime_Responder_Manager {
 	 * @return string the name of the class
 	 */
 	protected static function getResponderClassName($data) {
-		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_' . ucfirst($data['usaget'] . '_');
+		$usaget = ($data['usaget'] !== 'video_call' ? $data['usaget'] : 'call');
+		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_' . ucfirst($usaget . '_');
 		return $classNamePref . str_replace(" ", "", ucwords(str_replace("_", " ", $data['record_type'])));
 	}
 

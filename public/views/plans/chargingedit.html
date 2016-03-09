@@ -39,8 +39,8 @@
 				</div>
 				<div class='col-md-6'>
 					<select ng-model="entity.operation" class="form-control"
-                                                ng-options="operation as operation for operation in availableOperations">
-					</select>				
+                                                ng-options="operation.value as operation.label for operation in availableOperations">
+					</select>
 				</div>
 			</div>
 			<div class="row" ng-if="utils.display('recurring', 'plans')">
@@ -83,6 +83,29 @@
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					</span>
+				</div>
+			</div>
+			
+			<hr/>
+			<div>
+				<h3>{{utils.getDisplayValue("period", "plans")}}</h3>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("unit", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.period.unit'
+								ng-options='unit as unit for unit in availableCostUnits'>
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("duration", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.period.duration' class='form-control' />
+					</div>
 				</div>
 			</div>
 			
@@ -141,8 +164,8 @@
 									Unit:
 								</div>
 								<div class='col-md-6'>
-									<select class='form-control' ng-model='cost.period.unit'>
-										<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+									<select class='form-control' ng-model='cost.period.unit'
+											ng-options='cost as cost for cost in availableCostUnits'>
 									</select>
 								</div>
 							</div>
@@ -200,8 +223,8 @@
 										Unit
 									</div>
 									<div class='col-md-6'>
-										<select class='form-control' ng-model='includeType.period.unit'>
-											<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+										<select class='form-control' ng-model='includeType.period.unit'
+												ng-options='cost as cost for cost in availableCostUnits'>
 										</select>
 									</div>
 								</div>

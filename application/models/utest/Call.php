@@ -123,12 +123,14 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$data['call_type'] = $call_type;
 				break;
 			case 'reservation_time':
+				$data['call_type'] = $call_type;
 				break;
 			case 'release_call':
 				$data['duration'] = $duration;
 				$data['scp_release_cause'] = 'tmp';
 				$data['isup_release_cause'] = 'tmp';
 				$data['call_leg'] = 'x'; //(call party terminated the call: 0 – MSC, 1 – originator (Calling party), 2 – terminator (Called party), 3 – SCP, 4 - Billing)
+				$data['call_type'] = $call_type;
 				break;
 			default:
 				$data = array(); // Case with Error, not support API name

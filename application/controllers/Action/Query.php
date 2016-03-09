@@ -163,7 +163,10 @@ class QueryAction extends ApiAction {
 		} else {
 			$lines = $model->getData($query);
 			foreach ($lines as &$line) {
-				$line = Billrun_Util::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));;
+				if (isset($line['source_ref'])) {
+					$line['source_ref_value'] = $line->get('source_ref', false)->getRawData();
+				}
+				$line = Billrun_Util::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));
 			}
 		}
 		

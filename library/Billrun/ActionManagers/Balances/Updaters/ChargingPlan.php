@@ -97,9 +97,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		} else if ($query['service_provider'] != $subscriber['service_provider']) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			// TODO: OFER I THINK THIS WILL RETURN A PROPER ERROR IF THE SERVER
-			// PROVIDERS MISMATCH. But you wrote the code so I am not entirely sure
-			// It seems to work so I think it's ok, tell me if this is wrong
 			return false;
 		}
 
