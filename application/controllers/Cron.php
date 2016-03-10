@@ -104,6 +104,11 @@ class CronController extends Yaf_Controller_Abstract {
 		$handler = new Billrun_Autorenew_Handler();
 		$handler->autoRenewServices();
 	}
+	
+	public function closeBalancesAction() {
+		$handler = new Billrun_Balances_Handler();
+		$handler->closeBalances();
+	}
 
 	public function nonRecurringAction() {
 		$this->cancelSlownessByEndedNonRecurringPlans();

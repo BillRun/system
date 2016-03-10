@@ -279,7 +279,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+			if(isset($jsonUpdateData[$field]) && (!empty($jsonUpdateData[$field])) || $jsonUpdateData[$field] === 0) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
