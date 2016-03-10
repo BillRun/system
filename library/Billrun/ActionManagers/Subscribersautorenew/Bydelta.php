@@ -41,7 +41,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	protected function getDefaultRecord() {
 		$defaultRecord = array();
 		$defaultRecord['interval'] = 'month';
-		$defaultRecord['operation'] = 'inc';
+		// TODO: Default is now set.
 		$defaultRecord['sid'] = $this->sid;
 		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);
 		return $defaultRecord;

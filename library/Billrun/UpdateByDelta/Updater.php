@@ -105,6 +105,11 @@ abstract class Billrun_UpdateByDelta_Updater {
 				return false;
 			}
 			
+			if(!isset($entity[$translate])) {
+				Billrun_Factory::log("Field " . $translate . " is missing in translated entity", Zend_Log::NOTICE);
+				continue;
+			}
+			
 			$query[$field] = $entity[$translate];
 		}
 		
