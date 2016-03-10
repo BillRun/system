@@ -142,6 +142,19 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	/**
+	 * Populate the operation clause
+	 * @param type $jsonUpdateData - Input json data.
+	 * @param type $set - Query to set operation to.
+	 */
+	protected function populateOperation($jsonUpdateData, &$set) {
+		if (isset($jsonUpdateData['operation'])) {
+			$set['operation'] = $jsonUpdateData['operation'];
+		} else {
+			$set['operation'] = 'set';
+		}
+	}
+	
+	/**
 	 * Populate the update query
 	 * @param type $jsonUpdateData
 	 */
@@ -163,11 +176,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$set['to'] = $jsonUpdateData['to'];
 		}
-		if (isset($jsonUpdateData['operation'])) {
-			$set['operation'] = $jsonUpdateData['operation'];
-		} else {
-			$set['operation'] = 'inc';
-		}
+
+		$this->populateOperation($jsonUpdateData, $set);
+		
 		$set['done'] = 0;
 		
 		// Check if we are at the end of the month.
