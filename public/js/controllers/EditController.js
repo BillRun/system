@@ -38,6 +38,10 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       return _.isObject(o);
     };
 
+    $scope.isArray = function (a) {
+      return _.isArray(a);
+    };
+
     $scope.setAdvancedMode = function (mode) {
       $scope.advancedMode = mode;
     };
