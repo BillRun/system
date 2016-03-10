@@ -94,6 +94,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$balance = $wallet->getPartialBalance();
 		$balance['aid'] = $subscriber['aid'];
 		$balance['sid'] = $subscriber['sid'];
+		$balance['from'] = new MongoDate();
+		$balance['to'] = $balance['from'];
 		$balance['charging_type'] = $subscriber['charging_type'];
 
 		if (isset($subscriber['charging_type'])) {
