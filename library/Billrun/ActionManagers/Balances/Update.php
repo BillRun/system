@@ -117,7 +117,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @param type $outputDocuments
 	 * @return array, with records sub array and processed lines sub array.
 	 */
-	protected function reportInLinesProcess($outputDocuments) {
+	protected function reportInLinesProcess($outputDocuments, $beforeUpdate) {
 		$processedLines = array();
 		$balancesRecords = array();
 		$balancesCol = Billrun_Factory::db()->balancesCollection();
@@ -136,7 +136,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 			
 			if (isset($balancePair['wallet'])) {
-				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet']);
+				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet'], $beforeUpdate);
 			}
 			
 			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
@@ -170,7 +170,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		unset($outputDocuments['updated']);
 		
-		$processResult = $this->reportInLinesProcess($outputDocuments);
+		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
 			
@@ -180,10 +180,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$reportedLine['lcount'] = count($processedLines);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
 			
-			if (isset($balancePair['wallet'])) {
-				$this->reportInLinesHandleWallet($reportedLine, $balance, $balancePair['wallet'], $beforeUpdate);
-			}
-			
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$linesCollection->insert($reportedLine); 	
+		
+		$archiveCollection = Billrun_Factory::db()->archiveCollection();
+		
 		// Report archive
 		foreach ($processedLines as $line) {
 			$archiveLine = array_merge($balanceLine, $line);
@@ -326,7 +327,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && (!empty($jsonUpdateData[$field])) || $jsonUpdateData[$field] === 0) {
+			if(isset($jsonUpdateData[$field]) && ((!empty($jsonUpdateData[$field])) || ($jsonUpdateData[$field] === 0))) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
