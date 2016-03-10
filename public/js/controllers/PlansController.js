@@ -66,12 +66,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         }
       };
       if (_.isUndefined($scope.entity.include[include_type])) {
-        if (include_type === "cost")
-          $scope.entity.include.cost = [new_include_type];
-        else
-          $scope.entity.include[include_type] = new_include_type;
-      } else if (include_type === "cost") {
-        $scope.entity.include.cost.push(new_include_type);
+        $scope.entity.include[include_type] = [new_include_type];
       } else if (_.isArray($scope.entity.include[include_type])) {
         $scope.entity.include[include_type].push(new_include_type);
       } else {
