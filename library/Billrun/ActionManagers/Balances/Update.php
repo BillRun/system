@@ -117,7 +117,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @param type $outputDocuments
 	 * @return array, with records sub array and processed lines sub array.
 	 */
-	protected function reportInLinesProcess($outputDocuments) {
+	protected function reportInLinesProcess($outputDocuments, $beforeUpdate) {
 		$processedLines = array();
 		$balancesRecords = array();
 		$balancesCol = Billrun_Factory::db()->balancesCollection();
@@ -136,7 +136,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 			
 			if (isset($balancePair['wallet'])) {
-				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet']);
+				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet'], $beforeUpdate);
 			}
 			
 			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
@@ -170,7 +170,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		unset($outputDocuments['updated']);
 		
-		$processResult = $this->reportInLinesProcess($outputDocuments);
+		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
 			
