@@ -107,7 +107,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		}
 		// TODO: put the charging value in the conf?
 		if(isset($chargingPlan['charging_value'])) {
-			$balanceLine['charging_value'] = $chargingPlan['charging_value'];
+			$balanceLine['charge'] = $chargingPlan['charging_value'];
 		}
 		$balanceLine['charging_type'] = implode(",",$chargingType);
 	}
@@ -173,7 +173,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
-			
+		
+		$balanceLine['aid'] = $processedLines[0]['aid'];
+		
 		// Report lines.
 		$reportedLine = $balanceLine;
 		$reportedLine['information'] = $processedLines;
@@ -187,7 +189,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Report archive
 		foreach ($processedLines as $line) {
-			$archiveLine = array_merge($balanceLine, $line);
+			$archiveLine = array_merge($this->additional, $balanceLine, $line);
 			$archiveLine['u_s'] = $reportedLine['stamp'];
 			$archiveCollection->insert($archiveLine);
 		}
