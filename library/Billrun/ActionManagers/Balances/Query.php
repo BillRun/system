@@ -26,6 +26,12 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected $balancesProjection = array();
 		
 	/**
+	 * Array of all available balances
+	 * @var array
+	 */
+	protected $availableBalances = array();
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error'=>"Success querying balances"));
@@ -37,21 +43,68 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected function queryRangeBalances() {
 		try {
 			$cursor = $this->collection->query($this->balancesQuery)->cursor();
-			$returnData = array();
+			$existingBalances = array();
 			
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
+				$externalID = $rawItem['pp_includes_external_id'];
+				unset($this->availableBalances[$externalID]);
+				$existingBalances[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
 			}
+			
+			$returnData = array_merge($existingBalances, array_values($this->availableBalances));
+			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
-			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}	
 		
 		return $returnData;
+	}
+	
+	/**
+	 * Get the plan object built from the record values.
+	 * @param array $prepaidRecord - Prepaid record.
+	 * @return \Billrun_DataTypes_Wallet Plan object built with values.
+	 */
+	protected function getPlanObject($prepaidRecord) {
+		$chargingBy = $prepaidRecord['charging_by'];
+		$chargingByUsaget = $prepaidRecord['charging_by_usaget'];
+		if ($chargingBy == $chargingByUsaget) {
+			$chargingByValue = 0;
+		} else {
+			$chargingByValue = array($chargingBy => 0);
+		}
+
+		$ppPair['priority'] = $prepaidRecord['priority'];
+		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
+		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
+		
+		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
+	}
+	
+	/**
+	 * Translate a prepaid record to a balance.
+	 * @param type $ppinclude
+	 */
+	protected function constructBalance($ppinclude, $subscriber) {
+		$wallet = $this->getPlanObject($ppinclude);
+		$balance = $wallet->getPartialBalance();
+		$balance['aid'] = $subscriber['aid'];
+		$balance['sid'] = $subscriber['sid'];
+		$balance['from'] = new MongoDate();
+		$balance['to'] = $balance['from'];
+		$balance['charging_type'] = $subscriber['charging_type'];
+
+		if (isset($subscriber['charging_type'])) {
+			$balance['charging_type'] = $subscriber['charging_type'];
+		} else {
+			$balance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
+		}
+
+		return $balance;
 	}
 	
 	/**
@@ -129,7 +182,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$sid = (int) $input->get('sid');
 		if(empty($sid)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 31;
-			$error = "Balances Query received no sid!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -144,7 +196,91 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			return false;
 		}
 		
+		// TODO: Use the subscriber getter
+		$this->availableBalances = $this->getAvailableBalances($sid);
+		if($this->availableBalances === false) {
+			return false;
+		}
+		
 		return true;
+	}
+	
+	/**
+	 * Get a subscriber query to get the subscriber.
+	 * @param type $subscriberId - The ID of the subscriber.
+	 * @return type Query to run.
+	 */
+	protected function getSubscriberQuery($subscriberId) {
+		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
+		$query['sid'] = $subscriberId;
+		
+		return $query;
+	}
+	
+	/**
+	 * Get billrun subscriber instance.
+	 * @param type $subscriberId If of the subscriber to load.
+	 */
+	protected function getSubscriber($subscriberId) {
+		// Get subscriber query.
+		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
+		
+		$coll = Billrun_Factory::db()->subscribersCollection();
+		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
+		if ($results->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 35;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriberId));
+			return false;
+		}
+		return $results->getRawData();
+	}
+	
+	protected function getAvailableBalances($sid) {
+		$subscriber = $this->getSubscriber($sid);
+		if($subscriber === false) {
+			return false;
+		}
+		
+		$planQuery = array("name" => $subscriber['plan']);
+		$planColl = Billrun_Factory::db()->plansCollection();
+		$plan = $planColl->query($planQuery)->cursor()->current();
+		if($plan->isEmpty()) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 36;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriber['plan']));
+			return false;
+		}
+		
+		$availableBalances = array();
+		
+		$thresholds = $plan->getRawData()['pp_threshold'];
+		foreach ($thresholds as $id => $value) {
+			if($value == 0) {
+				continue;
+			}
+			
+			// Get the prepaid include record.
+			$constructed = $this->constructByPrepaid($subscriber, $id);
+			if($constructed === false) {
+				continue;
+			}
+			
+			$availableBalances[$id] = $constructed;
+		}
+		
+		return $availableBalances;
+	}
+	
+	protected function constructByPrepaid($subscriber, $id) {
+		// Get the prepaid include record.
+		$ppQuery = array("external_id" => $id);
+		$ppColl = Billrun_Factory::db()->prepaidincludesCollection();
+		$ppinclude = $ppColl->query($ppQuery)->cursor()->current();
+		if($ppinclude->isEmpty()) {
+			Billrun_Factory::log("Faild to retrieve pp includes. Query: " . $ppQuery, Zend_Log::NOTICE);
+			return false;
+		}
+
+		return $this->constructBalance($ppinclude, $subscriber);
 	}
 	
 	/**
@@ -156,7 +292,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		
 		// Check if received both external_id and name.
 		if(count($prepaidQuery) > 1) {
-			$error ="Received both external id and name in balances query, specify one or none.";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 32;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -206,7 +341,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$prepaidRecord = $prepaidCollection->query($prepaidQuery)->cursor()->current();
 		if(!$prepaidRecord || $prepaidRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 33;
-			$error = "Failed to get prepaid record";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
