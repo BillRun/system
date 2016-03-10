@@ -339,7 +339,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterChargesCalculation(&$row, &$charges) {
-		if ($row['type'] === 'gy') {
+		$balance = Billrun_Factory::db()->balancesCollection()->getRef($this->row['balance_ref']);
+		if ($row['type'] === 'gy' &&
+			in_array($balance['pp_includes_external_id'], array(1,2,9,10))) {
 			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
 			
 			if ($charges['total'] > $diff) {
