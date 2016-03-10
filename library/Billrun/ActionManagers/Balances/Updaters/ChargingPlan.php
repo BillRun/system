@@ -166,6 +166,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 									 $recordToSet,
 									 $updateQuery) {
 		// Create a default balance record.
+		// TODO: Why are there values passed that are not used?
 		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet);
 		if($defaultBalance === false) {
 			return false;
