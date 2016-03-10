@@ -95,6 +95,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if(isset($chargingPlan['charging_type'])) {
 			$chargingType = $chargingPlan['charging_type'];
 		}
+		// TODO: put the charging value in the conf?
+		if(isset($chargingPlan['charging_value'])) {
+			$balanceLine['charging_value'] = $chargingPlan['charging_value'];
+		}
 		$balanceLine['charging_type'] = implode(",",$chargingType);
 	}
 	
