@@ -149,8 +149,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function populateOperation($jsonUpdateData, &$set) {
 		if (isset($jsonUpdateData['operation'])) {
 			$set['operation'] = $jsonUpdateData['operation'];
-		} else {
-			$set['operation'] = 'set';
 		}
 	}
 	
@@ -327,6 +325,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+		$this->updateQuery['$set']['operation'] = $planRecord['operation'];
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
 		$this->handlePlanInclude($planRecord);
