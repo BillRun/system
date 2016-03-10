@@ -263,7 +263,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 * @todo Add compatiblity to prepaid
 	 */
-	public function loadSubscriberBalance($row) {
+	public function loadSubscriberBalance($row, $granted_volume = null, $granted_cost = null) {
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -274,7 +274,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$row['plan_ref'] = $plan_ref;
-		$balance = new Billrun_Balance($row);
+		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
+		$balance = new Billrun_Balance($instanceOptions);
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
@@ -366,6 +367,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges));
 
 		$ret[$this->pricingField] = $charges['total'];
 		$ret[$this->interconnectChargeField] = $charges['interconnect'];
@@ -552,9 +554,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return 0;
 	}
 
-	protected function isFreeLine($row) {
+	protected function isFreeLine(&$row) {
 		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
-			return ($row['type'] === 'gy' && isset($row['in_data_slowness']) && $row['in_data_slowness']);
+			$isFreeLine = false;
+			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row,&$isFreeLine));
+			if ($isFreeLine) {
+				$row['free_line'] = true;
+			}
+			return $isFreeLine;
 		}
 		return false;
 	}
@@ -578,13 +585,21 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
 		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
-		if (!$this->loadSubscriberBalance($row)) { // will load $this->balance
+		if ($row['charging_type'] === 'prepaid') {
+			$min_balance_volume = (-1) * Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $row['usaget'], Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+			$charges = $this->getChargesByRate($rate, $row['usaget'], $min_balance_volume, $plan->getName(), $this->getCallOffset());
+			$min_balance_cost = $charges['total'];
+		} else {
+			$min_balance_volume = null;
+			$min_balance_cost = null;
+		}
+		if (!$this->loadSubscriberBalance($row, $min_balance_volume, $min_balance_cost)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
-				$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
-				$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
-				$granted_cost = $charges['total'];
 				if ($granted_cost == '0') {
+					$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
+					$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+					$granted_cost = $charges['total'];
 					return array(
 						$this->pricingField => $granted_cost,
 						$this->interconnectChargeField => $charges['interconnect'],

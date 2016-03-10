@@ -77,6 +77,54 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isSubscriberInDataSlowness($row) {
 		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
 	}
+	
+	protected function getMaxCurrencyValues($row) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		if ($plan && isset($plan['max_currency'])) {
+			$maxCurrency = $plan['max_currency'];
+		} else {
+			$maxCurrency = Billrun_Factory::config()->getConfigValue('realtimeevent.data.maxCurrency', array());
+		}
+		
+		return $maxCurrency;
+	}
+	
+	protected function getSubscriberDiffFromMaxCurrency($row) {
+		$maxCurrency = $this->getMaxCurrencyValues($row);
+		$query = $this->getSubscriberCurrencyUsageQuery($row, $maxCurrency['period']);
+		$archiveDb = Billrun_Factory::db();
+		$lines_archive_coll = $archiveDb->archiveCollection();
+		$res = $lines_archive_coll->aggregate($query)->current();
+		return $maxCurrency['cost'] - $res->get('total_price');
+	}
+	
+	protected function isSubscriberInMaxCurrency($row) {
+		$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+		return ($diff <= 0);
+	}
+			
+	
+	protected function getSubscriberCurrencyUsageQuery($row, $period) {
+		$startTime = Billrun_Util::getStartTimeByPeriod($period);
+		$match = array(
+			'type' => 'gy',
+			'sid' => $row['sid'],
+			'pp_includes_external_id' => array(
+				'$in' => array(1,2,9,10)
+			),
+			'urt' => array(
+				'$gte' => new MongoDate($startTime),
+			),
+		);
+		$group = array(
+			'_id' => '$sid',
+			'total_price' => array(
+				'$sum' => '$aprice'
+			),
+		);
+		
+		return array(array('$match' => $match),array('$group' => $group));
+	}
 
 	/**
 	 * Gets data slowness speed and SOC according to plan or default 
@@ -306,6 +354,35 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
 		if (isset($record['service']['code']) && empty($record['service']['code'])) {
 			$record['in_data_slowness'] = FALSE;
+		}
+	}
+	
+	public function isFreeLine(&$row, &$isFreeLine) {
+		$isFreeLine = false;
+		if ($row['type'] === 'gy') {
+			if ($this->isSubscriberInDataSlowness($row)) {
+				$row['free_line_reason'] = 'In data slowness';
+				$isFreeLine = true;
+				return;
+			} 
+			if ($this->isSubscriberInMaxCurrency($row)) {
+				$row['free_line_reason'] = 'Passed max currency';
+				$isFreeLine = true;
+				return;
+			} 
+		}
+	}
+
+	public function afterChargesCalculation(&$row, &$charges) {
+		$balance = Billrun_Factory::db()->balancesCollection()->getRef($this->row['balance_ref']);
+		if ($row['type'] === 'gy' &&
+			in_array($balance['pp_includes_external_id'], array(1,2,9,10))) {
+			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+			
+			if ($charges['total'] > $diff) {
+				$row['over_max_currency'] = $charges['total'] - $diff;
+				$charges['total'] = $diff;
+			}
 		}
 	}
 
