@@ -314,9 +314,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
+		
+		$this->balanceBefore = $balancesColl->query($query)->cursor()->current();
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if (!$balancesColl->exists($query)) {
+		if ($this->balanceBefore->isEmpty()) {
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());

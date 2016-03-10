@@ -74,7 +74,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 	
-	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet) {
+	/**
+	 * Report the wallet to the lines table
+	 * @param type $insertLine
+	 * @param type $balance
+	 * @param type $wallet
+	 * @param type $beforeUpdate
+	 */
+	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet, $beforeUpdate) {
 		$insertLine["usaget"] = 'balance';
 		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
 		$insertLine["usagev"] = $wallet->getValue();
@@ -82,9 +89,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		if(!isset($insertLine['normalized'])) {
-			$balance_after = $this->getBalanceValue($balance);
-			$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
-			$insertLine["balance_after"] = $balance_after;
+			$insertLine['balance_after'] = $this->getBalanceValue($balance);
+			if($beforeUpdate->isEmpty()) {
+				$insertLine['balance_before'] = 0;	
+			} else {
+				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdate);
+			}
 		}
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
@@ -141,9 +151,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
+	 * @param array $beforeUpdate the balance before the update action.
 	 * @return array Array of filtered balance mongo records.
 	 */
-	protected function reportInLines($outputDocuments) {
+	protected function reportInLines($outputDocuments, $beforeUpdate) {
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
 		$balanceLine['urt'] = new MongoDate();
@@ -158,21 +169,21 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		}
 		
 		unset($outputDocuments['updated']);
-
+		
 		$processResult = $this->reportInLinesProcess($outputDocuments);
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
-		
+			
 		// Report lines.
 		$reportedLine = $balanceLine;
 		$reportedLine['information'] = $processedLines;
 		$reportedLine['lcount'] = count($processedLines);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
-		
-		$linesCollection = Billrun_Factory::db()->linesCollection();
-		$linesCollection->insert($reportedLine);
-		$archiveCollection = Billrun_Factory::db()->archiveCollection();
-
+			
+			if (isset($balancePair['wallet'])) {
+				$this->reportInLinesHandleWallet($reportedLine, $balance, $balancePair['wallet'], $beforeUpdate);
+			}
+			
 		// Report archive
 		foreach ($processedLines as $line) {
 			$archiveLine = array_merge($balanceLine, $line);
@@ -212,7 +223,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
 			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments);
+			$outputDocuments = $this->reportInLines($outputDocuments, $updater->getBeforeUpdate());
 		}
 		
 		if($success) {
@@ -315,7 +326,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+			if(isset($jsonUpdateData[$field]) && (!empty($jsonUpdateData[$field])) || $jsonUpdateData[$field] === 0) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
