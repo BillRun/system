@@ -45,8 +45,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       return 'views/plans/' + type + 'edit.html';
     };
 
-    $scope.removeIncludeType = function (include_type_name) {
-      delete $scope.entity.include[include_type_name];
+    $scope.removeIncludeType = function (include_type_name, index) {
+      if (index > -1) $scope.entity.include[include_type_name].splice(index, 1);
+      else delete $scope.entity.include[include_type_name];
     };
     $scope.removeIncludeCost = function (index) {
       $scope.entity.include.cost.splice(index, 1);
@@ -65,12 +66,11 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         }
       };
       if (_.isUndefined($scope.entity.include[include_type])) {
-        if (include_type === "cost")
-          $scope.entity.include.cost = [new_include_type];
-        else
-          $scope.entity.include[include_type] = new_include_type;
-      } else if (include_type === "cost") {
-        $scope.entity.include.cost.push(new_include_type);
+        $scope.entity.include[include_type] = [new_include_type];
+      } else if (_.isArray($scope.entity.include[include_type])) {
+        $scope.entity.include[include_type].push(new_include_type);
+      } else {
+        $scope.entity.include[include_type] = [$scope.entity.include[include_type], new_include_type];
       }
       $scope.newIncludeType.type = '';
     };
