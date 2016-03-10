@@ -159,7 +159,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$subscribersColl->update($findQuery, $updateQuery);
 		if ($sendToProv) {
-			$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code'], $enterToDataSlowness);
+			$serviceCode = (isset($row['service']['code']) ? $row['service']['code'] : NULL);
+			$this->sendSlownessStateToProv($row['msisdn'], $serviceCode, $enterToDataSlowness);
 		}
 	}
 	
