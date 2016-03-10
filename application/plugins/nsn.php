@@ -35,6 +35,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	protected $ild_called_number_regex = null;
 
 	public function __construct(array $options = array()) {
+		parent::__construct($options);
 		$this->nsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('nsn.config_path')))->toArray();
 		$this->ild_called_number_regex = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.called_number_regex');
 		$this->initFraudAggregation();
