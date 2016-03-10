@@ -225,6 +225,14 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['priority'] = $this->getPriority();
 		$partialBalance[$this->getFieldName()] = $this->getValue();
 		
+		foreach ($partialBalance as $key => $value) {
+			if(!is_string($key)) {
+				continue;
+			}
+			
+			Billrun_Util::setDotArrayToArray($partialBalance, $key, $value);
+		}
+		
 		return $partialBalance;
 	}
 
