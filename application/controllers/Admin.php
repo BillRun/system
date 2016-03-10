@@ -507,6 +507,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
 		}
+		if (isset($entity['source_ref'])) {
+			$entity['source_ref'] = $entity->get('source_ref', false)->getRawData();
+		}
 
 		// passing values into the view
 		$this->getView()->entity = $entity;
