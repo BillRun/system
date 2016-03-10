@@ -96,6 +96,10 @@ class LinesModel extends TableModel {
 			} else {
 				$item['arate'] = $arate;
 			}
+			if (isset($item['source_ref'])) {
+				$source_ref = $item->get('source_ref', false)->getRawData();
+				$item['source_ref'] = $source_ref['name'];
+			}
 			if(isset($item['rat_type'])) {
 				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
 			}
