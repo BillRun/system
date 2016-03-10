@@ -166,6 +166,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// Report lines.
 		$reportedLine = $balanceLine;
 		$reportedLine['information'] = $processedLines;
+		$reportedLine['lcount'] = count($processedLines);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
 		
 		$linesCollection = Billrun_Factory::db()->linesCollection();
