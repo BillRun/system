@@ -1246,4 +1246,36 @@ class Billrun_Util {
 
 		return false;
 	}
+	
+	/**
+	 * Set a dot seperated array as an assoc array.
+	 * @param type $original
+	 * @param type $dotArray
+	 * @param type $value
+	 * @param type $separator
+	 * @return type
+	 */
+	function setDotArrayToArray(&$original, $dotArray, $value, $separator='.') {
+		$parts = explode($separator, $dotArray);
+		if(count($parts) <= 1) {
+			return $dotArray;
+		}
+		
+		unset($original[$dotArray]);
+		$parts[] = $value;
+				
+		$result = self::constructAssocArray($parts);
+		foreach ($result as $key => $value) {
+			$original[$key] = $value;
+		} 
+	}
+	
+	function constructAssocArray($parts) {
+		if((count($parts)) <= 1) {
+			return $parts[0];
+		}
+		
+		$shiftResult = array_shift($parts);
+		return array($shiftResult => self::constructAssocArray($parts));
+	}
 }
