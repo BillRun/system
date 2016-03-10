@@ -89,17 +89,63 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
 	
+	protected function reportInLinesHandleChargingPlan(&$balanceLine, $chargingPlan) {
+		$balanceLine['service_provider'] = $chargingPlan['service_provider'];
+		$chargingType = array();
+		if(isset($chargingPlan['charging_type'])) {
+			$chargingType = $chargingPlan['charging_type'];
+		}
+		// TODO: put the charging value in the conf?
+		if(isset($chargingPlan['charging_value'])) {
+			$balanceLine['charging_value'] = $chargingPlan['charging_value'];
+		}
+		$balanceLine['charging_type'] = implode(",",$chargingType);
+	}
+	
+	/**
+	 * Process report in lines
+	 * @param type $outputDocuments
+	 * @return array, with records sub array and processed lines sub array.
+	 */
+	protected function reportInLinesProcess($outputDocuments) {
+		$processedLines = array();
+		$balancesRecords = array();
+		$balancesCol = Billrun_Factory::db()->balancesCollection();
+		foreach ($outputDocuments as $balancePair) {
+			$balance = $balancePair['balance'];
+			$subscriber = $balancePair['subscriber'];
+			$archiveLine['aid'] = $subscriber['aid'];
+			$archiveLine['source_ref'] = $balancePair['source'];
+			
+			// TODO: Move this logic to a updater_balance class.
+			if(isset($balancePair['normalized'])) {
+				$archiveLine["balance_before"] = $balancePair['normalized']['before'];
+				$archiveLine["balance_after"] = $balancePair['normalized']['normalized'];
+				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
+				$archiveLine['normalized'] = $reducted;
+			}
+			
+			if (isset($balancePair['wallet'])) {
+				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet']);
+			}
+			
+			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
+			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
+			$processedLines[] = $archiveLine;
+			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
+		}
+		
+		return array("records" => $balancesRecords, "lines" => $processedLines);
+	}
+	
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
 	 * @return array Array of filtered balance mongo records.
 	 */
 	protected function reportInLines($outputDocuments) {
-		$db = Billrun_Factory::db();
-		$linesCollection = $db->linesCollection();
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
-		$balancesRecords = array();
 		$balanceLine['urt'] = new MongoDate();
 		$balanceLine['process_time'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
@@ -107,41 +153,31 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Handle charging plan values.
 		if(isset($outputDocuments['charging_plan'])) {
-			$chargingPlan = $outputDocuments['charging_plan'];
-			$balanceLine['service_provider'] = $chargingPlan['service_provider'];
-			$chargingType = array();
-			if(isset($chargingPlan['charging_type'])) {
-				$chargingType = $chargingPlan['charging_type'];
-			}
-			$balanceLine['charging_type'] = implode(",",$chargingType);
+			$this->reportInLinesHandleChargingPlan($balanceLine, $outputDocuments['charging_plan']);
 			unset($outputDocuments['charging_plan']);
 		}
 		
 		unset($outputDocuments['updated']);
+
+		$processResult = $this->reportInLinesProcess($outputDocuments);
+		$balancesRecords = $processResult['records'];
+		$processedLines = $processResult['lines'];
 		
-		foreach ($outputDocuments as $balancePair) {
-			$balance = $balancePair['balance'];
-			$subscriber = $balancePair['subscriber'];
-			$insertLine = $balanceLine;
-			$insertLine['aid'] = $subscriber['aid'];
-			$insertLine['source_ref'] = $balancePair['source'];
-			
-			// TODO: Move this logic to a updater_balance class.
-			if(isset($balancePair['normalized'])) {
-				$insertLine["balance_before"] = $balancePair['normalized']['before'];
-				$insertLine["balance_after"] = $balancePair['normalized']['normalized'];
-				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
-				$insertLine['normalized'] = $reducted;
-			}
-			
-			if (isset($balancePair['wallet'])) {
-				$this->reportInLinesHandleWallet($insertLine, $balance, $balancePair['wallet']);
-			}
-			
-			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
-			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
-			$linesCollection->insert($insertLine);
-			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
+		// Report lines.
+		$reportedLine = $balanceLine;
+		$reportedLine['information'] = $processedLines;
+		$reportedLine['lcount'] = count($processedLines);
+		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
+		
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$linesCollection->insert($reportedLine);
+		$archiveCollection = Billrun_Factory::db()->archiveCollection();
+
+		// Report archive
+		foreach ($processedLines as $line) {
+			$archiveLine = array_merge($balanceLine, $line);
+			$archiveLine['u_s'] = $reportedLine['stamp'];
+			$archiveCollection->insert($archiveLine);
 		}
 		
 		return $balancesRecords;
