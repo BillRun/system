@@ -74,7 +74,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 	
-	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet) {
+	/**
+	 * Report the wallet to the lines table
+	 * @param type $insertLine
+	 * @param type $balance
+	 * @param type $wallet
+	 * @param type $beforeUpdate
+	 */
+	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet, $beforeUpdate) {
 		$insertLine["usaget"] = 'balance';
 		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
 		$insertLine["usagev"] = $wallet->getValue();
@@ -82,9 +89,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		if(!isset($insertLine['normalized'])) {
-			$balance_after = $this->getBalanceValue($balance);
-			$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
-			$insertLine["balance_after"] = $balance_after;
+			$insertLine['balance_after'] = $this->getBalanceValue($balance);
+			if($beforeUpdate->isEmpty()) {
+				$insertLine['balance_before'] = 0;	
+			} else {
+				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdate);
+			}
 		}
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
@@ -92,9 +102,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
+	 * @param array $beforeUpdate the balance before the update action.
 	 * @return array Array of filtered balance mongo records.
 	 */
-	protected function reportInLines($outputDocuments) {
+	protected function reportInLines($outputDocuments, $beforeUpdate) {
 		$db = Billrun_Factory::db();
 		$linesCollection = $db->linesCollection();
 		$balanceLine = $this->additional;
@@ -135,7 +146,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 			
 			if (isset($balancePair['wallet'])) {
-				$this->reportInLinesHandleWallet($insertLine, $balance, $balancePair['wallet']);
+				$this->reportInLinesHandleWallet($insertLine, $balance, $balancePair['wallet'], $beforeUpdate);
 			}
 			
 			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
@@ -176,7 +187,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
 			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments);
+			$outputDocuments = $this->reportInLines($outputDocuments, $updater->getBeforeUpdate());
 		}
 		
 		if($success) {

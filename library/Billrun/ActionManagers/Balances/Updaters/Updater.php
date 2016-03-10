@@ -39,6 +39,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	protected $recurring = false;
 	
 	/**
+	 * The document before the balance update.
+	 * @var type 
+	 */
+	protected $balanceBefore = null;
+	
+	/**
 	 * Create a new instance of the updater class.
 	 * @param array $options - Holding:
 	 * 						   increment - If true then the values in mongo are updated by incrementation,
@@ -370,6 +376,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		);
 	}
 
+	/**
+	 * Get the balance record before the update.
+	 * @return type
+	 */
+	public function getBeforeUpdate() {
+		return $this->balanceBefore;
+	}
+	
 	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
