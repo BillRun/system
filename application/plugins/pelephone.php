@@ -98,6 +98,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
 			'sendRequestToProv' => $slownessParams['sendRequestToProv'],
+			'sendRequestTries' => $slownessParams['sendRequestTries'],
 		);
 	}
 	
@@ -149,6 +150,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param bool $sendToProv true - send to provisioning, false - don't send to provisioning
 	 */
 	protected function updateSubscriberInDataSlowness($row, $enterToDataSlowness = true, $sendToProv = true) {
+		if ($sendToProv) {
+			$serviceCode = (isset($row['service']['code']) ? $row['service']['code'] : NULL);
+			if (!$this->sendSlownessStateToProv($row['msisdn'], $serviceCode, $enterToDataSlowness)) {
+				return;
+			}
+		}
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
@@ -158,10 +165,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$updateQuery = array('$unset' => array('in_data_slowness' => 1));		
 		}
 		$subscribersColl->update($findQuery, $updateQuery);
-		if ($sendToProv) {
-			$serviceCode = (isset($row['service']['code']) ? $row['service']['code'] : NULL);
-			$this->sendSlownessStateToProv($row['msisdn'], $serviceCode, $enterToDataSlowness);
-		}
 	}
 	
 	/**
@@ -191,11 +194,42 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'addHeader' => false,
 		);
 		$request = $encoder->encode($requestBody, $params);
-		$requestUrl = $slownessParams['requestUrl'];
-		Billrun_Factory::log('Sending request to prov. Details: ' . $request,  Zend_Log::DEBUG);
-		$response = Billrun_Util::sendRequest($requestUrl, $request);
-		Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
-		return $response;
+		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries']);
+	}
+	
+	protected function sendRequest($request, $requestUrl, $numOfTries = 3) {
+		$logColl = Billrun_Factory::db()->logCollection();
+		$saveData = array(
+			'source' => 'pelephonePlugin',
+			'type' => 'sendRequest',
+			'process_time' => new MongoDate(),
+			'request' => $request,
+			'response' => array(),
+			'server_host' => gethostname(),
+			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'rand' => rand(1,1000000),
+			'time' => (microtime(1))*1000,
+		);
+		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
+		for ($i = 0; $i < $numOfTries; $i++) {
+			Billrun_Factory::log('Sending request to prov, try number ' . ($i+1) . '. Details: ' . $request,  Zend_Log::DEBUG);
+			$response = Billrun_Util::sendRequest($requestUrl, $request);
+			if ($response) {
+				array_push($saveData['response'], 'attempt ' . ($i+1) . ': ' . $response);
+				Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
+				$decoder = new Billrun_Decoder_Xml();
+				$response = $decoder->decode($response);
+				if (isset($response['HEADER']['STATUS_CODE']) && 
+					$response['HEADER']['STATUS_CODE'] === 'OK') {
+					$logColl->save(new Mongodloid_Entity($saveData), 0);
+					return true;
+				}
+			}
+			
+		}
+		Billrun_Factory::log('No response from prov. Request details: ' . $request,  Zend_Log::ALERT);
+		$logColl->save(new Mongodloid_Entity($saveData), 0);
+		return false;
 	}
 
 	/**
