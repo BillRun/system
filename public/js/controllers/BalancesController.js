@@ -42,6 +42,10 @@ function BalancesController($controller, Utils, $http, $window, Database) {
       sid: parseInt(vm.entity.sid, 10),
       query: JSON.stringify({
         "pp_includes_name": vm.entity.pp_includes_name
+      }),
+      additional: JSON.stringify({
+        mtr_type: "AdminPanel",
+        mtr_info: username
       })
     };
     if (vm.action === "new") {
