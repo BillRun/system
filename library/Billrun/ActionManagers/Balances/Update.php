@@ -84,17 +84,21 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet, $beforeUpdate) {
 		$insertLine["usaget"] = 'balance';
 		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
-		$insertLine["usagev"] = $wallet->getValue();
+		if ($insertLine["charging_usaget"] == 'cost' || $insertLine["charging_usaget"] == 'total_cost') {
+			$insertLine["aprice"] = $wallet->getValue();
+		} else {
+			$insertLine["usagev"] = $wallet->getValue();
+		}
 		$insertLine["pp_includes_name"] = $wallet->getPPName();
 		$insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		if(!isset($insertLine['normalized'])) {
-			$insertLine['balance_after'] = $this->getBalanceValue($balance);
 			if($beforeUpdate->isEmpty()) {
 				$insertLine['balance_before'] = 0;	
 			} else {
 				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdate);
 			}
+			$insertLine['balance_after'] = $this->getBalanceValue($balance);
 		}
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
@@ -107,7 +111,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		}
 		// TODO: put the charging value in the conf?
 		if(isset($chargingPlan['charging_value'])) {
-			$balanceLine['charge'] = $chargingPlan['charging_value'];
+			$balanceLine['aprice'] = $balanceLine['charge'] = $chargingPlan['charging_value'];
 		}
 		$balanceLine['charging_type'] = implode(",",$chargingType);
 	}
@@ -161,6 +165,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['process_time'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
+		$balanceLine['usaget'] = 'balance';
 		
 		// Handle charging plan values.
 		if(isset($outputDocuments['charging_plan'])) {
@@ -189,6 +194,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		// Report archive
 		foreach ($processedLines as $line) {
+			unset($balanceLine['aprice']);
 			$archiveLine = array_merge($this->additional, $balanceLine, $line);
 			$archiveLine['u_s'] = $reportedLine['stamp'];
 			$archiveCollection->insert($archiveLine);
