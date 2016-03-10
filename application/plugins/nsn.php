@@ -148,6 +148,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			),
 			'where' => array(
 				'$match' => array(
+					'event_stamp' => array('$exists' => false),
 					'deposit_stamp' => array('$exists' => false),
 				),
 			),
@@ -156,7 +157,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			),
 			'group' => array(
 				'$group' => array(
-					"_id" => array('sid' => '$sid', 'imsi'=> '$imsi', 'msisdn' => '$calling_number'),
+					"_id" => array('sid' => '$sid'/*, 'imsi'=> '$imsi'*/, 'msisdn' => '$calling_number'),
 					"usagev" => array('$sum' => '$usagev'),
 					"duration" => array('$sum' => '$usagev'),
 					'lines_stamps' => array('$addToSet' => '$stamp'),
@@ -168,7 +169,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					'usagev' => 1,
 					'duration' => 1,
 					'sid' => '$_id.sid',
-					'imsi' => '$_id.imsi',
+					//'imsi' => '$_id.imsi',
 					'msisdn' => array('$substr' => array('$_id.msisdn', 3,10)),//'$_id.msisdn',
 					'lines_stamps' => 1,
 				),
@@ -176,7 +177,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			'project' => array(
 				'$project' => array_merge(array(					
 					'duration' => 1,
-					'imsi' => 1,
+					//'imsi' => 1,
 					'sid' => 1,
 					'msisdn' => 1,
 					'lines_stamps' => 1,
