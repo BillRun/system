@@ -508,7 +508,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			die("There's already a newer entity with this key");
 		}
 		if (isset($entity['source_ref'])) {
-			$entity['source_ref'] = $entity->get('source_ref', false)->getRawData();
+			$source_ref = $entity->get('source_ref', false)->getRawData();
+			unset($source_ref['_id']);
+			$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
 		}
 
 		// passing values into the view
