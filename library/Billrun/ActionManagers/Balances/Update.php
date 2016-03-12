@@ -90,13 +90,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$insertLine["usagev"] = $wallet->getValue();
 		}
 		$insertLine["pp_includes_name"] = $wallet->getPPName();
-		$insertLine["pp_includes_external_id"] = $wallet->getPPID();
+		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
+		$beforeUpdateBalance = $beforeUpdate[$ppID];
 		if(!isset($insertLine['normalized'])) {
-			if($beforeUpdate->isEmpty()) {
+			if($beforeUpdateBalance->isEmpty()) {
 				$insertLine['balance_before'] = 0;	
 			} else {
-				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdate);
+				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
 			}
 			$insertLine['balance_after'] = $this->getBalanceValue($balance);
 		}
@@ -129,6 +130,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
 			$archiveLine['aid'] = $subscriber['aid'];
+			$archiveLine['service_provider'] = $subscriber['service_provider'];
 			$archiveLine['source_ref'] = $balancePair['source'];
 			
 			// TODO: Move this logic to a updater_balance class.
@@ -179,7 +181,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
 		
-		$balanceLine['aid'] = $processedLines[0]['aid'];
+		if(count($processedLines > 0)) {
+			$balanceLine['aid'] = $processedLines[0]['aid'];
+			$balanceLine['service_provider'] = $processedLines[0]['service_provider'];
+			$balanceLine['source_ref'] = $processedLines[0]['source_ref'];
+		}
 		
 		// Report lines.
 		$reportedLine = $balanceLine;
