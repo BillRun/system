@@ -413,7 +413,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function getCurrentUsernameAction() {
-		$this->responseSuccess(array('username' => Billrun_Factory::user()->getUsername()));
+		if ($user = Billrun_Factory::user()) {
+			$this->responseSuccess(array('username' => $user->getUsername()));
+		}
 		return false;
 	}
 	
