@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
+	protected $type = 'PrepaidInclude';
+
 	/**
 	 * Get the array of strings to translate the names of the input fields to the names used in the db.
 	 * @return array.
