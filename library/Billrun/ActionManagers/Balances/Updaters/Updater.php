@@ -74,6 +74,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 	}
 	
+	public function getType() {
+		return $this->type;
+	}
+	
 	/**
 	 * TODO: This kind of translator might exist, but if it does we need a more generic way. Best if not needed at all.
 	 * Update the field names to fit what is in the mongo.

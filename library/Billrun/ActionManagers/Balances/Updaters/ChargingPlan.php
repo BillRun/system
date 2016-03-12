@@ -13,6 +13,7 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
+	protected $type = 'ChargingPlan';
 	/**
 	 * Get the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.

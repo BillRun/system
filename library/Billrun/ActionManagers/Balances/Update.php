@@ -44,6 +44,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $additional;
 	
 	/**
+	 * the updater class container
+	 * 
+	 * @var Billrun_ActionManagers_Balances_Updaters_Updater
+	 */
+	protected $updater;
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
@@ -114,7 +121,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if(isset($chargingPlan['charging_value'])) {
 			$balanceLine['aprice'] = $balanceLine['charge'] = $chargingPlan['charging_value'];
 		}
-		$balanceLine['charging_type'] = implode(",",$chargingType);
+		$balanceLine['charging_plan_type'] = implode(",",$chargingType);
 	}
 	
 	/**
@@ -175,6 +182,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			unset($outputDocuments['charging_plan']);
 		}
 		
+		$balanceLine['charging_type'] = $this->updater->getType();
+		
 		unset($outputDocuments['updated']);
 		
 		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
@@ -227,9 +236,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$success = true;
 
 		// Get the updater for the filter.
-		$updater = $this->getAction();
+		$this->updater = $this->getAction();
 		
-		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
+		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
 			$success = false;
@@ -238,16 +247,16 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
 			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments, $updater->getBeforeUpdate());
+			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
 		}
 		
 		if($success) {
 			$this->stripTx($outputDocuments);
 		} else {
-			$updaterError = $updater->getError();
+			$updaterError = $this->updater->getError();
 			if($updaterError) {
 				$this->error = $updaterError;
-				$this->errorCode = $updater->getErrorCode();
+				$this->errorCode = $this->updater->getErrorCode();
 			}
 		}
 		
