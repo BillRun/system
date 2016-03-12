@@ -507,6 +507,7 @@ function detailFormatter(index, row) {
       });
       $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
 
+      if (lines[0] && lines[0].usaget === "balance") { return; }
       // lines
       $title = $("<strong>Breakdown By Intervals</strong>");
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
