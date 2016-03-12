@@ -199,6 +199,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
 
       $scope.availableCostUnits = ['days', 'month'];
+      $scope.availableActiveUnits = ['days', 'months'];
       $scope.availableOperations = {
         set: {
           value: 'set',
