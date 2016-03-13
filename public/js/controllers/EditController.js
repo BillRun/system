@@ -8,7 +8,6 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
 
     angular.element('li.active').removeClass('active');
     angular.element('.menu-item-' + $routeParams.collection).addClass('active');
-    angular.element("title").text("Billrun - " + _.capitalize($routeParams.collection));
 
     $scope.cancel = function () {
       $window.location = baseUrl + '/admin/' + $routeParams.collection;
