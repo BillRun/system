@@ -12,6 +12,8 @@ app.controller('SubscribersAutoRenewController', ['$scope', '$controller', 'Data
         if (_.isObject(entity.creation_date)) {
           entity.creation_date = new Date(entity.creation_date.sec * 1000);
         }
+        $scope.title = _.capitalize($scope.action) + " Subscriber Auto Renew";
+        angular.element('title').text("BillRun - " + $scope.title);
       });
       $scope.intervals = ["month", "day"];
       Database.getAvailableServiceProviders().then(function (res) {

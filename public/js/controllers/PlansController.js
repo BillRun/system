@@ -194,6 +194,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         }
         $scope.plan_rates = res.data.plan_rates;
         $scope.authorized_write = res.data.authorized_write;
+        $scope.title = _.capitalize($scope.action) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
+        angular.element('title').text("BillRun - " + $scope.title);
       }, function (err) {
         alert("Connection error!");
       });

@@ -2,7 +2,7 @@ angular
   .module('BillrunApp')
   .controller('BalancesController', BalancesController);
 
-function BalancesController($controller, Utils, $http, $window, Database) {
+function BalancesController($controller, Utils, $http, $window, Database, $routeParams) {
   'use strict';
 
   var vm = this;
@@ -88,6 +88,8 @@ function BalancesController($controller, Utils, $http, $window, Database) {
         entity.from = new Date(entity.from.sec * 1000);
       }
       vm.original_entity = _.cloneDeep(entity);
+      vm.title = _.capitalize($routeParams.action) + " Subscriber " + vm.entity.sid + " - Balance";
+      angular.element('title').text("Billrun - " + vm.title);
     });
 
     Database.getAvailablePPIncludes().then(function (res) {
