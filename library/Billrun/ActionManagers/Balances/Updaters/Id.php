@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers_Balances_Updaters_Updater{
 	
+	protected $type = 'MongoId';
+	
 	protected $balancesRecord = null;
 
 	/**

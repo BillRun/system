@@ -2,7 +2,7 @@ angular
   .module('BillrunApp')
   .controller('BalancesController', BalancesController);
 
-function BalancesController($controller, Utils, $http, $window, Database) {
+function BalancesController($controller, Utils, $http, $window, Database, $routeParams) {
   'use strict';
 
   var vm = this;
@@ -18,6 +18,23 @@ function BalancesController($controller, Utils, $http, $window, Database) {
         });
       }
       if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost)) vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
+      // save via Admin.php if only date was changed UNLESS it's CORE BALANCE (id: 1)
+      if (vm.entity.pp_includes_external_id != 1 && !angular.equals(vm.original_entity, vm.entity)) {
+        vm.original_entity.to = vm.entity.to;
+        if (angular.equals(vm.original_entity, vm.entity)) {
+          var params = {
+            entity: vm.entity,
+            coll: 'balances',
+            type: 'update',
+            data: vm.entity
+          };
+          Database.saveEntity(params).then(function (res) {
+            if (res.status === 200) $window.location = baseUrl + '/admin/balances';
+            else alert("Error saving balance! Please refresh and try again!");
+          });
+          return;
+        }
+      }
     }
     if (vm.entity.to && _.isObject(vm.entity.to)) vm.entity.to = vm.entity.to.toISOString();
     var postData = {
@@ -25,6 +42,10 @@ function BalancesController($controller, Utils, $http, $window, Database) {
       sid: parseInt(vm.entity.sid, 10),
       query: JSON.stringify({
         "pp_includes_name": vm.entity.pp_includes_name
+      }),
+      additional: JSON.stringify({
+        mtr_type: "AdminPanel",
+        mtr_info: username
       })
     };
     if (vm.action === "new") {
@@ -58,6 +79,7 @@ function BalancesController($controller, Utils, $http, $window, Database) {
   };
 
   vm.init = function () {
+    vm.original_entity = undefined;
     vm.initEdit(function (entity) {
       if (entity.to && _.result(entity.to, 'sec')) {
         entity.to = new Date(entity.to.sec * 1000);
@@ -65,7 +87,11 @@ function BalancesController($controller, Utils, $http, $window, Database) {
       if (entity.from && _.result(entity.from, 'sec')) {
         entity.from = new Date(entity.from.sec * 1000);
       }
+      vm.original_entity = _.cloneDeep(entity);
+      vm.title = _.capitalize($routeParams.action) + " Subscriber " + vm.entity.sid + " - Balance";
+      angular.element('title').text("Billrun - " + vm.title);
     });
+
     Database.getAvailablePPIncludes().then(function (res) {
       vm.availableBalanceTypes = res.data;
     });

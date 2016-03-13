@@ -45,6 +45,10 @@ class utest_BalanceCardModel extends utest_AbstractUtestModel {
 			'method' => 'update',
 			'sid' => $params['sid'],
 			'query' => json_encode(["secret" => $params['secret']]),
+			'additional' => json_encode(array(
+				'mtr_info' => Billrun_Factory::user()->getUsername(),
+				'mtr_type' => 'UTEST_BalanceCard',
+			)),
 		);
 		return $request;
 	}

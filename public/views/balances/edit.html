@@ -1,8 +1,8 @@
 <div class="container component" ng-controller='BalancesController as vm' ng-init="vm.init()">
 	<center>
-		<h2>Subscriber {{vm.entity.sid}} - Balance</h2>
+		<h2>{{vm.title}}</h2>
 	</center>
-	<form class='form-inline' ng-submit='vm.saveBalance()'>
+	<form class='form-inline'>
 		<div ng-if='!vm.advancedMode'>
 			<div class="row" ng-if="vm.action !== 'new'">
 				<div class="col-md-2">
@@ -112,7 +112,7 @@
 			<a ng-click='vm.setAdvancedMode(false)' class="clickable" ng-if='vm.advancedMode'>Basic Mode</a>
 			<a ng-click='vm.setAdvancedMode(true)' class="clickable" ng-if='!vm.advancedMode'>Advanced Mode</a>
 			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
-			<button type='submit' class="btn btn-primary" ng-if='vm.authorized_write'>Save changes</button>
+			<button type='submit' class="btn btn-primary" ng-if='vm.authorized_write' ng-click="vm.saveBalance()">Save changes</button>
 		</div>
 	</form>
 </div>

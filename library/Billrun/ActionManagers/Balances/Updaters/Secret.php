@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
 	
+	protected $type = 'Secret';
+	
 	/**
 	 * Reference to the card being used.
 	 * @var type Reference

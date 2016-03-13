@@ -39,8 +39,8 @@
 				</div>
 				<div class='col-md-6'>
 					<select ng-model="entity.operation" class="form-control"
-                                                ng-options="operation as operation for operation in availableOperations">
-					</select>				
+                                                ng-options="operation.value as operation.label for operation in availableOperations">
+					</select>
 				</div>
 			</div>
 			<div class="row" ng-if="utils.display('recurring', 'plans')">
@@ -86,15 +86,34 @@
 				</div>
 			</div>
 			
+			<hr/>
+			<div ng-if="">
+				<h3>{{utils.getDisplayValue("period", "plans")}}</h3>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("unit", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.period.unit'
+								ng-options='unit as unit for unit in availableActiveUnits'>
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("duration", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.period.duration' class='form-control' />
+					</div>
+				</div>
+			</div>
+			
 			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
-				<select class='form-control' ng-model='newIncludeType.type'>
-					<option value='' disabled>Select Rate Type</option>
-					<option ng-repeat='include_type in availableIncludeTypes'
-							ng-disabled='includeTypeExists(include_type)'
-							value='{{include_type}}'>
-						{{include_type}}
+				<select class='form-control' ng-model='newIncludeType.type'
+						ng-options="include_type as include_type for include_type in availableIncludeTypes">
 					</option>
 				</select>
 				<a href='' ng-click='addIncludeType()'>Add Rate</a>
@@ -141,8 +160,8 @@
 									Unit:
 								</div>
 								<div class='col-md-6'>
-									<select class='form-control' ng-model='cost.period.unit'>
-										<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+									<select class='form-control' ng-model='cost.period.unit'
+											ng-options='cost as cost for cost in availableCostUnits'>
 									</select>
 								</div>
 							</div>
@@ -158,7 +177,65 @@
 					</fieldset>
 				</div>			
 				<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
-					<div ng-if="isObject(includeType)">
+					<div ng-if="includeType.length" ng-repeat="include in includeType track by $index">
+						<fieldset>
+							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName, $index)"></i></small></legend>
+							<div class="row">
+								<div class="col-md-2">
+									Cost
+								</div>
+								<div class="col-md-6">
+									<input ng-model="includeType[$index].cost" type="text" class="form-control" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-md-2">
+									Usagev
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType[$index].usagev' type='number' class='form-control' />
+								</div>
+							</div>
+							<div class='row'>
+								<div class="col-md-2">
+									Name
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType[$index].pp_includes_name' type='text' class='form-control' />
+								</div>
+							</div>
+							<div class='row'>
+								<div class="col-md-2">
+									External ID
+								</div>
+								<div class="col-md-6">
+									<input ng-model='includeType[$index].pp_includes_external_id' type='text' class='form-control' />
+								</div>
+							</div>
+							<h5>Period</h5>
+							<div class="">
+								<div class='row'>
+									<div class='col-md-2 col-indent'>
+										Unit
+									</div>
+									<div class='col-md-6'>
+										<select class='form-control' ng-model='includeType[$index].period.unit'
+												ng-options='cost as cost for cost in availableCostUnits'>
+										</select>
+									</div>
+								</div>
+								<div class='row'>
+									<div class='col-md-2 col-indent'>
+										Duration
+									</div>
+									<div class='col-md-6'>
+										<input ng-model='includeType[$index].period.duration' type='number' class='form-control' />
+									</div>
+								</div>
+							</div>
+						</fieldset>
+					</div>
+					<div ng-if="isObject(includeType) && !includeType.length">
 						<fieldset>
 							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName)"></i></small></legend>
 							<div class="row">
@@ -200,8 +277,8 @@
 										Unit
 									</div>
 									<div class='col-md-6'>
-										<select class='form-control' ng-model='includeType.period.unit'>
-											<option ng-repeat="unit in availableCostUnits">{{unit}}</option>
+										<select class='form-control' ng-model='includeType.period.unit'
+												ng-options='cost as cost for cost in availableCostUnits'>
 										</select>
 									</div>
 								</div>
