@@ -25,6 +25,10 @@
 				<div class="col-md-2">External Code</div>
 				<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
 			</div>
+			<div class="row">
+				<div class="col-md-2">{{utils.getDisplayValue("data_from_currency", "plans")}}</div>
+				<div class='col-md-6'><input ng-model='entity.data_from_currency' type='checkbox' class='form-control' /></div>
+			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}

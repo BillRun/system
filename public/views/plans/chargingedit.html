@@ -61,6 +61,14 @@
 					</select>
 				</div>
 			</div>
+			<div class='row' ng-if='utils.display("charging_value", "plans") &&  type === "charging"'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("charging_value", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.charging_value' type='number' class='form-control' />
+				</div>
+			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}
