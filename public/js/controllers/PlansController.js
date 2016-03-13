@@ -162,6 +162,18 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
+          if ($scope.entity.type === "charging") {
+            _.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
+              if (_.isUndefined($scope.entity.include[usaget])) return;
+              if ($scope.entity.include[usaget].length) {
+                _.forEach($scope.entity.include[usaget], function (usage, i) {
+                  if (usage.period.unit === "month") $scope.entity.include[usaget][i].period.unit = "months";
+                });
+                return;
+              }
+              if ($scope.entity.include[usaget].period.unit === "month") $scope.entity.include[usaget].period.unit = "months";
+            });
+          }
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
             if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
