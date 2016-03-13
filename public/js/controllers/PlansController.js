@@ -41,6 +41,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.plansTemplate = function () {
       var type = $routeParams.type;
+      $scope.type = type;
       if (type === 'recurring') type = 'charging';
       return 'views/plans/' + type + 'edit.html';
     };
