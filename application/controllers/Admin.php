@@ -158,7 +158,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		//$pp_aggregated = $lines_coll->aggregate();
 		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
 		$sort = json_decode('{"$sort": {"urt": 1}}');
-		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_unit":{"$first": "$usaget"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
@@ -412,6 +412,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 	
+	public function getCurrentUsernameAction() {
+		if ($user = Billrun_Factory::user()) {
+			$this->responseSuccess(array('username' => $user->getUsername()));
+		}
+		return false;
+	}
+	
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -501,6 +508,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		if ($type == 'close_and_new' && is_subclass_of($model, "TabledateModel") && !$model->isLast($entity)) {
 			die("There's already a newer entity with this key");
+		}
+		if (isset($entity['source_ref'])) {
+			$source_ref = $entity->get('source_ref', false)->getRawData();
+			unset($source_ref['_id']);
+			$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
 		}
 
 		// passing values into the view
@@ -1344,6 +1356,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		foreach ($filter_fields as $filter_name => $filter_field) {
 			$value = $this->getSetVar($session, $filter_field['key'], $filter_field['key'], $filter_field['default']);
+			if ($table === "rates" && $filter_name == "plan" && is_array($value)) {
+				$model->setFilteredPlans($value);
+			}
 			if ((!empty($value) || $value === 0 || $value === "0") &&
 				is_array($filter_field) && isset($filter_field['db_key']) &&
 				$filter_field['db_key'] != 'nofilter' &&
@@ -1425,6 +1440,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		switch ($option) {
 			case 'number':
 				$returnValue = floatval($inputValue);
+				break;
 			case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
@@ -1432,6 +1448,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				} else {
 					return false;
 				}
+				break;
 			default:
 				break;
 		}
@@ -1515,7 +1532,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $operator - Operator for filter.
 	 * @param array $advancedOptions - Array of advanced options for this action
 	 */
-	protected function setManualFilterForKey($query, $key, $inputValue, $operator, $advancedOptions) {
+	protected function setManualFilterForKey(&$query, $key, $inputValue, $operator, $advancedOptions) {
 			$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
 			if($convertedValue === false) {
 				return;

@@ -1,5 +1,5 @@
 .min-width-96 {
-	min-width: 96px!important;
+	min-width: none!important;
 }
 
 .fa-spin-custom, .glyphicon-spin {

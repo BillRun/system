@@ -5,22 +5,8 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
     $controller('EditController', {$scope: $scope});
 
     $scope.save = function (redirect) {
-      var params = {
-        entity: $scope.entity,
-        coll: 'subscribers',
-        type: $scope.action
-      };
       $scope.err = {};
-      var entData = {
-        imsi: $scope.entity.imsi,
-        msisdn: $scope.entity.msisdn,
-        aid: $scope.entity.aid,
-        sid: $scope.entity.sid,
-        plan: $scope.entity.plan,
-        language: $scope.entity.language,
-        service_provider: $scope.entity.service_provider,
-        charging_type: $scope.entity.charging_type
-      };
+      var entData = $scope.entity;
       var postData = {
         method: ($scope.action === "new" ? 'create' : 'update')
       };
@@ -74,6 +60,8 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
       };
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data.entity;
+        $scope.title = _.capitalize($scope.action) + " Subscriber " + $scope.entity.sid;
+        angular.element('title').text("BillRun - " + $scope.title);
         $scope.autorized_write = res.data.authorized_write;
         if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
           $scope.entity.imsi = [$scope.entity.imsi];

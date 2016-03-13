@@ -433,6 +433,31 @@ class Billrun_Util {
 			)
 		);
 	}
+	
+	/**
+	 * Get start time by period given:
+	 * "day" - begin of day
+	 * "week" - begin of week
+	 * "month" - begin of month
+	 * "year" - begin of year
+	 * 
+	 * @param type $period
+	 * @return type
+	 */
+	public static function getStartTimeByPeriod($period = 'day') {
+		switch ($period) {
+			case ('day'):
+				return strtotime("midnight");
+			case ('week'):
+				return strtotime("last sunday");
+			case ('month'):
+				return strtotime(date('01-m-Y'));
+			case ('year'):
+				return strtotime(date('01-01-Y'));
+		}
+		
+		return time();
+	}
 
 	/**
 	 * method to fork process of PHP-Cli
@@ -1245,5 +1270,37 @@ class Billrun_Util {
 		}
 
 		return false;
+	}
+	
+	/**
+	 * Set a dot seperated array as an assoc array.
+	 * @param type $original
+	 * @param type $dotArray
+	 * @param type $value
+	 * @param type $separator
+	 * @return type
+	 */
+	function setDotArrayToArray(&$original, $dotArray, $value, $separator='.') {
+		$parts = explode($separator, $dotArray);
+		if(count($parts) <= 1) {
+			return $dotArray;
+		}
+		
+		unset($original[$dotArray]);
+		$parts[] = $value;
+				
+		$result = self::constructAssocArray($parts);
+		foreach ($result as $key => $value) {
+			$original[$key] = $value;
+		} 
+	}
+	
+	function constructAssocArray($parts) {
+		if((count($parts)) <= 1) {
+			return $parts[0];
+		}
+		
+		$shiftResult = array_shift($parts);
+		return array($shiftResult => self::constructAssocArray($parts));
 	}
 }
