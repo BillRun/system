@@ -136,6 +136,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
+			$archiveLine = array();
 			$archiveLine['aid'] = $subscriber['aid'];
 			$archiveLine['service_provider'] = $subscriber['service_provider'];
 			$archiveLine['plan'] = $subscriber['plan'];
@@ -209,9 +210,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		$archiveCollection = Billrun_Factory::db()->archiveCollection();
 		
+		unset($balanceLine['aprice'], $balanceLine['charge'], $balanceLine['usagev']);
 		// Report archive
 		foreach ($processedLines as $line) {
-			unset($balanceLine['aprice']);
 			$archiveLine = array_merge($this->additional, $balanceLine, $line);
 			$archiveLine['u_s'] = $reportedLine['stamp'];
 			$archiveCollection->insert($archiveLine);
