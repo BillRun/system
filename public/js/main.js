@@ -493,7 +493,7 @@ function detailFormatter(index, row) {
         // aggregated
         $title = $("<strong>Breakdown By Balance</strong>");
         var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-        $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th></tr></thead>");
+        $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th></tr></thead>");
         $aggregated_table.append($thead).append('<tbody>');
         _.forEach(aggregated, function (aggregate, i) {
           var $tr = $("<tr></tr>");
@@ -506,6 +506,7 @@ function detailFormatter(index, row) {
           $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
+          $tr.append("<td>" + aggregate.s_unit + "</td>");
           $aggregated_table.append($tr);
         });
         $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);

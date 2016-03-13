@@ -46,6 +46,13 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       $scope.advancedMode = mode;
     };
 
+    function setPageTitle() {
+      var title = "Billrun - " + _.capitalize($routeParams.action) + " ";
+      title += ($scope.entity.name ? $scope.entity.name : $scope.entity.key);
+      title += " " + pluralize.singular(_.capitalize($routeParams.collection));
+      angular.element("title").text(title);
+    }
+
     $scope.initEdit = function (callback) {
       var params = {
         coll: $routeParams.collection.replace(/_/g, ''),
@@ -56,6 +63,7 @@ app.controller('EditController', ['$scope', 'Utils', '$routeParams', '$window', 
       $scope.action = $routeParams.action;
       Database.getEntity(params).then(function (res) {
         $scope.entity = res.data.entity;
+        //setPageTitle();
         $scope.authorized_write = res.data.authorized_write;
         if (callback !== undefined)
           callback($scope.entity);

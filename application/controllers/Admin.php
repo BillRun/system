@@ -86,6 +86,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/pluralize.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -158,7 +159,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		//$pp_aggregated = $lines_coll->aggregate();
 		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
 		$sort = json_decode('{"$sort": {"urt": 1}}');
-		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_unit":{"$first": "$usaget"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
