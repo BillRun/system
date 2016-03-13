@@ -518,7 +518,12 @@ function detailFormatter(index, row) {
         $title = $("<strong>Breakdown By Intervals</strong>");
       }
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>API Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></tr></thead>");
+      $thead = $("<tr><th>#</th><th>Balance ID</th><th>Balance Name</th>");
+      if (lines[0] && lines[0].usaget !== "balance") {
+        $thead.append("<th>API Name</th><th>Usage</th>");
+      }
+      $thead.append("<th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></tr>");
+      $("<thead></thead>").append($thead);
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr></tr>");
@@ -529,9 +534,10 @@ function detailFormatter(index, row) {
         $tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");
         if (line.usaget === "data")
           $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
-        else
+        else if (line.usaget !== "balance")
           $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
-        $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
+        if (line.usaget !== "balance")
+          $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
         $tr.append("<td>" + ((line.aprice || line.aprice == 0)  ? line.aprice.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
