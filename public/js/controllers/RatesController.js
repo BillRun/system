@@ -289,6 +289,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
         if (_.isEmpty(entity.params)) {
           entity.params = {};
         }
+        $scope.title = _.capitalize($scope.action) + " " + $scope.entity.key + " Rate";
+        angular.element('title').text("BillRun - " + $scope.title);        
         if ($location.search().plans && $location.search().plans.length) {
           var plans = JSON.parse($location.search().plans);
           if (plans) {

@@ -78,6 +78,9 @@
 				$(this).attr('href', href);
 			});
 		}
+		$.get('/admin/getCurrentUsername', function (res) {
+			username = res.username;
+		});
 	</script>
 	<!-- end of hackitty hack hack -->
         

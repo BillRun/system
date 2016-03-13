@@ -486,31 +486,45 @@ function detailFormatter(index, row) {
     .done(function (res) {
       res = JSON.parse(res);
       var lines = res.detailed;
-      var aggregated = res.aggregated;
-      // aggregated
-      var $title = $("<strong>Breakdown By Balance</strong>");
-      var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      var $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th></tr></thead>");
-      $aggregated_table.append($thead).append('<tbody>');
-      _.forEach(aggregated, function (aggregate, i) {
-        var $tr = $("<tr></tr>");
-        var idx = i + 1;
-        //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
-        $tr.append("<td>" + idx + "</td>");
-        $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
-        $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
-        $tr.append("<td>" + ((aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "") + "</td>");
-        $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
-        $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
-        $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
-        $aggregated_table.append($tr);
-      });
-      $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
+      var $title, $thead;
+      
+      if (lines[0] && lines[0].usaget !== "balance") {
+        var aggregated = res.aggregated;
+        // aggregated
+        $title = $("<strong>Breakdown By Balance</strong>");
+        var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
+        $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th></tr></thead>");
+        $aggregated_table.append($thead).append('<tbody>');
+        _.forEach(aggregated, function (aggregate, i) {
+          var $tr = $("<tr></tr>");
+          var idx = i + 1;
+          //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
+          $tr.append("<td>" + idx + "</td>");
+          $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
+          $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
+          $tr.append("<td>" + ((aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "") + "</td>");
+          $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
+          $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
+          $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
+          $tr.append("<td>" + aggregate.s_unit + "</td>");
+          $aggregated_table.append($tr);
+        });
+        $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
+      }
 
       // lines
-      $title = $("<strong>Breakdown By Intervals</strong>");
+      if (lines[0] && lines[0].usaget === "balance") {
+        $title = $("<strong>Breakdown</strong>");
+      } else {
+        $title = $("<strong>Breakdown By Intervals</strong>");
+      }
       var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Unit</th><th>API Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Time</th></tr></thead>");
+      $thead = $("<tr><th>#</th><th>Balance ID</th><th>Balance Name</th>");
+      if (lines[0] && lines[0].usaget !== "balance") {
+        $thead.append("<th>API Name</th>");
+      }
+      $thead.append("<th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></tr>");
+      $("<thead></thead>").append($thead);
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr></tr>");
@@ -519,18 +533,22 @@ function detailFormatter(index, row) {
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + (line.pp_includes_external_id ? line.pp_includes_external_id : "") + "</td>");
         $tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");
-        $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
         if (line.usaget === "data")
           $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
-        else
+        else if (line.usaget !== "balance")
           $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
         $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
         $tr.append("<td>" + ((line.aprice || line.aprice == 0)  ? line.aprice.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
         $tr.append("<td>" + ((line.urt && line.urt.sec) ? moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') : "") + "</td>");
         $table.append($tr);
       });
-      $aggregated_table.after("<br/>", $title, "<br/>", $table);
+      if ($aggregated_table) {
+        $aggregated_table.after("<br/>", $title, "<br/>", $table);
+      } else {
+        $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($table);
+      }
     });
 }

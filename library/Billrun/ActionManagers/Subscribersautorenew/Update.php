@@ -142,6 +142,17 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	/**
+	 * Populate the operation clause
+	 * @param type $jsonUpdateData - Input json data.
+	 * @param type $set - Query to set operation to.
+	 */
+	protected function populateOperation($jsonUpdateData, &$set) {
+		if (isset($jsonUpdateData['operation'])) {
+			$set['operation'] = $jsonUpdateData['operation'];
+		}
+	}
+	
+	/**
 	 * Populate the update query
 	 * @param type $jsonUpdateData
 	 */
@@ -163,11 +174,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$set['to'] = $jsonUpdateData['to'];
 		}
-		if (isset($jsonUpdateData['operation'])) {
-			$set['operation'] = $jsonUpdateData['operation'];
-		} else {
-			$set['operation'] = 'inc';
-		}
+
+		$this->populateOperation($jsonUpdateData, $set);
+		
 		$set['done'] = 0;
 		
 		// Check if we are at the end of the month.
@@ -316,6 +325,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+		$this->updateQuery['$set']['operation'] = $planRecord['operation'];
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
 		$this->handlePlanInclude($planRecord);

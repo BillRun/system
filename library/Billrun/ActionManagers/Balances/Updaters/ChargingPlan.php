@@ -13,6 +13,7 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
+	protected $type = 'ChargingPlan';
 	/**
 	 * Get the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.
@@ -166,6 +167,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 									 $recordToSet,
 									 $updateQuery) {
 		// Create a default balance record.
+		// TODO: Why are there values passed that are not used?
 		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet);
 		if($defaultBalance === false) {
 			return false;
@@ -313,9 +315,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
+		
+		$balance = $balancesColl->query($query)->cursor()->current();
+		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if (!$balancesColl->exists($query)) {
+		if ($balance->isEmpty()) {
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());

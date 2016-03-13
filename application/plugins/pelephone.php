@@ -77,6 +77,54 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isSubscriberInDataSlowness($row) {
 		return isset($row['in_data_slowness']) && $row['in_data_slowness'];
 	}
+	
+	protected function getMaxCurrencyValues($row) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		if ($plan && isset($plan['max_currency'])) {
+			$maxCurrency = $plan['max_currency'];
+		} else {
+			$maxCurrency = Billrun_Factory::config()->getConfigValue('realtimeevent.data.maxCurrency', array());
+		}
+		
+		return $maxCurrency;
+	}
+	
+	protected function getSubscriberDiffFromMaxCurrency($row) {
+		$maxCurrency = $this->getMaxCurrencyValues($row);
+		$query = $this->getSubscriberCurrencyUsageQuery($row, $maxCurrency['period']);
+		$archiveDb = Billrun_Factory::db();
+		$lines_archive_coll = $archiveDb->archiveCollection();
+		$res = $lines_archive_coll->aggregate($query)->current();
+		return $maxCurrency['cost'] - $res->get('total_price');
+	}
+	
+	protected function isSubscriberInMaxCurrency($row) {
+		$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+		return ($diff <= 0);
+	}
+			
+	
+	protected function getSubscriberCurrencyUsageQuery($row, $period) {
+		$startTime = Billrun_Util::getStartTimeByPeriod($period);
+		$match = array(
+			'type' => 'gy',
+			'sid' => $row['sid'],
+			'pp_includes_external_id' => array(
+				'$in' => array(1,2,9,10)
+			),
+			'urt' => array(
+				'$gte' => new MongoDate($startTime),
+			),
+		);
+		$group = array(
+			'_id' => '$sid',
+			'total_price' => array(
+				'$sum' => '$aprice'
+			),
+		);
+		
+		return array(array('$match' => $match),array('$group' => $group));
+	}
 
 	/**
 	 * Gets data slowness speed and SOC according to plan or default 
@@ -98,6 +146,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
 			'sendRequestToProv' => $slownessParams['sendRequestToProv'],
+			'sendRequestTries' => $slownessParams['sendRequestTries'],
 		);
 	}
 	
@@ -149,6 +198,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param bool $sendToProv true - send to provisioning, false - don't send to provisioning
 	 */
 	protected function updateSubscriberInDataSlowness($row, $enterToDataSlowness = true, $sendToProv = true) {
+		if ($sendToProv) {
+			$serviceCode = (isset($row['service']['code']) ? $row['service']['code'] : NULL);
+			if (!$this->sendSlownessStateToProv($row['msisdn'], $serviceCode, $enterToDataSlowness)) {
+				return;
+			}
+		}
 		// Update subscriber in DB
 		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $row['sid']));
@@ -158,9 +213,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$updateQuery = array('$unset' => array('in_data_slowness' => 1));		
 		}
 		$subscribersColl->update($findQuery, $updateQuery);
-		if ($sendToProv) {
-			$this->sendSlownessStateToProv($row['msisdn'], $row['service']['code'], $enterToDataSlowness);
-		}
 	}
 	
 	/**
@@ -190,11 +242,42 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'addHeader' => false,
 		);
 		$request = $encoder->encode($requestBody, $params);
-		$requestUrl = $slownessParams['requestUrl'];
-		Billrun_Factory::log('Sending request to prov. Details: ' . $request,  Zend_Log::DEBUG);
-		$response = Billrun_Util::sendRequest($requestUrl, $request);
-		Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
-		return $response;
+		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries']);
+	}
+	
+	protected function sendRequest($request, $requestUrl, $numOfTries = 3) {
+		$logColl = Billrun_Factory::db()->logCollection();
+		$saveData = array(
+			'source' => 'pelephonePlugin',
+			'type' => 'sendRequest',
+			'process_time' => new MongoDate(),
+			'request' => $request,
+			'response' => array(),
+			'server_host' => gethostname(),
+			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'rand' => rand(1,1000000),
+			'time' => (microtime(1))*1000,
+		);
+		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
+		for ($i = 0; $i < $numOfTries; $i++) {
+			Billrun_Factory::log('Sending request to prov, try number ' . ($i+1) . '. Details: ' . $request,  Zend_Log::DEBUG);
+			$response = Billrun_Util::sendRequest($requestUrl, $request);
+			if ($response) {
+				array_push($saveData['response'], 'attempt ' . ($i+1) . ': ' . $response);
+				Billrun_Factory::log('Got response from prov. Details: ' . $response,  Zend_Log::DEBUG);
+				$decoder = new Billrun_Decoder_Xml();
+				$response = $decoder->decode($response);
+				if (isset($response['HEADER']['STATUS_CODE']) && 
+					$response['HEADER']['STATUS_CODE'] === 'OK') {
+					$logColl->save(new Mongodloid_Entity($saveData), 0);
+					return true;
+				}
+			}
+			
+		}
+		Billrun_Factory::log('No response from prov. Request details: ' . $request,  Zend_Log::ALERT);
+		$logColl->save(new Mongodloid_Entity($saveData), 0);
+		return false;
 	}
 
 	/**
@@ -271,6 +354,35 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
 		if (isset($record['service']['code']) && empty($record['service']['code'])) {
 			$record['in_data_slowness'] = FALSE;
+		}
+	}
+	
+	public function isFreeLine(&$row, &$isFreeLine) {
+		$isFreeLine = false;
+		if ($row['type'] === 'gy') {
+			if ($this->isSubscriberInDataSlowness($row)) {
+				$row['free_line_reason'] = 'In data slowness';
+				$isFreeLine = true;
+				return;
+			} 
+			if ($this->isSubscriberInMaxCurrency($row)) {
+				$row['free_line_reason'] = 'Passed max currency';
+				$isFreeLine = true;
+				return;
+			} 
+		}
+	}
+
+	public function afterChargesCalculation(&$row, &$charges) {
+		$balance = Billrun_Factory::db()->balancesCollection()->getRef($this->row['balance_ref']);
+		if ($row['type'] === 'gy' &&
+			in_array($balance['pp_includes_external_id'], array(1,2,9,10))) {
+			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
+			
+			if ($charges['total'] > $diff) {
+				$row['over_max_currency'] = $charges['total'] - $diff;
+				$charges['total'] = $diff;
+			}
 		}
 	}
 

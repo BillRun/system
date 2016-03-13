@@ -106,8 +106,19 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 	}
 
 	protected function getCall($rowData) {
+		$ret = array();
+		if ($rowData[$this->fieldsColumns['specific']['pele_network']] != 0) {
+			$ret[] =
+				array(
+					'usagev' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['pele_network']]),
+					'period' => $this->getDuration($rowData),
+					'pp_includes_name' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_name.pele_network', NULL),
+					'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.pele_network', NULL)
+				)
+			;
+		}
 		if ($rowData[$this->fieldsColumns['specific']['call_usagev']] != 0) {
-			return
+			$ret[] =
 				array(
 					'usagev' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['call_usagev']]),
 					'period' => $this->getDuration($rowData),
@@ -115,8 +126,9 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 					'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.call_usagev', NULL)
 				)
 			;
-		} else if ($rowData[$this->fieldsColumns['specific']['call_cost']] != 0) {
-			return
+		}
+		if ($rowData[$this->fieldsColumns['specific']['call_cost']] != 0) {
+			$ret[] =
 				array(
 					'cost' => (-1) * doubleval($rowData[$this->fieldsColumns['specific']['call_cost']]),
 					'period' => $this->getDuration($rowData),
@@ -124,6 +136,14 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 					'pp_includes_external_id' => Billrun_Factory::config()->getConfigValue('importer.ChargingPlans.pp_includes_external_id.call_cost', NULL)
 				)
 			;
+		}
+		switch (count($ret)) {
+			case 1:
+				return $ret[0];
+			case 0:
+				return;
+			default:
+				return $ret;
 		}
 	}
 
