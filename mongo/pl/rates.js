@@ -331,7 +331,41 @@ db.rates.insert({
 		}
 	}
 })
-db.rates.remove({rates:{}})
+db.rates.remove({rates:{}});
+db.rates.insert(
+	{
+		"from" : ISODate("2016-02-01T00:00:00Z"),
+		"to" : ISODate("2099-12-31T23:59:59Z"),
+		"key" : "FUNDIAL2",
+		"params" : {
+			"prefix" : [
+				"60000"
+			],
+			"premium" : true
+		},
+		"rates" : {
+			"call" : {
+				"BASE" : {
+					"access" : 0,
+					"unit" : "seconds",
+					"interconnect" : "A_ZERO_INTERCONNECT",
+					"rate" : [
+						{
+							"to" : 20,
+							"price" : 5.9,
+							"interval" : 20
+						},
+						{
+							"to" : 2147483647,
+							"price" : 0,
+							"interval" : 20
+						}
+					]
+				}
+			}
+		}
+	}
+);
 // set premium rates (exclude from some wallets)
 var _premium_rates = ["1700","1ST_CLASS_VPN","BEZEQ1","FOREIGN_DISCOUNT_2","FOREIGNERS","GPRS_LOCATION","INTERNET_BILL_BY_VOLUME","JFC_FREE_CALLS","NEPAL-VPN","PELEPHONE","PHIL-VPN","PROGENYB","PROGENYO","RL_FREE_CALLS_B","RL_FREE_CALLS_PEL","SHARON_VPN","SMS_BEZEQ","SMS_OTHER","SMS_PELE","TALK_VPN","VOICE_BEZEQ","VOICE_CELLCOM","VOICE_MIRS","VOICE_PARTNER","VOICE_RAMI_LEVY","VOICE_CELLULAR_ISRAEL","VOICEMAIL"];
 db.rates.update({key:{$nin:_premium_rates}, "params.interconnect": {$exists:0}}, {$set:{"params.premium": true}}, {multi:1});
