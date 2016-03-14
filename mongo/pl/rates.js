@@ -238,7 +238,7 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Vatania/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/SK670/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 	print("==========================================");
@@ -255,7 +255,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 
 //		======================================================================================================================================================
 //		non shabbat
-		db.tmp_Prefix_Allocation_ID_clear.find({ALLOCATION_B: _rate_name}).forEach(
+		db.tmp_Prefix_Allocation_ID_clear.find({$or:[{ALLOCATION_B: _rate_name}, {ALLOCATION_A: _rate_name, ALLOCATION_B: "Anywhere"}]}).forEach(
 			function(obj2) {
 				if (obj2.HOME_OPPS_ID == '0' && obj2.HOME_TPPS_ID == '0') {
 					return;
@@ -331,7 +331,7 @@ db.rates.insert({
 		}
 	}
 })
-
+db.rates.remove({rates:{}})
 // set premium rates (exclude from some wallets)
 var _premium_rates = ["1700","1ST_CLASS_VPN","BEZEQ1","FOREIGN_DISCOUNT_2","FOREIGNERS","GPRS_LOCATION","INTERNET_BILL_BY_VOLUME","JFC_FREE_CALLS","NEPAL-VPN","PELEPHONE","PHIL-VPN","PROGENYB","PROGENYO","RL_FREE_CALLS_B","RL_FREE_CALLS_PEL","SHARON_VPN","SMS_BEZEQ","SMS_OTHER","SMS_PELE","TALK_VPN","VOICE_BEZEQ","VOICE_CELLCOM","VOICE_MIRS","VOICE_PARTNER","VOICE_RAMI_LEVY","VOICE_CELLULAR_ISRAEL","VOICEMAIL"];
 db.rates.update({key:{$nin:_premium_rates}, "params.interconnect": {$exists:0}}, {$set:{"params.premium": true}}, {multi:1});
