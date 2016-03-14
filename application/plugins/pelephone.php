@@ -169,6 +169,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$this->updateSubscriberInDataSlowness($subscriber, false, true);
 	}
+	
+	public function handleNotifications(&$row) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		$balance = Billrun_Factory::db()->balancesCollection()->getRef($row['balance_ref']);
+		if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
+			return;
+		}
+		
+		//NOTIFICATION = [{value:5,type:usagev/days/cost,notification_type:"sms",notification:"asdsadsadsaasd"}]
+		foreach ($plan['notifications_threshold'][$balance['pp_includes_external_id']] as $notification) {
+			//if ()
+		}
+	}
 
 	public function afterSubscriberBalanceNotFound(&$row) {
 		if ($row['type'] === 'gy') {
@@ -243,6 +256,37 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$request = $encoder->encode($requestBody, $params);
 		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries']);
+	}
+	
+	/**
+	 * Send request to send notification
+	 * @todo Should be generic (same as sendSlownessStateToProv)
+	 */
+	public function sendNotification($notificationType, $msg, $msisdn) {
+		$notificationParams = Billrun_Factory::config()->getConfigValue('realtimeevent.notification.' . $notificationType);
+		if (!isset($notificationParams['sendRequestToProv']) || !$notificationParams['sendRequestToProv']) {
+			return;
+		}
+		$encoder = new Billrun_Encoder_Xml();
+		$requestBody = array(
+			'HEADER' => array(
+				'APPLICATION_ID' => $notificationParams['applicationId'],
+				'COMMAND' => $notificationParams['command'],
+			),
+			'PARAMS' => array(
+				'SENDER' => $notificationParams['sender'],
+				'USER_ID' => $notificationParams['userId'],
+				'SOURCE' => $notificationParams['source'],
+				'MSG' => $msg,
+				'TO_PHONE' => $msisdn,
+			)
+		);
+		$params = array(
+			'root' => 'REQUEST',
+			'addHeader' => false,
+		);
+		$request = $encoder->encode($requestBody, $params);
+		return $this->sendRequest($request, $notificationParams['requestUrl'], $notificationParams['sendRequestTries']);
 	}
 	
 	protected function sendRequest($request, $requestUrl, $numOfTries = 3) {
