@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
+	protected $type = 'PrepaidInclude';
+
 	/**
 	 * Get the array of strings to translate the names of the input fields to the names used in the db.
 	 * @return array.
@@ -134,11 +136,12 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
 		$update = array();
-		$this->balanceBefore = $balancesColl->query($query)->cursor()->current();
-
+		$balance = $balancesColl->query($query)->cursor()->current();
+		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
-		if (!isset($this->balanceBefore) || $this->balanceBefore->isEmpty()) {
+		if (!isset($balance) || $balance->isEmpty()) {
 			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
 		} else {
 			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());

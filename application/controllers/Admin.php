@@ -158,7 +158,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		//$pp_aggregated = $lines_coll->aggregate();
 		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
 		$sort = json_decode('{"$sort": {"urt": 1}}');
-		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_unit":{"$first": "$usaget"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
@@ -413,7 +413,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function getCurrentUsernameAction() {
-		$this->responseSuccess(array('username' => Billrun_Factory::user()->getUsername()));
+		if ($user = Billrun_Factory::user()) {
+			$this->responseSuccess(array('username' => $user->getUsername()));
+		}
 		return false;
 	}
 	
@@ -508,7 +510,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			die("There's already a newer entity with this key");
 		}
 		if (isset($entity['source_ref'])) {
-			$entity['source_ref'] = $entity->get('source_ref', false)->getRawData();
+			$source_ref = $entity->get('source_ref', false)->getRawData();
+			unset($source_ref['_id']);
+			$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
 		}
 
 		// passing values into the view

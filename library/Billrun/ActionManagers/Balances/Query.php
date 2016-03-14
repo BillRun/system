@@ -50,10 +50,13 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$rawItem = $line->getRawData();
 				$externalID = $rawItem['pp_includes_external_id'];
 				unset($this->availableBalances[$externalID]);
-				$existingBalances[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
+				$existingBalances[] = $rawItem;
 			}
 			
 			$returnData = array_merge($existingBalances, array_values($this->availableBalances));
+			foreach ($returnData as &$row) {
+				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
+			}
 			
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
