@@ -385,5 +385,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
+	
+	public function activeDirectoryLogin($username, $password) {
+		$billrun_auth = new Billrun_Auth('msg_type', 'UserAuthGroup', 'username', 'password');
+		$billrun_auth->setIdentity($username);
+		$billrun_auth->setCredential($password);
+		$auth = Zend_Auth::getInstance();
+		$result = $auth->authenticate($billrun_auth);		
+		Billrun_Factory::log(print_r($result, 1));
+		return $result;
+	}
 
 }
