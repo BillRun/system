@@ -48,9 +48,14 @@ class StatisticsAction extends ApiAction {
 		$from = $this->getRequest()->get('from');
 		$to = $this->getRequest()->get('to');
 		$query = array("creation_date" => array());
-		if ($from) $query["creation_date"]['$gte'] = new MongoDate(strtotime($from));
-		else $query["creation_date"]['$gte'] = new MongoDate(strtotime('1970-01-01'));
-		if ($to) $query["creation_date"]['$lte'] = new MongoDate(strtotime($to));
+		if ($from) {
+			$query["creation_date"]['$gte'] = new MongoDate(strtotime($from));
+		} else {
+			$query["creation_date"]['$gte'] = new MongoDate(strtotime('1970-01-01'));
+		}
+		if ($to) {
+			$query["creation_date"]['$lte'] = new MongoDate(strtotime($to));
+		}
 		$data = $this->model->getData($query);
 		$statistics = array();
 		foreach($data as $statistic) {

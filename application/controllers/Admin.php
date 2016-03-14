@@ -877,7 +877,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				$this->forceRedirect($this->baseUrl . $ret_action);
 				return true;
 			} else {
-				$result = Billrun_Factory::chain()->trigger('activeDirectoryLogin', array($username, $password, &$this));
+				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this));
 				if ($result->isValid()) {
 					$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
