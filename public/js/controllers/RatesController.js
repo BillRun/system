@@ -319,6 +319,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       });
       Database.getAvailableInterconnect().then(function (res) {
         $scope.availableInterconnect = res.data;
+        console.log(res.data);
+        $scope.availableInterconnect = [{future: false, key: ""}].concat($scope.availableInterconnect);
       });
       $scope.newOutCircuitGroup = {from: undefined, to: undefined};
       $scope.newRecordType = {value: undefined};
