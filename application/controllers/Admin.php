@@ -878,7 +878,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				return true;
 			} else {
 				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this));
-				if ($result->isValid()) {
+				if ($result && $result->isValid()) {
 					$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 					// TODO: stringify to url encoding (A-Z,a-z,0-9)

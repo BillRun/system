@@ -396,8 +396,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$billrun_auth->setIdentity($username);
 		$billrun_auth->setCredential($password);
 		$auth = Zend_Auth::getInstance();
-		$result = $auth->authenticate($billrun_auth);		
-		Billrun_Factory::log(print_r($result, 1));
+		$result = $auth->authenticate($billrun_auth);
+		if ($result->code == 0) {
+			return false;
+		}
 		return $result;
 	}
 
