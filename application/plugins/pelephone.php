@@ -169,18 +169,67 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$this->updateSubscriberInDataSlowness($subscriber, false, true);
 	}
+
+	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
+		$this->handleBalanceNotifications("BALANCE_AFTER", $row, $balance, $balanceAfter);
+	}
 	
-	public function handleNotifications(&$row) {
+	protected function getNotificationKey($type, $balance) {
+		switch ($type) {
+			case ('BALANCE_AFTER'):
+				return $balance->get('pp_includes_external_id');
+			case ('BALANCE_LOAD'):
+				return 'on_load';
+			case ('BALANCE_EXPIRATION'):
+				return 'expiration_date';
+		}
+		return false;
+	}
+
+	protected function needToSendNotification($type, $notification, $balanceAfter = 0) {
+		switch ($type) {
+			case ('BALANCE_AFTER'):
+				return $balanceAfter >= $notification['value'];
+			case ('BALANCE_LOAD'):
+			case ('BALANCE_EXPIRATION'):
+				return true;
+		}
+		return false;
+	}
+	
+	public function handleBalanceNotifications($type, $row, $balance, $balanceAfter = 0) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
-		$balance = Billrun_Factory::db()->balancesCollection()->getRef($row['balance_ref']);
 		if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
 			return;
 		}
-		
-		//NOTIFICATION = [{value:5,type:usagev/days/cost,notification_type:"sms",notification:"asdsadsadsaasd"}]
-		foreach ($plan['notifications_threshold'][$balance['pp_includes_external_id']] as $notification) {
-			//if ()
+		$notificationKey = $this->getNotificationKey($type, $balance);
+		foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
+			if (!$notificationSent = $balance->get('notifications_sent')) {
+				$notificationSent = array();
+			}
+			if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
+				continue;
+			}
+			if ($this->needToSendNotification($type, $notification, $balanceAfter)) {
+				$modifyParams = array('balance' => $balance);
+				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+				$this->sendNotification($notification['type'], $msg, $row['msisdn']);
+				array_push($notificationSent[$notificationKey], $index);
+				$balance->set('notifications_sent', $notificationSent);
+				$balance->save();
+			}
 		}
+	}
+	
+	protected function modifyNotificationMessage($str, $params) {
+		$msg = $str;
+		foreach ($params as $key => $obj) {
+			$replaces = Billrun_Factory::config()->getConfigValue('realtimeevent.notifications.replace.' . $key, array());
+			foreach ($replaces as $search => $replace) {
+				$msg = str_replace("~$search~", $obj->get($replace), $msg);
+			}
+		}
+		return $msg;
 	}
 
 	public function afterSubscriberBalanceNotFound(&$row) {
