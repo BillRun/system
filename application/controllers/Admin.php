@@ -156,7 +156,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		//$pp_aggregated = $lines_coll->aggregate();
-		$match = json_decode('{"$match":{"u_s":"' . $stamp . '", "api_name":{"$nin":["release_call"]}}}');
+		$match1 = json_decode('{"$match":{"u_s":"' . $stamp . '"}}');
+		$match2 = json_decode('{"$match": {"api_name":{"$nin":["release_call"]}}}');
 		$sort = json_decode('{"$sort": {"urt": 1}}');
 		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_unit":{"$first": "$usaget"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
 		$detailed = array();
@@ -166,7 +167,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$detailed[] = $l;
 		}
 		$aggregated = array();
-		$pp_aggregated = $lines_coll->aggregate($match, $sort, $group);
+		$pp_aggregated = $lines_coll->aggregate($match1, $match2, $sort, $group);
 		foreach($pp_aggregated as $ppagg) {
 			$aggregated[] = $ppagg->getRawData();
 		}
@@ -878,6 +879,16 @@ class AdminController extends Yaf_Controller_Abstract {
 //				}
 				$this->forceRedirect($this->baseUrl . $ret_action);
 				return true;
+			} else {
+				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this));
+				if ($result && $result->isValid()) {
+					$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
+					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
+					// TODO: stringify to url encoding (A-Z,a-z,0-9)
+					$ret_action = $this->getRequest()->get('ret_action');
+					$this->forceRedirect($this->baseUrl . $ret_action);
+					return true;
+				}
 			}
 		}
 
