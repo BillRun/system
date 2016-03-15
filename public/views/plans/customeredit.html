@@ -25,10 +25,6 @@
 				<div class="col-md-2">External Code</div>
 				<div class="col-md-6"><input ng-model='entity.external_code' type='text' class="form-control" /></div>
 			</div>
-			<div class="row">
-				<div class="col-md-2">{{utils.getDisplayValue("data_from_currency", "plans")}}</div>
-				<div class='col-md-6'><input ng-model='entity.data_from_currency' type='checkbox' class='form-control' /></div>
-			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}
@@ -51,6 +47,31 @@
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					</span>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-2">{{utils.getDisplayValue("data_from_currency", "plans")}}</div>
+				<div class='col-md-6'><input ng-model='entity.data_from_currency' type='checkbox' class='form-control' /></div>
+			</div>
+			<div ng-show="entity.data_from_currency">
+				<h4>Max. Currency</h4>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("maximum_charge_period", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.max_currency.period'
+								ng-options='unit as unit for unit in availableDataInCurrencyPeriodUnits'>
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("cost", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.max_currency.cost' class='form-control' />
+					</div>
 				</div>
 			</div>
 			<h3>Thresholds</h3>

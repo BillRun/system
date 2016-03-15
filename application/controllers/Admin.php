@@ -210,6 +210,10 @@ class AdminController extends Yaf_Controller_Abstract {
 					)
 				);
 				$id = '$id';
+				$default_max_currency = array(
+					'cost' => intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.maxCurrency.cost")),
+					'period' => Billrun_Factory::config()->getConfigValue("realtimeevent.data.maxCurrency.period")
+				);
 				foreach (Billrun_Factory::db()->ratesCollection()->query($query)->cursor() as $rate) {
 					$r = $rate->getRawData();
 					$data = (!empty($r['rates']['data'][$plan_name]) ? $r['rates']['data'][$plan_name] : array());
@@ -236,7 +240,7 @@ class AdminController extends Yaf_Controller_Abstract {
                                 }
 				
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes)));
+			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes, 'default_max_currency' => $default_max_currency)));
 			$response->response();
 			return false;			
 		}
