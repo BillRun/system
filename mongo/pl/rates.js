@@ -238,7 +238,7 @@ function standardKey(_rate_name) {
 	return _rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/SK670/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Voice_Cellular_Israel/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 	print("==========================================");
@@ -332,6 +332,8 @@ db.rates.insert({
 	}
 })
 db.rates.remove({rates:{}});
+var _interconnect_non_chargable = ["A_INTERCONNECT_BEZEQ_T1_INTERCONNECT", "A_INTERCONNECT_BEZEQ_T2_INTERCONNECT", "A_INTERCONNECT_JAWWAL_INTERCONNECT", "A_INTERCONNECT_OTHERS_INTERCONNECT", "A_INTERCONNECT_VATANIA_INTERCONNECT", "A_INTER_1700_T1_INTERCONNECT", "A_INTER_1700_T2_INTERCONNECT"];
+db.rates.update({key:{$in:_interconnect_non_chargable}}, {$set:{"params.chargable": false}}, {multi:1})
 db.rates.insert(
 	{
 		"from" : ISODate("2016-02-01T00:00:00Z"),
