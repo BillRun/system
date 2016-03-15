@@ -13,10 +13,10 @@
  * @since    2.1
  */
 
-class Generator_PrepaidRechargeV extends Billrun_Generator_ConfigurableCDRAggregationCsv {
+class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	
-	static $type = 'prepaidrechargev';
+	static $type = 'prepaidsubscribers';
 	
 	public function generate() {
 		$fileData = $this->getNextFileData();
@@ -28,7 +28,7 @@ class Generator_PrepaidRechargeV extends Billrun_Generator_ConfigurableCDRAggreg
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_V_'.date('YmdHi').".csv", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi').".csv", 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------

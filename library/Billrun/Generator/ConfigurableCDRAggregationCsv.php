@@ -23,7 +23,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $translations = array();
 	protected $fieldDefinitions =  array();
 	protected $preProject = array();
-	protected $unwind = array();
+	protected $prePipeline = array();
+	protected $postPipeline = array();
 
 	public function __construct($options) {
 		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
@@ -54,7 +55,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->fieldDefinitions = $this->translateJSONConfig( Billrun_Util::getFieldVal($config['field_definitions'], array()) );
 		$this->translations = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['translations'], array()));
 		$this->preProject = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_project'], array()));
-		$this->unwind = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['unwind'], ''));
+		$this->prePipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_pipeline'], ''));
+		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
 		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
 		
 		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
@@ -83,14 +85,19 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 												array('$match' => $this->match ),
 												array('$project'=> array_merge($fields, $this->preProject ) ),
 											);
-			if(!empty($this->unwind)) {
-				$this->aggregation_array[] = array('$unwind' => $this->unwind);
+			
+			if(!empty($this->prePipeline)) {
+				$this->aggregation_array = $this->aggregation_array + $this->prePipeline;
 			}
+//			if(!empty($this->unwind)) {
+//				$this->aggregation_array[] = array('$unwind' => $this->unwind);
+//			}
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
-			if(!empty($this->postFilter)) {
-				$this->aggregation_array[] = array('$match' => $this->postFilter);
+			if(!empty($this->postPipline)) {
+				$this->aggregation_array = $this->aggregation_array + $this->postPipline;
 			}
+			
 		} else {
 			$this->aggregation_array = 	array( array('$match' => $this->match ),					
 						//array('$unwind' => $this->unwind),
