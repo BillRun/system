@@ -173,6 +173,20 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
               }
               if ($scope.entity.include[usaget].period.unit === "month") $scope.entity.include[usaget].period.unit = "months";
             });
+          } else if ($scope.entity.type === "customer") {
+            if ($scope.entity.data_from_currency) {
+              if (_.isUndefined($scope.entity.max_currency)) {
+                $scope.entity.max_currency = {
+                  cost: res.data.default_max_currency.cost,
+                  period: res.data.default_max_currency.period
+                };
+              } else {
+                if (_.isUndefined($scope.entity.max_currency.cost))
+                  $scope.entity.max_currency.cost = res.data.default_max_currency.cost;
+                if (_.isUndefined($scope.entity.max_currency.period))
+                  $scope.entity.max_currency.period = res.data.deafult_max_currency.period;
+              }
+            }
           }
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
@@ -214,6 +228,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
 
       $scope.availableCostUnits = ['days', 'months'];
+      $scope.availableDataInCurrencyPeriodUnits = ['day', 'week', 'month', 'year'];
       $scope.availableOperations = {
         set: {
           value: 'set',
