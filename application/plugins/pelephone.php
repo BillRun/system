@@ -159,11 +159,22 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($results->isEmpty()) {
 			return false;
 		}
-		return $results->getRawData();
+		return $results;
+	}
+
+	protected function getSubscriberPlan($subscriber) {
+		$planQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $subscriber['plan']));
+		
+		$coll = Billrun_Factory::db()->plansCollection();
+		$results = $coll->query($planQuery)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return false;
+		}
+		return $results;
 	}
 	
 	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
-		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
+		$subscriber = $this->getSubscriber($autoRenewRecord['sid'])->getRawData();
 		if (!$subscriber) {
 			return false;
 		}
@@ -171,7 +182,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
-		$this->handleBalanceNotifications("BALANCE_AFTER", $row, $balance, $balanceAfter);
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		$this->handleBalanceNotification("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
+	}
+
+	public function afterBalanceLoad($balance, $subscriber) {
+		$balance->set('notifications_sent', null);
+		$balance->save();
+		$plan = $this->getSubscriberPlan($subscriber);
+		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
 	}
 	
 	protected function getNotificationKey($type, $balance) {
@@ -197,15 +216,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 	
-	public function handleBalanceNotifications($type, $row, $balance, $balanceAfter = 0) {
-		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+	public function handleBalanceNotifications($type, $plan, $msisdn, $balance, $balanceAfter = 0) {
 		if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
 			return;
 		}
 		$notificationKey = $this->getNotificationKey($type, $balance);
 		foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
 			if (!$notificationSent = $balance->get('notifications_sent')) {
-				$notificationSent = array();
+				$notificationSent = array($notificationKey => array());
 			}
 			if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
 				continue;
@@ -213,7 +231,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($this->needToSendNotification($type, $notification, $balanceAfter)) {
 				$modifyParams = array('balance' => $balance);
 				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
-				$this->sendNotification($notification['type'], $msg, $row['msisdn']);
+				$this->sendNotification($notification['type'], $msg, $msisdn);
 				array_push($notificationSent[$notificationKey], $index);
 				$balance->set('notifications_sent', $notificationSent);
 				$balance->save();
