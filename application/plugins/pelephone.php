@@ -192,6 +192,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$plan = $this->getSubscriberPlan($subscriber);
 		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
 	}
+
+	public function balanceExpirationDate($balance, $subscriber) {
+		$plan = $this->getSubscriberPlan($subscriber);
+		$this->handleBalanceNotifications("BALANCE_EXPIRATION", $plan, $subscriber['msisdn'], $balance);
+	}
 	
 	protected function getNotificationKey($type, $balance) {
 		switch ($type) {
