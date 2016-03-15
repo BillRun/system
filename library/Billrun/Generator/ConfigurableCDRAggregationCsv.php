@@ -87,15 +87,12 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 											);
 			
 			if(!empty($this->prePipeline)) {
-				$this->aggregation_array = $this->aggregation_array + $this->prePipeline;
+				$this->aggregation_array = array_merge($this->aggregation_array , $this->prePipeline);
 			}
-//			if(!empty($this->unwind)) {
-//				$this->aggregation_array[] = array('$unwind' => $this->unwind);
-//			}
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
 			if(!empty($this->postPipline)) {
-				$this->aggregation_array = $this->aggregation_array + $this->postPipline;
+				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipline);
 			}
 			
 		} else {
@@ -154,6 +151,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					}
 				}
 			}
+		} else {
+			$decodedJson = json_decode($retConfig,JSON_OBJECT_AS_ARRAY);
+			if(!empty($decodedJson)) {
+				$retConfig = $decodedJson;
+			}
 		}
 		return $retConfig;
 	}
@@ -166,10 +168,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 */
 	protected function translateCdrFields($line,$translations) {
 		foreach($translations as $key => $trans) {
+			if(empty( $line[$key] ) ) { continue; }
 			switch( $trans['type'] ) {			
 				case 'function' :
 					if(method_exists($this,$trans['translation']['function'])) {
-						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $trans['translation']['values'] , $line );
+						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $this->translateJSONConfig($trans['translation']['values']) , $line );
+					} else if( function_exists($trans['translation']['function']) ){
+						$line[$key] = call_user_func($trans['translation']['function'],$line[$key] );
 					}
 					break;
 				case 'regex' :

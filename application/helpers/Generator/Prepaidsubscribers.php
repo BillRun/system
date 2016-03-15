@@ -41,13 +41,32 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 			$this->markLines($line['stamps']);
 		}
 	}
+
+	protected function isLineEligible($line) {
+		return true;
+	}	
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 	
+	protected function flattenArray($array, $parameters, &$line) {
+		foreach($array as $idx => $val) {
+			foreach($parameters['mapping'] as $dataKey => $lineKey) {
+				$fieldValue = Billrun_Util::getNestedArrayVal($val,$dataKey);
+				if(!empty($fieldValue)) {
+					$line[sprintf($lineKey, $idx+1)] = $fieldValue;
+				}
+			}
+		}
+		return $array;
+	}
 	
-	protected function isLineEligible($line) {
-		return true;
+	
+	protected function lastSidTransactionDate($value, $parameters, $line) {
+		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid'=>$value),$parameters['query']))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
+		if(!$usage->isEmpty()) {
+			return $this->translateUrt($usage['urt'], $parameters);
+		}
 	}
 
 }
