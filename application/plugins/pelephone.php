@@ -205,13 +205,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 
-	protected function needToSendNotification($type, $notification, $balanceAfter = 0) {
+	protected function needToSendNotification($type, $notification, $balance, $balanceAfter = 0) {
 		switch ($type) {
 			case ('BALANCE_AFTER'):
 				return $balanceAfter >= $notification['value'];
 			case ('BALANCE_LOAD'):
 			case ('BALANCE_EXPIRATION'):
-				return true;
+				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
 		}
 		return false;
 	}
@@ -228,7 +228,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
 				continue;
 			}
-			if ($this->needToSendNotification($type, $notification, $balanceAfter)) {
+			if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
 				$modifyParams = array('balance' => $balance);
 				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
 				$this->sendNotification($notification['type'], $msg, $msisdn);
