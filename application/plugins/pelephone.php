@@ -181,13 +181,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->updateSubscriberInDataSlowness($subscriber, false, true);
 	}
 
-	public function subscribersNonRecurringPlansEnded($sids) {
+	public function subscribersPlansEnded($sids) {
 		foreach ($sids as $sid) {
 			$subscriber = $this->getSubscriber($sid);
 			if (!$subscriber) {
 				continue;
 			}
-			$this->updateSubscriberInDataSlowness($subscriber, false, true);
+			if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness']) {
+				$this->updateSubscriberInDataSlowness($subscriber, false, true);
+			}
 		}
 	}
 

@@ -110,15 +110,15 @@ class CronController extends Yaf_Controller_Abstract {
 		$handler->closeBalances();
 	}
 
-	public function nonRecurringAction() {
-		$this->cancelSlownessByEndedNonRecurringPlans();
+	public function endedPlansAction() {
+		$this->cancelSlownessByEndedPlans();
 	}
 
 	public function sendNotificationsAction() {
 		$this->sendBalanceExpirationdateNotifications();
 	}
 
-	public function cancelSlownessByEndedNonRecurringPlans() {
+	public function cancelSlownessByEndedPlans() {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$group = array(
 			'$group' => array(
@@ -129,9 +129,6 @@ class CronController extends Yaf_Controller_Abstract {
 				'charging_type' => array(
 					'$first' => '$charging_type',
 				),
-				'recurring' => array(
-					'$first' => '$recurring',
-				)
 			),
 		);
 		$beginOfDay = strtotime("midnight", time());
@@ -142,10 +139,6 @@ class CronController extends Yaf_Controller_Abstract {
 				'to' => array(
 					'$gte' => new MongoDate($beginOfYesterday),
 					'$lt' => new MongoDate($beginOfDay),
-				),
-				'$or' => array(
-					array('recurring' => array('$exists' => 0)),
-					array('recurring' => 0),
 				),
 			),
 		);
@@ -159,7 +152,7 @@ class CronController extends Yaf_Controller_Abstract {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
 		
-		Billrun_Factory::dispatcher()->trigger('subscribersNonRecurringPlansEnded', array($sids));
+		Billrun_Factory::dispatcher()->trigger('subscribersPlansEnded', array($sids));
 	}
 
 	/**
