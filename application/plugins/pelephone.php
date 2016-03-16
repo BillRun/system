@@ -181,12 +181,23 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->updateSubscriberInDataSlowness($subscriber, false, true);
 	}
 
+	public function subscribersNonRecurringPlansEnded($sids) {
+		foreach ($sids as $sid) {
+			$subscriber = $this->getSubscriber($sid);
+			if (!$subscriber) {
+				continue;
+			}
+			$this->updateSubscriberInDataSlowness($subscriber, false, true);
+		}
+	}
+
 	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
 		$this->handleBalanceNotification("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
 	}
 
 	public function afterBalanceLoad($balance, $subscriber) {
+		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
 		$balance->set('notifications_sent', null);
 		$balance->save();
 		$plan = $this->getSubscriberPlan($subscriber);
@@ -482,7 +493,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
 	 */
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
-		if (isset($record['service']['code']) && empty($record['service']['code'])) {
+		if (isset($record['service']) && 
+			array_key_exists('code', $record['service']) &&
+			$record['service']['code'] === NULL) {
 			$record['in_data_slowness'] = FALSE;
 		}
 	}
@@ -531,6 +544,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 		return $result;
+	}
+	
+	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
+		if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness'] &&
+			in_array($balance['pp_includes_external_id'], array(5, 8))) {
+			$this->updateSubscriberInDataSlowness($subscriber, false, true);
+		}
 	}
 
 }

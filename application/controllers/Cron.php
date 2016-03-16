@@ -159,20 +159,7 @@ class CronController extends Yaf_Controller_Abstract {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
 		
-		$this->cancelSubscribersDataSlowness($sids);
-	}
-	
-	/**
-	 * Exit subscribers from data slowness mode
-	 * 
-	 * @param type $sids
-	 */
-	protected function cancelSubscribersDataSlowness($sids = array()) {
-		$subscribersColl = Billrun_Factory::db()->subscribersCollection();
-		$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => array('$in' => $sids)));
-		$updateQuery = array('$set' => array('in_data_slowness' => FALSE));		
-		$params = array('multiple' => 1);
-		$subscribersColl->update($findQuery, $updateQuery, $params);
+		Billrun_Factory::dispatcher()->trigger('subscribersNonRecurringPlansEnded', array($sids));
 	}
 
 	/**
