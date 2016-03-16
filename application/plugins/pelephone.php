@@ -136,12 +136,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getDataSlownessParams($socKey = NULL) {
 		// TODO: Check first if it's set in plan
 		$slownessParams = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness');
-		if (!is_null($socKey) && !isset($slownessParams[$socKey])) {
+		if (!is_null($socKey) && !isset($slownessParams['bandwidth_cap'][$socKey])) {
 			$socKey = NULL;
 		}
 		return array(
-			'speed' => is_null($socKey) ? '' : $slownessParams[$socKey]['speed'],
-			'soc' => is_null($socKey) ? '' : $slownessParams[$socKey]['SOC'],
+			'speed' => is_null($socKey) ? '' : $slownessParams['bandwidth_cap'][$socKey]['speed'],
+			'soc' => is_null($socKey) ? '' : $slownessParams['bandwidth_cap'][$socKey]['SOC'],
 			'command' => $slownessParams['command'],
 			'applicationId' => $slownessParams['applicationId'],
 			'requestUrl' => $slownessParams['requestUrl'],
