@@ -352,7 +352,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
 	 */
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
-		if (isset($record['service']['code']) && empty($record['service']['code'])) {
+		if (isset($record['service']) && 
+			array_key_exists('code', $record['service']) &&
+			$record['service']['code'] === NULL) {
 			$record['in_data_slowness'] = FALSE;
 		}
 	}
