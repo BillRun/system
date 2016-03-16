@@ -281,7 +281,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $lineToRebalance['usagev'];
 	}
 
-	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
 			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
 			return 0;
@@ -289,14 +289,18 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$rebalanceCost = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		$rebalanceCharges = Billrun_Calculator_CustomerPricing::getChargesByRate($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		$rebalanceCost = $rebalanceCharges['total'];
 		if (isset($lineToRebalance['over_max_currency'])) {
 			$rebalanceCost -= $lineToRebalance['over_max_currency'];
 			if ($rebalanceCost < 0) {
 				$rebalanceCost = 0;
 			}
 		}
-		return (-1) * $rebalanceCost;
+		return array(
+			'cost' => (-1) * $rebalanceCost,
+			'interconnect' => (-1) * $rebalanceCharges['interconnect'],
+		);
 	}
 
 	/**
@@ -307,7 +311,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
 		$usaget = $lineToRebalance['usaget'];
-		$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
+		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
+		$rebalanceCost = $rebalanceCharges['cost'];
+		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
@@ -324,7 +330,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
-			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 		} else {
 			$balance = null;
@@ -361,15 +367,18 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $rebalanceUsagev
 	 */
-	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost) {
+	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost, $rebalanceInterconnect) {
 		return array(
 			'$inc' => array(
 				'usagev' => $rebalanceUsagev,
 				'aprice' => $cost,
+				'apr' => $cost,
+				'interconnect_aprice' => $rebalanceInterconnect,
 			),
 			'$set' => array(
 				'rebalance_usagev' => $rebalanceUsagev,
 				'rebalance_cost' => $cost,
+				'rebalance_interconnect' => $rebalanceInterconnect,
 			)
 		);
 	}
