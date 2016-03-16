@@ -844,10 +844,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			'sort' => $sort,
 			'showprefix' => $showprefix,
 		);
-		if ($table === "plans") $options['plan_type'] = $this->_request->getParam('plan_type');
 		// set the model
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
+		if ($table === "plans") {
+			$options['plan_type'] = $query['$and'][1]['type'];
+			//$this->_request->setParam('plan_type', $options['plan_type']);
+		}
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}

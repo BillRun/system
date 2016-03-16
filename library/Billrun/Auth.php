@@ -174,13 +174,12 @@ class Billrun_Auth implements Zend_Auth_Adapter_Interface {
 	}
 
 	protected function _authenticateHttpRequest() {
-		$internalModel = new Billrun_Util();//new Application_Model_Internal(array());
 		$data = array(
 			$this->_methodField => $this->_methodName,
 			$this->_identityField => $this->_identity,
 			$this->_credentialField => $this->_credential,
 		);
-		$json = $internalModel->sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
+		$json = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
 		$obj = @json_decode($json);
 		return $obj;
 	}
