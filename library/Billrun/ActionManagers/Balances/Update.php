@@ -136,8 +136,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
+			$archiveLine = array();
 			$archiveLine['aid'] = $subscriber['aid'];
 			$archiveLine['service_provider'] = $subscriber['service_provider'];
+			$archiveLine['plan'] = $subscriber['plan'];
 			$archiveLine['source_ref'] = $balancePair['source'];
 			
 			// TODO: Move this logic to a updater_balance class.
@@ -192,15 +194,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if(count($processedLines > 0)) {
 			$balanceLine['aid'] = $processedLines[0]['aid'];
+			$balanceLine['plan'] = $processedLines[0]['plan'];
 			$balanceLine['service_provider'] = $processedLines[0]['service_provider'];
 			$balanceLine['source_ref'] = $processedLines[0]['source_ref'];
 		}
 		
 		// Report lines.
 		$reportedLine = $balanceLine;
-		if (!Billrun_Factory::config()->isProd()) {
-			$reportedLine['information'] = $processedLines;
-		}
+		$reportedLine['information'] = $processedLines;
 		$reportedLine['lcount'] = count($processedLines);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
 			
@@ -209,9 +210,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		$archiveCollection = Billrun_Factory::db()->archiveCollection();
 		
+		unset($balanceLine['aprice'], $balanceLine['charge'], $balanceLine['usagev']);
 		// Report archive
 		foreach ($processedLines as $line) {
-			unset($balanceLine['aprice']);
 			$archiveLine = array_merge($this->additional, $balanceLine, $line);
 			$archiveLine['u_s'] = $reportedLine['stamp'];
 			$archiveCollection->insert($archiveLine);
