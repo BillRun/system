@@ -81,6 +81,15 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 	
+	protected function setUpdateValue(&$line) {
+		$value = $line['balance_after'] - $line['balance_before'];
+		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
+			$line["aprice"] = $value;
+		} else {
+			$line["usagev"] = $value;
+		}
+	}
+	
 	/**
 	 * Report the wallet to the lines table
 	 * @param type $insertLine
@@ -91,11 +100,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet, $beforeUpdate) {
 		$insertLine["usaget"] = 'balance';
 		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
-		if ($insertLine["charging_usaget"] == 'cost' || $insertLine["charging_usaget"] == 'total_cost') {
-			$insertLine["aprice"] = $wallet->getValue();
-		} else {
-			$insertLine["usagev"] = $wallet->getValue();
-		}
 		$insertLine["pp_includes_name"] = $wallet->getPPName();
 		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
@@ -108,6 +112,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 			$insertLine['balance_after'] = $this->getBalanceValue($balance);
 		}
+		
+		$this->setUpdateValue($insertLine);
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
 	
