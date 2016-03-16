@@ -235,7 +235,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'usaget',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
-				'display' => 'Usage',
+				'display' => 'Activity',
 				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
 				'default' => array(),
 			),
