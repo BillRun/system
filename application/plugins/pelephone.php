@@ -414,5 +414,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $result;
 	}
+	
+	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
+		if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness'] &&
+			in_array($balance['pp_includes_external_id'], array(5,8))) {
+			$this->updateSubscriberInDataSlowness($subscriber, false, true);
+		}
+	}
 
 }
