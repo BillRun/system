@@ -215,8 +215,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			case ('BALANCE_AFTER'):
 				return $balanceAfter >= $notification['value'];
 			case ('BALANCE_LOAD'):
-			case ('BALANCE_EXPIRATION'):
 				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+			case ('BALANCE_EXPIRATION'):
+				return true;
 		}
 		return false;
 	}
@@ -238,10 +239,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
 				$this->sendNotification($notification['type'], $msg, $msisdn);
 				array_push($notificationSent[$notificationKey], $index);
+				$balance->collection(Billrun_Factory::db()->balancesCollection());
 				$balance->set('notifications_sent', $notificationSent);
 				$balance->save();
 			}
 		}
+	}
+	
+	protected function getNotificationExpireDate($obj) {
+		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
 	
 	protected function modifyNotificationMessage($str, $params) {
@@ -249,7 +255,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($params as $key => $obj) {
 			$replaces = Billrun_Factory::config()->getConfigValue('realtimeevent.notifications.replace.' . $key, array());
 			foreach ($replaces as $search => $replace) {
-				$msg = str_replace("~$search~", $obj->get($replace), $msg);
+				$val = null;
+				if (!is_array($replace)) {
+					$val = $obj->get($replace);
+				} else if (isset($replace['classMethod']) && method_exists($this, $replace['classMethod'])) {
+					$val = $this->{$replace['classMethod']}($obj);	
+				}
+				if (!is_null($val)) {
+					$msg = str_replace("~$search~", $val, $msg);
+				}
 			}
 		}
 		return $msg;

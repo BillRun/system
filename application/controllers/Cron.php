@@ -197,39 +197,42 @@ class CronController extends Yaf_Controller_Abstract {
 		foreach ($plansNotifications as $planNotification) {
 			$subscribersInPlan = $this->getSubscribersInPlan($planNotification['plan_name']);
 			foreach ($subscribersInPlan as $subscriber) {
-				$balance = $this->getBalancesToNotify($subscriber->get('sid'), $planNotification['notification']);
-				if ($balance) {
-					Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRowData()));
+				$balances = $this->getBalancesToNotify($subscriber->get('sid'), $planNotification['notification']);
+				if ($balances) {
+					foreach ($balances as $balance) {
+						Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
+					}
 				}
 			}
 		}
 	}
 	
 	protected function getBalancesToNotify($subscriberId, $notification) {
-		$balancesCollection = Billrun_Factory::db()->plansCollection();
+		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$query = array(
 			'sid' => $subscriberId,
 			'to' => array(
 				'$gte' => new MongoDate(strtotime('+' . $notification['value'] . ' days midnight')),
 				'$lte' => new MongoDate(strtotime('+' . ($notification['value'] + 1) . ' days midnight')),
-			)
+			),
+			'pp_includes_external_id' => array('$in' => $notification['pp_includes']),
 		);
-		$balances = $balancesCollection->query($query);
+		$balances = $balancesCollection->query($query)->cursor();
 		if ($balances->count() == 0) {
 			return false;
 		}
-		return $balances->cursor()->current();
+		return $balances;
 	}
 	
 	protected function getSubscribersInPlan($planName) {
-		$subscribersCollection = Billrun_Factory::db()->plansCollection();
+		$subscribersCollection = Billrun_Factory::db()->subscribersCollection();
 		$query = Billrun_Util::getDateBoundQuery();
 		$query['plan'] = $planName;
-		$subscribers = $subscribersCollection->query($query);
+		$subscribers = $subscribersCollection->query($query)->cursor();
 		if ($subscribers->count() == 0) {
 			return false;
 		}
-		return $subscribers->cursor();
+		return $subscribers;
 	}
 	
 	protected function getAllPlansWithExpirationDateNotification() {
