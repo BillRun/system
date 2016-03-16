@@ -9,6 +9,9 @@ app.controller('SubscribersAutoRenewController', ['$scope', '$controller', 'Data
         if (_.isObject(entity.last_renew_date)) {
           entity.last_renew_date = new Date(entity.last_renew_date.sec * 1000);
         }
+        if (_.isObject(entity.next_renew_date)) {
+          entity.next_renew_date = new Date(entity.next_renew_date.sec * 1000);
+        }
         if (_.isObject(entity.creation_date)) {
           entity.creation_date = new Date(entity.creation_date.sec * 1000);
         }
