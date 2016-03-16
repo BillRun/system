@@ -193,7 +193,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
-		$this->handleBalanceNotification("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
+		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
 	}
 
 	public function afterBalanceLoad($balance, $subscriber) {
@@ -473,18 +473,51 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
 			}
 			
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy') {
-				$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10);
 				}
 			}
+			
+			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
 
 			if (count($pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
 			}
 		}
+	}
+		
+	protected function getPPIncludesToExclude($plan, $rate) {
+		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
+		$query = $this->getPPIncludesAllowedQuery($plan['name'], $rate['key']);
+		$ppIncludes = $prepaidIncludesCollection->query($query)->cursor();
+		$allowedPPIncludes = array();
+		if ($ppIncludes->count() > 0) {
+			$allowedPPIncludes = array_map(function($doc) {
+				return $doc['external_id'];
+			}, iterator_to_array($ppIncludes));
+		}
+		return array_diff(array(1,2,3,4,5,6,7,8,9,10), array_values($allowedPPIncludes));
+	}
+	
+	protected function getPPIncludesAllowedQuery($planName, $rateName) {
+		$basePlanName = "BASE";
+		return array('$or' => array(
+			array('$and' => array(
+				array("allowed_in." . $planName => array('$exists' => 0)),
+				array("allowed_in." . $basePlanName => array('$exists' => 0)),
+			)),
+			array('$and' => array(
+				array("allowed_in." . $planName => array('$exists' => 1)),
+				array("allowed_in." . $planName => array('$in' => array($rateName))),
+			)),
+			array('$and' => array(
+				array("allowed_in." . $planName => array('$exists' => 0)),
+				array("allowed_in." . $basePlanName => array('$in' => array($rateName))),
+			)),
+		));
 	}
 
 	/**
