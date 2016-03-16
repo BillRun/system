@@ -197,6 +197,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterBalanceLoad($balance, $subscriber) {
+		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
 		$balance->set('notifications_sent', null);
 		$balance->save();
 		$plan = $this->getSubscriberPlan($subscriber);
@@ -547,7 +548,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
 		if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness'] &&
-			in_array($balance['pp_includes_external_id'], array(5,8))) {
+			in_array($balance['pp_includes_external_id'], array(5, 8))) {
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}
