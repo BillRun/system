@@ -274,7 +274,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getBandwidthCapDetailsAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$config = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
+		$config = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness.bandwidth_cap', array());
 		unset($config['requestUrl']);
 		unset($config['command']);
 		unset($config['applicationId']);
@@ -292,14 +292,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $data['cap_name'];
 		unset($data['cap_name']);
 		unset($data['service']);
-		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
 					->cursor()->setReadPreference('RP_PRIMARY')
 					->sort(array('_id' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
 		unset($allCaps['_id']);
-		$allCaps['realtimeevent']['data']['slowness'][$cap_name] = $data;
+		$allCaps['realtimeevent']['data']['slowness']['bandwidth_cap'][$cap_name] = $data;
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
@@ -310,14 +310,14 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$cap_name = $this->getRequest()->get('cap_name');
 		$configColl = Billrun_Factory::db()->configCollection();
-		$allCaps = $configColl->query(array("realtimeevent.data.slowness" => array('$exists' => 1)))
+		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
 					->cursor()->setReadPreference('RP_PRIMARY')
 					->sort(array('_id' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
 		unset($allCaps['_id']);
-		unset($allCaps["realtimeevent"]["data"]["slowness"][$cap_name]);
+		unset($allCaps["realtimeevent"]["data"]["slowness"]['bandwidth_cap'][$cap_name]);
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
