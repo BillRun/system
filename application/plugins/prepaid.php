@@ -281,7 +281,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $lineToRebalance['usagev'];
 	}
 
-	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
 			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
 			return 0;
@@ -311,7 +311,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
 		$usaget = $lineToRebalance['usaget'];
-		$rebalanceCharges = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
+		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];
 		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
 		// Update subscribers balance
