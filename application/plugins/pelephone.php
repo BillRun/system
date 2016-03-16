@@ -159,15 +159,114 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($results->isEmpty()) {
 			return false;
 		}
-		return $results->getRawData();
+		return $results;
+	}
+
+	protected function getSubscriberPlan($subscriber) {
+		$planQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $subscriber['plan']));
+		
+		$coll = Billrun_Factory::db()->plansCollection();
+		$results = $coll->query($planQuery)->cursor()->limit(1)->current();
+		if ($results->isEmpty()) {
+			return false;
+		}
+		return $results;
 	}
 	
 	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
-		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
+		$subscriber = $this->getSubscriber($autoRenewRecord['sid'])->getRawData();
 		if (!$subscriber) {
 			return false;
 		}
 		$this->updateSubscriberInDataSlowness($subscriber, false, true);
+	}
+
+	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		$this->handleBalanceNotification("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
+	}
+
+	public function afterBalanceLoad($balance, $subscriber) {
+		$balance->set('notifications_sent', null);
+		$balance->save();
+		$plan = $this->getSubscriberPlan($subscriber);
+		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
+	}
+
+	public function balanceExpirationDate($balance, $subscriber) {
+		$plan = $this->getSubscriberPlan($subscriber);
+		$this->handleBalanceNotifications("BALANCE_EXPIRATION", $plan, $subscriber['msisdn'], $balance);
+	}
+	
+	protected function getNotificationKey($type, $balance) {
+		switch ($type) {
+			case ('BALANCE_AFTER'):
+				return $balance->get('pp_includes_external_id');
+			case ('BALANCE_LOAD'):
+				return 'on_load';
+			case ('BALANCE_EXPIRATION'):
+				return 'expiration_date';
+		}
+		return false;
+	}
+
+	protected function needToSendNotification($type, $notification, $balance, $balanceAfter = 0) {
+		switch ($type) {
+			case ('BALANCE_AFTER'):
+				return $balanceAfter >= $notification['value'];
+			case ('BALANCE_LOAD'):
+				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+			case ('BALANCE_EXPIRATION'):
+				return true;
+		}
+		return false;
+	}
+	
+	public function handleBalanceNotifications($type, $plan, $msisdn, $balance, $balanceAfter = 0) {
+		if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
+			return;
+		}
+		$notificationKey = $this->getNotificationKey($type, $balance);
+		foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
+			if (!$notificationSent = $balance->get('notifications_sent')) {
+				$notificationSent = array($notificationKey => array());
+			}
+			if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
+				continue;
+			}
+			if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
+				$modifyParams = array('balance' => $balance);
+				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+				$this->sendNotification($notification['type'], $msg, $msisdn);
+				array_push($notificationSent[$notificationKey], $index);
+				$balance->collection(Billrun_Factory::db()->balancesCollection());
+				$balance->set('notifications_sent', $notificationSent);
+				$balance->save();
+			}
+		}
+	}
+	
+	protected function getNotificationExpireDate($obj) {
+		return date('Y-m-d H:i:s', $obj->get('to')->sec);
+	}
+	
+	protected function modifyNotificationMessage($str, $params) {
+		$msg = $str;
+		foreach ($params as $key => $obj) {
+			$replaces = Billrun_Factory::config()->getConfigValue('realtimeevent.notifications.replace.' . $key, array());
+			foreach ($replaces as $search => $replace) {
+				$val = null;
+				if (!is_array($replace)) {
+					$val = $obj->get($replace);
+				} else if (isset($replace['classMethod']) && method_exists($this, $replace['classMethod'])) {
+					$val = $this->{$replace['classMethod']}($obj);	
+				}
+				if (!is_null($val)) {
+					$msg = str_replace("~$search~", $val, $msg);
+				}
+			}
+		}
+		return $msg;
 	}
 
 	public function afterSubscriberBalanceNotFound(&$row) {
@@ -243,6 +342,37 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$request = $encoder->encode($requestBody, $params);
 		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries']);
+	}
+	
+	/**
+	 * Send request to send notification
+	 * @todo Should be generic (same as sendSlownessStateToProv)
+	 */
+	public function sendNotification($notificationType, $msg, $msisdn) {
+		$notificationParams = Billrun_Factory::config()->getConfigValue('realtimeevent.notification.' . $notificationType);
+		if (!isset($notificationParams['sendRequestToProv']) || !$notificationParams['sendRequestToProv']) {
+			return;
+		}
+		$encoder = new Billrun_Encoder_Xml();
+		$requestBody = array(
+			'HEADER' => array(
+				'APPLICATION_ID' => $notificationParams['applicationId'],
+				'COMMAND' => $notificationParams['command'],
+			),
+			'PARAMS' => array(
+				'SENDER' => $notificationParams['sender'],
+				'USER_ID' => $notificationParams['userId'],
+				'SOURCE' => $notificationParams['source'],
+				'MSG' => $msg,
+				'TO_PHONE' => $msisdn,
+			)
+		);
+		$params = array(
+			'root' => 'REQUEST',
+			'addHeader' => false,
+		);
+		$request = $encoder->encode($requestBody, $params);
+		return $this->sendRequest($request, $notificationParams['requestUrl'], $notificationParams['sendRequestTries']);
 	}
 	
 	protected function sendRequest($request, $requestUrl, $numOfTries = 3) {

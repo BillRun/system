@@ -255,8 +255,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
+			$subscriber = $outputDocuments[0]['subscriber'];
+			$balance = $outputDocuments[0]['balance'];
 			// Write the action to the lines collection.
 			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
+			Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber));
 		}
 		
 		if($success) {
