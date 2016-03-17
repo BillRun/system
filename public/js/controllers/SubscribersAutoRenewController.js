@@ -4,6 +4,10 @@ app.controller('SubscribersAutoRenewController', ['$scope', '$controller', 'Data
 
     $controller('EditController', {$scope: $scope});
 
+    $scope.cancel = function () {
+      $window.location = baseUrl + '/admin/subscribersautorenewservices';
+    };
+
     $scope.init = function () {
       $scope.initEdit(function (entity) {
         if (_.isObject(entity.last_renew_date)) {
