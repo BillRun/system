@@ -64,7 +64,7 @@ $(function () {
 
   $("#chargingPlanPopup").on('show.bs.modal', function (event) {
     var plan_name = $(event.relatedTarget).data('charging-plan-name');
-    //$('#data-rates-tbody tr').remove();
+    $('#data-charging-plan-tbody tr').remove();
     $.ajax({
       url: baseUrl + '/admin/getEntity',
       type: "GET",
