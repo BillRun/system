@@ -69,7 +69,7 @@ class Billrun_Balances_Handler {
 		$data['operation'] = "inc";
 		$data['recurring'] = isset($balance['recurring']);
 		// TODO: Put actual values
-		$data['additional'] = json_encode(array("mtr_info" => "Crontab", "mtr_type" => "BAL_EXP"));
+		$data['additional'] = json_encode(array("balance_source" => "CRON", "balance_type" => "BAL_EXP"));
 		return $data;
 	}
 	
