@@ -87,6 +87,17 @@
 					</span>
 				</div>
 			</div>
+			<div class='row' ng-if='utils.display("next_renew_date", "renew")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue('next_renew_date', 'renew')}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.next_renew_date" is-open="status.opened" date-disabled="utils.disabled('next_renew_date', 'renew')" close-text="Close" />
+					<span>
+					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					</span>
+				</div>
+			</div>
 		</div>
 		<div class='jsonView' ng-if='advancedMode === true'>
 			<json child='entity' default-collapsed='true' type='object'></json>
