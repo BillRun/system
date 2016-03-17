@@ -2,6 +2,7 @@
 
 $c = $this->offset;
 foreach ($this->data as $item) {
+	if ($active === "lines" && $item['usaget'] !== "balance" && !$item['usagev']) continue;
 	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
 		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
 	else:
