@@ -182,6 +182,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		if (!$id) {
+			$name = Billrun_Util::filter_var($this->getRequest()->get('name'), FILTER_SANITIZE_STRING);
+		}
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$response = new Yaf_Response_Http();
 
@@ -189,7 +192,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($type == 'new') {
 			$entity = $model->getEmptyItem();
 		} else {
-			$entity = $model->getItem($id);
+			if ($id) {
+				$entity = $model->getItem($id);
+			} else if ($name) {
+				$entity = $model->getItemByName($name);
+			}
 			if (!$entity) {
 				$response->setBody(json_encode(array('error' => 'Could not find entity')));
 				$response->response();
@@ -197,7 +204,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
-				if ($key !== '_id') unset($entity[$key]);
+				if ($key !== '_id')
+					unset($entity[$key]);
 			}
 			$plan_rates = array();
 			if ($coll == 'plans') {
@@ -230,15 +238,14 @@ class AdminController extends Yaf_Controller_Abstract {
 					);
 					$plan_rates[] = $cur_rate;
 				}
-                                $ppincludes = array();
-                                if ($entity['type'] === "customer") {
-                                    foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
-                                        $pp = $ppinclude->getRawData();
-                                        $ppincludes[] = (string)$pp['external_id'];
-                                    }
-                                    sort($ppincludes);
-                                }
-				
+				$ppincludes = array();
+				if ($entity['type'] === "customer") {
+					foreach (Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor() as $ppinclude) {
+						$pp = $ppinclude->getRawData();
+						$ppincludes[] = (string) $pp['external_id'];
+					}
+					sort($ppincludes);
+				}
 			}
 			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes, 'default_max_currency' => $default_max_currency)));
 			$response->response();
