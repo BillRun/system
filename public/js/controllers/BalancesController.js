@@ -44,7 +44,8 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
         "pp_includes_name": vm.entity.pp_includes_name
       }),
       additional: JSON.stringify({
-        mtr_type: "AdminPanel",
+        mtr_source: "AdminPanel",
+        mtr_type: "BalanceUpdate",
         mtr_info: username
       })
     };
