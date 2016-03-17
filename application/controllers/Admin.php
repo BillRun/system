@@ -1585,6 +1585,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$query = false;
 		if (!$session) $session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
+		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
 
 		$operators = $this->getSetVar($session, 'manual_operator', 'manual_operator');
 		$values = $this->getSetVar($session, 'manual_value', 'manual_value');
