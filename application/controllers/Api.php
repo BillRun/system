@@ -80,14 +80,15 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @return boolean on success, else false
 	 */
 	public function setOutput() {
-		$this->apiLogAction();
 		$args = func_get_args();
 		if (isset($args[0])) {
 			$var = $args[0];
 		} else {
 			$var = $args;
 		}
-		return $this->setOutputVar($var);
+		$ret = $this->setOutputVar($var);
+		$this->apiLogAction();
+		return $ret;
 	}
 	
 	public function setOutputVar() {
