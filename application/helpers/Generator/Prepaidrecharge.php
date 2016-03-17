@@ -13,10 +13,10 @@
  * @since    2.1
  */
 
-class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
+class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	
-	static $type = 'prepaidsubscribers';
+	static $type = 'prepaidrecharge';
 	
 	public function generate() {
 		$fileData = $this->getNextFileData();
@@ -28,7 +28,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi').".csv", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_'.date('YmdHi').".csv", 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------
@@ -41,19 +41,39 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 			if($this->isLineEligible($line)) {
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}
-			//$this->markLines($line['stamps']);
+			$this->markLines($line['stamps']);
 		}
 	}
-
-	protected function isLineEligible($line) {
-		return true;
-	}	
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 	
+	
+	protected function isLineEligible($line) {
+		return true;
+	}
+
+	
+	protected function getFromDBRef($dbRef, $parameters, &$line) {
+		$entity =$this->collection->getRef($dbRef);
+		if($entity && !$entity->isEmpty()) {
+			return $entity[$parameters['field_name']];
+		}
+		return FALSE;
+	}
+	
+	protected function getFromDBRefUrt($dbRef, $parameters, &$line) {
+		$value = $this->getFromDBRef($dbRef, $parameters, $line);
+		if(!empty($value)) {
+			return $this->translateUrt($value, $parameters);
+		}
+	}
+	
 	protected function flattenArray($array, $parameters, &$line) {
 		foreach($array as $idx => $val) {
+			if($val instanceof MongoDBRef ) {
+				$val = Billrun_DBRef::getEntity($val);
+			}
 			foreach($parameters['mapping'] as $dataKey => $lineKey) {
 				$fieldValue = Billrun_Util::getNestedArrayVal($val,$dataKey);
 				if(!empty($fieldValue)) {
@@ -63,20 +83,4 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		}
 		return $array;
 	}
-	
-	
-	protected function lastSidTransactionDate($value, $parameters, $line) {
-		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid'=>$value),$parameters['query']))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
-		if(!$usage->isEmpty()) {
-			return $this->translateUrt($usage['urt'], $parameters);
-		}
-	}
-	
-	protected function getPlanId($value, $parameters, $line) {
-		$plan = Billrun_Factory::db()->plansCollection()->query(array('key'=>$value))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
-		if(!$plan->isEmpty()) {
-			return $plan['external_id'];
-		}
-	}
-
 }

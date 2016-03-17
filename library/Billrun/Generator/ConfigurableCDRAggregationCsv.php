@@ -44,8 +44,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->grouping = array('_id'=> array());
 		$this->grouping['_id'] = array_merge($this->grouping['_id'],$this->translateJSONConfig($config['grouping']));	
 		$this->grouping = array_merge($this->grouping,$this->translateJSONConfig($config['mapping']));
-			
-		foreach($config['helpers'] as  $key => $mapping) {
+		
+		foreach(Billrun_Util::getFieldVal($config['helpers'],array()) as  $key => $mapping) {
 			$mapArr = json_decode($mapping,JSON_OBJECT_AS_ARRAY);
 			if(!empty($mapArr)) {
 				$this->grouping[$key] = $mapArr;
@@ -58,6 +58,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->prePipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_pipeline'], ''));
 		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
 		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
+		
+		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
+			$this->headers = array_keys($this->fieldDefinitions);
+		}
 		
 		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
 		
@@ -89,10 +93,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			if(!empty($this->prePipeline)) {
 				$this->aggregation_array = array_merge($this->aggregation_array , $this->prePipeline);
 			}
+			$this->aggregation_array[] = array('$limit'=>500);
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
-			if(!empty($this->postPipline)) {
-				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipline);
+			if(!empty($this->postPipeline)) {
+				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipeline);
 			}
 			
 		} else {
@@ -168,13 +173,15 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 */
 	protected function translateCdrFields($line,$translations) {
 		foreach($translations as $key => $trans) {
-			if(empty( $line[$key] ) ) { continue; }
+			if(empty( $line[$key] ) && !is_array($line[$key]) ) { continue; }
 			switch( $trans['type'] ) {			
 				case 'function' :
 					if(method_exists($this,$trans['translation']['function'])) {
-						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $this->translateJSONConfig($trans['translation']['values']) , $line );
+						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $this->translateJSONConfig(Billrun_Util::getFieldVal($trans['translation']['values'],array()) ) , $line );
 					} else if( function_exists($trans['translation']['function']) ){
 						$line[$key] = call_user_func($trans['translation']['function'],$line[$key] );
+					} else {
+						Billrun_Factory::log("WTF");
 					}
 					break;
 				case 'regex' :
