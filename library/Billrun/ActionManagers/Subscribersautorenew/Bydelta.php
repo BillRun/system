@@ -12,6 +12,7 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_ActionManagers_Subscribersautorenew_Action{
+	use Billrun_Traits_Api_AdditionalInput;
 	
 	/**
 	 * Field to hold the data to be checked for delta in the DB.
@@ -48,6 +49,37 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	}
 	
 	/**
+	 * Report autorenew update action to the lines collection
+	 */
+	protected function reportInLines() {
+		$reportLine = $this->additional;
+		$reportLine["sid"] = $this->sid;
+		$reportLine['urt'] = new MongoDate();
+		$reportLine['process_time'] = Billrun_Util::generateCurrentTime();
+		$reportLine['source'] = 'api';
+		$reportLine['type'] = 'bydelta';
+		$reportLine['usaget'] = 'bydelta';
+		
+		// Report lines.
+		$reportedLine = $reportLine;
+		$reportedLine['information'] = $this->expected;
+		$reportedLine['lcount'] = count($this->expected);
+		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
+			
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$linesCollection->insert($reportedLine); 	
+		
+		$archiveCollection = Billrun_Factory::db()->archiveCollection();
+		
+		// Report archive
+		foreach ($this->expected as $line) {
+			$archiveLine = array_merge($this->additional, $reportLine, $line);
+			$archiveLine['u_s'] = $reportedLine['stamp'];
+			$archiveCollection->insert($archiveLine);
+		}
+	}
+	
+	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -67,6 +99,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			$this->errorCode = $deltaUpdater->getErrorCode();
 			$success = false;
 		}
+		
+		$this->reportInLines();
 		
 		$outputResult = array(
 			'status'      => $this->errorCode == 0 ? 1 : 0,
@@ -137,6 +171,18 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	 * @return true if valid.
 	 */
 	public function parse($input) {
+		// handle the additional data.
+		$this->handleAdditional($input);
+		
+		return $this->parseExpected($input);
+	}
+	
+	/**
+	 * Parse the expectedn records.
+	 * @param type $input
+	 * @return boolean
+	 */
+	public function parseExpected($input) {
 		$jsonData = null;
 		$expected = $input->get('expected');
 		if(empty($expected) || (!($jsonData = json_decode($expected, true)))) {
