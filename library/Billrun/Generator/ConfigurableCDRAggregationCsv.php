@@ -367,6 +367,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		return  $retVal;
 	}
 	
-	
+	protected function getPlanId($value, $parameters, $line) {
+		$plan = Billrun_Factory::db()->plansCollection()->query(array('name'=>$value))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
+		if(!$plan->isEmpty()) {
+			return $plan['external_id'];
+		}
+	}
 	
 }
