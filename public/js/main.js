@@ -41,7 +41,7 @@ $(function () {
 		}
 	});
 
-    $("#ratePlanPopup").on('show.bs.modal', function (event) {
+  $("#ratePlanPopup").on('show.bs.modal', function (event) {
     var rate_id = $(event.relatedTarget).data('rate-id');
     var plan = $(event.relatedTarget).data('plan');
     var usage = $(event.relatedTarget).data('usage');
@@ -59,6 +59,26 @@ $(function () {
         var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
         $tbody.append($row);
       });
+    });
+  });
+
+  $("#chargingPlanPopup").on('show.bs.modal', function (event) {
+    var plan_name = $(event.relatedTarget).data('charging-plan-name');
+    $('#data-charging-plan-tbody tr').remove();
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: 'plans', name: plan_name}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var include_types = _.keys(entity.include);
+      var tbody = $("#data-charging-plan-tbody");
+      _.forEach(include_types, function (include_type) {
+        var amount = (entity.include[include_type].usagev ? entity.include[include_type].usagev : entity.include[include_type].cost),
+          pp_includes_name = entity.include[include_type].pp_includes_name;
+        var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
+        tbody.append($row);
+      })
     });
   });
 
@@ -529,7 +549,7 @@ function detailFormatter(index, row) {
       _.forEach(lines, function (line, i) {
         var $tr = $("<tr></tr>");
         var idx = i + 1;
-        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
+        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
         $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
         $tr.append("<td>" + (line.pp_includes_external_id ? line.pp_includes_external_id : "") + "</td>");
         $tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");

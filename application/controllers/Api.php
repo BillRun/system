@@ -81,25 +81,33 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
+		if (isset($args[0])) {
+			$var = $args[0];
+		} else {
+			$var = $args;
+		}
+		$ret = $this->setOutputVar($var);
+		$this->apiLogAction();
+		return $ret;
+	}
+	
+	public function setOutputVar() {
+		$args = func_get_args();
 		$num_args = count($args);
 		if (is_array($args[0])) {
 			foreach ($args[0] as $key => $value) {
-				$this->setOutput($key, $value);
+				$this->setOutputVar($key, $value);
 			}
-			$this->apiLogAction();
 			return true;
 		} else if ($num_args == 1) {
 			$this->output = $args[0];
-			$this->apiLogAction();
 			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
 			$this->output->$key = $value;
-			$this->apiLogAction();
 			return true;
 		}
-		$this->apiLogAction();
 		return false;
 	}
 
@@ -144,15 +152,19 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @todo log response
 	 */
 	protected function apiLogAction() {
-		$this->logColl = Billrun_Factory::db()->logCollection();
 		$request = $this->getRequest();
+		$php_input = file_get_contents("php://input");
+		if ($request->action == 'index') {
+			return;
+		}
+		$this->logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
 			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
 			'response' => $this->output,
-			'request_php_input' => file_get_contents("php://input"),
+			'request_php_input' => $php_input,
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1,1000000),

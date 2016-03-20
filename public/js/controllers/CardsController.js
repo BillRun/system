@@ -5,7 +5,6 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
     $controller('EditController', {$scope: $scope});
 
     $scope.save = function (redirect) {
-      $scope.entity.to = $scope.entity.to / 1000;
       $scope.err = {};
       //Database.saveEntity(params).then(function (res) {
       var postData = {
