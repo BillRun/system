@@ -42,7 +42,6 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan',
-			'charging_plan_external_id' => "Charging Plan ID",
 			'service_provider' => "Service Provider",
 			'done' => 'Done',
 			'remain' => 'Remaining',
@@ -62,7 +61,6 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			'aid' => 'BAN',
 			'interval' => 'Interval',
 			'charging_plan_name' => 'Charging Plan Name',
-			'charging_plan_external_id' => "Charging Plan External ID",
 			'done' => 'Done',
 			'remain' => 'Remaining',
 			'operators' => 'Operation',
@@ -153,6 +151,11 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			$params['next_renew_date'] = new MongoDate(strtotime($params['next_renew_date']));
 		} else if (is_array($params['next_renew_date'])) {
 			$params['next_renew_date'] = new MongoDate($params['next_renew_date']['sec']);
+		}
+		if (is_string($params['last_renew_date'])) {
+			$params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
+		} else if (is_array($params['last_renew_date'])) {
+			$params['last_renew_date'] = new MongoDate($params['last_renew_date']['sec']);
 		}
 		return parent::update($params);
 	}

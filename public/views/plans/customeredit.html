@@ -49,6 +49,31 @@
 					</span>
 				</div>
 			</div>
+			<div class="row">
+				<div class="col-md-2">{{utils.getDisplayValue("data_from_currency", "plans")}}</div>
+				<div class='col-md-6'><input ng-model='entity.data_from_currency' type='checkbox' class='form-control' /></div>
+			</div>
+			<div ng-show="entity.data_from_currency">
+				<h4>Max. Currency</h4>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("maximum_charge_period", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.max_currency.period'
+								ng-options='unit as unit for unit in availableDataInCurrencyPeriodUnits'>
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("cost", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.max_currency.cost' class='form-control' />
+					</div>
+				</div>
+			</div>
 			<h3>Thresholds</h3>
 			<div style="margin-bottom: 15px">
 				<select ng-model="newPPIncludeThreshold.id" class="form-control">

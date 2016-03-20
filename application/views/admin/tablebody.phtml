@@ -2,6 +2,7 @@
 
 $c = $this->offset;
 foreach ($this->data as $item) {
+	if ($active === "lines" && $this->session->show_zero_usage != "on" && $item['usaget'] !== "balance" && !$item['usagev']) continue;
 	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
 		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
 	else:
@@ -25,7 +26,7 @@ foreach ($this->data as $item) {
 		if (isset($edit_key) && $h == $edit_key) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date' || $h == "next_renew_date") && $data) {
+		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date' || $h == "next_renew_date" || $h == "activation_datetime") && $data) {
 			//$dateFormat = "Y-d-m H:i:s";
 			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
 			if (!empty($item["tzoffset"])) {
@@ -56,6 +57,8 @@ foreach ($this->data as $item) {
 					}
 				} 
 			}
+		} else if ($h == 'charging_plan_name' && isset($item['charging_plan_name'])) {
+			print '<a href="#chargingPlanPopup" data-charging-plan-name="' . $item['charging_plan_name'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
 			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
 			print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';*/

@@ -61,6 +61,14 @@
 					</select>
 				</div>
 			</div>
+			<div class='row' ng-if='utils.display("charging_value", "plans") &&  type === "charging"'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue("charging_value", "plans")}}
+				</div>
+				<div class='col-md-6'>
+					<input ng-model='entity.charging_value' type='number' class='form-control' />
+				</div>
+			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
 				<div class='col-md-2'>
 					{{utils.getDisplayValue("from", "plans")}}
@@ -86,8 +94,8 @@
 				</div>
 			</div>
 			
-			<hr/>
-			<div ng-if="">
+			<div ng-if="type === 'charging'">
+				<hr/>
 				<h3>{{utils.getDisplayValue("period", "plans")}}</h3>
 				<div class="row">
 					<div class="col-md-2">
@@ -95,7 +103,7 @@
 					</div>
 					<div class='col-md-6'>
 						<select class='form-control' ng-model='entity.period.unit'
-								ng-options='unit as unit for unit in availableActiveUnits'>
+								ng-options='unit as unit for unit in availableCostUnits'>
 						</select>
 					</div>
 				</div>

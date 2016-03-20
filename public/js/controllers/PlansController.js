@@ -41,6 +41,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
     $scope.plansTemplate = function () {
       var type = $routeParams.type;
+      $scope.type = type;
       if (type === 'recurring') type = 'charging';
       return 'views/plans/' + type + 'edit.html';
     };
@@ -161,6 +162,32 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
+          if ($scope.entity.type === "charging") {
+            _.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
+              if (_.isUndefined($scope.entity.include[usaget])) return;
+              if ($scope.entity.include[usaget].length) {
+                _.forEach($scope.entity.include[usaget], function (usage, i) {
+                  if (usage.period.unit === "month") $scope.entity.include[usaget][i].period.unit = "months";
+                });
+                return;
+              }
+              if ($scope.entity.include[usaget].period.unit === "month") $scope.entity.include[usaget].period.unit = "months";
+            });
+          } else if ($scope.entity.type === "customer") {
+            if ($scope.entity.data_from_currency) {
+              if (_.isUndefined($scope.entity.max_currency)) {
+                $scope.entity.max_currency = {
+                  cost: res.data.default_max_currency.cost,
+                  period: res.data.default_max_currency.period
+                };
+              } else {
+                if (_.isUndefined($scope.entity.max_currency.cost))
+                  $scope.entity.max_currency.cost = res.data.default_max_currency.cost;
+                if (_.isUndefined($scope.entity.max_currency.period))
+                  $scope.entity.max_currency.period = res.data.deafult_max_currency.period;
+              }
+            }
+          }
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
             if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
@@ -200,8 +227,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         alert("Connection error!");
       });
 
-      $scope.availableCostUnits = ['days', 'month'];
-      $scope.availableActiveUnits = ['days', 'months'];
+      $scope.availableCostUnits = ['days', 'months'];
+      $scope.availableDataInCurrencyPeriodUnits = ['day', 'week', 'month', 'year'];
       $scope.availableOperations = {
         set: {
           value: 'set',

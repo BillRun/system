@@ -47,8 +47,8 @@ class utest_BalanceChargeModel extends utest_AbstractUtestModel {
 			'query' => json_encode(["charging_plan_name" => $params['name']]),
 			'upsert' => json_encode(["a" => 1]),
 			'additional' => json_encode(array(
-				'mtr_info' => Billrun_Factory::user()->getUsername(),
-				'mtr_type' => 'UTEST_BalanceCharge',
+				'balance_info' => Billrun_Factory::user()->getUsername(),
+				'balance_type' => 'UTEST_BalanceCharge',
 			)),
 		);
 		return $request;

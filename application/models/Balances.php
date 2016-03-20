@@ -229,6 +229,9 @@ class BalancesModel extends TableModel {
 				if (isset($subscriber['service_provider'])) {
 					$item['service_provider'] = $subscriber['service_provider'];
 				}
+				if (isset($subscriber['plan'])) {
+					$item['plan'] = $subscriber['plan'];
+				}
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];

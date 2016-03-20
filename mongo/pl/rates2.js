@@ -11,10 +11,53 @@ db.tmp_PP_PLAN.ensureIndex({"PP_PLAN_ID": 1}, { unique: false , sparse: false, b
 
 // long script to migrate the rates pricing
 var _rate, _plan, _plan_name, _usaget, _appid, _prefixes = [], _tariffs = {}, _cos_id, _unit;
-var _location_id, _subtype, _t, _find_tariff, _interconnect,_tariff_ids, _interconnect_ar = {};
+var _location_id, _subtype, _t, _find_tariff, _interconnect,_tariff_ids, _interconnect_ar = {}, _interconnect_shabbat, _interconnect_shabbat_ar = {}, _rate_name;
+var _shabbat_cos_ar = [
+	"PP_Haredim_Minute",
+	"PP_Haredim_12",
+	"PP_Haredim_Hul_Minute",
+	"PP_Haredim_Hul_12",
+	"PP_Haredim_69",
+	"PP_Haredim_Hul_69",
+	"PP_Haredim_Fix_49",
+	"PP_Haredim_Flat_84"
+];
 
-function create_tariff(tariff, interconnect) {
-	var _access = 0; var _amount, _amount2;
+////////////////////////////////////////////////////////////////////////////////////
+// method to compare arrays
+// Warn if overriding existing method
+if(Array.prototype.equals)
+    console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+// attach the .equals method to Array's prototype to call it on any array
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time 
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;       
+        }           
+        else if (this[i] != array[i]) { 
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;   
+        }           
+    }       
+    return true;
+}
+// Hide method from for-in loops
+Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+////////////////////////////////////////////////////////////////////////////////////
+
+function create_tariff(tariff, interconnect, shabbat) {
+	var _access = 0; var _amount, _amount2, ret;
 	tariff.INITIAL_CHARGE = Number(tariff.INITIAL_CHARGE);
 	tariff.INITIAL_AMOUNT = Number(tariff.INITIAL_AMOUNT);
 	tariff.ADD_CHARGE     = Number(tariff.ADD_CHARGE);
@@ -37,7 +80,7 @@ function create_tariff(tariff, interconnect) {
 	_amount2 = tariff.ADD_AMOUNT;
 	
 	if (tariff.INITIAL_AMOUNT == tariff.ADD_AMOUNT && tariff.INITIAL_CHARGE == tariff.ADD_CHARGE) {
-		return {
+		ret = {
 			'access': _access,
 			'unit' : _unit,
 			'interconnect': _interconnect_name,
@@ -47,22 +90,40 @@ function create_tariff(tariff, interconnect) {
 				'interval': Number(_amount2)
 			}]
 		};
+	} else {
+		ret = {
+			'access':   _access,
+			'unit' : _unit,
+			'interconnect': _interconnect_name,
+			'rate':     [{
+				'to': Number(_amount),
+				'price': Number(tariff.INITIAL_CHARGE),
+				'interval': Number(_amount)
+				},{
+				'to': 2147483647,
+				'price': Number(tariff.ADD_CHARGE),
+				'interval': Number(_amount2)
+			}]
+		};
 	}
-	return {
-		'access':   _access,
-		'unit' : _unit,
-		'interconnect': _interconnect_name,
-		'rate':     [{
-			'to': Number(_amount),
-			'price': Number(tariff.INITIAL_CHARGE),
-			'interval': Number(_amount)
-			},{
-			'to': 2147483647,
-			'price': Number(tariff.ADD_CHARGE),
-			'interval': Number(_amount2)
-		}]
-	};
-
+	if (shabbat/* && (
+			shabbat.INITIAL_AMOUNT != tariff.INITIAL_AMOUNT
+			|| shabbat.ADD_AMOUNT != tariff.ADD_AMOUNT
+			|| shabbat.INITIAL_CHARGE != tariff.INITIAL_CHARGE
+			|| shabbat.ADD_CHARGE != tariff.ADD_CHARGE
+		)*/) {
+		print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+		ret['shabbat'] = [{
+				'to': Number(shabbat.INITIAL_AMOUNT),
+				'price': Number(shabbat.INITIAL_CHARGE),
+				'interval': Number(shabbat.INITIAL_AMOUNT)
+				},{
+				'to': 2147483647,
+				'price': Number(shabbat.ADD_CHARGE),
+				'interval': Number(shabbat.ADD_AMOUNT)
+		}];
+	}
+	return ret;
 }
 
 function getUsageType(app_id) {
@@ -94,12 +155,102 @@ function getUsageType(app_id) {
 	return _usaget;
 }
 
+function create_interconnect(interconnect_ar, interconnect, usaget, plan) {
+	if (typeof interconnect_ar[interconnect.PP_TARIFF_NAME] == 'undefined') {
+		interconnect_ar[interconnect.PP_TARIFF_NAME] = {};
+	}
+
+	interconnect_ar[interconnect.PP_TARIFF_NAME][usaget] = interconnect;
+
+	obj = {
+		'key':	   standardKey(interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
+		'from':    ISODate('2016-03-01'),
+		'to':      ISODate('2099-12-31 23:59:59'),
+		'params' : {
+//							'prefix': _prefixes,
+			'interconnect' : true
+		},
+		'rates': {}
+	};
+	obj['rates'][usaget] = {
+		'BASE' : {
+			"access": 0,
+			"unit": "seconds",
+			"rate": [
+				{
+					"to": Number(interconnect.INITIAL_AMOUNT),
+					"price": Number(interconnect.INITIAL_CHARGE),
+					"interval": Number(interconnect.INITIAL_AMOUNT)
+				},
+				{
+					"to": 2147483647,
+					"price": Number(interconnect.ADD_CHARGE),
+					"interval": Number(interconnect.ADD_AMOUNT)
+				},
+			]
+
+		}
+	};
+
+	_upsert = {
+			'$setOnInsert' : {
+				'key':	   standardKey(interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
+				'from':    ISODate('2016-03-01'),
+				'to':      ISODate('2099-12-31 23:59:59'),
+				'params' : {
+//					'prefix': _prefixes,
+					'interconnect' : true
+				},
+			},
+			'$set' : {}
+	};
+	_upsert['$set'] = {};
+	_upsert['$set']['rates.' + usaget + '.' + plan] = {
+		"access": 0,
+		"unit": "seconds",
+		"rate": [
+			{
+				"to": Number(interconnect.INITIAL_AMOUNT),
+				"price": Number(interconnect.INITIAL_CHARGE),
+				"interval": Number(interconnect.INITIAL_AMOUNT)
+			},
+			{
+				"to": 2147483647,
+				"price": Number(_interconnect.ADD_CHARGE),
+				"interval": Number(interconnect.ADD_AMOUNT)
+			},
+		]
+
+	};
+	db.rates.update({'key':standardKey(interconnect.PP_TARIFF_NAME+'_INTERCONNECT')} , _upsert, {upsert:1});
+}
+
 function _plan(plan_id, plan_name, usaget, tariffs) {
 	print("===============");
-	var unit_type
-	unit_type = "7";
+	var unit_type = "7", unit_type_shabbat = "13";
 	var _tariff_ids = [];
 	db.tmp_PP_PLAN.aggregate({$match:{"PP_PLAN_ID" : plan_id, TIME_TYPE:{$in:[unit_type]}}}, {$group:{_id:null, tariff_ids:{$addToSet:"$PP_TARIFF_ID"}}}).forEach(function(objx) {_tariff_ids = objx.tariff_ids;});
+	
+	if (_shabbat_cos_ar.indexOf(plan_name) >= 0) {
+		db.tmp_PP_PLAN.aggregate({$match: {"PP_PLAN_ID": plan_id, TIME_TYPE: {$in: [unit_type_shabbat]}}}, {$group: {_id: null, tariff_ids: {$addToSet: "$PP_TARIFF_ID"}}}).forEach(function (objy) {
+			_shabbat_tariff_ids = objy.tariff_ids;
+		});
+		print(_rate_name + " shabbat tarrifs: " + _shabbat_tariff_ids.toSource());
+		if (!_shabbat_tariff_ids.equals(_tariff_ids)) {
+			print("special shabbat tarrifs");
+			obj11 = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_shabbat_tariff_ids}, "CHARGE_TYPE" : "0"})[0];
+//			print(obj11.toSource());
+			_interconnect_shabbat = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_shabbat_tariff_ids}, "CHARGE_TYPE" : "1"})[0];
+		} else {
+			print("same shabbat tarrifs");
+			obj11 = false;
+			_interconnect_shabbat = false;
+		}
+	} else {
+		obj11 = false;
+		_interconnect_shabbat = false;
+	}
+	
 	_interconnect = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_tariff_ids}, "CHARGE_TYPE" : "1"})[0];
 	obj10 = db.tmp_PP_TARIFFS.find({"PP_TARIFF_ID": {$in:_tariff_ids}, "CHARGE_TYPE" : "0"})[0];
 	if (typeof obj10 == 'undefined') {
@@ -110,7 +261,7 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 		print("plan id: " + plan_id);
 		print("plan : " + plan_name);
 		print("interconnect name: " + _interconnect.PP_TARIFF_NAME);
-		_t = create_tariff(obj10, _interconnect);
+		_t = create_tariff(obj10, _interconnect, obj11);
 		if (tariffs[usaget] === undefined) {
 			tariffs[usaget] = {};
 		}
@@ -122,80 +273,13 @@ function _plan(plan_id, plan_name, usaget, tariffs) {
 				typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] == 'undefined'
 				)
 			) {
-
-			if (typeof _interconnect_ar[_interconnect.PP_TARIFF_NAME] == 'undefined') {
-				_interconnect_ar[_interconnect.PP_TARIFF_NAME] = {};
+				create_interconnect(_interconnect_ar, _interconnect, usaget, 'BASE');
 			}
-
-			_interconnect_ar[_interconnect.PP_TARIFF_NAME][usaget] = _interconnect;
-
-			obj = {
-				'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
-				'from':    ISODate('2016-02-01'),
-				'to':      ISODate('2099-12-31 23:59:59'),
-				'params' : {
-//							'prefix': _prefixes,
-					'interconnect' : true
-				},
-				'rates': {}
-			};
-			obj['rates'][usaget] = {
-				'BASE' : {
-					"access": 0,
-					"unit": "seconds",
-					"rate": [
-						{
-							"to": Number(_interconnect.INITIAL_AMOUNT),
-							"price": Number(_interconnect.INITIAL_CHARGE),
-							"interval": Number(_interconnect.INITIAL_AMOUNT)
-						},
-						{
-							"to": 2147483647,
-							"price": Number(_interconnect.ADD_CHARGE),
-							"interval": Number(_interconnect.ADD_AMOUNT)
-						},
-					]
-
-				}
-			};
-			
-			_upsert = {
-					'$setOnInsert' : {
-						'key':	   standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT'),
-						'from':    ISODate('2016-02-01'),
-						'to':      ISODate('2099-12-31 23:59:59'),
-						'params' : {
-		//							'prefix': _prefixes,
-							'interconnect' : true
-						},
-					},
-					'$set' : {}
-			};
-			_upsert['$set'] = {};
-			_upsert['$set']['rates.' + usaget + '.BASE'] = {
-				"access": 0,
-				"unit": "seconds",
-				"rate": [
-					{
-						"to": Number(_interconnect.INITIAL_AMOUNT),
-						"price": Number(_interconnect.INITIAL_CHARGE),
-						"interval": Number(_interconnect.INITIAL_AMOUNT)
-					},
-					{
-						"to": 2147483647,
-						"price": Number(_interconnect.ADD_CHARGE),
-						"interval": Number(_interconnect.ADD_AMOUNT)
-					},
-				]
-
-			};
-			db.rates.update({'key':standardKey(_interconnect.PP_TARIFF_NAME+'_INTERCONNECT')} , _upsert, {upsert:1});
-		}
 	} else {
 		print('tariffs ids: ' + _tariff_ids.join());
 		print("plan id: " + plan_id);
 		print("plan : " + plan_name);
-		_t = create_tariff(obj10, {});
+		_t = create_tariff(obj10, {}, obj11);
 		if (tariffs[usaget] === undefined)
 			tariffs[usaget] = {};
 		tariffs[usaget][plan_name] = _t;
@@ -234,12 +318,12 @@ function isEmpty(obj) {
 	return Object.keys(obj).length == 0;
 }
 
-function standardKey(_rate_name) {
-	return _rate_name.replace(/ |-/g, "_").toUpperCase();
+function standardKey(rate_name) {
+	return rate_name.replace(/ |-/g, "_").toUpperCase();
 }
 
-//db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Voice_Cellular_Israel/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
-db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+db.tmp_PPS_PREFIXES.aggregate({$match:{BILLING_ALLOCATION:/Voice Bezeq/}}, {$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
+//db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$addToSet:"$PPS_PREFIXES"}}}).forEach(
 	function(obj1) {
 	print("==========================================");
 		_rate_name = obj1._id;
@@ -285,7 +369,7 @@ db.tmp_PPS_PREFIXES.aggregate({$group:{_id:"$BILLING_ALLOCATION", prefixes:{$add
 		);
 
 		_rate = {
-			'from':    ISODate('2016-02-01'),
+			'from':    ISODate('2016-03-01'),
 			'to':      ISODate('2099-12-31 23:59:59'),
 			'key':     standardKey(_rate_name),
 			'params':  {
@@ -336,7 +420,7 @@ var _interconnect_non_chargable = ["A_INTERCONNECT_BEZEQ_T1_INTERCONNECT", "A_IN
 db.rates.update({key:{$in:_interconnect_non_chargable}}, {$set:{"params.chargable": false}}, {multi:1})
 db.rates.insert(
 	{
-		"from" : ISODate("2016-02-01T00:00:00Z"),
+		"from" : ISODate("2016-03-01"),
 		"to" : ISODate("2099-12-31T23:59:59Z"),
 		"key" : "FUNDIAL2",
 		"params" : {

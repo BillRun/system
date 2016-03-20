@@ -42,8 +42,6 @@ class SubscribersModel extends TabledateModel{
 			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
-			'service_provider' => 'Service Provider',
-			'language' => 'Language',
 			'from' => 'From',
 			'to' => 'Expiration'
 		);
@@ -55,9 +53,7 @@ class SubscribersModel extends TabledateModel{
 			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
-			'plan' => 'Plan',
-			'language' => 'Language',
-			'service_provider' => 'Service Provider'
+			'plan' => 'Plan'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}

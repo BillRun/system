@@ -440,13 +440,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$tariff = static::getTariff($rate, $usageType, $plan);
 		if ($offset) {
 			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
-		}
-		else {
+		} else {
 			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
+		}
+		if ($interconnectCharge && $interconnect && (!isset($interconnect['params']['chargable']) || $interconnect['params']['chargable'])) {
+			return array(
+				'interconnect' => $interconnectCharge,
+				'total' => $interconnectCharge + $chargeWoIC,
+			);
 		}
 		return array(
 			'interconnect' => $interconnectCharge,
-			'total' => $interconnectCharge + $chargeWoIC,
+			'total' => $chargeWoIC,
 		);
 	}
 	
