@@ -855,11 +855,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 		if ($table === "plans") {
-			$options['plan_type'] = $query['$and'][1]['type'];
-			//$this->_request->setParam('plan_type', $options['plan_type']);
+			$options['plan_type'] = $this->_request->getParam('plan_type');
 		}
 
-		$this->getView()->component = $this->buildTableComponent($table, $query);
+		$this->getView()->component = $this->buildTableComponent($table, $query, $options);
 	}
 
 	public function loginAction() {
@@ -1291,7 +1290,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		if ($this->getRequest()->isPost()) {
-			$this->redirect($this->baseUrl . '/admin/' . str_replace('_', '', $table));
+			$redirectUrl = $this->baseUrl . '/admin/';
+			if ($options['plan_type']) $redirectUrl .= $options['plan_type'];
+			$redirectUrl .= str_replace('_', '', $table);
+			$this->redirect($redirectUrl);
 			return;
 		}
 		$this->title = str_replace('_', ' ', ucfirst($table));
