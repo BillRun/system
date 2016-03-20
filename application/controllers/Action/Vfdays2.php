@@ -160,7 +160,6 @@ class Vfdays2Action extends Action_Base {
 			);
 		}
 		
-		print_R($elements);die;
 		$res = call_user_func_array(array(Billrun_Factory::db()->linesCollection(), 'aggregate'), $elements);
 
 		return $res;
