@@ -156,10 +156,49 @@ class AdminController extends Yaf_Controller_Abstract {
 		$stamp = $this->getRequest()->get('stamp');
 		$lines = $lines_coll->query(array('u_s' => $stamp))->cursor()->sort(array('urt' => 1));
 		//$pp_aggregated = $lines_coll->aggregate();
-		$match1 = json_decode('{"$match":{"u_s":"' . $stamp . '"}}');
-		$match2 = json_decode('{"$match": {"api_name":{"$nin":["release_call"]}}}');
-		$sort = json_decode('{"$sort": {"urt": 1}}');
-		$group = json_decode('{"$group":{"_id":{"pp_includes_external_id":"$pp_includes_external_id", "pp_includes_name":"$pp_includes_name"}, "balance_before":{"$first":"$balance_before"}, "balance_after":{"$last":"$balance_after"}, "s_unit":{"$first": "$usaget"}, "s_usagev":{"$sum":"$usagev"}, "s_price":{"$sum":"$aprice"}}}');
+		$match1 = array(
+			'$match' => array(
+				'u_s' => $stamp
+			)
+		);
+		$match2 = array(
+			'$match' => array(
+				'api_name' => array(
+					'$nin' => array(
+						"release_call"
+					)
+				)
+			)
+		);
+		$sort = array(
+			'$sort' => array(
+				'urt' => 1
+			)
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => array(
+					"pp_includes_external_id" => '$pp_includes_external_id',
+					'pp_includes_name' => '$pp_includes_name'
+				),
+				'balance_before' => array(
+					'$first' => '$balance_before'
+				),
+				'balance_after' => array(
+					'$last' => '$balance_after'
+				),
+				's_unit' => array(
+					'$first' => '$usaget'
+				),
+				's_usagev' => array(
+					'$sum' => '$usagev'
+				),
+				's_price' => array(
+					'$sum' => '$aprice'
+				)
+			)
+		);
+		
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
