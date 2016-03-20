@@ -855,7 +855,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
 		if ($table === "plans") {
-			$options['plan_type'] = $query['$and'][1]['type'];
+			$options['plan_type'] = $this->_request->getParam('plan_type');
 		}
 
 		$this->getView()->component = $this->buildTableComponent($table, $query, $options);
@@ -1292,7 +1292,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($this->getRequest()->isPost()) {
 			$redirectUrl = $this->baseUrl . '/admin/';
 			if ($options['plan_type']) $redirectUrl .= $options['plan_type'];
-			$redirectUrl .= $table;
+			$redirectUrl .= str_replace('_', '', $table);
 			$this->redirect($redirectUrl);
 			return;
 		}
