@@ -72,11 +72,5 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		}
 	}
 	
-	protected function getPlanId($value, $parameters, $line) {
-		$plan = Billrun_Factory::db()->plansCollection()->query(array('key'=>$value))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
-		if(!$plan->isEmpty()) {
-			return $plan['external_id'];
-		}
-	}
 
 }
