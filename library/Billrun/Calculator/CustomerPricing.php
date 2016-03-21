@@ -443,16 +443,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
 		}
-		if ($interconnectCharge && $interconnect && (!isset($interconnect['params']['chargable']) || $interconnect['params']['chargable'])) {
-			return array(
+		if ($interconnectCharge && $interconnectRate && (!isset($interconnectRate['params']['chargable']) || $interconnectRate['params']['chargable'])) {
+			$ret = array(
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
+		} else {
+			$ret = array(
+				'interconnect' => $interconnectCharge,
+				'total' => $chargeWoIC,
+			);
 		}
-		return array(
-			'interconnect' => $interconnectCharge,
-			'total' => $chargeWoIC,
-		);
+		return $ret;
 	}
 	
 	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
