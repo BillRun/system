@@ -80,7 +80,7 @@
 		</div>
 		<div class='row'>
 			<div class='col-md-3'>
-				<label>Allowed In</label>
+				<label>Limited Destinations</label>
 			</div>
 			<div class='col-md-3'>
 				<select ng-model="vm.selected_allowed_plan" class="form-control">
@@ -89,7 +89,7 @@
 				<a href="" ng-click="vm.addAllowedPlan()">Add Plan</a>
 			</div>
 		</div>	
-		<h3>Allowed In</h3>
+		<h3>Limited Destinations</h3>
 		<div ng-repeat="(planName, rates) in vm.current_entity.allowed_in">
 			<h4>{{planName}}</h4>
 			<select id="{{planName}}-select" name="plan[]" class="form-control multiselect" multiple="multiple"
