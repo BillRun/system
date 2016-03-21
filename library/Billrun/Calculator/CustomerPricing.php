@@ -461,6 +461,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getChargeByVolume($tariff, $volume) {
 		$accessPrice = self::getAccessPrice($tariff);
+		if ($volume < 0) {
+			$volume *= (-1);
+			$isNegative = true;
+		} else {
+			$isNegative = false;
+		}
 		$price = 0;
 		foreach ($tariff['rate'] as $currRate) {
 			if (!isset($currRate['from'])) {
@@ -487,7 +493,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 			$lastRate = $currRate;
 		}
-		return $accessPrice + $price;
+		$ret = $accessPrice + $price;
+		return ($isNegative ? $ret * (-1) : $ret);
 	}
 
 	/**
