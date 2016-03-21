@@ -61,6 +61,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
 		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
+		$this->addCss($this->baseUrl . '/css/vendor/isteven-multi-select.css');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
@@ -86,6 +87,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/isteven-multi-select.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -439,6 +441,20 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availablePlans));
+		$response->response();
+		return false;
+	}
+
+	public function getAvailableRatesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$availableRates = array();
+		foreach($rates as $rate) {
+			$availableRates[] = $rate->get('key');
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($availableRates));
 		$response->response();
 		return false;
 	}
