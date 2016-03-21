@@ -202,7 +202,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
 		$update = array(
 			'$unset' => array(
-				'notifications_sent' => $notificationSent,
+				'notifications_sent' => 1,
 			),
 		);
 		$query = array(
