@@ -200,8 +200,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterBalanceLoad($balance, $subscriber) {
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
-		$balance->set('notifications_sent', null);
-		$balance->save();
+		$update = array(
+			'$unset' => array(
+				'notifications_sent' => $notificationSent,
+			),
+		);
+		$query = array(
+			'sid' => $balance->get('sid'), // this is for balance sharding mechanism
+			'_id' => $balance->getId()->getMongoId(),
+		);
+		Billrun_Factory::db()->balancesCollection()->update($query, $update);
 		$plan = $this->getSubscriberPlan($subscriber);
 		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
 	}
