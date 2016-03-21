@@ -494,31 +494,28 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 	protected function getPPIncludesToExclude($plan, $rate) {
 		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
-		$query = $this->getPPIncludesAllowedQuery($plan['name'], $rate['key']);
+		$query = $this->getPPIncludesNotAllowedQuery($plan['name'], $rate['key']);
 		$ppIncludes = $prepaidIncludesCollection->query($query)->cursor();
-		$allowedPPIncludes = array();
+		$notAllowedPPIncludes = array();
 		if ($ppIncludes->count() > 0) {
-			$allowedPPIncludes = array_map(function($doc) {
+			$notAllowedPPIncludes = array_map(function($doc) {
 				return $doc['external_id'];
 			}, iterator_to_array($ppIncludes));
 		}
-		return array_diff(array(1,2,3,4,5,6,7,8,9,10), array_values($allowedPPIncludes));
+		return array_values($notAllowedPPIncludes);
 	}
 	
-	protected function getPPIncludesAllowedQuery($planName, $rateName) {
+	protected function getPPIncludesNotAllowedQuery($planName, $rateName) {
 		$basePlanName = "BASE";
 		return array('$or' => array(
 			array('$and' => array(
-				array("allowed_in." . $planName => array('$exists' => 0)),
-				array("allowed_in." . $basePlanName => array('$exists' => 0)),
-			)),
-			array('$and' => array(
 				array("allowed_in." . $planName => array('$exists' => 1)),
-				array("allowed_in." . $planName => array('$in' => array($rateName))),
+				array("allowed_in." . $planName => array('$nin' => array($rateName))),
 			)),
 			array('$and' => array(
 				array("allowed_in." . $planName => array('$exists' => 0)),
-				array("allowed_in." . $basePlanName => array('$in' => array($rateName))),
+				array("allowed_in." . $basePlanName => array('$exists' => 1)),
+				array("allowed_in." . $basePlanName => array('$nin' => array($rateName))),
 			)),
 		));
 	}
