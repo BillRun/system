@@ -83,6 +83,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	
 	protected function setUpdateValue(&$line) {
 		$value = $line['balance_after'] - $line['balance_before'];
+		
+		if(isset($line['normalized'])) {
+			$value += $line['normalized'];
+		}
+		
 		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
 			$line["aprice"] = $value;
 		} else {
