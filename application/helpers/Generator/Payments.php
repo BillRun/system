@@ -31,17 +31,6 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 		return array('seq'=> $seq , 'filename' => 'Brun_PS_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
-	//--------------------------------------------  Protected ------------------------------------------------
-	
-	protected function writeRows() {
-		foreach($this->data as $line) {
-			if($this->isLineEligible($line)) {
-				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			}
-			$this->markLines($line['stamps']);
-		}
-	}
-	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 	
