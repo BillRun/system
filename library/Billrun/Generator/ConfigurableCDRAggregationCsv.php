@@ -69,6 +69,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$options['limit'] = (int) Billrun_Util::getFieldVal($config['limit'], $this->limit);
 		}
 		
+		if(empty($options['export_directory']) && !empty($config['export'])) {
+			$options['export_directory'] =$config['export'];
+			$options['disable_stamp_export_directory']= true;
+		}
+		
 		parent::__construct($options);
 		
 	}
@@ -251,7 +256,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $str
 	 */
 	protected function writeToFile( $str , $overwrite = false) {
-		Billrun_Factory::log($str);
 		parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES"));
 	}
 	
