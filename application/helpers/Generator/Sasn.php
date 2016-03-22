@@ -16,6 +16,7 @@
 class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	
 	static $type = 'sasn';
+	static $ONE_GB = 1024*1024*1024;
 	
 	protected $data = null;
 	protected $grouping = array();
@@ -24,6 +25,8 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	protected $fieldDefinitions =  array();
 	protected $preProject = array();
 	protected $unwind = array();
+	
+
 	
 	
 	public function generate() {
@@ -42,8 +45,24 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	protected function writeRows() {
 		foreach($this->data as $line) {
-			$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			$this->markLines($line['stamps']);
+			if($line['data_volume_gprs_downlink'] > static::$ONE_GB) {
+				while($line['data_volume_gprs_downlink'] > 0) {
+					$brokenLine = $line->getRawData();
+					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 
+																				? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['orig_data_volume_gprs_downlink']) 
+																				: 0;
+					$brokenLine['data_volume_gprs_downlink'] =  $line['data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['data_volume_gprs_downlink'];
+					$this->writeRowToFile($this->translateCdrFields($brokenLine, $this->translations), $this->fieldDefinitions);
+					$line['record_opening_time'] = new MongoDate($line['record_opening_time']->sec+1);
+					$line['data_volume_gprs_downlink'] -= static::$ONE_GB;
+					$line['orig_data_volume_gprs_downlink'] -= static::$ONE_GB;
+				}
+				
+			} else {
+				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+			}
+				$this->markLines($line['stamps']);
+			
 		}
 	}
 	

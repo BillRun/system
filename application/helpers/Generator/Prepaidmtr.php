@@ -31,19 +31,6 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 		return array('seq'=> $seq , 'filename' => 'PREPAID_MTR_'.date('YmdHi').".csv", 'source' => static::$type);
 	}
 	
-	//--------------------------------------------  Protected ------------------------------------------------
-	
-	protected function writeRows() {
-		if(!empty($this->headers)) {
-			$this->writeHeaders();
-		}
-		foreach($this->data as $line) {
-			if($this->isLineEligible($line)) {
-				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			}
-			$this->markLines($line['stamps']);
-		}
-	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 

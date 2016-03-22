@@ -40,8 +40,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		foreach($this->data as $line) {
 			if($this->isLineEligible($line)) {
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			}
-			//$this->markLines($line['stamps']);
+			}			
 		}
 	}
 

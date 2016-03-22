@@ -31,19 +31,6 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_'.date('YmdHi').".csv", 'source' => static::$type);
 	}
 	
-	//--------------------------------------------  Protected ------------------------------------------------
-	
-	protected function writeRows() {
-		if(!empty($this->headers)) {
-			$this->writeHeaders();
-		}
-		foreach($this->data as $line) {
-			if($this->isLineEligible($line)) {
-				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			}
-			$this->markLines($line['stamps']);
-		}
-	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
@@ -67,6 +54,25 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 		if(!empty($value)) {
 			return $this->translateUrt($value, $parameters);
 		}
+	}
+	
+	protected function getChargingPlanValues($dbRef, $parameters, &$line) {
+		$entity = $this->collection->getRef($dbRef);
+		if(!empty($entity)) {
+			if(!empty($entity['secret']) && !empty($entity['charging_plan_name'])) { //  the  ref was  to  a card
+				$entity = $this->db->plansCollection()->query(array('name'=> (string) $entity['charging_plan_name'],
+															'to'=>array('$gt'=>$line['urt']),
+															'from'=>array('$lte'=>$line['urt'])) )->cursor()->limit(1)->current();
+			}
+		}
+		if($entity && !$entity->isEmpty()) {
+			$val = Billrun_Util::getFieldVal($entity->getRawData()[$parameters['field_name']], null);
+			return empty($parameters['function']) ? $val : $this->{$parameters['function']}($val, $parameters, $line );
+		}
+	}
+	
+	protected function getChargeType($chargingType, $parameters, &$line) {
+		return  !empty($chargingType) ? (in_array('digital',$chargingType) ? (in_array('card',$chargingType) ? 3 : 2 ) : 1) : 1;
 	}
 	
 	protected function flattenArray($array, $parameters, &$line) {
