@@ -73,9 +73,25 @@ $(function () {
       var entity = JSON.parse(res).entity;
       var include_types = _.keys(entity.include);
       var tbody = $("#data-charging-plan-tbody");
+      var amount, pp_includes_name;
       _.forEach(include_types, function (include_type) {
-        var amount = (entity.include[include_type].usagev ? entity.include[include_type].usagev : entity.include[include_type].cost),
+        if (entity.include[include_type].length) {
+          _.forEach(entity.include[include_type], function (k, i) {
+            amount = (entity.include[include_type][i].usagev ? 
+                          entity.include[include_type][i].usagev : 
+                          (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
+            pp_includes_name = entity.include[include_type][i].pp_includes_name;
+          });
+        } else {
+          amount = (entity.include[include_type].usagev ? 
+                        entity.include[include_type].usagev : 
+                        (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
           pp_includes_name = entity.include[include_type].pp_includes_name;
+        }
         var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
         tbody.append($row);
       })
