@@ -52,8 +52,6 @@ class ApiController extends Yaf_Controller_Abstract {
 			// DB heartbeat
 			Billrun_Factory::db()->linesCollection()
 				->query()->cursor()->limit(1)->current(); 
-			Billrun_Factory::db()->balancesCollection()
-				->query()->cursor()->limit(1)->current(); 
 			$msg = 'SUCCESS';
 			$status = 1;
 		} catch (Exception $ex) {

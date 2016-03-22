@@ -57,7 +57,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->preProject = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_project'], array()));
 		$this->prePipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_pipeline'], ''));
 		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
-		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
+		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));		
 		
 		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
 			$this->headers = array_keys($this->fieldDefinitions);
@@ -65,7 +65,17 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		
 		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
 		
+		if(empty($options['limit'])) {
+			$options['limit'] = (int) Billrun_Util::getFieldVal($config['limit'], $this->limit);
+		}
+		
+		if(empty($options['export_directory']) && !empty($config['export'])) {
+			$options['export_directory'] =$config['export'];
+			$options['disable_stamp_export_directory']= true;
+		}
+		
 		parent::__construct($options);
+		
 	}
 		
 	
@@ -93,7 +103,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			if(!empty($this->prePipeline)) {
 				$this->aggregation_array = array_merge($this->aggregation_array , $this->prePipeline);
 			}
-			$this->aggregation_array[] = array('$limit'=>500);
+			$this->aggregation_array[] = array('$limit'=>$this->limit);
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
 			if(!empty($this->postPipeline)) {
@@ -120,6 +130,18 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	
 	//--------------------------------------------  Protected ------------------------------------------------
 
+	protected function writeRows() {
+		if(!empty($this->headers)) {
+			$this->writeHeaders();
+		}
+		foreach($this->data as $line) {
+			if($this->isLineEligible($line)) {
+				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+			}
+			$this->markLines($line['stamps']);
+		}
+	}
+	
 	/**
 	 * 
 	 */
@@ -234,7 +256,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $str
 	 */
 	protected function writeToFile( $str , $overwrite = false) {
-		Billrun_Factory::log($str);
 		parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES"));
 	}
 	

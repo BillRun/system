@@ -47,7 +47,8 @@ class utest_BalanceCardModel extends utest_AbstractUtestModel {
 			'query' => json_encode(["secret" => $params['secret']]),
 			'additional' => json_encode(array(
 				'balance_info' => Billrun_Factory::user()->getUsername(),
-				'balance_type' => 'UTEST_BalanceCard',
+				'balance_type' => 'RECHCARD',
+				'balance_source' => 'UTEST',
 			)),
 		);
 		return $request;
