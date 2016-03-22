@@ -16,7 +16,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	// TODO: This class shares some logic with the cards and balances update action. 
 	// TODO: The setUpdateRecord function is shared. 
 	// TODO: This is to be implemented using 'trait'
-	
+	use Billrun_Traits_Api_AdditionalInput;
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -227,6 +227,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
 		}
 		
+		// Set the additional.
+		if(!empty($this->additional)) {
+			$set['additional'] = $this->additional;
+		}
+		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 		
 		return true;
@@ -401,7 +406,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+				
 		return true;
 	}
 	

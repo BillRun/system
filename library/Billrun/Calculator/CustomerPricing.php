@@ -443,16 +443,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
 		}
-		if ($interconnectCharge && $interconnect && (!isset($interconnect['params']['chargable']) || $interconnect['params']['chargable'])) {
-			return array(
+		if ($interconnectCharge && $interconnectRate && (!isset($interconnectRate['params']['chargable']) || $interconnectRate['params']['chargable'])) {
+			$ret = array(
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
+		} else {
+			$ret = array(
+				'interconnect' => $interconnectCharge,
+				'total' => $chargeWoIC,
+			);
 		}
-		return array(
-			'interconnect' => $interconnectCharge,
-			'total' => $chargeWoIC,
-		);
+		return $ret;
 	}
 	
 	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
@@ -461,6 +463,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getChargeByVolume($tariff, $volume) {
 		$accessPrice = self::getAccessPrice($tariff);
+		if ($volume < 0) {
+			$volume *= (-1);
+			$isNegative = true;
+		} else {
+			$isNegative = false;
+		}
 		$price = 0;
 		foreach ($tariff['rate'] as $currRate) {
 			if (!isset($currRate['from'])) {
@@ -487,7 +495,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 			$lastRate = $currRate;
 		}
-		return $accessPrice + $price;
+		$ret = $accessPrice + $price;
+		return ($isNegative ? $ret * (-1) : $ret);
 	}
 
 	/**
