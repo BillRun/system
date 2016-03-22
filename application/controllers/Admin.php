@@ -172,6 +172,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$sort = array(
 			'$sort' => array(
+				'u_s' => 1, // mongo bug on cluster
 				'urt' => 1
 			)
 		);
