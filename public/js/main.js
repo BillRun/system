@@ -62,6 +62,24 @@ $(function () {
     });
   });
 
+  $("#SourceRefPopup").on('show.bs.modal', function (event) {
+    var line_id = $(event.relatedTarget).data('line');
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: "lines", id: line_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var $modal_body = $(".modal-body");
+      var html = "";
+      _.forEach(entity.source_ref, function (v, k) {
+        var key = _.capitalize(k.replace(/_/, ' '));
+        html += "<br/><b>" + key + ":</b> " + v;
+      });
+      $modal_body.html(html);
+    });
+  });
+
   $("#chargingPlanPopup").on('show.bs.modal', function (event) {
     var plan_name = $(event.relatedTarget).data('charging-plan-name');
     $('#data-charging-plan-tbody tr').remove();
