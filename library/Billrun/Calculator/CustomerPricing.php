@@ -337,10 +337,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	
 	protected function getReverseChargePricingData($row) {
 		$query = $this->getReverseChargedQuery($row);
+		if (!$query) {
+			Billrun_Factory::log('Cannot find query to reverse charge from. The line is set to free. Probably wrong type. Details: ' . print_R($row,1), Zend_Log::ALERT);
+			return $this->getFreeRowPricingData();
+		
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		$prevCharge = $linesCollection->query($query)->cursor();
 		if ($prevCharge->count() === 0) {
-			Billrun_Factory::log('Cannot fing previous line to reverse charge from. The line is set to free. Details: ' . print_R($row,1), Zend_Log::ALERT);
+			Billrun_Factory::log('Cannot find previous line to reverse charge from. The line is set to free. Details: ' . print_R($row,1), Zend_Log::ALERT);
 			return $this->getFreeRowPricingData();
 		}
 		
