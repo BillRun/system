@@ -6,6 +6,9 @@ function BandwidthCapController(Database) {
   'use strict';
   var vm = this;
 
+  angular.element('.active').removeClass('active');
+  angular.element('.menu-item-bandwidth_cap').addClass('active');
+
   vm.edit_mode = false;
   vm.newent = false;
 
