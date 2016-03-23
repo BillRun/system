@@ -429,6 +429,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return false;
 		}
 		
+		$this->handleAdditional($input);
+		
 		return true;
 	}
 	

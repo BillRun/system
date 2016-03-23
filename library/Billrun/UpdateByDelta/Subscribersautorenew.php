@@ -95,7 +95,12 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			return false;
 		}
 		
-		return array("query" => json_encode($query), "upsert" => json_encode($upsert));
+		$returnQuery = array("query" => json_encode($query), "upsert" => json_encode($upsert));
+		if(isset($entity['additional'])) {
+			$returnQuery['additional'] = json_encode($entity['additional']);
+		}
+		
+		return $returnQuery;
 	}
 	
 	/**
