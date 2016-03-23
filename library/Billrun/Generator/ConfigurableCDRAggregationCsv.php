@@ -25,6 +25,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $preProject = array();
 	protected $prePipeline = array();
 	protected $postPipeline = array();
+	protected $tmpFileIndicator = ".tmp";
 
 	public function __construct($options) {
 		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
@@ -57,7 +58,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->preProject = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_project'], array()));
 		$this->prePipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_pipeline'], ''));
 		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
-		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));		
+		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
+		$this->tmpFileIndicator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['temporary_file_indicator'], $this->tmpFileIndicator));	
 		
 		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
 			$this->headers = array_keys($this->fieldDefinitions);
@@ -109,7 +111,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			if(!empty($this->postPipeline)) {
 				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipeline);
 			}
-			
+			Billrun_Factory::log(json_encode($this->aggregation_array));
 		} else {
 			$this->aggregation_array = 	array( array('$match' => $this->match ),					
 						//array('$unwind' => $this->unwind),
@@ -140,6 +142,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			}
 			$this->markLines($line['stamps']);
 		}
+		$this->markFileAsDone();
 	}
 	
 	/**
@@ -195,7 +198,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 */
 	protected function translateCdrFields($line,$translations) {
 		foreach($translations as $key => $trans) {
-			if(empty( $line[$key] ) && !is_array($line[$key]) ) { continue; }
+			if(!isset( $line[$key] ) ) {
+				$line[$key] = '';
+				}
 			switch( $trans['type'] ) {			
 				case 'function' :
 					if(method_exists($this,$trans['translation']['function'])) {
@@ -221,7 +226,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 	protected function setFilename() {
 		$data = $this->getNextFileData();
-		$this->filename = $data['filename'];
+		$this->filename = $data['filename'].$this->tmpFileIndicator;
+	}
+	
+	protected function markFileAsDone() {
+		rename($this->file_path, preg_replace("/{$this->tmpFileIndicator}$/",'',$this->file_path));
 	}
 
 	
@@ -355,6 +364,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @return type
 	 */
 	protected function translateUrt($value, $parameters) {
+		if(empty($value)) {return $value;}
 		$dateFormat = is_array($parameters) ?  $parameters['date_format'] : $parameters;
 		$retDate = date($dateFormat,$value->sec);
 		

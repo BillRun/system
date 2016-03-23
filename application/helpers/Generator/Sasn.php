@@ -64,6 +64,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 				$this->markLines($line['stamps']);
 			
 		}
+		$this->markFileAsDone();
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

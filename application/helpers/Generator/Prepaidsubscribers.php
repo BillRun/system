@@ -42,6 +42,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}			
 		}
+		$this->markFileAsDone();
 	}
 
 	protected function isLineEligible($line) {

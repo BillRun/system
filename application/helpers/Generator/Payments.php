@@ -39,4 +39,20 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 		return true;
 	}
 
+	/**
+	 * Get subscriber ID for refund transactions
+	 * @param type $value
+	 * @param type $parameters
+	 * @param type $line
+	 * @return type
+	 */
+	function getSubscriberForRefund($value, $parameters, $line) {
+		if(/*empty($value) &&*/ !empty($line['refund_trans_id_1'])) {
+			$orgTrans = $this->collection->query(array('transaction_id' => $line['refund_trans_id_1']))->cursor()->limit(1)->current();
+			if(!empty($orgTrans) && !$orgTrans->isEmpty()) {
+				$value = $orgTrans['sid'];
+			}
+		}
+		return $value;
+	}
 }
