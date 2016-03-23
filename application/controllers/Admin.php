@@ -491,7 +491,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$response = new Yaf_Response_Http();
 		if ($this->getRequest()->get('full_objects')) {
-			$collection = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor();
+			$collection = Billrun_Factory::db()->prepaidincludesCollection()->query()->cursor()->sort(array('external_id' => 1));
 			$ppincludes = array();
 			foreach ($collection as $ppinclude) {
 				$pp = $ppinclude->getRawData();
