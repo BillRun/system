@@ -605,9 +605,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 						$writer->writeElement("User", $username);
 						$writer->writeElement("PASSWORD", $password);
 						$writer->startElement("MemberOf");
-							$writer->writeElement("Group", "BILLRUN_READ");
-							$writer->writeElement("Group", "BILLRUN_WRITE");
-							$writer->writeElement("Group", "BILLRUN_ADMIN");
+							$writer->writeElement("Group", "billrun_read");
+							$writer->writeElement("Group", "billrun_write");
+							$writer->writeElement("Group", "billrun_admin");
 						$writer->endElement();
 					$writer->endElement();
 				$writer->endElement();

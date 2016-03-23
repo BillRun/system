@@ -961,7 +961,7 @@ class AdminController extends Yaf_Controller_Abstract {
 					$entity->username = $username;
 					$entity->roles = array();
 					foreach ($results['REQUEST']['PARAMS']['MemberOf'] as $key=>$group) {
-						$entity->roles[] = str_replace('BILLRUN_', '', $group);
+						$entity->roles[] = str_replace('billrun_', '', $group);
 					}
 					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity));
 					$this->forceRedirect($this->baseUrl . $ret_action);
