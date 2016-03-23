@@ -243,6 +243,11 @@ class AdminController extends Yaf_Controller_Abstract {
 				$response->response();
 				return false;
 			}
+			if (isset($entity['source_ref'])) {
+				$source_ref = $entity->get('source_ref', false)->getRawData();
+				unset($source_ref['_id']);
+				$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
+			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
 				if ($key !== '_id')

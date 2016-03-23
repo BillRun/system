@@ -262,7 +262,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           label: 'increment'
         }
       };
-      $scope.availableChargingTypes = ['charge', 'digital'];
+      $scope.availableChargingTypes = ['card', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.newPPIncludeThreshold = {id: null};
       $scope.newThresholdNotification = {id: null};
