@@ -184,6 +184,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row->getRawData();
+		$lookForRate = true;
+		Billrun_Factory::dispatcher()->trigger('beforeGetRate', array(&$row, &$lookForRate));
+		if (!$lookForRate) {
+			return true;
+		}
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
 			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');

@@ -580,6 +580,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
+	
+	public function beforeGetRate(&$row, &$lookForRate) {
+		$lookForRate = !isset($row['reverse_charge']) || !$row['reverse_charge'];
+	}
 
 	/**
 	 * Method to authenticate active directory login
