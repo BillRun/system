@@ -315,6 +315,45 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$this->interconnectChargeField => 0,
 			);
 	}
+	
+	protected function getReverseChargedQuery($row) {
+		switch($row['type']) {
+			case ('smsrt'):
+			case ('mmsrt'):
+			case ('service'):
+				return array(
+					'transaction_id' => $row['transaction_id'],
+					'calling_number' => $row['calling_number'],
+					'association_number' => $row['association_number'],
+					'$or' => array(
+						array('reverse_charge' => array('$exists' => 0)),
+						array('reverse_charge' => false),
+					),
+				);
+		}
+		
+		return false;
+	}
+	
+	protected function getReverseChargePricingData($row) {
+		$query = $this->getReverseChargedQuery($row);
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$prevCharge = $linesCollection->query($query)->cursor();
+		if ($prevCharge->count() === 0) {
+			Billrun_Factory::log('');
+			return $this->getFreeRowPricingData();
+		}
+		
+		$prevCharge = $prevCharge->current();
+		$fieldsToCopy = $this->getPossiblyUpdatedFields();
+		$ret = array();
+		foreach ($fieldsToCopy as $fieldName) {
+			if (!is_null($val = $prevCharge->get($fieldName))) {
+				$ret[$fieldName] = (is_numeric($val) ? (-1) * $val : $val);
+			}
+		}
+		return $ret;
+	}
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
@@ -627,7 +666,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 		}
-		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
+		if ($row['charging_type'] === 'prepaid') {
 			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
@@ -650,7 +689,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
 			return $pricingData;
 		}
-		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $row);
+		if (isset($row['reverse_charge']) && $row['reverse_charge']) {
+			$pricingData = $this->getReverseChargePricingData($row);
+		} else {
+			$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $row);
+		}
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 			return $pricingData;
@@ -787,9 +830,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public function isLineLegitimate($line) {
 		$arate = $this->getRateByRef($line->get('arate'));
-		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
+		return (isset($line['reverse_charge']) && $line['reverse_charge']) || 
+			(!is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
-			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp);
 	}
 
 	/**
