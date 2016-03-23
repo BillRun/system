@@ -78,18 +78,15 @@
 				</select>
 			</div>
 		</div>
-		<div class='row'>
-			<div class='col-md-3'>
-				<label>Limited Destinations</label>
-			</div>
-			<div class='col-md-3'>
+		<h3>Limited Destinations</h3>
+		<div class="row">
+			<div class="col-md-2">
 				<select ng-model="vm.selected_allowed_plan" class="form-control">
 					<option ng-repeat="plan in vm.availablePlans" ng-disabled="vm.current_entity.allowed_in[plan]">{{plan}}</option>
 				</select>
 				<a href="" ng-click="vm.addAllowedPlan()">Add Plan</a>
 			</div>
-		</div>	
-		<h3>Limited Destinations</h3>
+		</div>
 		<div ng-repeat="(planName, rates) in vm.current_entity.allowed_in">
 			<h4>{{planName}}</h4>
 			<!--

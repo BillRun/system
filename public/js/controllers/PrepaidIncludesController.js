@@ -8,6 +8,9 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
   vm.edit_mode = false;
   vm.newent = false;
 
+  angular.element('.active').removeClass('active');
+  angular.element('.menu-item-pp_includes').addClass('active');
+
   vm.newPPInclude = function () {
     vm.edit_mode = true;
     vm.newent = true;
@@ -57,6 +60,7 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 
   vm.addAllowedPlan = function () {
     if (!vm.selected_allowed_plan) return;
+    if (_.isUndefined(vm.current_entity.allowed_in)) vm.current_entity.allowed_in = {};
     vm.current_entity.allowed_in[vm.selected_allowed_plan] = {};
     $rootScope.spinner++;
     $timeout(function () {
