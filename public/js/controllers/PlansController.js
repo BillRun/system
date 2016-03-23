@@ -108,7 +108,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         return bal.external_id === parseInt(id, 10);
       });
       if (found) return found.name;
-      return "";
+      return _.capitalize(id.replace(/_/, ' '));
     };
 
     $scope.getTDHeight = function (rate) {
@@ -148,6 +148,29 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       if (r) {
         delete $scope.entity.pp_threshold[pp];
       }
+    };
+
+    $scope.addNotification = function (id) {
+      if (!id) return;
+      var new_notification = {value: 0, type: "", msg: ""};
+      $scope.entity.notifications_threshold[id].length ?
+        $scope.entity.notifications_threshold[id].push(new_notification) :
+        $scope.entity.notifications_threshold[id] = [new_notification];
+    };
+
+    $scope.removeNotification = function (id) {
+      if (!id) return;
+      $scope.entity.notifications_threshold[id].pop();
+    };
+
+    $scope.notificationForThresholdExists = function (pp) {
+      return $scope.entity.notifications_threshold[pp.external_id].length;
+    };
+
+    $scope.addThresholdNotification = function () {
+      if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length) return;
+      $scope.entity.notifications_threshold[$scope.newThresholdNotification.id].push({value: 0, type: "", msg: ""});
+      $scope.newTresholdNotification.id = null;
     };
 
     $scope.init = function () {
@@ -242,6 +265,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       $scope.availableChargingTypes = ['charge', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.newPPIncludeThreshold = {id: null};
+      $scope.newThresholdNotification = {id: null};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;

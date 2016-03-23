@@ -86,6 +86,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap-table.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
+		$this->addJs($this->baseUrl . '/js/vendor/angular-bootstrap-multiselect.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -440,6 +441,20 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availablePlans));
+		$response->response();
+		return false;
+	}
+
+	public function getAvailableRatesAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$availableRates = array();
+		foreach($rates as $rate) {
+			$availableRates[] = $rate->get('key');
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($availableRates));
 		$response->response();
 		return false;
 	}
@@ -930,10 +945,13 @@ class AdminController extends Yaf_Controller_Abstract {
 //				if (empty($ret_action)) {
 //					$ret_action = 'admin';
 //				}
+				$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
+				Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity->getRawData()));
 				$this->forceRedirect($this->baseUrl . $ret_action);
 				return true;
 			} else {
-				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this));
+				$entity = new stdClass();
+				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this, &$entity));
 				if ($result && $result->isValid()) {
 					$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
@@ -1031,7 +1049,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
-		
+
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
 

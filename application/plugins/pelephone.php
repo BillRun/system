@@ -590,6 +590,36 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$billrun_auth = new Billrun_Auth('msg_type', 'UserAuthGroup', 'username', 'password');
 		$billrun_auth->setIdentity($username);
 		$billrun_auth->setCredential($password);
+
+		//$encoder = new Billrun_Encoder_Xml();
+		$writer = new XMLWriter();
+		$writer->openMemory();
+		$writer->startDocument('1.0', 'UTF-8');
+		$writer->setIndent(4);
+		$writer->startElement('REQUEST');
+			$writer->startElement("HEADER");
+				$writer->writeElement("COMMAND", "IT_UserAuthGroup");
+				$writer->writeElement("APPLICATION_ID", 283);
+				$writer->startElement("PARAMS");
+					$writer->startElement("IT_IN_PARAMS");
+						$writer->writeElement("User", $username);
+						$writer->writeElement("PASSWORD", $password);
+						$writer->startElement("MemberOf");
+							$writer->writeElement("Group", "BILLRUN_READ");
+							$writer->writeElement("Group", "BILLRUN_WRITE");
+							$writer->writeElement("Group", "BILLRUN_ADMIN");
+						$writer->endElement();
+					$writer->endElement();
+				$writer->endElement();
+			$writer->endElement();
+		$writer->endElement();
+		$writer->endDocument();
+		$data = $writer->outputMemory();
+
+		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
+		$xml  = simplexml_load_string($xml, "SimpleXMLElement", LIBXML_NOCDATA);
+		$obj = json_decode(json_encode($xml));
+
 		$auth = Zend_Auth::getInstance();
 		$result = $auth->authenticate($billrun_auth);
 		if ($result->code == 0) {
