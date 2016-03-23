@@ -92,10 +92,19 @@
 		<h3>Limited Destinations</h3>
 		<div ng-repeat="(planName, rates) in vm.current_entity.allowed_in">
 			<h4>{{planName}}</h4>
+			<!--
 			<select id="{{planName}}-select" name="plan[]" class="form-control multiselect" multiple="multiple"
 					ng-model='vm.current_entity.allowed_in[planName]'
 					ng-options='rate as rate for rate in vm.availableRates'>
 			</select>
+   -->
+			<multiselect
+				ng-model="vm.current_entity.allowed_in[planName]"
+				options="rate for rate in vm.availableRates"
+				data-multiple="true"
+				filter-after-rows="10"
+				scroll-after-rows="10"
+				></multiselect>
 		</div>
 		<div class="modal-footer">
 			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
