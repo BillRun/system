@@ -952,11 +952,18 @@ class AdminController extends Yaf_Controller_Abstract {
 			} else {
 				$entity = new stdClass();
 				$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this, &$entity));
-				if ($result && $result->isValid()) {
+				if ($result) {
 					$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
 					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 					// TODO: stringify to url encoding (A-Z,a-z,0-9)
 					$ret_action = $this->getRequest()->get('ret_action');
+					$entity = new stdClass();
+					$entity->username = $username;
+					$entity->roles = array();
+					foreach ($results['REQUEST']['PARAMS']['MemberOf'] as $key=>$group) {
+						$entity->roles[] = str_replace('BILLRUN_', '', $group);
+					}
+					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity));
 					$this->forceRedirect($this->baseUrl . $ret_action);
 					return true;
 				}

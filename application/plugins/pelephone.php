@@ -617,15 +617,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = $writer->outputMemory();
 
 		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
-		$xml  = simplexml_load_string($xml, "SimpleXMLElement", LIBXML_NOCDATA);
+		$xml  = simplexml_load_string($res, "SimpleXMLElement", LIBXML_NOCDATA);
 		$obj = json_decode(json_encode($xml));
-
-		$auth = Zend_Auth::getInstance();
-		$result = $auth->authenticate($billrun_auth);
-		if ($result->code == 0) {
+		if ($obj['RESPONSE']['PARAMS']['STATUS'] != 0) {
 			return false;
 		}
-		return $result;
+		return $obj;
 	}
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
