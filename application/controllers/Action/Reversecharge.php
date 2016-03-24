@@ -59,14 +59,16 @@ class ReversechargeAction extends RealtimeeventAction {
 	
 	protected function updateBalance() {
 		if (in_array($this->balance['charging_by_usaget'], array('cost', 'total_cost'))) {
-			$this->balance['balance']['cost'] += $this->row['aprice'];
+			$currentPrice = $this->balance['balance']['cost'];
+			$this->balance->set('balance.cost', $currentPrice + $this->row['aprice']);
 		} else if ($this->balance['charging_by'] === 'cost') {
-			$this->balance['balance']['totals'][$this->balance['charging_by_usaget']][$this->balance['charging_by']] += $this->row['aprice'];
+			$currentPrice = $this->balance['balance']['totals'][$this->balance['charging_by_usaget']][$this->balance['charging_by']];
+			$this->balance->set('balance.totals.' . $this->balance['charging_by_usaget'] . '.' . $this->balance['charging_by'], $currentPrice + $this->row['aprice']);
 		} else {
-			$this->balance['balance']['totals'][$this->balance['charging_by_usaget']][$this->balance['charging_by']] += $this->row['usagev'];
+			$currentUsage = $this->balance['balance']['totals'][$this->balance['charging_by_usaget']][$this->balance['charging_by']];
+			$this->balance->set('balance.totals.' . $this->balance['charging_by_usaget'] . '.' . $this->balance['charging_by'], $currentUsage + $this->row['usagev']);
 		}
-		$this->balance->save();
-		return true;
+		return $this->balance->save();
 	}
 	
 	protected function getBalance() {
