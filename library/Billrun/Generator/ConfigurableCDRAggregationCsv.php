@@ -26,8 +26,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $prePipeline = array();
 	protected $postPipeline = array();
 	protected $tmpFileIndicator = ".tmp";
+	protected $startTime = 0;
 
 	public function __construct($options) {
+		
+		$this->startTime = time();
+		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
+		
 		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.configuration.include',array()) as  $path ) {
 			Billrun_Factory::config()->addConfig($path);
@@ -40,7 +45,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 				$this->match['$or'][$idx][$key] = json_decode($val,JSON_OBJECT_AS_ARRAY);
 			}
 		}
-		$this->match['mediated.'.static::$type] = array('$exists' => 0);
+		$this->match = array_merge($this->match,$this->getReportCandiateMatchQuery());
 		
 		$this->grouping = array('_id'=> array());
 		$this->grouping['_id'] = array_merge($this->grouping['_id'],$this->translateJSONConfig($config['grouping']));	
@@ -64,8 +69,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
 			$this->headers = array_keys($this->fieldDefinitions);
 		}
-		
-		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
 		
 		if(empty($options['limit'])) {
 			$options['limit'] = (int) Billrun_Util::getFieldVal($config['limit'], $this->limit);
@@ -108,16 +111,16 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$this->aggregation_array[] = array('$limit'=>$this->limit);
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
+			$this->aggregation_array[] = array('$match'=> $this->getReportFilterMatchQuery());
 			if(!empty($this->postPipeline)) {
 				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipeline);
 			}
 			Billrun_Factory::log(json_encode($this->aggregation_array));
 		} else {
-			$this->aggregation_array = 	array( array('$match' => $this->match ),					
-						//array('$unwind' => $this->unwind),
+			$this->aggregation_array = 	array( array('$match' => $this->match ),
 						array('$sort'=>array('urt'=> 1)),
 						array('$group'=> $this->grouping)
-					//	array('$match' => array('helper.record_type' => 'final_request')) 
+
 				);
 	
 		} 
@@ -144,6 +147,15 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 		$this->markFileAsDone();
 	}
+	
+	protected function getLastRunDate($type) {
+		$lastRun = $this->db->logCollection()->query(array('source'=>$type))->cursor()->sort(array('generated_time'=>-1))->limit(1)->current();
+		return empty($lastRun['generated_time']) ? new Mongodate(0) : $lastRun['generated_time'];
+	}
+	
+	abstract protected function getReportCandiateMatchQuery();
+	
+	abstract protected function getReportFilterMatchQuery();
 	
 	/**
 	 * 
@@ -283,7 +295,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		
 	}
 	
-	//---------------------- Manage files/cdrs function ------------------------
 	
 	/**
 	 * method to log the processing
@@ -300,7 +311,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			'source' => $fileData['source'],
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => date(self::base_dateformat),
-			'generated_time' => date(self::base_dateformat),
+			'generated_time' =>new MongoDate($this->startTime),
 			'direction' => 'out'
 		);
 
@@ -324,7 +335,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		
 		return $result['ok'] == 1 ;
 	}
-	
+
+	//---------------------- Manage files/cdrs function ------------------------
 	
 	/**
 	 * 

@@ -45,6 +45,15 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		$this->markFileAsDone();
 	}
 
+	
+	protected function getReportCandiateMatchQuery() {
+		return array();
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
+	}
+	
 	protected function isLineEligible($line) {
 		return true;
 	}	

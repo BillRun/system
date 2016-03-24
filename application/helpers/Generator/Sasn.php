@@ -61,10 +61,22 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 			} else {
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}
-				$this->markLines($line['stamps']);
+				//$this->markLines($line['stamps']);
 			
 		}
 		$this->markFileAsDone();
+	}
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('$or' => array(
+							array('urt'=>array('$gt'=>new MongoDate($this->getLastRunDate(static::$type)->sec - 7200)),'record_type'=>array('$ne'=>'final_request')),
+							array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)))
+						)
+					);
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array('change_date_time'=>array('$lt'=>new Mongodate($this->startTime)));
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

@@ -31,6 +31,15 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_'.date('YmdHi').".csv", 'source' => static::$type);
 	}
 	
+	// ------------------------------------ Protected -----------------------------------------
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
+	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 

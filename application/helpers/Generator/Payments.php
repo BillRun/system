@@ -35,6 +35,14 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 	// 
 	
 	
+	protected function getReportCandiateMatchQuery() {
+		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
+	}
+	
 	protected function isLineEligible($line) {
 		return true;
 	}
@@ -55,4 +63,5 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 		}
 		return $value;
 	}
+
 }

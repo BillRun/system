@@ -31,6 +31,19 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 		return array('seq'=> $seq , 'filename' => 'Brun_PN_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
+	//--------------------------------------------  Protected ------------------------------------------------
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('$or' =>array(
+							array('urt'=>array('$gt'=>new MongoDate($this->getLastRunDate(static::$type)->sec - 12800)),'record_type'=>array('$ne'=>'final_request')),
+							array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)))
+						)
+					);
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array('disconnect_time'=>array('$lt'=>new Mongodate($this->startTime)));
+	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
