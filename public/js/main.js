@@ -73,6 +73,7 @@ $(function () {
       var $modal_body = $(".modal-body");
       var html = "";
       _.forEach(entity.source_ref, function (v, k) {
+        if (_.isObject(v)) return;
         var key = _.capitalize(k.replace(/_/, ' '));
         html += "<br/><b>" + key + ":</b> " + v;
       });
@@ -552,12 +553,16 @@ function detailFormatter(index, row) {
         _.forEach(aggregated, function (aggregate, i) {
           var $tr = $("<tr></tr>");
           var idx = i + 1;
+          var usagev = (aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "";
+          var charge = (aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "";
+          if (aggregate.s_unit && aggregate.s_unit.toLowerCase() !== "nis")
+            charge = usagev;
           //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
           $tr.append("<td>" + idx + "</td>");
           $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
           $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
-          $tr.append("<td>" + ((aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "") + "</td>");
-          $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
+          $tr.append("<td>" + usagev + "</td>");
+          $tr.append("<td>" + charge + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
           $tr.append("<td>" + aggregate.s_unit + "</td>");
@@ -581,6 +586,10 @@ function detailFormatter(index, row) {
       $("<thead></thead>").append($thead);
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
+        var usagev = (line.usagev || line.usagev == 0) ? line.usagev : "";
+        var charge = (line.aprice || line.aprice == 0) ? line.aprice.toFixed(6) : "";
+        if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis")
+          charge = usagev;
         var $tr = $("<tr></tr>");
         var idx = i + 1;
         var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
@@ -591,8 +600,8 @@ function detailFormatter(index, row) {
           $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
         else if (line.usaget !== "balance")
           $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
-        $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
-        $tr.append("<td>" + ((line.aprice || line.aprice == 0)  ? line.aprice.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + usagev + "</td>");
+        $tr.append("<td>" + charge + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
