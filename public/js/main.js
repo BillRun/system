@@ -73,6 +73,7 @@ $(function () {
       var $modal_body = $(".modal-body");
       var html = "";
       _.forEach(entity.source_ref, function (v, k) {
+        if (_.isObject(v)) return;
         var key = _.capitalize(k.replace(/_/, ' '));
         html += "<br/><b>" + key + ":</b> " + v;
       });
