@@ -45,7 +45,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
       }),
       additional: JSON.stringify({
         balance_source: "AdminPanel",
-        balance_type: "MTR",
+        balance_type: "MTRCREDIT",
         balance_info: username
       })
     };
