@@ -282,6 +282,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
 	
+	protected function getPositiveValue($obj, $data) {
+		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
+			return 0;
+		}
+		return $val * (-1);
+	}
+	
 	protected function modifyNotificationMessage($str, $params) {
 		$msg = $str;
 		foreach ($params as $key => $obj) {
@@ -291,7 +298,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (!is_array($replace)) {
 					$val = $obj->get($replace);
 				} else if (isset($replace['classMethod']) && method_exists($this, $replace['classMethod'])) {
-					$val = $this->{$replace['classMethod']}($obj);	
+					$val = $this->{$replace['classMethod']}($obj, $replace);	
 				}
 				if (!is_null($val)) {
 					$msg = str_replace("~$search~", $val, $msg);
