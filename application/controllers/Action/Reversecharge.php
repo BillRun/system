@@ -54,6 +54,7 @@ class ReversechargeAction extends RealtimeeventAction {
 			return false;
 		}
 		Billrun_Factory::db()->linesCollection()->insert($this->row);
+		return true;
 	}
 	
 	protected function updateBalance() {
@@ -65,6 +66,7 @@ class ReversechargeAction extends RealtimeeventAction {
 			$this->balance['balance']['totals'][$this->balance['charging_by_usaget']][$this->balance['charging_by']] += $this->row['usagev'];
 		}
 		$this->balance->save();
+		return true;
 	}
 	
 	protected function getBalance() {
@@ -98,6 +100,8 @@ class ReversechargeAction extends RealtimeeventAction {
 				$this->row[$fieldToUpdate] = $this->{$updateFunction}($this->row[$fieldToUpdate]);
 			}
 		}
+		
+		return true;
 	}
 	
 	protected function getFieldsToUpdate() {
