@@ -26,6 +26,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $prePipeline = array();
 	protected $postPipeline = array();
 	protected $tmpFileIndicator = ".tmp";
+	protected $legitimateFileExtension = "";
 	protected $startTime = 0;
 
 	public function __construct($options) {
@@ -65,6 +66,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
 		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
 		$this->tmpFileIndicator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['temporary_file_indicator'], $this->tmpFileIndicator));	
+		$this->legitimateFileExtension = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['file_extension'], $this->legitimateFileExtension));
 		
 		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
 			$this->headers = array_keys($this->fieldDefinitions);
@@ -244,7 +246,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 	
 	protected function markFileAsDone() {
-		rename($this->file_path, preg_replace("/{$this->tmpFileIndicator}$/",'',$this->file_path));
+		rename($this->file_path, preg_replace("/{$this->tmpFileIndicator}$/" ,$this->legitimateFileExtension,$this->file_path));
 	}
 
 	

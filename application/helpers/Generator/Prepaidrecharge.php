@@ -28,7 +28,7 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_'.date('YmdHi').".dat", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_RECHARGE_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
 	// ------------------------------------ Protected -----------------------------------------
