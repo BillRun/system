@@ -62,6 +62,24 @@ $(function () {
     });
   });
 
+  $("#SourceRefPopup").on('show.bs.modal', function (event) {
+    var line_id = $(event.relatedTarget).data('line');
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: "lines", id: line_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var $modal_body = $(".modal-body");
+      var html = "";
+      _.forEach(entity.source_ref, function (v, k) {
+        var key = _.capitalize(k.replace(/_/, ' '));
+        html += "<br/><b>" + key + ":</b> " + v;
+      });
+      $modal_body.html(html);
+    });
+  });
+
   $("#chargingPlanPopup").on('show.bs.modal', function (event) {
     var plan_name = $(event.relatedTarget).data('charging-plan-name');
     $('#data-charging-plan-tbody tr').remove();
@@ -73,9 +91,25 @@ $(function () {
       var entity = JSON.parse(res).entity;
       var include_types = _.keys(entity.include);
       var tbody = $("#data-charging-plan-tbody");
+      var amount, pp_includes_name;
       _.forEach(include_types, function (include_type) {
-        var amount = (entity.include[include_type].usagev ? entity.include[include_type].usagev : entity.include[include_type].cost),
+        if (entity.include[include_type].length) {
+          _.forEach(entity.include[include_type], function (k, i) {
+            amount = (entity.include[include_type][i].usagev ? 
+                          entity.include[include_type][i].usagev : 
+                          (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
+            pp_includes_name = entity.include[include_type][i].pp_includes_name;
+          });
+        } else {
+          amount = (entity.include[include_type].usagev ? 
+                        entity.include[include_type].usagev : 
+                        (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
           pp_includes_name = entity.include[include_type].pp_includes_name;
+        }
         var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
         tbody.append($row);
       })

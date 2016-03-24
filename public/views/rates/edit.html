@@ -5,9 +5,9 @@
             </center>
     </div>
     <div pretty-error errors="err.data"></div>
-	<form class='form-inline' style="margin-top: 60px;">
+	<form class='form-inline' style="margin-top: 65px;">
 		<div ng-if='!advancedMode'>
-			<div class="row" ng-if="action === 'new'">
+			<div class="row" ng-if="action === 'new' || action === 'duplicate'">
 				<div class="col-md-2">
 					{{utils.getDisplayValue("key", "rates")}}
 				</div>
@@ -84,7 +84,14 @@
 					<input type="checkbox" ng-model="entity.params.interconnect" class="form-control" style="width: 17px; margin-top: -5px" />
 				</div>
 			</div>
-			
+			<div class="row" ng-if="entity.params.interconnect">
+				<div class="col-md-2">
+					{{utils.getDisplayValue("chargable", "rates")}}
+				</div>
+				<div class="col-md-6">
+					<input type="checkbox" ng-model="entity.params.chargable" class="form-control" style='width: 17px; margin-top: -5px' />
+				</div>
+			</div>
 			<h3>
 				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
 				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
