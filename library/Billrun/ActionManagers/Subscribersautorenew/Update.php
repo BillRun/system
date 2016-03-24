@@ -417,6 +417,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @todo Create a generic update class that implemnts this basic parse logic.
 	 */
 	public function parse($input) {
+		$this->handleAdditional($input);
+
 		if(!$this->setQueryRecord($input)) {
 			return false;
 		}
@@ -428,8 +430,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		if (!$this->handleDuplicates()) {
 			return false;
 		}
-		
-		$this->handleAdditional($input);
 		
 		return true;
 	}
