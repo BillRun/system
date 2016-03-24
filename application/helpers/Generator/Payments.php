@@ -31,9 +31,7 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 		return array('seq'=> $seq , 'filename' => 'Brun_PS_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
-	// ------------------------------------ Helpers -----------------------------------------
-	// 
-	
+	// ------------------------------------ Protected -----------------------------------------
 	
 	protected function getReportCandiateMatchQuery() {
 		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
@@ -42,6 +40,11 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 	protected function getReportFilterMatchQuery() {
 		return array();
 	}
+	
+	// ------------------------------------ Helpers -----------------------------------------
+	// 
+	
+	
 	
 	protected function isLineEligible($line) {
 		return true;

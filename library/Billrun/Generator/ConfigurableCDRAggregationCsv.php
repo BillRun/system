@@ -111,11 +111,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$this->aggregation_array[] = array('$limit'=>$this->limit);
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
-			$this->aggregation_array[] = array('$match'=> $this->getReportFilterMatchQuery());
+			if(!empty($this->getReportFilterMatchQuery())) {
+				$this->aggregation_array[] = array('$match'=> $this->getReportFilterMatchQuery());
+			}
 			if(!empty($this->postPipeline)) {
 				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipeline);
 			}
-			Billrun_Factory::log(json_encode($this->aggregation_array));
+			//Billrun_Factory::log(json_encode($this->aggregation_array));
 		} else {
 			$this->aggregation_array = 	array( array('$match' => $this->match ),
 						array('$sort'=>array('urt'=> 1)),
@@ -143,7 +145,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			if($this->isLineEligible($line)) {
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}
-			$this->markLines($line['stamps']);
+			//$this->markLines($line['stamps']);
 		}
 		$this->markFileAsDone();
 	}

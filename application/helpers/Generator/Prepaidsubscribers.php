@@ -28,7 +28,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi').".csv", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi').".dat", 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------
