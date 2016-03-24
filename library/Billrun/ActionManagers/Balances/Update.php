@@ -82,7 +82,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	protected function setUpdateValue(&$line) {
-		$value = $line['balance_after'] - $line['balance_before'];
+		$value = $line['balance_after'];
+		if($this->recordToSet['operation'] === 'inc') {
+			$value -= $line['balance_before'];
+		}
 		
 		if(isset($line['normalized'])) {
 			$value += $line['normalized'];
