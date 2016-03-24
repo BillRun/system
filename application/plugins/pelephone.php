@@ -260,7 +260,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$modifyParams = array('balance' => $balance);
 					$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
 					$this->sendNotification($notification['type'], $msg, $msisdn);
-					array_push($notificationSent[$notificationKey], $index);
+					if (is_null($notificationSent[$notificationKey])) {
+						$notificationSent[$notificationKey] = array($index);
+					} else {
+						array_push($notificationSent[$notificationKey], $index);
+					}
 					$update = array(
 						'$set' => array(
 							'notifications_sent' => $notificationSent,
