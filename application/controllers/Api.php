@@ -27,6 +27,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
+		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
 		// all output will be store at class output class
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
@@ -64,7 +65,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			$this->setOutput(array($msg, 1));
 			$this->getView()->outputMethod = 'print_r';
 		} else {
-			$this->setOutput(array(array('status' => $status, 'message' => 'Billrun API ' . ucfirst($msg))));
+			$this->setOutput(array(array('status' => $status, 'message' => 'BillRun API ' . ucfirst($msg))));
 		}
 
 	}
@@ -139,7 +140,6 @@ class ApiController extends Yaf_Controller_Abstract {
 			$this->getView()->outputMethod = $output_methods[$action];
 			return;
 		}
-		Billrun_Factory::log('No output method defined; set to json encode', Zend_Log::DEBUG);
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		header('Content-Type: application/json');
 	}
