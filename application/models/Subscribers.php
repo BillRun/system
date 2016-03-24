@@ -59,9 +59,7 @@ class SubscribersModel extends TabledateModel{
 	}
 	
 	public function getFilterFields() {
-		$planModel = new PlansModel();
-		$names = $planModel->getData(
-			array(
+		$names = Billrun_Factory::db()->plansCollection()->query(array(
 				'$or' => array(
 					array(
 						'type' => 'customer'
@@ -72,8 +70,7 @@ class SubscribersModel extends TabledateModel{
 						)
 					)
 				)
-			)
-		);
+			))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];

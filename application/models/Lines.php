@@ -180,9 +180,7 @@ class LinesModel extends TableModel {
 		}
 		arsort($billruns);
 
-		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
-		$planNames = array();
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'customer'))->cursor()->sort(array('name' => 1));		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
