@@ -190,7 +190,7 @@ class AdminController extends Yaf_Controller_Abstract {
 					'$last' => '$balance_after'
 				),
 				's_unit' => array(
-					'$first' => '$usaget'
+					'$first' => '$usage_unit'
 				),
 				's_usagev' => array(
 					'$sum' => '$usagev'

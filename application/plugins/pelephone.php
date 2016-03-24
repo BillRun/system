@@ -480,21 +480,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
-			$is_intl = isset($this->row['call_type']) && $this->row['call_type'] == '2';
-			if (($this->isInterconnect($this->row) && $this->row['np_code'] != '831') || $is_intl) {
-				// we are out of PL network
-				array_push($pp_includes_external_ids, 6);
-			}
-
-			if ($is_intl) {
-				array_push($pp_includes_external_ids, 3, 4);
-			}
-
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($this->row->get('arate'));
-			if (isset($rate['params']['premium']) && $rate['params']['premium']) {
-				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
-			}
-			
 			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
@@ -502,11 +488,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10);
 				}
 			}
-			
 			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
-
 			if (count($pp_includes_external_ids)) {
-				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
+				$query['pp_includes_external_id'] = array('$nin' => array_unique($pp_includes_external_ids));
 			}
 		}
 	}
