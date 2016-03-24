@@ -82,14 +82,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	}
 	
 	protected function setUpdateValue(&$line) {
-		$value = $line['balance_after'];
-		if($this->recordToSet['operation'] === 'inc') {
-			$value -= $line['balance_before'];
-		}
-		
-		if(isset($line['normalized'])) {
-			$value += $line['normalized'];
-		}
+		$value = $line['balance_after'] - $line['balance_before'];
 		
 		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
 			$line["aprice"] = $value;
@@ -156,8 +149,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 			// TODO: Move this logic to a updater_balance class.
 			if(isset($balancePair['normalized'])) {
-//				$archiveLine["balance_before"] = $balancePair['normalized']['before'];
-//				$archiveLine["balance_after"] = $balancePair['normalized']['normalized'];
 				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
 				$archiveLine['normalized'] = $reducted;
 			}
