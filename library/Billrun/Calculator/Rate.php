@@ -264,12 +264,6 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		return $rates_coll->query(array("key" => $key))->cursor()->current();
 	}
 	
-	protected function getDisallowedRates($row) {
-		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
-		return (isset($plan['disallow_rates']) ? $plan['disallow_rates'] : array());
-	}
-
-
 	/**
 	 * Builds aggregate query from config
 	 * 
@@ -307,12 +301,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-
+		
 		return $query;
-	}
-	
-	protected function getKeyQuery($row) {
-		return array('$nin' => $this->getDisallowedRates($row));
 	}
 	
 	/**

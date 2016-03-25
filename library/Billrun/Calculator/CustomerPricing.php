@@ -264,6 +264,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo Add compatiblity to prepaid
 	 */
 	public function loadSubscriberBalance($row, $granted_volume = null, $granted_cost = null) {
+		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /*'disableCache' => true*/));
+		$plan_ref = $plan->createRef();
+		if (is_null($plan_ref)) {
+			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
+			$row['usagev'] = 0;
+			$row['apr'] = 0;
+			return false;
+		}
+
+		$row['plan_ref'] = $plan_ref;
 		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
 		$balance = new Billrun_Balance($instanceOptions);
 		if (!$balance || !$balance->isValid()) {
