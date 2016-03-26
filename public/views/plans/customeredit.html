@@ -1,10 +1,11 @@
-<center>
-	<h2>{{entity.name}}</h2>
-	<h3 class='subtitle'>{{capitalize(action)}} Customer Plan</h3>
-</center>
-<div pretty-error errors="err.data"></div>
-<div>
-	<form class='form-inline'>
+<div class="container component ">
+	<div class="fixed-title">
+			<center>
+				<h2>{{capitalize(action)}} Customer Plan {{entity.name}}</h2>
+			</center>
+	</div>
+	<div pretty-error errors="err.data"></div>
+	<form class='form-inline' style="margin-top: 70px;">
 		<div ng-if='!advancedMode'>
 			<div class='row' ng-if='action === "new"'>
 				<div class='col-md-2'>Name</div>
