@@ -61,6 +61,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
 		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
+		$this->addCss($this->baseUrl . '/css/vendor/isteven-multi-select.css');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
@@ -87,6 +88,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-bootstrap-multiselect.js');
+		$this->addJs($this->baseUrl . '/js/vendor/isteven-multi-select.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');

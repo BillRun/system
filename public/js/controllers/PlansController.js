@@ -1,5 +1,5 @@
-app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$location',
-  function ($scope, $window, $routeParams, Database, $controller, $location) {
+app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$location', '$rootScope', '$timeout',
+  function ($scope, $window, $routeParams, Database, $controller, $location, $rootScope, $timeout) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -85,6 +85,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.save = function (redirect) {
       $scope.err = {};
       if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
+      if ($scope.entity.type === "customer" && $scope.disallowed_rates) {
+        if (_.isUndefined($scope.entity.disallowed_rates)) $scope.entity.disallowed_rates = [];
+        var filtered = _.filter($scope.availableRates, function (r) { return r.ticked; });
+        $scope.entity.disallowed_rates = _.reduce(filtered,
+          function (acc, dr) {
+            acc.push(dr.name);
+            return acc;
+          }, []);
+      }
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -185,6 +194,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       };
       $scope.advancedMode = false;
       $scope.action = $routeParams.action;
+      $rootScope.spinner++;
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
@@ -195,6 +205,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
                 _.forEach($scope.entity.include[usaget], function (usage, i) {
                   if (usage.period.unit === "month") $scope.entity.include[usaget][i].period.unit = "months";
                 });
+                $rootScope.spinner--;
                 return;
               }
               if ($scope.entity.include[usaget].period.unit === "month") $scope.entity.include[usaget].period.unit = "months";
@@ -213,6 +224,23 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
                   $scope.entity.max_currency.period = res.data.deafult_max_currency.period;
               }
             }
+            $scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
+              function (acc, dr) {
+                acc.push({name: dr, ticked: true});
+                return acc;
+              }, []);
+            Database.getAvailableRates().then(function (res) {
+              $scope.availableRates = _.reduce(res.data,
+                function (acc, rd) {
+                  acc.push({name: rd,
+                    ticked: _.includes($scope.entity.disallowed_rates, rd) ?
+                      true : 
+                      false
+                  });
+                  return acc;
+                }, []);
+            });
+            $timeout(function () { $rootScope.spinner--; }, 0);
           }
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
@@ -276,9 +304,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
       Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
         $scope.ppIncludes = res.data.ppincludes;
-      });
-      Database.getAvailableRates().then(function (res) {
-        $scope.availableRates = res.data;
       });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
       $scope.plan_type = $routeParams.type;
