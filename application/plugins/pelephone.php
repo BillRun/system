@@ -197,6 +197,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterBalanceLoad($balance, $subscriber) {
+		if (!$balance) {
+			return;
+		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
 		$update = array(
 			'$unset' => array(
