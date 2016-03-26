@@ -330,7 +330,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	
 	protected function isRateBlockedByPlan($row, $rate) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
- 		if (isset($plan['disallow_rates']) && isset($rate['key']) && isset($plan['disallow_rates'][$rate['key']])) {
+		if (isset($plan['disallowed_rates']) && isset($rate['key']) && in_array($rate['key'], $plan['disallowed_rates'])) {
+			Billrun_Factory::log('Plan ' . $plan['name'] . ' is not allowed to use rate ' . $rate['key'], Zend_Log::NOTICE);
 			return true;
 		}
 		return false;
