@@ -180,9 +180,12 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.addThresholdNotification = function () {
-      if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length) return;
+      if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id] &&
+        $scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length)
+        return;
+      $scope.entity.notifications_threshold[$scope.newThresholdNotification.id] = [];
       $scope.entity.notifications_threshold[$scope.newThresholdNotification.id].push({value: 0, type: "", msg: ""});
-      $scope.newTresholdNotification.id = null;
+      $scope.newThresholdNotification.id = null;
     };
 
     $scope.init = function () {
