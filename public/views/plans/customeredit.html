@@ -90,6 +90,18 @@
 				</div>
 			</div>
 
+			<h3>Blocked Rates</h3>
+			<div
+				isteven-multi-select
+				input-model="availableRates"
+				output-model="disallowed_rates"
+				item-label="name"
+				button-label="name"
+				tick-property="ticked"
+				max-height="250px"
+				max-labels="4"
+			>
+			</div>
 			<h3>Notifications</h3>
 			<div style="margin-bottom: 15px">
 				<select ng-model="newThresholdNotification.id" class="form-control">
@@ -116,7 +128,7 @@
 					</tbody>	
 				</table>
 			</div>
-			
+									
 			<div id='plan-include-groups-div' ng-if="entity.include.groups !== undefined">
 				<h3>Groups</h3>
 				<input ng-model='newGroup.name' type='text' class='form-control' />
