@@ -31,12 +31,40 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 		return array('seq'=> $seq , 'filename' => 'Brun_PS_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
+	// ------------------------------------ Protected -----------------------------------------
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
+	}
+	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 	
 	
+	
 	protected function isLineEligible($line) {
 		return true;
+	}
+
+	/**
+	 * Get subscriber ID for refund transactions
+	 * @param type $value
+	 * @param type $parameters
+	 * @param type $line
+	 * @return type
+	 */
+	function getSubscriberForRefund($value, $parameters, $line) {
+		if(/*empty($value) &&*/ !empty($line['refund_trans_id_1'])) {
+			$orgTrans = $this->collection->query(array('transaction_id' => $line['refund_trans_id_1']))->cursor()->limit(1)->current();
+			if(!empty($orgTrans) && !$orgTrans->isEmpty()) {
+				$value = $orgTrans['sid'];
+			}
+		}
+		return $value;
 	}
 
 }
