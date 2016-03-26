@@ -582,11 +582,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $password
 	 */
 	public function userAuthenticate($username, $password) {
-		$billrun_auth = new Billrun_Auth('msg_type', 'UserAuthGroup', 'username', 'password');
-		$billrun_auth->setIdentity($username);
-		$billrun_auth->setCredential($password);
-
-		//$encoder = new Billrun_Encoder_Xml();
 		$writer = new XMLWriter();
 		$writer->openMemory();
 		$writer->startDocument('1.0', 'UTF-8');
@@ -611,7 +606,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$writer->endDocument();
 		$data = $writer->outputMemory();
 
-		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
+		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('pelephone.ldapurl'), $data);
 		$xml  = simplexml_load_string($res, "SimpleXMLElement", LIBXML_NOCDATA);
 		$obj = json_decode(json_encode($xml));
 		if ($obj['RESPONSE']['PARAMS']['STATUS'] != 0) {
