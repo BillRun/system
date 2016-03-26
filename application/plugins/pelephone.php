@@ -497,7 +497,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
 				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
-					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost)
+					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
 			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
@@ -620,7 +620,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
 		if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness'] &&
-			in_array($balance['pp_includes_external_id'], array(5, 8))) {
+			in_array($balance['pp_includes_external_id'], array(5, 8))) { // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}
