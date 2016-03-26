@@ -164,6 +164,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.notificationForThresholdExists = function (pp) {
+      if (!$scope.entity.notifications_threshold ||
+        !$scope.entity.notifications_threshold[pp.external_id]) 
+        return false;
       return $scope.entity.notifications_threshold[pp.external_id].length;
     };
 
@@ -239,7 +242,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "to": new Date(),
             "type": "customer",
             "external_id": "",
-            "external_code": ""
+            "external_code": "",
+            "disallowed_rates": []
           };
         }
         $scope.plan_rates = res.data.plan_rates;
@@ -272,6 +276,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
       Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
         $scope.ppIncludes = res.data.ppincludes;
+      });
+      Database.getAvailableRates().then(function (res) {
+        $scope.availableRates = res.data;
       });
       $scope.action = $routeParams.action.replace(/_/g, ' ');
       $scope.plan_type = $routeParams.type;
