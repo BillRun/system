@@ -109,9 +109,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
-			'pp_includes_external_id' => array(
-				'$in' => array(1,2,9,10)
-			),
+			'charging_by' => 'total_cost',
 			'urt' => array(
 				'$gte' => new MongoDate($startTime),
 			),
@@ -496,7 +494,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
 				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
-					array_push($pp_includes_external_ids, 1, 2, 9, 10);
+					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost)
 				}
 			}
 			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
@@ -564,9 +562,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterChargesCalculation(&$row, &$charges) {
+		if ($row['type'] !== 'gy') {
+			return;
+		}
 		$balance = Billrun_Factory::db()->balancesCollection()->getRef($this->row['balance_ref']);
-		if ($row['type'] === 'gy' &&
-			in_array($balance['pp_includes_external_id'], array(1,2,9,10))) {
+		if ($balance['charging_by'] == 'total_cost') {
 			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
 			
 			if ($charges['total'] > $diff) {
