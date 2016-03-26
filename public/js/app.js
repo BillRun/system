@@ -1,5 +1,5 @@
 var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 
-  'pageslide-directive', 'ngSanitize', 'ui.multiselect']);
+  'pageslide-directive', 'ngSanitize', 'ui.multiselect', 'isteven-multi-select']);
 app.run(function ($rootScope, $http) {
   $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
     $rootScope.fields = res.data;
