@@ -75,6 +75,8 @@
 					</div>
 				</div>
 			</div>
+			
+			<hr/>
 			<h3>Thresholds</h3>
 			<div style="margin-bottom: 15px">
 				<select ng-model="newPPIncludeThreshold.id" class="form-control">
@@ -91,6 +93,7 @@
 				</div>
 			</div>
 
+			<hr/>
 			<h3>Blocked Rates</h3>
 			<div
 				isteven-multi-select
@@ -103,6 +106,8 @@
 				max-labels="4"
 			>
 			</div>
+			
+			<hr/>
 			<h3>Notifications</h3>
 			<div style="margin-bottom: 15px">
 				<select ng-model="newThresholdNotification.id" class="form-control">
@@ -223,7 +228,9 @@
 					</div>
 				</div>
 			</div>
+
 			<div ng-if='!_.isEmpty(plan_rates)'>
+				<hr/>
 				<h3>Rates</h3>
 				<div ng-repeat='type in ["calls", "data", "sms", "video_call"]'>
 					<label ng-if="type === 'calls'">Call</label>
