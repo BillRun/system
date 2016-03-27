@@ -154,7 +154,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	
 	protected function getLastRunDate($type) {
 		$lastRun = $this->db->logCollection()->query(array('source'=>$type))->cursor()->sort(array('generated_time'=>-1))->limit(1)->current();
-		return empty($lastRun['generated_time']) ? new Mongodate(0) : $lastRun['generated_time'];
+		return empty($lastRun['generated_time']) && $lastRun['generated_time'] instanceof MongoDate ? new MongoDate(0) : $lastRun['generated_time'];
 	}
 	
 	abstract protected function getReportCandiateMatchQuery();
