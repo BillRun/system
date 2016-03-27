@@ -21,7 +21,7 @@ class Billrun_Cards_Handler {
 	protected function getExpiredQuery() {
 		$query = array();
 		
-		// TODO: The 'active' value should not be hardcoded.
+		// TODO: What should be in this array? It shouldn't be hard coded.
 		$query['status'] = array('$nin' => array("Expired", "Stolen"));
 		$query['to'] = array('$lte' => new MongoDate());
 			
