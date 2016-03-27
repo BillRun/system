@@ -62,6 +62,25 @@ $(function () {
     });
   });
 
+  $("#SourceRefPopup").on('show.bs.modal', function (event) {
+    var line_id = $(event.relatedTarget).data('line');
+    $.ajax({
+      url: baseUrl + '/admin/getEntity',
+      type: "GET",
+      data: {coll: "lines", id: line_id}
+    }).done(function (res) {
+      var entity = JSON.parse(res).entity;
+      var $modal_body = $(".modal-body");
+      var html = "";
+      _.forEach(entity.source_ref, function (v, k) {
+        if (_.isObject(v)) return;
+        var key = _.capitalize(k.replace(/_/, ' '));
+        html += "<br/><b>" + key + ":</b> " + v;
+      });
+      $modal_body.html(html);
+    });
+  });
+
   $("#chargingPlanPopup").on('show.bs.modal', function (event) {
     var plan_name = $(event.relatedTarget).data('charging-plan-name');
     $('#data-charging-plan-tbody tr').remove();
@@ -73,9 +92,25 @@ $(function () {
       var entity = JSON.parse(res).entity;
       var include_types = _.keys(entity.include);
       var tbody = $("#data-charging-plan-tbody");
+      var amount, pp_includes_name;
       _.forEach(include_types, function (include_type) {
-        var amount = (entity.include[include_type].usagev ? entity.include[include_type].usagev : entity.include[include_type].cost),
+        if (entity.include[include_type].length) {
+          _.forEach(entity.include[include_type], function (k, i) {
+            amount = (entity.include[include_type][i].usagev ? 
+                          entity.include[include_type][i].usagev : 
+                          (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
+            pp_includes_name = entity.include[include_type][i].pp_includes_name;
+          });
+        } else {
+          amount = (entity.include[include_type].usagev ? 
+                        entity.include[include_type].usagev : 
+                        (entity.include[include_type][i].cost ?
+                            entity.include[include_type][i].cost :
+                            entity.include[include_type][i].value));
           pp_includes_name = entity.include[include_type].pp_includes_name;
+        }
         var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
         tbody.append($row);
       })
@@ -518,12 +553,16 @@ function detailFormatter(index, row) {
         _.forEach(aggregated, function (aggregate, i) {
           var $tr = $("<tr></tr>");
           var idx = i + 1;
+          var usagev = (aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "";
+          var charge = (aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "";
+          if (aggregate.s_unit && aggregate.s_unit.toLowerCase() !== "nis")
+            charge = usagev;
           //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
           $tr.append("<td>" + idx + "</td>");
           $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
           $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
-          $tr.append("<td>" + ((aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "") + "</td>");
-          $tr.append("<td>" + ((aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "") + "</td>");
+          $tr.append("<td>" + usagev + "</td>");
+          $tr.append("<td>" + charge + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
           $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
           $tr.append("<td>" + aggregate.s_unit + "</td>");
@@ -547,6 +586,10 @@ function detailFormatter(index, row) {
       $("<thead></thead>").append($thead);
       $table.append($thead).append('<tbody>');
       _.forEach(lines, function (line, i) {
+        var usagev = (line.usagev || line.usagev == 0) ? line.usagev : "";
+        var charge = (line.aprice || line.aprice == 0) ? line.aprice.toFixed(6) : "";
+        if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis")
+          charge = usagev;
         var $tr = $("<tr></tr>");
         var idx = i + 1;
         var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
@@ -557,8 +600,8 @@ function detailFormatter(index, row) {
           $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
         else if (line.usaget !== "balance")
           $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
-        $tr.append("<td>" + ((line.usagev || line.usagev == 0) ? line.usagev : "") + "</td>");
-        $tr.append("<td>" + ((line.aprice || line.aprice == 0)  ? line.aprice.toFixed(6) : "") + "</td>");
+        $tr.append("<td>" + usagev + "</td>");
+        $tr.append("<td>" + charge + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "" ) + "</td>");
         $tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
         $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");

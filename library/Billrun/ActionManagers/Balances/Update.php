@@ -83,6 +83,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	
 	protected function setUpdateValue(&$line) {
 		$value = $line['balance_after'] - $line['balance_before'];
+		
 		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
 			$line["aprice"] = $value;
 		} else {
@@ -104,14 +105,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		$beforeUpdateBalance = $beforeUpdate[$ppID];
-		if(!isset($insertLine['normalized'])) {
-			if($beforeUpdateBalance->isEmpty()) {
-				$insertLine['balance_before'] = 0;	
-			} else {
-				$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
-			}
-			$insertLine['balance_after'] = $this->getBalanceValue($balance);
+		if($beforeUpdateBalance->isEmpty()) {
+			$insertLine['balance_before'] = 0;	
+		} else {
+			$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
 		}
+		$insertLine['balance_after'] = $this->getBalanceValue($balance);
 		
 		$this->setUpdateValue($insertLine);
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
@@ -150,9 +149,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 			// TODO: Move this logic to a updater_balance class.
 			if(isset($balancePair['normalized'])) {
-				$archiveLine["balance_before"] = $balancePair['normalized']['before'];
-				$archiveLine["balance_after"] = $balancePair['normalized']['normalized'];
-				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
+				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'] - $balancePair['normalized']['before'];
 				$archiveLine['normalized'] = $reducted;
 			}
 			
@@ -255,11 +252,14 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
-			$subscriber = $outputDocuments[0]['subscriber'];
-			$balance = $outputDocuments[0]['balance'];
+			$documents = $outputDocuments;
 			// Write the action to the lines collection.
 			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
-			Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber));
+			foreach ($documents as $document) {
+				$subscriber = $document['subscriber'];
+				$balance = $document['balance'];
+				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber));
+			}
 		}
 		
 		if($success) {

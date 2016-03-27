@@ -99,7 +99,13 @@ class CronController extends Yaf_Controller_Abstract {
 			$this->smser->send($message, $recipients);
 		}
 	}
-
+	
+	public function cardsExpirationAction() {
+		$handler = new Billrun_Cards_Handler();
+		$result = $handler->cardsExpiration();
+		
+		// TODO: Do something with the result?
+	}
 	public function autoRenewServicesAction() {
 		$handler = new Billrun_Autorenew_Handler();
 		$handler->autoRenewServices();

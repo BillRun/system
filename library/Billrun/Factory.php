@@ -350,11 +350,13 @@ class Billrun_Factory {
 			return FALSE;
 		}
 
-		if (!isset(self::$users[$username])) {
-			$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
-			self::$users[$username] = new Billrun_User($entity);
+		$stamp = Billrun_Util::generateArrayStamp($username);
+		if (!isset(self::$users[$stamp])) {
+			$read = Billrun_Factory::auth()->getStorage()->read();
+			$entity = new Mongodloid_Entity($read['current_user']);
+			self::$users[$stamp] = new Billrun_User($entity);
 		}
-		return self::$users[$username];
+		return self::$users[$stamp];
 	}
 
 	public static function auth() {

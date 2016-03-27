@@ -1,5 +1,5 @@
-app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$location',
-  function ($scope, $window, $routeParams, Database, $controller, $location) {
+app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Database', '$controller', '$location', '$rootScope', '$timeout',
+  function ($scope, $window, $routeParams, Database, $controller, $location, $rootScope, $timeout) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -85,6 +85,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     $scope.save = function (redirect) {
       $scope.err = {};
       if (_.isEmpty($scope.entity.include)) delete $scope.entity.include;
+      if ($scope.entity.type === "customer" && $scope.disallowed_rates) {
+        if (_.isUndefined($scope.entity.disallowed_rates)) $scope.entity.disallowed_rates = [];
+        var filtered = _.filter($scope.availableRates, function (r) { return r.ticked; });
+        $scope.entity.disallowed_rates = _.reduce(filtered,
+          function (acc, dr) {
+            acc.push(dr.name);
+            return acc;
+          }, []);
+      }
       var params = {
         entity: $scope.entity,
         coll: $routeParams.collection,
@@ -108,7 +117,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
         return bal.external_id === parseInt(id, 10);
       });
       if (found) return found.name;
-      return "";
+      return _.capitalize(id.replace(/_/, ' '));
     };
 
     $scope.getTDHeight = function (rate) {
@@ -150,6 +159,35 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       }
     };
 
+    $scope.addNotification = function (id) {
+      if (!id) return;
+      var new_notification = {value: 0, type: "", msg: ""};
+      $scope.entity.notifications_threshold[id].length ?
+        $scope.entity.notifications_threshold[id].push(new_notification) :
+        $scope.entity.notifications_threshold[id] = [new_notification];
+    };
+
+    $scope.removeNotification = function (id) {
+      if (!id) return;
+      $scope.entity.notifications_threshold[id].pop();
+    };
+
+    $scope.notificationForThresholdExists = function (pp) {
+      if (!$scope.entity.notifications_threshold ||
+        !$scope.entity.notifications_threshold[pp.external_id]) 
+        return false;
+      return $scope.entity.notifications_threshold[pp.external_id].length;
+    };
+
+    $scope.addThresholdNotification = function () {
+      if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id] &&
+        $scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length)
+        return;
+      $scope.entity.notifications_threshold[$scope.newThresholdNotification.id] = [];
+      $scope.entity.notifications_threshold[$scope.newThresholdNotification.id].push({value: 0, type: "", msg: ""});
+      $scope.newThresholdNotification.id = null;
+    };
+
     $scope.init = function () {
       angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
       var params = {
@@ -159,6 +197,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       };
       $scope.advancedMode = false;
       $scope.action = $routeParams.action;
+      $rootScope.spinner++;
       Database.getEntity(params).then(function (res) {
         if ($routeParams.action !== "new") {
           $scope.entity = res.data.entity;
@@ -169,6 +208,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
                 _.forEach($scope.entity.include[usaget], function (usage, i) {
                   if (usage.period.unit === "month") $scope.entity.include[usaget][i].period.unit = "months";
                 });
+                $rootScope.spinner--;
                 return;
               }
               if ($scope.entity.include[usaget].period.unit === "month") $scope.entity.include[usaget].period.unit = "months";
@@ -187,6 +227,23 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
                   $scope.entity.max_currency.period = res.data.deafult_max_currency.period;
               }
             }
+            $scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
+              function (acc, dr) {
+                acc.push({name: dr, ticked: true});
+                return acc;
+              }, []);
+            Database.getAvailableRates().then(function (res) {
+              $scope.availableRates = _.reduce(res.data,
+                function (acc, rd) {
+                  acc.push({name: rd,
+                    ticked: _.includes($scope.entity.disallowed_rates, rd) ?
+                      true : 
+                      false
+                  });
+                  return acc;
+                }, []);
+            });
+            $timeout(function () { $rootScope.spinner--; }, 0);
           }
           if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
             $scope.entity.include = {};
@@ -216,13 +273,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
             "to": new Date(),
             "type": "customer",
             "external_id": "",
-            "external_code": ""
+            "external_code": "",
+            "disallowed_rates": []
           };
         }
         $scope.plan_rates = res.data.plan_rates;
         $scope.authorized_write = res.data.authorized_write;
         $scope.title = _.capitalize($scope.action) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
         angular.element('title').text("BillRun - " + $scope.title);
+        $rootScope.spinner--;
       }, function (err) {
         alert("Connection error!");
       });
@@ -239,9 +298,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
           label: 'increment'
         }
       };
-      $scope.availableChargingTypes = ['charge', 'digital'];
+      $scope.availableChargingTypes = ['card', 'digital'];
       $scope.newIncludeType = {type: ""};
       $scope.newPPIncludeThreshold = {id: null};
+      $scope.newThresholdNotification = {id: null};
       $scope.availableIncludeTypes = ['cost', 'data', 'sms', 'call'];
       Database.getAvailableServiceProviders().then(function (res) {
         $scope.availableServiceProviders = res.data;
