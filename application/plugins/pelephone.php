@@ -612,8 +612,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = $writer->outputMemory();
 
 		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
-		$arr = json_decode(json_encode($res), true);
-		$xml  = simplexml_load_string($arr, "SimpleXMLElement", LIBXML_NOCDATA);
+		$xml  = simplexml_load_string((array) $res, "SimpleXMLElement", LIBXML_NOCDATA);
 		$obj = json_decode(json_encode($xml));
 		if ($obj['RESPONSE']['PARAMS']['STATUS'] != 0) {
 			return false;
