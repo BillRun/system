@@ -393,6 +393,14 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param string $chargingPlan - The wallet in use.
 	 */
 	protected function getSetQuery($chargingPlan) {
+		// THIS SEEMS UNECCESSARY. BUT I AM LEAVING IT HERE BECAUSE IT MIGHT BE THAT I
+		// MISUNDERSTOOD THE PROBLEM AND WE STILL NEED THIS SOLUTION FOR IT
+		// Check if the value before is 0 and if so take the input values to update.
+//		$valueBefore = Billrun_Balances_Util::getBalanceValue($this->balanceBefore);
+//		if($valueBefore === 0) {
+//			
+//		}
+		
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
