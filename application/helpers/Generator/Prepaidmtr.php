@@ -28,21 +28,17 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_MTR_'.date('YmdHi').".csv", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_MTR_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
-	//--------------------------------------------  Protected ------------------------------------------------
+	// ------------------------------------ Protected -----------------------------------------
 	
-	protected function writeRows() {
-		if(!empty($this->headers)) {
-			$this->writeHeaders();
-		}
-		foreach($this->data as $line) {
-			if($this->isLineEligible($line)) {
-				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			}
-			$this->markLines($line['stamps']);
-		}
+	protected function getReportCandiateMatchQuery() {
+		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------
@@ -75,4 +71,5 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 			return $plan['external_id'];
 		}
 	}
+
 }

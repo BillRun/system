@@ -4,6 +4,9 @@ function ServiceProvidersController(Database, $uibModal) {
   'use strict';
   var vm = this;
 
+  angular.element('.active').removeClass('active');
+  angular.element('.menu-item-service_providers').addClass('active');
+
   vm.saveNew = function(redirect) {
       var params = {
           entity: vm.service_provider,

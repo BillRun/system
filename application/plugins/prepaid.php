@@ -28,16 +28,6 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $db;
 
-
-	public function __construct() {
-		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
-		if (in_array('unify', $calculators)) {
-			$this->db = Billrun_Factory::db();
-		} else {
-			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('db', array()));
-		}
-	}
-	
 	/**
 	 * Method to trigger api outside of Billrun.
 	 * afterSubscriberBalanceNotFound trigger after the subscriber has no available balance (relevant only for prepaid subscribers)
@@ -225,7 +215,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Gets the Line that needs to be updated (on rebalance)
 	 */
 	protected function getLineToUpdate($row) {
-		$lines_archive_coll = $this->db->archiveCollection();
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		if ($row['type'] == 'gy') {
 			$findQuery = array(
 				"sid" => $row['sid'],
@@ -274,7 +264,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getChargedUsagev($row, $lineToRebalance) {
 		if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
-			$lines_archive_coll = $this->db->archiveCollection();
+			$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 			$query = $this->getRebalanceQuery($row);
 			$line = $lines_archive_coll->aggregate($query)->current();
 			return $line['sum'];
@@ -346,7 +336,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		
 		// Update line in archive
-		$lines_archive_coll = $this->db->archiveCollection();
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 		
 		// Update line in Lines collection
