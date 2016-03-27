@@ -32,12 +32,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
 		// Check if the wallet has a special period.
-		$walletPeriod = $wallet->getPeriod();
-		if ($walletPeriod) {
-			return $this->getDateFromPeriod($walletPeriod);
+		if(isset($recordToSet['to'])) {
+			$wallet->setPeriod($recordToSet['to']);
+			return $recordToSet['to'];		
 		}
-		$wallet->setPeriod($recordToSet['to']);
-		return $recordToSet['to'];
+	
+		$walletPeriod = $wallet->getPeriod();
+		return $this->getDateFromPeriod($walletPeriod);
 	}
 
 	protected function getChargingPlanQuery($query) {
@@ -340,11 +341,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
-		
-		if(!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
-		}
+		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
 			'upsert' => true,

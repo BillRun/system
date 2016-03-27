@@ -151,7 +151,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		return $update;
 	}
-
+	
 	/**
 	 * Update a single balance.
 	 * @param Billrun_DataTypes_Wallet $chargingPlan
@@ -163,12 +163,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
-		
-		if(!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
-		}
+		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);	
+		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
 			'upsert' => true,
