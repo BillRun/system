@@ -34,6 +34,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		Billrun_Factory::db();
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
