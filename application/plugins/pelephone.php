@@ -595,15 +595,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$writer->startElement("HEADER");
 				$writer->writeElement("COMMAND", "IT_UserAuthGroup");
 				$writer->writeElement("APPLICATION_ID", 283);
-				$writer->startElement("PARAMS");
-					$writer->startElement("IT_IN_PARAMS");
-						$writer->writeElement("User", $username);
-						$writer->writeElement("PASSWORD", $password);
-						$writer->startElement("MemberOf");
-							$writer->writeElement("Group", "billrun_read");
-							$writer->writeElement("Group", "billrun_write");
-							$writer->writeElement("Group", "billrun_admin");
-						$writer->endElement();
+			$writer->endElement();
+			$writer->startElement("PARAMS");
+				$writer->startElement("IT_IN_PARAMS");
+					$writer->writeElement("User", $username);
+					$writer->writeElement("PASSWORD", $password);
+					$writer->startElement("MemberOf");
+						$writer->writeElement("Group", "Billrun_read");
+						$writer->writeElement("Group", "Billrun_write");
+						$writer->writeElement("Group", "Billrun_admin");
 					$writer->endElement();
 				$writer->endElement();
 			$writer->endElement();
@@ -612,12 +612,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = $writer->outputMemory();
 
 		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
-		$xml  = simplexml_load_string((array) $res, "SimpleXMLElement", LIBXML_NOCDATA);
-		$obj = json_decode(json_encode($xml));
-		if ($obj['RESPONSE']['PARAMS']['STATUS'] != 0) {
+		$xml  = simplexml_load_string($res);
+		if ($xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
 		}
-		return $obj;
+		return $res;
 	}
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
