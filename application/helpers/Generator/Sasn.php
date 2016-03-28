@@ -19,15 +19,12 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	static $ONE_GB = 1024*1024*1024;
 	
 	protected $data = null;
-	protected $grouping = array();
-	protected $match = array();
-	protected $translations = array();
-	protected $fieldDefinitions =  array();
-	protected $preProject = array();
-	protected $unwind = array();
-	
+	protected $startEndWindow = 12800;
 
-	
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->startEndWindow =  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.start_end_window',$this->startEndWindow);
+	}
 	
 	public function generate() {
 		$fileData = $this->getNextFileData();
@@ -61,9 +58,24 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 			} else {
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}
-				$this->markLines($line['stamps']);
+				//$this->markLines($line['stamps']);
 			
 		}
+		$this->markFileAsDone();
+	}
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('$and' => array(
+						array('$or' => array(
+							array('urt'=>array('$gt'=>new MongoDate($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)),'record_type'=>array('$ne'=>'final_request')),
+							array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)))
+						))
+					)
+				);
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array('change_date_time'=>array('$lt'=>new Mongodate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

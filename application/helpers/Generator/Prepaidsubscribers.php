@@ -28,7 +28,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 		
-		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi').".csv", 'source' => static::$type);
+		return array('seq'=> $seq , 'filename' => 'PREPAID_SUBSCRIBERS_'.date('YmdHi'), 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------
@@ -42,8 +42,18 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
 			}			
 		}
+		$this->markFileAsDone();
 	}
 
+	
+	protected function getReportCandiateMatchQuery() {
+		return array();
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array();
+	}
+	
 	protected function isLineEligible($line) {
 		return true;
 	}	

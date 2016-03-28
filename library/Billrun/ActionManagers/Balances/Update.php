@@ -149,7 +149,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			
 			// TODO: Move this logic to a updater_balance class.
 			if(isset($balancePair['normalized'])) {
-				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'];
+				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'] - $balancePair['normalized']['before'];
 				$archiveLine['normalized'] = $reducted;
 			}
 			
