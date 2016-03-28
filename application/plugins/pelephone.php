@@ -639,7 +639,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$writer->endDocument();
 		$data = $writer->outputMemory();
 
-		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('UrlToInternalResponse'), $data);
+		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('pelephone.ldapurl'), $data);
 		$xml  = simplexml_load_string($res);
 		if ($xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
