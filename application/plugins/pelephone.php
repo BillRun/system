@@ -69,9 +69,33 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.shabbat'] = $shabbat;
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
+	
+	protected function canUseDataFromCurrencyBalances($row, $plan = null) {
+		if (is_null($plan)) {
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);	
+		}
+		return ($plan && isset($plan['data_from_currency']) && $plan['data_from_currency']);
+	}
+	
+	protected function hasAvailableBalances($row) {
+		$query = Billrun_Util::getDateBoundQuery();
+		if ($this->canUseDataFromCurrencyBalances($row)) {
+			$query['$or'] = array(
+				array('charging_by_usaget' => 'data'),
+				array('charging_by' => 'total_cost')
+			);
+		} else {
+			$query['charging_by_usaget'] = 'data';
+		}
+		
+		$availableBalances = Billrun_Factory::db()->balancesCollection()->query($query)->cursor()->current();
+		return !$availableBalances->isEmpty();
+	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
+		return isset($row['service']['code']) && 
+			$this->validateSOC($row['service']['code']) &&
+			$this->hasAvailableBalances($row);
 	}
 
 	protected function isSubscriberInDataSlowness($row) {
@@ -496,7 +520,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
-				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
+				if (!$this->canUseDataFromCurrencyBalances($this->row, $plan)) {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
