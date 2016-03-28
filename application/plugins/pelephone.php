@@ -390,7 +390,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
-			return;
+			return true;
 		}
 		$encoder = new Billrun_Encoder_Xml();
 		$requestBody = array(
