@@ -34,6 +34,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		Billrun_Factory::db();
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
@@ -61,6 +62,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
 		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
+		$this->addCss($this->baseUrl . '/css/vendor/isteven-multi-select.css');
 		
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
@@ -87,6 +89,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/vendor/angular-pageslide-directive.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-sanitize.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular-bootstrap-multiselect.js');
+		$this->addJs($this->baseUrl . '/js/vendor/isteven-multi-select.js');
 
 		$this->addJs($this->baseUrl . '/js/main.js');
 		$this->addJs($this->baseUrl . '/js/app.js');
@@ -438,11 +441,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => $type));
+		//$names = $planModel->getData(array('type' => $type));
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => $type))->cursor()->sort(array('name' => 1));
+		Billrun_Factory::log(print_r($names, 1));
 		$availablePlans = array();
 		$availablePlans['BASE'] = 'BASE';
 		foreach($names as $name) {
-			$availablePlans[$name['name']] = $name['name'];
+			$availablePlans[$name['name']] = $name->get('name');
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availablePlans));
@@ -453,7 +458,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailableRatesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor();
+		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->sort(array('key' => 1));
 		$availableRates = array();
 		foreach($rates as $rate) {
 			$availableRates[] = $rate->get('key');
@@ -471,7 +476,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'params.interconnect' => TRUE,
 			'to' => array('$gte' => new MongoDate()),
 		);
-		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor();
+		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$availableInterconnect = array();
 		foreach ($interconnect_rates as $interconnect) {
 			$future = $interconnect->from->sec > new DateTime();
