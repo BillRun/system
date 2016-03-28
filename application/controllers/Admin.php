@@ -34,6 +34,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		Billrun_Factory::db();
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
@@ -969,10 +970,13 @@ class AdminController extends Yaf_Controller_Abstract {
 					$entity = new stdClass();
 					$entity->username = $username;
 					$entity->roles = array();
-					foreach ($results['REQUEST']['PARAMS']['MemberOf'] as $key=>$group) {
-						$entity->roles[] = str_replace('billrun_', '', $group);
+					$xml = simplexml_load_string($result);
+					$groups = (array) $xml->PARAMS->IT_OUT_PARAMS->MemberOf->Group;
+					$entity->roles = array();
+					foreach ($groups as $group) {
+						$entity->roles[] = str_ireplace('billrun_', '', $group);
 					}
-					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity));
+					Billrun_Factory::auth()->getStorage()->write(array('current_user' => (array) $entity));
 					$this->forceRedirect($this->baseUrl . $ret_action);
 					return true;
 				}

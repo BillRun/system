@@ -327,6 +327,96 @@ db.rates.insert({
 					}
 				],
 				"unit" : "bytes"
+			},
+			"PP_Fix_49" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000039736,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_Netstick_Adi" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_Netstick_Talk" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000039736,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_UMTS_1" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Michaeli" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Phil_Netstick" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000075654,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Philippines" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000082011,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_SWA" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000150673,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_TMarket" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000150039,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
 			}
 		}
 	}
