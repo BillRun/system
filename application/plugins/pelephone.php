@@ -526,9 +526,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$pp_includes_exclude = $this->getPPIncludesToExclude($plan, $rate);
 			if (!empty($pp_includes_exclude)) {
-				$unique_pp_includes_external_ids = array_unique(array_merge($pp_includes_external_ids, $pp_includes_exclude));
+				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
 			} else {
-				$unique_pp_includes_external_ids = array_unique($pp_includes_exclude);
+				$unique_pp_includes_external_ids = $pp_includes_exclude;
 			}
 
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
