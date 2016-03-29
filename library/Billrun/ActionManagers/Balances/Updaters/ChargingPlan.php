@@ -209,24 +209,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
 			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
 			
-			// Report the error.
-			$normalizeError = Billrun_Factory::config()->getConfigValue('balances_error_base') + 25;
-			$this->reportError($normalizeError, Zend_Log::ERR);
+			if(isset($normalizeResult['bill_err'])) {
+				// Report the error.
+				$this->reportError($normalizeResult['bill_err'], Zend_Log::ERR);
+				$returnPair['blocked'] = true;
+			}
 		}
 		
 		unset($returnPair['query']);
 		return $returnPair;
-	}
-	
-	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
-		// Check if core balance.
-		if(!in_array($wallet->getChargingByUsaget(), array('cost', 'total_cost'))) {
-			return parent::getNormalizedBalanceQuery($wallet, $maxValue);
-		}
-		
-		$balanceBefore = $this->getLastBalanceRecord();
-		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		return array('$set' => array($wallet->getFieldName() => $valueBefore));
 	}
 	
 	/**

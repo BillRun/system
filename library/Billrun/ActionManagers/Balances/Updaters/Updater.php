@@ -229,16 +229,36 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			return false;
 		}
 		
-		$query['priority'] = $wallet->getPriority();
+		// Check if passed the max value.
+		$balanceBefore = $this->getLastBalanceRecord();
+		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
+		$currentValue = $wallet->getValue();
+		if($this->isIncrement) {
+			$currentValue += $valueBefore;
+		}
 		
-		return $this->commitNormalizeBalance($wallet, $maxValue, $query);
+		$query['priority'] = $wallet->getPriority();
+		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
+		
+		$errorPassingMax = false;
+		if(($currentValue > $maxValue) && ($wallet->getPPID() == 1)) {
+			$updateQuery = array('$set' => array($wallet->getFieldName() => $valueBefore));
+			$errorPassingMax = true;
+		}
+		
+		$result = $this->commitNormalizeBalance($maxValue, $query, $updateQuery);
+		if($errorPassingMax) {
+			$errCode = Billrun_Factory::config()->getConfigValue('balances_error_base') + 25;	
+			$result['bill_err'] = $errCode;
+		}
+		return $result;
 	}
 	
 	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
 		return array('$max' => array($wallet->getFieldName() =>$maxValue));
 	}
 	
-	protected function commitNormalizeBalance($wallet, $maxValue, $query, $plan) {
+	protected function commitNormalizeBalance($maxValue, $query, $updateQuery) {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
@@ -246,7 +266,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		);
 				
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
 		return $updateResult;
