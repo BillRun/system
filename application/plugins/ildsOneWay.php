@@ -95,9 +95,6 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterCalculatorUpdateRow($row, $calculator) {
-		if ($row['stamp'] == "6ad72ffdccff0f5d6ddfe0a278ff58de") {
-			$a = 1;
-		}
 		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name]) && ($row['usagev'] > 0)) {
 			$result = $this->createRow($row);
 			if (!empty($result)) {

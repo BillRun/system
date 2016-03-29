@@ -252,11 +252,6 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
                                                 if (preg_match($this->ild_called_number_regex, $data['called_number'])){
                                                     $data['called_number'] = substr($data['called_number'], 3);
                                                 } 
-					
-                                              /* else {
-                                                    $data['called_number'] = $data['called_number'];
-                                                }*/
-                                                    
 				}
 				if ((!isset($data['out_circuit_group'])) || (isset($data['out_circuit_group']) && !(($data['out_circuit_group'] >= '2000' && $data['out_circuit_group'] <= '2069') || ($data['out_circuit_group'] >= '2500' && $data['out_circuit_group'] <= '2529') || ($data['out_circuit_group'] >= '1230' && $data['out_circuit_group'] <= '1233')))) {
 					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
