@@ -529,7 +529,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($pp_includes_exclude)) {
 				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
 			} else {
-				$unique_pp_includes_external_ids = $pp_includes_exclude;
+				$unique_pp_includes_external_ids = $pp_includes_external_ids;
 			}
 
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
