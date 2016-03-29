@@ -74,7 +74,7 @@ class Billrun_Balances_Handler {
 		$chargingByUsegt = $balance['charging_by_usaget'];
 		$value = 0;
 		if($chargingBy === $chargingByUsegt) {
-			$value = $balance['balance'][$chargingBy];
+			$value = isset($balance['balance']['total_cost']) ? $balance['balance']['total_cost'] : $balance['balance']['cost'];
 		} else {
 			$value = $balance['balance']['totals'][$chargingByUsegt][$chargingBy];
 		}
