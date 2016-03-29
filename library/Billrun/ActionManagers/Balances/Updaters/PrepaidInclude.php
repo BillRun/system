@@ -108,7 +108,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		return $updateResult;
 	}
 
-	protected function getNormalizedBalanceQuery($wallet) {
+	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
 		$balanceBefore = $this->getLastBalanceRecord();
 		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
 		return array('$set' => array($wallet->getFieldName() => $valueBefore));
