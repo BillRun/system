@@ -132,6 +132,8 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 2;
 				case ($returnCodes['no_rate']):
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 1;
+				case ($returnCodes['block_rate']):
+					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 4;
 				case ($returnCodes['no_subscriber']):
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 3;
 			} 

@@ -57,9 +57,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function get_called_number($row) {
 		$called_number = $row->get('called_number');
 		if (empty($called_number)) {
-			$called_number = $row->get('connected_number');
+			$called_number = $row->get('dialed_digits');
 			if (empty($called_number)) {
-				$called_number = $row->get('dialed_digits');
+				$called_number = $row->get('connected_number');
 			}
 		}
 		return $called_number;
