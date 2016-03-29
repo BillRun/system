@@ -231,13 +231,22 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		
 		$query['priority'] = $wallet->getPriority();
 		
+		return $this->commitNormalizeBalance($wallet, $maxValue, $query);
+	}
+	
+	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
+		return array('$max' => array($wallet->getFieldName() =>$maxValue));
+	}
+	
+	protected function commitNormalizeBalance($wallet, $maxValue, $query) {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'multiple' => 1
 		);
+				
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
+		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue);
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
 		return $updateResult;
@@ -388,6 +397,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		return $this->balanceBefore;
 	}
 	
+	protected function getLastBalanceRecord() {
+		$balanceRecord = end($this->balanceBefore);
+		reset($this->balanceBefore);
+		return $balanceRecord;
+	}
+	
 	/**
 	 * Set the 'To' field to the update query
 	 * @param array $update - The update query to set the to for
@@ -399,8 +414,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 		
 		// Check if the value before is 0 and if so take the input values to update.
-		$balanceRecord = end($this->balanceBefore);
-		reset($this->balanceBefore);
+		$balanceRecord = $this->getLastBalanceRecord();
 		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceRecord);
 		if($valueBefore < 0) {
 			// TODO: Move the $max functionality to a trait
