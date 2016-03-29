@@ -158,6 +158,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			}
 			
 			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
+			$archiveLine['rand'] = rand(1, 1000000);
 			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
 			$processedLines[] = $archiveLine;
 			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
@@ -206,6 +207,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$reportedLine = $balanceLine;
 		$reportedLine['information'] = $processedLines;
 		$reportedLine['lcount'] = count($processedLines);
+		$reportedLine['rand'] = rand(1, 1000000);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
 			
 		$linesCollection = Billrun_Factory::db()->linesCollection();

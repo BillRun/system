@@ -327,6 +327,96 @@ db.rates.insert({
 					}
 				],
 				"unit" : "bytes"
+			},
+			"PP_Fix_49" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000039736,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_Netstick_Adi" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_Netstick_Talk" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000039736,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"PP_UMTS_1" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Michaeli" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000119208,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Phil_Netstick" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000075654,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_Philippines" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000082011,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_SWA" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000150673,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
+			},
+			"Z_TMarket" : {
+				"rate" : [
+					{
+						"to" : 2147483647,
+						"price" : 0.0000150039,
+						"interval" : 1024
+					}
+				],
+				"unit" : "bytes"
 			}
 		}
 	}
@@ -369,5 +459,5 @@ db.rates.insert(
 	}
 );
 // set premium rates (exclude from some wallets)
-//var _premium_rates = ["1700","1ST_CLASS_VPN","BEZEQ1","FOREIGN_DISCOUNT_2","FOREIGNERS","GPRS_LOCATION","INTERNET_BILL_BY_VOLUME","JFC_FREE_CALLS","NEPAL-VPN","PELEPHONE","PHIL-VPN","PROGENYB","PROGENYO","RL_FREE_CALLS_B","RL_FREE_CALLS_PEL","SHARON_VPN","SMS_BEZEQ","SMS_OTHER","SMS_PELE","TALK_VPN","VOICE_BEZEQ","VOICE_CELLCOM","VOICE_MIRS","VOICE_PARTNER","VOICE_RAMI_LEVY","VOICE_CELLULAR_ISRAEL","VOICEMAIL"];
+//var _premium_rates = ["1700","1ST_CLASS_VPN","BEZEQ1","FOREIGN_DISCOUNT_2","FOREIGNERS","GPRS_LOCATION","INTERNET_BILL_BY_VOLUME","JFC_FREE_CALLS","NEPAL_VPN","PELEPHONE","PHIL_VPN","PROGENYB","PROGENYO","RL_FREE_CALLS_B","RL_FREE_CALLS_PEL","SHARON_VPN","SMS_BEZEQ","SMS_OTHER","SMS_PELE","TALK_VPN","VOICE_BEZEQ","VOICE_CELLCOM","VOICE_MIRS","VOICE_PARTNER","VOICE_RAMI_LEVY","VOICE_CELLULAR_ISRAEL","VOICEMAIL"];
 //db.rates.update({key:{$nin:_premium_rates}, "params.interconnect": {$exists:0}}, {$set:{"params.premium": true}}, {multi:1});

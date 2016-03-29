@@ -69,9 +69,33 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.shabbat'] = $shabbat;
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
+	
+	protected function canUseDataFromCurrencyBalances($row, $plan = null) {
+		if (is_null($plan)) {
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);	
+		}
+		return ($plan && isset($plan['data_from_currency']) && $plan['data_from_currency']);
+	}
+	
+	protected function hasAvailableBalances($row) {
+		$query = Billrun_Util::getDateBoundQuery();
+		if ($this->canUseDataFromCurrencyBalances($row)) {
+			$query['$or'] = array(
+				array('charging_by_usaget' => 'data'),
+				array('charging_by' => 'total_cost')
+			);
+		} else {
+			$query['charging_by_usaget'] = 'data';
+		}
+		
+		$availableBalances = Billrun_Factory::db()->balancesCollection()->query($query)->cursor()->current();
+		return !$availableBalances->isEmpty();
+	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
+		return isset($row['service']['code']) && 
+			$this->validateSOC($row['service']['code']) &&
+			$this->hasAvailableBalances($row);
 	}
 
 	protected function isSubscriberInDataSlowness($row) {
@@ -364,9 +388,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $subscriberSoc
 	 */
 	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
+		Billrun_Factory::log("Send to provisioning slowness of subscriber " . $msisdn . " with status " . ($enterToDataSlowness ? "true" : "false"), Zend_Log::INFO);
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
-			return;
+			return true;
 		}
 		$encoder = new Billrun_Encoder_Xml();
 		$requestBody = array(
@@ -496,13 +521,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
-				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
+				if (!$this->canUseDataFromCurrencyBalances($this->row, $plan)) {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
-			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
-			if (count($pp_includes_external_ids)) {
-				$query['pp_includes_external_id'] = array('$nin' => array_unique($pp_includes_external_ids));
+			$pp_includes_exclude = $this->getPPIncludesToExclude($plan, $rate);
+			if (!empty($pp_includes_exclude)) {
+				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
+			} else {
+				$unique_pp_includes_external_ids = $pp_includes_exclude;
+			}
+
+			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
+				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
 		}
 	}
@@ -593,15 +624,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$writer->startElement("HEADER");
 				$writer->writeElement("COMMAND", "IT_UserAuthGroup");
 				$writer->writeElement("APPLICATION_ID", 283);
-				$writer->startElement("PARAMS");
-					$writer->startElement("IT_IN_PARAMS");
-						$writer->writeElement("User", $username);
-						$writer->writeElement("PASSWORD", $password);
-						$writer->startElement("MemberOf");
-							$writer->writeElement("Group", "billrun_read");
-							$writer->writeElement("Group", "billrun_write");
-							$writer->writeElement("Group", "billrun_admin");
-						$writer->endElement();
+			$writer->endElement();
+			$writer->startElement("PARAMS");
+				$writer->startElement("IT_IN_PARAMS");
+					$writer->writeElement("User", $username);
+					$writer->writeElement("PASSWORD", $password);
+					$writer->startElement("MemberOf");
+						$writer->writeElement("Group", "Billrun_read");
+						$writer->writeElement("Group", "Billrun_write");
+						$writer->writeElement("Group", "Billrun_admin");
 					$writer->endElement();
 				$writer->endElement();
 			$writer->endElement();
@@ -610,12 +641,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = $writer->outputMemory();
 
 		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('pelephone.ldapurl'), $data);
-		$xml  = simplexml_load_string($res, "SimpleXMLElement", LIBXML_NOCDATA);
-		$obj = json_decode(json_encode($xml));
-		if ($obj['RESPONSE']['PARAMS']['STATUS'] != 0) {
+		$xml  = simplexml_load_string($res);
+		if ($xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
 		}
-		return $obj;
+		return $res;
 	}
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
