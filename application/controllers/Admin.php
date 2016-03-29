@@ -917,11 +917,9 @@ class AdminController extends Yaf_Controller_Abstract {
 			'showprefix' => $showprefix,
 		);
 		// set the model
+		if ($this->_request->getParam("plan_type")) $options['plan_type'] = $this->_request->getParam("plan_type");
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
-		if ($table === "plans") {
-			$options['plan_type'] = $this->_request->getParam('plan_type');
-		}
 
 		$this->getView()->component = $this->buildTableComponent($table, $query, $options);
 	}
