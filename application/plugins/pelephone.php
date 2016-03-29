@@ -388,6 +388,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $subscriberSoc
 	 */
 	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
+		Billrun_Factory::log("Send to provisioning slowness of subscriber " . $msisdn . " with status " . ($enterToDataSlowness ? "true" : "false"), Zend_Log::INFO);
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
 			return true;
