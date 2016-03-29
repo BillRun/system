@@ -95,7 +95,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterCalculatorUpdateRow($row, $calculator) {
-		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name])) {
+		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name]) && ($row['usagev'] > 0)) {
 			$result = $this->createRow($row);
 			if (!empty($result)) {
 				if (!$this->createTreatedFile($result)) {
@@ -119,10 +119,10 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$res['charging_end_time'] = substr($row['charging_end_time'], 2);
 		} else if (!empty($row['call_reference_time'])) {
 			$res['charging_start_time'] = substr($row['call_reference_time'], 2);
-			$res['charging_end_time'] = date('ymdhis', strtotime($row['call_reference_time'])+ $row['usagev']);
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['call_reference_time']) + $row['usagev']);
 		} else {
 			$res['charging_start_time'] = date('ymdhis', strtotime($row['process_time']));
-			$res['charging_end_time'] = date('ymdhis', strtotime($row['process_time'])+ $row['usagev']);
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['process_time']) + $row['usagev']);
 		}
 		$res['prepaid'] = '0';
 		$res['is_in_glti'] = '0';
@@ -130,7 +130,7 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$res['records_type'] = '000';
 		$res['sampleDurationInSec'] = '1';
 
-		$row[$this->pricingField] =  $res['aprice'] = round($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
+		$row[$this->pricingField] = $res['aprice'] = round($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
 
 		if ($row['usagev'] == '0') {
 			return;
