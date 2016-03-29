@@ -18,6 +18,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $line_time = null;
 	protected $line_type = null;
 	protected $cached_results = array();
+	protected $count_days;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
 		if ($row['type'] == 'tap3') {
@@ -35,6 +36,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				Billrun_Factory::log()->log('localTimeStamp wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
 		}
+	}
+	
+	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
+		$pricingData['vf_count_days'] = $this->count_days;
 	}
 
 	/**
@@ -73,8 +78,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$results = array_unique($results);
 
-		$count_days = count($results);
-		if ($count_days <= $limits['days']) {
+		$this->count_days = count($results);
+		if ($this->count_days <= $limits['days']) {
 			return;
 		}
 		
