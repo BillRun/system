@@ -137,14 +137,12 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 			),
 		);
-		$beginOfDay = strtotime("midnight", time());
-		$beginOfYesterday = strtotime("yesterday midnight", time());
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
 				'to' => array(
-					'$gte' => new MongoDate($beginOfYesterday),
-					'$lt' => new MongoDate($beginOfDay),
+					'$gt' => new MongoDate(strtotime("yesterday midnight")),
+					'$lte' => new MongoDate(strtotime("midnight")),
 				),
 			),
 		);
