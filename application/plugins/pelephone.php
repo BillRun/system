@@ -576,6 +576,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			array_key_exists('code', $record['service']) &&
 			$record['service']['code'] === NULL) {
 			$record['in_data_slowness'] = FALSE;
+			$this->sendSlownessStateToProv($record['msisdn'], NULL, true);
 		}
 	}
 	
