@@ -58,6 +58,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 				case ($returnCodes['no_rate']):
 				case ($returnCodes['no_subscriber']):
+				case ($returnCodes['block_rate']):
 					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
 			} 
 		}
