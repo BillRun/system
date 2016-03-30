@@ -103,6 +103,7 @@ class Billrun_Billrun {
 	public function save() {
 		if (isset($this->data)) {
 			try {
+                                $this->data['creation_time'] = new MongoDate();
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
