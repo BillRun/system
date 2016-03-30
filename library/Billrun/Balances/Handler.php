@@ -20,15 +20,11 @@ class Billrun_Balances_Handler {
 	/**
 	 * Close all balances.
 	 */
-	public function closeBalances() {			
-		$day = date('d') - 1;
-		if($day <= 0) {
-			$day = date('t', strtotime("last month"));
-		}
-		$dayLower = mktime(0, 0, 0, date("n"), $day, date("Y"));
-		$dayUpper = mktime(23, 59, 59, date("n"), $day, date("Y"));
-		
-		$balancesQuery['to'] = array('$gte' => new MongoDate($dayLower),'$lte' => new MongoDate($dayUpper));
+	public function closeBalances() {					
+		$balancesQuery['to'] = array(
+			'$gt' => new MongoDate(strtotime("yesterday midnight")),
+			'$lte' => new MongoDate(strtotime("midnight")),
+		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balancesCursor = $balancesColl->query($balancesQuery)->cursor();
 		foreach ($balancesCursor as $balance) {
@@ -75,12 +71,12 @@ class Billrun_Balances_Handler {
 	
 	protected function getValue($balance) {
 		$chargingBy = $balance['charging_by'];
-		$chargingByUsegt = $balance['charging_by_usaget'];
+		$chargingByUsaget = $balance['charging_by_usaget'];
 		$value = 0;
-		if($chargingBy === $chargingByUsegt) {
-			$value = $balance['balance'][$chargingBy];
+		if($chargingBy === $chargingByUsaget) {
+			$value = isset($balance['balance']['total_cost']) ? $balance['balance']['total_cost'] : $balance['balance']['cost'];
 		} else {
-			$value = $balance['balance']['totals'][$chargingByUsegt][$chargingBy];
+			$value = $balance['balance']['totals'][$chargingByUsaget][$chargingBy];
 		}
 		
 		return $value;

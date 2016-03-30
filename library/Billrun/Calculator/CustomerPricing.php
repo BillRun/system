@@ -612,7 +612,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (!$this->loadSubscriberBalance($row, $min_balance_volume, $min_balance_cost)) { // will load $this->balance
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
-				if ($granted_cost == '0') {
+				if ($min_balance_cost == '0') {
 					$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
 					$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
 					$granted_cost = $charges['total'];

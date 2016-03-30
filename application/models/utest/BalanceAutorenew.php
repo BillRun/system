@@ -33,10 +33,10 @@ class utest_BalanceAutorenewModel extends utest_AbstractUtestModel {
 			'query' => array(
 				'sid' => $sid,
 				'charging_plan' => $plan,
-				'from' => $from,
+				'from' => date_format(date_create_from_format('d/m/Y H:i', $from), 'c'),
 			),
 			'upsert' => array(
-				'to' => $to,
+				'to' => date_format(date_create_from_format('d/m/Y H:i', $to), 'c'),
 				'interval' => $interval,
 				'operation' => $operation
 			)
