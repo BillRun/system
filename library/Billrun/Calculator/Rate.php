@@ -190,6 +190,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$row['usagev'] = 0;
 			return false;
 		}
+		
+		if ($this->isRateBlockedByPlan($row, $rate)) {
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.block_rate');
+			$row['usagev'] = 0;
+			return false;
+		}
+		
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -325,6 +332,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	
 	public function getRatingField() {
 		return $this->ratingField;
+	}
+	
+	protected function isRateBlockedByPlan($row, $rate) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		if (isset($plan['disallowed_rates']) && isset($rate['key']) && in_array($rate['key'], $plan['disallowed_rates'])) {
+			Billrun_Factory::log('Plan ' . $plan['name'] . ' is not allowed to use rate ' . $rate['key'], Zend_Log::NOTICE);
+			return true;
+		}
+		return false;
+ 
 	}
 
 }

@@ -26,6 +26,9 @@ class RealtimeeventAction extends ApiAction {
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->event = $this->getRequestData();
 		$this->setEventData();
+		if (isset($this->event['reverse_charge']) && $this->event['reverse_charge']) {
+			return $this->forward("reversecharge", array("event" => $this->event, "usaget" => $this->usaget));
+		}
 		$data = $this->process();
 		return $this->respond($data);
 	}
@@ -105,10 +108,10 @@ class RealtimeeventAction extends ApiAction {
 		
 		if ($this->usaget === 'call' || $this->usaget === 'video_call' || $this->usaget === 'forward_call') {
 			if (!isset($this->event['called_number'])) {
-				if (isset($this->event['connected_number'])) {
-					$this->event['called_number'] = $this->event['connected_number'];
-				} else if (isset($this->event['dialed_digits'])) {
+				if (isset($this->event['dialed_digits'])) {
 					$this->event['called_number'] = $this->event['dialed_digits'];
+				} else if (isset($this->event['connected_number'])) {
+					$this->event['called_number'] = $this->event['connected_number'];
 				}
 			}
 			

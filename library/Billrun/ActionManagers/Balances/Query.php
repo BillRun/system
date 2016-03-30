@@ -126,9 +126,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 		
 		foreach ($returnData as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx']);
-			}
+			unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
 		}
 		
 		$outputResult = array(

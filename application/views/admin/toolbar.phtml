@@ -60,6 +60,7 @@
 				} else {
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
+				echo "<label class='inline'><input type='checkbox' id='show-zero-usage' name='show_zero_usage' " . ($this->session->show_zero_usage ==  'on' ? " checked='true' " : "") . " />Show zero-usage lines</label>";
 				echo "</div>";
 			elseif ($active == 'rates') :
 			endif;

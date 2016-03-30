@@ -42,8 +42,6 @@ class SubscribersModel extends TabledateModel{
 			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
 			'plan' => 'Plan',
-			'service_provider' => 'Service Provider',
-			'language' => 'Language',
 			'from' => 'From',
 			'to' => 'Expiration'
 		);
@@ -55,17 +53,13 @@ class SubscribersModel extends TabledateModel{
 			'sid' => 'Subscriber No',
 			'aid' => 'BAN',
 			'msisdn' => 'MSISDN',
-			'plan' => 'Plan',
-			'language' => 'Language',
-			'service_provider' => 'Service Provider'
+			'plan' => 'Plan'
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
 	
 	public function getFilterFields() {
-		$planModel = new PlansModel();
-		$names = $planModel->getData(
-			array(
+		$names = Billrun_Factory::db()->plansCollection()->query(array(
 				'$or' => array(
 					array(
 						'type' => 'customer'
@@ -76,8 +70,7 @@ class SubscribersModel extends TabledateModel{
 						)
 					)
 				)
-			)
-		);
+			))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];

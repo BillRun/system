@@ -69,9 +69,33 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$query[0]['$match']['params.shabbat'] = $shabbat;
 		$query[0]['$match']['params.interconnect'] = $interconnect;
 	}
+	
+	protected function canUseDataFromCurrencyBalances($row, $plan = null) {
+		if (is_null($plan)) {
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);	
+		}
+		return ($plan && isset($plan['data_from_currency']) && $plan['data_from_currency']);
+	}
+	
+	protected function hasAvailableBalances($row) {
+		$query = Billrun_Util::getDateBoundQuery();
+		if ($this->canUseDataFromCurrencyBalances($row)) {
+			$query['$or'] = array(
+				array('charging_by_usaget' => 'data'),
+				array('charging_by' => 'total_cost')
+			);
+		} else {
+			$query['charging_by_usaget'] = 'data';
+		}
+		
+		$availableBalances = Billrun_Factory::db()->balancesCollection()->query($query)->cursor()->current();
+		return !$availableBalances->isEmpty();
+	}
 
 	protected function canSubscriberEnterDataSlowness($row) {
-		return isset($row['service']['code']) && $this->validateSOC($row['service']['code']);
+		return isset($row['service']['code']) && 
+			$this->validateSOC($row['service']['code']) &&
+			$this->hasAvailableBalances($row);
 	}
 
 	protected function isSubscriberInDataSlowness($row) {
@@ -109,9 +133,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
-			'pp_includes_external_id' => array(
-				'$in' => array(1,2,9,10)
-			),
+			'charging_by' => 'total_cost',
 			'urt' => array(
 				'$gte' => new MongoDate($startTime),
 			),
@@ -195,13 +217,24 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterUpdateSubscriberAfterBalance($row,$balance,$balanceAfter) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
-		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, $row['msisdn'], $balance, $balanceAfter);
+		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceAfter);
 	}
 
 	public function afterBalanceLoad($balance, $subscriber) {
+		if (!$balance) {
+			return;
+		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
-		$balance->set('notifications_sent', null);
-		$balance->save();
+		$update = array(
+			'$unset' => array(
+				'notifications_sent' => 1,
+			),
+		);
+		$query = array(
+			'sid' => $balance->get('sid'), // this is for balance sharding mechanism
+			'_id' => $balance->getId()->getMongoId(),
+		);
+		Billrun_Factory::db()->balancesCollection()->update($query, $update);
 		$plan = $this->getSubscriberPlan($subscriber);
 		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
 	}
@@ -236,31 +269,53 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function handleBalanceNotifications($type, $plan, $msisdn, $balance, $balanceAfter = 0) {
-		if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
-			return;
-		}
-		$notificationKey = $this->getNotificationKey($type, $balance);
-		foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
-			if (!$notificationSent = $balance->get('notifications_sent')) {
-				$notificationSent = array($notificationKey => array());
+		try {
+			if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
+				return;
 			}
-			if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
-				continue;
+			$notificationKey = $this->getNotificationKey($type, $balance);
+			foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
+				if (!$notificationSent = $balance->get('notifications_sent')) {
+					$notificationSent = array($notificationKey => array());
+				}
+				if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
+					continue;
+				}
+				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
+					$modifyParams = array('balance' => $balance);
+					$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+					$this->sendNotification($notification['type'], $msg, $msisdn);
+					if (is_null($notificationSent[$notificationKey])) {
+						$notificationSent[$notificationKey] = array($index);
+					} else {
+						array_push($notificationSent[$notificationKey], $index);
+					}
+					$update = array(
+						'$set' => array(
+							'notifications_sent' => $notificationSent,
+						),
+					);
+					$query = array(
+						'sid' => $balance->get('sid'), // this is for balance sharding mechanism
+						'_id' => $balance->getId()->getMongoId(),
+					);
+					Billrun_Factory::db()->balancesCollection()->update($query, $update);
+				}
 			}
-			if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
-				$modifyParams = array('balance' => $balance);
-				$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
-				$this->sendNotification($notification['type'], $msg, $msisdn);
-				array_push($notificationSent[$notificationKey], $index);
-				$balance->collection(Billrun_Factory::db()->balancesCollection());
-				$balance->set('notifications_sent', $notificationSent);
-				$balance->save();
-			}
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Handle balance notifications failed. Reason: " . $ex->getCode() . " " . $ex->getMessage(), Zend_Log::ERR);
 		}
 	}
 	
 	protected function getNotificationExpireDate($obj) {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
+	}
+	
+	protected function getPositiveValue($obj, $data) {
+		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
+			return 0;
+		}
+		return $val * (-1);
 	}
 	
 	protected function modifyNotificationMessage($str, $params) {
@@ -272,7 +327,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (!is_array($replace)) {
 					$val = $obj->get($replace);
 				} else if (isset($replace['classMethod']) && method_exists($this, $replace['classMethod'])) {
-					$val = $this->{$replace['classMethod']}($obj);	
+					$val = $this->{$replace['classMethod']}($obj, $replace);	
 				}
 				if (!is_null($val)) {
 					$msg = str_replace("~$search~", $val, $msg);
@@ -333,9 +388,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $subscriberSoc
 	 */
 	public function sendSlownessStateToProv($msisdn, $subscriberSoc = NULL, $enterToDataSlowness = true) {
+		Billrun_Factory::log("Send to provisioning slowness of subscriber " . $msisdn . " with status " . ($enterToDataSlowness ? "true" : "false"), Zend_Log::INFO);
 		$slownessParams = $this->getDataSlownessParams($subscriberSoc);
 		if (!isset($slownessParams['sendRequestToProv']) || !$slownessParams['sendRequestToProv']) {
-			return;
+			return true;
 		}
 		$encoder = new Billrun_Encoder_Xml();
 		$requestBody = array(
@@ -461,63 +517,51 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
-			if (($this->isInterconnect($this->row) && $this->row['np_code'] != '831') || (isset($this->row['call_type']) && $this->row['call_type'] == '2')) {
-				// we are out of PL network
-				array_push($pp_includes_external_ids, 6);
-			}
-
-			if (isset($this->row['call_type']) && $this->row['call_type'] == '2') {
-				array_push($pp_includes_external_ids, 3, 4);
-			}
-
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($this->row->get('arate'));
-			if (isset($rate['params']['premium']) && $rate['params']['premium']) {
-				array_push($pp_includes_external_ids, 3, 4, 5, 6, 7, 8);
-			}
-			
+			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
-				$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
-				if ($plan && (!isset($plan['data_from_currency']) || !$plan['data_from_currency'])) {
-					array_push($pp_includes_external_ids, 1, 2, 9, 10);
+				if (!$this->canUseDataFromCurrencyBalances($this->row, $plan)) {
+					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
-			
-			$pp_includes_external_ids = array_merge($pp_includes_external_ids, $this->getPPIncludesToExclude($plan, $rate));
+			$pp_includes_exclude = $this->getPPIncludesToExclude($plan, $rate);
+			if (!empty($pp_includes_exclude)) {
+				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
+			} else {
+				$unique_pp_includes_external_ids = $pp_includes_external_ids;
+			}
 
-			if (count($pp_includes_external_ids)) {
-				$query['pp_includes_external_id'] = array('$nin' => $pp_includes_external_ids);
+			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
+				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
 		}
 	}
 		
 	protected function getPPIncludesToExclude($plan, $rate) {
 		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
-		$query = $this->getPPIncludesAllowedQuery($plan['name'], $rate['key']);
+		$query = $this->getPPIncludesNotAllowedQuery($plan['name'], $rate['key']);
 		$ppIncludes = $prepaidIncludesCollection->query($query)->cursor();
-		$allowedPPIncludes = array();
+		$notAllowedPPIncludes = array();
 		if ($ppIncludes->count() > 0) {
-			$allowedPPIncludes = array_map(function($doc) {
+			$notAllowedPPIncludes = array_map(function($doc) {
 				return $doc['external_id'];
 			}, iterator_to_array($ppIncludes));
 		}
-		return array_diff(array(1,2,3,4,5,6,7,8,9,10), array_values($allowedPPIncludes));
+		return array_values($notAllowedPPIncludes);
 	}
 	
-	protected function getPPIncludesAllowedQuery($planName, $rateName) {
+	protected function getPPIncludesNotAllowedQuery($planName, $rateName) {
 		$basePlanName = "BASE";
 		return array('$or' => array(
 			array('$and' => array(
-				array("allowed_in." . $planName => array('$exists' => 0)),
-				array("allowed_in." . $basePlanName => array('$exists' => 0)),
-			)),
-			array('$and' => array(
 				array("allowed_in." . $planName => array('$exists' => 1)),
-				array("allowed_in." . $planName => array('$in' => array($rateName))),
+				array("allowed_in." . $planName => array('$nin' => array($rateName))),
 			)),
 			array('$and' => array(
 				array("allowed_in." . $planName => array('$exists' => 0)),
-				array("allowed_in." . $basePlanName => array('$in' => array($rateName))),
+				array("allowed_in." . $basePlanName => array('$exists' => 1)),
+				array("allowed_in." . $basePlanName => array('$nin' => array($rateName))),
 			)),
 		));
 	}
@@ -552,9 +596,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterChargesCalculation(&$row, &$charges) {
+		if ($row['type'] !== 'gy') {
+			return;
+		}
 		$balance = Billrun_Factory::db()->balancesCollection()->getRef($this->row['balance_ref']);
-		if ($row['type'] === 'gy' &&
-			in_array($balance['pp_includes_external_id'], array(1,2,9,10))) {
+		if ($balance['charging_by'] == 'total_cost') {
 			$diff = $this->getSubscriberDiffFromMaxCurrency($row);
 			
 			if ($charges['total'] > $diff) {
@@ -570,20 +616,41 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $password
 	 */
 	public function userAuthenticate($username, $password) {
-		$billrun_auth = new Billrun_Auth('msg_type', 'UserAuthGroup', 'username', 'password');
-		$billrun_auth->setIdentity($username);
-		$billrun_auth->setCredential($password);
-		$auth = Zend_Auth::getInstance();
-		$result = $auth->authenticate($billrun_auth);
-		if ($result->code == 0) {
+		$writer = new XMLWriter();
+		$writer->openMemory();
+		$writer->startDocument('1.0', 'UTF-8');
+		$writer->setIndent(4);
+		$writer->startElement('REQUEST');
+			$writer->startElement("HEADER");
+				$writer->writeElement("COMMAND", "IT_UserAuthGroup");
+				$writer->writeElement("APPLICATION_ID", 283);
+			$writer->endElement();
+			$writer->startElement("PARAMS");
+				$writer->startElement("IT_IN_PARAMS");
+					$writer->writeElement("User", $username);
+					$writer->writeElement("PASSWORD", $password);
+					$writer->startElement("MemberOf");
+						$writer->writeElement("Group", "Billrun_read");
+						$writer->writeElement("Group", "Billrun_write");
+						$writer->writeElement("Group", "Billrun_admin");
+					$writer->endElement();
+				$writer->endElement();
+			$writer->endElement();
+		$writer->endElement();
+		$writer->endDocument();
+		$data = $writer->outputMemory();
+
+		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('pelephone.ldapurl'), $data);
+		$xml  = simplexml_load_string($res);
+		if ($xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
 		}
-		return $result;
+		return $res;
 	}
 	
 	protected function updateDataSlownessOnBalanceUpdate($balance, $subscriber) {
 		if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness'] &&
-			in_array($balance['pp_includes_external_id'], array(5, 8))) {
+			in_array($balance['pp_includes_external_id'], array(5, 8))) { // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}

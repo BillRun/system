@@ -139,8 +139,7 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getFilterFields() {
-		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'customer'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		$planNames['BASE'] = 'BASE';
 		foreach($names as $name) {

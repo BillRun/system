@@ -99,7 +99,13 @@ class CronController extends Yaf_Controller_Abstract {
 			$this->smser->send($message, $recipients);
 		}
 	}
-
+	
+	public function cardsExpirationAction() {
+		$handler = new Billrun_Cards_Handler();
+		$result = $handler->cardsExpiration();
+		
+		// TODO: Do something with the result?
+	}
 	public function autoRenewServicesAction() {
 		$handler = new Billrun_Autorenew_Handler();
 		$handler->autoRenewServices();
@@ -131,14 +137,12 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 			),
 		);
-		$beginOfDay = strtotime("midnight", time());
-		$beginOfYesterday = strtotime("yesterday midnight", time());
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
 				'to' => array(
-					'$gte' => new MongoDate($beginOfYesterday),
-					'$lt' => new MongoDate($beginOfDay),
+					'$gt' => new MongoDate(strtotime("yesterday midnight")),
+					'$lte' => new MongoDate(strtotime("midnight")),
 				),
 			),
 		);

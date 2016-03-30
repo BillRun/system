@@ -1,18 +1,6 @@
-var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 'pageslide-directive', 'ngSanitize']);
-app.run(function ($rootScope, $interval, $http) {
-  /*
-  var lastDigestRun = Date.now();
-  var idleCheck = $interval(function () {
-    var now = Date.now();
-    if (now - lastDigestRun > 30 * 60 * 1000) {
-      window.location = '/admin/logout';
-    }
-  }, 15 * 60 * 1000);
-  $rootScope.$on('$routeChangeStart', function (evt) {
-    lastDigestRun = Date.now();
-  });
-  */
-
+var app = angular.module('BillrunApp', ['ngRoute', 'JSONedit', 'ui.bootstrap', 
+  'pageslide-directive', 'ngSanitize', 'ui.multiselect', 'isteven-multi-select']);
+app.run(function ($rootScope, $http) {
   $http.get(baseUrl + '/admin/getViewINI').then(function (res) {
     $rootScope.fields = res.data;
   });
