@@ -156,7 +156,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 
 		return $update;
 	}
-	
+
 	/**
 	 * Update a single balance.
 	 * @param Billrun_DataTypes_Wallet $chargingPlan
@@ -168,7 +168,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);	
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
+		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);	
 		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
@@ -176,7 +177,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'new' => true,
 		);
 
-		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
+		$balance = $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 
 		// Return the new document.
 		return array(

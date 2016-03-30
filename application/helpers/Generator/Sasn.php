@@ -16,7 +16,7 @@
 class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	
 	static $type = 'sasn';
-	static $ONE_GB = 1024*1024*1024;
+	static $ONE_GB = 1073741824;
 	
 	protected $data = null;
 	protected $startEndWindow = 12800;
@@ -75,7 +75,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('change_date_time'=>array('$lt'=>new Mongodate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
+		return array('change_date_time'=>array('$lt'=>new MongoDate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

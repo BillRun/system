@@ -529,7 +529,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($pp_includes_exclude)) {
 				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
 			} else {
-				$unique_pp_includes_external_ids = $pp_includes_exclude;
+				$unique_pp_includes_external_ids = $pp_includes_external_ids;
 			}
 
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
@@ -574,8 +574,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
 		if (isset($record['service']) && 
 			array_key_exists('code', $record['service']) &&
-			$record['service']['code'] === NULL) {
+			$record['service']['code'] === NULL &&
+			isset($record['in_data_slowness']) &&
+			$record['in_data_slowness']) {
 			$record['in_data_slowness'] = FALSE;
+			$this->sendSlownessStateToProv($record['msisdn'], NULL, true);
 		}
 	}
 	

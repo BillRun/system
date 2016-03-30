@@ -27,10 +27,10 @@ class Billrun_Version
 	public static $DEV_STATUS = 'RC';
 
 	/** @var  string  Build number. */
-	public static $BUILD = '4';
+	public static $BUILD = '6';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '28-March-2016';
+	public static $RELDATE = '30-March-2016';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';

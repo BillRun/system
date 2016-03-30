@@ -31,9 +31,12 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
 				case ($returnCodes['no_rate']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.invalid_called_number');
 				case ($returnCodes['no_subscriber']):
 					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.inactive_account');
-			} 
+				case ($returnCodes['block_rate']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.black_list_number');
+			}
 		}
 
 		return "";
@@ -55,6 +58,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 				case ($returnCodes['no_rate']):
 				case ($returnCodes['no_subscriber']):
+				case ($returnCodes['block_rate']):
 					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
 			} 
 		}

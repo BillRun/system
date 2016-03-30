@@ -322,15 +322,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
 		
-		$balance = $balancesColl->query($query)->cursor()->current();
-		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balance = $balancesColl->query($balanceQuery)->cursor()->current();
+		$this->balanceBefore[$balanceQuery['pp_includes_external_id']] = $balance;
 		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if ($balance->isEmpty()) {
 			$update = $this->getSetOnInsert($wallet, $defaultBalance);
 		} else {
-			$this->handleZeroing($query, $balancesColl, $wallet->getFieldName());
+			$this->handleZeroing($balanceQuery, $balancesColl, $wallet->getFieldName());
 			$update = $this->getSetQuery($wallet);
 		}
 
@@ -345,7 +346,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance);
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
 		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
@@ -354,7 +356,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		);
 		
 		// Return the new document.
-		return $balancesColl->findAndModify($query, $update, array(), $options, true);
+		return $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 	}
 
 	/**

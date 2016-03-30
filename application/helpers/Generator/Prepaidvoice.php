@@ -50,7 +50,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('disconnect_time'=>array('$lt'=>new Mongodate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
+		return array('disconnect_time'=>array('$lt'=>new MongoDate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

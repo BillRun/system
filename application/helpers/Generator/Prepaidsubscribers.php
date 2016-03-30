@@ -61,14 +61,28 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 	
+		protected function countBalances($sid, $parameters, &$line) {
+		$time = new MongoDate();
+		
+		return $this->db->balancesCollection()->query(array('sid'=>$sid,'from' => array('$lt'=> $time),'to'=> array('$gt'=> $time)))->cursor()->count(true);
+	}
+	
+	protected function flattenBalances($sid, $parameters, &$line) {
+		$time = new MongoDate();
+		$balances = $this->db->balancesCollection()->query(array('sid'=>$sid,'from' => array('$lt'=> $time),'to'=> array('$gt'=> $time)));
+		return $this->flattenArray($balances, $parameters, $line);
+	}
+	
 	protected function flattenArray($array, $parameters, &$line) {
-		foreach($array as $idx => $val) {
+		$idx = 0;
+		foreach($array as $val) {
 			foreach($parameters['mapping'] as $dataKey => $lineKey) {
 				$fieldValue = Billrun_Util::getNestedArrayVal($val,$dataKey);
 				if(!empty($fieldValue)) {
 					$line[sprintf($lineKey, $idx+1)] = $fieldValue;
 				}
 			}
+			$idx++;
 		}
 		return $array;
 	}
