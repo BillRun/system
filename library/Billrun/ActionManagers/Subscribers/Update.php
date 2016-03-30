@@ -140,6 +140,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 
 		$record->collection($this->collection);
+		$prevRecord = clone $record;
 		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
@@ -149,7 +150,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 		}
 
-		Billrun_Factory::dispatcher()->trigger('beforeSubscriberSave', array(&$record, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeSubscriberSave', array(&$record, $prevRecord, $this));
 		// This throws an exception if fails.
 		$this->collection->save($record);
 				
