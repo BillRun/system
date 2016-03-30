@@ -83,11 +83,18 @@ class Mongodloid_Connection {
 			unset($options['readPreference']);
 		}
 
+		if (isset($options['tags'])) {
+			$tags = (array) $options['tags'];
+			unset($options['tags']);
+		} else {
+			$tags = array();
+		}
+
 		// this can throw an Exception
 		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
 
 		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
-			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference));
+			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
 		}
 
 		$this->_connected = true;
