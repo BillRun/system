@@ -126,17 +126,6 @@ class CronController extends Yaf_Controller_Abstract {
 
 	public function cancelSlownessByEndedPlans() {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
-		$group = array(
-			'$group' => array(
-				'_id' => '$sid',
-				'to' => array(
-					'$first' => '$to',
-				),
-				'charging_type' => array(
-					'$first' => '$charging_type',
-				),
-			),
-		);
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
@@ -146,12 +135,17 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 			),
 		);
+		$group = array(
+			'$group' => array(
+				'_id' => '$sid',
+			),
+		);
 		$project = array(
 			'$project' => array(
 				'sid' => '$_id',
 			),
 		);
-		$balances = $balancesCollection->aggregate($group, $match, $project);
+		$balances = $balancesCollection->aggregate($match, $group, $project);
 		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
