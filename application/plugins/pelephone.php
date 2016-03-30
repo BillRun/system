@@ -577,14 +577,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Mongodloid_Entity $record
 	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
 	 */
-	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
+	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction, $prevService) {
 		if (isset($record['service']) && 
 			array_key_exists('code', $record['service']) &&
 			$record['service']['code'] === NULL &&
 			isset($record['in_data_slowness']) &&
 			$record['in_data_slowness']) {
 			$record['in_data_slowness'] = FALSE;
-			$this->sendSlownessStateToProv($record['msisdn'], NULL, true);
+			$this->sendSlownessStateToProv($record['msisdn'], $prevService['code'], true);
 		}
 	}
 	
