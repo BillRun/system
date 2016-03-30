@@ -123,7 +123,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if($this->trackHistory) {
 			if(isset($this->recordToSet['sid'])) {
 				$queryArray = array('sid' => $record['sid']);
-				$updateArray = array('$set' => array('sid' => $this->recordToSet['sid']));
+				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid']));
 				$updateOptionsArray = array('multiple' => 1);
 				Billrun_Factory::db()->subscribersCollection()
 					->update($queryArray, $updateArray, $updateOptionsArray);
