@@ -219,9 +219,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
 		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceAfter);
 	}
+	
+	protected function shouldSendNotification($source) {
+		$dontSendNotifications = Billrun_Factory::config()->getConfigValue('realtimeevent.notifications.dontSendNotification', array());
+		return isset($source['$ref']) &&
+			!in_array($source['$ref'], $dontSendNotifications);
+	}
 
-	public function afterBalanceLoad($balance, $subscriber) {
-		if (!$balance) {
+	public function afterBalanceLoad($balance, $subscriber, $source) {
+		if (!$balance || !$this->shouldSendNotification($source)) {
 			return;
 		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
