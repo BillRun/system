@@ -109,6 +109,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
     };
     $scope.cancel = function () {
+      if ($scope.entity.type === "charging" && $scope.entity.recurring) {
+        $window.location = baseUrl + '/admin/recurringplans';
+        return;
+      }
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 
