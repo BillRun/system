@@ -163,7 +163,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
+		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
 		
 		if(!Billrun_Util::multiKeyExists($update, 'to')) {
 			// TODO: Move the $max functionality to a trait
@@ -175,7 +176,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'new' => true,
 		);
 
-		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
+		$balance = $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 
 		// Return the new document.
 		return array(
