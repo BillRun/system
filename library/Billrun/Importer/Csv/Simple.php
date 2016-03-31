@@ -39,6 +39,11 @@ class Billrun_Importer_Csv_Simple extends Billrun_Importer_Csv {
 		if (empty($this->fieldToImport)) {
 			$this->fieldToImport = fgetcsv($this->handle, $this->limit, $this->delimiter);
 		}
+		foreach($this->fieldToImport as $key => $field) {
+			if (empty($this->fieldToImport[$key])) {
+				unset($this->fieldToImport[$key]);
+			}
+		}
 		return $this->fieldToImport;
 	}
 	

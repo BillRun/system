@@ -260,7 +260,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			foreach ($documents as $document) {
 				$subscriber = $document['subscriber'];
 				$balance = $document['balance'];
-				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber));
+				$source = $document['source'];
+				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 			}
 		}
 		

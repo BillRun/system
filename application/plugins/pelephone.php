@@ -219,9 +219,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
 		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceAfter);
 	}
+	
+	protected function shouldSendNotification($source) {
+		$dontSendNotifications = Billrun_Factory::config()->getConfigValue('realtimeevent.notifications.dontSendNotification', array());
+		return isset($source['$ref']) &&
+			!in_array($source['$ref'], $dontSendNotifications);
+	}
 
-	public function afterBalanceLoad($balance, $subscriber) {
-		if (!$balance) {
+	public function afterBalanceLoad($balance, $subscriber, $source) {
+		if (!$balance || !$this->shouldSendNotification($source)) {
 			return;
 		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
@@ -278,7 +284,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (!$notificationSent = $balance->get('notifications_sent')) {
 					$notificationSent = array($notificationKey => array());
 				}
-				if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
+				if (isset($notificationSent[$notificationKey]) && in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
 					continue;
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
@@ -571,14 +577,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param Mongodloid_Entity $record
 	 * @param Billrun_ActionManagers_Subscribers_Update $updateAction
 	 */
-	public function beforeSubscriberSave(&$record, Billrun_ActionManagers_Subscribers_Update $updateAction) {
+	public function beforeSubscriberSave(&$record, $prevRecord, Billrun_ActionManagers_Subscribers_Update $updateAction) {
+		$prevService = $prevRecord->get('service');
+		$prevServiceCode = ($prevService && isset($prevService['code']) ? $prevService['code'] : NULL);
 		if (isset($record['service']) && 
 			array_key_exists('code', $record['service']) &&
 			$record['service']['code'] === NULL &&
 			isset($record['in_data_slowness']) &&
 			$record['in_data_slowness']) {
 			$record['in_data_slowness'] = FALSE;
-			$this->sendSlownessStateToProv($record['msisdn'], NULL, true);
+			$this->sendSlownessStateToProv($record['msisdn'], $prevServiceCode, false);
 		}
 	}
 	
