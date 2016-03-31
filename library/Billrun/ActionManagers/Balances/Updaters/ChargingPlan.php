@@ -32,12 +32,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
 		// Check if the wallet has a special period.
-		$walletPeriod = $wallet->getPeriod();
-		if ($walletPeriod) {
-			return $this->getDateFromPeriod($walletPeriod);
+		if(isset($recordToSet['to'])) {
+			$wallet->setPeriod($recordToSet['to']);
+			return $recordToSet['to'];		
 		}
-		$wallet->setPeriod($recordToSet['to']);
-		return $recordToSet['to'];
+	
+		$walletPeriod = $wallet->getPeriod();
+		return $this->getDateFromPeriod($walletPeriod);
 	}
 
 	protected function getChargingPlanQuery($query) {
