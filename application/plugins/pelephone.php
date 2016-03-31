@@ -284,7 +284,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (!$notificationSent = $balance->get('notifications_sent')) {
 					$notificationSent = array($notificationKey => array());
 				}
-				if (in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
+				if (isset($notificationSent[$notificationKey]) && in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
 					continue;
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
