@@ -116,6 +116,8 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 		$input = new Billrun_AnObj($updaterInput);
 		
 		if(!$updater->parse($input)) {
+			$this->error = $updater->getError();
+			$this->errorCode = $updater->getErrorCode();
 			return false;
 		}
 		
@@ -127,8 +129,8 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 		if($parseErrorCode == $duplicateError) {
 			return true;
 		}
-		
-		if(!$parseErrorCode		 || 
+			
+		if($parseErrorCode		 || 
 		   !$updater->execute()	 ||
 			$updater->getErrorCode()) {
 			$this->error = $updater->getError();

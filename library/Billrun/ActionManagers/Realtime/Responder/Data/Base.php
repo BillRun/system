@@ -50,8 +50,6 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
 			if (isset($msccData['rating_group']) && in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
 				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
-			} else {
-				$currUsagev = 0;
 			}
 			$retMsccData[] = array_merge(
 				Billrun_Util::parseBillrunConventionToCamelCase($msccData), 
