@@ -340,6 +340,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			Billrun_Factory::log('Plan ' . $plan['name'] . ' is not allowed to use rate ' . $rate['key'], Zend_Log::NOTICE);
 			return true;
 		}
+
+		if (!isset($rate['rates'][$row['usaget']][$plan['name']]) && !isset($rate['rates'][$row['usaget']]['BASE'])) {
+			return true;
+		}
+		
 		return false;
  
 	}
