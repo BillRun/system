@@ -90,6 +90,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		
 		// Report on changes
+		// TODO: Move this to a function in the updater
 		if($normalizeResult['nModified'] > 0) {
 			$valueName = $chargingPlan->getFieldName();
 			$beforeNormalizing = $updateResult[0]['balance'][$valueName];
@@ -130,17 +131,14 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		
 		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}
-
+	
 	/**
-	 * Get the query to be used to normalize the balance.
-	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used
-	 * @param int $maxValue - The max value of the balance.
-	 * @return array the array used to update the mongo.
+	 * Return indication for blocking a balance update over the max value.
+	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used in the update.
+	 * @return true if should block.
 	 */
-	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
-		$balanceBefore = $this->getLastBalanceRecord();
-		$beforeValue = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		return array('$set' => array($wallet->getFieldName() => $beforeValue));
+	protected function shouldBlockUpdate($wallet) {
+		return true;
 	}
 	
 	/**
