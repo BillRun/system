@@ -241,7 +241,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
 		
 		$errorPassingMax = false;
-		if(($currentValue > $maxValue) && ($wallet->getPPID() == 1)) {
+		if(($currentValue < $maxValue) && ($wallet->getPPID() == 1)) {
 			$updateQuery = array('$set' => array($wallet->getFieldName() => $valueBefore));
 			$errorPassingMax = true;
 		}
