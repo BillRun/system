@@ -448,7 +448,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		// If keep_history is set take it or   if we will update the SID  force  tracking history.
-		$isSidUpdate = isset($this->recordToSet['sid']) && $this->query['sid'] !== $this->recordToSet['sid'];
+		$isSidUpdate = isset($this->recordToSet['sid']) && ($this->query['sid'] !== $this->recordToSet['sid']);
 		$this->trackHistory =  $isSidUpdate || Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
