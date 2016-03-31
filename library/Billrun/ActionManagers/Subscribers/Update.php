@@ -73,7 +73,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$cleanupdate = array();
 			$cleanupdate['$set']['to'] = $epoch;
 
-			$balances = $balancesColl->query($balancesQuery);
+			$balances = iterator_to_array($balancesColl->query($balancesQuery));
 			$balancesColl->update($balancesQuery, $cleanupdate, $options);
 			unset($update['$set']['to']);
 			
@@ -449,7 +449,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		
 		// If keep_history is set take it or   if we will update the SID  force  tracking history.
 		$isSidUpdate = isset($this->recordToSet['sid']) && $this->query['sid'] !== $this->recordToSet['sid'];
-		$this->trackHistory = $isSidUpdate || Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		$this->trackHistory =  $isSidUpdate || Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
 		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
