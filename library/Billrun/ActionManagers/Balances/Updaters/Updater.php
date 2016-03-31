@@ -254,6 +254,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		return $result;
 	}
 	
+	/**
+	 * Get the query to be used to normalize the balance.
+	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used
+	 * @param int $maxValue - The max value of the balance.
+	 * @return array the array used to update the mongo.
+	 */
 	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
 		return array('$max' => array($wallet->getFieldName() =>$maxValue));
 	}
