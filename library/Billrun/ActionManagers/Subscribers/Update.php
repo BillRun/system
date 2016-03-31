@@ -32,6 +32,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating subscriber"));
+		$this->collection->setReadPreference(MongoClient::RP_PRIMARY,array());
 	}
 	
 	/**
