@@ -5,7 +5,6 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
     $controller('EditController', {$scope: $scope});
 
     $scope.save = function (redirect) {
-      $scope.entity.to = $scope.entity.to / 1000;
       $scope.err = {};
       //Database.saveEntity(params).then(function (res) {
       var postData = {
@@ -71,6 +70,8 @@ app.controller('CardsController', ['$scope', '$window', '$routeParams', 'Databas
           $scope.entity.to = new Date($scope.entity.to.sec * 1000);
         }
         $scope.cardStatuses = ["Idle", "Active", "Disqualified", "Used", "Expired", "Stolen"];
+        $scope.title =  _.capitalize($scope.action) + " Card " + $scope.entity.serial_number;
+        angular.element('title').text("BillRun - " + $scope.title);
       }, function (err) {
         alert("Connection error!");
       });

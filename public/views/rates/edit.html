@@ -1,13 +1,13 @@
 <div class="container component" ng-controller='RatesController' ng-init="init()">
     <div class="fixed-title">
             <center>
-                    <h2>{{capitalize(action)}} {{entity.key}} Rate</h2>
+                    <h2>{{title}}</h2>
             </center>
     </div>
     <div pretty-error errors="err.data"></div>
-	<form class='form-inline' style="margin-top: 60px;">
+	<form class='form-inline' style="margin-top: 65px;">
 		<div ng-if='!advancedMode'>
-			<div class="row" ng-if="action === 'new'">
+			<div class="row" ng-if="action === 'new' || action === 'duplicate'">
 				<div class="col-md-2">
 					{{utils.getDisplayValue("key", "rates")}}
 				</div>
@@ -84,7 +84,14 @@
 					<input type="checkbox" ng-model="entity.params.interconnect" class="form-control" style="width: 17px; margin-top: -5px" />
 				</div>
 			</div>
-			
+			<div class="row" ng-if="entity.params.interconnect">
+				<div class="col-md-2">
+					{{utils.getDisplayValue("chargable", "rates")}}
+				</div>
+				<div class="col-md-6">
+					<input type="checkbox" ng-model="entity.params.chargable" class="form-control" style='width: 17px; margin-top: -5px' />
+				</div>
+			</div>
 			<h3>
 				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-down" ng-show="shown.prefix"></i></small>
 				<small><i ng-click="shown.prefix = !shown.prefix" class="glyphicon glyphicon-chevron-right" ng-hide="shown.prefix"></i></small>
@@ -103,8 +110,8 @@
 			<hr/>
 
 			<h2>Tariffs</h2>
-			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms"]'>
-				<h3>{{capitalize(type)}}</h3>
+			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms", "video_call"]'>
+				<h3>{{titlize(type)}}</h3>
 				<div style="margin-bottom: 10px;">
 					<select ng-model="newRate[type].name" class="form-control">
 						<option value="" disabled>Select Plan</option>
@@ -115,7 +122,7 @@
 				<div class="table-wrapper">
 					<div class='table'>
 						<div class='thead'>
-							<div class='th' style='width: 260px;'>Plan</div>
+							<div class='th' style='width: 310px;'>Plan</div>
 							<div class='th' style='width: 85px;'>Access</div>
 							<div class='th' style='width: 330px;'>Interconnect</div>
 							<div class='th' style='width: 100px;'>Interval</div>
@@ -126,7 +133,7 @@
 						<div class='tbody'>
 							<div class='tr parent' ng-repeat='(rateName, rate) in entity.rates[type] track by $index' id="{{rateName}}">
 								<div class='table-fix'>
-									<div class='td' style='width: 260px; padding: 6px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
+									<div class='td' style='width: 310px; padding: 6px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
 										<i class='glyphicon glyphicon-trash' ng-click="deleteRate(type, rateName)"></i>&nbsp;&nbsp;{{rateName}}
 									</div>
 									<div class='td' style='width: 85px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
@@ -145,7 +152,7 @@
 											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].interval' style='width: 81px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
-											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 100px;'/>
+											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 120px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
 											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].to' style='width: 120px;'/>

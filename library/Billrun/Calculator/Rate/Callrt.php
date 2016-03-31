@@ -15,6 +15,14 @@
 class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 
 	static protected $type = 'callrt';
+	protected $usaget = 'call';
+	
+	public function __construct($options = array()) {
+		parent::__construct($options);
+		if (isset($options['usaget'])) {
+			$this->usaget = $options['usaget'];
+		}
+	}
 
 	/**
 	 * Check if a given line should be rated.
@@ -49,9 +57,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function get_called_number($row) {
 		$called_number = $row->get('called_number');
 		if (empty($called_number)) {
-			$called_number = $row->get('connected_number');
+			$called_number = $row->get('dialed_digits');
 			if (empty($called_number)) {
-				$called_number = $row->get('dialed_digits');
+				$called_number = $row->get('connected_number');
 			}
 		}
 		return $called_number;
@@ -73,6 +81,17 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	}
 	
 	protected function getRatesExistsQuery() {
-		return array('$exists' => true);
+		if ($this->usaget === 'call') {
+			return array('$exists' => true);
+		}
+		return null;
 	}
+	
+	protected function getVideoCallRatesExistsQuery() {
+		if ($this->usaget === 'video_call') {
+			return array('$exists' => true);
+		}
+		return null;
+	}
+	
 }

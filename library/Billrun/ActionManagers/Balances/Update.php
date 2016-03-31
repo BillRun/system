@@ -44,6 +44,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected $additional;
 	
 	/**
+	 * the updater class container
+	 * 
+	 * @var Billrun_ActionManagers_Balances_Updaters_Updater
+	 */
+	protected $updater;
+	
+	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
@@ -74,57 +81,146 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 	
+	protected function setUpdateValue(&$line) {
+		$value = $line['balance_after'] - $line['balance_before'];
+		
+		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
+			$line["aprice"] = $value;
+		} else {
+			$line["usagev"] = $value;
+		}
+	}
+	
+	/**
+	 * Report the wallet to the lines table
+	 * @param type $insertLine
+	 * @param type $balance
+	 * @param type $wallet
+	 * @param type $beforeUpdate
+	 */
+	protected function reportInLinesHandleWallet(&$insertLine, $balance, $wallet, $beforeUpdate) {
+		$insertLine["usaget"] = 'balance';
+		$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
+		$insertLine["pp_includes_name"] = $wallet->getPPName();
+		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
+
+		$beforeUpdateBalance = $beforeUpdate[$ppID];
+		if($beforeUpdateBalance->isEmpty()) {
+			$insertLine['balance_before'] = 0;	
+		} else {
+			$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
+		}
+		$insertLine['balance_after'] = $this->getBalanceValue($balance);
+		
+		$this->setUpdateValue($insertLine);
+		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
+	}
+	
+	protected function reportInLinesHandleChargingPlan(&$balanceLine, $chargingPlan) {
+		$balanceLine['service_provider'] = $chargingPlan['service_provider'];
+		$chargingType = array();
+		if(isset($chargingPlan['charging_type'])) {
+			$chargingType = $chargingPlan['charging_type'];
+		}
+		// TODO: put the charging value in the conf?
+		if(isset($chargingPlan['charging_value'])) {
+			$balanceLine['charging_value'] = $chargingPlan['charging_value'];
+		}
+		$balanceLine['charging_plan_type'] = implode(",",$chargingType);
+	}
+	
+	/**
+	 * Process report in lines
+	 * @param type $outputDocuments
+	 * @return array, with records sub array and processed lines sub array.
+	 */
+	protected function reportInLinesProcess($outputDocuments, $beforeUpdate) {
+		$processedLines = array();
+		$balancesRecords = array();
+		$balancesCol = Billrun_Factory::db()->balancesCollection();
+		foreach ($outputDocuments as $balancePair) {
+			$balance = $balancePair['balance'];
+			$subscriber = $balancePair['subscriber'];
+			$archiveLine = array();
+			$archiveLine['aid'] = $subscriber['aid'];
+			$archiveLine['service_provider'] = $subscriber['service_provider'];
+			$archiveLine['plan'] = $subscriber['plan'];
+			$archiveLine['source_ref'] = $balancePair['source'];
+			
+			// TODO: Move this logic to a updater_balance class.
+			if(isset($balancePair['normalized'])) {
+				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'] - $balancePair['normalized']['before'];
+				$archiveLine['normalized'] = $reducted;
+			}
+			
+			if (isset($balancePair['wallet'])) {
+				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet'], $beforeUpdate);
+			}
+			
+			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
+			$archiveLine['rand'] = rand(1, 1000000);
+			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
+			$processedLines[] = $archiveLine;
+			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
+		}
+		
+		return array("records" => $balancesRecords, "lines" => $processedLines);
+	}
+	
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
+	 * @param array $beforeUpdate the balance before the update action.
 	 * @return array Array of filtered balance mongo records.
 	 */
-	protected function reportInLines($outputDocuments) {
-		$db = Billrun_Factory::db();
-		$linesCollection = $db->linesCollection();
+	protected function reportInLines($outputDocuments, $beforeUpdate) {
 		$balanceLine = $this->additional;
 		$balanceLine["sid"] = $this->subscriberId;
-		$balancesRecords = array();
 		$balanceLine['urt'] = new MongoDate();
 		$balanceLine['process_time'] = Billrun_Util::generateCurrentTime();
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
+		$balanceLine['usaget'] = 'balance';
 		
 		// Handle charging plan values.
 		if(isset($outputDocuments['charging_plan'])) {
-			$chargingPlan = $outputDocuments['charging_plan'];
-			$balanceLine['service_provider'] = $chargingPlan['service_provider'];
-			$chargingType = array();
-			if(isset($chargingPlan['charging_type'])) {
-				$chargingType = $chargingPlan['charging_type'];
-			}
-			$balanceLine['charging_type'] = implode(",",$chargingType);
+			$this->reportInLinesHandleChargingPlan($balanceLine, $outputDocuments['charging_plan']);
 			unset($outputDocuments['charging_plan']);
 		}
 		
-		foreach ($outputDocuments as $balancePair) {
-			$balance = $balancePair['balance'];
-			$subscriber = $balancePair['subscriber'];
-			$insertLine = $balanceLine;
-			$insertLine['aid'] = $subscriber['aid'];
-			$insertLine['source_ref'] = $balancePair['source'];
-			if (isset($balancePair['wallet'])) {
-				$wallet = $balancePair['wallet'];
-				$insertLine["usaget"] = 'balance';
-				$insertLine["charging_usaget"] = $wallet->getChargingByUsaget();
-				$insertLine["usagev"] = $wallet->getValue();
-				$insertLine["pp_includes_name"] = $wallet->getPPName();
-				$insertLine["pp_includes_external_id"] = $wallet->getPPID();
-				$balance_after = $this->getBalanceValue($balance);
-				$insertLine["balance_before"] = $balance_after - $insertLine["usagev"];
-				$insertLine["balance_after"] = $balance_after;
-				$insertLine["usage_unit"] = Billrun_Util::getUsagetUnit($insertLine["usaget"]);
-
-			}
-			$insertLine['balance_ref'] = $db->balancesCollection()->createRefByEntity($balance);
-			$insertLine['stamp'] = Billrun_Util::generateArrayStamp($insertLine);
-			$linesCollection->insert($insertLine);
-			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
+		$balanceLine['charging_type'] = $this->updater->getType();
+		
+		unset($outputDocuments['updated']);
+		
+		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
+		$balancesRecords = $processResult['records'];
+		$processedLines = $processResult['lines'];
+		
+		if(count($processedLines > 0)) {
+			$balanceLine['aid'] = $processedLines[0]['aid'];
+			$balanceLine['plan'] = $processedLines[0]['plan'];
+			$balanceLine['service_provider'] = $processedLines[0]['service_provider'];
+			$balanceLine['source_ref'] = $processedLines[0]['source_ref'];
+		}
+		
+		// Report lines.
+		$reportedLine = $balanceLine;
+		$reportedLine['information'] = $processedLines;
+		$reportedLine['lcount'] = count($processedLines);
+		$reportedLine['rand'] = rand(1, 1000000);
+		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
+			
+		$linesCollection = Billrun_Factory::db()->linesCollection();
+		$linesCollection->insert($reportedLine); 	
+		
+		$archiveCollection = Billrun_Factory::db()->archiveCollection();
+		
+		unset($balanceLine['aprice'], $balanceLine['charge'], $balanceLine['usagev']);
+		// Report archive
+		foreach ($processedLines as $line) {
+			$archiveLine = array_merge($this->additional, $balanceLine, $line);
+			$archiveLine['u_s'] = $reportedLine['stamp'];
+			$archiveCollection->insert($archiveLine);
 		}
 		
 		return $balancesRecords;
@@ -148,9 +244,9 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$success = true;
 
 		// Get the updater for the filter.
-		$updater = $this->getAction();
+		$this->updater = $this->getAction();
 		
-		$outputDocuments = $updater->update($this->query, $this->recordToSet, $this->subscriberId);
+		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
 	
 		if($outputDocuments === false) {
 			$success = false;
@@ -158,21 +254,24 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
+			$documents = $outputDocuments;
 			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments);
-		}
-		
-		if(!$success) {
-			$updaterError = $updater->getError();
-			if($updaterError) {
-				$this->error = $updaterError;
-				$this->errorCode = $updater->getErrorCode();
+			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
+			foreach ($documents as $document) {
+				$subscriber = $document['subscriber'];
+				$balance = $document['balance'];
+				$source = $document['source'];
+				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 			}
 		}
 		
-		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx']);
+		if($success) {
+			$this->stripTx($outputDocuments);
+		} else {
+			$updaterError = $this->updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+				$this->errorCode = $this->updater->getErrorCode();
 			}
 		}
 		
@@ -185,6 +284,19 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $outputResult;
 	}
 
+	/**
+	 * TODO: THIS IS A PATCH
+	 * Strip the result from the tx values.
+	 * @param type $outputDocuments - output result to strip.
+	 */
+	protected function stripTx(&$outputDocuments) {
+		foreach ($outputDocuments as &$doc) {
+			if (isset($doc['tx'])) {
+				unset($doc['tx']);
+			}
+		}
+	}
+	
 	/**
 	 * Get the array of fields to be set in the update record from the user input.
 	 * @return array - Array of fields to set.
@@ -253,7 +365,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && !empty($jsonUpdateData[$field])) {
+			if(isset($jsonUpdateData[$field]) && ((!empty($jsonUpdateData[$field])) || ($jsonUpdateData[$field] === 0))) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
@@ -295,7 +407,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$error = "Update action does not have a query field!";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -304,7 +415,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if($this->query===null){
-			$error = "Balances Update: Received more than one filter field";
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -312,7 +422,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// No filter found.
 		else if(empty($this->query)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
-			$error = "Balances Update: Did not receive a filter field!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

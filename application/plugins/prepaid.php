@@ -28,16 +28,6 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $db;
 
-
-	public function __construct() {
-		$calculators = Billrun_Factory::config()->getConfigValue('queue.calculators', array());
-		if (in_array('unify', $calculators)) {
-			$this->db = Billrun_Factory::db();
-		} else {
-			$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('db', array()));
-		}
-	}
-	
 	/**
 	 * Method to trigger api outside of Billrun.
 	 * afterSubscriberBalanceNotFound trigger after the subscriber has no available balance (relevant only for prepaid subscribers)
@@ -155,6 +145,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pricingData["balance_before"] = $balance_before;
 			$pricingData["balance_after"] = $balance_before + $balance_usage;
 			$pricingData["usage_unit"] = $balance->get('charging_by_usaget_unit');
+			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row,$balance,$pricingData["balance_after"]));
 		} catch (Exception $ex) {
 			Billrun_Factory::log('prepaid plugin afterUpdateSubscriberBalance error', Zend_Log::ERR);
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
@@ -213,8 +204,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$realUsagev = $this->getRealUsagev($row);
 		$chargedUsagev = $this->getChargedUsagev($row, $lineToRebalance);
 		if ($chargedUsagev !== null) {
-			if (($realUsagev - $chargedUsagev) < 0) {
-				$this->handleRebalanceRequired($realUsagev - $chargedUsagev, $lineToRebalance);
+			$rebalanceUsagev = $realUsagev - $chargedUsagev;
+			if (($rebalanceUsagev) < 0) {
+				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance);
 			}
 		}
 	}
@@ -223,7 +215,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * Gets the Line that needs to be updated (on rebalance)
 	 */
 	protected function getLineToUpdate($row) {
-		$lines_archive_coll = $this->db->archiveCollection();
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		if ($row['type'] == 'gy') {
 			$findQuery = array(
 				"sid" => $row['sid'],
@@ -272,12 +264,34 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getChargedUsagev($row, $lineToRebalance) {
 		if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
-			$lines_archive_coll = $this->db->archiveCollection();
+			$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 			$query = $this->getRebalanceQuery($row);
 			$line = $lines_archive_coll->aggregate($query)->current();
 			return $line['sum'];
 		}
 		return $lineToRebalance['usagev'];
+	}
+
+	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
+			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
+			return 0;
+		}
+//		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
+//		$rebalance_offset = $call_offset + $rebalanceUsagev;
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$rebalanceCharges = Billrun_Calculator_CustomerPricing::getChargesByRate($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		$rebalanceCost = $rebalanceCharges['total'];
+		if (isset($lineToRebalance['over_max_currency'])) {
+			$rebalanceCost -= $lineToRebalance['over_max_currency'];
+			if ($rebalanceCost < 0) {
+				$rebalanceCost = 0;
+			}
+		}
+		return array(
+			'cost' => (-1) * $rebalanceCost,
+			'interconnect' => (-1) * $rebalanceCharges['interconnect'],
+		);
 	}
 
 	/**
@@ -286,16 +300,11 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
-	protected function handleRebalanceRequired($rebalanceUsagev, $lineToRebalance = null) {
-		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
-		$rebalance_offset = $call_offset + $rebalanceUsagev;
-		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
 		$usaget = $lineToRebalance['usaget'];
-		if (empty($lineToRebalance['in_data_slowness'])) {
-			$rebalanceCost = (-1) * Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $usaget, (-1) * $rebalanceUsagev, $lineToRebalance['plan'], (-1) * $rebalance_offset);
-		} else {
-			$rebalanceCost = 0;
-		}
+		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
+		$rebalanceCost = $rebalanceCharges['cost'];
+		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
@@ -312,7 +321,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
-			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost);
+			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 		} else {
 			$balance = null;
@@ -327,7 +336,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		
 		// Update line in archive
-		$lines_archive_coll = $this->db->archiveCollection();
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 		
 		// Update line in Lines collection
@@ -349,15 +358,18 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $rebalanceUsagev
 	 */
-	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost) {
+	protected function getUpdateLineUpdateQuery($rebalanceUsagev, $cost, $rebalanceInterconnect) {
 		return array(
 			'$inc' => array(
 				'usagev' => $rebalanceUsagev,
 				'aprice' => $cost,
+				'apr' => $cost,
+				'interconnect_aprice' => $rebalanceInterconnect,
 			),
 			'$set' => array(
 				'rebalance_usagev' => $rebalanceUsagev,
 				'rebalance_cost' => $cost,
+				'rebalance_interconnect' => $rebalanceInterconnect,
 			)
 		);
 	}

@@ -23,9 +23,17 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $translations = array();
 	protected $fieldDefinitions =  array();
 	protected $preProject = array();
-	protected $unwind = array();
+	protected $prePipeline = array();
+	protected $postPipeline = array();
+	protected $tmpFileIndicator = ".tmp";
+	protected $legitimateFileExtension = "";
+	protected $startTime = 0;
 
 	public function __construct($options) {
+		
+		$this->startTime = time();
+		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
+		
 		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.configuration.include',array()) as  $path ) {
 			Billrun_Factory::config()->addConfig($path);
@@ -38,13 +46,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 				$this->match['$or'][$idx][$key] = json_decode($val,JSON_OBJECT_AS_ARRAY);
 			}
 		}
-		$this->match['mediated.'.static::$type] = array('$exists' => 0);
+		$this->match = array_merge($this->match,$this->getReportCandiateMatchQuery());
 		
 		$this->grouping = array('_id'=> array());
 		$this->grouping['_id'] = array_merge($this->grouping['_id'],$this->translateJSONConfig($config['grouping']));	
 		$this->grouping = array_merge($this->grouping,$this->translateJSONConfig($config['mapping']));
-			
-		foreach($config['helpers'] as  $key => $mapping) {
+		
+		foreach(Billrun_Util::getFieldVal($config['helpers'],array()) as  $key => $mapping) {
 			$mapArr = json_decode($mapping,JSON_OBJECT_AS_ARRAY);
 			if(!empty($mapArr)) {
 				$this->grouping[$key] = $mapArr;
@@ -54,12 +62,27 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->fieldDefinitions = $this->translateJSONConfig( Billrun_Util::getFieldVal($config['field_definitions'], array()) );
 		$this->translations = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['translations'], array()));
 		$this->preProject = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_project'], array()));
-		$this->unwind = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['unwind'], ''));
+		$this->prePipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['pre_pipeline'], ''));
+		$this->postPipeline = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['post_pipeline'], ''));
 		$this->separator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['separator'], ''));
+		$this->tmpFileIndicator = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['temporary_file_indicator'], $this->tmpFileIndicator));	
+		$this->legitimateFileExtension = $this->translateJSONConfig(Billrun_Util::getFieldVal($config['file_extension'], $this->legitimateFileExtension));
 		
-		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.db','archive.db'),array()));
+		if( Billrun_Util::getFieldVal($config['include_headers'],FALSE)) {
+			$this->headers = array_keys($this->fieldDefinitions);
+		}
+		
+		if(empty($options['limit'])) {
+			$options['limit'] = (int) Billrun_Util::getFieldVal($config['limit'], $this->limit);
+		}
+		
+		if(empty($options['export_directory']) && !empty($config['export'])) {
+			$options['export_directory'] =$config['export'];
+			$options['disable_stamp_export_directory']= true;
+		}
 		
 		parent::__construct($options);
+		
 	}
 		
 	
@@ -68,10 +91,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @return type
 	 */
 	protected function buildAggregationQuery() {
-		
+		$collName =  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.collection','archive').'Collection';
 		$fields = array();
 		//sample 100 lines  and get all the  fields  from these lines.
-		$fieldExamples =  $this->db->archiveCollection()->query( $this->match )->cursor()->limit(100);
+		$fieldExamples =  $this->db->{$collName}()->query( $this->match )->cursor()->limit(100);
 		foreach( $fieldExamples as $doc ) {
 			foreach( $doc->getRawData() as $key => $val ) {
 				$fields[$key] = 1;
@@ -83,24 +106,29 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 												array('$match' => $this->match ),
 												array('$project'=> array_merge($fields, $this->preProject ) ),
 											);
-			if(!empty($this->unwind)) {
-				$this->aggregation_array[] = array('$unwind' => $this->unwind);
+			
+			if(!empty($this->prePipeline)) {
+				$this->aggregation_array = array_merge($this->aggregation_array , $this->prePipeline);
 			}
+			$this->aggregation_array[] = array('$limit'=>$this->limit);
 			$this->aggregation_array[] = array('$sort'=>array('urt'=> 1));
 			$this->aggregation_array[] = array('$group'=> $this->grouping);
-			if(!empty($this->postFilter)) {
-				$this->aggregation_array[] = array('$match' => $this->postFilter);
+			if(!empty($this->getReportFilterMatchQuery())) {
+				$this->aggregation_array[] = array('$match'=> $this->getReportFilterMatchQuery());
+			}
+			if(!empty($this->postPipeline)) {
+				$this->aggregation_array = array_merge($this->aggregation_array , $this->postPipeline);
 			}
 		} else {
-			$this->aggregation_array = 	array( array('$match' => $this->match ),					
-						//array('$unwind' => $this->unwind),
+			$this->aggregation_array = 	array( array('$match' => $this->match ),
 						array('$sort'=>array('urt'=> 1)),
 						array('$group'=> $this->grouping)
-					//	array('$match' => array('helper.record_type' => 'final_request')) 
+
 				);
 	
 		} 
-
+		
+		//Billrun_Factory::log(json_encode($this->aggregation_array));
 	}
 	
 	/**
@@ -111,6 +139,28 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	
 	//--------------------------------------------  Protected ------------------------------------------------
 
+	protected function writeRows() {
+		if(!empty($this->headers)) {
+			$this->writeHeaders();
+		}
+		foreach($this->data as $line) {
+			if($this->isLineEligible($line)) {
+				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+			}
+			//$this->markLines($line['stamps']);
+		}
+		$this->markFileAsDone();
+	}
+	
+	protected function getLastRunDate($type) {
+		$lastRun = $this->db->logCollection()->query(array('source'=>$type))->cursor()->sort(array('generated_time'=>-1))->limit(1)->current();
+		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof MongoDate) ? new MongoDate(0) : $lastRun['generated_time'];
+	}
+	
+	abstract protected function getReportCandiateMatchQuery();
+	
+	abstract protected function getReportFilterMatchQuery();
+	
 	/**
 	 * 
 	 */
@@ -147,6 +197,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					}
 				}
 			}
+		} else {
+			$decodedJson = json_decode($retConfig,JSON_OBJECT_AS_ARRAY);
+			if(!empty($decodedJson)) {
+				$retConfig = $decodedJson;
+			}
 		}
 		return $retConfig;
 	}
@@ -159,10 +214,17 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 */
 	protected function translateCdrFields($line,$translations) {
 		foreach($translations as $key => $trans) {
+			if(!isset( $line[$key] ) ) {
+				$line[$key] = '';
+				}
 			switch( $trans['type'] ) {			
 				case 'function' :
 					if(method_exists($this,$trans['translation']['function'])) {
-						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $trans['translation']['values'] , $line );
+						$line[$key] = $this->{$trans['translation']['function']}( $line[$key], $this->translateJSONConfig(Billrun_Util::getFieldVal($trans['translation']['values'],array()) ) , $line );
+					} else if( function_exists($trans['translation']['function']) ){
+						$line[$key] = call_user_func($trans['translation']['function'],$line[$key] );
+					} else {
+						Billrun_Factory::log("WTF");
 					}
 					break;
 				case 'regex' :
@@ -180,7 +242,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 	protected function setFilename() {
 		$data = $this->getNextFileData();
-		$this->filename = $data['filename'];
+		$this->filename = $data['filename'].$this->tmpFileIndicator;
+	}
+	
+	protected function markFileAsDone() {
+		rename($this->file_path, preg_replace("/{$this->tmpFileIndicator}$/" ,$this->legitimateFileExtension,$this->file_path));
 	}
 
 	
@@ -215,7 +281,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $str
 	 */
 	protected function writeToFile( $str , $overwrite = false) {
-		Billrun_Factory::log($str);
 		parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES"));
 	}
 	
@@ -234,7 +299,6 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		
 	}
 	
-	//---------------------- Manage files/cdrs function ------------------------
 	
 	/**
 	 * method to log the processing
@@ -251,7 +315,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			'source' => $fileData['source'],
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => date(self::base_dateformat),
-			'generated_time' => date(self::base_dateformat),
+			'generated_time' =>new MongoDate($this->startTime),
 			'direction' => 'out'
 		);
 
@@ -275,7 +339,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		
 		return $result['ok'] == 1 ;
 	}
-	
+
+	//---------------------- Manage files/cdrs function ------------------------
 	
 	/**
 	 * 
@@ -315,6 +380,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @return type
 	 */
 	protected function translateUrt($value, $parameters) {
+		if(empty($value)) {return $value;}
 		$dateFormat = is_array($parameters) ?  $parameters['date_format'] : $parameters;
 		$retDate = date($dateFormat,$value->sec);
 		
@@ -348,6 +414,11 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		return  $retVal;
 	}
 	
-	
+	protected function getPlanId($value, $parameters, $line) {
+		$plan = Billrun_Factory::db()->plansCollection()->query(array('name'=>$value))->cursor()->sort(array('urt'=>-1))->limit(1)->current();
+		if(!$plan->isEmpty()) {
+			return $plan['external_id'];
+		}
+	}
 	
 }

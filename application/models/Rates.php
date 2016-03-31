@@ -16,6 +16,7 @@
 class RatesModel extends TabledateModel {
 
 	protected $showprefix;
+	protected $filter_by_plan;
 
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->rates;
@@ -28,6 +29,11 @@ class RatesModel extends TabledateModel {
 			}
 		} else {
 			$this->showprefix = false;
+		}
+		if (isset($params['filter_by_plan'])) {
+			$this->filter_by_plan = $params['filter_by_plan'];
+		} else {
+			$this->filter_by_plan = array();
 		}
 	}
 
@@ -133,8 +139,7 @@ class RatesModel extends TabledateModel {
 	}
 
 	public function getFilterFields() {
-		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'customer'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		$planNames['BASE'] = 'BASE';
 		foreach($names as $name) {
@@ -169,12 +174,12 @@ class RatesModel extends TabledateModel {
 			),
 			'plan' => array(
 				'key' => 'plan',
-				'db_key' => array('rates.call', 'rates.sms'),
+				'db_key' => array('rates.call', 'rates.sms', 'rates.data'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
 				'display' => 'Plan',
 				'values' => $planNames,
-				'default' => array(array('BASE' => 'BASE')),
+				'default' => array('BASE'),
 			),
 			'showprefix' => array(
 				'key' => 'showprefix',
@@ -223,13 +228,13 @@ class RatesModel extends TabledateModel {
 	public function applyFilter($filter_field, $value) {
 		if ($filter_field['comparison'] == '$exists') {
 			if (!is_null($value) && $value != $filter_field['default'] && is_array($value)) {
-				$ret = array('$and' => array());
+				$ret = array('$or' => array());
 				foreach($value as $val) {
 					$or = array('$or' => array());
 					foreach($filter_field['db_key'] as $key) {
 						$or['$or'][] = array("$key.$val" => array('$exists' => true));
 					}
-					$ret['$and'][] = $or;
+					$ret['$or'][] = $or;
 				}
 				return $ret;
 			}			
@@ -238,17 +243,16 @@ class RatesModel extends TabledateModel {
 		}
 	}
 	
+	public function setFilteredPlans($plans = array()) {
+		$this->filter_by_plan = $plans;
+	}
+	
 	/**
 	 * Get the data resource
 	 * 
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
-		if (isset($filter_query['$and'][0]['$and'][0]['$or'][0])) {
-			$filteredPlan = end(explode('.', key($filter_query['$and'][0]['$and'][0]['$or'][0])));
-		} else {
-			$filteredPlan = "BASE";
-		}
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -274,21 +278,23 @@ class RatesModel extends TabledateModel {
 				$ret[] = $row;
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
-					if (is_array($rate) && isset($rate[$filteredPlan])) {
-						$added_columns = array(
-							't' => $key,
-							'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
-							'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
-							'tunit' => $rate[$filteredPlan]['unit']
-						);
-						if (strpos($key, 'call') !== FALSE) {
-							$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
-						} else if ($key == 'data') {
-							$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan]['rate'][0]['interval'], '', 0, true);
-						} else {
-							$added_columns['tduration'] = $rate[$filteredPlan]['rate'][0]['interval'];
+					foreach($this->filter_by_plan as $filteredPlan) {
+						if (is_array($rate) && isset($rate[$filteredPlan])) {
+							$added_columns = array(
+								't' => $key,
+								'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
+								'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
+								'tunit' => $rate[$filteredPlan]['unit']
+							);
+							if (strpos($key, 'call') !== FALSE) {
+								$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
+							} else if ($key == 'data') {
+								$added_columns['tduration'] = Billrun_Util::byteFormat($rate[$filteredPlan]['rate'][0]['interval'], '', 0, true);
+							} else {
+								$added_columns['tduration'] = $rate[$filteredPlan]['rate'][0]['interval'];
+							}
+							$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 						}
-						$ret[] = new Mongodloid_Entity(array_merge($item->getRawData(), $added_columns, $rate));
 					}
 				}
 			} 

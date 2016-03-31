@@ -27,6 +27,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
+		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
 		// all output will be store at class output class
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
@@ -52,8 +53,6 @@ class ApiController extends Yaf_Controller_Abstract {
 			// DB heartbeat
 			Billrun_Factory::db()->linesCollection()
 				->query()->cursor()->limit(1)->current(); 
-			Billrun_Factory::db()->balancesCollection()
-				->query()->cursor()->limit(1)->current(); 
 			$msg = 'SUCCESS';
 			$status = 1;
 		} catch (Exception $ex) {
@@ -66,7 +65,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			$this->setOutput(array($msg, 1));
 			$this->getView()->outputMethod = 'print_r';
 		} else {
-			$this->setOutput(array(array('status' => $status, 'message' => 'Billrun API ' . ucfirst($msg))));
+			$this->setOutput(array(array('status' => $status, 'message' => 'BillRun API ' . ucfirst($msg))));
 		}
 
 	}
@@ -81,25 +80,33 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
+		if (isset($args[0])) {
+			$var = $args[0];
+		} else {
+			$var = $args;
+		}
+		$ret = $this->setOutputVar($var);
+		$this->apiLogAction();
+		return $ret;
+	}
+	
+	public function setOutputVar() {
+		$args = func_get_args();
 		$num_args = count($args);
 		if (is_array($args[0])) {
 			foreach ($args[0] as $key => $value) {
-				$this->setOutput($key, $value);
+				$this->setOutputVar($key, $value);
 			}
-			$this->apiLogAction();
 			return true;
 		} else if ($num_args == 1) {
 			$this->output = $args[0];
-			$this->apiLogAction();
 			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
 			$this->output->$key = $value;
-			$this->apiLogAction();
 			return true;
 		}
-		$this->apiLogAction();
 		return false;
 	}
 
@@ -133,7 +140,6 @@ class ApiController extends Yaf_Controller_Abstract {
 			$this->getView()->outputMethod = $output_methods[$action];
 			return;
 		}
-		Billrun_Factory::log('No output method defined; set to json encode', Zend_Log::DEBUG);
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		header('Content-Type: application/json');
 	}
@@ -144,15 +150,19 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @todo log response
 	 */
 	protected function apiLogAction() {
-		$this->logColl = Billrun_Factory::db()->logCollection();
 		$request = $this->getRequest();
+		$php_input = file_get_contents("php://input");
+		if ($request->action == 'index') {
+			return;
+		}
+		$this->logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
 			'process_time' => new MongoDate(),
 			'request' => $this->getRequest()->getRequest(),
 			'response' => $this->output,
-			'request_php_input' => file_get_contents("php://input"),
+			'request_php_input' => $php_input,
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1,1000000),

@@ -41,7 +41,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	protected function getDefaultRecord() {
 		$defaultRecord = array();
 		$defaultRecord['interval'] = 'month';
-		$defaultRecord['operation'] = 'inc';
+		// TODO: Default is now set.
 		$defaultRecord['sid'] = $this->sid;
 		$defaultRecord['from'] = date(Billrun_Base::base_dateformat);
 		return $defaultRecord;
@@ -105,6 +105,33 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	}
 	
 	/**
+	 * Parse the date fields of a record
+	 * @param array $record - Reference to the array to parse the date fields of
+	 * @return boolean true if successful.
+	 */
+	protected function parseDateFields(&$record) {
+		$dateFields = Billrun_Factory::config()->getConfigValue('autorenew.date_fields');
+		foreach ($dateFields as $field) {
+			if (!isset($record[$field]) || ($record[$field] == null)) {
+				continue;
+			}
+			
+			$time = strtotime($record[$field]);
+
+			// This fails if the date is in the wrong format
+			if($time === false) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 24;
+				$this->reportError($errorCode, Zend_Log::ALERT, array($record[$field]));
+				return false;
+			}
+			$mongoTime = new MongoDate($time);
+			$record[$field] = $mongoTime;
+		}
+		
+		return true;
+	}
+	
+	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
@@ -134,12 +161,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 		$isEmpty = true;
 		foreach ($jsonData as &$record) {
-			if (isset($record['from']) && $record['from'] != null) {
-				$record['from'] = new MongoDate(strtotime($record['from']));
-			}
-			
-			if (isset($record['to']) && $record['to'] != null) {
-				$record['to'] = new MongoDate(strtotime($record['to']));
+			// TODO: This will fail ALL records, if just ONE is invalid!!!
+			// I believe that this IS the correct logic, but pay attention, it
+			// might be different from what the customer wants.
+			if(!$this->parseDateFields($record)) {
+				return false;
 			}
 			
 			if(isset($record['to']) && isset($record['from'])) {

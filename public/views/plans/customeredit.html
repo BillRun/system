@@ -1,10 +1,11 @@
-<center>
-	<h2>{{entity.name}}</h2>
-	<h3 class='subtitle'>{{capitalize(action)}} Customer Plan</h3>
-</center>
-<div pretty-error errors="err.data"></div>
-<div>
-	<form class='form-inline'>
+<div class="container component ">
+	<div class="fixed-title">
+			<center>
+				<h2>{{capitalize(action)}} Customer Plan {{entity.name}}</h2>
+			</center>
+	</div>
+	<div pretty-error errors="err.data"></div>
+	<form class='form-inline' style="margin-top: 70px;">
 		<div ng-if='!advancedMode'>
 			<div class='row' ng-if='action === "new"'>
 				<div class='col-md-2'>Name</div>
@@ -49,7 +50,41 @@
 					</span>
 				</div>
 			</div>
+			<hr/>
+			<div class="row">
+				<div class="col-md-2">{{utils.getDisplayValue("data_from_currency", "plans")}}</div>
+				<div class='col-md-6'><input ng-model='entity.data_from_currency' type='checkbox' class='form-control' /></div>
+			</div>
+			<div ng-show="entity.data_from_currency">
+				<h4>Max. Currency</h4>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("maximum_charge_period", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<select class='form-control' ng-model='entity.max_currency.period'
+								ng-options='unit as unit for unit in availableDataInCurrencyPeriodUnits'>
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-2">
+						{{utils.getDisplayValue("cost", "plans")}}
+					</div>
+					<div class='col-md-6'>
+						<input type='number' ng-model='entity.max_currency.cost' class='form-control' />
+					</div>
+				</div>
+			</div>
+			
+			<hr/>
 			<h3>Thresholds</h3>
+			<div style="margin-bottom: 15px">
+				<select ng-model="newPPIncludeThreshold.id" class="form-control">
+					<option ng-repeat="pp in ppIncludes" ng-value="pp.external_id" ng-disabled="thresholdExists(pp)">{{pp.name}}</option>
+				</select>
+				<a href="" ng-click="addPPIncludeThreshold()">Add Threshold</a>
+			</div>
 			<div class='row' ng-repeat='(pp, threshold) in entity.pp_threshold'>
 				<div class='col-md-2'>
 					{{balanceName(pp)}}
@@ -59,6 +94,48 @@
 				</div>
 			</div>
 
+			<hr/>
+			<h3>Blocked Rates</h3>
+			<div
+				isteven-multi-select
+				input-model="availableRates"
+				output-model="disallowed_rates"
+				item-label="name"
+				button-label="name"
+				tick-property="ticked"
+				max-height="250px"
+				max-labels="4"
+			>
+			</div>
+			
+			<hr/>
+			<h3>Notifications</h3>
+			<div style="margin-bottom: 15px">
+				<select ng-model="newThresholdNotification.id" class="form-control">
+					<option ng-repeat="pp in ppIncludes" ng-value="pp.external_id" ng-disabled="notificationForThresholdExists(pp)">{{pp.name}}</option>
+				</select>
+				<a href="" ng-click="addThresholdNotification()">Add Notification</a>
+			</div>			
+			<div class='row' ng-repeat='(id, notifications) in entity.notifications_threshold' ng-if='notifications.length' style="margin-left: 0px;">
+				<strong>{{balanceName(id)}}</strong>&nbsp;<i class='glyphicon glyphicon-plus-sign' ng-click='addNotification(id)'></i>&nbsp;<i class='glyphicon glyphicon-minus-sign' ng-click='removeNotification(id)' ng-show='notifications.length'></i>
+				<table class='table table-striped table-bordered table-no-more-tables' ng-if='notifications.length'>
+					<thead>
+						<tr>
+							<th>Value</th>
+							<th>Type</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr ng-repeat='notification in notifications track by $index'>
+							<td><input type='number' ng-model='entity.notifications_threshold[id][$index].value' class='form-control' /></td>
+							<td><input type='text' ng-model='entity.notifications_threshold[id][$index].type' class='form-control' /></td>
+							<td><textarea ng-model='entity.notifications_threshold[id][$index].msg' class='form-control' style='width:584px; height: 73px;'></textarea></td>
+						</tr>
+					</tbody>	
+				</table>
+			</div>
+									
 			<div id='plan-include-groups-div' ng-if="entity.include.groups !== undefined">
 				<h3>Groups</h3>
 				<input ng-model='newGroup.name' type='text' class='form-control' />
@@ -152,15 +229,18 @@
 					</div>
 				</div>
 			</div>
+
 			<div ng-if='!_.isEmpty(plan_rates)'>
+				<hr/>
 				<h3>Rates</h3>
-				<div ng-repeat='type in ["calls", "data", "sms"]'>
+				<div ng-repeat='type in ["calls", "data", "sms", "video_call"]'>
 					<label ng-if="type === 'calls'">Call</label>
 					<label ng-if="type === 'data'">Data</label>
 					<label ng-if="type === 'sms'">SMS</label>
+					<label ng-if="type === 'video_call'">Video Call</label>
 					<div class='table'>
 						<div class='thead'>
-							<div class='th' style='width: 260px;'>Plan</div>
+							<div class='th' style='width: 320px;'>Plan</div>
 							<div class='th' style='width: 100px;'>Interval</div>
 							<div class='th' style='width: 130px;'>Price</div>
 							<div class='th' style='width: 130px;'>To</div>
@@ -168,7 +248,7 @@
 						<div class='tbody'>
 							<div class='tr parent' ng-repeat='rate in plan_rates' ng-if='rate.price[type].rate'>
 								<div class='table-fix'>
-									<div class='td' style='width: 260px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
+									<div class='td' style='width: 320px; padding: 6px;'  ng-class='{"small-double": rate.price[type].rate.length > 1}'>
 										<a href='#/rates/update/{{rate.id}}?plans=["{{entity.name}}"]'><b>{{rate.key}}</b></a>
 									</div>								
 								</div>

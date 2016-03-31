@@ -16,7 +16,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	// TODO: This class shares some logic with the cards and balances update action. 
 	// TODO: The setUpdateRecord function is shared. 
 	// TODO: This is to be implemented using 'trait'
-	
+	use Billrun_Traits_Api_AdditionalInput;
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -142,6 +142,17 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 	
 	/**
+	 * Populate the operation clause
+	 * @param type $jsonUpdateData - Input json data.
+	 * @param type $set - Query to set operation to.
+	 */
+	protected function populateOperation($jsonUpdateData, &$set) {
+		if (isset($jsonUpdateData['operation'])) {
+			$set['operation'] = $jsonUpdateData['operation'];
+		}
+	}
+	
+	/**
 	 * Populate the update query
 	 * @param type $jsonUpdateData
 	 */
@@ -163,11 +174,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			$set['to'] = $jsonUpdateData['to'];
 		}
-		if (isset($jsonUpdateData['operation'])) {
-			$set['operation'] = $jsonUpdateData['operation'];
-		} else {
-			$set['operation'] = 'inc';
-		}
+
+		$this->populateOperation($jsonUpdateData, $set);
+		
 		$set['done'] = 0;
 		
 		// Check if we are at the end of the month.
@@ -218,9 +227,27 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
 		}
 		
+		// Set the additional.
+		if(!empty($this->additional)) {
+			$set['additional'] = $this->additional;
+		}
+		
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
 		
 		return true;
+	}
+	
+	protected function getBaseTime($to, $from) {
+		$baseTime = time();
+		if($baseTime < $from) {
+			$baseTime = $from;
+		}
+		
+		if($baseTime > $to) {
+			$baseTime = $to;
+		}
+		
+		return $baseTime;
 	}
 	
 	/**
@@ -232,18 +259,25 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 */
 	protected function handleMigrated(&$jsonUpdateData, &$set, $from, $to) {
 		$months = $set['remain'];
-		$remainingMonths = Billrun_Util::countMonths(time(), $to);
-		$doneMonths = $months - $remainingMonths;
+		$baseTime = $this->getBaseTime($to, $from);
+		
+		$doneMonths = Billrun_Util::countMonths($from, $baseTime);
+		if($from > time()) {
+			$doneMonths -= 1;
+		}
+		
+		$remainingMonths = $months - $doneMonths;
 
 		$set['remain'] = $remainingMonths;
 		$set['done'] = $doneMonths;
 
-		$nextRenewMonth = (date('m', $from) + $remainingMonths) % 12;
+		$fromMonth = date('m', $from);
+		$nextRenewMonth = ($fromMonth + $doneMonths) % 12;
 		if(!$nextRenewMonth) {
 			$nextRenewMonth = 12;
 		}
 
-		$nextRenewYear = date('y', $from) + (int)($remainingMonths / 12);
+		$nextRenewYear = date('y', $from) + (int)(($fromMonth + $doneMonths) / 12);
 		$nextRenewDay = date('d', $from);
 
 		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
@@ -257,7 +291,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
-		$set['next_renew_date'] = $renewDate;
+		$set['next_renew_date'] = new MongoDate($renewDate);
 
 		unset($jsonUpdateData['migrated']);
 	}
@@ -296,6 +330,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
+		$this->updateQuery['$set']['operation'] = $planRecord['operation'];
 		$this->updateQuery['$set']['charging_plan_name'] = $planRecord['name'];
 		$this->updateQuery['$set']['charging_plan_external_id'] = $planRecord['external_id'];
 		$this->handlePlanInclude($planRecord);
@@ -371,7 +406,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+				
 		return true;
 	}
 	
@@ -382,6 +417,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @todo Create a generic update class that implemnts this basic parse logic.
 	 */
 	public function parse($input) {
+		$this->handleAdditional($input);
+
 		if(!$this->setQueryRecord($input)) {
 			return false;
 		}

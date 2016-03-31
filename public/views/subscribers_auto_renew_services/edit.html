@@ -26,9 +26,9 @@
 					{{utils.getDisplayValue('plan', 'renew')}}
 				</div>
 				<div class="col-md-6">
-					<select ng-model='entity.charging_plan_name' class='form-control' ng-disabled='utils.disabled("plan", "renew")'>
+					<select ng-model='entity.charging_plan_name' class='form-control' ng-disabled='utils.disabled("plan", "renew")'
+							ng-options="plan as plan for plan in availablePlans">
 						<option value='' disabled>Select Plan</option>
-						<option ng-repeat='availablePlan in availablePlans' value='{{availablePlan}}'>{{availablePlan}}</option>
 					</select>
 				</div>
 			</div>
@@ -82,6 +82,17 @@
 				</div>
 				<div class='col-md-6'>
 					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.last_renew_date" is-open="status.opened" date-disabled="utils.disabled('last_renew_date', 'renew')" close-text="Close" />
+					<span>
+					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
+					</span>
+				</div>
+			</div>
+			<div class='row' ng-if='utils.display("next_renew_date", "renew")'>
+				<div class='col-md-2'>
+					{{utils.getDisplayValue('next_renew_date', 'renew')}}
+				</div>
+				<div class='col-md-6'>
+					<input type="text" class="form-control" uib-datepicker-popup="{{utils.getDateFormat()}}" ng-model="entity.next_renew_date" is-open="status.opened" date-disabled="utils.disabled('next_renew_date', 'renew')" close-text="Close" />
 					<span>
 					  <button type="button" class="btn btn-default" ng-click="status.opened = !status.opened"><i class="glyphicon glyphicon-calendar"></i></button>
 					</span>

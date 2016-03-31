@@ -16,15 +16,15 @@
 class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	
 	static $type = 'sasn';
+	static $ONE_GB = 1073741824;
 	
 	protected $data = null;
-	protected $grouping = array();
-	protected $match = array();
-	protected $translations = array();
-	protected $fieldDefinitions =  array();
-	protected $preProject = array();
-	protected $unwind = array();
-	
+	protected $startEndWindow = 12800;
+
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->startEndWindow =  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.start_end_window',$this->startEndWindow);
+	}
 	
 	public function generate() {
 		$fileData = $this->getNextFileData();
@@ -42,9 +42,40 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	protected function writeRows() {
 		foreach($this->data as $line) {
-			$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
-			$this->markLines($line['stamps']);
+			if($line['data_volume_gprs_downlink'] > static::$ONE_GB) {
+				while($line['data_volume_gprs_downlink'] > 0) {
+					$brokenLine = $line->getRawData();
+					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 
+																				? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['orig_data_volume_gprs_downlink']) 
+																				: 0;
+					$brokenLine['data_volume_gprs_downlink'] =  $line['data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['data_volume_gprs_downlink'];
+					$this->writeRowToFile($this->translateCdrFields($brokenLine, $this->translations), $this->fieldDefinitions);
+					$line['record_opening_time'] = new MongoDate($line['record_opening_time']->sec+1);
+					$line['data_volume_gprs_downlink'] -= static::$ONE_GB;
+					$line['orig_data_volume_gprs_downlink'] -= static::$ONE_GB;
+				}
+				
+			} else {
+				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+			}
+				//$this->markLines($line['stamps']);
+			
 		}
+		$this->markFileAsDone();
+	}
+	
+	protected function getReportCandiateMatchQuery() {
+		return array('$and' => array(
+						array('$or' => array(
+							array('urt'=>array('$gt'=>new MongoDate($this->getLastRunDate(static::$type)->sec - $this->startEndWindow)),'record_type'=>array('$ne'=>'final_request')),
+							array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)))
+						))
+					)
+				);
+	}
+
+	protected function getReportFilterMatchQuery() {
+		return array('change_date_time'=>array('$lt'=>new MongoDate($this->startTime),'$gte'=>$this->getLastRunDate(static::$type)));
 	}
 	
 	// ------------------------------------ Helpers -----------------------------------------

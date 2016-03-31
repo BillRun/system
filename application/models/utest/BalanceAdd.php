@@ -55,7 +55,12 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 			'method' => 'update',
 			'sid' => $params['sid'],
 			'query' => json_encode($query),
-			'upsert' => json_encode($upsert)
+			'upsert' => json_encode($upsert),
+			'additional' => json_encode(array(
+				'balance_info' => Billrun_Factory::user()->getUsername(),
+				'balance_type' => 'MTR',
+				'balance_source' => 'UTEST',
+			)),
 		);
 		return $request;
 	}

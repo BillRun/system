@@ -29,7 +29,7 @@ abstract class Billrun_Autorenew_Record {
 		if(!is_a($record, "Mongodloid_Entity")) {
 			throw new Exception;
 		}
-		$this->data = $record;
+		$this->data = clone $record;
 	}
 	
 	/**
@@ -57,6 +57,11 @@ abstract class Billrun_Autorenew_Record {
 		
 		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
 		$updaterInput['upsert'] = json_encode($updaterInputUpdate,JSON_FORCE_OBJECT);
+		
+		// Send the additional field if exists.
+		if(isset($this->data['additional'])) {
+			$updaterInput['additional'] = json_encode($this->data['additional']);
+		}
 		
 		return $updaterInput;
 	}

@@ -80,9 +80,11 @@ class BalancesModel extends TableModel {
 		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month'], $usage_filter_values['current_plan']);
 //		$usage_filter_values = array_merge($basic_columns, $extra_columns);
 		
-		$planNames = array_unique(array_keys(Billrun_Plan::getPlans()['by_name']));
-		$planNames = array_combine($planNames, $planNames);
-		
+		$names = Billrun_Factory::db()->plansCollection()->query()->cursor()->sort(array('name' => 1));
+		$planNames = array();
+		foreach($names as $name) {
+			$planNames[$name['name']] = $name['name'];
+		}
 		$operators = array(
 			'equals' => '=',
 			'lt' => '<',
@@ -219,13 +221,19 @@ class BalancesModel extends TableModel {
 				$item['units'] = implode(',', $units);
 				$subscriber = Billrun_Factory::db()->subscribersCollection()
 					->query(array('sid' => $item['sid'],
-						'from' => array('$lte' => $item['from']),
-						'to' => array('$gte' => $item['from'])))
+						'from' => array('$lte' => new MongoDate()),
+						'to' => array('$gte' => new MongoDate())))
 					->cursor()
+					->sort(array('from' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
-				$item['service_provider'] = $subscriber['service_provider'];
+				if (isset($subscriber['service_provider'])) {
+					$item['service_provider'] = $subscriber['service_provider'];
+				}
+				if (isset($subscriber['plan'])) {
+					$item['plan'] = $subscriber['plan'];
+				}
 			}
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];

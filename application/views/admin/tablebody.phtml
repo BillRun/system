@@ -2,6 +2,7 @@
 
 $c = $this->offset;
 foreach ($this->data as $item) {
+	if ($active === "lines" && $this->session->show_zero_usage != "on" && $item['usaget'] !== "balance" && !$item['usagev']) continue;
 	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
 		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
 	else:
@@ -10,7 +11,7 @@ foreach ($this->data as $item) {
 	$href = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '/admin#/' . $this->active . '/update/' . $item['_id'] : '#popupModal';
 	$onclick = ($this->active === 'subscribers_auto_renew_services' || $this->active === 'plans' || $this->active === 'rates' || $this->active === 'balances' || $this->active === 'cards' || $this->active === 'subscribers') ? '' : 'update_current(this);';
 	print '<td data-title=\'#\'>'
-		. '<label class="checkbox">'
+		. '<label ' . ($active == 'lines' ? "" : " class='checkbox' ") . '>'
 		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
 		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
 		. '</label>'
@@ -25,7 +26,7 @@ foreach ($this->data as $item) {
 		if (isset($edit_key) && $h == $edit_key) {
 			$url = $this->baseUrl . '/admin/edit?type=' . strtolower($this->title) . '&amp;id=' . $item['_id'];
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
-		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date' || $h == "next_renew_date") && $data) {
+		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time' || $h == 'last_renew_date' || $h == "next_renew_date" || $h == "activation_datetime") && $data) {
 			//$dateFormat = "Y-d-m H:i:s";
 			$dateFormat = Billrun_Factory::config()->getConfigValue('admin_panel.date_format', 'Y-d-m H:i:s');
 			if (!empty($item["tzoffset"])) {
@@ -42,13 +43,28 @@ foreach ($this->data as $item) {
 				$zend_date->setTimezone('UTC');
 				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 			} else {
-				$zend_date = new Zend_Date($data->sec);
-				echo $zend_date->toString($dateFormat, 'php');
+				if(isset($data->sec)) {
+					$zend_date = new Zend_Date($data->sec);
+					echo $zend_date->toString($dateFormat, 'php');
+				} else {
+					if($data == -1) {
+						echo "Migrated service";
+					} else if(is_numeric($data)) {
+						$zend_date = new Zend_Date($data);
+						echo $zend_date->toString($dateFormat, 'php');
+					} else {
+						echo "";
+					}
+				} 
 			}
+		} else if ($h == 'charging_plan_name' && isset($item['charging_plan_name'])) {
+			print '<a href="#chargingPlanPopup" data-charging-plan-name="' . $item['charging_plan_name'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
 			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
 			print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';*/
 			print '<a href="#ratePlanPopup" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+		} else if ($h == 'balance_type') {
+			print '<a href="#SourceRefPopup" data-line="' . $item['_id'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if (is_numeric($data) && (($active == 'balances' && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb')))) {
 			if (is_float($data) && strpos($h, 'usage') === FALSE) { // hack: is_float sometimes take long numbers as float
 				print number_format($data, $this->decimal_places);

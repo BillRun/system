@@ -93,10 +93,21 @@ abstract class Billrun_UpdateByDelta_Updater {
 	protected function translateEntityToQuery($entity, $translateFields) {
 		$query = array();
 		foreach ($translateFields as $field=>$translate) {
+			// TODO: This is to "fix" the weird empty fields in the config file.
+			if(empty($field)) {
+				Billrun_Factory::log("Received empty values from the config file", Zend_Log::NOTICE);
+				continue;
+			}
+			
 			if($this->isMendatoryField($field) && !isset($entity[$translate])) {
 				$errorCode = Billrun_Factory::config()->getConfigValue('autorenew_error_base') + 16;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($translate));
 				return false;
+			}
+			
+			if(!isset($entity[$translate])) {
+				Billrun_Factory::log("Field " . $translate . " is missing in translated entity", Zend_Log::NOTICE);
+				continue;
 			}
 			
 			$query[$field] = $entity[$translate];
@@ -140,7 +151,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 	 * @param array $toBeAdded - Array of records to be added.
 	 * @param array $defaultRecord - The default record to use.
 	 */
-	protected function meltWithDefault($toBeAdded, $defaultRecord) {
+	protected function meltWith($toBeAdded, $defaultRecord) {
 		$melted = array();
 		foreach ($toBeAdded as $record) {
 			$temp = $defaultRecord;
@@ -169,7 +180,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		$toBeAdded = 
 			$this->handleDeltaArrays($expectedReults, $existingRecords);
 		
-		$valuesToAdd = $this->meltWithDefault($toBeAdded, $defaultRecord);
+		$valuesToAdd = $this->meltWith($toBeAdded, $defaultRecord);
 		
 		// Add all the values.
 		return $this->addValues($valuesToAdd);
@@ -236,7 +247,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 			}
 		}
 		
-		return @array_diff($expectedResults, $expectedMatched);
+		return @array_diff_assoc($expectedResults, $expectedMatched);
 	}
 	
 	/**
@@ -284,7 +295,7 @@ abstract class Billrun_UpdateByDelta_Updater {
 		}
 
 		// Update the record.
-		return $this->updateRecordByDiff($existing, array_diff($expected, $existing));
+		return $this->updateRecordByDiff($existing, array_diff_assoc($expected, $existing));
 	}
 	
 	/**

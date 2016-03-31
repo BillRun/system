@@ -65,9 +65,8 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			}
 		}
 
-		$diff = @array_diff($expected, $existing);
 		// Update the record.
-		return $this->updateRecordByDiff($existing, $diff);
+		return  $this->updateRecordByDiff($existing, @array_diff_assoc($expected, $existing));
 	}
 	
 	/**
@@ -96,7 +95,12 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			return false;
 		}
 		
-		return array("query" => json_encode($query), "upsert" => json_encode($upsert));
+		$returnQuery = array("query" => json_encode($query), "upsert" => json_encode($upsert));
+		if(isset($entity['additional'])) {
+			$returnQuery['additional'] = json_encode($entity['additional']);
+		}
+		
+		return $returnQuery;
 	}
 	
 	/**
@@ -161,7 +165,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 	 * @param string $field - Field to check
 	 * @return true if the field is mendatory.
 	 */
-	protected function isMendatoryField($field) {
+	protected function isMendatoryField($field) {		
 		if(empty($this->mendatoryFields)) {
 			$this->mendatoryFields = Billrun_Factory::config()->getConfigValue('autorenew.mendatory', array());
 		}

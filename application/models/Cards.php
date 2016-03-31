@@ -64,8 +64,7 @@ class CardsModel extends TableModel {
 	}
 	
 	public function getFilterFields() {
-		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'charging'));
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'charging'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
@@ -78,7 +77,6 @@ class CardsModel extends TableModel {
 				'db_key' => 'batch_number',
 				'input_type' => 'number',
 				'comparison' => 'equals',
-				'comparison' => 'contains',
 				'display' => 'Batch Number',
 				'default' => '',
 			),

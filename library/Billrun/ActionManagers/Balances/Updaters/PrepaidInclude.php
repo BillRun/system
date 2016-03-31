@@ -13,6 +13,8 @@
  */
 class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
+	protected $type = 'PrepaidInclude';
+
 	/**
 	 * Get the array of strings to translate the names of the input fields to the names used in the db.
 	 * @return array.
@@ -82,8 +84,19 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
 		
 		$updateResult = $this->updateBalance($chargingPlan, $findQuery, $defaultBalance, $recordToSet['to']);
-		if($this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan) === false) {
+		$normalizeResult = $this->normalizeBalance($findQuery, $subscriber['plan'], $chargingPlan);
+		if($normalizeResult === false) {
 			return false;
+		}
+		
+		// Report on changes
+		if($normalizeResult['nModified'] > 0) {
+			$valueName = $chargingPlan->getFieldName();
+			$beforeNormalizing = $updateResult[0]['balance'][$valueName];
+			$updateResult[0]['balance'][$valueName] = $normalizeResult['max'];
+			$updateResult[0]['normalized']['before'] = $beforeNormalizing - $chargingPlan->getValue();
+			$updateResult[0]['normalized']['after'] = $beforeNormalizing;
+			$updateResult[0]['normalized']['normalized'] = $normalizeResult['max'];
 		}
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
@@ -124,7 +137,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
 		$update = array();
 		$balance = $balancesColl->query($query)->cursor()->current();
-
+		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
+		
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if (!isset($balance) || $balance->isEmpty()) {
@@ -149,7 +163,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance);
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
+		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
 		
 		if(!Billrun_Util::multiKeyExists($update, 'to')) {
 			// TODO: Move the $max functionality to a trait
@@ -161,7 +176,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			'new' => true,
 		);
 
-		$balance = $balancesColl->findAndModify($query, $update, array(), $options, true);
+		$balance = $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 
 		// Return the new document.
 		return array(

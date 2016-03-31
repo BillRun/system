@@ -211,5 +211,29 @@ class Billrun_DataTypes_Wallet {
 	public function getPPID() {
 		return $this->ppID;
 	}
+	
+	/**
+	 * Get the partial balance record from the wallet values.
+	 * @return array - Partial balance.
+	 */
+	public function getPartialBalance() {
+		$partialBalance['charging_by'] = $this->getChargingBy();
+		$partialBalance['charging_by_usaget'] = $this->getChargingByUsaget();
+		$partialBalance['charging_by_usaget_unit'] = $this->getChargingByUsagetUnit();
+		$partialBalance['pp_includes_name'] = $this->getPPName();
+		$partialBalance['pp_includes_external_id'] = $this->getPPID();
+		$partialBalance['priority'] = $this->getPriority();
+		$partialBalance[$this->getFieldName()] = $this->getValue();
+		
+		foreach ($partialBalance as $key => $value) {
+			if(!is_string($key)) {
+				continue;
+			}
+			
+			Billrun_Util::setDotArrayToArray($partialBalance, $key, $value);
+		}
+		
+		return $partialBalance;
+	}
 
 }

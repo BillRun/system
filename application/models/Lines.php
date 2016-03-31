@@ -96,6 +96,11 @@ class LinesModel extends TableModel {
 			} else {
 				$item['arate'] = $arate;
 			}
+//			if (isset($item['source_ref'])) {
+//				$source_ref = $item->get('source_ref', false)->getRawData();
+//				$item['source_ref'] = $source_ref['name'];
+//				unset($entity['source_ref']['_id']);
+//			}
 			if(isset($item['rat_type'])) {
 				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
 			}
@@ -175,9 +180,7 @@ class LinesModel extends TableModel {
 		}
 		arsort($billruns);
 
-		$planModel = new PlansModel();
-		$names = $planModel->getData(array('type' => 'customer'));
-		$planNames = array();
+		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'customer'))->cursor()->sort(array('name' => 1));		$planNames = array();
 		foreach($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
@@ -230,7 +233,7 @@ class LinesModel extends TableModel {
 				'db_key' => 'usaget',
 				'input_type' => 'multiselect',
 				'comparison' => '$in',
-				'display' => 'Usage',
+				'display' => 'Activity',
 				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.line_usages'),
 				'default' => array(),
 			),

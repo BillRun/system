@@ -65,7 +65,7 @@
 				<label>Priority</label>
 			</div>
 			<div class='col-md-3'>
-				<input ng-model='vm.current_entity.priority' type='number' class='form-control' />
+				<input ng-model='vm.current_entity.priority' class='form-control' />
 			</div>
 		</div>
 		<div class='row'>
@@ -77,6 +77,31 @@
 					<option ng-repeat='charging_by in vm.availableChargingByType'>{{charging_by}}</option>
 				</select>
 			</div>
+		</div>
+		<h3>Limited Destinations</h3>
+		<div class="row">
+			<div class="col-md-2">
+				<select ng-model="vm.selected_allowed_plan" class="form-control">
+					<option ng-repeat="plan in vm.availablePlans" ng-disabled="vm.current_entity.allowed_in[plan]">{{plan}}</option>
+				</select>
+				<a href="" ng-click="vm.addAllowedPlan()">Add Plan</a>
+			</div>
+		</div>
+		<div ng-repeat="(planName, rates) in vm.current_entity.allowed_in">
+			<h4>{{planName}}</h4>
+			<!--
+			<select id="{{planName}}-select" name="plan[]" class="form-control multiselect" multiple="multiple"
+					ng-model='vm.current_entity.allowed_in[planName]'
+					ng-options='rate as rate for rate in vm.availableRates'>
+			</select>
+   -->
+			<multiselect
+				ng-model="vm.current_entity.allowed_in[planName]"
+				options="rate for rate in vm.availableRates"
+				data-multiple="true"
+				filter-after-rows="10"
+				scroll-after-rows="10"
+				></multiselect>
 		</div>
 		<div class="modal-footer">
 			<button class="btn" ng-click='vm.cancel()'>Cancel</button>

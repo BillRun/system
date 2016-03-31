@@ -30,12 +30,18 @@ app.factory('Database', ['$http', function ($http) {
       return $http.get(baseUrl + '/admin/getAvailableServiceProviders', {params: params});
     }
 
-    function getAvailablePlans(type) {
+    function getAvailablePlans(type, full_objects) {
+      if (full_objects === undefined) full_objects = false;
       if (type === undefined) type = 'customer';
-      return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type}});
+      return $http.get(baseUrl + '/admin/getAvailablePlans', {params: {type: type, full_objects: full_objects}});
     }
+
     function getAvailableInterconnect() {
       return $http.get(baseUrl + '/admin/getAvailableInterconnect');
+    }
+
+    function getAvailableRates() {
+      return $http.get(baseUrl + '/admin/getAvailableRates');
     }
 
     function getAvailablePPIncludes(params) {
@@ -72,6 +78,7 @@ app.factory('Database', ['$http', function ($http) {
       removeEntity: removeEntity,
       getAvailablePlans: getAvailablePlans,
       getAvailableInterconnect: getAvailableInterconnect,
+      getAvailableRates: getAvailableRates,
       getAvailableServiceProviders: getAvailableServiceProviders,
       getCollectionItems: getCollectionItems,
       filterCollectionItems: filterCollectionItems,

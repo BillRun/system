@@ -155,6 +155,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
 				$options = array_merge($options, $configOptions);
 			}
+			
+			if ($type === 'callrt') {
+				$options = array_merge($options, array('usaget' => $line['usaget']));
+			}
 			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
 			if(!class_exists($class, true)) {
 				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line,true), Zend_Log::ERR);
@@ -186,6 +190,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$row['usagev'] = 0;
 			return false;
 		}
+		
+		if ($this->isRateBlockedByPlan($row, $rate)) {
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.block_rate');
+			$row['usagev'] = 0;
+			return false;
+		}
+		
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -282,7 +293,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$pipelineValue[$key] = $this->{$value['classMethod']}($row);
+							$val = $this->{$value['classMethod']}($row);
+							if (!is_null($val)) {
+								$pipelineValue[$key] = $val;
+							}
 						} else {
 							$pipelineValue[$key] = (is_numeric($value)) ? intval($value) : $value;
 						}
@@ -318,6 +332,21 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	
 	public function getRatingField() {
 		return $this->ratingField;
+	}
+	
+	protected function isRateBlockedByPlan($row, $rate) {
+		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
+		if (isset($plan['disallowed_rates']) && isset($rate['key']) && in_array($rate['key'], $plan['disallowed_rates'])) {
+			Billrun_Factory::log('Plan ' . $plan['name'] . ' is not allowed to use rate ' . $rate['key'], Zend_Log::NOTICE);
+			return true;
+		}
+
+		if (!isset($rate['rates'][$row['usaget']][$plan['name']]) && !isset($rate['rates'][$row['usaget']]['BASE'])) {
+			return true;
+		}
+		
+		return false;
+ 
 	}
 
 }
