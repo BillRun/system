@@ -132,6 +132,16 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	}
 
 	/**
+	 * Get the query to be used to normalize the balance.
+	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used
+	 * @param int $maxValue - The max value of the balance.
+	 * @return array the array used to update the mongo.
+	 */
+	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
+		return array('$set' => array($wallet->getFieldName() => $wallet->getValue()));
+	}
+	
+	/**
 	 * Get the update balance query. 
 	 * @param Mongoldoid_Collection $balancesColl
 	 * @param array $query - Query for getting tha balance.
