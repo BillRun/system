@@ -145,7 +145,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 					return false;
 				}
 				
-				if(isset($returnPair['updated']) && $returnPair['updated']) {
+				if(isset($returnPair['blocked']) && $returnPair['blocked']) {
 					$balancesToReturn['blocked'] = true;
 				}
 				
@@ -212,6 +212,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			if(isset($normalizeResult['bill_err'])) {
 				// Report the error.
 				$this->reportError($normalizeResult['bill_err'], Zend_Log::ERR);
+				$returnPair['blocked'] = true;
 			}
 		}
 		

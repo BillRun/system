@@ -83,7 +83,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		// wallet, which means that the card was loaded, even if partially, and should be 
 		// signaled as used.  If the $ret['updated'] is false, nothing was actually loaded
 		// into the account.
-		if($ret['blocked']) {
+		if(!$ret['blocked']) {
 			$this->signalCardAsUsed($cardRecord, $subscriberId);
 		}
 		unset($ret['blocked']);
