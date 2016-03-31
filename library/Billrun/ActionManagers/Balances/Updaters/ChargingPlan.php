@@ -211,7 +211,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			
 			if(isset($normalizeResult['bill_err'])) {
 				// Report the error.
-				$this->reportError($normalizeResult['bill_err'], Zend_Log::ERR);
+				$this->reportError($normalizeResult['bill_err'] + 1, Zend_Log::ERR);
 				$returnPair['blocked'] = true;
 			}
 		}
