@@ -34,9 +34,27 @@ abstract class Billrun_Autorenew_Record {
 	
 	/**
 	 * Get the next renew date for this recurring plan.
-	 * @return Next update date.
+	 * @return MongoDate Next update date.
 	 */
 	protected abstract function getNextRenewDate();
+	
+	/**
+	 * Get the date to set in the balance 'to' field.
+	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
+	 * @return MongoDate date to set in the 'to' field.
+	 */
+	protected function getUpdaterInputToTime($nextRenewDate) {
+		$toTime = strtotime($this->data['to']);
+		
+		$toDate = $nextRenewDate;
+		
+		// Check if the 'to' is before the next renew date.
+		if($nextRenewDate->sec > $toTime) {
+			$toDate = new MongoDate($toTime);
+		}
+		
+		return $toDate;
+	}
 	
 	/**
 	 * Get the balance updater input.
@@ -53,7 +71,7 @@ abstract class Billrun_Autorenew_Record {
 		// Build the query
 		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
 		$updaterInputUpdate['from'] = $this->data['from'];
-		$updaterInputUpdate['to'] = $nextRenewDate;
+		$updaterInputUpdate['to'] = $this->getUpdaterInputToTime($nextRenewDate);
 		$updaterInputUpdate['operation'] = $this->data['operation'];
 		
 		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
