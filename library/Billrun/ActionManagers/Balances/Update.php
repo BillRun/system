@@ -90,6 +90,18 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
 		
+		// Handle charging plan values.
+		if(isset($outputDocuments['charging_plan'])) {
+			$chargingPlan = $outputDocuments['charging_plan'];
+			$balanceLine['service_provider'] = $chargingPlan['service_provider'];
+			$chargingType = array();
+			if(isset($chargingPlan['charging_type'])) {
+				$chargingType = $chargingPlan['charging_type'];
+			}
+			$balanceLine['charging_type'] = implode(",",$chargingType);
+			unset($outputDocuments['charging_plan']);
+		}
+		
 		foreach ($outputDocuments as $balancePair) {
 			$balance = $balancePair['balance'];
 			$subscriber = $balancePair['subscriber'];
