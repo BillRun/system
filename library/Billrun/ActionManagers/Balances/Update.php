@@ -54,6 +54,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
+		$this->collection->setReadPreference(MongoClient::RP_PRIMARY,array());
 	}
 	
 	/**
@@ -260,7 +261,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			foreach ($documents as $document) {
 				$subscriber = $document['subscriber'];
 				$balance = $document['balance'];
-				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber));
+				$source = $document['source'];
+				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 			}
 		}
 		
@@ -291,7 +293,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function stripTx(&$outputDocuments) {
 		foreach ($outputDocuments as &$doc) {
 			if (isset($doc['tx'])) {
-				unset($doc['tx']);
+				unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
 			}
 		}
 	}

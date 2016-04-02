@@ -31,9 +31,12 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
 				case ($returnCodes['no_rate']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.invalid_called_number');
 				case ($returnCodes['no_subscriber']):
 					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.inactive_account');
-			} 
+				case ($returnCodes['block_rate']):
+					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.black_list_number');
+			}
 		}
 
 		return "";
@@ -55,6 +58,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_available_balances']):
 				case ($returnCodes['no_rate']):
 				case ($returnCodes['no_subscriber']):
+				case ($returnCodes['block_rate']):
 					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
 			} 
 		}
@@ -69,8 +73,11 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
-				case ($returnCodes['no_rate']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.insufficient_credit");
+					break;
+				case ($returnCodes['no_rate']):
+				case ($returnCodes['block_rate']):
+					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.call_to_blocked_number");
 					break;
 				case ($returnCodes['no_subscriber']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.subscriber_not_found");

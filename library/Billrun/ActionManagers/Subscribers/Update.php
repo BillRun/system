@@ -32,6 +32,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating subscriber"));
+		$this->collection->setReadPreference(MongoClient::RP_PRIMARY,array());
 	}
 	
 	/**
@@ -123,7 +124,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if($this->trackHistory) {
 			if(isset($this->recordToSet['sid'])) {
 				$queryArray = array('sid' => $record['sid']);
-				$updateArray = array('$set' => array('sid' => $this->recordToSet['sid']));
+				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid']));
 				$updateOptionsArray = array('multiple' => 1);
 				Billrun_Factory::db()->subscribersCollection()
 					->update($queryArray, $updateArray, $updateOptionsArray);
@@ -140,6 +141,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 
 		$record->collection($this->collection);
+		$prevRecord = clone $record;
 		foreach ($this->recordToSet as $key => $value) {
 			if(!$record->set($key, $value)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
@@ -149,7 +151,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 		}
 
-		Billrun_Factory::dispatcher()->trigger('beforeSubscriberSave', array(&$record, $this));
+		Billrun_Factory::dispatcher()->trigger('beforeSubscriberSave', array(&$record, $prevRecord, $this));
 		// This throws an exception if fails.
 		$this->collection->save($record);
 				

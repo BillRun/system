@@ -126,26 +126,18 @@ class CronController extends Yaf_Controller_Abstract {
 
 	public function cancelSlownessByEndedPlans() {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
-		$group = array(
-			'$group' => array(
-				'_id' => '$sid',
-				'to' => array(
-					'$first' => '$to',
-				),
-				'charging_type' => array(
-					'$first' => '$charging_type',
-				),
-			),
-		);
-		$beginOfDay = strtotime("midnight", time());
-		$beginOfYesterday = strtotime("yesterday midnight", time());
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
 				'to' => array(
-					'$gte' => new MongoDate($beginOfYesterday),
-					'$lt' => new MongoDate($beginOfDay),
+					'$gt' => new MongoDate(strtotime("yesterday midnight")),
+					'$lte' => new MongoDate(strtotime("midnight")),
 				),
+			),
+		);
+		$group = array(
+			'$group' => array(
+				'_id' => '$sid',
 			),
 		);
 		$project = array(
@@ -153,7 +145,7 @@ class CronController extends Yaf_Controller_Abstract {
 				'sid' => '$_id',
 			),
 		);
-		$balances = $balancesCollection->aggregate($group, $match, $project);
+		$balances = $balancesCollection->aggregate($match, $group, $project);
 		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
