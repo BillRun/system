@@ -34,15 +34,34 @@ abstract class Billrun_Autorenew_Record {
 	
 	/**
 	 * Get the next renew date for this recurring plan.
-	 * @return Next update date.
+	 * @return MongoDate Next update date.
 	 */
 	protected abstract function getNextRenewDate();
 	
 	/**
+	 * Get the date to set in the balance 'to' field.
+	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
+	 * @return MongoDate date to set in the 'to' field.
+	 */
+	protected function getUpdaterInputToTime($nextRenewDate) {
+		$toTime = strtotime($this->data['to']);
+		
+		$toDate = $nextRenewDate;
+		
+		// Check if the 'to' is before the next renew date.
+		if($nextRenewDate->sec > $toTime) {
+			$toDate = new MongoDate($toTime);
+		}
+		
+		return $toDate;
+	}
+	
+	/**
 	 * Get the balance updater input.
+	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
 	 * @return array - Input array for the balance updater.
 	 */
-	protected function getUpdaterInput() {
+	protected function getUpdaterInput($nextRenewDate) {
 		$updaterInput['method'] = 'update';
 		$updaterInput['sid'] = $this->data['sid'];
 
@@ -52,7 +71,7 @@ abstract class Billrun_Autorenew_Record {
 		// Build the query
 		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
 		$updaterInputUpdate['from'] = $this->data['from'];
-		$updaterInputUpdate['to'] = $this->data['to'];
+		$updaterInputUpdate['to'] = $this->getUpdaterInputToTime($nextRenewDate);
 		$updaterInputUpdate['operation'] = $this->data['operation'];
 		
 		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
@@ -68,10 +87,11 @@ abstract class Billrun_Autorenew_Record {
 	
 	/**
 	 * Update a balance according to a auto renew record.
+	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record.
 	 * @return boolean
 	 */
-	protected function updateBalance() {
-		$updaterInput = $this->getUpdaterInput();
+	protected function updateBalance($nextRenewDate) {
+		$updaterInput = $this->getUpdaterInput($nextRenewDate);
 		$updater = new Billrun_ActionManagers_Balances_Update(); 
 		
 		// Anonymous object
@@ -90,11 +110,12 @@ abstract class Billrun_Autorenew_Record {
 	
 	/**
 	 * Update the auto renew record.
+	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
 	 * @return Result of the update operation.
 	 */
-	protected function updateAutorenew() {
+	protected function updateAutorenew($nextRenewDate) {
 		$this->data['last_renew_date'] = new MongoDate();
-		$this->data['next_renew_date'] = $this->getNextRenewDate();
+		$this->data['next_renew_date'] = $nextRenewDate;
 		$this->data['remain'] = $this->data['remain'] - 1;
 		
 		$this->data['done'] = $this->data['done'] + 1;
@@ -108,12 +129,14 @@ abstract class Billrun_Autorenew_Record {
 	 * @return the update function result.
 	 */
 	public function update() {
-		if(!$this->updateBalance()) {
+		$nextRenewDate = $this->getNextRenewDate();
+		
+		if(!$this->updateBalance($nextRenewDate)) {
 			// TODO: This means that if we failed to update the balance we do not
 			// update the auto renew record!!!
 			return false;
 		}
 		
-		return $this->updateAutorenew();
+		return $this->updateAutorenew($nextRenewDate);
 	}
 }
