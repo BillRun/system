@@ -324,7 +324,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			if($subCol->exists($subscriberValidationQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-				$cleaned = Billrun_Util::array_remove_compound_elements($this->query);
+				$cleaned = Billrun_Util::array_remove_compound_elements($jsonUpdateData);
 				$parameters = http_build_query($cleaned, '', ', ');
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 				return false;
