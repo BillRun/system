@@ -44,12 +44,20 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var Mongodloid_Collection
 	 */
 	protected $lines = null;
+	
+	
+		/**
+	 *
+	 * @var Mongodloid_Collection
+	 */
+	protected $billing_cycle = null;
 
 	/**
 	 *
 	 * @var Mongodloid_Collection
 	 */
 	protected $billrun = null;
+	
 
 	/**
 	 *
@@ -88,17 +96,26 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var array
 	 */
 	protected $successfulAccounts = array();
+	
+	
+	
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
 
-		if (isset($options['aggregator']['page']) && is_numeric($options['aggregator']['page'])) {
-			$this->page = $options['aggregator']['page'];
+		$next_billrun_key = Billrun_Util::getBillrunKey(time());
+		$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
+		
+		if (isset($options['aggregator']['stamp'])){
+			$this->stamp = $options['aggregator']['stamp'];
 		}
-		if (isset($options['page']) && is_numeric($options['page'])) {
-			$this->page = $options['page'];
+		if (isset($options['stamp']) && $options['stamp']){
+			$this->stamp = $options['stamp'];
+		}
+		if(!isset($options['stamp'])){
+			$this->stamp = $current_billrun_key;
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
@@ -131,12 +148,19 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['override_accounts'])) {
 			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
 		}
-
+		
+		
+		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
-
+                
 		$this->loadRates();
+		
+		$this->page = $this->getNextPage();
+		if ($this->page === FALSE){
+			return FALSE;
+		}
 	}
 
 	/**
@@ -155,7 +179,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			$this->data = $subscriber->getList($this->page, $this->size, $date);
 		}
-
+		$this->billing_cycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('count' => count($this->data))));
+		
 		Billrun_Factory::log()->log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
@@ -426,6 +451,47 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			return $row->get('arate', false);
 		}
+	}
+	
+
+	
+	
+	
+	
+	/**
+	 * 
+	 * 
+	 */
+
+	protected function getNextPage($max_tries = 100) {
+		
+		if ($max_tries <= 0){ // 100 is arbitrary number and should be enough
+			Billrun_Factory::log()->log("Failed getting next page", Zend_Log::ALERT);
+			return FALSE;
+		}
+		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_number' => $next_page , 'page_size' => $this->size, 'count' => 0))->count() >= 10){  // 10 is arbitrary number
+			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
+			return FALSE;
+		}
+		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp))->cursor()->sort(array('page_number' => -1))->limit(1);
+		foreach ($current_document as $exp) {
+			$current_page = $exp[page_number];
+		}
+		if(isset($current_page)){
+			$next_page = $current_page + 1;
+		}
+		else{
+			$next_page = 0; // first page
+		}				
+		$host = gethostname();
+		try {
+		$this->billing_cycle->insert(array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host'=> $host));
+		} catch (Exception $e) {
+				getNextPage($max_tries - 1);
+			}
+		
+		return $next_page;
+				
 	}
 
 }
