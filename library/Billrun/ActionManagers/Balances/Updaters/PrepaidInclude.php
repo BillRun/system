@@ -90,6 +90,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		
 		// Report on changes
+		// TODO: Move this to a function in the updater
 		if($normalizeResult['nModified'] > 0) {
 			$valueName = $chargingPlan->getFieldName();
 			$beforeNormalizing = $updateResult[0]['balance'][$valueName];
@@ -97,6 +98,11 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$updateResult[0]['normalized']['before'] = $beforeNormalizing - $chargingPlan->getValue();
 			$updateResult[0]['normalized']['after'] = $beforeNormalizing;
 			$updateResult[0]['normalized']['normalized'] = $normalizeResult['max'];
+			
+			if(isset($normalizeResult['bill_err'])) {
+				// Report the error.
+				$this->reportError($normalizeResult['bill_err'], Zend_Log::ERR);	
+			}
 		}
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
@@ -125,7 +131,16 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		
 		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}
-
+	
+	/**
+	 * Return indication for blocking a balance update over the max value.
+	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used in the update.
+	 * @return true if should block.
+	 */
+	protected function shouldBlockUpdate($wallet) {
+		return true;
+	}
+	
 	/**
 	 * Get the update balance query. 
 	 * @param Mongoldoid_Collection $balancesColl
@@ -164,12 +179,8 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
-		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
-		
-		if(!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
-		}
+		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);	
+		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
 			'upsert' => true,
