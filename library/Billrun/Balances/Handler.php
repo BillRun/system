@@ -22,7 +22,7 @@ class Billrun_Balances_Handler {
 	 */
 	public function closeBalances() {					
 		$balancesQuery['to'] = array(
-			'$gt' => new MongoDate(strtotime("yesterday midnight")),
+			'$gte' => new MongoDate(strtotime("yesterday midnight")),
 			'$lte' => new MongoDate(strtotime("midnight")),
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
