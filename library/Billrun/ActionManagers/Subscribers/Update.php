@@ -67,7 +67,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$autoRenewColl->update($balancesQuery, $update, $options);
 		
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		if( empty(array_intersect_key($update['$set'], array('sid'=>1,'aid'=>1))) ) {
+		if( empty(array_intersect_key($update['$set'], array('sid'=>1))) ) {
 			$balancesColl->update($balancesQuery, $update, $options);
 		} else {
 			$epoch = !isset($update['$set']['to']) ? new MongoDate() : $update['$set']['to'];
