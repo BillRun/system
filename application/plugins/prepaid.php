@@ -305,6 +305,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];
 		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
+        $updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
@@ -321,7 +322,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
-			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
+			
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 		} else {
 			$balance = null;
