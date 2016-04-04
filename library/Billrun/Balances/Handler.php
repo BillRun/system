@@ -22,7 +22,7 @@ class Billrun_Balances_Handler {
 	 */
 	public function closeBalances() {					
 		$balancesQuery['to'] = array(
-			'$gt' => new MongoDate(strtotime("yesterday midnight")),
+			'$gte' => new MongoDate(strtotime("yesterday midnight")),
 			'$lte' => new MongoDate(strtotime("midnight")),
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
@@ -50,7 +50,9 @@ class Billrun_Balances_Handler {
 	}
 	
 	protected function getInputQuery($data) {
-		return array('pp_includes_external_id' => $data['pp_includes_external_id']);
+		$result = array();
+		$result['_id'] = $data['_id'];
+		return $result;
 	}
 	
 	protected function getUpdateQuery($data) {
@@ -60,6 +62,11 @@ class Billrun_Balances_Handler {
 		return $updaterInputUpdate;
 	}
 	
+	/**
+	 * Get the update data data to be used in the query.
+	 * @param Mongodloid_Entity $balance
+	 * @return array
+	 */
 	protected function getUpdateData($balance) {
 		$data = $balance->getRawData();
 		$data['operation'] = "inc";
