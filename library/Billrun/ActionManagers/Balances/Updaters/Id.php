@@ -42,6 +42,33 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	}
 	
 	/**
+	 * Validate the service provider fields.
+	 * @param type $subscriber
+	 * @param type $planRecord
+	 * @return boolean
+	 */
+	protected function validateServiceProviders($subscriber, $planRecord) {
+		if(!isset($planRecord['service_provider'])) {
+			// Return true if no service provider is supplied
+			return true;
+		}
+		
+		return parent::validateServiceProviders($subscriber, $planRecord);
+	}
+	
+	/**
+	 * Get the query to be used to find a record by ID.
+	 * @param array $query - Query with the _id value
+	 * @return \MongoId
+	 */
+	protected function getIDQuery($query) {
+		// Convert the string ID to mongo ID.
+		$id = $query['_id']['$id'];
+		$mongoId = new MongoId($id);
+		return array("_id" => $mongoId);
+	}
+	
+	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
 	 * @param type $recordToSet - Values to update.
@@ -50,7 +77,11 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 */
 	public function update($query, $recordToSet, $subscriberId) {
 		$coll = Billrun_Factory::db()->balancesCollection();
-		$this->getBalanceRecord($coll, $query);
+		
+		// Convert the string ID to mongo ID.
+		$idQuery = $this->getIDQuery($query);
+		
+		$this->getBalanceRecord($coll, $idQuery);
 		if(!$this->balancesRecord){
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -64,16 +95,13 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		$this->handleExpirationDate($recordToSet, $subscriberId);
 		
-		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		
-		$updateResult = $this->updateBalance($query, $balancesColl, $recordToSet);
-		$updateResult[0]['source'] = 
-			Billrun_Factory::db()->subscribersCollection()->createRefByEntity($subscriber);
-		$updateResult[0]['subscriber'] = 
-			$subscriber;
+		$updateResult = $this->updateBalance($idQuery, $coll, $recordToSet);
+		$updatedBalance = $updateResult[0]['balance'];
+		$updateResult[0]['source'] = $coll->createRefByEntity($updatedBalance);
+		$updateResult[0]['subscriber'] = $subscriber;
 		return $updateResult;
 	}
-	
+
 	/**
 	 * Get the record from the balance collection.
 	 * @param type $balancesColl
@@ -94,6 +122,53 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		
 		$this->balancesRecord = $balanceRecord;
 	}
+
+	/**
+	 * Get the wallet for a data/sms type.
+	 * @param array $ppPair - The prepaid include pair.
+	 * @param type $valueToUseInQuery
+	 * @return \Billrun_DataTypes_Wallet
+	 */
+	protected function getUsagetWallet($ppPair, $valueToUseInQuery) {
+		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']['totals']);
+		list($chargingByValueName, $value)= each($chargingByValue);
+
+		if($valueToUseInQuery !== false) {
+			$chargingByValue[$chargingByValueName] = $valueToUseInQuery;
+		} else {
+			$valueToUseInQuery = $value;
+		}
+		
+		return new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
+	}
+	
+	/**
+	 * Get the wallet for the balance update
+	 * @param array $recordToSet - Record to be set in the update.
+	 * @return \Billrun_DataTypes_Wallet
+	 */
+	protected function getWallet($recordToSet) {
+		@list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']);
+		
+		$valueToUseInQuery = false;
+		if(isset($recordToSet['value'])) {
+			$valueToUseInQuery = $recordToSet['value'];
+		}
+		
+		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];
+		$ppPair['pp_includes_name'] = $this->balancesRecord['pp_includes_name'];
+		
+		if(is_array($chargingByValue)){
+			return $this->getUsagetWallet($ppPair, $valueToUseInQuery);
+		}
+		
+		if($valueToUseInQuery !== false) {
+			$chargingByValue = $valueToUseInQuery;
+		} else {
+			$valueToUseInQuery = $chargingByValue;
+		}
+		return new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
+	}
 	
 	/**
 	 * Update a single balance.
@@ -102,9 +177,6 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 * @return Array with the wallet as the key and the Updated record as the value
 	 */
 	protected function updateBalance($query, $balancesColl, $recordToSet) {
-		$valueFieldName = array();
-		$valueToUseInQuery = null;
-		
 		// Find the record in the collection.
 		if(!$this->balancesRecord) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 5;
@@ -112,35 +184,27 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			return false;
 		}
 		
-		list($chargingBy, $chargingByValue) = each($this->balancesRecord['balance']);
+		$usedWallet = $this->getWallet($recordToSet);
 		
-		if(!is_array($chargingByValue)){
-			$valueFieldName= 'balance.' . $chargingBy;
-			$valueToUseInQuery = $chargingByValue;
-		}else{
-			list($chargingByValueName, $value)= each($chargingByValue);
-			$valueFieldName= 'balance.totals.' . $chargingBy . '.' . $chargingByValueName;
-			$valueToUseInQuery = $value;
-			$chargingBy=$chargingByValueName;
-		}
-
-		$valueUpdateQuery = array();
+		// Set the old record
+		$this->balanceBefore[$usedWallet->getPPID()] = $this->balancesRecord;
+		
 		$queryType = $this->isIncrement ? '$inc' : '$set';
+		$valueFieldName = $usedWallet->getFieldName();
+		$valueUpdateQuery = array();
 		$valueUpdateQuery[$queryType]
-				   [$valueFieldName] = $valueToUseInQuery;
-		$valueUpdateQuery[$queryType]
-				   ['to'] = $recordToSet['to'];
+				   [$valueFieldName] = $usedWallet->getValue();
+		$to = $recordToSet['to'];
+		if(isset($to['sec'])) {
+			$to = new MongoDate($to['sec']);
+		}
+		$valueUpdateQuery['$set']['to'] = $to;
 
 		$options = array(
 			// We do not want to upsert if trying to update by ID.
 			'upsert' => false,
 			'new' => true,
 		);
-		
-		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];
-		$ppPair['pp_includes_name'] = $this->balancesRecord['pp_includes_name'];
-		
-		$usedWallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
 		
 		$balance = $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true);
 		// Return the new document.
