@@ -446,7 +446,8 @@ db.rates.insert({
 })
 db.rates.remove({rates:{}});
 var _interconnect_non_chargable = ["A_INTERCONNECT_BEZEQ_T1_INTERCONNECT", "A_INTERCONNECT_BEZEQ_T2_INTERCONNECT", "A_INTERCONNECT_JAWWAL_INTERCONNECT", "A_INTERCONNECT_OTHERS_INTERCONNECT", "A_INTERCONNECT_VATANIA_INTERCONNECT", "A_INTER_1700_T1_INTERCONNECT", "A_INTER_1700_T2_INTERCONNECT"];
-db.rates.update({key:{$in:_interconnect_non_chargable}}, {$set:{"params.chargable": false}}, {multi:1})
+db.rates.update({key:{$in:_interconnect_non_chargable}, "params.interconnect": true}, {$set:{"params.chargable": false}}, {multi:1})
+db.rates.update({key:{$nin:_interconnect_non_chargable}, "params.interconnect": true}, {$set:{"params.chargable": true}}, {multi:1})
 db.rates.insert(
 	{
 		"from" : ISODate("2016-03-01T00:00:00Z"),
