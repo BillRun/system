@@ -227,20 +227,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response = new Yaf_Response_Http();
 		$coll = 'rates';
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
-		$model = self::initModel($coll);
-		$entity = $model->getItem($id);
-		$interconnect_key = Billrun_Util::filter_var($this->getRequest()->get('interconnect_key'), FILTER_SANITIZE_STRING);
-		$interconnect_model = self::initModel($coll);
-		$interconnect_entity = $interconnect_model->getItemByName($interconnect_key, 'key');
-		if (!$entity) {
-			$response->setBody(json_encode(array('error' => 'Could not find entity')));
-			$response->response();
-			return false;
+		if ($id) {
+			$model = self::initModel($coll);
+			$entity = $model->getItem($id);
 		}
-		$entity = $entity->getRawData();
-		foreach ($model->getHiddenKeys($entity, $type) as $key) {
-			if ($key !== '_id')
-				unset($entity[$key]);
+		if ($entity) {
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, $type) as $key) {
+				if ($key !== '_id')
+					unset($entity[$key]);
+			}
+		}
+		$interconnect_key = Billrun_Util::filter_var($this->getRequest()->get('interconnect_key'), FILTER_SANITIZE_STRING);
+		if ($interconnect_key) {
+			$interconnect_model = self::initModel($coll);
+			$interconnect_entity = $interconnect_model->getItemByName($interconnect_key, 'key');
 		}
 		if ($interconnect_entity) {
 			$interconnect = $interconnect_entity->getRawData();
