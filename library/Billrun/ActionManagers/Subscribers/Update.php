@@ -122,21 +122,20 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateSubscriberRecord($record) {
 		// Check if the user requested to keep history.
 		if($this->trackHistory) {
+			$track_time = time();
 			if(isset($this->recordToSet['sid'])) {
 				$queryArray = array('sid' => $record['sid']);
-				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid']));
+				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid'], 'to'=> new MongoDate($track_time)));
 				$updateOptionsArray = array('multiple' => 1);
-				Billrun_Factory::db()->subscribersCollection()
-					->update($queryArray, $updateArray, $updateOptionsArray);
+				$this->collection->update($queryArray, $updateArray, $updateOptionsArray);
 
 				$record['sid'] = $this->recordToSet['sid'];
 			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
-			$track_time = time();
+			
 			// This throws an exception if fails.
 			$this->handleKeepHistory($record, $track_time);
 			unset($record['_id']);
-			
 			$this->recordToSet['from'] = new MongoDate($track_time);
 		}
 
@@ -320,9 +319,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$subscriberValidationQuery = $this->getSubscriberUpdateValidationQuery($jsonUpdateData);
 		
 		if(!empty($subscriberValidationQuery)) {
-			$subCol = Billrun_Factory::db()->subscribersCollection();
 			
-			if($subCol->exists($subscriberValidationQuery)) {
+			if($this->collection->exists($subscriberValidationQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
 				$cleaned = Billrun_Util::array_remove_compound_elements($this->query);
 				$parameters = http_build_query($cleaned, '', ', ');
