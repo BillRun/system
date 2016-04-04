@@ -68,7 +68,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 		$data = $this->customerQueryDb($subscriberQuery);
 		if(!$data) {
-			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::ALERT);
+			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::NOTICE);
 			return false;
 		}	
 		
