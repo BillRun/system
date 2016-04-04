@@ -43,22 +43,48 @@ $(function () {
 
   $("#ratePlanPopup").on('show.bs.modal', function (event) {
     var rate_id = $(event.relatedTarget).data('rate-id');
+    var interconnect_key = $(event.relatedTarget).data('interconnect-key');
     var plan = $(event.relatedTarget).data('plan');
     var usage = $(event.relatedTarget).data('usage');
     $('#data-rates-tbody tr').remove();
     $.ajax({
-      url: baseUrl + '/admin/getEntity',
+      url: baseUrl + '/admin/getRate',
       type: "GET",
-      data: {coll: 'rates', id: rate_id}
+      data: {coll: 'rates', id: rate_id, interconnect_key: interconnect_key}
     }).done(function (res) {
       var entity = JSON.parse(res).entity;
+      var interconnect_entity = JSON.parse(res).interconnect;
       var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
+      if (!_.isEmpty(interconnect_entity)) {
+        var interconnect = (_.isUndefined(interconnect_entity.rates[usage][plan]) ?
+                                interconnect_entity.rates[usage]['BASE'].rate : 
+                                interconnect_entity.rates[usage][plan].rate);
+      }
       var $tbody = $("#data-rates-tbody");
       $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
       _.forEach(rate, function (r) {
         var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
         $tbody.append($row);
       });
+      if (interconnect) {
+        var $inter_table = $("<hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
+					<thead>\
+						<tr>\
+							<th>Interval</th>\
+							<th>Price</th>\
+							<th>To</th>\
+						</tr>\
+					</thead>\
+					<tbody id='data-interconnect-tbody'>\
+					</tbody>\
+				</table>");
+        var $inter_tbody = $('#data-interconnect-tbody', $inter_table)
+        _.forEach(interconnect, function (inter) {
+          var $row = $("<tr><td>" + inter.interval + "</td><td>" + inter.price + "</td><td>" + inter.to + "</td></tr>");
+          $inter_tbody.append($row);
+        });
+        $('.data-rates-table').after($inter_table);
+      }
     });
   });
 
