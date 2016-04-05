@@ -22,7 +22,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 		if($this->data['eom'] == 1) {
 			return new MongoDate($lastDayNextMonth);
 		}
-		$nextMonth = strtotime("+1 month 23:59:59");
+		$nextMonth = strtotime("+1 month -1 day 23:59:59");
 		if($nextMonth > $lastDayNextMonth) {
 			return new MongoDate($lastDayNextMonth);
 		} 
@@ -33,7 +33,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 		
 		// Check if the day of the start is larger, because of overlap.
 		$fromDay = date('d',strtotime($this->data['from']));
-		$dayDifference = $fromDay - date('d', $nextMonth);
+		$dayDifference = $fromDay - date('d', $nextMonth) - 1;
 
 		if($dayDifference <= 0) {
 			$renewDate = $nextMonth;

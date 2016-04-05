@@ -208,7 +208,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		
 		// Check if the from is in the past.
 		if($from >= strtotime("today midnight")) {
-			$set['next_renew_date'] = $set['from'];
+			$set['next_renew_date'] = strtotime("23:59:59", $from) + 1;
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
 			$set['last_renew_date'] = -1;
@@ -290,8 +290,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$nextRenewDay = date('t', $renewDateInitial);
 		}
 
-		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
-		$set['next_renew_date'] = new MongoDate($renewDate);
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 23:59:59");
+		$set['next_renew_date'] = new MongoDate($renewDate + 1);
 
 		unset($jsonUpdateData['migrated']);
 	}
