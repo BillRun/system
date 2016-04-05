@@ -40,7 +40,7 @@ class Billrun_Balances_Handler {
 				$data['value'] = $value *-1;
 				$this->updateBalance($data);
 			} catch (Exception $ex) {
-				Billrun_Factory::log("Cron exception! " . $ex->getCode() . ": " . $ex->getMessage());
+				Billrun_Factory::log("Cron exception! " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			}
 		}
 	}
