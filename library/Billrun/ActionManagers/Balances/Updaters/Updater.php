@@ -368,7 +368,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		} else {
 			$unit = 'months';
 		}
-		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)));
+		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
 	}
 	
 	/**
