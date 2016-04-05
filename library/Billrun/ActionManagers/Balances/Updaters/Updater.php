@@ -251,7 +251,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Get subscriber query.
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 		
-		$coll = Billrun_Factory::db()->subscribersCollection();
+		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference(MongoClient::RP_PRIMARY,array());;
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;

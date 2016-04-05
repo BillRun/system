@@ -79,6 +79,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function hasAvailableBalances($row) {
 		$query = Billrun_Util::getDateBoundQuery();
+		$query['sid'] = $row['sid'];
 		if ($this->canUseDataFromCurrencyBalances($row)) {
 			$query['$or'] = array(
 				array('charging_by_usaget' => 'data'),

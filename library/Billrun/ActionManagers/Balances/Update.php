@@ -54,6 +54,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
+		$this->collection->setReadPreference(MongoClient::RP_PRIMARY,array());
 	}
 	
 	/**
@@ -351,7 +352,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		if ($to) {
-			$this->recordToSet['to'] = new MongoDate(strtotime($to));
+			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime($to)) : $to;
 		}
 		
 		// Upsert is not needed so no need to go over the fields
