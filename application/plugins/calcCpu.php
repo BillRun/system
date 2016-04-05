@@ -258,9 +258,11 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), array('np_code', 'call_type', 'dialed_digits'));
 			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
 			if ($query) {
+				$flipedArr = array_flip($possibleNewFields);
+				unset($flipedArr['in_data_slowness']);
 				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->current();
 				if (!$formerLine->isEmpty()) {
-					$addArr = array_intersect_key($formerLine->getRawData(), array_flip($possibleNewFields));
+					$addArr = array_intersect_key($formerLine->getRawData(), $flipedArr);
 					$line = array_merge($addArr, $line);
 				}
 			}
