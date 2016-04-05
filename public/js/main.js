@@ -47,6 +47,7 @@ $(function () {
     var plan = $(event.relatedTarget).data('plan');
     var usage = $(event.relatedTarget).data('usage');
     $('#data-rates-tbody tr').remove();
+    $('#rate-interconnect-info').remove();
     $.ajax({
       url: baseUrl + '/admin/getRate',
       type: "GET",
@@ -67,7 +68,7 @@ $(function () {
         $tbody.append($row);
       });
       if (interconnect) {
-        var $inter_table = $("<hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
+        var $inter_table = $("<div id='rate-interconnect-info'><hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
 					<thead>\
 						<tr>\
 							<th>Interval</th>\
@@ -77,7 +78,7 @@ $(function () {
 					</thead>\
 					<tbody id='data-interconnect-tbody'>\
 					</tbody>\
-				</table>");
+				</table></div>");
         var $inter_tbody = $('#data-interconnect-tbody', $inter_table)
         _.forEach(interconnect, function (inter) {
           var $row = $("<tr><td>" + inter.interval + "</td><td>" + inter.price + "</td><td>" + inter.to + "</td></tr>");
