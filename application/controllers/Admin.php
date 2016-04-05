@@ -221,6 +221,40 @@ class AdminController extends Yaf_Controller_Abstract {
 		return false;
 	}
 	
+	public function getRateAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$response = new Yaf_Response_Http();
+		$coll = 'rates';
+		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
+		if ($id) {
+			$model = self::initModel($coll);
+			$entity = $model->getItem($id);
+		}
+		if ($entity) {
+			$entity = $entity->getRawData();
+			foreach ($model->getHiddenKeys($entity, $type) as $key) {
+				if ($key !== '_id')
+					unset($entity[$key]);
+			}
+		}
+		$interconnect_key = Billrun_Util::filter_var($this->getRequest()->get('interconnect_key'), FILTER_SANITIZE_STRING);
+		if ($interconnect_key) {
+			$interconnect_model = self::initModel($coll);
+			$interconnect_entity = $interconnect_model->getItemByName($interconnect_key, 'key');
+		}
+		if ($interconnect_entity) {
+			$interconnect = $interconnect_entity->getRawData();
+			foreach ($interconnect_model->getHiddenKeys($interconnect, $type) as $key) {
+				unset($interconnect[$key]);
+			}
+			unset($interconnect['_id']);
+		}
+		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'interconnect' => $interconnect)));
+		$response->response();
+		return false;
+	}
+	
 	public function getEntityAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -917,11 +951,11 @@ class AdminController extends Yaf_Controller_Abstract {
 			'showprefix' => $showprefix,
 		);
 		// set the model
+		if ($this->_request->getParam("plan_type")) {
+			$options['plan_type'] = $this->_request->getParam("plan_type");
+		}
 		self::initModel($table, $options);
 		$query = $this->applyFilters($table);
-		if ($table === "plans") {
-			$options['plan_type'] = $this->_request->getParam('plan_type');
-		}
 
 		$this->getView()->component = $this->buildTableComponent($table, $query, $options);
 	}

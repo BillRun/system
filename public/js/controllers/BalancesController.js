@@ -20,6 +20,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
       if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost)) vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
       // save via Admin.php if only date was changed UNLESS it's CORE BALANCE (id: 1)
       if (vm.entity.pp_includes_external_id != 1 && !angular.equals(vm.original_entity, vm.entity)) {
+        vm.entity.to = moment(vm.entity.to).endOf("day");
         vm.original_entity.to = vm.entity.to;
         if (angular.equals(vm.original_entity, vm.entity)) {
           var params = {

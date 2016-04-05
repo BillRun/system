@@ -243,12 +243,12 @@ class TableModel {
 		return $ret;
 	}
 
-	public function getItemByName($name) {
+	public function getItemByName($name, $field_name = 'name') {
 		if (!($this->collection instanceof Mongodloid_Collection)) {
 			return false;
 		}
 
-		$entity = $this->collection->query(array('name' => $name))->cursor()->limit(1)->current();
+		$entity = $this->collection->query(array($field_name => $name))->cursor()->limit(1)->current();
 
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];

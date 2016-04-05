@@ -294,7 +294,7 @@ class RatesModel extends TabledateModel {
 								$added_columns['tduration'] = $rate[$filteredPlan]['rate'][0]['interval'];
 							}
 							$raw = $item->getRawData();
-							$raw['key'] .= " ($filteredPlan)";
+							$raw['key'] .= " [" . $filteredPlan . "]";
 							$ret[] = new Mongodloid_Entity(array_merge($raw, $added_columns, $rate));
 						}
 					}
