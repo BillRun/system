@@ -100,16 +100,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
 
-		if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
-			$this->stamp = $options['aggregator']['stamp'];
-		}
 		if (isset($options['stamp']) && $options['stamp']) {
 			$this->stamp = $options['stamp'];
-		}
-		if (!isset($options['stamp'])) {
-			$next_billrun_key = Billrun_Util::getBillrunKey(time());
-			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
-			$this->stamp = $current_billrun_key;
+		} else {
+			if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
+				$this->stamp = $options['aggregator']['stamp'];
+			} else {
+				$next_billrun_key = Billrun_Util::getBillrunKey(time());
+				$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
+				$this->stamp = $current_billrun_key;
+			}
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
@@ -142,8 +142,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['override_accounts'])) {
 			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
 		}
-
-
+		
 		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
@@ -151,8 +150,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 
-		$this->page = $this->getNextPage();
-		if ($this->page === FALSE) {
+		if (!$this->page = $this->getNextPage()) {
 			return FALSE;
 		}
 	}
