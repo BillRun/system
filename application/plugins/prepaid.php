@@ -275,7 +275,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
 			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
-			return 0;
+			return array(
+				'cost' => 0,
+				'interconnect' => 0,
+			);
 		}
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
