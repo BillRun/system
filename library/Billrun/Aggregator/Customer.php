@@ -148,7 +148,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 
-		if (!$this->page = $this->getNextPage()) {
+		if (!$this->page = $this->getPage()) {
 			return FALSE;
 		}
 	}
@@ -300,6 +300,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 
 		// @TODO trigger after aggregate
+		$this->billing_cycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('end_time' => new MongoDate())));
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 		return $this->successfulAccounts;
 	}
@@ -447,8 +448,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * 
 	 * 
 	 */
-	protected function getNextPage($max_tries = 100) {
-
+	protected function getPage($max_tries = 100) {
+		
 		if ($max_tries <= 0) { // 100 is arbitrary number and should be enough
 			Billrun_Factory::log()->log("Failed getting next page", Zend_Log::ALERT);
 			return FALSE;
@@ -458,10 +459,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
 			return FALSE;
 		}
-		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp))->cursor()->sort(array('page_number' => -1))->limit(1);
-		foreach ($current_document as $exp) {
-			$current_page = $exp['page_number'];
+		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
+		if (is_null($current_document)){
+			return FALSE;
 		}
+		$current_page = $current_document['page_number'];
 		if (isset($current_page)) {
 			$next_page = $current_page + 1;
 		} else {
@@ -471,12 +473,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		try {
 			//	$this->billing_cycle->insert(array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host));
 			$this->billing_cycle->findAndModify(
-				array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size), array('$setOnInsert' => array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host)), null, array(
+				array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size), array('$setOnInsert' => array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host, 'start_time'=> new MongoDate())), null, array(
 				"upsert" => true
 				)
 			);
 		} catch (Exception $e) {
-			$this->getNextPage($max_tries - 1);
+			$this->getPage($max_tries - 1);
 		}
 
 		return $next_page;
