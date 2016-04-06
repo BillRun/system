@@ -259,7 +259,10 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
 			if ($query) {
 				$flipedArr = array_flip($possibleNewFields);
-				unset($flipedArr['in_data_slowness']);
+				$fieldsToIgnore = Billrun_Factory::config()->getConfigValue('realtimeevent.reuse.ignoreFields', array());
+				foreach ($fieldsToIgnore as $fieldToIgnore) {
+					unset($flipedArr[$fieldToIgnore]);
+				}
 				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->current();
 				if (!$formerLine->isEmpty()) {
 					$addArr = array_intersect_key($formerLine->getRawData(), $flipedArr);
