@@ -102,14 +102,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		if (isset($options['stamp']) && $options['stamp']) {
 			$this->stamp = $options['stamp'];
-		} else {
-			if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
+		} else if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
 				$this->stamp = $options['aggregator']['stamp'];
-			} else {
-				$next_billrun_key = Billrun_Util::getBillrunKey(time());
-				$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
-				$this->stamp = $current_billrun_key;
-			}
+		} else {
+			$next_billrun_key = Billrun_Util::getBillrunKey(time());
+			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
+			$this->stamp = $current_billrun_key;
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
 			$this->size = $options['aggregator']['size'];
