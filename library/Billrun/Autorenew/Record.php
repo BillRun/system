@@ -46,7 +46,7 @@ abstract class Billrun_Autorenew_Record {
 	protected function getUpdaterInputToTime($nextRenewDate) {
 		$toTime = strtotime($this->data['to']);
 		
-		$toDate = $nextRenewDate - 1;
+		$toDate = $nextRenewDate;
 		
 		// Check if the 'to' is before the next renew date.
 		if($nextRenewDate->sec > $toTime) {
