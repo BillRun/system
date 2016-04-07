@@ -172,7 +172,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
 		try {
-			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
+			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
@@ -275,7 +275,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
 			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
-			return 0;
+			return array(
+				'cost' => 0,
+				'interconnect' => 0,
+			);
 		}
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
@@ -305,6 +308,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];
 		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
+		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref');
 		if ($balanceRef) {
@@ -321,7 +325,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
-			$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceUsagev, $rebalanceCost, $rebalanceInterconnect);
+			
 			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
 		} else {
 			$balance = null;

@@ -62,10 +62,34 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			'multiple' => true,
 		);
 		// TODO: Use balances DB/API proxy class.
-		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$balancesColl->update($balancesQuery, $update, $options);
+		
 		$autoRenewColl = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewColl->update($balancesQuery, $update, $options);
+		
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY,array());
+		if( empty(array_intersect_key($update['$set'], array('sid'=>1))) ) {
+			$balancesColl->update($balancesQuery, $update, $options);
+		} else {
+			$epoch = !isset($update['$set']['to']) ? new MongoDate() : $update['$set']['to'];
+			$cleanupdate = array();
+			$cleanupdate['$set']['to'] = $epoch;
+
+			$balances = iterator_to_array($balancesColl->query($balancesQuery));
+			$balancesColl->update($balancesQuery, $cleanupdate, $options);
+			unset($update['$set']['to']);
+			
+			foreach($balances as $balance) {
+				$newBalance = $balance->getRawData();
+				unset($newBalance['_id']);
+				foreach($update['$set'] as $key => $val) {
+					$newBalance[$key] = $val;
+				}
+				$newBalance['from'] = $epoch;
+				if($newBalance['to']->sec > $epoch->sec ) {
+					$balancesColl->save(new Mongodloid_Entity($newBalance));
+				}
+			}
+		}
 	}
 	
 	/**
@@ -122,21 +146,20 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateSubscriberRecord($record) {
 		// Check if the user requested to keep history.
 		if($this->trackHistory) {
+			$track_time = time();
 			if(isset($this->recordToSet['sid'])) {
 				$queryArray = array('sid' => $record['sid']);
-				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid']));
+				$updateArray = array('$set' => array('new_sid' => $this->recordToSet['sid'], 'to'=> new MongoDate($track_time)));
 				$updateOptionsArray = array('multiple' => 1);
-				Billrun_Factory::db()->subscribersCollection()
-					->update($queryArray, $updateArray, $updateOptionsArray);
+				$this->collection->update($queryArray, $updateArray, $updateOptionsArray);
 
 				$record['sid'] = $this->recordToSet['sid'];
 			}
 //				$record['msisdn'] = $this->recordToSet['msisdn'];
-			$track_time = time();
+			
 			// This throws an exception if fails.
 			$this->handleKeepHistory($record, $track_time);
 			unset($record['_id']);
-			
 			$this->recordToSet['from'] = new MongoDate($track_time);
 		}
 
@@ -190,7 +213,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$updateArray = array('$set' => array());
 				if (isset($this->recordToSet['sid'])) {
 					$updateArray['$set']['sid'] = $this->recordToSet['sid'];
-				}
+			}
 				if (isset($this->recordToSet['aid'])) {
 					$updateArray['$set']['aid'] = $this->recordToSet['aid'];
 				}
@@ -320,9 +343,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$subscriberValidationQuery = $this->getSubscriberUpdateValidationQuery($jsonUpdateData);
 		
 		if(!empty($subscriberValidationQuery)) {
-			$subCol = Billrun_Factory::db()->subscribersCollection();
 			
-			if($subCol->exists($subscriberValidationQuery)) {
+			if($this->collection->exists($subscriberValidationQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
 				$cleaned = Billrun_Util::array_remove_compound_elements($this->query);
 				$parameters = http_build_query($cleaned, '', ', ');
@@ -424,8 +446,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		// If keep_history is set take it.
-		$this->trackHistory = Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		// If keep_history is set take it or   if we will update the SID  force  tracking history.
+		$isSidUpdate = isset($this->recordToSet['sid']) && ($this->query['sid'] !== $this->recordToSet['sid']);
+		$this->trackHistory =  $isSidUpdate || Billrun_Util::filter_var($input->get('track_history', $this->trackHistory), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		
 		// If keep_balances is set take it.
 		$this->keepBalances = Billrun_Util::filter_var($input->get('keep_balances', $this->keepBalances), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);

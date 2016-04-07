@@ -1,15 +1,17 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Handler for externally closing all balances.
- *
- * @author Tom Feigin
+ * Billing cron controller class
+ * Used for is alive checks
+ * 
+ * @package  Controller
+ * @since    4.0
  */
 class Billrun_Balances_Handler {
 	use Billrun_Traits_Updater_Balance {
@@ -22,20 +24,24 @@ class Billrun_Balances_Handler {
 	 */
 	public function closeBalances() {					
 		$balancesQuery['to'] = array(
-			'$gt' => new MongoDate(strtotime("yesterday midnight")),
+			'$gte' => new MongoDate(strtotime("yesterday midnight")),
 			'$lte' => new MongoDate(strtotime("midnight")),
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balancesCursor = $balancesColl->query($balancesQuery)->cursor();
 		foreach ($balancesCursor as $balance) {
-			$value = $this->getValue($balance);
-			if($value >= 0) {
-				continue;
+			try {
+				$value = $this->getValue($balance);
+				if($value >= 0) {
+					continue;
+				}
+
+				$data = $this->getUpdateData($balance);
+				$data['value'] = $value *-1;
+				$this->updateBalance($data);
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Cron exception! " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			}
-			
-			$data = $this->getUpdateData($balance);
-			$data['value'] = $value *-1;
-			$this->updateBalance($data);
 		}
 	}
 	
@@ -50,7 +56,9 @@ class Billrun_Balances_Handler {
 	}
 	
 	protected function getInputQuery($data) {
-		return array('pp_includes_external_id' => $data['pp_includes_external_id']);
+		$result = array();
+		$result['_id'] = $data['_id'];
+		return $result;
 	}
 	
 	protected function getUpdateQuery($data) {
@@ -60,6 +68,11 @@ class Billrun_Balances_Handler {
 		return $updaterInputUpdate;
 	}
 	
+	/**
+	 * Get the update data data to be used in the query.
+	 * @param Mongodloid_Entity $balance
+	 * @return array
+	 */
 	protected function getUpdateData($balance) {
 		$data = $balance->getRawData();
 		$data['operation'] = "inc";
