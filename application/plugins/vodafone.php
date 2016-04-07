@@ -39,7 +39,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		$pricingData['vf_count_days'] = $this->count_days;
+		if (!is_null($this->count_days)) {
+			$pricingData['vf_count_days'] = $this->count_days;
+		}
+		$this->count_days = NULL;
 	}
 
 	/**
