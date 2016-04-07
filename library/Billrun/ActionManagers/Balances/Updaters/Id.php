@@ -206,6 +206,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 			'new' => true,
 		);
 		
+		$query['sid'] = $this->balancesRecord['sid']; // used for sharded cluster
 		$balance = $balancesColl->findAndModify($query, $valueUpdateQuery, array(), $options, true);
 		// Return the new document.
 		return array(array('wallet'=>$usedWallet, 'balance' => $balance));

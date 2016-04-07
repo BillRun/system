@@ -1,15 +1,17 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Handler for externally closing all balances.
- *
- * @author Tom Feigin
+ * Billing cron controller class
+ * Used for is alive checks
+ * 
+ * @package  Controller
+ * @since    4.0
  */
 class Billrun_Balances_Handler {
 	use Billrun_Traits_Updater_Balance {
@@ -28,14 +30,18 @@ class Billrun_Balances_Handler {
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balancesCursor = $balancesColl->query($balancesQuery)->cursor();
 		foreach ($balancesCursor as $balance) {
-			$value = $this->getValue($balance);
-			if($value >= 0) {
-				continue;
+			try {
+				$value = $this->getValue($balance);
+				if($value >= 0) {
+					continue;
+				}
+
+				$data = $this->getUpdateData($balance);
+				$data['value'] = $value *-1;
+				$this->updateBalance($data);
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Cron exception! " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			}
-			
-			$data = $this->getUpdateData($balance);
-			$data['value'] = $value *-1;
-			$this->updateBalance($data);
 		}
 	}
 	

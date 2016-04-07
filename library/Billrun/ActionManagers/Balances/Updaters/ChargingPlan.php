@@ -32,12 +32,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
 		// Check if the wallet has a special period.
-		$walletPeriod = $wallet->getPeriod();
-		if ($walletPeriod) {
-			return $this->getDateFromPeriod($walletPeriod);
+		if(isset($recordToSet['to'])) {
+			$wallet->setPeriod($recordToSet['to']);
+			return $recordToSet['to'];		
 		}
-		$wallet->setPeriod($recordToSet['to']);
-		return $recordToSet['to'];
+	
+		$walletPeriod = $wallet->getPeriod();
+		return $this->getDateFromPeriod($walletPeriod);
 	}
 
 	protected function getChargingPlanQuery($query) {
@@ -144,8 +145,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 					return false;
 				}
 				
-				if(isset($returnPair['updated']) && $returnPair['updated']) {
-					$balancesToReturn['updated'] = true;
+				if(isset($returnPair['blocked']) && $returnPair['blocked']) {
+					$balancesToReturn['blocked'] = true;
 				}
 				
 				$balancesToReturn[] = $returnPair;
@@ -207,6 +208,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['after'] = $beforeNormalizing;
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
 			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+			
+			if(isset($normalizeResult['bill_err'])) {
+				// Report the error.
+				$this->reportError($normalizeResult['bill_err'] + 1, Zend_Log::ERR);
+				$returnPair['blocked'] = true;
+			}
 		}
 		
 		unset($returnPair['query']);
@@ -342,11 +349,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
-		
-		if(!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
-		}
+		$this->setToForUpdate($update, $toTime);
 		
 		$options = array(
 			'upsert' => true,
