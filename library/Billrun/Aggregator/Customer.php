@@ -449,7 +449,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * 
 	 */
 	protected function getPage($max_tries = 100) {
-		
+
 		if ($max_tries <= 0) { // 100 is arbitrary number and should be enough
 			Billrun_Factory::log()->log("Failed getting next page", Zend_Log::ALERT);
 			return FALSE;
@@ -460,7 +460,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			return FALSE;
 		}
 		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
-		if (is_null($current_document)){
+		if (is_null($current_document)) {
 			return FALSE;
 		}
 		$current_page = $current_document['page_number'];
@@ -471,16 +471,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		$host = gethostname();
 		try {
-			//	$this->billing_cycle->insert(array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host));
-			$this->billing_cycle->findAndModify(
-				array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size), array('$setOnInsert' => array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host, 'start_time'=> new MongoDate())), null, array(
+			$check_exists = $this->billing_cycle->findAndModify(
+				array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size), array('$setOnInsert' => array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host, 'start_time' => new MongoDate())), null, array(
 				"upsert" => true
 				)
 			);
+			if (!$check_exists->isEmpty()) {
+				throw new Exception("page already exists");
+			}
 		} catch (Exception $e) {
-			$this->getPage($max_tries - 1);
+			return $this->getPage($max_tries - 1);
 		}
-
 		return $next_page;
 	}
 
