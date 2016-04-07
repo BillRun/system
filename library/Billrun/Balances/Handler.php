@@ -32,7 +32,7 @@ class Billrun_Balances_Handler {
 		foreach ($balancesCursor as $balance) {
 			try {
 				$value = $this->getValue($balance);
-				if($value >= 0) {
+				if($value > 0 && !Billrun_Util::isEqual($value, 0, Billrun_Calculator_CustomerPricing::getPrecision())) {
 					continue;
 				}
 
