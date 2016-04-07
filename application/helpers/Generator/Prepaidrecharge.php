@@ -86,13 +86,14 @@ class Generator_PrepaidRecharge extends Billrun_Generator_ConfigurableCDRAggrega
 	
 	protected function flattenArray($array, $parameters, &$line) {
 		foreach($array as $idx => $val) {
-			if($val instanceof MongoDBRef ) {
-				$val = Billrun_DBRef::getEntity($val);
+			if($val instanceof MongoDBRef  || isset($val['$ref'],$val['$id'])) {
+				$val = $this->collection->getRef($val);
 			}
+			$dstIdx = isset($parameters['key_field']) ? $val[$parameters['key_field']] : $idx+1; 
 			foreach($parameters['mapping'] as $dataKey => $lineKey) {
-				$fieldValue = Billrun_Util::getNestedArrayVal($val,$dataKey);
+				$fieldValue = is_array($val) || is_object($val) ?  Billrun_Util::getNestedArrayVal($val,$dataKey) : $val;
 				if(!empty($fieldValue)) {
-					$line[sprintf($lineKey, $idx+1)] = $fieldValue;
+					$line[sprintf($lineKey, $dstIdx)] = $fieldValue;
 				}
 			}
 		}
