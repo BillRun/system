@@ -49,7 +49,7 @@ class Billrun_Aggregator_Ilds extends Billrun_Aggregator {
 
 			if (!$item->get('account_id') || !$item->get('subscriber_id')) {
 				// load subscriber
-				$phone_number = $item->get('caller_phone_no');
+				$phone_number = Billrun_Util::cleanLeadingZeros($item->get('caller_phone_no'));
 				$subscriber_golan = Billrun_Factory::subscriber();
 				$subsriber_details = $subscriber_golan->load(array("NDC_SN" => $phone_number, "time" => $time));
 				$subscriber['account_id'] = $subsriber_details->account_id;
