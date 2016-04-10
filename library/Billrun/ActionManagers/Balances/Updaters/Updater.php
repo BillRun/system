@@ -354,7 +354,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	protected function getDateFromPeriod($period) {
 		if ($period instanceof MongoDate) {
 			return $period;
+		} 
+		if(isset($period['sec'])) {
+			return new MongoDate($period['sec']);
 		}
+		
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location
