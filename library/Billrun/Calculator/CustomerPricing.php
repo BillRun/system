@@ -981,4 +981,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return $rate['rates'][$usage_type]['interconnect'];
 		}
 	}
+	
+	public static function getPrecision() {
+		return static::$precision;
+	}
 }
