@@ -137,6 +137,7 @@ abstract class Billrun_Autorenew_Record {
 			return false;
 		}
 		
-		return $this->updateAutorenew($nextRenewDate);
+		// The next auto renew is one second after the balance expiration input
+		return $this->updateAutorenew($nextRenewDate + 1);
 	}
 }
