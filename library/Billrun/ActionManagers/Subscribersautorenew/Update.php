@@ -212,6 +212,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
 			$set['last_renew_date'] = -1;
+			$jsonUpdateData['migrated'] = true;
 		}
 		
 		if (isset($jsonUpdateData['to']->sec)) {
