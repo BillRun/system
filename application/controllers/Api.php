@@ -28,6 +28,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		$this->start_time = microtime(1);
 		// all output will be store at class output class
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
@@ -35,7 +36,6 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
-		$this->start_time = microtime(1);
 	}
 
 	/**
