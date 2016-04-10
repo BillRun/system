@@ -62,7 +62,6 @@ class Billrun_Autorenew_Handler {
 	
 	public function autoRenewServices() {				
 		$queryDate = $this->getAutoRenewServicesQuery();
-		
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 

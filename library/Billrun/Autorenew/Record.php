@@ -44,7 +44,13 @@ abstract class Billrun_Autorenew_Record {
 	 * @return MongoDate date to set in the 'to' field.
 	 */
 	protected function getUpdaterInputToTime($nextRenewDate) {
-		$toTime = strtotime($this->data['to']);
+		$dataTo = $this->data['to'];
+		if(is_a($dataTo, "MongoDate")) {
+			$toTime = $dataTo->sec;
+		} else {
+			$toTime = strtotime($dataTo);
+		}
+		
 		
 		$toDate = $nextRenewDate;
 		
@@ -114,6 +120,12 @@ abstract class Billrun_Autorenew_Record {
 	 * @return Result of the update operation.
 	 */
 	protected function updateAutorenew($nextRenewDate) {
+		if(is_a($nextRenewDate, 'MongoDate')) {
+			$nextRenewDate->sec += 1;
+		} else {
+			$nextRenewDate = new MongoDate($nextRenewDate + 1);
+		}
+		
 		$this->data['last_renew_date'] = new MongoDate();
 		$this->data['next_renew_date'] = $nextRenewDate;
 		$this->data['remain'] = $this->data['remain'] - 1;
@@ -138,6 +150,6 @@ abstract class Billrun_Autorenew_Record {
 		}
 		
 		// The next auto renew is one second after the balance expiration input
-		return $this->updateAutorenew($nextRenewDate + 1);
+		return $this->updateAutorenew($nextRenewDate);
 	}
 }
