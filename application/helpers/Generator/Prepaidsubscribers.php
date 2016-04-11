@@ -76,10 +76,11 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	protected function flattenArray($array, $parameters, &$line) {
 		$idx = 0;
 		foreach($array as $val) {
+			$dstIdx = isset($parameters['key_field']) ? $val[$parameters['key_field']] : $idx+1; 
 			foreach($parameters['mapping'] as $dataKey => $lineKey) {
-				$fieldValue = Billrun_Util::getNestedArrayVal($val,$dataKey);
+				$fieldValue = is_array($val) || is_object($val) ?  Billrun_Util::getNestedArrayVal($val,$dataKey) : $val;
 				if(!empty($fieldValue)) {
-					$line[sprintf($lineKey, $idx+1)] = $fieldValue;
+					$line[sprintf($lineKey, $dstIdx)] = $fieldValue;
 				}
 			}
 			$idx++;
@@ -87,6 +88,10 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		return $array;
 	}
 	
+	
+	protected function multiply($value, $parameters, $line) {
+		return $value * $parameters;
+	}
 	
 	protected function lastSidTransactionDate($value, $parameters, $line) {
 		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid'=>$value),$parameters['query']))->cursor()->sort(array('urt'=>-1))->limit(1)->current();

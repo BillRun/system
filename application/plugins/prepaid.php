@@ -192,7 +192,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
-		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request')) && (!isset($row['in_data_slowness']) || !$row['in_data_slowness'])) || 
+		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request'))) || 
 			($row['type'] == 'callrt' && in_array($row['api_name'], array('release_call')));
 	}
 
@@ -303,7 +303,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
-	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance) {
 		$usaget = $lineToRebalance['usaget'];
 		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];
