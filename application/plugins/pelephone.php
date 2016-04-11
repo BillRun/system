@@ -228,10 +228,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterBalanceLoad($balance, $subscriber, $source) {
-		if (!$balance || !$this->shouldSendNotification($source)) {
+		if (!$balance) {
 			return;
 		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
+		if (!$this->shouldSendNotification($source)) {
+			return;
+		}
 		$update = array(
 			'$unset' => array(
 				'notifications_sent' => 1,
