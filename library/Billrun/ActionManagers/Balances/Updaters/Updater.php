@@ -238,7 +238,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		return array('$max' => array($wallet->getFieldName() =>$maxValue));
 	}
 	
-	protected function commitNormalizeBalance($wallet, $maxValue, $query, $plan) {
+	protected function commitNormalizeBalance($wallet, $maxValue, $query) {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
@@ -246,7 +246,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		);
 				
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
-		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
+		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue);
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
 		return $updateResult;
