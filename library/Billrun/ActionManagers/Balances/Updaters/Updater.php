@@ -393,33 +393,18 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	}
 	
 	/**
-	 * Set the 'To' field to the update query
-	 * @param array $update - The update query to set the to for
-	 * @param type $to - Time value.
-	 */
-	protected function setToForUpdate(&$update, $to) {
-		if(Billrun_Util::multiKeyExists($update, 'to')) {			
-			return;
-		}
-		
-		// Check if the value before is 0 and if so take the input values to update.
-		$balanceRecord = end($this->balanceBefore);
-		reset($this->balanceBefore);
-		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceRecord);
-		if($valueBefore < 0) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $to;
-		} else {
-			// TODO: Move the $max functionality to a trait
-			$update['$set']['to'] = $to;	
-		}
-	}
-	
-	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
 	 */
-	protected function getSetQuery($chargingPlan) {		
+	protected function getSetQuery($chargingPlan) {
+		// THIS SEEMS UNECCESSARY. BUT I AM LEAVING IT HERE BECAUSE IT MIGHT BE THAT I
+		// MISUNDERSTOOD THE PROBLEM AND WE STILL NEED THIS SOLUTION FOR IT
+		// Check if the value before is 0 and if so take the input values to update.
+//		$valueBefore = Billrun_Balances_Util::getBalanceValue($this->balanceBefore);
+//		if($valueBefore === 0) {
+//			
+//		}
+		
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
