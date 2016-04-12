@@ -138,9 +138,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @return array the array used to update the mongo.
 	 */
 	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
-		$balanceBefore = $this->getLastBalanceRecord();
-		$beforeValue = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		return array('$set' => array($wallet->getFieldName() => $beforeValue));
+		return array('$set' => array($wallet->getFieldName() => $wallet->getValue()));
 	}
 	
 	/**
