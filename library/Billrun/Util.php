@@ -1295,6 +1295,21 @@ class Billrun_Util {
 		} 
 	}
 	
+	/**
+	 * Return the first value of a multidimentional array.
+	 * Example:
+	 * [a => [b => [c => 4]]] returns 4.
+	 * @param array $array - The array to get the value of.
+	 * @return The first value of the array.
+	 */
+	function getFirstValueOfMultidimentionalArray($array) {
+		$value = array_map(function($i) {
+			return $i[0];
+		}, $array);
+		
+		return $value;
+	}
+	
 	function constructAssocArray($parts) {
 		if((count($parts)) <= 1) {
 			return $parts[0];
@@ -1302,21 +1317,5 @@ class Billrun_Util {
 		
 		$shiftResult = array_shift($parts);
 		return array($shiftResult => self::constructAssocArray($parts));
-	}
-	
-		/**
-	 * Return the first value of a multidimentional array.
-	 * Example:
-	 * [a => [b => [c => 4]]] returns 4.
-	 * @param array $array - The array to get the value of.
-	 * @return The first value of the array.
-	 */
-	public function getFirstValueOfMultidimentionalArray($array) {
-		if(is_array($array)) {
-			$next = reset($array);
-			return self::getFirstValueOfMultidimentionalArray($next);
-		}
-		
-		return $array;
 	}
 }
