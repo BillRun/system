@@ -268,11 +268,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if($success) {
 			$this->stripTx($outputDocuments);
-		}
-		$updaterError = $this->updater->getError();
-		if($updaterError) {
-			$this->error = $updaterError;
-			$this->errorCode = $this->updater->getErrorCode();
+		} else {
+			$updaterError = $this->updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+				$this->errorCode = $this->updater->getErrorCode();
+			}
 		}
 		
 		$outputResult = array(
