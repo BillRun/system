@@ -237,16 +237,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			$currentValue += $valueBefore;
 		}
 		
-		// These values are negative
-		if($currentValue > $maxValue) {
-			return array('nModified' => 0);
-		}
-		
 		$query['priority'] = $wallet->getPriority();
 		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
 		
 		$errorPassingMax = false;
-		if($this->shouldBlockUpdate($wallet)) {
+		if(($currentValue < $maxValue) && ($wallet->getPPID() == 1)) {
 			$updateQuery = array('$set' => array($wallet->getFieldName() => $valueBefore));
 			$errorPassingMax = true;
 		}
@@ -257,15 +252,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			$result['bill_err'] = $errCode;
 		}
 		return $result;
-	}
-	
-	/**
-	 * Return indication for blocking a balance update over the max value.
-	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used in the update.
-	 * @return true if should block.
-	 */
-	protected function shouldBlockUpdate($wallet) {
-		return ($wallet->getPPID() == 1);
 	}
 	
 	/**
