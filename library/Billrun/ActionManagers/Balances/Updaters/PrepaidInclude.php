@@ -97,10 +97,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			$updateResult[0]['normalized']['before'] = $beforeNormalizing - $chargingPlan->getValue();
 			$updateResult[0]['normalized']['after'] = $beforeNormalizing;
 			$updateResult[0]['normalized']['normalized'] = $normalizeResult['max'];
-			
-			// Report the error.
-			$normalizeError = Billrun_Factory::config()->getConfigValue('balances_error_base') + 25;
-			$this->reportError($normalizeError, Zend_Log::ERR);
 		}
 		
 		$updateResult[0]['source'] = $prepaidIncludes->createRefByEntity($prepaidRecord);
@@ -108,12 +104,6 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		return $updateResult;
 	}
 
-	protected function getNormalizedBalanceQuery($wallet) {
-		$balanceBefore = $this->getLastBalanceRecord();
-		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		return array('$set' => array($wallet->getFieldName() => $valueBefore));
-	}
-	
 	/**
 	 * Get the plan object built from the record values.
 	 * @param array $prepaidRecord - Prepaid record.
