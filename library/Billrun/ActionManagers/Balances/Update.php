@@ -292,9 +292,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function stripTx(&$outputDocuments) {
 		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
-			}
+			unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
 		}
 	}
 	
