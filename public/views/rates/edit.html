@@ -163,7 +163,7 @@
 												ng-disabled="isInterconnect()"
 												ng-options="ic.key as ic.key for ic in availableInterconnect">
 										</select>
-										<a href="" ng-click="showInterconnectDetails(entity.rates[type][rateName].interconnect, type, rateName)">Details</a>
+										<a href="" ng-if="entity.rates[type][rateName].interconnect" ng-click="showInterconnectDetails(entity.rates[type][rateName].interconnect, type, rateName)">Details</a>
 									</div>
 								</div>
 							</div>
