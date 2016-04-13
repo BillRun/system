@@ -451,10 +451,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'addHeader' => false,
 		);
 		$request = $encoder->encode($requestBody, $params);
-		return $this->sendRequest($request, $notificationParams['requestUrl'], $notificationParams['sendRequestTries']);
+		return $this->sendRequest($request, $notificationParams['requestUrl'], $notificationParams['sendRequestTries'], true);
 	}
 	
-	protected function sendRequest($request, $requestUrl, $numOfTries = 3) {
+	protected function sendRequest($request, $requestUrl, $numOfTries = 3, $inDifferentFork = false) {
+		if ($inDifferentFork) {
+			return $this->sendRequestInDifferentFork($request, $requestUrl, $numOfTries);
+		}
 		$logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
 			'source' => 'pelephonePlugin',
@@ -487,6 +490,20 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('No response from prov. Request details: ' . $request,  Zend_Log::ALERT);
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		return false;
+	}
+	
+	protected function sendRequestInDifferentFork($request, $requestUrl, $numOfTries = 3) {
+		$url = Billrun_Factory::config()->getConfigValue('realtimeevent.notification.sms.sendRequestForkUrl', '');
+		if ($url === '') {
+			return false;
+		}
+		$params = array(
+			'request' => $request,
+			'requestUrl' => $requestUrl,
+			'numOfTries' => $numOfTries,
+		);
+		Billrun_Util::forkProcessWeb($url, $params);
+		return true;
 	}
 
 	/**

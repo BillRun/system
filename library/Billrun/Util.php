@@ -376,6 +376,12 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
+	
+	public static function getForkUrl() {
+		$request = Yaf_Dispatcher::getInstance()->getRequest(); 
+		$protocol = (empty($request->getServer('HTTPS'))) ? 'http' : 'https';
+		return $protocol . '://' . $request->get('HTTP_HOST') . '/' . $request->getBaseUri();
+	}
 
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
