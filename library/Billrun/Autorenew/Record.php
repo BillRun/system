@@ -44,7 +44,13 @@ abstract class Billrun_Autorenew_Record {
 	 * @return MongoDate date to set in the 'to' field.
 	 */
 	protected function getUpdaterInputToTime($nextRenewDate) {
-		$toTime = strtotime($this->data['to']);
+		$dataTo = $this->data['to'];
+		if(is_a($dataTo, "MongoDate")) {
+			$toTime = $dataTo->sec;
+		} else {
+			$toTime = strtotime($dataTo);
+		}
+		
 		
 		$toDate = $nextRenewDate;
 		
@@ -71,9 +77,15 @@ abstract class Billrun_Autorenew_Record {
 		// Build the query
 		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
 		$updaterInputUpdate['from'] = $this->data['from'];
-		$updaterInputUpdate['to'] = $this->getUpdaterInputToTime($nextRenewDate);
 		$updaterInputUpdate['operation'] = $this->data['operation'];
 		
+		// Check if inc
+		if($updaterInputUpdate['operation'] == "inc") {
+			$expirationDate = $this->data['to'];
+		} else {
+			$expirationDate = $this->getUpdaterInputToTime($nextRenewDate);
+		}
+		$updaterInputUpdate['to'] = $updaterInputUpdate['expiration_date'] = $expirationDate;
 		$updaterInput['query'] = json_encode($updaterInputQuery,JSON_FORCE_OBJECT);
 		$updaterInput['upsert'] = json_encode($updaterInputUpdate,JSON_FORCE_OBJECT);
 		
@@ -114,6 +126,12 @@ abstract class Billrun_Autorenew_Record {
 	 * @return Result of the update operation.
 	 */
 	protected function updateAutorenew($nextRenewDate) {
+		if(is_a($nextRenewDate, 'MongoDate')) {
+			$nextRenewDate->sec += 1;
+		} else {
+			$nextRenewDate = new MongoDate($nextRenewDate + 1);
+		}
+		
 		$this->data['last_renew_date'] = new MongoDate();
 		$this->data['next_renew_date'] = $nextRenewDate;
 		$this->data['remain'] = $this->data['remain'] - 1;
@@ -137,6 +155,7 @@ abstract class Billrun_Autorenew_Record {
 			return false;
 		}
 		
+		// The next auto renew is one second after the balance expiration input
 		return $this->updateAutorenew($nextRenewDate);
 	}
 }

@@ -255,12 +255,18 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!$rateCalc) {
 				continue;
 			}
-			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), array('np_code', 'call_type', 'dialed_digits'));
+			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), 
+				Billrun_Factory::config()->getConfigValue('calcCpu.reuse.addedFields', array()));
 			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
 			if ($query) {
+				$flipedArr = array_flip($possibleNewFields);
+				$fieldsToIgnore = Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreFields', array());
+				foreach ($fieldsToIgnore as $fieldToIgnore) {
+					unset($flipedArr[$fieldToIgnore]);
+				}
 				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->current();
 				if (!$formerLine->isEmpty()) {
-					$addArr = array_intersect_key($formerLine->getRawData(), array_flip($possibleNewFields));
+					$addArr = array_intersect_key($formerLine->getRawData(), $flipedArr);
 					$line = array_merge($addArr, $line);
 				}
 			}

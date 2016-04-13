@@ -1,5 +1,5 @@
-app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope',
-  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope', '$http', '$uibModal',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope, $http, $uibModal) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
@@ -272,6 +272,61 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
     $scope.isInterconnect = function () {
       if (!_.result($scope.entity, "params.interconnect")) return false;
       return $scope.entity.params.interconnect;
+    };
+
+    $scope.showInterconnectDetails = function (interconnect, type, plan) {
+      if (!interconnect) return;
+      $http.get('/admin/getRate', {params: {interconnect_key: interconnect}}).then(function (res) {
+        var modalInstance = $uibModal.open({
+          //templateUrl: 'interconnectDetails.html',
+          template: "	<div class='modal-header'>\
+		<h3 class='modal-title'>{{interconnect.key}}</h3>\
+	</div>\
+	<div class='modal-body'>\
+		<table class='table table-striped table-bordered data-rates-table'>\
+			<thead>\
+				<tr>\
+					<th>Interval</th>\
+					<th>Price</th>\
+					<th>To</th>\
+				</tr>\
+			</thead>\
+			<tbody>\
+				<tr ng-repeat='rate in interconnect_rate'>\
+					<td>{{rate.interval}}</td>\
+					<td>{{rate.price}}</td>\
+					<td>{{rate.to}}</td>\
+			  </tr>\
+			</tbody>\
+		</table>\
+	</div>\
+	<div class='modal-footer'>\
+		<button class='btn btn-primary' type='button' ng-click='ok()'>OK</button>\
+	</div>",
+          controller: function ($scope, $uibModalInstance, interconnect, type, plan) {
+            $scope.interconnect = interconnect;
+            $scope.plan = plan;
+            $scope.type = type;
+            if (_.isUndefined($scope.interconnect.rates[$scope.type][$scope.plan])) $scope.plan = "BASE";
+            $scope.interconnect_rate = interconnect.rates[$scope.type][$scope.plan].rate;
+            $scope.ok = function () {
+              $uibModalInstance.dismiss('cancel');
+            };
+          },
+          size: 'md',
+          resolve: {
+            interconnect: function () {
+              return res.data.interconnect;
+            },
+            type: function () {
+              return type;
+            },
+            plan: function () {
+              return plan;
+            }
+          }
+        });        
+      });
     };
 
     $scope.init = function () {

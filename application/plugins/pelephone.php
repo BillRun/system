@@ -79,6 +79,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function hasAvailableBalances($row) {
 		$query = Billrun_Util::getDateBoundQuery();
+		$query['sid'] = $row['sid'];
 		if ($this->canUseDataFromCurrencyBalances($row)) {
 			$query['$or'] = array(
 				array('charging_by_usaget' => 'data'),
@@ -227,10 +228,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterBalanceLoad($balance, $subscriber, $source) {
-		if (!$balance || !$this->shouldSendNotification($source)) {
+		if (!$balance) {
 			return;
 		}
 		$this->updateDataSlownessOnBalanceUpdate($balance, $subscriber);
+		if (!$this->shouldSendNotification($source)) {
+			return;
+		}
 		$update = array(
 			'$unset' => array(
 				'notifications_sent' => 1,
