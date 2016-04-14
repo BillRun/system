@@ -15,7 +15,15 @@
  */
 class SendrequestController extends Yaf_Controller_Abstract {
 
+	protected $start_time = 0;
+	
 	public function init() {
+		Billrun_Factory::log("Start Sendrequest call", Zend_Log::INFO);
+		if ($this->getRequest()->getServer('REMOTE_ADDR') != $this->getRequest()->getServer('SERVER_ADDR')) {
+			Billrun_Factory::log('Remote access to sendrequest controller which is internal call. IP: ' . $this->getRequest()->getServer('REMOTE_ADDR'), Zend_Log::WARN);
+			$this->forward('index', 'index');
+		}
+		$this->start_time = microtime(1);
 	}
 
 	/**
@@ -24,7 +32,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 	 * @return void
 	 */
 	public function indexAction() {
-		
+		$this->forward('index', 'index');
 	}
 	
 	/**
@@ -51,7 +59,6 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1,1000000),
-			'time' => (microtime(1))*1000,
 		);
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		for ($i = 0; $i < $numOfTries; $i++) {
@@ -64,6 +71,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 				$response = $decoder->decode($response);
 				if (isset($response['HEADER']['STATUS_CODE']) && 
 					$response['HEADER']['STATUS_CODE'] === 'OK') {
+					$saveData['time'] = (microtime(1) - $this->start_time)*1000;
 					$logColl->save(new Mongodloid_Entity($saveData), 0);
 					return true;
 				}
@@ -71,6 +79,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			
 		}
 		Billrun_Factory::log('No response from prov. Request details: ' . $requestBody,  Zend_Log::ALERT);
+		$saveData['time'] = (microtime(1) - $this->start_time)*1000;
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		$this->handleSendRequestError();
 		return false;

@@ -458,6 +458,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($inDifferentFork) {
 			return $this->sendRequestInDifferentFork($request, $requestUrl, $numOfTries);
 		}
+		$start_time = microtime(1);
 		$logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
 			'source' => 'pelephonePlugin',
@@ -468,7 +469,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1,1000000),
-			'time' => (microtime(1))*1000,
 		);
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		for ($i = 0; $i < $numOfTries; $i++) {
@@ -481,6 +481,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$response = $decoder->decode($response);
 				if (isset($response['HEADER']['STATUS_CODE']) && 
 					$response['HEADER']['STATUS_CODE'] === 'OK') {
+					$saveData['time'] = (microtime(1) - $start_time)*1000;
 					$logColl->save(new Mongodloid_Entity($saveData), 0);
 					return true;
 				}
@@ -488,6 +489,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			
 		}
 		Billrun_Factory::log('No response from prov. Request details: ' . $request,  Zend_Log::ALERT);
+		$saveData['time'] = (microtime(1) - $start_time)*1000;
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		return false;
 	}
