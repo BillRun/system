@@ -114,13 +114,24 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (!$this->validateServiceProviders($subscriber, $chargingPlanRecord)) {
 			return false;
 		}
-
+		
 		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
 
 		$balancesArray = array();
 		if(isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
+		
+		// Check if we have core balance.
+		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
+		if($coreBalance !== null) {
+			if($this->blockMax($subscriber['plan'], $coreBalance, $updateQuery)) {
+				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 26;
+				$this->reportError($errorCode);
+				return false;
+			}
+		}
+		
 		$balancesToReturn = array('updated' => false);
 		
 		// Go through all charging possibilities. 
@@ -156,7 +167,60 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesToReturn['charging_plan'] = $chargingPlanRecord;
 		return $balancesToReturn;
 	}
+	
+	protected function getCoreBalance($balancesArray, $chargingPlanRecord) {		
+		foreach ($balancesArray as $chargeKey => $chargeValue) {
+			if(Billrun_Util::isAssoc($chargeValue)) {
+				$chargeValue = array($chargeValue);
+			}
 
+			foreach ($chargeValue as $chargingByValue) {
+				if($chargingByValue['pp_includes_external_id'] == '1') {
+					$ppName = $chargingPlanRecord['pp_includes_name'];
+					$ppID = $chargingPlanRecord['pp_includes_external_id'];
+					$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+					$wallet = new Billrun_DataTypes_Wallet($chargeKey, $chargingByValue, $ppPair);
+					return $wallet;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param string $planName
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param type $query
+	 * @return boolean
+	 */
+	protected function blockMax($planName, $wallet, $query) {
+		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
+		$newValue = $wallet->getValue();
+		$valueBefore = 0;
+		
+		// Check if passing the max.
+		if($this->isIncrement) {
+			$coll = Billrun_Factory::db()->balancesCollection();
+			$query[$wallet->getFieldName()]['$exists'] = 1;
+			$query['pp_includes_external_id'] = $wallet->getPPID();
+			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
+			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
+			if(!$balanceBefore->isEmpty()) {
+				$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
+			}
+		
+			$newValue += $valueBefore;
+		}
+		
+		if($newValue < $max) {
+			return true;
+		}
+		
+		return false;
+	}
+	
 	/**
 	 * Go through the balance include fields and return the "wallet" pair.
 	 */
@@ -173,6 +237,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 		
+		// TODO: This is for backward compatability
 		$ppName = $chargingPlanRecord['pp_includes_name'];
 		$ppID = $chargingPlanRecord['pp_includes_external_id'];
 
