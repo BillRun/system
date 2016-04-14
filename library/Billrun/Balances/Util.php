@@ -1,15 +1,16 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
  * Util class for the balances
  *
- * @author Tom Feigin
+ * @package  Util
+ * @since    4.1
  */
 class Billrun_Balances_Util {
 	
