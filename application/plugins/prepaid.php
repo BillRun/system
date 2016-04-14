@@ -172,7 +172,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
 		try {
-			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost') {
+			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
@@ -192,7 +192,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
-		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request')) && (!isset($row['in_data_slowness']) || !$row['in_data_slowness'])) || 
+		return ($row['type'] == 'gy' && in_array($row['record_type'], array('final_request', 'update_request'))) || 
 			($row['type'] == 'callrt' && in_array($row['api_name'], array('release_call')));
 	}
 
@@ -275,7 +275,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
 			($lineToRebalance['type'] === 'gy' && $lineToRebalance['in_data_slowness'])) {
-			return 0;
+			return array(
+				'cost' => 0,
+				'interconnect' => 0,
+			);
 		}
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
@@ -300,7 +303,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 */
-	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance = null) {
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance) {
 		$usaget = $lineToRebalance['usaget'];
 		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];

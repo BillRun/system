@@ -268,11 +268,12 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		
 		if($success) {
 			$this->stripTx($outputDocuments);
-		}
-		$updaterError = $this->updater->getError();
-		if($updaterError) {
-			$this->error = $updaterError;
-			$this->errorCode = $this->updater->getErrorCode();
+		} else {
+			$updaterError = $this->updater->getError();
+			if($updaterError) {
+				$this->error = $updaterError;
+				$this->errorCode = $this->updater->getErrorCode();
+			}
 		}
 		
 		$outputResult = array(
@@ -291,9 +292,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function stripTx(&$outputDocuments) {
 		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
-			}
+			unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
 		}
 	}
 	
@@ -351,7 +350,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		if ($to) {
-			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime($to)) : $to;
+			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime('tomorrow', strtotime($to))-1) : $to;
 		}
 		
 		// Upsert is not needed so no need to go over the fields

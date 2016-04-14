@@ -34,6 +34,21 @@ class RealtimeeventAction extends ApiAction {
 	}
 
 	/**
+	 * render override to handle HTTP 1.0 requests
+	 * 
+	 * @param string $tpl template name
+	 * @param array $parameters view parameters
+	 * @return string output
+	 */
+	protected function render($tpl, array $parameters = array()) {
+		$ret = parent::render($tpl, $parameters);
+		if ($this->getRequest()->get('SERVER_PROTOCOL') == 'HTTP/1.0' && !is_null($ret) && is_string($ret)) {
+			header('Content-Length: ' . strlen($ret));
+		}
+		return $ret;
+	}
+
+	/**
 	 * make simple sanity to the event input
 	 */
 	protected function preCheck() {

@@ -62,7 +62,7 @@ foreach ($this->data as $item) {
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
 			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
 			print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';*/
-			print '<a href="#ratePlanPopup" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
+			print '<a href="#ratePlanPopup" data-interconnect-key="' . $item['interconnect_arate_key'] . '" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if ($h == 'balance_type') {
 			print '<a href="#SourceRefPopup" data-line="' . $item['_id'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if (is_numeric($data) && (($active == 'balances' && !in_array($h, array('aid', 'sid')) && strpos($h, 'billrun') === FALSE) || ($active == 'lines' && ($h == 'aprice' || $h == 'usagev' || $h == 'usagesb')))) {

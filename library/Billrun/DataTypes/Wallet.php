@@ -90,8 +90,6 @@ class Billrun_DataTypes_Wallet {
 			unset($chargingByValue['period']);
 		}
 
-		// TODO: We can use Billrun_Utill::getFirstValueOfMultidimentionalArray to get the value
-		
 		if (!is_array($chargingByValue) || isset($chargingByValue['value'])) {
 			$this->valueFieldName = 'balance.' . str_replace("total_", "", $chargingBy);
 			$this->value = isset($chargingByValue['value']) ? $chargingByValue['value'] : $chargingByValue;

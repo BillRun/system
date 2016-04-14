@@ -229,63 +229,15 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			return false;
 		}
 		
-		// Check if passed the max value.
-		$balanceBefore = $this->getLastBalanceRecord();
-		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		$currentValue = $wallet->getValue();
-		if($this->isIncrement) {
-			$currentValue += $valueBefore;
-		}
-		
-		// These values are negative
-		if($currentValue > $maxValue) {
-			return array('nModified' => 0);
-		}
-		
 		$query['priority'] = $wallet->getPriority();
-		$updateQuery = $this->getNormalizedBalanceQuery($wallet, $maxValue, $plan);
 		
-		$errorPassingMax = false;
-		if($this->shouldBlockUpdate($wallet)) {
-			$updateQuery = array('$set' => array($wallet->getFieldName() => $valueBefore));
-			$errorPassingMax = true;
-		}
-		
-		$result = $this->commitNormalizeBalance($maxValue, $query, $updateQuery);
-		if($errorPassingMax) {
-			$errCode = Billrun_Factory::config()->getConfigValue('balances_error_base') + 25;	
-			$result['bill_err'] = $errCode;
-		}
-		return $result;
-	}
-	
-	/**
-	 * Return indication for blocking a balance update over the max value.
-	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used in the update.
-	 * @return true if should block.
-	 */
-	protected function shouldBlockUpdate($wallet) {
-		return ($wallet->getPPID() == 1);
-	}
-	
-	/**
-	 * Get the query to be used to normalize the balance.
-	 * @param Billrun_DataTypes_Wallet $wallet - The wallet used
-	 * @param int $maxValue - The max value of the balance.
-	 * @return array the array used to update the mongo.
-	 */
-	protected function getNormalizedBalanceQuery($wallet, $maxValue) {
-		return array('$max' => array($wallet->getFieldName() =>$maxValue));
-	}
-	
-	protected function commitNormalizeBalance($maxValue, $query, $updateQuery) {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
 			'multiple' => 1
 		);
-				
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$updateQuery = array('$max' => array($wallet->getFieldName() =>$maxValue));
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
 		return $updateResult;
@@ -354,7 +306,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	protected function getDateFromPeriod($period) {
 		if ($period instanceof MongoDate) {
 			return $period;
+		} 
+		if(isset($period['sec'])) {
+			return new MongoDate($period['sec']);
 		}
+		
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location
@@ -368,7 +324,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		} else {
 			$unit = 'months';
 		}
-		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)));
+		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
 	}
 	
 	/**
@@ -436,39 +392,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		return $this->balanceBefore;
 	}
 	
-	protected function getLastBalanceRecord() {
-		$balanceRecord = end($this->balanceBefore);
-		reset($this->balanceBefore);
-		return $balanceRecord;
-	}
-	
-	/**
-	 * Set the 'To' field to the update query
-	 * @param array $update - The update query to set the to for
-	 * @param type $to - Time value.
-	 */
-	protected function setToForUpdate(&$update, $to) {
-		if(Billrun_Util::multiKeyExists($update, 'to')) {			
-			return;
-		}
-		
-		// Check if the value before is 0 and if so take the input values to update.
-		$balanceRecord = $this->getLastBalanceRecord();
-		$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceRecord);
-		if($valueBefore < 0) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $to;
-		} else {
-			// TODO: Move the $max functionality to a trait
-			$update['$set']['to'] = $to;	
-		}
-	}
-	
 	/**
 	 * Get the set part of the query.
 	 * @param string $chargingPlan - The wallet in use.
 	 */
-	protected function getSetQuery($chargingPlan) {		
+	protected function getSetQuery($chargingPlan) {
 		$valueUpdateQuery = array();
 		$valueToUseInQuery = $chargingPlan->getValue();
 		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';

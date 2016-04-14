@@ -32,15 +32,14 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
 		// Check if the wallet has a special period.
-		if(isset($recordToSet['to'])) {
-			$wallet->setPeriod($recordToSet['to']);
-			return $recordToSet['to'];		
-		}
-	
 		$walletPeriod = $wallet->getPeriod();
-		return $this->getDateFromPeriod($walletPeriod);
+		if ($walletPeriod) {
+			return $this->getDateFromPeriod($walletPeriod);
+		}
+		$wallet->setPeriod($recordToSet['to']);
+		return $recordToSet['to'];		
 	}
-
+	
 	protected function getChargingPlanQuery($query) {
 		$charging_plan_query = $query;
 		if($this->recurring) {
@@ -145,8 +144,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 					return false;
 				}
 				
-				if(isset($returnPair['blocked']) && $returnPair['blocked']) {
-					$balancesToReturn['blocked'] = true;
+				if(isset($returnPair['updated']) && $returnPair['updated']) {
+					$balancesToReturn['updated'] = true;
 				}
 				
 				$balancesToReturn[] = $returnPair;
@@ -208,12 +207,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['after'] = $beforeNormalizing;
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
 			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
-			
-			if(isset($normalizeResult['bill_err'])) {
-				// Report the error.
-				$this->reportError($normalizeResult['bill_err'] + 1, Zend_Log::ERR);
-				$returnPair['blocked'] = true;
-			}
 		}
 		
 		unset($returnPair['query']);
@@ -349,7 +342,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
-		$this->setToForUpdate($update, $toTime);
+		
+		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $toTime;
+		}
 		
 		$options = array(
 			'upsert' => true,
