@@ -9,7 +9,6 @@
 /**
  * Field validator for charging plan
  *
- * @author Tom Feigin
  */
 trait Billrun_FieldValidator_ServiceProvider {
 

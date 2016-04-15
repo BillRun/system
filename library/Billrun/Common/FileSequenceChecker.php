@@ -13,7 +13,6 @@
  *  to the contructor.
  *  then call verifyFileSequence with the file name for each file you want to check.
  *
- * @author eran
  */
 class Billrun_Common_FileSequenceChecker {
 

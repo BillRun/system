@@ -1,14 +1,14 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of Smsc
+ * Sms processor based on field lines separator
  *
- * @author eran
  */
 class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 

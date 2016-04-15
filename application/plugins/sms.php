@@ -1,9 +1,17 @@
 <?php
 
 /**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+/**
  * Temporary plugin  to handle smsc/smpp/mmsc retrival should be changed to specific CDR  handling baviour
  *
- * @author eran
+ * @package  Application
+ * @subpackage Plugins
+ * @since    2.0
  */
 class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 

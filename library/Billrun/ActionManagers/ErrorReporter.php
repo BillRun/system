@@ -9,7 +9,6 @@
 /**
  * Trait to implement error reportimg.
  *
- * @author tom
  */
 trait Billrun_ActionManagers_ErrorReporter {
 

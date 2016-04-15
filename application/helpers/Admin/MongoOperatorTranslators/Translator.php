@@ -9,7 +9,6 @@
 /**
  * Abstract class for mongo operator translator.
  *
- * @author Tom Feigin
  */
 abstract class Admin_MongoOperatorTranslators_Translator {
 

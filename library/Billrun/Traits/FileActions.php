@@ -9,7 +9,6 @@
 /**
  * This Trait is used to allow classes to  parse file names an  extract  data  from them. 
  *
- * @author eran
  */
 trait Billrun_Traits_FileActions {
 

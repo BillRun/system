@@ -11,7 +11,6 @@
  *
  * @package  cards
  * @since    4.0
- * @author   Dori
  */
 class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_Action {
 

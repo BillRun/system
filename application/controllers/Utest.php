@@ -11,7 +11,6 @@
  *
  * @package  Controller
  * @since    4.0
- * @author	 Roman Edneral
  */
 class UtestController extends Yaf_Controller_Abstract {
 

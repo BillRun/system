@@ -9,7 +9,6 @@
 /**
  * Translator for the startsWith operator.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_StartsWith extends Admin_MongoOperatorTranslators_Regex {
 

@@ -9,7 +9,6 @@
 /**
  * This Trait is used for API modules that handle additional input.
  *
- * @author Tom Feigin
  */
 trait Billrun_Traits_Api_AdditionalInput {
 

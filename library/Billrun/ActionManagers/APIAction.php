@@ -9,7 +9,6 @@
 /**
  * Helper class to manage the API actions.
  *
- * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_APIAction {
 	// TODO: Remove all this logic and replace with the ErrorReporter trait.

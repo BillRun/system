@@ -9,7 +9,6 @@
 /**
  * This a plguin to provide TAP3 CDRs support to the billing system.
  *
- * @author eran
  */
 class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 

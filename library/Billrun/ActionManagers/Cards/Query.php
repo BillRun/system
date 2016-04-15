@@ -9,7 +9,6 @@
 /**
  * This is a parser to be used by the cards action.
  *
- * @author Dori
  */
 class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Action {
 

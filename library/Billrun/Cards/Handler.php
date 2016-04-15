@@ -9,7 +9,6 @@
 /**
  * Handle the cards cron proccess
  *
- * @author Tom Feigin
  * @todo Maybe move this to a Cron folder
  */
 class Billrun_Cards_Handler {

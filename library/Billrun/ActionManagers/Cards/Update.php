@@ -9,7 +9,6 @@
 /**
  * This is an update parser for the use of Cards Update action.
  *
- * @author Dori
  */
 class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_Action {
 

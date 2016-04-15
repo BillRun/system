@@ -9,7 +9,6 @@
 /**
  * This is a class that uses the update by delta module for the subscribers auto renew collection.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_ActionManagers_Subscribersautorenew_Action {
 

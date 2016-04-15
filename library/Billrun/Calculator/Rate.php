@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of RateAndVolume
+ * Rate calculator class for records
  *
- * @author eran
+ * @package  calculator
+ * @since    2.0
  */
 abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 

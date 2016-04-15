@@ -9,7 +9,6 @@
 /**
  * This is a delete parser for the use of Cards Delete action.
  *
- * @author Dori
  */
 class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_Action {
 

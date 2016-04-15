@@ -9,7 +9,6 @@
 /**
  * Field validator for the customer plan.
  *
- * @author Tom Feigin
  */
 trait Billrun_FieldValidator_CustomerPlan {
 

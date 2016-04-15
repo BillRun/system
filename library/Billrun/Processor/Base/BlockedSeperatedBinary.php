@@ -9,7 +9,6 @@
 /**
  * Description of BlockedSeperatedFile
  *
- * @author eran
  */
 abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Processor_Base_Binary {
 

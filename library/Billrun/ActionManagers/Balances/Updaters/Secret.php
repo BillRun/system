@@ -9,7 +9,6 @@
 /**
  * Holds the logic for updating balances using the secret card number.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
 

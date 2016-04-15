@@ -9,7 +9,6 @@
 /**
  * Trait to updating the balance externally
  *
- * @author Tom Feigin
  */
 trait Billrun_Traits_Updater_Balance {
 

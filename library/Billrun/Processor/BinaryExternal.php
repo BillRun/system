@@ -1,14 +1,14 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of BinaryExternal
+ * External binary processor
  *
- * @author eran
  */
 class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 

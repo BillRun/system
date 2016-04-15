@@ -9,7 +9,6 @@
 /**
  * Static functions to calculate miliseconds in different resolutions.
  *
- * @author Tom Feigin
  */
 class Billrun_Utils_Time {
 

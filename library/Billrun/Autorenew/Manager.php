@@ -9,7 +9,6 @@
 /**
  * Factory to create the record types.
  *
- * @author Tom Feigin
  */
 class Billrun_Autorenew_Manager extends Billrun_ActionManagers_Manager {
 

@@ -9,7 +9,6 @@
 /**
  * Class to represent the auto renew daily record.
  *
- * @author Tom Feigin
  */
 class Billrun_Autorenew_Day extends Billrun_Autorenew_Record {
 

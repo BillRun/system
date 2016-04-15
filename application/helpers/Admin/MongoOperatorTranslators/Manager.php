@@ -9,7 +9,6 @@
 /**
  * Helper class to manage the mongo operator translators.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_Manager {
 

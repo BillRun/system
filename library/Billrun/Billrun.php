@@ -394,7 +394,7 @@ class Billrun_Billrun {
 			);
 			$subscriber_settings = array_merge($subscriber_general_settings, $null_subscriber_params);
 			$subscriber = Billrun_Subscriber::getInstance($subscriber_settings);
-			// [tom] TODO: Why not checking the 'is valid' function?
+			// TODO: Why not checking the 'is valid' function?
 			$this->addSubscriber($subscriber, "closed");
 			$this->updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 		}
@@ -406,7 +406,7 @@ class Billrun_Billrun {
 	 * @return string the general usage type
 	 */
 	public static function getGeneralUsageType($specific_usage_type) {
-		// [tom] TODO: Why isn't this just a table? the code is executed as a lookup table anyway.
+		// TODO: Why isn't this just a table? the code is executed as a lookup table anyway.
 		// Will be easier to update if moved to a table as a property of this class.
 		switch ($specific_usage_type) {
 			case 'call':
@@ -497,7 +497,7 @@ class Billrun_Billrun {
 			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
 			if ($row['type'] == 'ggsn') {
-				// [tom] TODO: What is this magic number 06? There should just be a ggsn row class
+				// TODO: What is this magic number 06? There should just be a ggsn row class
 				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
 					$data_generation = 'usage_4g';
 				} else {
@@ -654,7 +654,7 @@ class Billrun_Billrun {
 		return self::getRateById($id_str);
 	}
 
-	// [tom] The correct way would be to have two handler types, rates and plans.
+	// The correct way would be to have two handler types, rates and plans.
 	// And have them as billrun members, so the implementation will be more modular.
 
 	/**
@@ -706,7 +706,7 @@ class Billrun_Billrun {
 
 	/**
 	 * This function loads all data from a givven structure of DB collumns.
-	 * [tom] @TODO: This should not be here, this logic is for some DB class, 
+	 * @TODO: This should not be here, this logic is for some DB class, 
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
@@ -914,7 +914,7 @@ class Billrun_Billrun {
 		} else {
 			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
 			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
-			// [tom] TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
+			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
@@ -970,6 +970,6 @@ class Billrun_Billrun {
 
 }
 
-// [tom] TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
+// TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
 Billrun_Billrun::loadRates();
 Billrun_Billrun::loadPlans();

@@ -13,7 +13,6 @@
  * 
  * @package  Billing
  * @since    4.0
- * @author Tom Feigin
  * 
  * @todo Inherit from the error report class/interface to enable dynamic
  * error reporting

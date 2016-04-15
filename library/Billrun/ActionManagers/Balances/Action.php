@@ -9,7 +9,6 @@
 /**
  * This is a prototype for a balances action.
  *
- * @author Tom Feigin
  */
 // TODO: Make an interface for these classes.
 abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction {

@@ -9,7 +9,6 @@
 /**
  * Helper class to manage the api action managers.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 

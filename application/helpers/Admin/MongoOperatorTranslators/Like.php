@@ -9,7 +9,6 @@
 /**
  * Translator for the like operator.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_Like extends Admin_MongoOperatorTranslators_Regex {
 

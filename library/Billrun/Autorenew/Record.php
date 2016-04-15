@@ -9,7 +9,6 @@
 /**
  * Abstract helper class for an auto renew record
  *
- * @author tom
  */
 abstract class Billrun_Autorenew_Record {
 

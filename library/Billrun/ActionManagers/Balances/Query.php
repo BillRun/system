@@ -9,7 +9,6 @@
 /**
  * This is a parser to be used by the balances action.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balances_Action {
 

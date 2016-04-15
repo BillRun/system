@@ -9,7 +9,6 @@
 /**
  * This is a prototype for a cards action.
  *
- * @author Dori
  */
 abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManagers_APIAction {
 

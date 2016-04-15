@@ -9,7 +9,6 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionManagers_Subscribersautorenew_Action {
 

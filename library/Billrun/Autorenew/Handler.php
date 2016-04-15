@@ -9,7 +9,6 @@
 /**
  * Handle the auto renew service proccess
  *
- * @author Tom Feigin
  */
 class Billrun_Autorenew_Handler {
 

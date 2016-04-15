@@ -9,7 +9,6 @@
 /**
  * This is a prototype for a subscriber action.
  *
- * @author Tom Feigin
  */
 abstract class Billrun_ActionManagers_Subscribersautorenew_Action extends Billrun_ActionManagers_APIAction {
 

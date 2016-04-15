@@ -12,7 +12,6 @@
  * 
  * @package  Billing
  * @since    4.0
- * @author Tom Feigin
  */
 class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_Updater {
 

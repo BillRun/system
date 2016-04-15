@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of Rebalance
+ * Rebalance calculator class for records
  *
- * @author shani
+ * @package  calculator
+ * @since    2.5
  */
 class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 

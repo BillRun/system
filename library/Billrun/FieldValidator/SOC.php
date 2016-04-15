@@ -9,7 +9,6 @@
 /**
  * Field validator for the subscriber SOC.
  *
- * @author Shani
  */
 trait Billrun_FieldValidator_SOC {
 

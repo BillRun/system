@@ -9,7 +9,6 @@
 /**
  * Handle the logic of an auto renew monthly record.
  *
- * @author Tom Feigin
  */
 class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 
