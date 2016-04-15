@@ -1,8 +1,26 @@
-app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope', '$http', '$uibModal',
-  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope, $http, $uibModal) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope', '$http', '$window', '$uibModal',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope, $http, $window, $uibModal) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
+
+    $scope.save = function () {
+      $scope.err = {};
+      var params = {
+        entity: $scope.entity,
+        coll: "rates",
+        type: $scope.action,
+        duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false),
+      };
+			if (params.entity.from) {
+				params.entity.from = moment(params.entity.from).startOf('day').format();
+			}
+      Database.saveEntity(params).then(function (res) {
+        $window.location = baseUrl + '/admin/rates';
+      }, function (err) {
+        $scope.err = err;
+      });
+    };
 
     $scope.addOutCircuitGroup = function () {
       if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined)
@@ -246,7 +264,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return false;
     };
     $scope.smsPlanExists = function (plan) {
-      if (plan && $scope.entity && $scope.entity.rates 
+      if (plan && $scope.entity && $scope.entity.rates
         && $scope.entity.rates.sms && $scope.entity.rates.sms[plan]) {
         return true;
       }
@@ -325,7 +343,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
               return plan;
             }
           }
-        });        
+        });
       });
     };
 
@@ -345,7 +363,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
           entity.params = {};
         }
         $scope.title = _.capitalize($scope.action) + " " + $scope.entity.key + " Rate";
-        angular.element('title').text("BillRun - " + $scope.title);        
+        angular.element('title').text("BillRun - " + $scope.title);
         if ($location.search().plans && $location.search().plans.length) {
           var plans = JSON.parse($location.search().plans);
           if (plans) {
