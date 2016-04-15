@@ -187,40 +187,22 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		
 		return null;
 	}
-	
+
 	/**
+	 * method to check if wallet get to max value on update
 	 * 
 	 * @param string $planName
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param type $query
-	 * @return boolean
+	 * 
+	 * @return boolean true if get to max value, else false
 	 */
 	protected function blockMax($planName, $wallet, $query) {
-		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
-		$newValue = $wallet->getValue();
-		$valueBefore = 0;
-		
-		// Check if passing the max.
-		if($this->isIncrement) {
-			$coll = Billrun_Factory::db()->balancesCollection();
-			$query[$wallet->getFieldName()]['$exists'] = 1;
-			$query['pp_includes_external_id'] = $wallet->getPPID();
-			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
-			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
-			if(!$balanceBefore->isEmpty()) {
-				$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-			}
-		
-			$newValue += $valueBefore;
-		}
-		
-		if($newValue < $max) {
-			return true;
-		}
-		
-		return false;
+		$query[$wallet->getFieldName()]['$exists'] = 1;
+		$query['pp_includes_external_id'] = $wallet->getPPID();
+		return parent::blockMax($planName, $wallet, $query);
 	}
-	
+
 	/**
 	 * Go through the balance include fields and return the "wallet" pair.
 	 */

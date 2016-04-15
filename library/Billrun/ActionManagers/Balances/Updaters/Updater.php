@@ -11,7 +11,7 @@
  *
  * @author Tom Feigin
  */
-abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_ActionManagers_APIAction{
+abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_ActionManagers_APIAction {
 
 	use Billrun_FieldValidator_ServiceProvider;
 	
@@ -414,6 +414,39 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}	
 			
 		return $valueUpdateQuery;
+	}
+
+	/**
+	 * method to check if wallet get to max value on update
+	 * 
+	 * @param string $planName
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param type $query
+	 * 
+	 * @return boolean true if get to max value, else false
+	 */
+	protected function blockMax($planName, $wallet, $query) {
+		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
+		$newValue = $wallet->getValue();
+		$valueBefore = 0;
+		
+		// Check if passing the max.
+		if($this->isIncrement) {
+			$coll = Billrun_Factory::db()->balancesCollection();
+			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery()); 
+			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
+			if(!$balanceBefore->isEmpty()) {
+				$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
+			}
+		
+			$newValue += $valueBefore;
+		}
+
+		if(abs($newValue) > abs($max)) { // we're using absolute for both cases - positive and negative values
+			return true;
+		}
+		
+		return false;
 	}
 	
 }
