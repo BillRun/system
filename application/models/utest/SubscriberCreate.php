@@ -20,7 +20,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 		$this->result = array('subscriber_after', 'subscriber_before');
 		$this->label = 'Subscriber | Create';
 	}
-	
+
 	public function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$aid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('aid'), FILTER_SANITIZE_STRING);
@@ -48,7 +48,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 
 	protected function getRequestData($params) {
 		$imsi = array_map('trim', explode("\n", trim($params['imsi'])));
-		if(count($imsi) == 1) {
+		if (count($imsi) == 1) {
 			$imsi = $imsi[0];
 		}
 		$subscriber = array(
@@ -67,5 +67,5 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 		);
 		return $request;
 	}
-	
+
 }

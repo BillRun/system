@@ -20,7 +20,7 @@ class utest_BalanceCardModel extends utest_AbstractUtestModel {
 		$this->result = array('balance_before', 'balance_after', 'lines');
 		$this->label = 'Balance | Update by card';
 	}
-	
+
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$secret = Billrun_Util::filter_var($this->controller->getRequest()->get('secret'), FILTER_SANITIZE_STRING);

@@ -34,9 +34,9 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 	protected function getLineUsageType($row) {
 		return 'service';
 	}
-	
+
 	protected function getServiceRateKey($row) {
 		return $row['service_name'];
 	}
-	
+
 }

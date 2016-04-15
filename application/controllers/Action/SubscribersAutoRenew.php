@@ -52,10 +52,10 @@ class SubscribersAutoRenewAction extends ApiAction {
 
 			$errorCode = $this->manager->getErrorCode();
 			$output = array(
-				'status'     => $errorCode == 0 ? 1 : 0,
-				'desc'       => $this->manager->getError(),
+				'status' => $errorCode == 0 ? 1 : 0,
+				'desc' => $this->manager->getError(),
 				'error_code' => $errorCode,
-				'details'    => 'Error'
+				'details' => 'Error'
 			);
 		} else {
 			$output = $action->execute();

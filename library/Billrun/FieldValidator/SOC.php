@@ -22,4 +22,5 @@ trait Billrun_FieldValidator_SOC {
 		$dataSlowness = Billrun_Factory::config()->getConfigValue('realtimeevent.data.slowness', array());
 		return isset($dataSlowness['bandwidth_cap'][$SOC]);
 	}
+
 }

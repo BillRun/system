@@ -10,7 +10,7 @@ class Billrun_Decoder_Xml extends Billrun_Decoder_Base {
 
 	public function decode($str) {
 		$xmlArr = (array) simplexml_load_string($str);
-		return json_decode( json_encode($xmlArr) , 1);
+		return json_decode(json_encode($xmlArr), 1);
 	}
 
 }

@@ -11,10 +11,10 @@
  *
  * @author Tom Feigin
  */
-abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionManagers_APIAction{
+abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionManagers_APIAction {
 
 	protected $collection = null;
-	
+
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
@@ -23,7 +23,7 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/subscribers/errors.ini");
 		parent::__construct($params);
 	}
-	
+
 	/**
 	 * Parse a request to build the action logic.
 	 * 
@@ -31,19 +31,20 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 	 * @return true if valid.
 	 */
 	public abstract function parse($request);
-	
+
 	/**
 	 * Execute the action logic.
 	 * 
 	 * @return true if sucessfull.
 	 */
 	public abstract function execute();
-	
+
 	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
 	protected function getQueryFields() {
-		return Billrun_Factory::config()->getConfigValue('subscribers.query_fields');	
+		return Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
 	}
+
 }

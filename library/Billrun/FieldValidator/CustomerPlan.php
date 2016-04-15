@@ -21,7 +21,7 @@ trait Billrun_FieldValidator_CustomerPlan {
 	 */
 	protected function validateCustomerPlan($plan) {
 		// If the update doesn't affect the plan there is no reason to validate it.
-		if(!isset($plan)) {
+		if (!isset($plan)) {
 			return true;
 		}
 		$planName = $plan;
@@ -30,13 +30,14 @@ trait Billrun_FieldValidator_CustomerPlan {
 		$planQuery['name'] = $planName;
 		$planCollection = Billrun_Factory::db()->plansCollection();
 		$currentPlan = $planCollection->query($planQuery)->cursor()->current();
-		
+
 		// TODO: Use the subscriber class.
-		if($currentPlan->isEmpty()){
-			$error='Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
+		if ($currentPlan->isEmpty()) {
+			$error = 'Invalid plan for the subscriber! [' . print_r($planName, true) . ']';
 			return $error;
-		}		
-		
+		}
+
 		return true;
 	}
+
 }

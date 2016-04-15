@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @subpackage  Action
  * @since       4.0
  * @author Spyes
-*/
+ */
 class StatisticsAction extends ApiAction {
 
 	protected $model;
@@ -22,7 +22,7 @@ class StatisticsAction extends ApiAction {
 	protected function initializeModel() {
 		$this->model = new StatisticsModel();
 	}
-	
+
 	protected function create($request) {
 		$this->initializeModel();
 		$statistics = json_decode($request->get('statistics'), true);
@@ -42,7 +42,7 @@ class StatisticsAction extends ApiAction {
 			);
 		}
 	}
-	
+
 	protected function query($request) {
 		$this->initializeModel();
 		$from = $this->getRequest()->get('from');
@@ -58,7 +58,7 @@ class StatisticsAction extends ApiAction {
 		}
 		$data = $this->model->getData($query);
 		$statistics = array();
-		foreach($data as $statistic) {
+		foreach ($data as $statistic) {
 			$statistics[] = $statistic->getRawData();
 		}
 		return array(
@@ -66,7 +66,7 @@ class StatisticsAction extends ApiAction {
 			'desc' => $statistics
 		);
 	}
-	
+
 	public function execute() {
 		$method = $this->getRequest()->get('method');
 		if (empty($method)) {
@@ -86,4 +86,5 @@ class StatisticsAction extends ApiAction {
 		}
 		$this->getController()->setOutput(array($output));
 	}
+
 }

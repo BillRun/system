@@ -13,9 +13,7 @@
 abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billrun_ActionManagers_Realtime_Responder_Base {
 
 	protected function getResponseFields() {
-		return array_merge(parent::getResponseFields(),
-			Billrun_Factory::config()->getConfigValue("realtimeevent.responseData.call.basic", array()),
-			Billrun_Factory::config()->getConfigValue("realtimeevent.responseData.call.$this->responseApiName", array()));
+		return array_merge(parent::getResponseFields(), Billrun_Factory::config()->getConfigValue("realtimeevent.responseData.call.basic", array()), Billrun_Factory::config()->getConfigValue("realtimeevent.responseData.call.$this->responseApiName", array()));
 	}
 
 	/**
@@ -27,7 +25,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 		//TODO: check if call excceeded max duration (realtimeevent.callReservationTime.max)
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 					return Billrun_Factory::config()->getConfigValue('realtimeevent.clearCause.no_balance');
 				case ($returnCodes['no_rate']):
@@ -41,7 +39,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 
 		return "";
 	}
-	
+
 	/**
 	 * Gets the reservation time allowed for call, until next check with BillRun
 	 * 
@@ -50,28 +48,28 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 	protected function getReservationTime() {
 		return $this->row['usagev'] * 10;
 	}
-	
+
 	protected function getReturnCode() {
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 				case ($returnCodes['no_rate']):
 				case ($returnCodes['no_subscriber']):
 				case ($returnCodes['block_rate']):
 					return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_not_allowed");
-			} 
+			}
 		}
-		
+
 		return Billrun_Factory::config()->getConfigValue("realtimeevent.returnCode.call_allowed");
 	}
-	
+
 	protected function getAnnouncement() {
 		$announcement = false;
 		$language = (isset($this->row['subscriber_lang']) ? $this->row['subscriber_lang'] : Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.default_language"));
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.insufficient_credit");
 					break;
@@ -82,9 +80,9 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 				case ($returnCodes['no_subscriber']):
 					$announcement = Billrun_Factory::config()->getConfigValue("realtimeevent.announcement.subscriber_not_found");
 					break;
-			} 
+			}
 		}
-		
+
 		if (!$announcement) {
 			return "";
 		}

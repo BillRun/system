@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -21,9 +19,9 @@
  * @since    4.0
  */
 class CardsModel extends TableModel {
-	
+
 	protected $cards_coll;
-	
+
 	/**
 	 * constructor
 	 * 
@@ -62,14 +60,14 @@ class CardsModel extends TableModel {
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
-	
+
 	public function getFilterFields() {
 		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'charging'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
-		
+
 		$statuses = array('Idle' => 'Idle', 'Shipped' => 'Shipped', 'Active' => 'Active', 'Disqualified' => 'Disqualified', 'Stolen' => 'Stolen', 'Expired' => 'Expired', 'Used' => 'Used');
 		$filter_fields = array(
 			'batch_number' => array(
@@ -86,7 +84,7 @@ class CardsModel extends TableModel {
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Serial Number',
-				'default' => '',				
+				'default' => '',
 			),
 			'charging_plan_name' => array(
 				'key' => 'plan',
@@ -107,7 +105,7 @@ class CardsModel extends TableModel {
 				'display' => 'Status',
 				'values' => $statuses,
 				'default' => array(),
-			),			
+			),
 			'service_provider' => array(
 				'key' => 'service_provider',
 				'db_key' => 'service_provider',
@@ -158,31 +156,27 @@ class CardsModel extends TableModel {
 				),
 				'sid' => array(
 					'width' => 2,
-		
-					),
+				),
 				'date' => array(
 					'width' => 2,
 				)
 			),
 		);
 		return $filter_field_order;
-	}	
-	
+	}
+
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge(	array("_id"),
-							$parentKeys,
-							array()
-						);
+		return array_merge(array("_id"), $parentKeys, array()
+		);
 	}
+
 	public function getHiddenKeys($entity, $type) {
 		$parentKeys = parent::getHiddenKeys($entity, $type);
-		return array_merge(	array("_id"),
-							$parentKeys,
-							array(
-								"secret"
-							)
-						);
+		return array_merge(array("_id"), $parentKeys, array(
+			"secret"
+			)
+		);
 	}
 
 	public function applyFilter($filter_field, $value) {
@@ -207,4 +201,5 @@ class CardsModel extends TableModel {
 			return parent::applyFilter($filter_field, $value);
 		}
 	}
+
 }

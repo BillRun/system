@@ -20,7 +20,7 @@ class utest_BalanceAutorenewModel extends utest_AbstractUtestModel {
 		$this->result = array('autorenew_before', 'autorenew_after');
 		$this->label = 'Balance | Autorenew';
 	}
-	
+
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$plan = Billrun_Util::filter_var($this->controller->getRequest()->get('plan'), FILTER_SANITIZE_STRING);

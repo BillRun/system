@@ -66,8 +66,8 @@ class TableModel {
 	 * @var array extra columns to display in the table
 	 */
 	public $extra_columns;
+	protected $error;
 
-	protected $error; 
 	/**
 	 * constructor
 	 * 
@@ -260,7 +260,7 @@ class TableModel {
 			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
 		return $entity;
 	}
-	
+
 	public function getItem($id) {
 		if (!($this->collection instanceof Mongodloid_Collection)) {
 			return false;
@@ -480,17 +480,17 @@ class TableModel {
 	public function duplicate($params) {
 		$key = $params[$this->search_key];
 
-		if($key) { 
+		if ($key) {
 			$count = $this->collection
-			->query($this->search_key, $key)
-			->count();
+				->query($this->search_key, $key)
+				->count();
 			if ($count) {
-				return $this->setError("key already exists") ;
+				return $this->setError("key already exists");
 			}
 		}
 		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
-		} else if (isset($params['_id'])){
+		} else if (isset($params['_id'])) {
 			$params['source_id'] = (string) $params['_id'];
 		}
 		unset($params['_id']);
@@ -565,11 +565,12 @@ class TableModel {
 	}
 
 	protected function setError($str) {
-			$this->error = $str ;
-			return false;
+		$this->error = $str;
+		return false;
 	}
 
 	public function getError($str) {
-			return $this->error;
+		return $this->error;
 	}
+
 }

@@ -50,7 +50,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var array
 	 */
 	protected $extraData = array();
-	
+
 	/**
 	 * Should the mandatory customer fields be overriden if they exist
 	 * @var boolean
@@ -85,7 +85,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * method to get calculator lines
 	 */
 	protected function getLines() {
-		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit','nrtrde'))));
+		return $this->getQueuedLines(array('type' => array('$in' => array('nsn', 'ggsn', 'smsc', 'mmsc', 'smpp', 'tap3', 'credit', 'nrtrde'))));
 	}
 
 	protected function subscribersByStamp() {
@@ -109,7 +109,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$this->subscribersByStamp();
 			$subscriber = isset($this->subscribers[$row['stamp']]) ? $this->subscribers[$row['stamp']] : FALSE;
 		} else {
-			if ($this->loadSubscriberForLine($row)) {	
+			if ($this->loadSubscriberForLine($row)) {
 				$subscriber = $this->subscriber;
 			} else {
 				Billrun_Factory::log('Error load subscriber : ' . $row->get('stamp'), Zend_Log::NOTICE);
@@ -142,7 +142,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$row['subscriber_lang'] = $subscriber->language;
-		
+
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
 		$plan_ref = $plan->createRef();
 		if (is_null($plan_ref)) {
@@ -206,11 +206,11 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 	}
-	
+
 	public function getPossiblyUpdatedFields() {
 		return array_merge($this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
 	}
-	
+
 	public function getCustomerPossiblyUpdatedFields() {
 		$subscriber = Billrun_Factory::subscriber();
 		$availableFileds = array_keys($subscriber->getAvailableFields());
@@ -341,7 +341,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		if ( $this->isCustomerable($line)) {
+		if ($this->isCustomerable($line)) {
 			if (!$this->overrideMandatoryFields) {
 				$validSubscriber = TRUE;
 				foreach ($this->subscriber->getAvailableFields() as $requiredField) {

@@ -22,8 +22,8 @@ class utest_CardDeleteModel extends utest_AbstractUtestModel {
 	}
 
 	function doTest() {
-		$query_serial_number = (int)Billrun_Util::filter_var($this->controller->getRequest()->get('serial_number'), FILTER_VALIDATE_INT);
-		$query_batch_number = (int)Billrun_Util::filter_var($this->controller->getRequest()->get('batch_number'), FILTER_VALIDATE_INT);
+		$query_serial_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('serial_number'), FILTER_VALIDATE_INT);
+		$query_batch_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('batch_number'), FILTER_VALIDATE_INT);
 		$query_secret = Billrun_Util::filter_var($this->controller->getRequest()->get('secret'), FILTER_SANITIZE_STRING);
 		$query_status = Billrun_Util::filter_var($this->controller->getRequest()->get('status'), FILTER_SANITIZE_STRING);
 
@@ -56,7 +56,7 @@ class utest_CardDeleteModel extends utest_AbstractUtestModel {
 			'method' => 'update',
 			'query' => json_encode($query),
 		);
-		
+
 		return $request;
 	}
 

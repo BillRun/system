@@ -60,12 +60,12 @@ class BulkCreditAction extends CreditAction {
 		if (!$receiver) {
 			return $this->setError('Receiver cannot be loaded', $request);
 		}
-		
+
 		$files = $receiver->receive();
 		if (!$files) {
 			return $this->setError('Couldn\'t receive file', $request);
 		}
-		
+
 		$this->processBulkCredit();
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -87,7 +87,7 @@ class BulkCreditAction extends CreditAction {
 		if (!isset($request['stamp'])) {
 			return $this->setError('Stamp is missing', $request);
 		}
-		
+
 		$filtered_request['stamp'] = $request['stamp'];
 
 		if (!isset($request['details'])) {

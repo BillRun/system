@@ -14,6 +14,7 @@
 class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_ActionManagers_Balances_Updaters_Updater {
 
 	protected $type = 'ChargingPlan';
+
 	/**
 	 * Get the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.
@@ -37,23 +38,23 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return $this->getDateFromPeriod($walletPeriod);
 		}
 		$wallet->setPeriod($recordToSet['to']);
-		return $recordToSet['to'];		
+		return $recordToSet['to'];
 	}
-	
+
 	protected function getChargingPlanQuery($query) {
 		$charging_plan_query = $query;
-		if($this->recurring) {
+		if ($this->recurring) {
 			$charging_plan_query['recurring'] = 1;
 		} else {
 			$charging_plan_query['$or'] = array(
 				array('recurring' => 0),
 				array('recurring' => array('$exists' => 0)),
-			);	
+			);
 		}
-		
+
 		return $charging_plan_query;
 	}
-	
+
 	/**
 	 * Get the charging plan record and apply values on the queries.
 	 * @param array $query Query to get the balances.
@@ -64,7 +65,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
 		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
 		$charging_plan_query = $this->getChargingPlanQuery($query);
-		
+
 		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
@@ -114,26 +115,26 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (!$this->validateServiceProviders($subscriber, $chargingPlanRecord)) {
 			return false;
 		}
-		
+
 		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
 
 		$balancesArray = array();
-		if(isset($chargingPlanRecord['include'])) {
+		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-		
+
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
-		if($coreBalance !== null) {
-			if($this->blockMax($subscriber['plan'], $coreBalance, $updateQuery)) {
+		if ($coreBalance !== null) {
+			if ($this->blockMax($subscriber['plan'], $coreBalance, $updateQuery)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 26;
 				$this->reportError($errorCode);
 				return false;
 			}
 		}
-		
+
 		$balancesToReturn = array('updated' => false);
-		
+
 		// Go through all charging possibilities. 
 		foreach ($balancesArray as $chargingBy => $chargingByValue) {
 			// TODO: Shouldn't we check using Billrun_Util::isMultidimentionalArray 
@@ -142,23 +143,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			if (Billrun_Util::isAssoc($chargingByValue)) {
 				$chargingByValue = array($chargingByValue);
 			}
-			
+
 			// There is more than one value pair in the wallet.
 			foreach ($chargingByValue as $chargingByValueValue) {
-				$returnPair = $this->getReturnPair($chargingByValueValue, 
-												   $chargingBy, 
-												   $subscriber, 
-												   $chargingPlanRecord, 
-												   $recordToSet,
-												   $updateQuery);
-				if($returnPair === false) {
+				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery);
+				if ($returnPair === false) {
 					return false;
 				}
-				
-				if(isset($returnPair['updated']) && $returnPair['updated']) {
+
+				if (isset($returnPair['updated']) && $returnPair['updated']) {
 					$balancesToReturn['updated'] = true;
 				}
-				
+
 				$balancesToReturn[] = $returnPair;
 			}
 		}
@@ -167,15 +163,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesToReturn['charging_plan'] = $chargingPlanRecord;
 		return $balancesToReturn;
 	}
-	
-	protected function getCoreBalance($balancesArray, $chargingPlanRecord) {		
+
+	protected function getCoreBalance($balancesArray, $chargingPlanRecord) {
 		foreach ($balancesArray as $chargeKey => $chargeValue) {
-			if(Billrun_Util::isAssoc($chargeValue)) {
+			if (Billrun_Util::isAssoc($chargeValue)) {
 				$chargeValue = array($chargeValue);
 			}
 
 			foreach ($chargeValue as $chargingByValue) {
-				if($chargingByValue['pp_includes_external_id'] == '1') {
+				if ($chargingByValue['pp_includes_external_id'] == '1') {
 					$ppName = $chargingPlanRecord['pp_includes_name'];
 					$ppID = $chargingPlanRecord['pp_includes_external_id'];
 					$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
@@ -184,7 +180,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 				}
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -206,25 +202,20 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	/**
 	 * Go through the balance include fields and return the "wallet" pair.
 	 */
-	protected function getReturnPair($chargingByValue, 
-									 $chargingBy, 
-									 $subscriber, 
-									 $chargingPlanRecord, 
-									 $recordToSet,
-									 $updateQuery) {
+	protected function getReturnPair($chargingByValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery) {
 		// Create a default balance record.
 		// TODO: Why are there values passed that are not used?
 		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet);
-		if($defaultBalance === false) {
+		if ($defaultBalance === false) {
 			return false;
 		}
-		
+
 		// TODO: This is for backward compatability
 		$ppName = $chargingPlanRecord['pp_includes_name'];
 		$ppID = $chargingPlanRecord['pp_includes_external_id'];
 
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
-		
+
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
 		$params = array(
 			'chargingBy' => $chargingBy,
@@ -236,17 +227,17 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			'source' => $source,
 			'subscriber' => $subscriber
 		);
-		
-		$returnPair = $this->goThroughBalanceWallets($params);	
-		
+
+		$returnPair = $this->goThroughBalanceWallets($params);
+
 		$wallet = $returnPair['wallet'];
 		$normalizeResult = $this->normalizeBalance($returnPair['query'], $subscriber['plan'], $wallet);
-		if($normalizeResult === false) {
+		if ($normalizeResult === false) {
 			return false;
 		}
-		
+
 		// Report on changes
-		if($normalizeResult['nModified'] > 0) {
+		if ($normalizeResult['nModified'] > 0) {
 			$valueName = $wallet->getFieldName();
 			$beforeNormalizing = $returnPair['balance'][$valueName];
 			$returnPair['balance'][$valueName] = $normalizeResult['max'];
@@ -255,11 +246,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
 			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
 		}
-		
+
 		unset($returnPair['query']);
 		return $returnPair;
 	}
-	
+
 	/**
 	 * Go throuh the balance wallet and return the wallet pair
 	 * @param array $params
@@ -285,7 +276,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		// populate pp values
 		foreach (array('pp_includes_name', 'pp_includes_external_id') as $ppField) {
-			if(!isset($chargingByValue[$ppField])) {
+			if (!isset($chargingByValue[$ppField])) {
 				$ppPair[$ppField] = $ppField == 'pp_includes_name' ? $ppName : $ppID;
 			} else {
 				$ppPair[$ppField] = $chargingByValue[$ppField];
@@ -309,16 +300,16 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function updateBalanceByWallet($chargingBy, $chargingByValue, $recordToSet, $updateQuery, $defaultBalance, $ppPair) {
 		$wallet = new Billrun_DataTypes_Wallet($chargingBy, $chargingByValue, $ppPair);
-		
+
 		$updateQuery['pp_includes_external_id'] = $wallet->getPPID();
-		
+
 		// Get the balance with the current value field.
 		$updateQuery[$wallet->getFieldName()]['$exists'] = 1;
-		
+
 		$to = $this->getExpirationTime($wallet, $recordToSet);
 
 		$currentBalance = $this->updateBalance($wallet, $updateQuery, $defaultBalance, $to);
-		
+
 		return array(
 			'balance' => $currentBalance,
 			'wallet' => $wallet,
@@ -362,11 +353,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
-		
+
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$balance = $balancesColl->query($balanceQuery)->cursor()->current();
 		$this->balanceBefore[$balanceQuery['pp_includes_external_id']] = $balance;
-		
+
 		// If the balance doesn't exist take the setOnInsert query, 
 		// if it exists take the set query.
 		if ($balance->isEmpty()) {
@@ -389,17 +380,17 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
-		
-		if(!Billrun_Util::multiKeyExists($update, 'to')) {
+
+		if (!Billrun_Util::multiKeyExists($update, 'to')) {
 			// TODO: Move the $max functionality to a trait
 			$update['$max']['to'] = $toTime;
 		}
-		
+
 		$options = array(
 			'upsert' => true,
 			'new' => true,
 		);
-		
+
 		// Return the new document.
 		return $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 	}
@@ -433,7 +424,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			"to" => array('$gt', $nowTime),
 			"from" => array('$lt', $nowTime)
 		);
-		
+
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.
 //		$planRecord = $plansCollection->query($plansQuery)->cursor()->current();
@@ -442,7 +433,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 //			// TODO: What error should be reported here?
 //			return false;
 //		}
-		
 //		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
 		if (isset($subscriber['charging_type'])) {
 			$defaultBalance['charging_type'] = $subscriber['charging_type'];

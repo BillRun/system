@@ -14,36 +14,36 @@
  * a generic query class should be created for both to implement.
  */
 class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Subscribers_Action {
-	
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
 	 */
 	protected $subscriberQuery = array();
-	
+
 	/**
 	 * If true then the query is a ranged query in a specific date.
 	 * @var boolean 
 	 */
 	protected $queryInRange = false;
-	
+
 	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success querying subscriber"));
 	}
-	
+
 	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
 	protected function queryRangeSubscribers() {
 		try {
-			$cursor = $this->collection->query($this->subscriberQuery)->cursor()->sort(array('_id'=>-1));
-			if(!$this->queryInRange) {
+			$cursor = $this->collection->query($this->subscriberQuery)->cursor()->sort(array('_id' => -1));
+			if (!$this->queryInRange) {
 				$cursor->limit(1);
 			}
 			$returnData = array();
-			
+
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
@@ -54,34 +54,33 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
-		}	
-		
+		}
+
 		return $returnData;
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
-		$returnData = 
-			$this->queryRangeSubscribers();
+		$returnData = $this->queryRangeSubscribers();
 
 		// Check if the return data is invalid.
-		if(!$returnData) {
+		if (!$returnData) {
 			$returnData = array();
 			$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 23);
 		}
-		
+
 		$outputResult = array(
-			'status'      => $this->errorCode == 0 ? 1 : 0,
-			'desc'        => $this->error,
-			'error_code'  => $this->errorCode,
-			'details'     => $returnData
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => $returnData
 		);
 		return $outputResult;
 	}
-	
+
 	/**
 	 * Parse the to and from parameters if exists. If not execute handling logic.
 	 * @param type $input - The received input.
@@ -91,7 +90,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$to = $input->get('to');
 		$from = $input->get('from');
 		$this->queryInRange = true;
-		if ($from){
+		if ($from) {
 			$this->subscriberQuery['from'] = array('$lte' => new MongoDate(strtotime($from)));
 		} else {
 			$this->subscriberQuery['from']['$lte'] = new MongoDate();
@@ -104,20 +103,20 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			$this->queryInRange = false;
 		}
 	}
-	
+
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if(!$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -126,26 +125,26 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	protected function setQueryRecord($input) {
 		$jsonData = null;
 		$query = $input->get('query');
-		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		$invalidFields = $this->setQueryFields($jsonData);
-		
+
 		// If there were errors.
-		if(empty($this->subscriberQuery)) {
+		if (empty($this->subscriberQuery)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
-		
+
 		$this->parseDateParameters($input);
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -153,19 +152,20 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
-		
+
 		// Arrary of errors to report if any occurs.
 		$invalidFields = array();
-		
+
 		// Get only the values to be set in the update record.
 		foreach ($queryFields as $field) {
-			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+			if (isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->subscriberQuery[$field] = $queryData[$field];
 			} else {
 //				$invalidFields[] = $field;
 			}
 		}
-		
+
 		return $invalidFields;
 	}
+
 }

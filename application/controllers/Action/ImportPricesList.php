@@ -41,7 +41,7 @@ class ImportPricesListAction extends ApiAction {
 		if (!$this->validateList($list)) {
 			return false;
 		}
-		
+
 		if (isset($request['remove_non_existing_usage_types'])) {
 			$this->should_remove_non_existing_usage_types = (boolean) $request['remove_non_existing_usage_types'];
 		}
@@ -50,12 +50,11 @@ class ImportPricesListAction extends ApiAction {
 		}
 
 		$ret = $this->importRates();
-		
-		$controllerOutput = 
-			array(
-				'status' => 1,
-				'desc' => 'success',
-				'keys' => $ret,
+
+		$controllerOutput = array(
+			'status' => 1,
+			'desc' => 'success',
+			'keys' => $ret,
 		);
 		return $this->getController()->setOutput(array($controllerOutput));
 	}
@@ -68,20 +67,20 @@ class ImportPricesListAction extends ApiAction {
 	protected function getUpdatedAndMissingCategoryKeys($ratesModel) {
 		// This array is to be filled with the new rates.
 		$updatedKeys = array();
-		
+
 		// This array is to be filled with all missing categories found.
 		$missingCategories = array();
-		
+
 		$activeRates = $ratesModel->getActiveRates(array_unique(array_keys($this->rules)));
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		
+
 		// Go through all the old rates.
 		foreach ($activeRates as $oldRate) {
 			$updatedRate = $this->updateRates($ratesModel, $oldRate, $ratesColl);
 			// If the return key is false it means a missing category is found.
-			if(isset($updatedRate[true])) {
+			if (isset($updatedRate[true])) {
 				$updatedKeys[] = $updatedRate;
-			} else if(isset($updatedRate[false])) {
+			} else if (isset($updatedRate[false])) {
 				$missingCategories[] = $updatedRate;
 			} else {
 				// This can happen if saving to the mongo failed.
@@ -89,10 +88,10 @@ class ImportPricesListAction extends ApiAction {
 				return null;
 			}
 		}
-		
+
 		return array($updatedKeys, $missingCategories);
 	}
-	
+
 	/**
 	 * Get all rates from the rates collection.
 	 * @return array - Array of rates in the collection divided to, updated, future, old and missing category.
@@ -106,19 +105,17 @@ class ImportPricesListAction extends ApiAction {
 		foreach ($future_keys as $key) {
 			unset($this->rules[$key]);
 		}
-		
+
 		// If there are rules to select rates by.
 		if ($this->rules) {
-			$updatedAndMissingCategories = 
-				$this->getUpdatedAndMissingCategoryKeys($ratesModel);
+			$updatedAndMissingCategories = $this->getUpdatedAndMissingCategoryKeys($ratesModel);
 			// This is a criticl error!
-			if(!$updatedAndMissingCategories) {
+			if (!$updatedAndMissingCategories) {
 				return null;
 			}
-			list($updated_keys, $missing_categories) = 
-				each($updatedAndMissingCategories);
+			list($updated_keys, $missing_categories) = each($updatedAndMissingCategories);
 		}
-		
+
 		// Check if there are keys that are in the db but not in the rules or keys that are in the rules
 		// but not in the db.
 		if (count($updated_keys) + count($future_keys) + count($missing_categories) != count($this->rules)) {
@@ -127,7 +124,7 @@ class ImportPricesListAction extends ApiAction {
 		}
 		return array('updated' => $updated_keys, 'future' => $future_keys, 'missing_category' => $missing_categories, 'old' => $old_or_not_exist);
 	}
-	
+
 	/**
 	 * Remove the non existing usage types from the rates record.
 	 * @param array $rulesForRate - Rules for the current rate.
@@ -142,7 +139,7 @@ class ImportPricesListAction extends ApiAction {
 			unset($newRates[$usage_types]);
 		}
 	}
-	
+
 	/**
 	 * Get the params prefix to set.
 	 * @param array $ratePrefix - The prefix for the current rate proccessed.
@@ -151,16 +148,16 @@ class ImportPricesListAction extends ApiAction {
 	 */
 	protected function getParamsPrefix($ratePrefix, $currentPrefix) {
 		$prefix = explode(',', $ratePrefix);
-		
+
 		// If requested not to remove existing prefix, we concatenate it.
 		if (!$this->remove_non_existing_prefix) {
 			$additional_prefix = array_diff($prefix, $currentPrefix);
 			$prefix = array_merge($currentPrefix, $additional_prefix);
 		}
-		
+
 		return $prefix;
 	}
-	
+
 	/**
 	 * Set the dates for the new raw record.
 	 * @param array $rateKey - The current rate key record.
@@ -176,7 +173,7 @@ class ImportPricesListAction extends ApiAction {
 		unset($newRawData['_id']);
 		$newRawData['from'] = new MongoDate($newFromDate->getTimestamp());
 	}
-	
+
 	/**
 	 * Update the new rates according to the old rates.
 	 * @param RatesModel $ratesModel - The rates model object.
@@ -191,42 +188,35 @@ class ImportPricesListAction extends ApiAction {
 		$this->setDates($rateKey, $oldRate, $newRawData, $oldRawData);
 
 		if ($this->should_remove_non_existing_usage_types) {
-			$this->removeNonExistingUsageTypes($this->rules[$rateKey]['usage_type_rates'],
-											   $oldRate['rates'],
-											   $newRawData['rates']);
+			$this->removeNonExistingUsageTypes($this->rules[$rateKey]['usage_type_rates'], $oldRate['rates'], $newRawData['rates']);
 		}
 
 		// Write the updated old rate to the database.
-		if(!$ratesColl->save($oldRate)) {
+		if (!$ratesColl->save($oldRate)) {
 			Billrun_Factory::log("UpdateRates: failed to save old rate to the data base. " . print_r($oldRate, true), Zend_Log::ERR);
 			return null;
 		}
-		
-		$prefix = 
-			$this->getParamsPrefix($this->rules[$rateKey]['prefix'],
-								   $newRawData['params']['prefix']);
-		$newRawData['params']['prefix']= $prefix;
-		
+
+		$prefix = $this->getParamsPrefix($this->rules[$rateKey]['prefix'], $newRawData['params']['prefix']);
+		$newRawData['params']['prefix'] = $prefix;
+
 		foreach ($this->rules[$rateKey]['usage_type_rates'] as $usage_type => $usage_type_rate) {
 			// If this returns false it means we found a missing category.
-			if(!$this->setUsageTypeData($ratesModel,
-										$usage_type,
-										$usage_type_rate,
-										$newRawData['rates'])) {
+			if (!$this->setUsageTypeData($ratesModel, $usage_type, $usage_type_rate, $newRawData['rates'])) {
 				return array(false => $rateKey);
 			}
 		}
-		
+
 		$newRate = new Mongodloid_Entity($newRawData);
-				
-		if(!$ratesColl->save($newRate)){
+
+		if (!$ratesColl->save($newRate)) {
 			Billrun_Factory::log("UpdateRates: failed to save new rate to the data base. " . print_r($newRate, true), Zend_Log::ERR);
 			return null;
 		}
-		
+
 		return array(true => $rateKey);
 	}
-	
+
 	/**
 	 * Set the rates field of the new record with the rate usage types.
 	 * @param RatesModel $ratesModel - The rates model object.
@@ -236,8 +226,8 @@ class ImportPricesListAction extends ApiAction {
 	 * @return boolean - False if found a missing category true otherwise.
 	 */
 	protected function setUsageTypeData($ratesModel, $usageType, $usageTypeRate, $ratesToSet) {
-		if (!isset($ratesToSet[$usageType]) && 
-		   (!isset($usageTypeRate['category'])	    || 
+		if (!isset($ratesToSet[$usageType]) &&
+			(!isset($usageTypeRate['category']) ||
 			!$usageTypeRate['category'])) {
 			return false;
 		}
@@ -247,10 +237,10 @@ class ImportPricesListAction extends ApiAction {
 			$ratesToSet['rates'][$usageType]['category'] = $usageTypeRate['category'];
 		}
 		$ratesToSet[$usageType]['access'] = floatval($usageTypeRate['access']);
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Validate a list item.
 	 * @param array $item - Item to be validated.
@@ -281,10 +271,10 @@ class ImportPricesListAction extends ApiAction {
 		} else if (!$item['key']) {
 			$error = 'Illegal key';
 		}
-		
+
 		return $error;
 	}
-	
+
 	/**
 	 * Set the item's usage type value, return error string if failed.
 	 * @param array $item - Item to set the usage type by.
@@ -314,10 +304,10 @@ class ImportPricesListAction extends ApiAction {
 		} else {
 			$itemUsageType['access'] = $item['access_price'];
 		}
-	
+
 		return "";
 	}
-	
+
 	/**
 	 * Build a rule in the rule list based on an input item.
 	 * @param array $item - Item to fill the rules with values by.
@@ -325,15 +315,15 @@ class ImportPricesListAction extends ApiAction {
 	 * a Zend_Date object each time.
 	 * @return string - Error to report, empty if no error.
 	 */
-	protected function buildRuleFromItem($item , $now) {
+	protected function buildRuleFromItem($item, $now) {
 		$error = $this->validateItem($item, $now);
-		if(!empty($error)) {
+		if (!empty($error)) {
 			// Send $item as received input.
 			return $error;
 		}
 
 		$error = $this->setRuleUsageTypeByItem($item);
-		if(!empty($error)) {
+		if (!empty($error)) {
 			// Send $item as received input.
 			return $error;
 		}
@@ -353,10 +343,10 @@ class ImportPricesListAction extends ApiAction {
 		} else {
 			$this->rules[$item['key']]['prefix'] = $item['prefix'];
 		}
-		
+
 		return "";
 	}
-	
+
 	/**
 	 * Validate an input list of rules.
 	 * @param array $list - Input list to validate.
@@ -370,22 +360,22 @@ class ImportPricesListAction extends ApiAction {
 			return $this->setError('Empty list');
 		}
 		$now = new Zend_Date();
-		
+
 		// Go through the items of the list.
 		foreach ($list as $item) {
 			$error = $this->buildRuleFromItem($item, $now);
-			if(!empty($error)) {
+			if (!empty($error)) {
 				// Send $item as received input.
 				return $this->setError($error, $item);
 			}
 		}
-		
+
 		// Validate the rules.
 		$error = $this->validateRuleList();
-		if(!empty($error)) {
+		if (!empty($error)) {
 			return $this->setError($error);
 		}
-		
+
 		return TRUE;
 	}
 
@@ -404,15 +394,15 @@ class ImportPricesListAction extends ApiAction {
 		if (count($rule_numbers) != $max - $min + 1) {
 			return 'Missing rule for';
 		}
-		
+
 		$ruleMaxTimes = $rate_rules[strval($max)]['times'];
 		if ($ruleMaxTimes != '0' && $ruleMaxTimes != pow(2, 31) - 1) {
 			return 'The last rule must be an infinite one';
 		}
-				
+
 		return "";
 	}
-	
+
 	/**
 	 * Validate the number of inifinite rules in a rule list.
 	 * @param array $rateRules - List of rules to validate.
@@ -430,7 +420,7 @@ class ImportPricesListAction extends ApiAction {
 			return 'None or more than one infinite rule detected for';
 		}
 	}
-	
+
 	/**
 	 * Validate this object's rule list.
 	 * @return string - Returns error string to report. Empty string if no error.
@@ -442,23 +432,22 @@ class ImportPricesListAction extends ApiAction {
 			foreach ($rule['usage_type_rates'] as $usageType => $usageTypeRate) {
 				$rateRules = $usageTypeRate['rules'];
 				$error = $this->validateRuleNumbers($rateRules);
-				if(!empty($error)) {
-					// Append the key and usage type to the error.
-					return $error . ' (' . $key . ', ' . $usageType . ')';
-				}
-				
-				$error = $this->validateInfiniteRules($rateRules);
-				if(!empty($error)) {
+				if (!empty($error)) {
 					// Append the key and usage type to the error.
 					return $error . ' (' . $key . ', ' . $usageType . ')';
 				}
 
+				$error = $this->validateInfiniteRules($rateRules);
+				if (!empty($error)) {
+					// Append the key and usage type to the error.
+					return $error . ' (' . $key . ', ' . $usageType . ')';
+				}
 			}
 		}
-		
+
 		return "";
 	}
-	
+
 	/**
 	 * 
 	 * @param mixed $value

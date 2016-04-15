@@ -14,7 +14,7 @@
  * @since    4.0
  */
 abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
-	
+
 	protected $collectionName = null;
 	protected $fieldToImport = null;
 	protected $dataToImport = null;
@@ -23,19 +23,19 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	protected $handle = null;
 	protected $delimiter = null;
 	protected $limit = null;
-	
+
 	abstract protected function getCollectionName();
-	
+
 	public function __construct($options) {
 		parent::__construct($options);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/importers/conf.ini");
 	}
-	
+
 	public function import() {
 		Billrun_Factory::log("Starting to import CSV", Zend_Log::INFO);
 		$path = $this->getPath();
 		$this->importerName = $this->getImporterName();
-		
+
 		if (!file_exists($path) || is_dir($path)) {
 			Billrun_Factory::log("File not exists or path is directory", Zend_Log::ALERT);
 			return FALSE;
@@ -59,16 +59,16 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 				$rowIndex++;
 			}
 		}
-		
+
 		$this->save();
-		
+
 		Billrun_Factory::log("Done importing CSV", Zend_Log::INFO);
 	}
-	
+
 	protected function getImporterName() {
 		return str_replace('Billrun_Importer_', '', get_called_class());
 	}
-	
+
 	public function save() {
 		try {
 			$error = '';
@@ -88,15 +88,15 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 			Billrun_Factory::log($error, Zend_Log::ALERT);
 			$success = false;
 		}
-		
+
 		if (!$success) {
 			Billrun_Factory::log('Entities:' . print_r($this->dataToImport, 1), Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	public function getDelimiter() {
 		$delimiter = Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.delimiter', false);
 		if ($delimiter === false) {
@@ -104,7 +104,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 		}
 		return $delimiter;
 	}
-	
+
 	public function getLimit() {
 		$limit = Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.limit', false);
 		if ($limit === false) {
@@ -112,11 +112,11 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 		}
 		return intval($limit);
 	}
-	
+
 	public function getRowsIndexesToSkip() {
 		return array(0); //TODO: move to config
 	}
-	
+
 	/**
 	 * Gets the fields to save in the document
 	 * 
@@ -125,10 +125,9 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 	protected function getImporterFields() {
 		if (empty($this->fieldToImport)) {
 			$this->fieldToImport = array_merge(
-				Billrun_Factory::config()->getConfigValue('importer.basic.fields', array()),
-				Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.fields', array()));
+				Billrun_Factory::config()->getConfigValue('importer.basic.fields', array()), Billrun_Factory::config()->getConfigValue('importer.' . $this->importerName . '.fields', array()));
 		}
-		
+
 		return $this->fieldToImport;
 	}
 
@@ -147,12 +146,12 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 			} else { // Hard-coded value
 				$ret[$field] = $rowFieldIndex;
 			}
-			
+
 			if (is_null($ret[$field])) {
 				unset($ret[$field]);
 			}
 		}
 		return $ret;
 	}
-	
+
 }

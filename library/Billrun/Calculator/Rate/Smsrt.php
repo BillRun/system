@@ -24,14 +24,14 @@ class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Callrt {
 	protected function shouldLineBeRated($row) {
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'smsrt';
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */

@@ -12,7 +12,7 @@
  * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_StartsWith extends Admin_MongoOperatorTranslators_Regex {
-	
+
 	/**
 	 * Return a pair of oprator and value in the mongo format based on user string
 	 * input.
@@ -22,4 +22,5 @@ class Admin_MongoOperatorTranslators_StartsWith extends Admin_MongoOperatorTrans
 	public function translate($value) {
 		return array($this->getOperator() => "^$value");
 	}
+
 }

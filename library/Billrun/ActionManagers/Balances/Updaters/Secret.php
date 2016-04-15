@@ -12,15 +12,15 @@
  * @author Tom Feigin
  */
 class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionManagers_Balances_Updaters_ChargingPlan {
-	
+
 	protected $type = 'Secret';
-	
+
 	/**
 	 * Reference to the card being used.
 	 * @var type Reference
 	 */
 	protected $cardRef;
-	
+
 	/**
 	 * Get the card record according to the received query
 	 * @param array $query - Received query to get the record by.
@@ -28,7 +28,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	 */
 	protected function getCardRecord($query) {
 		if (isset($query['secret'])) {
-			$query['secret'] = hash('sha512',$query['secret']);
+			$query['secret'] = hash('sha512', $query['secret']);
 		} else {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 22;
 			$this->reportError($errorCode, Zend_Log::ALERT);
@@ -40,7 +40,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		return $cardsColl->query($finalQuery)->cursor()->current();
 	}
-	
+
 	/**
 	 * Update the balances, based on the plans table
 	 * @param type $query - Query to find row to update.
@@ -51,31 +51,31 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	public function update($query, $recordToSet, $subscriberId) {
 		// Get the record.
 		$cardRecord = $this->getCardRecord($query);
-		
-		if($cardRecord === false) {
+
+		if ($cardRecord === false) {
 			return false;
 		}
-		
-		if($cardRecord->isEmpty()) {
+
+		if ($cardRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		$this->setSourceForLineRecord($cardRecord);
-		
+
 		// Build the plan query from the card plan and service provider field.
 		$planQuery = array(
 			'charging_plan_name' => $cardRecord['charging_plan_name'],
 			'service_provider' => $cardRecord['service_provider'],
 		);
-		
+
 		$ret = parent::update($planQuery, $recordToSet, $subscriberId);
-		
+
 		if ($ret === FALSE) {
 			return false;
 		}
-		
+
 		// TODO: To the request of Pelephone, we always singal a card as used after
 		// being loaded into a balance EVEN IF NON IS ACTUALLY LOADED INTO THE BALANCE!
 		// To prevent the latter from happening, remove the 'true' in the following if 
@@ -83,13 +83,13 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		// wallet, which means that the card was loaded, even if partially, and should be 
 		// signaled as used.  If the $ret['updated'] is false, nothing was actually loaded
 		// into the account.
-		if(true || $ret['updated']) {
+		if (true || $ret['updated']) {
 			$this->signalCardAsUsed($cardRecord, $subscriberId);
 		}
 		unset($ret['updated']);
 		return $ret;
 	}
-	
+
 	/**
 	 * Signal a given card as used after it has been used to charge a balance.
 	 * @param mongoEntity $cardRecord - Record to set as canceled in the mongo.
@@ -105,8 +105,8 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		$update = array(
 			'$set' => array(
 				'status' => 'Used',
-				'sid'    => $subscriberId,
-				'activation_datetime'    => new MongoDate(),
+				'sid' => $subscriberId,
+				'activation_datetime' => new MongoDate(),
 			),
 		);
 		$options = array(
@@ -115,7 +115,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
 		$cardsColl->findAndModify($query, $update, array(), $options, true);
 	}
-	
+
 	/**
 	 * Set the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.
@@ -124,7 +124,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		$collection = Billrun_Factory::db()->cardsCollection();
 		$this->cardRef = $collection->createRefByEntity($card);
 	}
-	
+
 	/**
 	 * Get the 'Source' value to put in the record of the lines collection.
 	 * @return object The value to set.
@@ -132,4 +132,5 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 	protected function getSourceForLineRecord($chargingPlanRecord) {
 		return $this->cardRef;
 	}
+
 }

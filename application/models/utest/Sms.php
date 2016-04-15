@@ -20,7 +20,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 		$this->result = array('balance_before', 'balance_after', 'lines');
 		$this->label = 'SMS/MMS | Real-time event';
 	}
-	
+
 	/**
 	 * main action to do basic tests
 	 * 
@@ -47,18 +47,17 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 				'transaction_id' => ''
 			)
 		);
-		
+
 		$data = $this->getRequestData($params);
 		$res = $this->controller->sendRequest($data);
 
-		if($send_failed_request == 'send_failed_request'){
+		if ($send_failed_request == 'send_failed_request') {
 			sleep(1);
 			$xml = simplexml_load_string($res);
-			$params['request']['transaction_id'] = (string)$xml->transaction_id;
+			$params['request']['transaction_id'] = (string) $xml->transaction_id;
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest($data);
 		}
-
 	}
 
 	/**

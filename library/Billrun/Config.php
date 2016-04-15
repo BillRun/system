@@ -46,11 +46,11 @@ class Billrun_Config {
 	}
 
 	public function addConfig($path) {
-		if(file_exists($path)) {
+		if (file_exists($path)) {
 			$addedConf = new Yaf_Config_Ini($path);
 			$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
 		} else {
-			error_log ("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
+			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
 	}
 
@@ -66,11 +66,13 @@ class Billrun_Config {
 		}
 
 		foreach (array_merge(array_keys($lessImportentConf), array_keys($moreImportantConf)) as $key) {
-			if(!isset($moreImportantConf[$key])) { continue; }
-			
+			if (!isset($moreImportantConf[$key])) {
+				continue;
+			}
+
 			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
-						$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
-						$moreImportantConf[$key];
+				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
+				$moreImportantConf[$key];
 		}
 
 		return $lessImportentConf;
@@ -199,7 +201,7 @@ class Billrun_Config {
 		}
 		return false;
 	}
-	
+
 	public function toArray() {
 		return $this->config->toArray();
 	}

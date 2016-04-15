@@ -105,13 +105,13 @@ class CliController extends Yaf_Controller_Abstract {
 
 
 		//Go through all actions and run the first one that was selected
-			foreach (array_keys($this->actions) as $val) {
-				if (isset($this->options->{$val})) {
-					$this->addOutput(ucfirst($val) . "...");
-					$this->forward($val);
-				}
+		foreach (array_keys($this->actions) as $val) {
+			if (isset($this->options->{$val})) {
+				$this->addOutput(ucfirst($val) . "...");
+				$this->forward($val);
 			}
 		}
+	}
 
 	/**
 	 * method to add output to the stream and log

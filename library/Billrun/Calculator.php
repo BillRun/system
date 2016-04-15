@@ -100,11 +100,11 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
 		}
-		
+
 		if (Billrun_Util::getFieldVal($options['calculator']['rates_query'], false)) {
 			$this->rates_query = Billrun_Util::getFieldVal($options['calculator']['rates_query'], array());
 		}
-		
+
 		$this->queue_coll = Billrun_Factory::db()->queueCollection();
 	}
 
@@ -468,7 +468,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @return array

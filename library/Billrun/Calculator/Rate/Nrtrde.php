@@ -73,7 +73,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 			),
 			array(
 				'$match' => array(
-					"params.prefix" => array (
+					"params.prefix" => array(
 						'$in' => $call_number_prefixes,
 					)
 				)
@@ -90,7 +90,7 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 //		$rate = $rates_coll->aggregate($aggregate)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 		$rate = $rates_coll->aggregate($aggregate);
-		if(!empty($rate)) {
+		if (!empty($rate)) {
 			$obj_rate = new Mongodloid_Entity(reset($rate));
 			$obj_rate->collection($rates_coll);
 			return $obj_rate;
@@ -102,12 +102,10 @@ class Billrun_Calculator_Rate_Nrtrde extends Billrun_Calculator_Rate {
 			if (!empty($cursor_rate)) {
 				$UNrate = $cursor_rate->current();
 				$UNrate->collection($rates_coll);
-				return $UNrate;			
+				return $UNrate;
 			}
 		}
 	}
-
-
 
 	/**
 	 * "e" - data, "9" - outgoing(call/sms), "a" - incoming 

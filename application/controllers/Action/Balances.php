@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class BalancesAction extends ApiAction {
-	
+
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action

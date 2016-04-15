@@ -35,8 +35,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 	protected $ftpConfig = false;
-
 	protected $checkReceivedSize = true;
+
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->ftpConfig = isset($options['ftp']['host']) ? array($options['ftp']) : $options['ftp'];
@@ -118,7 +118,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				$isFileReceivedMoreFields['extra_data'] = $extraData;
 			}
 
-			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields) ) {
+			if (!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields)) {
 				continue;
 			}
 
@@ -139,7 +139,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 			$fileData['path'] = $targetPath . $file->name;
 
-			if (!$this->isFileReceivedCorrectly($file, $fileData['path'])) {			
+			if (!$this->isFileReceivedCorrectly($file, $fileData['path'])) {
 				continue;
 			}
 			if ($this->preserve_timestamps) {
@@ -150,13 +150,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPFileReceived', array(&$fileData['path'], $file, $this, $hostName, $extraData));
 
-			if(!empty($this->backupPaths)) {
+			if (!empty($this->backupPaths)) {
 				$backedTo = $this->backup($fileData['path'], $file->name, $this->backupPaths, $hostName, FALSE);
 				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path'], $hostName));
 				$fileData['backed_to'] = $backedTo;
 				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path'], $hostName));
 			}
-			if ($this->logDB($fileData)) {				
+			if ($this->logDB($fileData)) {
 				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
 				// delete the file after downloading and store it to processing queue
@@ -171,7 +171,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Check if a remote file shold be received for further processing.
 	 * @param type $file
@@ -181,7 +181,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (!$file->isFile()) {
 			Billrun_Factory::log("FTP: " . $file->name . " is not a file", Zend_Log::INFO);
 			$ret = false;
-		}else if (!$this->isFileValid($file->name, $file->path)) {
+		} else if (!$this->isFileValid($file->name, $file->path)) {
 			Billrun_Factory::log("FTP: " . $file->name . " is not a valid file", Zend_Log::INFO);
 			$ret = false;
 		} else if (!$this->lockFileForReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
@@ -195,8 +195,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 * check if the received file was correctly received
 	 * @param type $param
 	 */
-	protected function isFileReceivedCorrectly($remoteFile,$localFilePath) {
-		if($this->checkReceivedSize) {
+	protected function isFileReceivedCorrectly($remoteFile, $localFilePath) {
+		if ($this->checkReceivedSize) {
 			$local_size = filesize($localFilePath);
 			$remote_size = $remoteFile->size();
 			if ($local_size !== $remote_size) {

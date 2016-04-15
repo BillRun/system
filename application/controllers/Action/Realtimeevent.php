@@ -78,7 +78,7 @@ class RealtimeeventAction extends ApiAction {
 	protected function saveEvent() {
 		
 	}
-	
+
 	/**
 	 * Gets the data sent to the api
 	 * @todo get real data from request (now it's only mock-up)
@@ -87,7 +87,7 @@ class RealtimeeventAction extends ApiAction {
 		$request = $this->getRequest()->getRequest();
 		$this->usaget = $request['usaget'];
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
-			'usaget' => $this->usaget
+				'usaget' => $this->usaget
 		));
 		if (!$decoder) {
 			Billrun_Factory::log('Cannot get decoder', Zend_Log::ALERT);
@@ -102,25 +102,25 @@ class RealtimeeventAction extends ApiAction {
 
 		return Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
-	
+
 	/**
 	 * Sets the data of $this->event
 	 */
 	protected function setEventData() {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
-		$this->event['rand'] = rand(1,1000000);
+		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
 		if ($this->usaget === 'data') {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
-		
+
 		// some hack for PL (@TODO - move to plugin)
 		if (isset($this->event['call_type']) && $this->event['call_type'] == '3') {
 			$this->usaget = 'video_call';
 		}
-		
+
 		if ($this->usaget === 'call' || $this->usaget === 'video_call' || $this->usaget === 'forward_call') {
 			if (!isset($this->event['called_number'])) {
 				if (isset($this->event['dialed_digits'])) {
@@ -129,7 +129,7 @@ class RealtimeeventAction extends ApiAction {
 					$this->event['called_number'] = $this->event['connected_number'];
 				}
 			}
-			
+
 			if (!empty($this->event['called_number']) && strlen($this->event['called_number']) > 3 && substr($this->event['called_number'], 0, 3) == '972') {
 				$called_number = $this->event['called_number'];
 				if (substr($this->event['called_number'], 0, 4) == '9721') {
@@ -137,11 +137,11 @@ class RealtimeeventAction extends ApiAction {
 				} else {
 					$prefix = '0';
 				}
-				$this->event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number)+3);
+				$this->event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number) + 3);
 			}
 		}
-		
-				
+
+
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		if (isset($this->event['time_date'])) {
 			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
@@ -149,30 +149,30 @@ class RealtimeeventAction extends ApiAction {
 			// we are on real time -> the time is now
 			$this->event['urt'] = new MongoDate();
 		}
-		
-		if (in_array($this->usaget, array('sms','mms','service'))) {
+
+		if (in_array($this->usaget, array('sms', 'mms', 'service'))) {
 			$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
 			$this->event['transaction_id'] = $this->getTransactionId($this->event);
 		}
 	}
-	
+
 	protected function getSgsn($event) {
 		$sgsn = 0;
 		if (isset($event['service']['sgsn_address'])) {
 			$sgsn = $event['service']['sgsn_address'];
-		} else if(isset ($event['sgsn_address'])) {
+		} else if (isset($event['sgsn_address'])) {
 			$sgsn = $event['sgsn_address'];
-		} else if(isset ($event['sgsnaddress'])) {
+		} else if (isset($event['sgsnaddress'])) {
 			$sgsn = $event['sgsnaddress'];
 		}
 		return $sgsn;
 	}
-	
+
 	protected function getDataRecordType($usaget, $data) {
-		switch ($usaget){
+		switch ($usaget) {
 			case('data'):
 				$requestCode = $data['request_type'];
-				$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType',array());
+				$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType', array());
 				foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
 					if ($requestCode == $requestTypeCode) {
 						return strtolower($requestTypeDesc);
@@ -189,11 +189,11 @@ class RealtimeeventAction extends ApiAction {
 			case('service'):
 				return 'service';
 		}
-		
+
 		Billrun_Factory::log("No record type found. Params: " . print_R($usaget) . "," . print_R($data), Zend_Log::ERR);
 		return false;
 	}
-	
+
 	/**
 	 * Gets the event type for rates calculator
 	 * 
@@ -215,11 +215,11 @@ class RealtimeeventAction extends ApiAction {
 			case ('service'):
 				return 'service';
 		}
-		
+
 		Billrun_Factory::log("No event type found. Usaget: " . print_R($this->usaget), Zend_Log::ERR);
 		return false;
 	}
-	
+
 	/**
 	 * Runs Billrun process
 	 * 
@@ -235,7 +235,7 @@ class RealtimeeventAction extends ApiAction {
 		$processor->process();
 		return current($processor->getAllLines());
 	}
-	
+
 	/**
 	 * Send respond
 	 * 
@@ -244,13 +244,13 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function respond($data) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-			'usaget' => $this->usaget
-			));
+				'usaget' => $this->usaget
+		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		$responder = Billrun_ActionManagers_Realtime_Responder_Manager::getResponder($data);
 		if (!$responder) {
 			Billrun_Factory::log('Cannot get responder', Zend_Log::ALERT);
@@ -267,7 +267,7 @@ class RealtimeeventAction extends ApiAction {
 		//$responseUrl = Billrun_Factory::config()->getConfigValue('IN.respose.url.realtimeevent');
 		//return Billrun_Util::sendRequest($responseUrl, $response);
 	}
-	
+
 	/**
 	 * Checks if the row should really decrease balance from the subscriber's balance, or just pretend
 	 * 
@@ -276,7 +276,7 @@ class RealtimeeventAction extends ApiAction {
 	protected function isPretend($event) {
 		return (($this->usaget === 'call' || $this->usaget === 'video_call') && $event['record_type'] === 'start_call');
 	}
-	
+
 	/**
 	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
 	 * 
@@ -285,7 +285,7 @@ class RealtimeeventAction extends ApiAction {
 	protected function isReverseCharge($event) {
 		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
 	}
-	
+
 	/**
 	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
 	 * 

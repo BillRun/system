@@ -11,6 +11,7 @@
  *
  */
 abstract class Billrun_Encoder_Base {
+
 	/**
 	 * Encode to string
 	 * 

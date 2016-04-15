@@ -9,13 +9,13 @@
 /**
  * This class represents a credit row in the billing system.
  */
-class CreditRow 
-{
+class CreditRow {
+
 	/**
 	 * The properties of the credit row.
 	 */
 	private $properties;
-	
+
 	/**
 	 * Construct a new credit row object.
 	 * 
@@ -171,4 +171,5 @@ class CreditRow
 
 		return $filtered_request;
 	}
+
 }

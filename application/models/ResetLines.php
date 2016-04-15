@@ -62,7 +62,7 @@ class ResetLinesModel {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Get the reset lines query.
 	 * @param array $update_sids - Array of sid's to reset.
@@ -104,10 +104,7 @@ class ResetLinesModel {
 	 * @param Mongodloid_Collection $queue_coll - The queue colection.
 	 * @return boolean true if successful false otherwise.
 	 */
-	protected function resetLinesForSubscribers($update_sids, 
-												$advancedProperties, 
-											    $lines_coll,
-												$queue_coll) {
+	protected function resetLinesForSubscribers($update_sids, $advancedProperties, $lines_coll, $queue_coll) {
 		$query = $this->getResetLinesQuery($update_sids);
 		$lines = $lines_coll->query($query);
 		$stamps = array();
@@ -128,16 +125,12 @@ class ResetLinesModel {
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if(!$this->handleStamps($stamps,
-									$queue_coll, 
-									$queue_lines, 
-									$lines_coll, 
-									$update_sids)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_sids)) {
 				return false;
 			}
 		}
 	}
-	
+
 	/**
 	 * Removes lines from queue, reset added fields off lines and re-insert to queue first stage
 	 * @todo support update/removal of credit lines
@@ -149,21 +142,17 @@ class ResetLinesModel {
 			// TODO: Why return true?
 			return true;
 		}
-		
+
 		$offset = 0;
 		$configFields = array('imsi', 'msisdn', 'called_number', 'calling_number');
-		$advancedProperties = 
-			Billrun_Factory::config()->getConfigValue("queue.advancedProperties", $configFields);
-						
+		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", $configFields);
+
 		while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
 			Billrun_Factory::log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
-			$this->resetLinesForSubscribers($update_sids, 
-											$advancedProperties, 
-											$lines_coll,
-											$queue_coll);
+			$this->resetLinesForSubscribers($update_sids, $advancedProperties, $lines_coll, $queue_coll);
 			$offset += 10;
 		}
-		
+
 		return TRUE;
 	}
 
@@ -184,7 +173,7 @@ class ResetLinesModel {
 			}
 		}
 	}
-	
+
 	/**
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
@@ -192,8 +181,8 @@ class ResetLinesModel {
 	protected function getUpdateQuery() {
 		return array(
 			'$unset' => array(
-	//						'aid' => 1,
-	//						'sid' => 1,
+				//						'aid' => 1,
+				//						'sid' => 1,
 				'apr' => 1,
 				'aprice' => 1,
 				'arate' => 1,
@@ -215,7 +204,7 @@ class ResetLinesModel {
 			),
 		);
 	}
-	
+
 	/**
 	 * Get the query to return all lines including the collected stamps.
 	 * @param $stamps - Array of stamps to query for.
@@ -228,6 +217,7 @@ class ResetLinesModel {
 			),
 		);
 	}
+
 	/**
 	 * Handle stamps for reset lines.
 	 * @param array $stamps
@@ -240,16 +230,16 @@ class ResetLinesModel {
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_sids) {
 		$update = $this->getUpdateQuery();
 		$stamps_query = $this->getStampsQuery($stamps);
-		
+
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-		
+
 		$ret = $this->resetBalances($update_sids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
-		} 
+		}
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
 			$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
 			if (isset($ret['err']) && !is_null($ret['err'])) {
@@ -267,7 +257,8 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-		
+
 		return true;
 	}
+
 }

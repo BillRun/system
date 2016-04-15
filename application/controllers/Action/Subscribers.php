@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @subpackage  Action
  * @since       4.0
  * @author Tom Feigin
-*/
+ */
 class SubscribersAction extends ApiAction {
 
 	protected $model;
@@ -61,10 +61,10 @@ class SubscribersAction extends ApiAction {
 			Billrun_Factory::log("Failed to get subscriber action instance for received input", Zend_Log::ALERT);
 			$errorCode = $this->manager->getErrorCode();
 			$output = array(
-				'status'     => $errorCode == 0 ? 1 : 0,
-				'desc'       => $this->manager->getError(),
+				'status' => $errorCode == 0 ? 1 : 0,
+				'desc' => $this->manager->getError(),
 				'error_code' => $errorCode,
-				'details'    => 'Error'
+				'details' => 'Error'
 			);
 		} else {
 			$output = $action->execute();

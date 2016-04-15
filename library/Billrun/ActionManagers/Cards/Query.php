@@ -62,9 +62,9 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		if (isset($jsonQueryData['secret'])) {
-			$jsonQueryData['secret'] = hash('sha512',$jsonQueryData['secret']);
+			$jsonQueryData['secret'] = hash('sha512', $jsonQueryData['secret']);
 		}
 
 		$this->query = array();
@@ -101,16 +101,16 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 			$returnData = array();
 		}
 
-		if(!$returnData) {
+		if (!$returnData) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 23;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
-		
+
 		$outputResult = array(
-			'status'      => $this->errorCode == 0 ? 1 : 0,
-			'desc'        => $this->error,
-			'error_code'  => $this->errorCode,
-			'details'     => $returnData
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => $returnData
 		);
 		return $outputResult;
 	}

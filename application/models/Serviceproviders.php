@@ -12,9 +12,11 @@
  * @author lewis
  */
 class ServiceprovidersModel extends TabledateModel {
+
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->serviceproviders;
 		parent::__construct($params);
 		$this->service_providers_coll = Billrun_Factory::db()->serviceprovidersCollection();
 	}
+
 }

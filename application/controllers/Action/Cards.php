@@ -62,10 +62,10 @@ class CardsAction extends ApiAction {
 			Billrun_Factory::log("Failed to get cards action instance for received input", Zend_Log::ALERT);
 			$errorCode = $this->manager->getErrorCode();
 			$output = array(
-				'status'     => $errorCode == 0 ? 1 : 0,
-				'desc'       => $this->manager->getError(),
+				'status' => $errorCode == 0 ? 1 : 0,
+				'desc' => $this->manager->getError(),
 				'error_code' => $errorCode,
-				'details'    => 'Error'
+				'details' => 'Error'
 			);
 		} else {
 

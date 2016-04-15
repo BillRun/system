@@ -114,6 +114,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 	protected function getLineUsageType($row) {
 		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
 	}
+
 }
 
 ?>

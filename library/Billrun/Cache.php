@@ -217,7 +217,7 @@ class Billrun_Cache {
 		} elseif (!isset($args[2]['automatic_serialization'])) {
 			$args[2]['automatic_serialization'] = true;
 		}
-		
+
 		$args[2]['logging'] = true;
 		$args[2]['logger'] = Billrun_Factory::log();
 
@@ -225,8 +225,8 @@ class Billrun_Cache {
 		if (!isset($args[3])) {
 			$args[3] = $args[2];
 		}
-		
-		
+
+
 		if (is_null(self::$instance)) {
 			$cache = forward_static_call_array(array('Zend_Cache', 'factory'), $args);
 			self::$instance = new self($cache);

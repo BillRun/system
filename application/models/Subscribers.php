@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -20,10 +18,10 @@
  * @subpackage Table
  * @since    4.0
  */
-class SubscribersModel extends TabledateModel{
-	
+class SubscribersModel extends TabledateModel {
+
 	protected $subscribers_coll;
-	
+
 	/**
 	 * constructor
 	 * 
@@ -35,7 +33,7 @@ class SubscribersModel extends TabledateModel{
 		$this->subscribers_coll = Billrun_Factory::db()->subscribersCollection();
 		$this->search_key = "sid";
 	}
-	
+
 	public function getTableColumns() {
 		$columns = array(
 			'sid' => 'Subscriber No',
@@ -57,13 +55,13 @@ class SubscribersModel extends TabledateModel{
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
-	
+
 	public function getFilterFields() {
 		$names = Billrun_Factory::db()->plansCollection()->query(array(
 				'$or' => array(
 					array(
 						'type' => 'customer'
-						), 
+					),
 					array(
 						'type' => array(
 							'$exists' => false
@@ -72,7 +70,7 @@ class SubscribersModel extends TabledateModel{
 				)
 			))->cursor()->sort(array('name' => 1));
 		$planNames = array();
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
 
@@ -84,7 +82,7 @@ class SubscribersModel extends TabledateModel{
 				'comparison' => 'equals',
 				'display' => 'Subscriber No',
 				'default' => '',
-			),			
+			),
 			'aid' => array(
 				'key' => 'aid',
 				'db_key' => 'aid',
@@ -92,7 +90,7 @@ class SubscribersModel extends TabledateModel{
 				'comparison' => 'equals',
 				'display' => 'BAN',
 				'default' => '',
-			),			
+			),
 			'msisdn' => array(
 				'key' => 'msisdn',
 				'db_key' => 'msisdn',
@@ -117,7 +115,7 @@ class SubscribersModel extends TabledateModel{
 				'display' => 'Plan',
 				'values' => $planNames,
 				'default' => array(),
-			),		
+			),
 			'service_provider' => array(
 				'key' => 'service_provider',
 				'db_key' => 'service_provider',
@@ -135,7 +133,7 @@ class SubscribersModel extends TabledateModel{
 			array(
 				'sid' => array(
 					'width' => 2,
-				),				
+				),
 				'aid' => array(
 					'width' => 2
 				),
@@ -149,7 +147,7 @@ class SubscribersModel extends TabledateModel{
 				),
 				'plan' => array(
 					'width' => 2
-				),				
+				),
 				'service_provider' => array(
 					'width' => 2
 				)
@@ -177,7 +175,7 @@ class SubscribersModel extends TabledateModel{
 
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge($parentKeys, 
-						   array());
+		return array_merge($parentKeys, array());
 	}
+
 }

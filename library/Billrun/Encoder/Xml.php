@@ -23,7 +23,7 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 	 */
 	protected function arrayToXML($array, $root = 'root', $addHeader = true) {
 		if ($addHeader) {
-			header ("Content-Type:text/xml");
+			header("Content-Type:text/xml");
 		}
 		return '<?xml version="1.0" encoding="UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
 	}
@@ -38,7 +38,7 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 		if (!is_array($value)) {
 			return $value;
 		}
-		
+
 		$ret = '';
 		foreach ($value as $key => $val) {
 			$ret .= '<' . $key . '>' . $this->getXMLBody($val) . '</' . $key . '>';

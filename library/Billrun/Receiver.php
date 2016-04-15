@@ -58,13 +58,13 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
 			$this->setGranularity((int) $options['receiver']['backup_granularity']);
 		}
-		
-		if (Billrun_Util::getFieldVal($options['receiver']['backup_date_format'],false) ) {
-			$this->setBackupDateDirFromat( $options['receiver']['backup_date_format']);
+
+		if (Billrun_Util::getFieldVal($options['receiver']['backup_date_format'], false)) {
+			$this->setBackupDateDirFromat($options['receiver']['backup_date_format']);
 		}
-		
-		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900 ) {
-			$this->file_fetch_orphan_time =  $options['receiver']['orphan_time'];
+
+		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900) {
+			$this->file_fetch_orphan_time = $options['receiver']['orphan_time'];
 		}
 	}
 
@@ -82,12 +82,12 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	 */
 	protected function logDB($fileData) {
 		Billrun_Factory::dispatcher()->trigger('beforeLogReceiveFile', array(&$fileData, $this));
-		
+
 		$query = array(
-			'stamp' =>  $fileData['stamp'],
+			'stamp' => $fileData['stamp'],
 			'received_time' => array('$exists' => false)
 		);
-	
+
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
 			'received_time' => date(self::base_dateformat),
@@ -108,7 +108,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if ($result['ok'] != 1 || $result['n'] != 1) {
 			Billrun_Factory::log("Billrun_Receiver::logDB - Failed when trying to update a file log record " . $fileData['file_name'] . " with stamp of : {$fileData['stamp']}", Zend_Log::NOTICE);
 		}
-		
+
 		return $result['n'] == 1 && $result['ok'] == 1;
 	}
 

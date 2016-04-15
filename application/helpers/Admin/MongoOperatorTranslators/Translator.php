@@ -12,13 +12,13 @@
  * @author Tom Feigin
  */
 abstract class Admin_MongoOperatorTranslators_Translator {
-	
+
 	/**
 	 * Return the mongo operator string.
 	 * @return string - Mongo operator string for this class.
 	 */
 	public abstract function getOperator();
-	
+
 	/**
 	 * Return a pair of oprator and value in the mongo format based on user string
 	 * input.
@@ -28,4 +28,5 @@ abstract class Admin_MongoOperatorTranslators_Translator {
 	public function translate($value) {
 		return array($this->getOperator() => $value);
 	}
+
 }

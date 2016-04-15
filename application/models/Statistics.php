@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-
 /**
  * This class is to hold the logic for the Statistics module.
  *
@@ -15,7 +14,7 @@
  * @since    4.0
  */
 class StatisticsModel extends TableModel {
-	
+
 	protected $statistics_coll;
 
 	/**
@@ -27,5 +26,6 @@ class StatisticsModel extends TableModel {
 		$params['collection'] = Billrun_Factory::db()->statistics;
 		parent::__construct($params);
 		$this->statistics_coll = Billrun_Factory::db()->statisticsCollection();
-	}	
+	}
+
 }

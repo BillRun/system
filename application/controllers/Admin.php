@@ -12,8 +12,6 @@
  * @package  Controller
  * @since    0.5
  */
-
-
 class AdminController extends Yaf_Controller_Abstract {
 
 	/**
@@ -29,7 +27,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected $jsPaths = array();
 	protected $version = null;
 	protected $commit;
-	
+
 	/**
 	 * method to control and navigate the user to the right view
 	 */
@@ -63,7 +61,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
 		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
 		$this->addCss($this->baseUrl . '/css/vendor/isteven-multi-select.css');
-		
+
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
 		$this->addJs($this->baseUrl . '/js/plugins.js');
@@ -75,7 +73,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/bootstrap-switch.js');
 		$this->addJs($this->baseUrl . '/js/jquery.csv-0.71.min.js');
 		$this->addJs($this->baseUrl . '/js/jquery.stickytableheaders.min.js');
-		
+
 		$this->addJs($this->baseUrl . '/js/vendor/modernizr-2.6.2-respond-1.1.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/lodash.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/angular.min.js');
@@ -128,7 +126,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function fetchJsFiles() {
 		$ret = '';
 		foreach ($this->jsPaths as $jsPath) {
-			$ret.='<script src="' . $jsPath .  '?' . $this->commit . '"></script>' . PHP_EOL;
+			$ret.='<script src="' . $jsPath . '?' . $this->commit . '"></script>' . PHP_EOL;
 		}
 		return $ret;
 	}
@@ -203,7 +201,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				)
 			)
 		);
-		
+
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
@@ -212,7 +210,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$aggregated = array();
 		$pp_aggregated = $lines_coll->aggregate($match1, $match2, $sort, $group);
-		foreach($pp_aggregated as $ppagg) {
+		foreach ($pp_aggregated as $ppagg) {
 			$aggregated[] = $ppagg->getRawData();
 		}
 		$response = new Yaf_Response_Http();
@@ -220,7 +218,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getRateAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -254,7 +252,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getEntityAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -332,13 +330,13 @@ class AdminController extends Yaf_Controller_Abstract {
 			}
 			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes, 'default_max_currency' => $default_max_currency)));
 			$response->response();
-			return false;			
+			return false;
 		}
 		$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity)));
 		$response->response();
 		return false;
 	}
-	
+
 	public function getSubscriberDetailsAction() {
 		$global_session = $this->getSession('global');
 		if (isset($global_session->sid)) {
@@ -360,7 +358,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getBandwidthCapDetailsAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -383,36 +381,36 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($data['cap_name']);
 		unset($data['service']);
 		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
-					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
-					->limit(1)
-					->current()
-					->getRawData();
+			->cursor()->setReadPreference('RP_PRIMARY')
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
 		unset($allCaps['_id']);
 		$allCaps['realtimeevent']['data']['slowness']['bandwidth_cap'][$cap_name] = $data;
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
-	
+
 	public function removeBandwidthCapAction() {
 		if (!$this->allowed('write'))
 			return false;
 		$cap_name = $this->getRequest()->get('cap_name');
 		$configColl = Billrun_Factory::db()->configCollection();
 		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
-					->cursor()->setReadPreference('RP_PRIMARY')
-					->sort(array('_id' => -1))
-					->limit(1)
-					->current()
-					->getRawData();
+			->cursor()->setReadPreference('RP_PRIMARY')
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
 		unset($allCaps['_id']);
 		unset($allCaps["realtimeevent"]["data"]["slowness"]['bandwidth_cap'][$cap_name]);
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
-	
+
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -422,11 +420,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($coll);
 		$filter = @json_decode($this->getRequest()->get('filter'));
 		if ($filter) {
-			foreach($filter as $key => $val) {
+			foreach ($filter as $key => $val) {
 				$session->$key = $val;
 				if (is_array($val)) {
 					$t = array();
-					foreach($val as $v) {
+					foreach ($val as $v) {
 						$t[$v] = $v;
 					}
 					$session->$key = $t;
@@ -480,7 +478,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		Billrun_Factory::log(print_r($names, 1));
 		$availablePlans = array();
 		$availablePlans['BASE'] = 'BASE';
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$availablePlans[$name['name']] = $name->get('name');
 		}
 		$response = new Yaf_Response_Http();
@@ -494,7 +492,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->sort(array('key' => 1));
 		$availableRates = array();
-		foreach($rates as $rate) {
+		foreach ($rates as $rate) {
 			$availableRates[] = $rate->get('key');
 		}
 		$response = new Yaf_Response_Http();
@@ -522,14 +520,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function getCurrentUsernameAction() {
 		if ($user = Billrun_Factory::user()) {
 			$this->responseSuccess(array('username' => $user->getUsername()));
 		}
 		return false;
 	}
-	
+
 	public function getAvailablePPIncludesAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -551,7 +549,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
-	
+
 	public function savePPIncludesAction() {
 		if (!AdminController::authorized('write'))
 			return false;
@@ -566,10 +564,10 @@ class AdminController extends Yaf_Controller_Abstract {
 			unset($data['_id']);
 			Billrun_Factory::db()->prepaidincludesCollection()->update(array('_id' => $id), array('$set' => $data), array('upsert' => true));
 		}
-		$this->responseSuccess(array("data" => $data , "status"=>true ));
+		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
-	
+
 	public function getAvailableServiceProvidersAction() {
 		if (!$this->allowed('read'))
 			return false;
@@ -599,6 +597,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
+
 	/**
 	 * save controller
 	 * @return boolean
@@ -719,12 +718,11 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @todo protect the from and to to be continuely
 	 */
 	public function saveAction() {
-		$v = new Billrun_Validator() ;
+		$v = new Billrun_Validator();
 		// $v->RequiredValidator("sasa","");
 		// $v->IntegerValidator("sasa1111111","111.1");
 		// $v->NumberValidator("sasa","1212");
 		// $v->LengthValidator("sasa111","1212",array("min"=>10));
-
 		//print_R($v->getErrors());
 
 		if (!$this->allowed('write'))
@@ -744,14 +742,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$collection = Billrun_Factory::db()->getCollection($coll);
 		if (!($collection instanceof Mongodloid_Collection)) {
-			 return $this->responseError($collection . " collection not exists");
+			return $this->responseError($collection . " collection not exists");
 		}
 
 		$data = @json_decode($flatData, true);
 
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 
-				return $this->responseError($v->setReport(array("Data is empty !!!")));
+			return $this->responseError($v->setReport(array("Data is empty !!!")));
 		}
 
 		if ($id) {
@@ -762,15 +760,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($duplicate_rates) {
 			$params = array_merge($params, array('duplicate_rates' => $duplicate_rates));
 		}
-		
+
 		//Billrun_Factory::log("USER: " . var_export( Billrun_Factory::user() ), Zend_Log::INFO);
 
-                /*
-		$v->validate($params,$coll) ;
-		if(!$v->isValid()) {	   	
-			return $this->responseError($v->getErrors());
-		}
-		*/
+		/*
+		  $v->validate($params,$coll) ;
+		  if(!$v->isValid()) {
+		  return $this->responseError($v->getErrors());
+		  }
+		 */
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -779,9 +777,9 @@ class AdminController extends Yaf_Controller_Abstract {
 				$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
-		  	 $model->closeAndNew($params);
+			$model->closeAndNew($params);
 		} else if (in_array($type, array('duplicate', 'new'))) {
-			 $model->duplicate($params);
+			$model->duplicate($params);
 		}
 
 
@@ -792,15 +790,13 @@ class AdminController extends Yaf_Controller_Abstract {
 //		);
 		// @TODO: need to load ajax view
 		// for now just die with json
- 
-		if($errorMsg = $model->getError()) { 
-			return $this->responseError($errorMsg);
-		} else { 
-			return $this->responseSuccess(array("data" => $params , "status"=>true ));
-		}
-		
-	}
 
+		if ($errorMsg = $model->getError()) {
+			return $this->responseError($errorMsg);
+		} else {
+			return $this->responseSuccess(array("data" => $params, "status" => true));
+		}
+	}
 
 	public function logDetailsAction() {
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
@@ -1346,7 +1342,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	// apply property
 	// remove property
 	protected function createToolbar() {
-
+		
 	}
 
 	/**
@@ -1396,14 +1392,16 @@ class AdminController extends Yaf_Controller_Abstract {
 				die("Error loading model");
 			}
 		}
-		if ($collection_name === "plans" && isset($options['plan_type'])) $this->model->type = $options['plan_type'];
+		if ($collection_name === "plans" && isset($options['plan_type']))
+			$this->model->type = $options['plan_type'];
 		return $this->model;
 	}
 
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		if ($this->getRequest()->isPost()) {
 			$redirectUrl = $this->baseUrl . '/admin/';
-			if ($options['plan_type']) $redirectUrl .= $options['plan_type'];
+			if ($options['plan_type'])
+				$redirectUrl .= $options['plan_type'];
 			$redirectUrl .= str_replace('_', '', $table);
 			$this->redirect($redirectUrl);
 			return;
@@ -1450,7 +1448,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function getSetVar($session, $source_name, $target_name = null, $default = null) {
 		$global_session_vars = Billrun_Factory::config()->getConfigValue('admin_panel.global_session_vars', array());
 		if (in_array($source_name, $global_session_vars)) {
-			$getsetvar_session = $this->getSession('global');//Yaf_session::getInstance();
+			$getsetvar_session = $this->getSession('global'); //Yaf_session::getInstance();
 		} else {
 			$getsetvar_session = $session;
 		}
@@ -1533,7 +1531,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				$sort = array('from' => -1);
 			} else if ($table === "lines") {
 				$sort = array('urt' => -1);
-			}else {
+			} else {
 				$sort = array();
 			}
 		}
@@ -1614,7 +1612,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	protected function getValueForOption($option, $inputValue) {
 		$returnValue = $this->translateValueByType($option['type'], $inputValue);
-		if($returnValue === false) {
+		if ($returnValue === false) {
 			return false;
 		}
 
@@ -1635,7 +1633,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function getOperatorValuePair($operator, $value) {
 		$translator = Admin_MongoOperatorTranslators_Manager::getUpdater($operator);
 		// No translator found.
-		if($translator != null) {
+		if ($translator != null) {
 			// TODO: decoupling to config of fields
 			return $translator->translate($value);
 		}
@@ -1672,19 +1670,19 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param array $advancedOptions - Array of advanced options for this action
 	 */
 	protected function setManualFilterForKey(&$query, $key, $inputValue, $operator, $advancedOptions) {
-			$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
-			if($convertedValue === false) {
-				return;
-			}
+		$convertedValue = $this->getValueForOption($advancedOptions[$key], $inputValue);
+		if ($convertedValue === false) {
+			return;
+		}
 
-			$value = $convertedValue;
+		$value = $convertedValue;
 
-			list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue));
+		list($operator, $value) = each($this->getOperatorValuePair($operator, $convertedValue));
 
-			// Handle a db ref option.
-			if ($advancedOptions[$key]['type'] == 'dbref') {
-				list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
-			}
+		// Handle a db ref option.
+		if ($advancedOptions[$key]['type'] == 'dbref') {
+			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
+		}
 
 		$query[$key][$operator] = $value;
 	}
@@ -1697,7 +1695,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$query = false;
-		if (!$session) $session = $this->getSession($table);
+		if (!$session)
+			$session = $this->getSession($table);
 		$keys = $this->getSetVar($session, 'manual_key', 'manual_key');
 		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
 
@@ -1831,17 +1830,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 
-public function responseError($message,$statusCode = 400)
-	{
-		
+	public function responseError($message, $statusCode = 400) {
+
 		$resp = $this->getResponse();
-		$req  =  $this->getRequest();
-		$resp->setHeader($req->getServer('SERVER_PROTOCOL') , $statusCode );
-		$resp->setHeader('Content-Type','application/json');
-		if(is_array($message)) { 
+		$req = $this->getRequest();
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL'), $statusCode);
+		$resp->setHeader('Content-Type', 'application/json');
+		if (is_array($message)) {
 			$resp->setBody(json_encode($message));
-		} else { 
-			$resp->setBody(json_encode(array("message"=>$message)));
+		} else {
+			$resp->setBody(json_encode(array("message" => $message)));
 		}
 		//$resp->response();
 		return false;
@@ -1852,18 +1850,16 @@ public function responseError($message,$statusCode = 400)
 	 * @param int $successStatus
 	 * @return bool
 	 */
-	public function responseSuccess($answer)
-	{
-			
-		$statusCode = 200 ;	
-		$resp =  $this->getResponse();
-		$req  =  $this->getRequest();
-		$resp->setHeader($req->getServer('SERVER_PROTOCOL')  , $statusCode . ' OK');
-		$resp->setHeader('Content-Type','application/json');
+	public function responseSuccess($answer) {
+
+		$statusCode = 200;
+		$resp = $this->getResponse();
+		$req = $this->getRequest();
+		$resp->setHeader($req->getServer('SERVER_PROTOCOL'), $statusCode . ' OK');
+		$resp->setHeader('Content-Type', 'application/json');
 		$resp->setBody(json_encode($answer));
 		//$resp->response();
 		return false;
 	}
 
-  
 }

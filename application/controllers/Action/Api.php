@@ -20,7 +20,7 @@ abstract class ApiAction extends Action_Base {
 	 * @var int
 	 */
 	protected $cacheLifetime = 14400;
-	
+
 	/**
 	 * Set an error message to the controller.
 	 * @param string $errorMessage - Error message to send to the controller.
@@ -38,13 +38,12 @@ abstract class ApiAction extends Action_Base {
 		}
 
 		// If failed to report to controller.
-		if(!$this->getController()->setOutput(array($output))) {
+		if (!$this->getController()->setOutput(array($output))) {
 			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
 		}
-		
+
 		return false;
 	}
-	
 
 	/**
 	 * method to store and fetch by global cache layer
@@ -72,10 +71,10 @@ abstract class ApiAction extends Action_Base {
 			$lifetime = Billrun_Factory::config()->getConfigValue('api.cacheLifetime.' . $actionName, $this->getCacheLifeTime());
 			$cache->set($cacheKey, $cachedData, $cachePrefix, $lifetime);
 		}
-		
+
 		return $cachedData;
 	}
-	
+
 	/**
 	 * method to get cache prefix of this action
 	 * 
@@ -84,7 +83,7 @@ abstract class ApiAction extends Action_Base {
 	protected function getCachePrefix() {
 		return $this->getAction() . '_';
 	}
-	
+
 	/**
 	 * method to get controller action name
 	 * 
@@ -93,7 +92,7 @@ abstract class ApiAction extends Action_Base {
 	protected function getAction() {
 		return Yaf_Dispatcher::getInstance()->getRequest()->getActionName();
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -112,7 +111,7 @@ abstract class ApiAction extends Action_Base {
 	protected function setCacheLifeTime($val) {
 		$this->cacheLifetime = $val;
 	}
-	
+
 	/**
 	 * method to get api call cache lifetime
 	 * @return int $val the cache lifetime (seconds)

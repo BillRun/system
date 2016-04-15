@@ -12,40 +12,37 @@
  * @package  Models
  * @since    2.1
  */
-
 class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
-	
 	static $type = 'payments';
-	
+
 	public function generate() {
 		$fileData = $this->getNextFileData();
 		$this->writeRows();
 		$this->logDB($fileData);
 	}
-	
-	
+
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
-		
-		return array('seq'=> $seq , 'filename' => 'Brun_PS_'.sprintf('%05.5d',$seq).'_'.date('YmdHi'), 'source' => static::$type);
+
+		return array('seq' => $seq, 'filename' => 'Brun_PS_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi'), 'source' => static::$type);
 	}
-	
+
 	// ------------------------------------ Protected -----------------------------------------
-	
+
 	protected function getReportCandiateMatchQuery() {
-		return array('urt'=>array('$gt'=>$this->getLastRunDate(static::$type)));
+		return array('urt' => array('$gt' => $this->getLastRunDate(static::$type)));
 	}
 
 	protected function getReportFilterMatchQuery() {
 		return array();
 	}
-	
+
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
-	
-	
-	
+
+
+
 	protected function isLineEligible($line) {
 		return true;
 	}
@@ -58,9 +55,9 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 	 * @return type
 	 */
 	function getSubscriberForRefund($value, $parameters, $line) {
-		if(/*empty($value) &&*/ !empty($line['refund_trans_id_1'])) {
+		if (/* empty($value) && */!empty($line['refund_trans_id_1'])) {
 			$orgTrans = $this->collection->query(array('transaction_id' => $line['refund_trans_id_1']))->cursor()->limit(1)->current();
-			if(!empty($orgTrans) && !$orgTrans->isEmpty()) {
+			if (!empty($orgTrans) && !$orgTrans->isEmpty()) {
 				$value = $orgTrans['sid'];
 			}
 		}

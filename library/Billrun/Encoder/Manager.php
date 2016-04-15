@@ -24,12 +24,12 @@ class Billrun_Encoder_Manager {
 
 	protected static function getEncoderClassName($params) {
 		$encoderName = null;
-		
+
 		if (!is_null($usaget = $params['usaget'])) {
 			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($usaget) . ".encode");
 		} else if (!is_null($controllerName = $params['controllerName']) && !is_null($actionName = $params['actionName'])) {
 			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".encode." . strtolower($actionName));
-		} 
+		}
 		if (is_null($encoderName)) {
 			Billrun_Factory::log('No encoder defined; set to JSON', Zend_Log::WARN);
 			$encoderName = 'json';

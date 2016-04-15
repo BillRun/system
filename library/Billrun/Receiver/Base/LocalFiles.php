@@ -85,20 +85,20 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 				Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
 				continue;
 			}
-			if ( !$this->lockFileForReceive($file, $type) ) {
+			if (!$this->lockFileForReceive($file, $type)) {
 				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
 			}
 			Billrun_Factory::log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
-			
+
 			$fileData = $this->getFileLogData($file, $type);
 			$fileData['path'] = $this->handleFile($path, $file);
-			
+
 			if (!$fileData['path']) {
 				Billrun_Factory::log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
 				continue;
 			}
-			if(!empty($this->backupPaths)) {
+			if (!empty($this->backupPaths)) {
 				$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
 				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
 				$fileData['backed_to'] = $backedTo;

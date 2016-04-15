@@ -13,7 +13,7 @@
  * @since    4
  */
 class Billrun_Subscriber_Query_Types_Imsi extends Billrun_Subscriber_Query_Base {
-	
+
 	/**
 	 * get the field name in the parameters and the field name to set in the query.
 	 * @return array - Key is the field name in the parameters and value is the field
@@ -22,4 +22,5 @@ class Billrun_Subscriber_Query_Types_Imsi extends Billrun_Subscriber_Query_Base 
 	protected function getKeyFields() {
 		return array('imsi' => 'imsi');
 	}
+
 }

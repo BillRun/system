@@ -41,15 +41,16 @@ class AggregateAction extends Action_Base {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 			return;
 		}
-		
+
 		$this->_controller->addOutput("Loading data to Aggregate...");
 		$aggregator->load();
 		if (isset($options['fetchonly'])) {
 			$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
 		}
-		
+
 		$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
 		$aggregator->aggregate();
 		$this->_controller->addOutput("Finish to Aggregate.");
 	}
+
 }

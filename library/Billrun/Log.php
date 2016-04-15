@@ -14,14 +14,14 @@
  * @since    0.5
  */
 class Billrun_Log extends Zend_Log {
-	
+
 	/**
 	 * the log instances for bridged singletones
 	 * 
 	 * @var array
 	 */
 	protected static $instances = array();
-	
+
 	/**
 	 * stamp of the run (added to separate processes while running to the same log file)
 	 * @var string
@@ -36,28 +36,27 @@ class Billrun_Log extends Zend_Log {
 	protected $user = null;
 
 	/**
-     * Class constructor.  Create a new logger.
+	 * Class constructor.  Create a new logger.
 	 * Generate an ID for the logger for later filtering.
-     *
-     * @param Zend_Log_Writer_Abstract|null  $writer  default writer
-     * @return void
-     */
-    public function __construct(Zend_Log_Writer_Abstract $writer = null) {
+	 *
+	 * @param Zend_Log_Writer_Abstract|null  $writer  default writer
+	 * @return void
+	 */
+	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-		
+
 		if ($pid = getmypid()) {
-			$this->stamp = Billrun_Util::getHostName() .  ':p' . $pid;
+			$this->stamp = Billrun_Util::getHostName() . ':p' . $pid;
 		} else {
 			// Make a unique log stamp for each run of the application
 			$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 		}
-		
+
 		if (($user = Billrun_Factory::user()) !== FALSE) {
 			$this->user = $user->getUsername();
 		}
-
 	}
-	
+
 	public static function getInstance(array $options = array()) {
 
 		$stamp = md5(serialize($options));
@@ -78,15 +77,14 @@ class Billrun_Log extends Zend_Log {
 	 * @param exception $e - The exception object that was raised.
 	 * @param LogPriority $priority - The priority of the crash, Critical by default.
 	 */
-	public function logCrash($e, $priority=Billrun_Log::CRIT) {
-		$log = 
-			print_R($_SERVER, TRUE) . PHP_EOL . 
-			print_R('Error code : ' . $e->getCode() . PHP_EOL . 
-					'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' .
-					gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE); 
+	public function logCrash($e, $priority = Billrun_Log::CRIT) {
+		$log = print_R($_SERVER, TRUE) . PHP_EOL .
+			print_R('Error code : ' . $e->getCode() . PHP_EOL .
+				'Error message: ' . $e->getMessage() . PHP_EOL . 'Host: ' .
+				gethostname() . PHP_EOL . $e->getTraceAsString(), TRUE);
 		$this->log('Crashed When running... exception details are as follow : ' . PHP_EOL . $log, $priority);
 	}
-	
+
 	/**
 	 * Log a message at a priority
 	 *
@@ -101,13 +99,13 @@ class Billrun_Log extends Zend_Log {
 		if ($this->stamp) {
 			$prefixes[] = $this->stamp;
 		}
-		
+
 		if ($this->user) {
 			$prefixes[] = $this->user;
 		}
 
 		if (!empty($prefixes)) {
-			$message = '[' . implode('|', $prefixes). '] ' . $message;			
+			$message = '[' . implode('|', $prefixes) . '] ' . $message;
 		}
 		parent::log($message, $priority, $extras);
 	}
@@ -118,13 +116,13 @@ class Billrun_Log extends Zend_Log {
 			error_log("removeWriters Log is null!\n");
 			return;
 		}
-		
+
 		foreach ($log as $writer) {
 			// Check if in the correct format.
 			if (!is_array($writer)) {
 				continue;
 			}
-			
+
 			// Found the writer to remove.
 			if ($writer['writerName'] == $writerName) {
 				$className = $this->getClassName($writer, "writer", $this->_defaultWriterNamespace);
@@ -144,7 +142,7 @@ class Billrun_Log extends Zend_Log {
 			error_log("addWriters Log is null!\n");
 			return;
 		}
-		
+
 		foreach ($log as $writer) {
 			// If the writer is in the correct format.
 			if (is_array($writer) && $writer['writerName'] == $writerName) {
@@ -152,18 +150,15 @@ class Billrun_Log extends Zend_Log {
 			}
 		}
 	}
-	
-    protected function _packEvent($message, $priority)
-    {
-        return array_merge(array(
-            'timestamp'    => date($this->_timestampFormat) . ':' . (substr(($microtime = microtime(0)), 0, strpos($microtime,' ')) * 1000),
-            'message'      => $message,
-            'priority'     => $priority,
-            'priorityName' => $this->_priorities[$priority]
-            ),
-            $this->_extras
-        );
-    }
 
+	protected function _packEvent($message, $priority) {
+		return array_merge(array(
+			'timestamp' => date($this->_timestampFormat) . ':' . (substr(($microtime = microtime(0)), 0, strpos($microtime, ' ')) * 1000),
+			'message' => $message,
+			'priority' => $priority,
+			'priorityName' => $this->_priorities[$priority]
+			), $this->_extras
+		);
+	}
 
 }

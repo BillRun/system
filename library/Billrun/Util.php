@@ -376,9 +376,9 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-	
+
 	public static function getForkUrl() {
-		$request = Yaf_Dispatcher::getInstance()->getRequest(); 
+		$request = Yaf_Dispatcher::getInstance()->getRequest();
 		$protocol = (empty($request->getServer('HTTPS'))) ? 'http' : 'https';
 		return $protocol . '://' . $request->get('HTTP_HOST') . '/' . $request->getBaseUri();
 	}
@@ -439,7 +439,7 @@ class Billrun_Util {
 			)
 		);
 	}
-	
+
 	/**
 	 * Get start time by period given:
 	 * "day" - begin of day
@@ -461,7 +461,7 @@ class Billrun_Util {
 			case ('year'):
 				return strtotime(date('01-01-Y'));
 		}
-		
+
 		return time();
 	}
 
@@ -515,7 +515,9 @@ class Billrun_Util {
 		if (!is_array($ar)) {
 			return array();
 		}
-		return array_filter($ar, function($var) {return is_string($var) || is_numeric($var);});
+		return array_filter($ar, function($var) {
+			return is_string($var) || is_numeric($var);
+		});
 	}
 
 	/**
@@ -833,13 +835,13 @@ class Billrun_Util {
 	public static function recursiveWriteXmlBody(XMLWriter $xml, $data, $childElement) {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
-				$key = is_numeric($key) ? $childElement : $key ;
+				$key = is_numeric($key) ? $childElement : $key;
 				$xml->startElement($key);
 				self::recursiveWriteXmlBody($xml, $value, $childElement);
 				$xml->endElement();
 				continue;
 			}
-			$key = is_numeric($key) ? $childElement : $key ;
+			$key = is_numeric($key) ? $childElement : $key;
 			$xml->writeElement($key, $value);
 		}
 	}
@@ -1033,7 +1035,7 @@ class Billrun_Util {
 		$client->setMethod($method);
 
 		if (!empty($data)) {
-			if (!is_array($data)) {	
+			if (!is_array($data)) {
 				$client->setRawData($data);
 			} else {
 				if ($zendMethod == Zend_Http_Client::POST) {
@@ -1067,7 +1069,6 @@ class Billrun_Util {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
 				$value = self::parseDataToBillrunConvention($value);
-				
 			}
 			$newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
 			$parsedData[$newKey] = $value;
@@ -1086,7 +1087,6 @@ class Billrun_Util {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
 				$value = self::parseBillrunConventionToCamelCase($value);
-				
 			}
 			$newKey = self::underscoresToCamelCase($key);
 			$parsedData[$newKey] = $value;
@@ -1095,7 +1095,7 @@ class Billrun_Util {
 		return $parsedData;
 	}
 
-	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false)  {
+	public static function underscoresToCamelCase($string, $capitalizeFirstCharacter = false) {
 
 		$str = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 		if (!$capitalizeFirstCharacter) {
@@ -1110,7 +1110,7 @@ class Billrun_Util {
 	 * @return Integer value of input, or false if failed.
 	 */
 	public static function toNumber($input) {
-		if($input === "UNLIMITED") {
+		if ($input === "UNLIMITED") {
 			return $input;
 		}
 
@@ -1149,7 +1149,7 @@ class Billrun_Util {
 
 		return $record;
 	}
-	
+
 	/**
 	 * Change the times of a mongo record
 	 * 
@@ -1161,11 +1161,11 @@ class Billrun_Util {
 	 */
 	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
 		foreach ($record as $key => $subRecord) {
-			if(is_array($subRecord)) {
+			if (is_array($subRecord)) {
 				$record[$key] = self::recursiveConvertRecordMongoDatetimeFields($subRecord, $fields, $format);
 			}
 		}
-		
+
 		return self::convertRecordMongoDatetimeFields($record, $fields, $format);
 	}
 
@@ -1177,10 +1177,8 @@ class Billrun_Util {
 	public static function isMultidimentionalArray($arr) {
 		return count($arr) != count($arr, COUNT_RECURSIVE);
 	}
-	
-	
-	public static function isAssoc($arr)
-	{
+
+	public static function isAssoc($arr) {
 		return array_keys($arr) !== range(0, count($arr) - 1);
 	}
 
@@ -1249,7 +1247,7 @@ class Billrun_Util {
 		}
 		return $months;
 	}
-	
+
 	/**
 	 * Check if a key exists in a multidimantional array.
 	 * @param array $arr - Array to search for the key.
@@ -1267,17 +1265,16 @@ class Billrun_Util {
 			if (!is_array($element)) {
 				continue;
 			}
-			
+
 			// Recursively check if the key exists.
 			if (self::multiKeyExists($element, $key)) {
 				return true;
 			}
-
 		}
 
 		return false;
 	}
-	
+
 	/**
 	 * Set a dot seperated array as an assoc array.
 	 * @param type $original
@@ -1286,30 +1283,30 @@ class Billrun_Util {
 	 * @param type $separator
 	 * @return type
 	 */
-	function setDotArrayToArray(&$original, $dotArray, $value, $separator='.') {
+	function setDotArrayToArray(&$original, $dotArray, $value, $separator = '.') {
 		$parts = explode($separator, $dotArray);
-		if(count($parts) <= 1) {
+		if (count($parts) <= 1) {
 			return $dotArray;
 		}
-		
+
 		unset($original[$dotArray]);
 		$parts[] = $value;
-				
+
 		$result = self::constructAssocArray($parts);
 		foreach ($result as $key => $value) {
 			$original[$key] = $value;
-		} 
+		}
 	}
-	
+
 	function constructAssocArray($parts) {
-		if((count($parts)) <= 1) {
+		if ((count($parts)) <= 1) {
 			return $parts[0];
 		}
-		
+
 		$shiftResult = array_shift($parts);
 		return array($shiftResult => self::constructAssocArray($parts));
 	}
-	
+
 	/**
 	 * Return the first value of a multidimentional array.
 	 * Example:
@@ -1318,11 +1315,12 @@ class Billrun_Util {
 	 * @return The first value of the array.
 	 */
 	public function getFirstValueOfMultidimentionalArray($array) {
-		if(is_array($array)) {
+		if (is_array($array)) {
 			$next = reset($array);
 			return self::getFirstValueOfMultidimentionalArray($next);
 		}
-		
+
 		return $array;
 	}
+
 }
