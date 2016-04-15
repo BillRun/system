@@ -1755,7 +1755,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$header = $this->model->getPricesListFileHeader($show_prefix);
 		$data_output[] = implode(",", $header);
 		foreach ($rates as $rate) {
-			$rules = $this->model->getRulesByRate($rate, $show_prefix);
+			$rules = $this->model->getRulesByRate($rate, $show_prefix, $this->getSession("rates")->{"plan"});
 			foreach ($rules as $rule) {
 				$imploded_text = '';
 				foreach ($header as $title) {

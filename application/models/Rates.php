@@ -453,7 +453,7 @@ class RatesModel extends TabledateModel {
 	 * @param Mongodloid_Entity $rate
 	 * @return array
 	 */
-	public function getRulesByRate($rate, $showprefix = false) {
+	public function getRulesByRate($rate, $showprefix = false, $plans = array()) {
 		$first_rule = true;
 		$rule['key'] = $rate['key'];
 		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
@@ -462,22 +462,24 @@ class RatesModel extends TabledateModel {
 			$rule['category'] = $usage_type_rate['category'];
 			$rule['access_price'] = isset($usage_type_rate['access']) ? $usage_type_rate['access'] : 0;
 			$rule_counter = 1;
-			foreach ($usage_type_rate['rate'] as $rate_rule) {
-				$rule['rule'] = $rule_counter;
-				$rule['interval'] = $rate_rule['interval'];
-				$rule['price'] = $rate_rule['price'];
-				$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
-				$rule_counter++;
-				if ($showprefix) {
-					if ($first_rule) {
-						$rule['prefix'] = '"' . implode(',', $rate['params']['prefix']) . '"';
-						$first_rule = false;
-					} else {
-						$rule['prefix'] = '';
-					}
-				}
-				$rules[] = $rule;
-			}
+                        foreach ($plans as $plan) {
+                            foreach ($usage_type_rate[$plan]['rate'] as $rate_rule) {
+                                    $rule['rule'] = $rule_counter;
+                                    $rule['interval'] = $rate_rule['interval'];
+                                    $rule['price'] = $rate_rule['price'];
+                                    $rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
+                                    $rule_counter++;
+                                    if ($showprefix) {
+                                            if ($first_rule) {
+                                                    $rule['prefix'] = '"' . implode(',', $rate['params']['prefix']) . '"';
+                                                    $first_rule = false;
+                                            } else {
+                                                    $rule['prefix'] = '';
+                                            }
+                                    }
+                                    $rules[] = $rule;
+                            }
+                        }
 		}
 		return $rules;
 		//sort by header?
