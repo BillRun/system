@@ -10,7 +10,7 @@
  * Udata Generator class
  *
  * @package  Models
- * @since    2.1
+ * @since    4.0
  */
 class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
