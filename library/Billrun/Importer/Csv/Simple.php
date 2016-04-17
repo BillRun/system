@@ -14,22 +14,22 @@
  * @since    4.0
  */
 class Billrun_Importer_Csv_Simple extends Billrun_Importer_Csv {
-	
+
 	protected $collectionName = null;
 	protected $fieldToImport = null;
 	protected $dataToImport = null;
 	protected $importerName = null;
-	
+
 	public function __construct($options) {
 		parent::__construct($options);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/importers/conf.ini");
 	}
-	
+
 	protected function getCollectionName() {
 		$ret = pathinfo($this->getPath(), PATHINFO_FILENAME);
 		return $ret;
 	}
-	
+
 	/**
 	 * Gets the fields to save in the document
 	 * 
@@ -39,14 +39,14 @@ class Billrun_Importer_Csv_Simple extends Billrun_Importer_Csv {
 		if (empty($this->fieldToImport)) {
 			$this->fieldToImport = fgetcsv($this->handle, $this->limit, $this->delimiter);
 		}
-		foreach($this->fieldToImport as $key => $field) {
+		foreach ($this->fieldToImport as $key => $field) {
 			if (empty($this->fieldToImport[$key])) {
 				unset($this->fieldToImport[$key]);
 			}
 		}
 		return $this->fieldToImport;
 	}
-	
+
 	public function getRowsIndexesToSkip() {
 		return array();
 	}
@@ -59,5 +59,4 @@ class Billrun_Importer_Csv_Simple extends Billrun_Importer_Csv {
 		return $ret;
 	}
 
-	
 }

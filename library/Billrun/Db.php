@@ -95,7 +95,7 @@ class Billrun_Db extends Mongodloid_Db {
 		} else if ($arguments['force']) {
 			return $this->getCollection($name);
 		}
-		
+
 		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
 		return false;
 	}
@@ -134,5 +134,5 @@ class Billrun_Db extends Mongodloid_Db {
 		}
 		return $arr;
 	}
-	
+
 }

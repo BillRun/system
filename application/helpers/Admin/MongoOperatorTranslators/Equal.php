@@ -9,10 +9,9 @@
 /**
  * class for mongo not equal operator translator.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_Equal extends Admin_MongoOperatorTranslators_Translator {
-	
+
 	/**
 	 * Return the mongo operator string.
 	 * @return string - Mongo operator string for this class.
@@ -20,7 +19,7 @@ class Admin_MongoOperatorTranslators_Equal extends Admin_MongoOperatorTranslator
 	public function getOperator() {
 		return '$in';
 	}
-	
+
 	/**
 	 * Return a pair of oprator and value in the mongo format based on user string
 	 * input.
@@ -30,4 +29,5 @@ class Admin_MongoOperatorTranslators_Equal extends Admin_MongoOperatorTranslator
 	public function translate($value) {
 		return array($this->getOperator() => array($value));
 	}
+
 }

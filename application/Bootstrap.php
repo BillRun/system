@@ -59,7 +59,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			$dispatcher->setView($view);
 		}
 	}
-	
+
 	/**
 	 * Check if the URI requires an admin layout.
 	 * @param string $requestUri - The received URI.
@@ -69,9 +69,9 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		$allowedInUriForAdming = array("admin");
 		$bannedInUriForAdmin = array("edit", "confirm", "logDetails", "wholesaleajax");
 		return $this->queryString($allowedInUriForAdming, $requestUri, TRUE) &&
-			   $this->queryString($bannedInUriForAdmin, $requestUri, FALSE);
+			$this->queryString($bannedInUriForAdmin, $requestUri, FALSE);
 	}
-	
+
 	/**
 	 * Search for an array of token strings in a string.
 	 * @param array $array - Array of tokens.
@@ -83,16 +83,16 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 	 */
 	protected function queryString($array, $string, $find) {
 		foreach ($array as $token) {
-			$notFound = (strpos($string, $token) === FALSE); 
-			
+			$notFound = (strpos($string, $token) === FALSE);
+
 			// If notfound is true, and find is false (should not be found) then the XOR result is true.
 			// If notfound is false, and find is true (should be found) then the XOR result is true.
 			// If notfound is true, and find is true (should be found) then the XOR result is false.
-			if(!($notFound ^ $find)) {
+			if (!($notFound ^ $find)) {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 

@@ -45,13 +45,12 @@ class BalancesModel extends TableModel {
 //		print_R($query);die;
 		return $this->collection->query($query)->cursor()->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);
 	}
-	
+
 	protected function getBalancesFields() {
 		$basic_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.table_columns', array());
 		$extra_columns = Billrun_Config::getInstance()->getConfigValue('admin_panel.balances.extra_columns', array());
 		return array_merge($basic_columns, $extra_columns);
 	}
-
 
 	public function getFilterFields() {
 		$months = 6;
@@ -61,8 +60,7 @@ class BalancesModel extends TableModel {
 			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
 			if ($billrun_key >= '201401') {
 				$billruns[$billrun_key] = $billrun_key;
-			}
-			else {
+			} else {
 				break;
 			}
 			$timestamp = strtotime("1 month ago", $timestamp);
@@ -75,14 +73,14 @@ class BalancesModel extends TableModel {
 //		foreach ($plansCursor as $p) {
 //			$plans[(string) $p->getId()->getMongoID()] = $p["name"];
 //		}
-		
+
 		$usage_filter_values = $this->getBalancesFields();
 		unset($usage_filter_values['aid'], $usage_filter_values['sid'], $usage_filter_values['billrun_month'], $usage_filter_values['current_plan']);
 //		$usage_filter_values = array_merge($basic_columns, $extra_columns);
-		
+
 		$names = Billrun_Factory::db()->plansCollection()->query()->cursor()->sort(array('name' => 1));
 		$planNames = array();
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
 		$operators = array(
@@ -158,7 +156,7 @@ class BalancesModel extends TableModel {
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
-	
+
 	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			0 => array(
@@ -244,7 +242,7 @@ class BalancesModel extends TableModel {
 		$this->_count = $resource->count(false);
 		return $ret;
 	}
-	
+
 	public function getSortFields() {
 		return $this->getBalancesFields();
 	}

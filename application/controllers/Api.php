@@ -20,7 +20,6 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @var mixed
 	 */
 	protected $output;
-	
 	protected $start_time = 0;
 
 	/**
@@ -52,7 +51,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		try {
 			// DB heartbeat
 			Billrun_Factory::db()->linesCollection()
-				->query()->cursor()->limit(1)->current(); 
+				->query()->cursor()->limit(1)->current();
 			$msg = 'SUCCESS';
 			$status = 1;
 		} catch (Exception $ex) {
@@ -60,14 +59,13 @@ class ApiController extends Yaf_Controller_Abstract {
 			$msg = 'FAILED';
 			$status = 0;
 		}
-		
+
 		if ($this->getRequest()->get('simple')) {
 			$this->setOutput(array($msg, 1));
 			$this->getView()->outputMethod = 'print_r';
 		} else {
 			$this->setOutput(array(array('status' => $status, 'message' => 'BillRun API ' . ucfirst($msg))));
 		}
-
 	}
 
 	/**
@@ -89,7 +87,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->apiLogAction();
 		return $ret;
 	}
-	
+
 	public function setOutputVar() {
 		$args = func_get_args();
 		$num_args = count($args);
@@ -143,7 +141,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		$this->getView()->outputMethod = array('Zend_Json', 'encode');
 		header('Content-Type: application/json');
 	}
-	
+
 	/**
 	 * method to log api request
 	 * 
@@ -165,11 +163,11 @@ class ApiController extends Yaf_Controller_Abstract {
 			'request_php_input' => $php_input,
 			'server_host' => gethostname(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
-			'rand' => rand(1,1000000),
-			'time' => (microtime(1) - $this->start_time)*1000,
+			'rand' => rand(1, 1000000),
+			'time' => (microtime(1) - $this->start_time) * 1000,
 		);
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		$this->logColl->save(new Mongodloid_Entity($saveData), 0);
 	}
-	
+
 }

@@ -116,40 +116,39 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
 		$row['sender'] = $this->data['header']['sender'];
-		$row['header_stamp'] = $this->data['header']['stamp'];	
+		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
 		$row['process_time'] = date(self::base_dateformat);
 		$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
 		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');
-		$row['usagev'] = $this->getLineVolume($row,$row['usaget']);
+		$row['usagev'] = $this->getLineVolume($row, $row['usaget']);
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
 	}
-	
+
 	protected function getLineUsageType($row) {
-		if($row['callEventDuration'] > 0) {
-			if($row['record_type'] == "MTC" ) {
+		if ($row['callEventDuration'] > 0) {
+			if ($row['record_type'] == "MTC") {
 				return "incoming_call";
-			} else if($row['record_type'] == "MOC") {
+			} else if ($row['record_type'] == "MOC") {
 				return "call";
 			}
-		}
-		else if($row['callEventDuration'] == 0) {
-			if($row['record_type'] == "MTC" ) {
+		} else if ($row['callEventDuration'] == 0) {
+			if ($row['record_type'] == "MTC") {
 				return "incoming_sms";
-			} else if($row['record_type'] == "MOC") {
+			} else if ($row['record_type'] == "MOC") {
 				return "sms";
 			}
 		}
 	}
-	
+
 	protected function getLineVolume($row) {
-		if($row['usaget'] == 'sms' || $row['usaget'] == 'incoming_sms') {
+		if ($row['usaget'] == 'sms' || $row['usaget'] == 'incoming_sms') {
 			return 1;
-		} else if($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') {
+		} else if ($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') {
 			return $row['callEventDuration'];
 		}
 	}

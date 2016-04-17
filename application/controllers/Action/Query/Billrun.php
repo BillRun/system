@@ -22,14 +22,14 @@ class QuerybillrunAction extends QueryAction {
 	protected function preExecute() {
 		Billrun_Factory::log("Execute api query billrun", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * The function to run after execute.
 	 */
 	protected function postExecute() {
 		Billrun_Factory::log("Query success", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * Get the array of fields that the request should have.
 	 * @return array of field names.
@@ -37,7 +37,7 @@ class QuerybillrunAction extends QueryAction {
 	protected function getRequestFields() {
 		return array('aid');
 	}
-	
+
 	/**
 	 * Sets additional values to the query.
 	 * @param array $request Input array to set values by.
@@ -48,21 +48,21 @@ class QuerybillrunAction extends QueryAction {
 			$query['billrun_key'] = $this->getBillrunQuery($request['billrun']);
 		}
 	}
-	
+
 	/**
 	 * Get the array of options to use for the query.
 	 * @param array $request - Input request array.
 	 * @return array Options array for the query.
 	 */
 	protected function getQueryOptions($request) {
-		return 	array(
+		return array(
 			'sort' => array('aid', 'billrun_key'),
 //			@todo: support pagination
 //			'page' => isset($request['page']) && $request['page'] > 0 ? (int) $request['page']: 0,
 //			'size' =>isset($request['size']) && $request['size'] > 0 ? (int) $request['size']: 1000,
 		);
 	}
-	
+
 	/**
 	 * Get the lines data by the input request and query.
 	 * @param array $request - Input request array.
@@ -73,11 +73,11 @@ class QuerybillrunAction extends QueryAction {
 		$cacheParams = array(
 			'fetchParams' => $linesRequestQueries
 		);
-		
+
 		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
 		return $this->cache($cacheParams);
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 

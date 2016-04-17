@@ -56,5 +56,5 @@ class Admin_Lines {
 	public static function isManualFilter($session) {
 		return isset($session->manual_value) && count($session->manual_value) > 0 && $session->manual_value[0] != '' && $session->manual_key[0] != '';
 	}
-	
+
 }

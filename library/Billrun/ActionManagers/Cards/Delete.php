@@ -9,7 +9,6 @@
 /**
  * This is a delete parser for the use of Cards Delete action.
  *
- * @author Dori
  */
 class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_Action {
 
@@ -68,9 +67,9 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
 		}
-		
+
 		if (isset($jsonQueryData['secret'])) {
-			$jsonQueryData['secret'] = hash('sha512',$jsonQueryData['secret']);
+			$jsonQueryData['secret'] = hash('sha512', $jsonQueryData['secret']);
 		}
 
 		$this->query = array();
@@ -86,7 +85,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 	protected function removeCreated($bulkOptions) {
 		return Billrun_Factory::db()->cardsCollection()->remove($this->query, $bulkOptions);
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -107,18 +106,18 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
-		if(!$count) {
+		if (!$count) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
-		
+
 		$outputResult = array(
-			'status'	  => $this->errorCode == 0 ? 1 : 0,
-			'desc'        => $this->error,
-			'error_code'  => $this->errorCode,
-			'details'     => (!$this->errorCode) ? 
-							('Deleted ' . $count . ' card(s)') : 
-							($error)
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => (!$this->errorCode) ?
+				('Deleted ' . $count . ' card(s)') :
+				($error)
 		);
 
 		return $outputResult;

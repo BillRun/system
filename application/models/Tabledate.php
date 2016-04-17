@@ -58,8 +58,7 @@ class TabledateModel extends TableModel {
 	public function isLast($entity) {
 		$to_date = new MongoDate(strtotime($entity['to']));
 		if (!$to_date) {
-			return $this->setError("date error") ;
-			
+			return $this->setError("date error");
 		}
 		$result = $this->getLastItem($entity[$this->search_key]);
 		return strval($result['_id']) == strval($entity['_id']);
@@ -141,11 +140,11 @@ class TabledateModel extends TableModel {
 
 	public function getLastItem($key_name) {
 		$result = $this->collection
-				->query($this->search_key, $key_name)
-				->cursor()
-				->sort(array('to' => -1))
-				->limit(1)
-				->current();
+			->query($this->search_key, $key_name)
+			->cursor()
+			->sort(array('to' => -1))
+			->limit(1)
+			->current();
 		$result->collection($this->collection);
 		return $result;
 	}

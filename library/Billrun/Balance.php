@@ -30,7 +30,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	protected $data = array();
 	protected $collection = null;
-	
 	protected $granted = array();
 
 	/**
@@ -49,7 +48,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
 			return false;
 		}
-		
+
 		if (isset($options['granted_usagev']) && is_numeric($options['granted_usagev'])) {
 			$this->granted['usagev'] = (-1) * $options['granted_usagev'];
 		}
@@ -70,7 +69,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 
 		parent::__construct($ret, self::getCollection());
 	}
-	
+
 	/**
 	 * Gets default balance for subscriber (when no balance was found).
 	 * For post-paid subscribers, create new empty balance, for prepaid return no balance.
@@ -81,8 +80,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 	protected function getDefaultBalance($options) {
 		if ($options['charging_type'] == 'prepaid') {
 			return array();
-		} 
-		
+		}
+
 		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 		$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
 		$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
@@ -145,7 +144,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return $cursor->setReadPreference('RP_PRIMARY')
 				->limit(1)->current();
 	}
-	
+
 	/**
 	 * Gets a query to get the correct balance of the subscriber.
 	 * 
@@ -167,7 +166,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		} else {
 			$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
 		}
-		
+
 		if (isset($this->granted['cost'])) {
 			$minCost = $this->granted['cost'];
 		} else {
@@ -181,9 +180,9 @@ class Billrun_Balance extends Mongodloid_Entity {
 				array("balance.cost" => array('$lt' => $minCost)),
 			);
 		}
-		
+
 		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $this));
-		
+
 		return $query;
 	}
 
@@ -334,7 +333,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		} else if (isset($balance['balance']['cost'])) {
 			$selectedBalance = 'balance.cost';
 		}
-		
+
 		return $selectedBalance;
 	}
 

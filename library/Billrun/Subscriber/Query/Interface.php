@@ -13,7 +13,7 @@
  * @since    4
  */
 interface Billrun_Subscriber_Query_Interface {
-	
+
 	/**
 	 * Get the query for a subscriber by received parameters.
 	 * @param type $params - Params to get the subscriber query by.

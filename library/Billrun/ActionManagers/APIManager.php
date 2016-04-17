@@ -9,39 +9,39 @@
 /**
  * Helper class to manage the api action managers.
  *
- * @author Tom Feigin
  */
 class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
-	
+
 	protected $action;
+
 	/**
 	 * Get the action name from the input.
 	 */
 	protected function getActionName() {
 		$input = $this->options['input'];
-		
+
 		$methodInput = $input->get('method');
-		if(empty($methodInput)) {
+		if (empty($methodInput)) {
 			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
 			return null;
 		}
-		
+
 		$apiName = $this->options['api_name'];
-		
+
 		// Make sure that the API name and the method input are lower case with capital first.
 		return ucfirst(strtolower($apiName)) . '_' . ucfirst(strtolower($methodInput));
 	}
-	
+
 	/**
 	 * Validate the input options parameters.
 	 * @return true if valid.
 	 */
 	protected function validate() {
-		return parent::validate() && 
-			   isset($this->options['input'])			 && 
-			   isset($this->options['api_name']);
+		return parent::validate() &&
+			isset($this->options['input']) &&
+			isset($this->options['api_name']);
 	}
-	
+
 	/**
 	 * Get the current error of the action.
 	 * @return string the description for the current error.
@@ -49,11 +49,11 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 	public function getError() {
 		return $this->action->getError();
 	}
-	
+
 	public function getErrorCode() {
 		return $this->action->getErrorCode();
 	}
-	
+
 	/**
 	 * This function receives input and returns a subscriber action instance after
 	 * it already parsed the input into itself.
@@ -61,21 +61,22 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 	 */
 	public function getAction() {
 		$this->action = parent::getAction();
-		if(!$this->action) {
+		if (!$this->action) {
 			return null;
 		}
-		
+
 		$input = $this->options['input'];
-		
+
 		/**
 		 * Parse the input data.
 		 */
-		if(!$this->action->parse($input)) {
-			Billrun_Factory::log("APIAction getAction Action failed to parse input! " . 
-								 print_r($input, 1), Zend_Log::INFO);
+		if (!$this->action->parse($input)) {
+			Billrun_Factory::log("APIAction getAction Action failed to parse input! " .
+				print_r($input, 1), Zend_Log::INFO);
 			return $this->getError();
 		}
-		
+
 		return $this->action;
 	}
+
 }

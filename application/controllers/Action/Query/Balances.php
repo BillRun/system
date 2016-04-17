@@ -25,21 +25,21 @@ class BalancesAction extends QueryAction {
 	protected function getMaxList() {
 		return 10;
 	}
-	
+
 	/**
 	 * The function to run before execute.
 	 */
 	protected function preExecute() {
 		Billrun_Factory::log("Execute api balances query", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * The function to run after execute.
 	 */
 	protected function postExecute() {
 		Billrun_Factory::log("balances query success", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * Sets additional values to the query.
 	 * @param array $request Input array to set values by.
@@ -50,7 +50,7 @@ class BalancesAction extends QueryAction {
 			$query['billrun_month'] = $this->getBillrunQuery($request['billrun']);
 		}
 	}
-	
+
 	/**
 	 * Get the array of options to use for the query.
 	 * @param array $request - Input request array.
@@ -59,7 +59,7 @@ class BalancesAction extends QueryAction {
 	protected function getQueryOptions($request) {
 		return array();
 	}
-	
+
 	/**
 	 * Get the lines data by the input request and query.
 	 * @param array $request - Input request array.
@@ -70,11 +70,11 @@ class BalancesAction extends QueryAction {
 		$cacheParams = array(
 			'fetchParams' => $linesRequestQueries
 		);
-		
+
 		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
 		return $this->cache($cacheParams);
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -86,7 +86,7 @@ class BalancesAction extends QueryAction {
 		$model = new BalancesModel($params['options']);
 		$results = $model->getData($params['find']);
 		$ret = array();
-		foreach($results as $row) {
+		foreach ($results as $row) {
 			$ret[] = $row->getRawData();
 		}
 		return $ret;
@@ -106,4 +106,5 @@ class BalancesAction extends QueryAction {
 		}
 		return (array) $param;
 	}
+
 }

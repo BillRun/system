@@ -24,11 +24,12 @@ class Billrun_Calculator_Rate_Mmsrt extends Billrun_Calculator_Rate_Callrt {
 	protected function shouldLineBeRated($row) {
 		return true;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
 		return $line['type'] == 'mmsrt';
 	}
+
 }

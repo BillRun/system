@@ -147,8 +147,8 @@ class Admin_Graphs {
 			$output.='<div id="' . $graph_metadata->dashboard_div['id'] . '">';
 		}
 		$output .= '<div id="' . $graph_metadata->target_div['id'] . '" class="' . $graph_metadata->target_div['class'] . '">'
-				. '<div class="graph loading"></div>'
-				. '</div>';
+			. '<div class="graph loading"></div>'
+			. '</div>';
 		if (isset($graph_metadata->filter_div)) {
 			$output.= '<div id="' . $graph_metadata->filter_div['id'] . '" class="' . $graph_metadata->filter_div['class'] . '"></div></div>';
 		}
@@ -156,13 +156,12 @@ class Admin_Graphs {
 		$output .= '$(function() {';
 		if (!is_null($tabId)) {
 			$output.='$(\'#' . $tabId . '\').on("shown.bs.tab", function(e) {if ($(".graph.loading",$($(e.delegateTarget).attr("href"))).length)';
-		}
-		else if (!is_null($popupId)) {
+		} else if (!is_null($popupId)) {
 			$output .= '$("#' . $popupId . '").on("shown.bs.modal", function(e) {$("#' . $popupId . '").off("shown.bs.modal");';
 		}
 		$output.='drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
-				. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
-				. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
+			. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
+			. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
 		if (isset($graph_metadata->dashboard_div) && isset($graph_metadata->filter_options)) {
 			$output.=', \'' . $graph_metadata->dashboard_div['id'] . '\', ' . json_encode($graph_metadata->filter_options);
 		} else {

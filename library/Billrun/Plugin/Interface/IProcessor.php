@@ -36,4 +36,3 @@ interface Billrun_Plugin_Interface_IProcessor {
 	 */
 	public function getFilenameData($type, $filename, &$processor);
 }
-

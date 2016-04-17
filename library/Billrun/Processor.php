@@ -90,7 +90,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @var string SHould the bluk inserted lines be ordered before  the actuall  insert is done.
 	 */
 	protected $orderLinesBeforeInsert = false;
-	
+
 	/**
 	 * Lines that were processed but are not to be saved
 	 * @var array
@@ -315,7 +315,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function store() {
 		if (!isset($this->data['data'])) {
 			// raise error
-			Billrun_Factory::log('Got empty data from file  : ' . basename($this->filePath) , Zend_Log::ERR);
+			Billrun_Factory::log('Got empty data from file  : ' . basename($this->filePath), Zend_Log::ERR);
 			return false;
 		}
 
@@ -614,7 +614,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
-		
+
 		if (!isset($queue_row['stamp'])) {
 			$queue_row['stamp'] = $row['stamp'];
 		}
@@ -703,7 +703,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
-	
+
 	/**
 	 * Get a CDR line volume (duration/count/bytes used)
 	 * @param $row the line to get  the volume for.
@@ -725,7 +725,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->doNotSaveLines[$stamp] = $this->data['data'][$stamp];
 		unset($this->data['data'][$stamp]);
 	}
-	
+
 	/**
 	 * Get all lines processed by the processor
 	 * @return array
@@ -733,5 +733,5 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function getAllLines() {
 		return $this->data['data'] + $this->doNotSaveLines;
 	}
-	
+
 }

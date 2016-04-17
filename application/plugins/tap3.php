@@ -9,7 +9,6 @@
 /**
  * This a plguin to provide TAP3 CDRs support to the billing system.
  *
- * @author eran
  */
 class tap3Plugin extends Billrun_Plugin_BillrunPluginBase implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
@@ -162,11 +161,11 @@ use Billrun_Traits_FileSequenceChecking;
 				$cdrLine[$key] = $val;
 			}
 		}
-		
+
 
 		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
 			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
-			if(empty($offset)) {
+			if (empty($offset)) {
 				$offset = '+00:00';
 			}
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
@@ -181,10 +180,10 @@ use Billrun_Traits_FileSequenceChecking;
 				if ($tele_service_code == '11') {
 					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					if ($called_number) {
-						$cdrLine['called_number'] = $called_number; 
+						$cdrLine['called_number'] = $called_number;
 					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
-						if(isset($dialed_digits)) {
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+						if (isset($dialed_digits)) {
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
@@ -217,10 +216,10 @@ use Billrun_Traits_FileSequenceChecking;
 				if ($record_type == '9') {
 					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					if ($called_number) {
-						$cdrLine['called_number'] = $called_number; 
+						$cdrLine['called_number'] = $called_number;
 					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
-						if(isset($dialed_digits)) {
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+						if (isset($dialed_digits)) {
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
@@ -235,7 +234,7 @@ use Billrun_Traits_FileSequenceChecking;
 		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-		
+
 //		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 //			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 //				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
@@ -420,7 +419,7 @@ use Billrun_Traits_FileSequenceChecking;
 		}
 		return $sum;
 	}
-	
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
@@ -448,9 +447,9 @@ use Billrun_Traits_FileSequenceChecking;
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
 	protected function getLineUsageType($row) {
-		
+
 		$usage_type = null;
-		
+
 		$record_type = $row['record_type'];
 		if (isset($row['tele_srv_code'])) {
 			$tele_service_code = $row['tele_srv_code'];

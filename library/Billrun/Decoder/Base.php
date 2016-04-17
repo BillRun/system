@@ -11,6 +11,7 @@
  *
  */
 abstract class Billrun_Decoder_Base {
+
 	/**
 	 * Decode string to array
 	 * 

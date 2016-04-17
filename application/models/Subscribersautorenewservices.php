@@ -5,8 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
-
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -20,10 +18,10 @@
  * @subpackage Table
  * @since    4.0
  */
-class SubscribersautorenewservicesModel extends TabledateModel{
-	
+class SubscribersautorenewservicesModel extends TabledateModel {
+
 	protected $subscribers_auto_renew_services_coll;
-	
+
 	/**
 	 * constructor
 	 * 
@@ -35,7 +33,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		$this->subscribers_auto_renew_services_coll = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$this->search_key = "sid";
 	}
-	
+
 	public function getTableColumns() {
 		$columns = array(
 			'sid' => 'Subscriber No',
@@ -74,9 +72,9 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 	public function getFilterFields() {
 		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'charging'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
-		}	
+		}
 
 		$filter_fields = array(
 			'sid' => array(
@@ -86,7 +84,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'comparison' => 'equals',
 				'display' => 'Subscriber No',
 				'default' => '',
-			),			
+			),
 			'aid' => array(
 				'key' => 'aid',
 				'db_key' => 'aid',
@@ -94,7 +92,7 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 				'comparison' => 'equals',
 				'display' => 'BAN',
 				'default' => '',
-			),			
+			),
 			'charging_plan_name' => array(
 				'key' => 'charging_plan_name',
 				'db_key' => 'charging_plan_name',
@@ -136,14 +134,13 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 			)
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
-	}	
-	
+	}
+
 	public function getProtectedKeys($entity, $type) {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
-		return array_merge($parentKeys, 
-						   array());
+		return array_merge($parentKeys, array());
 	}
-	
+
 	public function update($params) {
 		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
 		if (is_string($params['next_renew_date'])) {
@@ -158,4 +155,5 @@ class SubscribersautorenewservicesModel extends TabledateModel{
 		}
 		return parent::update($params);
 	}
+
 }

@@ -9,9 +9,9 @@
 /**
  * Abstract class for regex operator translator.
  *
- * @author Tom Feigin
  */
 abstract class Admin_MongoOperatorTranslators_Regex extends Admin_MongoOperatorTranslators_Translator {
+
 	/**
 	 * Return the mongo operator string.
 	 * @return string - Mongo operator string for this class.
@@ -19,4 +19,5 @@ abstract class Admin_MongoOperatorTranslators_Regex extends Admin_MongoOperatorT
 	public function getOperator() {
 		return '$regex';
 	}
+
 }

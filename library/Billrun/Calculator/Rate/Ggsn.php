@@ -39,6 +39,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 		parent::__construct($options);
 		$this->loadRates();
 	}
+
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9

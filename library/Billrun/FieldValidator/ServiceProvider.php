@@ -9,10 +9,9 @@
 /**
  * Field validator for charging plan
  *
- * @author Tom Feigin
  */
 trait Billrun_FieldValidator_ServiceProvider {
-	
+
 	/**
 	 * Check with the mongo that the service provider is trusted.
 	 * If the service provider is empty, return true.
@@ -20,12 +19,13 @@ trait Billrun_FieldValidator_ServiceProvider {
 	 * @return boolean true if trusted.
 	 */
 	protected function validateServiceProvider($serviceProvider) {
-		if(!isset($serviceProvider)) {
+		if (!isset($serviceProvider)) {
 			return true;
 		}
-		
+
 		$collection = Billrun_Factory::db()->serviceprovidersCollection();
 		$query = array('name' => $serviceProvider);
 		return $collection->exists($query);
 	}
+
 }

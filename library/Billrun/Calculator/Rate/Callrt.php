@@ -16,7 +16,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 
 	static protected $type = 'callrt';
 	protected $usaget = 'call';
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['usaget'])) {
@@ -37,7 +37,8 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	 * 
 	 * @deprecated since version 2.9
 	 */
-	protected function getLineUsageType($row) {	
+	protected function getLineUsageType($row) {
+		
 	}
 
 	/**
@@ -45,8 +46,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	 * @deprecated since version 2.9
 	 */
 	protected function getLineVolume($row) {
+		
 	}
-	
+
 	/**
 	 * method to identify the destination of the call
 	 * 
@@ -64,7 +66,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		}
 		return $called_number;
 	}
-	
+
 	/**
 	 * Assistance function to generate 'prefix' field query with current row.
 	 * 
@@ -73,25 +75,25 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function getPrefixMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
 	}
-	
+
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',
 			"pref" => '$params.prefix');
 	}
-	
+
 	protected function getRatesExistsQuery() {
 		if ($this->usaget === 'call') {
 			return array('$exists' => true);
 		}
 		return null;
 	}
-	
+
 	protected function getVideoCallRatesExistsQuery() {
 		if ($this->usaget === 'video_call') {
 			return array('$exists' => true);
 		}
 		return null;
 	}
-	
+
 }

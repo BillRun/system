@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of Reports
+ * National roaming generator class
  *
- * @author eran
+ * @package  Billing
+ * @since    0.5
  */
 class Billrun_Generator_NationalRoaming extends Billrun_Generator_Base_WholesaleReport {
 

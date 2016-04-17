@@ -9,12 +9,12 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author Tom Feigin
  */
-class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action{
-	
-	use Billrun_FieldValidator_CustomerPlan, Billrun_FieldValidator_ServiceProvider;
-	
+class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action {
+
+	use Billrun_FieldValidator_CustomerPlan,
+	 Billrun_FieldValidator_ServiceProvider;
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -26,26 +26,25 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	public function __construct() {
 		parent::__construct(array('error' => "Success creating subscriber"));
 	}
-	
+
 	/**
 	 * Get the query to run to get a subscriber from the db.
 	 * @return array Query to run in the mongo.
 	 */
 	protected function getSubscriberQuery() {
-		$subscriberQueryKeys = 
-			Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
+		$subscriberQueryKeys = Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
 		foreach ($subscriberQueryKeys as $key) {
 			if (is_array($this->query[$key])) {
 				$subscriberQuery['$or'][][$key] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$key]));
 			}
 			$subscriberQuery['$or'][][$key] = $this->query[$key];
 		}
-		
+
 		// Get only active subscribers.
 		$subscriberQuery['to'] = array('$gte' => new MongoDate());
 		return $subscriberQuery;
 	}
-	
+
 	/**
 	 * Check if the subscriber to create already exists.
 	 * @return boolean - true if the subscriber exists.
@@ -53,20 +52,20 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function subscriberExists() {
 		// Check if the subscriber already exists.
 		$subscriberQuery = $this->getSubscriberQuery();
-		
+
 		$subscribers = $this->collection->query($subscriberQuery);
-		
+
 		// TODO: Use the subscriber class.
-		if($subscribers->count() > 0){
+		if ($subscribers->count() > 0) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
 			$parameters = http_build_query($this->query, '', ', ');
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -74,17 +73,17 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	public function execute() {
 		try {
 			// Create the subscriber only if it doesn't already exists.
-			if($this->validateCustomerPlan($this->query['plan']) !== true) {
+			if ($this->validateCustomerPlan($this->query['plan']) !== true) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 6;
 				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['plan']));
-			} elseif(!$this->validateServiceProvider($this->query['service_provider'])) {
+			} elseif (!$this->validateServiceProvider($this->query['service_provider'])) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 5;
 				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['service_provider']));
-			} elseif(!$this->subscriberExists()) { 
+			} elseif (!$this->subscriberExists()) {
 				$entity = new Mongodloid_Entity($this->query);
 
 				$this->collection->save($entity, 1);
-			}	
+			}
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -92,11 +91,11 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		}
 
 		$outputResult = array(
-			'status'        => $this->errorCode == 0 ? 1 : 0,
-			'desc'          => $this->error,
-			'error_code'    => $this->errorCode,
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
 		);
-		
+
 		if (isset($entity)) {
 			$outputResult['details'] = $entity->getRawData();
 		}
@@ -109,13 +108,13 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if(!$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -124,28 +123,28 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function setQueryRecord($input) {
 		$jsonData = null;
 		$query = $input->get('subscriber');
-		if(empty($query) || (!($jsonData = json_decode($query, true)))) {
+		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		$invalidFields = $this->setQueryFields($jsonData);
-		
+
 		// If there were errors.
-		if(!empty($invalidFields)) {
+		if (!empty($invalidFields)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
-		
+
 		// Set the from and to values.
-		$this->query['creation_time'] = $this->query['from']= new MongoDate();
-		$this->query['to']= new MongoDate(strtotime('+100 years'));
-		
+		$this->query['creation_time'] = $this->query['from'] = new MongoDate();
+		$this->query['to'] = new MongoDate(strtotime('+100 years'));
+
 		return true;
 	}
-	
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -154,24 +153,24 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
 		$optionalFields = $this->getOptionalFields();
-		
+
 		// Arrary of errors to report if any occurs.
 		$invalidFields = array();
-		
+
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+			if (isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
-			} else if(!in_array($field, $optionalFields)) {
+			} else if (!in_array($field, $optionalFields)) {
 				$invalidFields[] = $field;
 			}
 		}
-		
+
 		return $invalidFields;
 	}
-	
+
 	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
@@ -179,8 +178,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue("subscribers.create_fields");
 	}
-	
+
 	protected function getOptionalFields() {
 		return Billrun_Factory::config()->getConfigValue("subscribers.optional_fields");
 	}
+
 }

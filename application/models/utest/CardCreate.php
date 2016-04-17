@@ -27,7 +27,7 @@ class utest_CardCreateModel extends utest_AbstractUtestModel {
 		$status = Billrun_Util::filter_var($this->controller->getRequest()->get('status'), FILTER_SANITIZE_STRING);
 		$created = Billrun_Util::filter_var($this->controller->getRequest()->get('created'), FILTER_SANITIZE_STRING);
 		$expiration = Billrun_Util::filter_var($this->controller->getRequest()->get('expiration'), FILTER_SANITIZE_STRING);
-		
+
 		$override_service_provider = Billrun_Util::filter_var($this->controller->getRequest()->get('override_service_provider'), FILTER_SANITIZE_STRING);
 		$service_provider = Billrun_Util::filter_var($this->controller->getRequest()->get('service_provider'), FILTER_SANITIZE_STRING);
 
@@ -53,31 +53,31 @@ class utest_CardCreateModel extends utest_AbstractUtestModel {
 	 */
 	protected function getRequestData($params) {
 		$cards = array();
-		
+
 		$secrets = array_map('trim', explode("\n", trim($params['secrets'])));
-		
+
 		$planAndProvider = explode("|", $params['balance_type']);
 		$charging_plan_name = $planAndProvider[0];
-		$service_provider = ($params['override_service_provider'] == 'on') ? $params['service_provider'] : $planAndProvider[1] ;
-		
+		$service_provider = ($params['override_service_provider'] == 'on') ? $params['service_provider'] : $planAndProvider[1];
+
 		foreach ($secrets as $key => $secret) {
 			$cards[] = array(
 				'secret' => $secret,
-				'batch_number' =>  $this->controller->getReference(),
-				'serial_number' => (int)($this->controller->getReference().$key),
+				'batch_number' => $this->controller->getReference(),
+				'serial_number' => (int) ($this->controller->getReference() . $key),
 				'charging_plan_name' => $charging_plan_name,
-				'service_provider'=> $service_provider,
+				'service_provider' => $service_provider,
 				'to' => date_format(date_create_from_format('d/m/Y H:i', $params['to']), 'c'),
 				'creation_time' => date_format(date_create_from_format('d/m/Y H:i', $params['creation_time']), 'c'),
-				'status' =>  $params['status'],
+				'status' => $params['status'],
 			);
 		}
-		
+
 		$request = array(
 			'method' => 'create',
 			'cards' => json_encode($cards),
 		);
-		
+
 		return $request;
 	}
 

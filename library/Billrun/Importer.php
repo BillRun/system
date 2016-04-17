@@ -13,7 +13,6 @@
  * @since    4.0
  */
 Interface Billrun_Importer {
-	
+
 	public function import();
-	
 }

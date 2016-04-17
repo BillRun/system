@@ -9,7 +9,6 @@
 /**
  * Handle string and lined based records that are keyed by value and  seperated by a separator
  *
- * @author eran
  */
 class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 

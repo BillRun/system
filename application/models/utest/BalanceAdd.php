@@ -20,7 +20,7 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 		$this->result = array('balance_before', 'balance_after', 'lines');
 		$this->label = 'Balance | Update by pp includes';
 	}
-	
+
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$name = Billrun_Util::filter_var($this->controller->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);

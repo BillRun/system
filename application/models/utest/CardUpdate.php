@@ -22,8 +22,8 @@ class utest_CardUpdateModel extends utest_AbstractUtestModel {
 	}
 
 	function doTest() {
-		$query_serial_number = (int)Billrun_Util::filter_var($this->controller->getRequest()->get('serial_number'), FILTER_VALIDATE_INT);
-		$query_batch_number = (int)Billrun_Util::filter_var($this->controller->getRequest()->get('batch_number'), FILTER_VALIDATE_INT);
+		$query_serial_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('serial_number'), FILTER_VALIDATE_INT);
+		$query_batch_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('batch_number'), FILTER_VALIDATE_INT);
 		$query_secret = Billrun_Util::filter_var($this->controller->getRequest()->get('secret'), FILTER_SANITIZE_STRING);
 		$query_status = Billrun_Util::filter_var($this->controller->getRequest()->get('status'), FILTER_SANITIZE_STRING);
 
@@ -33,7 +33,7 @@ class utest_CardUpdateModel extends utest_AbstractUtestModel {
 
 		$new_batch_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('new_batch_number'), FILTER_VALIDATE_INT);
 		$send_new_batch_number = Billrun_Util::filter_var($this->controller->getRequest()->get('send_new_batch_number'), FILTER_SANITIZE_STRING);
-	
+
 		$new_serial_number = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('new_serial_number'), FILTER_SANITIZE_STRING);
 		$send_new_serial_number = Billrun_Util::filter_var($this->controller->getRequest()->get('send_new_serial_number'), FILTER_SANITIZE_STRING);
 
@@ -111,7 +111,7 @@ class utest_CardUpdateModel extends utest_AbstractUtestModel {
 			'query' => json_encode($query),
 			'update' => json_encode($update),
 		);
-		
+
 		return $request;
 	}
 

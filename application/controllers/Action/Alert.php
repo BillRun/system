@@ -36,7 +36,7 @@ class AlertAction extends Action_Base {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 			return;
 		}
-		
+
 		$this->_controller->addOutput("Handler loaded");
 		$handler->execute();
 	}

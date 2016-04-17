@@ -21,7 +21,7 @@ class ResetLinesAction extends ApiAction {
 		if (empty($request['sid'])) {
 			return $this->setError('Please supply at least one sid', $request);
 		}
-		
+
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
 			$this->cleanAccountCache($request['aid']);
@@ -35,19 +35,19 @@ class ResetLinesAction extends ApiAction {
 		if (!$sids) {
 			return $this->setError('Illegal sid', $request);
 		}
-		
+
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 			foreach ($sids as $sid) {
-				$rebalance_queue->insert(array( 'sid' => $sid, 
-												'billrun_key' => $billrun_key, 
-												'creation_date' => new MongoDate()));
+				$rebalance_queue->insert(array('sid' => $sid,
+					'billrun_key' => $billrun_key,
+					'creation_date' => new MongoDate()));
 			}
 		} catch (Exception $exc) {
 			Billrun_Util::logFailedResetLines($sids, $billrun_key);
 			return FALSE;
 		}
-		
+
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
@@ -55,7 +55,7 @@ class ResetLinesAction extends ApiAction {
 		)));
 		return TRUE;
 	}
-	
+
 	/**
 	 * Clean cache from account.
 	 * @param type $aid - Account ID
@@ -69,12 +69,12 @@ class ResetLinesAction extends ApiAction {
 			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => (int) $billrunKey))),
 			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => "", 'stamp' => (int) $billrunKey))),
 			Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => 0, 'stamp' => (int) $billrunKey))),
-			);
+		);
 		foreach ($cleanCacheKeys as $cacheKey) {
 			$cache->remove($cacheKey, $cachePrefix);
 		}
 	}
-	
+
 	/**
 	 * method to clean account cache
 	 * 

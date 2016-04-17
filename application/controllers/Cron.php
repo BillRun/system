@@ -69,7 +69,7 @@ class CronController extends Yaf_Controller_Abstract {
 
 	protected function sendAlerts($process, $empty_types) {
 		if (empty($empty_types)) {
-			return ;
+			return;
 		}
 		$events_string = implode(', ', $empty_types);
 		Billrun_Factory::log("Send alerts for " . $process, Zend_Log::INFO);
@@ -99,18 +99,19 @@ class CronController extends Yaf_Controller_Abstract {
 			$this->smser->send($message, $recipients);
 		}
 	}
-	
+
 	public function cardsExpirationAction() {
 		$handler = new Billrun_Cards_Handler();
 		$result = $handler->cardsExpiration();
-		
+
 		// TODO: Do something with the result?
 	}
+
 	public function autoRenewServicesAction() {
 		$handler = new Billrun_Autorenew_Handler();
 		$handler->autoRenewServices();
 	}
-	
+
 	public function closeBalancesAction() {
 		$handler = new Billrun_Balances_Handler();
 		$handler->closeBalances();
@@ -149,7 +150,7 @@ class CronController extends Yaf_Controller_Abstract {
 		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
-		
+
 		Billrun_Factory::dispatcher()->trigger('subscribersPlansEnded', array($sids));
 	}
 
@@ -169,7 +170,7 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function getSmsList() {
 		return Billrun_Factory::config()->getConfigValue('cron.log.sms_recipients', array());
 	}
-		
+
 	protected function sendBalanceExpirationdateNotifications() {
 		$plansNotifications = $this->getAllPlansWithExpirationDateNotification();
 		foreach ($plansNotifications as $planNotification) {
@@ -184,7 +185,7 @@ class CronController extends Yaf_Controller_Abstract {
 			}
 		}
 	}
-	
+
 	protected function getBalancesToNotify($subscriberId, $notification) {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$query = array(
@@ -201,7 +202,7 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 		return $balances;
 	}
-	
+
 	protected function getSubscribersInPlan($planName) {
 		$subscribersCollection = Billrun_Factory::db()->subscribersCollection();
 		$query = Billrun_Util::getDateBoundQuery();
@@ -212,13 +213,13 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 		return $subscribers;
 	}
-	
+
 	protected function getAllPlansWithExpirationDateNotification() {
 		$match = Billrun_Util::getDateBoundQuery();
 		$match["notifications_threshold.expiration_date"] = array('$exists' => 1);
 		$unwind = '$notifications_threshold.expiration_date';
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$plans = $plansCollection->aggregate(array('$match' => $match),array('$unwind' => $unwind));
+		$plans = $plansCollection->aggregate(array('$match' => $match), array('$unwind' => $unwind));
 		$plansNotifications = array_map(function($doc) {
 			return array('plan_name' => $doc['name'], 'notification' => $doc['notifications_threshold']['expiration_date']);
 		}, iterator_to_array($plans));

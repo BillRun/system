@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
@@ -32,7 +31,7 @@ class BalanceAction extends ApiAction {
 		} else {
 			$subscribers = array();
 		}
-		
+
 		$cacheParams = array(
 			'fetchParams' => array(
 				'aid' => $aid,
@@ -40,12 +39,12 @@ class BalanceAction extends ApiAction {
 				'stamp' => $stamp,
 			),
 		);
-		
+
 		$output = $this->cache($cacheParams);
 		header('Content-type: text/xml');
 		$this->getController()->setOutput(array($output, true)); // hack
 	}
-	
+
 	protected function fetchData($params) {
 		$options = array(
 			'type' => 'balance',

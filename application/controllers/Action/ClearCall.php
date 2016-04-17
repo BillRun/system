@@ -114,7 +114,7 @@ class ClearCallAction extends ApiAction {
 				'$first' => '$' . $field
 			);
 		}
-		
+
 		return $query;
 	}
 

@@ -9,7 +9,6 @@
 /**
  * A Class to aggregate sequence data and check it`s validity.
  *
- * @author eran
  */
 class Billrun_Common_SequenceChecker {
 

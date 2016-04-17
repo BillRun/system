@@ -3,7 +3,7 @@
 	<h3 id="popupModalLabel">Remove action</h3>
 </div>
 <div class="modal-body">
-Are you sure you want to remove <?php echo $this->key; ?>?
+	Are you sure you want to remove <?php echo $this->key; ?>?
 	<?php
 	print '<div class="form_protect">';
 	print '<span id="form_ids" class="hidden">' . $this->ids . '</span>';
@@ -12,40 +12,40 @@ Are you sure you want to remove <?php echo $this->key; ?>?
 	print '</div>';
 	?>
 	<script type="text/javascript">
-		var _confirmButtonSelector = '#save'
-		$(_confirmButtonSelector).click(function confirmClick() {
-			$(this).attr('disabled', 'disabled');
-			$(this).unbind("click", confirmClick);
-			var _ajaxOpts = {
-				async: true,
-				cache: false,
-				//			dataType:'json',
-				type: 'POST',
-				data: {
-					ids: $('#form_ids').html(),
-					coll: $('#form_coll').html(),
-					type: $('#form_type').html(),
-				},
-				success: function(data, textStatus, jqXHR) {
-					if (data != 'null') {
-						alert(data);
-						$(_confirmButtonSelector).removeAttr("disabled");
-						$(_confirmButtonSelector).bind("click", confirmClick);
-						return;
-					}
-					window.location.reload();
-				},
-				error: function(jqXHR, textStatus, errorThrown) {
-					alert('some error occured');
-				}
-			};
-			$.ajax('<?php echo $this->baseUrl; ?>/admin/remove', _ajaxOpts);
-		});
+				var _confirmButtonSelector = '#save'
+				$(_confirmButtonSelector).click(function confirmClick() {
+					$(this).attr('disabled', 'disabled');
+					$(this).unbind("click", confirmClick);
+					var _ajaxOpts = {
+						async: true,
+						cache: false,
+						//			dataType:'json',
+						type: 'POST',
+						data: {
+							ids: $('#form_ids').html(),
+							coll: $('#form_coll').html(),
+							type: $('#form_type').html(),
+						},
+						success: function (data, textStatus, jqXHR) {
+							if (data != 'null') {
+								alert(data);
+								$(_confirmButtonSelector).removeAttr("disabled");
+								$(_confirmButtonSelector).bind("click", confirmClick);
+								return;
+							}
+							window.location.reload();
+						},
+						error: function (jqXHR, textStatus, errorThrown) {
+							alert('some error occured');
+						}
+					};
+					$.ajax('<?php echo $this->baseUrl; ?>/admin/remove', _ajaxOpts);
+				});
 	</script>
 </div>
 <div class="modal-footer">
 	<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 	<?php if (AdminController::authorized('write')) : ?>
-	<button id="save" class="btn btn-primary">Save changes</button>
+		<button id="save" class="btn btn-primary">Save changes</button>
 	<?php endif; ?>
 </div>

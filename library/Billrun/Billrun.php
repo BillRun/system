@@ -108,7 +108,7 @@ class Billrun_Billrun {
 			// TODO: Report error?
 			return false;
 		}
-		
+
 		try {
 			// TODO: Check if save returns false?
 			$this->billrun_coll->save($this->data, 1);
@@ -116,7 +116,7 @@ class Billrun_Billrun {
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error saving billrun document. Error code: ' . $ex->getCode() . '. Message: ' . $ex->getMessage(), Zend_Log::ERR);
 		}
-		
+
 		return false;
 	}
 
@@ -394,7 +394,7 @@ class Billrun_Billrun {
 			);
 			$subscriber_settings = array_merge($subscriber_general_settings, $null_subscriber_params);
 			$subscriber = Billrun_Subscriber::getInstance($subscriber_settings);
-			// [tom] TODO: Why not checking the 'is valid' function?
+			// TODO: Why not checking the 'is valid' function?
 			$this->addSubscriber($subscriber, "closed");
 			$this->updateBillrun($billrun_key, $counters, $pricingData, $row, $vatable);
 		}
@@ -406,7 +406,7 @@ class Billrun_Billrun {
 	 * @return string the general usage type
 	 */
 	public static function getGeneralUsageType($specific_usage_type) {
-		// [tom] TODO: Why isn't this just a table? the code is executed as a lookup table anyway.
+		// TODO: Why isn't this just a table? the code is executed as a lookup table anyway.
 		// Will be easier to update if moved to a table as a property of this class.
 		switch ($specific_usage_type) {
 			case 'call':
@@ -496,9 +496,9 @@ class Billrun_Billrun {
 			$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
-			if($row['type'] == 'ggsn') {
-				// [tom] TODO: What is this magic number 06? There should just be a ggsn row class
-				if(isset($row['rat_type']) && $row['rat_type'] == '06') {
+			if ($row['type'] == 'ggsn') {
+				// TODO: What is this magic number 06? There should just be a ggsn row class
+				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
 					$data_generation = 'usage_4g';
 				} else {
 					$data_generation = 'usage_3g';
@@ -513,7 +513,7 @@ class Billrun_Billrun {
 		}
 		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 	}
-	
+
 	/**
 	 * Add pricing and usage counters to the subscriber billrun breakdown.
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
@@ -548,7 +548,7 @@ class Billrun_Billrun {
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
-			if($row['type'] == 'ggsn') {
+			if ($row['type'] == 'ggsn') {
 				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
 					$data_generation = 'usage_4g';
 				} else {
@@ -557,7 +557,6 @@ class Billrun_Billrun {
 				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
 				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
 				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
-
 			}
 		}
 
@@ -655,9 +654,9 @@ class Billrun_Billrun {
 		return self::getRateById($id_str);
 	}
 
-	// [tom] The correct way would be to have two handler types, rates and plans.
+	// The correct way would be to have two handler types, rates and plans.
 	// And have them as billrun members, so the implementation will be more modular.
-	
+
 	/**
 	 * Get a rate by hexadecimal id
 	 * @param string $id hexadecimal id of rate (taken from Mongo ID)
@@ -704,10 +703,10 @@ class Billrun_Billrun {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
 		self::loadFromDB($plans_coll);
 	}
-	
+
 	/**
 	 * This function loads all data from a givven structure of DB collumns.
-	 * [tom] @TODO: This should not be here, this logic is for some DB class, 
+	 * @TODO: This should not be here, this logic is for some DB class, 
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
@@ -718,7 +717,7 @@ class Billrun_Billrun {
 			self::$plans[strval($record->getId())] = $record;
 		}
 	}
-	
+
 	/**
 	 * Add all lines of the account to the billrun object
 	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
@@ -842,7 +841,7 @@ class Billrun_Billrun {
 		);
 
 		$requiredFields = array('aid' => 1);
-		if(empty($filter_fields)) {
+		if (empty($filter_fields)) {
 			$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
 		}
 
@@ -856,8 +855,8 @@ class Billrun_Billrun {
 			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>MongoClient::RP_SECONDARY_PREFERRED)))->linesCollection()
-				->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
+					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
+					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
@@ -915,7 +914,7 @@ class Billrun_Billrun {
 		} else {
 			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
 			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
-			// [tom] TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
+			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
 			}
@@ -948,14 +947,14 @@ class Billrun_Billrun {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
-	
+
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param date $date
 	 */
 	public static function getBillrunEndTimeByDate($date) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
 		return strtotime('-1 second', strtotime($datetime));
 	}
 
@@ -965,12 +964,12 @@ class Billrun_Billrun {
 	 */
 	public static function getBillrunStartTimeByDate($date) {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym',  strtotime($date)) . $dayofmonth . "000000";
+		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
 		return strtotime('-1 month', strtotime($datetime));
 	}
 
 }
 
-// [tom] TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
+// TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
 Billrun_Billrun::loadRates();
 Billrun_Billrun::loadPlans();

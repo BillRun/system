@@ -62,16 +62,16 @@ class Billrun_Plan {
 					$this->data = $plan;
 				} else {
 					$this->data = Billrun_Factory::db()->plansCollection()
-							->query(array(
-								'name' => $params['name'],
-								'$or' => array(
-									array('to' => array('$gt' => $date)),
-									array('to' => null)
-								)
-							))
-							->lessEq('from', $date)
-							->cursor()
-							->current();
+						->query(array(
+							'name' => $params['name'],
+							'$or' => array(
+								array('to' => array('$gt' => $date)),
+								array('to' => null)
+							)
+						))
+						->lessEq('from', $date)
+						->cursor()
+						->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
 			}
@@ -160,8 +160,8 @@ class Billrun_Plan {
 	 */
 	public function isRateInBasePlan($rate, $type) {
 		return isset($rate['rates'][$type]['plans']) &&
-				is_array($rate['rates'][$type]['plans']) &&
-				in_array($this->createRef(), $rate['rates'][$type]['plans']);
+			is_array($rate['rates'][$type]['plans']) &&
+			in_array($this->createRef(), $rate['rates'][$type]['plans']);
 	}
 
 	/**
@@ -377,7 +377,7 @@ class Billrun_Plan {
 	public function createRef($collection = false) {
 		if (count($this->plan_ref) == 0) {
 			$collection = $collection ? $collection :
-					($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
+				($this->data->collection() ? $this->data->collection() : Billrun_Factory::db()->plansCollection() );
 			$this->plan_ref = $collection->createRefByEntity($this->data);
 		}
 		return $this->plan_ref;

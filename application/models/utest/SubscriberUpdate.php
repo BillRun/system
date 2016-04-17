@@ -29,13 +29,13 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('new_sid'), FILTER_VALIDATE_INT);
 		$enable_sid = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_sid'), FILTER_SANITIZE_STRING);
-		
+
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('new_imsi'), FILTER_SANITIZE_STRING);
 		$enable_imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_imsi'), FILTER_SANITIZE_STRING);
 
 		$msisdn = Billrun_Util::filter_var($this->controller->getRequest()->get('new_msisdn'), FILTER_SANITIZE_STRING);
 		$enable_msisdn = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-new_msisdn'), FILTER_SANITIZE_STRING);
-	
+
 		$aid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('aid'), FILTER_SANITIZE_STRING);
 		$enable_aid = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-aid'), FILTER_SANITIZE_STRING);
 
@@ -154,18 +154,18 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 			'query' => json_encode($query),
 			'update' => json_encode($update),
 		);
-		
-		
-		if($params['track_history']['enable'] === 'on'){
+
+
+		if ($params['track_history']['enable'] === 'on') {
 			$request['track_history'] = $params['track_history']['value'];
 		}
-		if($params['keep_balances']['enable'] === 'on'){
+		if ($params['keep_balances']['enable'] === 'on') {
 			$request['keep_balances'] = $params['keep_balances']['value'];
 		}
-		if($params['keep_lines']['enable'] === 'on'){
+		if ($params['keep_lines']['enable'] === 'on') {
 			$request['keep_lines'] = $params['keep_lines']['value'];
 		}
 		return $request;
 	}
-	
+
 }

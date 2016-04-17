@@ -61,4 +61,5 @@ class ProcessAction extends Action_Base {
 		$this->_controller->addOutput(ob_get_contents());
 		ob_end_clean();
 	}
+
 }

@@ -14,7 +14,7 @@
  * @since    4.0
  */
 class utest_BalanceChargeModel extends utest_AbstractUtestModel {
-	
+
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');

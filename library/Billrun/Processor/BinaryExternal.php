@@ -1,14 +1,14 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of BinaryExternal
+ * External binary processor
  *
- * @author eran
  */
 class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 
@@ -31,8 +31,8 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 		}
 		try {
 			return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
-		} catch( Exception $e) {
-			Billrun_Factory::log("Got exception :".$e->getMessage(). " while processing file {$this->filePath}",Zend_Log::ERR);
+		} catch (Exception $e) {
+			Billrun_Factory::log("Got exception :" . $e->getMessage() . " while processing file {$this->filePath}", Zend_Log::ERR);
 			return FALSE;
 		}
 	}
@@ -43,12 +43,13 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	public function getFilenameData($filename) {
 		return Billrun_Factory::chain()->trigger('getFilenameData', array($this->getType(), $filename, &$this));
 	}
-	
+
 	protected function getLineVolume($row) {
 		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
 	}
-	
+
 	protected function getLineUsageType($row) {
 		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
 	}
+
 }

@@ -2,7 +2,8 @@
 
 $c = $this->offset;
 foreach ($this->data as $item) {
-	if ($active === "lines" && $this->session->show_zero_usage != "on" && $item['usaget'] !== "balance" && !$item['usagev']) continue;
+	if ($active === "lines" && $this->session->show_zero_usage != "on" && $item['usaget'] !== "balance" && !$item['usagev'])
+		continue;
 	if (strtolower($this->title) == 'log' && isset($item['start_process_time']) && !isset($item['process_time'])) :
 		print '<tr class="progress' . ((time() - $item['start_process_time']->sec) > 3600 ? ' alert-danger' : '') . '">';
 	else:
@@ -15,9 +16,7 @@ foreach ($this->data as $item) {
 		. '<a onclick="' . $onclick . '" href="' . $href . '" data-type="update" data-toggle="modal" role="button" data-remote="">#' . ($c + 1) . '</a>&nbsp;'
 		. '<input value="' . $item['_id'] . '" type="' . (AdminController::authorized('write') ? 'checkbox' : 'hidden') . '" id="chk' . $c . '"/>'
 		. '</label>'
-		. (($active == 'lines' && $item['lcount'] && $item['lcount'] > 0) 
-                    ? '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>' 
-                    : '')
+		. (($active == 'lines' && $item['lcount'] && $item['lcount'] > 0) ? '<a class="detail-icon" href="javascript:"><i class="glyphicon glyphicon-plus icon-plus"></i></a>' : '')
 		. '</td>';
 	$c++;
 	foreach ($this->columns as $h => $columnName) {
@@ -43,25 +42,25 @@ foreach ($this->data as $item) {
 				$zend_date->setTimezone('UTC');
 				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 			} else {
-				if(isset($data->sec)) {
+				if (isset($data->sec)) {
 					$zend_date = new Zend_Date($data->sec);
 					echo $zend_date->toString($dateFormat, 'php');
 				} else {
-					if($data == -1) {
+					if ($data == -1) {
 						echo "Migrated service";
-					} else if(is_numeric($data)) {
+					} else if (is_numeric($data)) {
 						$zend_date = new Zend_Date($data);
 						echo $zend_date->toString($dateFormat, 'php');
 					} else {
 						echo "";
 					}
-				} 
+				}
 			}
 		} else if ($h == 'charging_plan_name' && isset($item['charging_plan_name'])) {
 			print '<a href="#chargingPlanPopup" data-charging-plan-name="' . $item['charging_plan_name'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if ($h == 'arate' && isset($item['arate_id'])) {
-			/*$url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
-			print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';*/
+			/* $url = $this->baseUrl . '/admin/edit?coll=rates&amp;type=update&amp;id=' . $item['arate_id'] . '&amp;plan=' . $item['plan'];
+			  print '<a href="#ratePlanPopup " data-remote="' . $url . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>'; */
 			print '<a href="#ratePlanPopup" data-interconnect-key="' . $item['interconnect_arate_key'] . '" data-rate-id="' . $item['arate_id'] . '" data-plan="' . ($item['plan'] ? $item['plan'] : "BASE") . '" data-usage="' . $item['usaget'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';
 		} else if ($h == 'balance_type') {
 			print '<a href="#SourceRefPopup" data-line="' . $item['_id'] . '" role="button" data-toggle="modal" title="' . $data . '">' . $data . '</a>';

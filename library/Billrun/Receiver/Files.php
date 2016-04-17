@@ -55,7 +55,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 				}
 				$fileData = $this->getFileLogData($file, $type);
 				$fileData['path'] = $path;
-				if(!empty($this->backupPaths)) {
+				if (!empty($this->backupPaths)) {
 					$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
 					Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
 					$fileData['backed_to'] = $backedTo;
@@ -87,7 +87,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 			Billrun_Factory::log("error with loading processor", Zend_Log::ERR);
 			return false;
 		}
-		
+
 		$processor->process_files();
 		$data = $processor->getData();
 

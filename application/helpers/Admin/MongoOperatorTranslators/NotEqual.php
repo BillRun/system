@@ -9,10 +9,9 @@
 /**
  * class for mongo not equal operator translator.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_NotEqual extends Admin_MongoOperatorTranslators_Translator {
-	
+
 	/**
 	 * Return the mongo operator string.
 	 * @return string - Mongo operator string for this class.
@@ -20,4 +19,5 @@ class Admin_MongoOperatorTranslators_NotEqual extends Admin_MongoOperatorTransla
 	public function getOperator() {
 		return '$ne';
 	}
+
 }
