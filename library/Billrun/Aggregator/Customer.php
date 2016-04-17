@@ -110,10 +110,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->stamp = $current_billrun_key;
 		}
 		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
-			$this->size = $options['aggregator']['size'];
+			$this->size = (int)$options['aggregator']['size'];
 		}
 		if (isset($options['size']) && $options['size']) {
-			$this->size = $options['size'];
+			$this->size = (int)$options['size'];
 		}
 		if (isset($options['aggregator']['vatable'])) {
 			$this->vatable = $options['aggregator']['vatable'];
@@ -148,7 +148,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 
-		if (!$this->page = $this->getPage()) {
+		if (($this->page = $this->getPage()) === FALSE) {
 			return FALSE;
 		}
 	}
@@ -459,7 +459,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
 			return FALSE;
 		}
-		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
+		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
 		if (is_null($current_document)) {
 			return FALSE;
 		}
@@ -477,9 +477,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				)
 			);
 			if (!$check_exists->isEmpty()) {
-				throw new Exception("page already exists");
+				throw new Exception("Page already exists.");
 			}
 		} catch (Exception $e) {
+			Billrun_Factory::log()->log($e->getMessage() . " Trying Again...", Zend_Log::INFO);
 			return $this->getPage($max_tries - 1);
 		}
 		return $next_page;
