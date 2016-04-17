@@ -20,23 +20,23 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		if (isset($this->row['in_data_slowness']) && $this->row['in_data_slowness']) {
 			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 		}
-		
+
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
 				case ($returnCodes['no_rate']):
 					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_END_USER_SERVICE_DENIED", -1));
 				case ($returnCodes['no_subscriber']):
 					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_USER_UNKNOWN", -1));
-			} 
+			}
 		}
-		
+
 		if ($this->row['usagev'] === 0) {
 			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
 		}
-		
+
 		return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 	}
 
@@ -56,12 +56,11 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
 			}
 			$retMsccData[] = array_merge(
-				Billrun_Util::parseBillrunConventionToCamelCase($msccData), 
-				array(
-					"grantedUnits" => $currUsagev,
-					"validityTime" => $validityTime,
-					"quotaHoldingTime" => $defaultQuotaHoldingTime,
-					"resultCode" => $returnCode,
+				Billrun_Util::parseBillrunConventionToCamelCase($msccData), array(
+				"grantedUnits" => $currUsagev,
+				"validityTime" => $validityTime,
+				"quotaHoldingTime" => $defaultQuotaHoldingTime,
+				"resultCode" => $returnCode,
 			));
 		}
 		return $retMsccData;

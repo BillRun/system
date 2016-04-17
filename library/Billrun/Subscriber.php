@@ -40,7 +40,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var array
 	 */
 	protected $billrunExtraFields = array();
-	
+
 	/**
 	 * extra fields for the customer
 	 * @var array
@@ -85,8 +85,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function __get($name) {
 		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->billrunExtraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
-		}
-		else if (array_key_exists($name, $this->customerExtraData) && isset ($this->data['extra_data'][$name])) {
+		} else if (array_key_exists($name, $this->customerExtraData) && isset($this->data['extra_data'][$name])) {
 			return $this->data['extra_data'][$name];
 		}
 		return null;
@@ -98,7 +97,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function isEmpty() {
 		return empty($this->data);
 	}
-	
+
 	/**
 	 * method to load subsbscriber details
 	 * 
@@ -151,7 +150,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	public function getExtraFieldsForBillrun() {
 		return $this->billrunExtraFields;
 	}
-	
+
 	/**
 	 * Returns extra fields for the customer
 	 * @return array

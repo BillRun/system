@@ -34,7 +34,7 @@ class Billrun_Dispatcher extends Billrun_Spl_Subject {
 	 * @var string
 	 */
 	protected $event;
-	
+
 	/**
 	 * used for nested running of dispatcher
 	 * 

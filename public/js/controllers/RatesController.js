@@ -1,8 +1,26 @@
-app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope',
-  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope) {
+app.controller('RatesController', ['$scope', 'Database', '$controller', '$location', '$anchorScroll', '$timeout', '$rootScope', '$http', '$window', '$uibModal',
+  function ($scope, Database, $controller, $location, $anchorScroll, $timeout, $rootScope, $http, $window, $uibModal) {
     'use strict';
 
     $controller('EditController', {$scope: $scope});
+
+    $scope.save = function () {
+      $scope.err = {};
+      var params = {
+        entity: $scope.entity,
+        coll: "rates",
+        type: $scope.action,
+        duplicate_rates: ($scope.duplicate_rates ? $scope.duplicate_rates.on : false),
+      };
+			if (params.entity.from) {
+				params.entity.from = moment(params.entity.from).startOf('day').format();
+			}
+      Database.saveEntity(params).then(function (res) {
+        $window.location = baseUrl + '/admin/rates';
+      }, function (err) {
+        $scope.err = err;
+      });
+    };
 
     $scope.addOutCircuitGroup = function () {
       if ($scope.newOutCircuitGroup.to === undefined && $scope.newOutCircuitGroup.from === undefined)
@@ -246,7 +264,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return false;
     };
     $scope.smsPlanExists = function (plan) {
-      if (plan && $scope.entity && $scope.entity.rates 
+      if (plan && $scope.entity && $scope.entity.rates
         && $scope.entity.rates.sms && $scope.entity.rates.sms[plan]) {
         return true;
       }
@@ -274,6 +292,61 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       return $scope.entity.params.interconnect;
     };
 
+    $scope.showInterconnectDetails = function (interconnect, type, plan) {
+      if (!interconnect) return;
+      $http.get('/admin/getRate', {params: {interconnect_key: interconnect}}).then(function (res) {
+        var modalInstance = $uibModal.open({
+          //templateUrl: 'interconnectDetails.html',
+          template: "	<div class='modal-header'>\
+		<h3 class='modal-title'>{{interconnect.key}}</h3>\
+	</div>\
+	<div class='modal-body'>\
+		<table class='table table-striped table-bordered data-rates-table'>\
+			<thead>\
+				<tr>\
+					<th>Interval</th>\
+					<th>Price</th>\
+					<th>To</th>\
+				</tr>\
+			</thead>\
+			<tbody>\
+				<tr ng-repeat='rate in interconnect_rate'>\
+					<td>{{rate.interval}}</td>\
+					<td>{{rate.price}}</td>\
+					<td>{{rate.to}}</td>\
+			  </tr>\
+			</tbody>\
+		</table>\
+	</div>\
+	<div class='modal-footer'>\
+		<button class='btn btn-primary' type='button' ng-click='ok()'>OK</button>\
+	</div>",
+          controller: function ($scope, $uibModalInstance, interconnect, type, plan) {
+            $scope.interconnect = interconnect;
+            $scope.plan = plan;
+            $scope.type = type;
+            if (_.isUndefined($scope.interconnect.rates[$scope.type][$scope.plan])) $scope.plan = "BASE";
+            $scope.interconnect_rate = interconnect.rates[$scope.type][$scope.plan].rate;
+            $scope.ok = function () {
+              $uibModalInstance.dismiss('cancel');
+            };
+          },
+          size: 'md',
+          resolve: {
+            interconnect: function () {
+              return res.data.interconnect;
+            },
+            type: function () {
+              return type;
+            },
+            plan: function () {
+              return plan;
+            }
+          }
+        });
+      });
+    };
+
     $scope.init = function () {
       $rootScope.spinner++;
       $scope.shown = {prefix: false,
@@ -290,7 +363,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
           entity.params = {};
         }
         $scope.title = _.capitalize($scope.action) + " " + $scope.entity.key + " Rate";
-        angular.element('title').text("BillRun - " + $scope.title);        
+        angular.element('title').text("BillRun - " + $scope.title);
         if ($location.search().plans && $location.search().plans.length) {
           var plans = JSON.parse($location.search().plans);
           if (plans) {

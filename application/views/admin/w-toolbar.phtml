@@ -8,9 +8,9 @@
 				$this->group_field_display = $group_field['values'][$default_key]['display'];
 				$this->popup_group_field = $group_field['values'][$default_key]['popup'];
 				echo '<div class="controls form-inline">&nbsp;<label class="control-label">' . $group_field['display'] . '</label>';
-						echo '<input name="popup_group_field" type="hidden" value="' . $this->popup_group_field . '">';
-						echo '<input name="init_' . $group_field['key'] . '" type="hidden" value="' . (isset($this->session->$group_field['key']) ? $this->session->$group_field['key'] : $group_field['default']) . '">';
-						echo '<select id="' . $group_field['key'] . '" name="' . $group_field['key'] . '" class="form-control multiselect">';
+				echo '<input name="popup_group_field" type="hidden" value="' . $this->popup_group_field . '">';
+				echo '<input name="init_' . $group_field['key'] . '" type="hidden" value="' . (isset($this->session->$group_field['key']) ? $this->session->$group_field['key'] : $group_field['default']) . '">';
+				echo '<select id="' . $group_field['key'] . '" name="' . $group_field['key'] . '" class="form-control multiselect">';
 				foreach ($group_field['values'] as $key => $value) {
 					echo '<option value="' . $key . '"' . ($default_key == $key ? ' selected' : '') . '>' . $value['display'] . '</option>';
 				}

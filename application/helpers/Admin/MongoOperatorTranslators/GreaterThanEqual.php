@@ -9,10 +9,9 @@
 /**
  * class for mongo greater than operator translator.
  *
- * @author Tom Feigin
  */
 class Admin_MongoOperatorTranslators_GreaterThanEqual extends Admin_MongoOperatorTranslators_Translator {
-	
+
 	/**
 	 * Return the mongo operator string.
 	 * @return string - Mongo operator string for this class.
@@ -20,4 +19,5 @@ class Admin_MongoOperatorTranslators_GreaterThanEqual extends Admin_MongoOperato
 	public function getOperator() {
 		return '$gte';
 	}
+
 }

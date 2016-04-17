@@ -9,22 +9,21 @@
 /**
  * This is a parser to be used by the balances action.
  *
- * @author Tom Feigin
  */
-class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Action{
-	
+class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Balances_Action {
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @array type Array
 	 */
 	protected $recordToSet = array();
-	
+
 	/**
 	 * Query to be used to find records to update.
 	 * @var array
 	 */
 	protected $query = array();
-	
+
 	/**
 	 * Holds the subscriber ID to update the balance for.
 	 * @var integer
@@ -36,62 +35,62 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @var array 
 	 */
 	protected $updaterOptions = array();
-	
+
 	/**
 	 * Comment for updating a balance
 	 * @var string
 	 */
 	protected $additional;
-	
+
 	/**
 	 * the updater class container
 	 * 
 	 * @var Billrun_ActionManagers_Balances_Updaters_Updater
 	 */
 	protected $updater;
-	
+
 	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success updating balances"));
-		$this->collection->setReadPreference(MongoClient::RP_PRIMARY,array());
+		$this->collection->setReadPreference(MongoClient::RP_PRIMARY, array());
 	}
-	
+
 	/**
 	 * Get the correct action to use for this request.
 	 * @param data $request - The input request for the API.
 	 * @return Billrun_ActionManagers_Action
 	 */
 	protected function getAction() {
-		$filterName=key($this->query);
+		$filterName = key($this->query);
 		$this->updaterOptions['errors'] = $this->errors;
 		$updaterManagerInput = array(
-				'options'     => $this->updaterOptions,
-				'filter_name' => $filterName,
+			'options' => $this->updaterOptions,
+			'filter_name' => $filterName,
 		);
-		
+
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
-		if(!$manager) {
+		if (!$manager) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
-		
-		
+
+
 		// This is the method which is going to be executed.
 		return $manager->getAction();
 	}
-	
+
 	protected function setUpdateValue(&$line) {
 		$value = $line['balance_after'] - $line['balance_before'];
-		
+
 		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
 			$line["aprice"] = $value;
 		} else {
 			$line["usagev"] = $value;
 		}
 	}
-	
+
 	/**
 	 * Report the wallet to the lines table
 	 * @param type $insertLine
@@ -106,30 +105,30 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		$beforeUpdateBalance = $beforeUpdate[$ppID];
-		if($beforeUpdateBalance->isEmpty()) {
-			$insertLine['balance_before'] = 0;	
+		if ($beforeUpdateBalance->isEmpty()) {
+			$insertLine['balance_before'] = 0;
 		} else {
 			$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
 		}
 		$insertLine['balance_after'] = $this->getBalanceValue($balance);
-		
+
 		$this->setUpdateValue($insertLine);
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
-	
+
 	protected function reportInLinesHandleChargingPlan(&$balanceLine, $chargingPlan) {
 		$balanceLine['service_provider'] = $chargingPlan['service_provider'];
 		$chargingType = array();
-		if(isset($chargingPlan['charging_type'])) {
+		if (isset($chargingPlan['charging_type'])) {
 			$chargingType = $chargingPlan['charging_type'];
 		}
 		// TODO: put the charging value in the conf?
-		if(isset($chargingPlan['charging_value'])) {
+		if (isset($chargingPlan['charging_value'])) {
 			$balanceLine['charging_value'] = $chargingPlan['charging_value'];
 		}
-		$balanceLine['charging_plan_type'] = implode(",",$chargingType);
+		$balanceLine['charging_plan_type'] = implode(",", $chargingType);
 	}
-	
+
 	/**
 	 * Process report in lines
 	 * @param type $outputDocuments
@@ -147,27 +146,27 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$archiveLine['service_provider'] = $subscriber['service_provider'];
 			$archiveLine['plan'] = $subscriber['plan'];
 			$archiveLine['source_ref'] = $balancePair['source'];
-			
+
 			// TODO: Move this logic to a updater_balance class.
-			if(isset($balancePair['normalized'])) {
+			if (isset($balancePair['normalized'])) {
 				$reducted = $balancePair['normalized']['after'] - $balancePair['normalized']['normalized'] - $balancePair['normalized']['before'];
 				$archiveLine['normalized'] = $reducted;
 			}
-			
+
 			if (isset($balancePair['wallet'])) {
 				$this->reportInLinesHandleWallet($archiveLine, $balance, $balancePair['wallet'], $beforeUpdate);
 			}
-			
+
 			$archiveLine['balance_ref'] = $balancesCol->createRefByEntity($balance);
 			$archiveLine['rand'] = rand(1, 1000000);
 			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
 			$processedLines[] = $archiveLine;
 			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
 		}
-		
+
 		return array("records" => $balancesRecords, "lines" => $processedLines);
 	}
-	
+
 	/**
 	 * Report the balance update action to the lines collection
 	 * @param array $outputDocuments The output result of the Update action.
@@ -182,40 +181,40 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$balanceLine['source'] = 'api';
 		$balanceLine['type'] = 'balance';
 		$balanceLine['usaget'] = 'balance';
-		
+
 		// Handle charging plan values.
-		if(isset($outputDocuments['charging_plan'])) {
+		if (isset($outputDocuments['charging_plan'])) {
 			$this->reportInLinesHandleChargingPlan($balanceLine, $outputDocuments['charging_plan']);
 			unset($outputDocuments['charging_plan']);
 		}
-		
+
 		$balanceLine['charging_type'] = $this->updater->getType();
-		
+
 		unset($outputDocuments['updated']);
-		
+
 		$processResult = $this->reportInLinesProcess($outputDocuments, $beforeUpdate);
 		$balancesRecords = $processResult['records'];
 		$processedLines = $processResult['lines'];
-		
-		if(count($processedLines > 0)) {
+
+		if (count($processedLines > 0)) {
 			$balanceLine['aid'] = $processedLines[0]['aid'];
 			$balanceLine['plan'] = $processedLines[0]['plan'];
 			$balanceLine['service_provider'] = $processedLines[0]['service_provider'];
 			$balanceLine['source_ref'] = $processedLines[0]['source_ref'];
 		}
-		
+
 		// Report lines.
 		$reportedLine = $balanceLine;
 		$reportedLine['information'] = $processedLines;
 		$reportedLine['lcount'] = count($processedLines);
 		$reportedLine['rand'] = rand(1, 1000000);
 		$reportedLine['stamp'] = Billrun_Util::generateArrayStamp($reportedLine);
-			
+
 		$linesCollection = Billrun_Factory::db()->linesCollection();
-		$linesCollection->insert($reportedLine); 	
-		
+		$linesCollection->insert($reportedLine);
+
 		$archiveCollection = Billrun_Factory::db()->archiveCollection();
-		
+
 		unset($balanceLine['aprice'], $balanceLine['charge'], $balanceLine['usagev']);
 		// Report archive
 		foreach ($processedLines as $line) {
@@ -223,10 +222,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$archiveLine['u_s'] = $reportedLine['stamp'];
 			$archiveCollection->insert($archiveLine);
 		}
-		
+
 		return $balancesRecords;
 	}
-	
+
 	protected function getBalanceValue($balance) {
 		// TODO: The indicator was 'total_cost' but seems to have changed to 'cost',
 		// to preserve legacy I will now accept both, but we should consider normalizing the logic.
@@ -235,7 +234,6 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		}
 		return $balance['balance']['totals'][$balance['charging_by_usaget']][$balance['charging_by']];
 	}
-
 
 	/**
 	 * Execute the action.
@@ -246,10 +244,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		// Get the updater for the filter.
 		$this->updater = $this->getAction();
-		
+
 		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
-	
-		if($outputDocuments === false) {
+
+		if ($outputDocuments === false) {
 			$success = false;
 		} elseif (!$outputDocuments) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
@@ -265,22 +263,22 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 			}
 		}
-		
-		if($success) {
+
+		if ($success) {
 			$this->stripTx($outputDocuments);
 		} else {
 			$updaterError = $this->updater->getError();
-			if($updaterError) {
+			if ($updaterError) {
 				$this->error = $updaterError;
 				$this->errorCode = $this->updater->getErrorCode();
 			}
 		}
-		
+
 		$outputResult = array(
-			'status'      => $this->errorCode == 0 ? 1 : 0,
-			'desc'        => $this->error,
-			'error_code'  => $this->errorCode,
-			'details'     => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
 		);
 		return $outputResult;
 	}
@@ -292,12 +290,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function stripTx(&$outputDocuments) {
 		foreach ($outputDocuments as &$doc) {
-			if (isset($doc['tx'])) {
-				unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
-			}
+			unset($doc['tx'], $doc['_id'], $doc['notifications_sent']);
 		}
 	}
-	
+
 	/**
 	 * Get the array of fields to be set in the update record from the user input.
 	 * @return array - Array of fields to set.
@@ -305,24 +301,23 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function getUpdateFields() {
 		return Billrun_Factory::config()->getConfigValue('balances.update_fields');
 	}
-	
+
 	/**
 	 * Handle when the upsert record is not received
 	 * @return boolean true on success
 	 */
 	protected function handleNoUpsert() {
 		// Check if the update record is needed.
-		$upsertNeeded = 
-			Billrun_ActionManagers_Balances_Updaters_Manager::isUpsertRecordNeeded(key($this->query));
+		$upsertNeeded = Billrun_ActionManagers_Balances_Updaters_Manager::isUpsertRecordNeeded(key($this->query));
 
-		if(!$upsertNeeded) {
+		if (!$upsertNeeded) {
 			return true;
 		}
 		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
 		$this->reportError($errorCode, Zend_Log::NOTICE);
 		return false;
 	}
-	
+
 	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -331,49 +326,49 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
-		
+
 		$upsertNeeded = true;
-		
-		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			if(!$this->handleNoUpsert()) {
+
+		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+			if (!$this->handleNoUpsert()) {
 				return false;
 			}
-			
+
 			$upsertNeeded = false;
 		}
-		
+
 		$operation = "inc";
-		if(isset($jsonUpdateData['operation'])) {
+		if (isset($jsonUpdateData['operation'])) {
 			// TODO: What if this is not INC and not SET? Should we check and raise error?
 			$operation = $jsonUpdateData['operation'];
 		}
 		$this->recordToSet['operation'] = $operation;
-			
+
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		if ($to) {
-			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime($to)) : $to;
+			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime('tomorrow', strtotime($to)) - 1) : $to;
 		}
-		
+
 		// Upsert is not needed so no need to go over the fields
-		if(!$upsertNeeded) {
+		if (!$upsertNeeded) {
 			return true;
 		}
-		
+
 		$updateFields = $this->getUpdateFields();
-		
+
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($updateFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($jsonUpdateData[$field]) && ((!empty($jsonUpdateData[$field])) || ($jsonUpdateData[$field] === 0))) {
+			if (isset($jsonUpdateData[$field]) && ((!empty($jsonUpdateData[$field])) || ($jsonUpdateData[$field] === 0))) {
 				$this->recordToSet[$field] = $jsonUpdateData[$field];
 			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
@@ -381,24 +376,24 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function setQueryFields($queryData) {
 		$queryFields = $this->getQueryFields();
-		
+
 		// Arrary of errors to report if any occurs.
 		$invalidFields = array();
-		
+
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(isset($queryData[$field]) && !empty($queryData[$field])) {
+			if (isset($queryData[$field]) && !empty($queryData[$field])) {
 				$this->query[$field] = $queryData[$field];
 			} else {
 				$invalidFields[] = $field;
 			}
 		}
-		
+
 		return $invalidFields;
 	}
-	
+
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -407,29 +402,29 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function setQueryRecord($input) {
 		$jsonQueryData = null;
 		$query = $input->get('query');
-		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
+		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
-		if($this->query===null){
+		if ($this->query === null) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		// No filter found.
-		else if(empty($this->query)) {
+		else if (empty($this->query)) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Get the integer sid value from the input.
 	 * @param json $input - Received input to parse.
@@ -437,18 +432,18 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	protected function getSid($input) {
 		$sid = (int) $input->get('sid');
-		
+
 		// Check that sid exists.
-		if(!$sid) {
+		if (!$sid) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 19;
 			$error = "Update action did not receive a subscriber ID!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		return Billrun_Util::toNumber($sid);
 	}
-	
+
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
@@ -456,38 +451,38 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 */
 	public function parse($input) {
 		$sid = $this->getSid($input);
-		if($sid === false){
+		if ($sid === false) {
 			return false;
 		}
-		
+
 		$this->subscriberId = $sid;
-		if(!$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
-		
-		if(!$this->setUpdateRecord($input)) {
+
+		if (!$this->setUpdateRecord($input)) {
 			return false;
 		}
-		
+
 		$this->additional = json_decode($input->get('additional'), true);
-		if(!isset($this->additional)) {
+		if (!isset($this->additional)) {
 			$this->additional = array();
 		}
-		
+
 		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
-		
+
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
-		
+
 		// Check for recurring.
 		$recurring = $input->get('recurring');
-		if($recurring) {
+		if ($recurring) {
 			$this->updaterOptions['recurring'] = 1;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Get the query to use to update mongo.
 	 * 
@@ -497,26 +492,27 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	protected function getUpdateFilter($jsonQueryData) {
 		$filter = array();
 		$filterFields = Billrun_Factory::config()->getConfigValue('balances.filter_fields');
-		
+
 		// Check which field is set.
 		foreach ($filterFields as $fieldName) {
 			// Check if the field is set.
-			if(!isset($jsonQueryData[$fieldName])) {
+			if (!isset($jsonQueryData[$fieldName])) {
 				continue;
 			}
-			
+
 			// Check if filter is already set.
 			// If it is, this is an error. We do not want that someone will try
 			// to update by secret code, but somehow manages to send a query with 
 			// charging_plan, so that we will update by charging plan and not code.
 			// To be sure, when receiving more than one filter field, return error!
-			if(!empty($filter)) {
+			if (!empty($filter)) {
 				return NULL;
 			}
 
 			$filter = array($fieldName => $jsonQueryData[$fieldName]);
 		}
-		
+
 		return $filter;
 	}
+
 }

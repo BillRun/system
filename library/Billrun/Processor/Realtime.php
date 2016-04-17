@@ -27,7 +27,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineVolume($row);
-		if(!isset($row['urt'])) {
+		if (!isset($row['urt'])) {
 			$row['urt'] = new MongoDate();
 		}
 
@@ -41,7 +41,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	public function processData() {
 		parent::processData();
 		foreach ($this->data['data'] as &$row) {
-			if(!isset($row['urt'])) {
+			if (!isset($row['urt'])) {
 				$row['urt'] = new MongoDate();
 			}
 		}
@@ -71,18 +71,18 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		Billrun_Factory::dispatcher()->trigger('afterProcessorRemove', array($this));
 		return count($this->data['data']);
 	}
-	
+
 	protected function getLineVolume($row) {
 		switch ($row['usaget']) {
 			case ('data'):
-/*				$sum = 0;
-				$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
-				foreach ($row['mscc_data'] as $msccData) {
-					if (!in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
-						$sum += $msccData['requested_units'];
-					}
-				}
-				return $sum;*/
+				/* 				$sum = 0;
+				  $freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
+				  foreach ($row['mscc_data'] as $msccData) {
+				  if (!in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
+				  $sum += $msccData['requested_units'];
+				  }
+				  }
+				  return $sum; */
 				if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'))) {
 					return 0;
 				}
@@ -120,6 +120,5 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		}
 		return '';
 	}
-
 
 }

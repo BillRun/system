@@ -11,12 +11,11 @@
  *
  * @package  cards
  * @since    4.0
- * @author   Dori
  */
 class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_Action {
 
 	use Billrun_FieldValidator_ServiceProvider;
-	
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -24,11 +23,11 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected $cards = array();
 	protected $secrets = array();
 	protected $inner_hash;
-	
+
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' =>"Success creating cards"));
+		parent::__construct(array('error' => "Success creating cards"));
 	}
 
 	/**
@@ -46,7 +45,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected function getInitialStatus() {
 		return Billrun_Factory::config()->getConfigValue('cards.initialStatus', array());
 	}
-	
+
 	/**
 	 * Check if one of the secrets in the batch already exists in CARDS table.
 	 * @return boolean - true or false.
@@ -55,7 +54,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$query = array('secret' => array('$in' => $this->secrets));
 		return !Billrun_Factory::db()->cardsCollection()->query($query)->cursor()->limit(1)->current()->isEmpty();
 	}
-	
+
 	/**
 	 * This function builds the create for the Cards creation API after 
 	 * validating existance of field and that they are not empty.
@@ -80,7 +79,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$jsonCreateDataArray = array($jsonCreateDataArray);
 		}
 
-		$this->inner_hash = md5(serialize($jsonCreateDataArray));		
+		$this->inner_hash = md5(serialize($jsonCreateDataArray));
 		foreach ($jsonCreateDataArray as $jsonCreateData) {
 			$oneCard = array();
 			foreach ($createFields as $field) {
@@ -93,22 +92,22 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			}
 
 			// Initial status validity check (Initial status should be "Idle")
-			if($initialStatus && !in_array($oneCard['status'], $initialStatus)) {
+			if ($initialStatus && !in_array($oneCard['status'], $initialStatus)) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 3;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
 				return false;
 			}
 
 			// service provider validity check
-			if(!$this->validateServiceProvider($oneCard['service_provider'])) {
+			if (!$this->validateServiceProvider($oneCard['service_provider'])) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 4;
-				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']	));
+				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']));
 				return false;
 			}
 
-			$oneCard['secret'] = hash('sha512',$oneCard['secret']);
+			$oneCard['secret'] = hash('sha512', $oneCard['secret']);
 			$oneCard['from'] = new MongoDate();
-			$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));			
+			$oneCard['to'] = new MongoDate(strtotime($oneCard['to']));
 			$oneCard['creation_time'] = new MongoDate(strtotime($oneCard['creation_time']));
 			$oneCard['inner_hash'] = $this->inner_hash;
 
@@ -125,12 +124,12 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	 * @return type
 	 */
 	protected function cleanInnerHash($bulkOptions) {
-		$updateQuery = array('inner_hash' => $this->inner_hash);	
-		$updateValues = array('$unset' => array('inner_hash'=>1));			
+		$updateQuery = array('inner_hash' => $this->inner_hash);
+		$updateValues = array('$unset' => array('inner_hash' => 1));
 		$updateOptions = array_merge($bulkOptions, array('multiple' => 1));
 		return Billrun_Factory::db()->cardsCollection()->update($updateQuery, $updateValues, $updateOptions);
 	}
-	
+
 	/**
 	 * Remove the created cards due to error.
 	 * @param type $bulkOptions - Options used for bulk insert to the mongo db.
@@ -140,7 +139,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$removeQuery = array('inner_hash' => $this->inner_hash);
 		return Billrun_Factory::db()->cardsCollection()->remove($removeQuery, $bulkOptions);
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -172,18 +171,18 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		if (!$this->errorCode) {
 			$res = $this->cleanInnerHash($bulkOptions);
 		}
-		
-		array_walk($this->cards, function (&$card, $idx) { 
-			unset($card['secret']); 			
+
+		array_walk($this->cards, function (&$card, $idx) {
+			unset($card['secret']);
 		});
-			
+
 		$outputResult = array(
 			'status' => $this->errorCode == 0 ? 1 : 0,
 			'desc' => $this->error,
 			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ? 
-							 (json_encode($this->cards)) : 
-							 ('Batch Cancelled')
+			'details' => (!$this->errorCode) ?
+				(json_encode($this->cards)) :
+				('Batch Cancelled')
 		);
 		return $outputResult;
 	}

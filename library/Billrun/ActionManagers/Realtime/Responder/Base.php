@@ -18,7 +18,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	 * @var type array
 	 */
 	protected $row;
-	
+
 	/**
 	 * The name of the api response
 	 * 
@@ -33,7 +33,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$this->row = $options['row'];
 		$this->responseApiName = $this->getResponsApiName();
 	}
-	
+
 	/**
 	 * Sets API name
 	 */
@@ -55,7 +55,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 		$responseData = $this->getResponseData();
 		return $responseData;
 	}
-	
+
 	/**
 	 * Gets the fields to show on response
 	 * 
@@ -90,16 +90,16 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function getStatus() {
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_rate']):
 				case ($returnCodes['no_subscriber']):
 					return 0;
-			} 
+			}
 		}
 
 		return 1;
 	}
-	
+
 	/**
 	 * Gets response description
 	 * @return string Description
@@ -107,19 +107,19 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function getDesc() {
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 					return "No balance";
 				case ($returnCodes['no_rate']):
 					return "Error: No rate";
 				case ($returnCodes['no_subscriber']):
 					return "Error: No subscriber";
-			} 
+			}
 		}
 
 		return "Success";
 	}
-	
+
 	/**
 	 * Gets error code number (if an error occured)
 	 * @return int ErrorCode
@@ -127,7 +127,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function getErrorCode() {
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch($this->row['granted_return_code']) {
+			switch ($this->row['granted_return_code']) {
 				case ($returnCodes['no_available_balances']):
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 2;
 				case ($returnCodes['no_rate']):
@@ -136,9 +136,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 4;
 				case ($returnCodes['no_subscriber']):
 					return Billrun_Factory::config()->getConfigValue("realtime_error_base") + 3;
-			} 
+			}
 		}
 
 		return NULL;
 	}
+
 }

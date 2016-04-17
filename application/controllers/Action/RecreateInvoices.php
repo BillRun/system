@@ -25,12 +25,11 @@ class RecreateInvoicesAction extends ApiAction {
 		$billrun_key = Billrun_Util::getPreviousBillrunKey(Billrun_Util::getBillrunKey(time()));
 
 		// Warning: will convert half numeric strings / floats to integers
-		$account_ids = 
-			array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['account_id']), 'int'), array(0)));
+		$account_ids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['account_id']), 'int'), array(0)));
 
 		if (!$account_ids) {
 			return $this->setError('Illegal aids', $request);
-		} 
+		}
 		$options = array(
 			'autoload' => 0,
 			'stamp' => $billrun_key,
@@ -55,4 +54,5 @@ class RecreateInvoicesAction extends ApiAction {
 		)));
 		return TRUE;
 	}
+
 }

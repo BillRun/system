@@ -365,7 +365,7 @@ class Billrun_Factory {
 		}
 		return self::$auth;
 	}
-	
+
 	/**
 	 * factory for importer class
 	 * 
@@ -386,6 +386,5 @@ class Billrun_Factory {
 
 		return self::$importer[$stamp];
 	}
-
 
 }

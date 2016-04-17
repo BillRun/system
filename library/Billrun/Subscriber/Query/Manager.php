@@ -14,13 +14,13 @@
  * @todo Should move to a generic class of generic factory.
  */
 class Billrun_Subscriber_Query_Manager {
-	
+
 	/**
 	 * Array to hold all the query handlers.
 	 * @var Billrun_Subscriber_Query_Interface 
 	 */
 	static $queryHandlers = array();
-	
+
 	/**
 	 * Handle input parameters.
 	 * @param array $params - Array of input parameters to handle.
@@ -33,20 +33,20 @@ class Billrun_Subscriber_Query_Manager {
 		}
 		// Go through the handlers.
 		foreach (self::$queryHandlers as $handler) {
-			
+
 			// Get the query.
 			$result = $handler->getQuery($params);
-			if($result !== false) {
+			if ($result !== false) {
 				break;
 			}
 		}
 		if ($result) {
 			$result = array_merge($result, Billrun_Util::getDateBoundQuery(strtotime($params['time'])));
 		}
-		
+
 		return $result;
 	}
-	
+
 	/**
 	 * Register a query handler to the list.
 	 * @param Billrun_Subscriber_Query_Interface $queryHandler - Handler to register.
@@ -54,14 +54,14 @@ class Billrun_Subscriber_Query_Manager {
 	 */
 	public static function register($queryHandler) {
 		// Validate the input
-		if(!($queryHandler instanceof Billrun_Subscriber_Query_Interface)){
-			Billrun_Factory::log("Non query interface tried to register to query manager.",
-				Zend_Log::DEBUG);
+		if (!($queryHandler instanceof Billrun_Subscriber_Query_Interface)) {
+			Billrun_Factory::log("Non query interface tried to register to query manager.", Zend_Log::DEBUG);
 			return false;
 		}
-		
+
 		self::$queryHandlers[] = $queryHandler;
-		
+
 		return true;
 	}
+
 }

@@ -44,7 +44,7 @@ class ReceiveAction extends Action_Base {
 			$this->getController()->addOutput("Receiver cannot be loaded");
 			return;
 		}
-		
+
 		$this->getController()->addOutput("Starting to receive. This action can take a while...");
 		$files = $receiver->receive();
 		$this->getController()->addOutput("Received " . count($files) . " files");

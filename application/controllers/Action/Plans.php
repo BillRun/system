@@ -36,17 +36,17 @@ class PlansAction extends ApiAction {
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
 
-		$this->setCacheLifeTime(Billrun_Utils_Time::daysToSeconds(1)); 
+		$this->setCacheLifeTime(Billrun_Utils_Time::daysToSeconds(1));
 		$results = $this->cache($cacheParams);
-		
+
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'details' => $results,
 				'input' => $request->getRequest(),
-			)));
+		)));
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -62,17 +62,17 @@ class PlansAction extends ApiAction {
 			$params['query'] = array();
 		}
 		$params['query']['$or'] = array(
-				array(
-					'hiddenFromApi' => array(
-						'$exists' => 0,
-					)
-				),
-				array(
-					'hiddenFromApi' => false
-				),
-				array(
-					'hiddenFromApi' => 0
+			array(
+				'hiddenFromApi' => array(
+					'$exists' => 0,
 				)
+			),
+			array(
+				'hiddenFromApi' => false
+			),
+			array(
+				'hiddenFromApi' => 0
+			)
 		);
 		$model = new PlansModel(array('sort' => array('from' => 1)));
 		$resource = $model->getData($params['query'], $params['filter']);
@@ -89,7 +89,6 @@ class PlansAction extends ApiAction {
 			$results = $this->stripResults($results, $params['strip']);
 		}
 		return $results;
-
 	}
 
 	/**
@@ -102,10 +101,10 @@ class PlansAction extends ApiAction {
 		foreach (array('from', 'to') as $timeField) {
 			$record[$timeField] = date(DATE_ISO8601, $record[$timeField]->sec);
 		}
-		
+
 		return $record;
 	}
-	
+
 	/**
 	 * Process the query and prepere it for usage by the Plans model
 	 * @param type $query the query that was recevied from the http request.
@@ -126,7 +125,7 @@ class PlansAction extends ApiAction {
 		} else {
 			$retQuery['to'] = $this->intToMongoDate($retQuery['to']);
 		}
-		
+
 		return $retQuery;
 	}
 
@@ -178,8 +177,8 @@ class PlansAction extends ApiAction {
 	 * @return type
 	 */
 	protected function getCompundParam($param, $retParam = array()) {
-		if(isset($param)) {
-			$retParam =  $param ;
+		if (isset($param)) {
+			$retParam = $param;
 			if ($param !== FALSE) {
 				if (is_string($param)) {
 					$retParam = json_decode($param, true);

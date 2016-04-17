@@ -9,14 +9,15 @@
 /**
  * This is a parser to be used by the subscribers action.
  *
- * @author Tom Feigin
  */
-class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionManagers_Subscribersautorenew_Action{
+class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionManagers_Subscribersautorenew_Action {
+
 	// TODO: Create a generic update action class. 
 	// TODO: This class shares some logic with the cards and balances update action. 
 	// TODO: The setUpdateRecord function is shared. 
 	// TODO: This is to be implemented using 'trait'
 	use Billrun_Traits_Api_AdditionalInput;
+
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -24,14 +25,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected $recordToSet = array();
 	protected $updateQuery = null;
 	protected $query = array();
-	
+
 	/**
 	 */
 	public function __construct() {
 		parent::__construct(array('error' => "Success upserting auto renew"));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
-		
+
 	/**
 	 * Handle the update results.
 	 * @param type $count
@@ -39,15 +40,15 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	 * @return boolean
 	 */
 	protected function handleResult($count, $found) {
-		if($count || $found) {
+		if ($count || $found) {
 			return true;
 		}
-	
+
 		$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
 		$this->reportError($errorCode);
 		return false;
 	}
-	
+
 	/**
 	 * Get the update options array
 	 * @return array
@@ -58,13 +59,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			'new' => true,
 		);
 	}
-	
+
 	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
-		$options = $this->getUpdateOptions();				
+		$options = $this->getUpdateOptions();
 		$count = 0;
 		$success = true;
 		$updateResult = null;
@@ -79,20 +80,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
-		if(!$updateResult) {
+		if (!$updateResult) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
 			$this->reportError($errorCode);
 		}
-		
+
 		$outputResult = array(
-			'status'        => $this->errorCode == 0 ? 1 : 0,
-			'desc'          => $this->error,
-			'error_code'    => $this->errorCode,
-			'details'       => ($updateResult) ? $updateResult : 'No results',
+			'status' => $this->errorCode == 0 ? 1 : 0,
+			'desc' => $this->error,
+			'error_code' => $this->errorCode,
+			'details' => ($updateResult) ? $updateResult : 'No results',
 		);
 		return $outputResult;
 	}
-	
+
 	/**
 	 * Set the values for the update record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -101,33 +102,33 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function setUpdateRecord($input) {
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
-		if(empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
-		if(!isset($jsonUpdateData['to'])) {
+
+		if (!isset($jsonUpdateData['to'])) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-				
-		if(!$this->fillWithSubscriberValues()) {
+
+		if (!$this->fillWithSubscriberValues()) {
 			return false;
 		}
 
-		if(!$this->fillWithChargingPlanValues()) {
+		if (!$this->fillWithChargingPlanValues()) {
 			return false;
 		}
-		
-		if(!$this->populateUpdateQuery($jsonUpdateData)) {
+
+		if (!$this->populateUpdateQuery($jsonUpdateData)) {
 			return false;
 		}
 
 		return true;
 	}
-	
+
 	/**
 	 * Get the interval value from the json data
 	 * @param type $jsonUpdateData
@@ -136,11 +137,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function getInterval($jsonUpdateData) {
 		if (!isset($jsonUpdateData['interval'])) {
 			return 'month';
-		} 
-		
+		}
+
 		return $this->normalizeInterval($jsonUpdateData['interval']);
 	}
-	
+
 	/**
 	 * Populate the operation clause
 	 * @param type $jsonUpdateData - Input json data.
@@ -151,22 +152,22 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$set['operation'] = $jsonUpdateData['operation'];
 		}
 	}
-	
+
 	/**
 	 * Populate the update query
 	 * @param type $jsonUpdateData
 	 */
 	protected function populateUpdateQuery($jsonUpdateData) {
 		$interval = $this->getInterval($jsonUpdateData);
-		if($interval === false) {
+		if ($interval === false) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
 			return false;
 		}
-		
+
 		$set = array(
 			'interval' => $interval);
-			
+
 		if (isset($jsonUpdateData['to']['sec'])) {
 			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
@@ -176,28 +177,28 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$this->populateOperation($jsonUpdateData, $set);
-		
+
 		$set['done'] = 0;
-		
+
 		// Check if we are at the end of the month.
-		if(date('d') == date('t')) {
+		if (date('d') == date('t')) {
 			$set['eom'] = 1;
 		} else {
 			$set['eom'] = 0;
 		}
-		
+
 		$set['creation_time'] = new MongoDate();
-		
+
 		// TODO: Is it possible that we will receive a date here with hours minutes and seconds?
 		// if so we will have to strip them somehow.
 		if (isset($this->query['from']['sec'])) {
 			$this->query['from'] = $set['from'] = new MongoDate($this->query['from']['sec']);
 		} else if (is_string($this->query['from'])) {
- 			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
+			$this->query['from'] = $set['from'] = new MongoDate(strtotime($this->query['from']));
 		} else {
 			$this->query['from'] = $set['from'] = $set['creation_time'];
 		}
-				
+
 		if (isset($this->query['from']->sec)) {
 			$from = $this->query['from']->sec;
 		} else {
@@ -205,51 +206,52 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$set['last_renew_date'] = 0;
-		
+
 		// Check if the from is in the past.
-		if($from >= strtotime("today midnight")) {
-			$set['next_renew_date'] = $set['from'];
+		if ($from >= strtotime("today midnight")) {
+			$set['next_renew_date'] = new MongoDate(strtotime("23:59:59", $from) + 1);
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
 			$set['last_renew_date'] = -1;
+			$jsonUpdateData['migrated'] = true;
 		}
-		
+
 		if (isset($jsonUpdateData['to']->sec)) {
 			$to = $jsonUpdateData['to']->sec;
 		} else {
 			$to = $jsonUpdateData['to']['sec'];
 		}
-		
-		
+
+
 		$set['remain'] = Billrun_Util::countMonths($from, $to);
-		
-		if(isset($jsonUpdateData['migrated'])) {
+
+		if (isset($jsonUpdateData['migrated'])) {
 			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
 		}
-		
+
 		// Set the additional.
-		if(!empty($this->additional)) {
+		if (!empty($this->additional)) {
 			$set['additional'] = $this->additional;
 		}
-		
+
 		$this->updateQuery['$set'] = array_merge($this->updateQuery['$set'], $set);
-		
+
 		return true;
 	}
-	
+
 	protected function getBaseTime($to, $from) {
 		$baseTime = time();
-		if($baseTime < $from) {
+		if ($baseTime < $from) {
 			$baseTime = $from;
 		}
-		
-		if($baseTime > $to) {
+
+		if ($baseTime > $to) {
 			$baseTime = $to;
 		}
-		
+
 		return $baseTime;
 	}
-	
+
 	/**
 	 * Handle a migrated auto renew record.
 	 * @param type $jsonUpdateData
@@ -260,12 +262,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function handleMigrated(&$jsonUpdateData, &$set, $from, $to) {
 		$months = $set['remain'];
 		$baseTime = $this->getBaseTime($to, $from);
-		
+
 		$doneMonths = Billrun_Util::countMonths($from, $baseTime);
-		if($from > time()) {
+		if ($from > time()) {
 			$doneMonths -= 1;
 		}
-		
+
 		$remainingMonths = $months - $doneMonths;
 
 		$set['remain'] = $remainingMonths;
@@ -273,48 +275,48 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		$fromMonth = date('m', $from);
 		$nextRenewMonth = ($fromMonth + $doneMonths) % 12;
-		if(!$nextRenewMonth) {
+		if (!$nextRenewMonth) {
 			$nextRenewMonth = 12;
 		}
 
-		$nextRenewYear = date('y', $from) + (int)(($fromMonth + $doneMonths) / 12);
+		$nextRenewYear = date('y', $from) + (int) (($fromMonth + $doneMonths) / 12);
 		$nextRenewDay = date('d', $from);
 
 		$renewDateInitial = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
 
 		// Check if last day
-		if($nextRenewDay === date('t', $from)) {
+		if ($nextRenewDay === date('t', $from)) {
 			$this->data['eom'] = 1;
 			$nextRenewDay = date('t', $renewDateInitial);
-		} else if($nextRenewDay > date('t', $renewDateInitial)){
+		} else if ($nextRenewDay > date('t', $renewDateInitial)) {
 			$nextRenewDay = date('t', $renewDateInitial);
 		}
 
-		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay");
-		$set['next_renew_date'] = new MongoDate($renewDate);
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 23:59:59");
+		$set['next_renew_date'] = new MongoDate($renewDate + 1);
 
 		unset($jsonUpdateData['migrated']);
 	}
-	
+
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
 		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
-		
-		if($subRecord->isEmpty()) {
+
+		if ($subRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subQuery['sid']));
 			return false;
 		}
-		
+
 		$this->updateQuery['$set']['aid'] = $subRecord['aid'];
 		$this->updateQuery['$set']['service_provider'] = $subRecord['service_provider'];
-		
+
 		return true;
 	}
-	
+
 	protected function fillWithChargingPlanValues() {
 		// Get the charging plan.
 		$plansCollection = Billrun_Factory::db()->plansCollection();
@@ -323,9 +325,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
 		$chargingPlanQuery['recurring'] = 1;
-		
+
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
-		if($planRecord->isEmpty()) {
+		if ($planRecord->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -339,10 +341,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	}
 
 	protected function handlePlanInclude($planRecord) {
-		if(!isset($planRecord['include'])) {
+		if (!isset($planRecord['include'])) {
 			return;
 		}
-		
+
 		$include = $planRecord['include'];
 		foreach ($include as $key => &$val) {
 			if (isset($val['usagev'])) {
@@ -361,31 +363,31 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 		$this->updateQuery['$set']['include'] = $include;
 	}
-	
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
 	 * @return boolean true if success to set fields
 	 */
 	protected function setQueryFields($queryData) {
-		$queryFields =  Billrun_Factory::config()->getConfigValue('autorenew.query_fields');
-		
+		$queryFields = Billrun_Factory::config()->getConfigValue('autorenew.query_fields');
+
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if(!isset($queryData[$field]) || empty($queryData[$field])) {
+			if (!isset($queryData[$field]) || empty($queryData[$field])) {
 				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 16;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 				return false;
 			}
-			
+
 			$this->query[$field] = $queryData[$field];
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -394,22 +396,22 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function setQueryRecord($input) {
 		$jsonQueryData = null;
 		$query = $input->get('query');
-		if(empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
+		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
+
 		// If there were errors.
-		if($this->setQueryFields($jsonQueryData) === FALSE) {
+		if ($this->setQueryFields($jsonQueryData) === FALSE) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-				
+
 		return true;
 	}
-	
+
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.
@@ -419,27 +421,27 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	public function parse($input) {
 		$this->handleAdditional($input);
 
-		if(!$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
-		
-		if(!$this->setUpdateRecord($input)){
+
+		if (!$this->setUpdateRecord($input)) {
 			return false;
 		}
-		
+
 		if (!$this->handleDuplicates()) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	protected function handleDuplicates() {
 		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
 		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			
+
 			// TODO: Pelephone does not want this to return a failure indication.
 			// return false;
 		}

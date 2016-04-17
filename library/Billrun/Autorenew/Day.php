@@ -9,16 +9,15 @@
 /**
  * Class to represent the auto renew daily record.
  *
- * @author Tom Feigin
  */
-class Billrun_Autorenew_Day extends Billrun_Autorenew_Record  {
+class Billrun_Autorenew_Day extends Billrun_Autorenew_Record {
 
 	/**
 	 * Get the next renew date for this recurring plan.
 	 * @return Next update date.
 	 */
 	protected function getNextRenewDate() {
-		$nextDay = strtotime("+1 day");
+		$nextDay = strtotime("+1 day 23:59:59");
 		return new MongoDate($nextDay);
 	}
 

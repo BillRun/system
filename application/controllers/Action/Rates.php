@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class RatesAction extends ApiAction {
 
 	protected $model;
-	
+
 	public function execute() {
 		Billrun_Factory::log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
@@ -37,18 +37,18 @@ class RatesAction extends ApiAction {
 			),
 			'stampParams' => array($requestedQuery, $filter, $strip),
 		);
-		
+
 		$this->setCacheLifeTime(86400); // 1 day TODO: Use time utils.
 		$results = $this->cache($cacheParams);
-		
+
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
 				'desc' => 'success',
 				'details' => $results,
 				'input' => $request->getRequest(),
-			)));
+		)));
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -64,24 +64,23 @@ class RatesAction extends ApiAction {
 			$params['query'] = array();
 		}
 		$params['query']['$or'] = array(
-				array(
-					'hiddenFromApi' => array(
-						'$exists' => 0,
-					)
-				),
-				array(
-					'hiddenFromApi' => false
-				),
-				array(
-					'hiddenFromApi' => 0
+			array(
+				'hiddenFromApi' => array(
+					'$exists' => 0,
 				)
+			),
+			array(
+				'hiddenFromApi' => false
+			),
+			array(
+				'hiddenFromApi' => 0
+			)
 		);
 		$results = $this->model->getData($params['query'], $params['filter']);
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
 		return $results;
-
 	}
 
 	/**
@@ -94,10 +93,10 @@ class RatesAction extends ApiAction {
 		if (isset($query)) {
 			$retQuery = $this->getCompundParam($query, array());
 			$matches = preg_grep('/rates.\w+.plans/', array_keys($retQuery));
-			foreach($matches as $m) {
+			foreach ($matches as $m) {
 				$retQuery[$m] = $this->model->getPlan($retQuery[$m]);
 			}
-			
+
 			if (!isset($retQuery['from'])) {
 				$retQuery['from']['$lte'] = new MongoDate();
 			} else {
@@ -160,8 +159,8 @@ class RatesAction extends ApiAction {
 	 * @return type
 	 */
 	protected function getCompundParam($param, $retParam = array()) {
-		if(isset($param)) {
-			$retParam =  $param ;
+		if (isset($param)) {
+			$retParam = $param;
 			if ($param !== FALSE) {
 				if (is_string($param)) {
 					$retParam = json_decode($param, true);

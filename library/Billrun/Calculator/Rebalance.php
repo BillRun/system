@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of Rebalance
+ * Rebalance calculator class for records
  *
- * @author shani
+ * @package  calculator
+ * @since    2.5
  */
 class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 
@@ -50,7 +52,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 				}
 				$rebalance_queue->remove(array('sid' => array('$in' => $sids)));
 			} catch (Exception $exc) {
-				Billrun_Factory::log('Error resetting sids ' . implode(',', $sids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() .' : '.   $exc->getTraceAsString(), Zend_Log::ALERT);
+				Billrun_Factory::log('Error resetting sids ' . implode(',', $sids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;
 			}
 		}

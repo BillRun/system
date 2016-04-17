@@ -40,12 +40,12 @@ class GenerateAction extends Action_Base {
 			return;
 		}
 		$this->_controller->addOutput("Generator loaded");
-				
+
 		$this->_controller->addOutput("Loading data to Generate...");
 		$generator->load();
 		$this->_controller->addOutput("Starting to Generate. This action can take a while...");
 		$generator->generate();
-		$this->_controller->addOutput("Finished generating.");			
+		$this->_controller->addOutput("Finished generating.");
 	}
 
 }

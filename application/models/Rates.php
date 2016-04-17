@@ -93,9 +93,9 @@ class RatesModel extends TabledateModel {
 							$newRefPlans[] = $plan;
 						} else {
 							$planEntity = $plansColl->query('name', $plan)
-											->lessEq('from', $currentDate)
-											->greaterEq('to', $currentDate)
-											->cursor()->current();
+									->lessEq('from', $currentDate)
+									->greaterEq('to', $currentDate)
+									->cursor()->current();
 							$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
 						}
 					}
@@ -142,7 +142,7 @@ class RatesModel extends TabledateModel {
 		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => 'customer'))->cursor()->sort(array('name' => 1));
 		$planNames = array();
 		$planNames['BASE'] = 'BASE';
-		foreach($names as $name) {
+		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
 		$filter_fields = array(
@@ -229,24 +229,24 @@ class RatesModel extends TabledateModel {
 		if ($filter_field['comparison'] == '$exists') {
 			if (!is_null($value) && $value != $filter_field['default'] && is_array($value)) {
 				$ret = array('$or' => array());
-				foreach($value as $val) {
+				foreach ($value as $val) {
 					$or = array('$or' => array());
-					foreach($filter_field['db_key'] as $key) {
+					foreach ($filter_field['db_key'] as $key) {
 						$or['$or'][] = array("$key.$val" => array('$exists' => true));
 					}
 					$ret['$or'][] = $or;
 				}
 				return $ret;
-			}			
+			}
 		} else {
 			return parent::applyFilter($filter_field, $value);
 		}
 	}
-	
+
 	public function setFilteredPlans($plans = array()) {
 		$this->filter_by_plan = $plans;
 	}
-	
+
 	/**
 	 * Get the data resource
 	 * 
@@ -278,7 +278,7 @@ class RatesModel extends TabledateModel {
 				$ret[] = $row;
 			} else if ($item->get('rates') && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
-					foreach($this->filter_by_plan as $filteredPlan) {
+					foreach ($this->filter_by_plan as $filteredPlan) {
 						if (is_array($rate) && isset($rate[$filteredPlan])) {
 							$added_columns = array(
 								't' => $key,
@@ -294,16 +294,15 @@ class RatesModel extends TabledateModel {
 								$added_columns['tduration'] = $rate[$filteredPlan]['rate'][0]['interval'];
 							}
 							$raw = $item->getRawData();
-							$raw['key'] .= " ($filteredPlan)";
+							$raw['key'] .= " [" . $filteredPlan . "]";
 							$ret[] = new Mongodloid_Entity(array_merge($raw, $added_columns, $rate));
 						}
 					}
 				}
-			} 
-			/*else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
-				isset($filter_query['$and'][0]['params.prefix']))
-				&& !empty($item->get('params.prefix'))) { */
-			else if ($this->showprefix && !empty($item->get('params.prefix'))) {
+			}
+			/* else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
+			  isset($filter_query['$and'][0]['params.prefix']))
+			  && !empty($item->get('params.prefix'))) { */ else if ($this->showprefix && !empty($item->get('params.prefix'))) {
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage
@@ -453,7 +452,7 @@ class RatesModel extends TabledateModel {
 	 * @param Mongodloid_Entity $rate
 	 * @return array
 	 */
-	public function getRulesByRate($rate, $showprefix = false) {
+	public function getRulesByRate($rate, $showprefix = false, $plans = array()) {
 		$first_rule = true;
 		$rule['key'] = $rate['key'];
 		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
@@ -462,21 +461,23 @@ class RatesModel extends TabledateModel {
 			$rule['category'] = $usage_type_rate['category'];
 			$rule['access_price'] = isset($usage_type_rate['access']) ? $usage_type_rate['access'] : 0;
 			$rule_counter = 1;
-			foreach ($usage_type_rate['rate'] as $rate_rule) {
-				$rule['rule'] = $rule_counter;
-				$rule['interval'] = $rate_rule['interval'];
-				$rule['price'] = $rate_rule['price'];
-				$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
-				$rule_counter++;
-				if ($showprefix) {
-					if ($first_rule) {
-						$rule['prefix'] = '"' . implode(',', $rate['params']['prefix']) . '"';
-						$first_rule = false;
-					} else {
-						$rule['prefix'] = '';
+			foreach ($plans as $plan) {
+				foreach ($usage_type_rate[$plan]['rate'] as $rate_rule) {
+					$rule['rule'] = $rule_counter;
+					$rule['interval'] = $rate_rule['interval'];
+					$rule['price'] = $rate_rule['price'];
+					$rule['times'] = intval($rate_rule['to'] / $rate_rule['interval']);
+					$rule_counter++;
+					if ($showprefix) {
+						if ($first_rule) {
+							$rule['prefix'] = '"' . implode(',', $rate['params']['prefix']) . '"';
+							$first_rule = false;
+						} else {
+							$rule['prefix'] = '';
+						}
 					}
+					$rules[] = $rule;
 				}
-				$rules[] = $rule;
 			}
 		}
 		return $rules;
@@ -523,7 +524,7 @@ class RatesModel extends TabledateModel {
 			return NULL;
 		}
 	}
-	
+
 	/**
 	 * method to fetch plan reference by plan name
 	 * 
@@ -538,9 +539,9 @@ class RatesModel extends TabledateModel {
 		}
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$planEntity = $plansColl->query('name', $plan)
-						->lessEq('from', $currentDate)
-						->greaterEq('to', $currentDate)
-						->cursor()->current();
+				->lessEq('from', $currentDate)
+				->greaterEq('to', $currentDate)
+				->cursor()->current();
 		return $plansColl->createRefByEntity($planEntity);
 	}
 

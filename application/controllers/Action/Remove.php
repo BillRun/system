@@ -27,10 +27,7 @@ class RemoveAction extends ApiAction {
 
 		$stamps = array();
 		foreach ($request['stamps'] as $line_stamp) {
-			$clear_stamp = 
-				Billrun_Util::filter_var($line_stamp, 
-									     FILTER_SANITIZE_STRING, 
-									     FILTER_FLAG_ALLOW_HEX);
+			$clear_stamp = Billrun_Util::filter_var($line_stamp, FILTER_SANITIZE_STRING, FILTER_FLAG_ALLOW_HEX);
 			if (!empty($clear_stamp)) {
 				$stamps[] = $clear_stamp;
 			}
@@ -45,7 +42,7 @@ class RemoveAction extends ApiAction {
 			)));
 			return true;
 		}
-		
+
 		$model = new LinesModel();
 		$query = array(
 			'source' => 'api',
@@ -56,7 +53,7 @@ class RemoveAction extends ApiAction {
 			)
 		);
 		$ret = $model->remove($query);
-		
+
 		if (!isset($ret['ok']) || !$ret['ok'] || !isset($ret['n'])) {
 			Billrun_Factory::log("remove action failed pr miscomplete", Zend_Log::INFO);
 			$this->getController()->setOutput(array(array(
@@ -66,14 +63,13 @@ class RemoveAction extends ApiAction {
 			)));
 			return true;
 		}
-		
+
 		Billrun_Factory::log("remove success", Zend_Log::INFO);
 		$this->getController()->setOutput(array(array(
 				'status' => $ret['n'],
 				'desc' => 'success',
 				'input' => $request,
 		)));
-		
 	}
 
 }

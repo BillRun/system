@@ -17,24 +17,24 @@
  * This way whoever uses this class can send whatever he wants in the key fields.
  */
 class Billrun_Subscriber_Db extends Billrun_Subscriber {
-	
+
 	/**
 	 * True if the query handlers are loaded.
 	 * @var boolean
 	 */
 	static $queriesLoaded = false;
-	
+
 	/**
 	 * Construct a new subscriber DB instance.
 	 * @param array $options - Array of initialization parameters.
 	 */
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		
+
 		// Check that the queries are loaded.
-		if(!self::$queriesLoaded) {
+		if (!self::$queriesLoaded) {
 			self::$queriesLoaded = true;
-			
+
 			// Register all the query handlers.
 			// TODO: Move the list of query types to conf to be created here by reflection.
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
@@ -42,7 +42,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
 		}
 	}
-	
+
 	/**
 	 * method to load subsbscriber details
 	 * 
@@ -51,31 +51,30 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	 */
 	public function load($params) {
 		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
-		if($subscriberQuery === false){
+		if ($subscriberQuery === false) {
 			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
 			return false;
 		}
-		
+
 //		if (!isset($params['time'])) {
 //			$datetime = time();
 //		} else {
 //			$datetime = strtotime($params['time']);
 //		}
-	
 //		$queryParams['from'] = array('$lt' => new MongoDate(strtotime($datetime)));
 //		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
 
 
 		$data = $this->customerQueryDb($subscriberQuery);
-		if(!$data) {
+		if (!$data) {
 			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::NOTICE);
 			return false;
-		}	
-		
+		}
+
 		$this->data = $data;
 		return true;
 	}
-	
+
 	/**
 	 * Get the customer from the db.
 	 * @param array $params - Input params to get a subscriber by.
@@ -107,18 +106,17 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	public function isValid() {
 		return true;
 	}
-	
+
 	public function getSubscribersByParams($params, $availableFields) {
 		
 	}
-	
+
 	public function getList($page, $size, $time, $acc_id = null) {
 		
 	}
-	
+
 	public function getListFromFile($file_path, $time) {
 		
 	}
-
 
 }

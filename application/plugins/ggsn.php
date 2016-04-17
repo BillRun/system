@@ -583,7 +583,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$update['$inc']['balance.groups.' . $group . '.cost'] = $pricingData['aprice'];
 		$update['$inc']['balance.groups.' . $group . '.count'] = 1;
 	}
-	
+
 	/**
 	 * @see Billrun_Processor::getLineVolume
 	 */
@@ -597,5 +597,5 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	protected function getLineUsageType($row) {
 		return 'data';
 	}
-	
+
 }

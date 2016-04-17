@@ -56,7 +56,7 @@
 					if ($this->group_by == 'carrier') {
 						echo "<input class=\"carrier\" type=\"hidden\" value=\"" . $group_value . "\">";
 					}
-					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-value="' . $group_value . '">' . $group_value . ($this->group_by == 'dayofmonth'? ' (' . date("D", strtotime($group_value)) . ')' : '')  . '</a></td>';
+					echo '<a onclick="openPopup(this);" href="#w-popup" data-type="update" data-toggle="modal" role="button" data-remote="" data-value="' . $group_value . '">' . $group_value . ($this->group_by == 'dayofmonth' ? ' (' . date("D", strtotime($group_value)) . ')' : '') . '</a></td>';
 					foreach ($report_params['fields'] as $usage_type => $usage_fields) {
 						foreach ($usage_fields as $field) {
 							echo '<td class="num-cell">';
@@ -144,7 +144,7 @@
 			foreach ($retail_data as $row) {
 				echo '<tr>';
 				foreach ($retail_tbl_params['fields'] as $field) {
-					echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
+					echo '<td' . ($field['decimal'] === false ? '' : ' class="num-cell"') . '>';
 					if (is_object($field['display'])) {
 						echo $field['display']($row[$field['value']]);
 					} else if (isset($row[$field['display']])) {
@@ -165,7 +165,7 @@
 			}
 			echo '<tr class="totals">';
 			foreach ($retail_tbl_params['fields'] as $field) {
-				echo '<td' . ($field['decimal'] === false ? '': ' class="num-cell"') . '>';
+				echo '<td' . ($field['decimal'] === false ? '' : ' class="num-cell"') . '>';
 				if (isset($field['totals']) && !$field['totals']) {
 					echo '&nbsp;';
 				} else if ($field['decimal'] === false) {

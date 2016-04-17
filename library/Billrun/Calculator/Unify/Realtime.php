@@ -47,7 +47,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 							),
 							'update' => array(
 								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name', 'interconnect_arate_key'),
-								'$set' => array('process_time', 'np_code', 'call_type','balance_after'),
+								'$set' => array('process_time', 'np_code', 'call_type', 'balance_after'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
 							),
 						),
@@ -187,17 +187,18 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array('callrt','smsrt','mmsrt','service', 'gy');
+		$types = array('callrt', 'smsrt', 'mmsrt', 'service', 'gy');
 		return $this->getQueuedLines(array('type' => array('$in' => $types)));
 	}
-	
+
 	protected function setUnifiedLineDefaults(&$line) {
+		
 	}
-	
+
 	protected function getDateSeparation($line, $typeData) {
 		return FALSE;
 	}
-	
+
 	public function isNotInDataSlowness($line) {
 		if (!isset($line['in_data_slowness']) || !$line['in_data_slowness']) {
 			return true;

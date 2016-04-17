@@ -20,7 +20,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 		$this->result = array('balance_before', 'balance_after', 'lines');
 		$this->label = 'Data | Real-time event';
 	}
-	
+
 	/**
 	 * main action to do basic tests
 	 * 
@@ -76,7 +76,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 					"serviceId" => "400700",
 					"ratingGroup" => "92",
 					"requestedUnits" => 1000,
-				    //"usedUnits" => 1000
+				//"usedUnits" => 1000
 				),
 				"Service" => array(
 					"PdnConnectionId" => "0",

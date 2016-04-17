@@ -9,13 +9,12 @@
 /**
  * This is a prototype for a balances action.
  *
- * @author Tom Feigin
  */
 // TODO: Make an interface for these classes.
-abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction{
+abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction {
 
 	protected $collection = null;
-	
+
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
@@ -24,7 +23,7 @@ abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionMana
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/balances/errors.ini");
 		parent::__construct($params);
 	}
-	
+
 	/**
 	 * Parse a request to build the action logic.
 	 * 
@@ -32,7 +31,7 @@ abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionMana
 	 * @return true if valid.
 	 */
 	public abstract function parse($request);
-	
+
 	/**
 	 * Execute the action logic.
 	 * 

@@ -230,7 +230,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$data['org_dur'] = $data['duration']; // save the original duration.
 			}
 			if (isset($data['charging_end_time']) && isset($data['charging_start_time']) &&
-					(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
+				(strtotime($data['charging_end_time']) > 0 && strtotime($data['charging_start_time']) > 0)) {
 				$computed_dur = strtotime($data['charging_end_time']) - strtotime($data['charging_start_time']);
 				if ($computed_dur >= 0) {
 					$data['duration'] = $computed_dur;
@@ -340,11 +340,11 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 					for ($j = 0; $j < 2; $j++, $byteVal = $byteVal >> 4) {
 						$left = $byteVal & 0xF;
 						$digit = $left == 0xB ? '*' :
-								($left == 0xC ? '#' :
-										($left == 0xA ? 'a' :
-												($left == 0xF ? '' :
-														($left > 0xC ? dechex($left - 2) :
-																$left))));
+							($left == 0xC ? '#' :
+								($left == 0xA ? 'a' :
+									($left == 0xF ? '' :
+										($left > 0xC ? dechex($left - 2) :
+											$left))));
 						$val .= $digit;
 					}
 				}
@@ -414,7 +414,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			$this->fileStats = fstat($fileHandle);
 		}
 		$process_finished = feof($fileHandle) ||
-				ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
+			ftell($fileHandle) + self::TRAILER_LENGTH >= $this->fileStats['size'];
 		if ($process_finished) {
 			$this->fileStats = null;
 		}
@@ -458,7 +458,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
 		} else {
-			$msg  = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
+			$msg = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
 			Billrun_Factory::log($msg, Zend_Log::CRIT);
 			throw new Exception($msg);
 		}
@@ -538,7 +538,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 		}
 		return 'call';
 	}
-	
+
 }
 
 ?>

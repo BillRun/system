@@ -47,6 +47,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
     };
 
     $scope.removeIncludeType = function (include_type_name, index) {
+      var r = confirm("Are you sure you want to remove " + include_type_name + " rate?");
+      if (!r) return;
       if (index > -1) $scope.entity.include[include_type_name].splice(index, 1);
       else delete $scope.entity.include[include_type_name];
     };
@@ -109,6 +111,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
       });
     };
     $scope.cancel = function () {
+      if ($scope.entity.type === "charging" && $scope.entity.recurring) {
+        $window.location = baseUrl + '/admin/recurringplans';
+        return;
+      }
       $window.location = baseUrl + '/admin/' + $scope.entity.type + $routeParams.collection;
     };
 

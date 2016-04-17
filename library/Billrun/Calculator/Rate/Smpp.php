@@ -67,4 +67,3 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 	}
 
 }
-

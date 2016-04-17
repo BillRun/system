@@ -22,14 +22,14 @@ class QueryaggregateAction extends QueryAction {
 	protected function preExecute() {
 		Billrun_Factory::log("Execute api query aggregate", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * The function to run after execute.
 	 */
 	protected function postExecute() {
 		Billrun_Factory::log("Aggregate query success", Zend_Log::INFO);
 	}
-	
+
 	/**
 	 * Return the group by filter for the query.
 	 * @param array $request - User request to parse.
@@ -41,10 +41,10 @@ class QueryaggregateAction extends QueryAction {
 		} else {
 			$groupby = array('_id' => null);
 		}
-		
+
 		return $groupby;
 	}
-	
+
 	/**
 	 * Return the aggregate filter for the query.
 	 * @param array $request - User request to parse.
@@ -56,10 +56,10 @@ class QueryaggregateAction extends QueryAction {
 		} else {
 			$aggregate = array('count' => array('$sum' => 1));
 		}
-		
+
 		return $aggregate;
 	}
-	
+
 	/**
 	 * Get the lines data by the input request and query.
 	 * @param array $request - Input request array.
@@ -70,13 +70,13 @@ class QueryaggregateAction extends QueryAction {
 		$groupBy = $this->getGroupBy($request);
 		$aggregate = $this->getAggregate($request);
 		$group = array_merge($groupBy, $aggregate);
-		
+
 		$linesRequestQueries['group'] = $group;
 		$linesRequestQueries['groupby'] = $groupBy;
 		$cacheParams = array(
 			'fetchParams' => $linesRequestQueries
 		);
-		
+
 		$this->setCacheLifeTime(Billrun_Utils_Time::weeksToSeconds(1)); // 1 week
 		return $this->cache($cacheParams);
 	}
@@ -90,10 +90,10 @@ class QueryaggregateAction extends QueryAction {
 		if (!isset($params['groupby']['_id'])) {
 			return array();
 		}
-		
+
 		return array_reverse(array_keys($params['groupby']['_id']));
 	}
-	
+
 	/**
 	 * basic fetch data method used by the cache
 	 * 
@@ -105,7 +105,7 @@ class QueryaggregateAction extends QueryAction {
 		$model = new LinesModel($params['options']);
 		$lines = $model->getDataAggregated(array('$match' => $params['find']), array('$group' => $params['group']));
 		$groupby_keys = $this->getGroupbyKeys($params);
-		
+
 		$results = array();
 		foreach ($lines as $line) {
 			$row = $line->getRawData();
@@ -117,4 +117,5 @@ class QueryaggregateAction extends QueryAction {
 		}
 		return $results;
 	}
+
 }

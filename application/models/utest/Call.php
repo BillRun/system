@@ -14,7 +14,7 @@
  * @since    4.0
  */
 class utest_CallModel extends utest_AbstractUtestModel {
-	
+
 	public function __construct(\UtestController $controller) {
 		parent::__construct($controller);
 		$this->result = array('balance_before', 'balance_after', 'lines');
@@ -39,14 +39,14 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$send_time_date = Billrun_Util::filter_var($this->controller->getRequest()->get('send_time_date'), FILTER_SANITIZE_STRING);
 		$np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('np_code'), FILTER_SANITIZE_STRING);
 		$send_np_code = Billrun_Util::filter_var($this->controller->getRequest()->get('send_np_code'), FILTER_SANITIZE_STRING);
-		
-		if($call_tech == 'UMTS'){
+
+		if ($call_tech == 'UMTS') {
 			$subscriber = Billrun_Factory::db()->subscribersCollection()->query(array('imsi' => $imsi))->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
 			$msisdn = $subscriber['msisdn'];
 		} else {
 			$msisdn = $calling_number;
 		}
-		
+
 		//Run test scenario
 		foreach ($scenario as $index => $name) {
 			$nameAndUssage = explode("|", $name);
@@ -54,15 +54,15 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'msisdn' => $msisdn,
 				'imsi' => $imsi,
 				'dialedDigits' => $called_number,
-				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1]*10) : 4800, // default 8 minutes
+				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
 				'type' => $nameAndUssage[0],
 				'call_type' => $call_type,
 				'call_tech' => $call_tech
 			);
-			if($send_np_code === 'on'){
+			if ($send_np_code === 'on') {
 				$params['np_code'] = $np_code;
 			}
-			if($send_time_date === 'on'){
+			if ($send_time_date === 'on') {
 				$params['time_date'] = date_format(date_add(date_create_from_format('d/m/Y H:i', $time_date), new DateInterval('PT' . $index . 'S')), 'Y/m/d H:i:s.000'); // 2015/08/13 11:59:03.325
 			}
 			$data = $this->getRequestData($params);
@@ -92,14 +92,14 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			'calling_number' => $msisdn,
 			'call_reference' => $this->controller->getReference(),
 			'call_id' => 'rm7xxxxxxxxx',
-			'connected_number' =>  $dialedDigits,
+			'connected_number' => $dialedDigits,
 			'time_date' => $time_date,
 		);
-		
-		if($call_tech == 'UMTS') {
+
+		if ($call_tech == 'UMTS') {
 			$data['imsi'] = $imsi;
 		}
-		
+
 		if (isset($params['np_code'])) {
 			$data['np_code'] = $params['np_code'];
 		}
@@ -109,7 +109,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				$data['dialed_digits'] = $dialedDigits;
 				$data['event_type'] = 2;
 				$data['service_key'] = 61;
-				if($call_tech == 'UMTS') {
+				if ($call_tech == 'UMTS') {
 					$data['vlr'] = 972500000701;
 					$data['location_mcc'] = 425;
 					$data['location_mnc'] = 03;

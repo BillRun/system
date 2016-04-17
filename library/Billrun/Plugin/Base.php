@@ -13,4 +13,5 @@
  * @since    0.5
  */
 abstract class Billrun_Plugin_Base extends Billrun_Plugin_BillrunPluginBase {
+	
 }

@@ -49,19 +49,19 @@ class Billrun_DataTypes_Wallet {
 	 * @var array
 	 */
 	protected $period = null;
-	
+
 	/**
 	 * The name of the pp include.
 	 * @var string
 	 */
 	protected $ppName = null;
-	
+
 	/**
 	 * The ID of the pp include.
 	 * @var integer
 	 */
 	protected $ppID = null;
-	
+
 	/**
 	 * The wallet priority.
 	 * @var number - priority.
@@ -77,13 +77,13 @@ class Billrun_DataTypes_Wallet {
 	public function __construct($chargingBy, $chargingByValue, $ppPair) {
 		$chargingByUsaget = $chargingBy;
 
-		if(isset($ppPair['priority'])) {
+		if (isset($ppPair['priority'])) {
 			$this->priority = $ppPair['priority'];
 		}
-		
+
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
-		
+
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
 			$this->setPeriod($chargingByValue['period']);
@@ -123,22 +123,22 @@ class Billrun_DataTypes_Wallet {
 	 * @return numeric
 	 */
 	public function getPriority() {
-		if($this->priority) {
+		if ($this->priority) {
 			return $this->priority;
 		}
-		
+
 		$col = Billrun_Factory::db()->prepaidincludesCollection();
 		$query = array("external_id" => $this->ppID);
 		$prepaid = $col->query($query)->cursor()->current();
-		if(isset($prepaid['priority'])) {
+		if (isset($prepaid['priority'])) {
 			$this->priority = $prepaid['priority'];
 		} else {
 			Billrun_Factory::log("Faild to retrieve PP include. ID: " . $this->ppID, Zend_Log::WARN);
 			$this->priority = 0;
-		} 
+		}
 		return $this->priority;
 	}
-	
+
 	/**
 	 * Get the value for the current wallet.
 	 * @return The current wallet value.
@@ -188,7 +188,7 @@ class Billrun_DataTypes_Wallet {
 	public function getChargingByUsaget() {
 		return $this->chargingByUsaget;
 	}
-	
+
 	/**
 	 * Get the charging by unit usaget string value.
 	 * @return string
@@ -196,7 +196,7 @@ class Billrun_DataTypes_Wallet {
 	public function getChargingByUsagetUnit() {
 		return $this->chargingByUsagetUnit;
 	}
-	
+
 	/**
 	 * Get the pp include name.
 	 * @return string
@@ -204,6 +204,7 @@ class Billrun_DataTypes_Wallet {
 	public function getPPName() {
 		return $this->ppName;
 	}
+
 	/**
 	 * Get the pp include ID.
 	 * @return integer
@@ -211,7 +212,7 @@ class Billrun_DataTypes_Wallet {
 	public function getPPID() {
 		return $this->ppID;
 	}
-	
+
 	/**
 	 * Get the partial balance record from the wallet values.
 	 * @return array - Partial balance.
@@ -224,15 +225,15 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['pp_includes_external_id'] = $this->getPPID();
 		$partialBalance['priority'] = $this->getPriority();
 		$partialBalance[$this->getFieldName()] = $this->getValue();
-		
+
 		foreach ($partialBalance as $key => $value) {
-			if(!is_string($key)) {
+			if (!is_string($key)) {
 				continue;
 			}
-			
+
 			Billrun_Util::setDotArrayToArray($partialBalance, $key, $value);
 		}
-		
+
 		return $partialBalance;
 	}
 
