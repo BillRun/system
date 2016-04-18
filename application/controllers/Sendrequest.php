@@ -72,6 +72,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 				if (isset($response['HEADER']['STATUS_CODE']) &&
 					$response['HEADER']['STATUS_CODE'] === 'OK') {
 					$saveData['time'] = (microtime(1) - $this->start_time) * 1000;
+					$saveData['success'] = true;
 					$logColl->save(new Mongodloid_Entity($saveData), 0);
 					return true;
 				}
@@ -79,6 +80,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		}
 		Billrun_Factory::log('No response from prov. Request details: ' . $requestBody, Zend_Log::ALERT);
 		$saveData['time'] = (microtime(1) - $this->start_time) * 1000;
+		$saveData['success'] = false;
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		$this->handleSendRequestError();
 		return false;
