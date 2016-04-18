@@ -29,6 +29,9 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($this->event['reverse_charge']) && $this->event['reverse_charge']) {
 			return $this->forward("reversecharge", array("event" => $this->event, "usaget" => $this->usaget));
 		}
+		if (isset($this->event['api_name']) && $this->event['api_name'] === 'healthcheck_in') {
+			return $this->forward('healthcheck', array("event" => $this->event, "usaget" => $this->usaget));
+		}
 		$data = $this->process();
 		return $this->respond($data);
 	}
