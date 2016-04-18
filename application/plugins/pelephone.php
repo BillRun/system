@@ -419,7 +419,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'addHeader' => false,
 		);
 		$request = $encoder->encode($requestBody, $params);
-		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries']);
+		return $this->sendRequest($request, $slownessParams['requestUrl'], $slownessParams['sendRequestTries'], true);
 	}
 
 	/**
@@ -481,6 +481,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($response['HEADER']['STATUS_CODE']) &&
 					$response['HEADER']['STATUS_CODE'] === 'OK') {
 					$saveData['time'] = (microtime(1) - $start_time) * 1000;
+					$saveData['success'] = true;
 					$logColl->save(new Mongodloid_Entity($saveData), 0);
 					return true;
 				}
@@ -488,6 +489,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		Billrun_Factory::log('No response from prov. Request details: ' . $request, Zend_Log::ALERT);
 		$saveData['time'] = (microtime(1) - $start_time) * 1000;
+		$saveData['success'] = false;
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		return false;
 	}
