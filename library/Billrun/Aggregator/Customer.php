@@ -148,8 +148,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 
-		if (($this->page = $this->getPage()) === FALSE) {
-			return FALSE;
+		if (($this->page = $this->getPage(0)) === FALSE) {
+			 throw new Exception('Failed getting next page');
 		}
 	}
 
@@ -478,10 +478,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				)
 			);
 			if (!$check_exists->isEmpty()) {
-				throw new Exception("Page already exists.");
+				throw new Exception("Page number ". $next_page ." already exists.");
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log($e->getMessage() . " Trying Again...", Zend_Log::INFO);
+			Billrun_Factory::log()->log($e->getMessage() . " Trying Again...", Zend_Log::NOTICE);
 			return $this->getPage($max_tries - 1);
 		}
 		return $next_page;
