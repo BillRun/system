@@ -445,8 +445,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	/**
-	 * 
-	 * 
+	 * Finding which page is next in the biiling cycle
+	 * @param the number of max tries to get the next page in the billing cycle
+	 * @return number of the next page that should be taken
 	 */
 	protected function getPage($max_tries = 100) {
 
