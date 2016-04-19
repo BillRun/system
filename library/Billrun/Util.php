@@ -380,7 +380,7 @@ class Billrun_Util {
 	public static function getForkUrl() {
 		$request = Yaf_Dispatcher::getInstance()->getRequest();
 		$protocol = (empty($request->getServer('HTTPS'))) ? 'http' : 'https';
-		return $protocol . '://' . $request->get('HTTP_HOST') . '/' . $request->getBaseUri();
+		return $protocol . '://' . $request->get('SERVER_ADDR') . '/' . $request->getBaseUri();
 	}
 
 	/**
