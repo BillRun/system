@@ -324,7 +324,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
 			return 0;
 		}
-		return round($val * (-1));
+		return abs(round($val, 2));
 	}
 
 	protected function modifyNotificationMessage($str, $params) {
