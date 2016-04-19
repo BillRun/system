@@ -412,7 +412,6 @@ class Billrun_Util {
 			error_log("Can't fork PHP process");
 			return false;
 		}
-		usleep(500000);
 		return true;
 	}
 
