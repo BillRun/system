@@ -10,7 +10,7 @@
  * Udata Generator class
  *
  * @package  Models
- * @since    2.1
+ * @since    4.0
  */
 abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_Generator_AggregatedCsv {
 
@@ -222,7 +222,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					break;
 				case 'regex' :
 				default :
-					$line[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $line[$key]);
+					if (is_array($trans['translation']) && isset($trans['translation'][0])) {
+						foreach ($trans['translation'] as $value) {
+							$line[$key] = preg_replace(key($value), reset($value), $line[$key]);
+						}
+					} else {
+						$line[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $line[$key]);
+					}
 					break;
 			}
 		}
