@@ -46,7 +46,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 	 * @return reservation time in 10th of seconds
 	 */
 	protected function getReservationTime() {
-		return $this->row['usagev'] * 10;
+		return round($this->row['usagev'] * 10);
 	}
 
 	protected function getReturnCode() {
