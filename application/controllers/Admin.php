@@ -33,6 +33,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
+		$this->initSession();
 		$this->setCommit();
 		$this->setConfig();
 		$this->setBaseUrl();
@@ -129,6 +130,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
 	}
+	
+	protected function initSession() {
+		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
+		ini_set('session.gc_maxlifetime', $session_timeout);
+	}
+	
 	protected function addCss($path) {
 		$this->cssPaths[] = $path;
 	}
