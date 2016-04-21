@@ -112,7 +112,9 @@ class RatesModel extends TabledateModel {
 		if ($this->showprefix) {
 			$columns = array(
 				'key' => 'Key',
-				'prefix' => 'Prefix'
+				'prefix' => 'Prefix',
+				'from' => 'From',
+				'to' => 'To'
 			);
 		} else {
 			$columns = array(
@@ -121,7 +123,9 @@ class RatesModel extends TabledateModel {
 				'tprice' => 'Price',
 				'tduration' => 'Interval',
 				'tunit' => 'Unit',
-				'taccess' => 'Access'
+				'taccess' => 'Access',
+				'from' => 'From',
+				'to' => 'To'
 			);
 		}
 		if (!empty($this->extra_columns)) {
