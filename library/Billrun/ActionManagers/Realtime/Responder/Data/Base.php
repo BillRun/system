@@ -43,9 +43,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 	protected function getMsccData() {
 		$retMsccData = array();
 		$usagev = $this->row['usagev'] / count($this->row['mscc_data']);
-		$secondsUntilMidnight = (strtotime('tomorrow 00:00:00') - time());
-		$defaultValidityTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.validityTime", 0);
-		$validityTime = min(array($defaultValidityTime, $secondsUntilMidnight));
+		$validityTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.validityTime", 0);
 		$defaultQuotaHoldingTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.quotaHoldingTime", 0);
 		$returnCode = $this->getReturnCode();
 
