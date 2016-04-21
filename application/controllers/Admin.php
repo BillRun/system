@@ -34,13 +34,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function init() {
 		Billrun_Factory::db();
 		$this->initSession();
-		$this->setCommit();
-		$this->setConfig();
-		$this->setBaseUrl();
-		$this->setHtml();
+		$this->initCommit();
+		$this->initConfig();
+		$this->initBaseUrl();
+		$this->initHtmlHeaders();
 	}
 	
-	protected function setCommit() {
+	protected function initCommit() {
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
@@ -58,17 +58,17 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 	}
 	
-	protected function setConfig() {
+	protected function initConfig() {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
 	
-	protected function setBaseUrl() {
+	protected function initBaseUrl() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
 	}
 
-	protected function setHtml() {
+	protected function initHtmlHeaders() {
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
