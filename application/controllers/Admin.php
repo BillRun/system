@@ -33,6 +33,13 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
+		$this->setCommit();
+		$this->setConfig();
+		$this->setBaseUrl();
+		$this->setHtml();
+	}
+	
+	protected function setCommit() {
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
@@ -48,8 +55,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
 		}
-
+	}
+	
+	protected function setConfig() {
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
+	}
+	
+	protected function setBaseUrl() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+	}
+
+	protected function setHtml() {
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
@@ -110,11 +128,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
-
 	protected function addCss($path) {
 		$this->cssPaths[] = $path;
 	}
