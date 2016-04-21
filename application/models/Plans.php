@@ -74,5 +74,42 @@ class PlansModel extends TabledateModel {
 			$rates_col->update($query, $update, $params);
 		}
 	}
-
+	
+	public function getFilterFields() {
+		$names = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor()->sort(array('name' => 1));
+		$serviceProvidersNames = array();
+		foreach ($names as $name) {
+			$serviceProvidersNames[$name['name']] = $name['name'];
+		}
+		$filter_fields = array(
+			'service_provider' => array(
+				'key' => 'service_provider',
+				'db_key' => 'service_provider',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Service Provider',
+				'values' => $serviceProvidersNames,
+				'default' => array(),
+			),
+		);
+		return array_merge($filter_fields, parent::getFilterFields());
+	}
+	
+	public function getFilterFieldsOrder() {
+		$filter_field_order = array(
+			array(
+				'service_provider' => array(
+					'width' => 2,
+				),
+			),
+		);
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+	}
+	
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == '$in' && empty($value)) {
+			return;
+		}
+		return parent::applyFilter($filter_field, $value);
+	}
 }
