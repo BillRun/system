@@ -42,7 +42,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 
 	protected function getMsccData() {
 		$retMsccData = array();
-		$usagev = $this->row['usagev'] / count($this->row['mscc_data']);
+		$usagev = round($this->row['usagev'] / count($this->row['mscc_data']));
 		$balanceRef = $this->row['balance_ref'];
 		$defaultValidityTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.validityTime", 0);
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
