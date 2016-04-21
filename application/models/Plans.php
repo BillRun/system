@@ -89,13 +89,13 @@ class PlansModel extends TabledateModel {
 				'comparison' => '$in',
 				'display' => 'Service Provider',
 				'values' => $serviceProvidersNames,
-				'default' => array(''),
+				'default' => array(),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
 	
-		public function getFilterFieldsOrder() {
+	public function getFilterFieldsOrder() {
 		$filter_field_order = array(
 			array(
 				'service_provider' => array(
@@ -105,5 +105,11 @@ class PlansModel extends TabledateModel {
 		);
 		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}
-
+	
+	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == '$in' && empty($value)) {
+			return;
+		}
+		return parent::applyFilter($filter_field, $value);
+	}
 }
