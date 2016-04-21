@@ -409,7 +409,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'COMMAND' => $slownessParams['command'],
 			),
 			'PARAMS' => array(
-				'MSISDN' => $msisdn,
+				'MSISDN' => Billrun_Util::msisdn($msisdn),
 				'SLOWDOWN_SPEED' => ($enterToDataSlowness ? $slownessParams['speed'] : ''),
 				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
@@ -442,7 +442,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'USER_ID' => $notificationParams['userId'],
 				'SOURCE' => $notificationParams['source'],
 				'MSG' => $msg,
-				'TO_PHONE' => $msisdn,
+				'TO_PHONE' => Billrun_Util::msisdn($msisdn),
 			)
 		);
 		$params = array(
