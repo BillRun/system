@@ -91,6 +91,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $orderLinesBeforeInsert = false;
 
+	protected $config = null;
+	protected  $usage_type = null;
+
+
 	/**
 	 * Lines that were processed but are not to be saved
 	 * @var array
@@ -105,14 +109,17 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function __construct($options) {
 
 		parent::__construct($options);
+		$this->usage_type = $this->getType();
+		$this->config = Billrun_Factory::db()->configCollection()->query(array("processor.$this->usage_type"=> array('$exists' => true)))->cursor()->sort(array('processor.process_time' => -1))->limit(1)->current();
+		//$this->config = iterator_to_array($this->config);
 
 		if (isset($options['path'])) {
 			$this->loadFile($options['path']);
 		}
-
-		if (isset($options['parser']) && $options['parser'] != 'none') {
-			$this->setParser($options['parser']);
+		if (!is_null($this->config["processor.$this->usage_type.parser"]) && $this->config["processor.$this->usage_type.parser"]){
+			$this->setParser($this->config["processor.$this->usage_type.parser"]);
 		}
+
 		if (isset($options['processor']['line_numbers'])) {
 
 			$this->line_numbers = $options['processor']['line_numbers'];
@@ -614,7 +621,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
-
+				
 		if (!isset($queue_row['stamp'])) {
 			$queue_row['stamp'] = $row['stamp'];
 		}
@@ -734,4 +741,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->data['data'] + $this->doNotSaveLines;
 	}
 
+	public function getConfig() {
+		return $this->config;
+	}
 }
