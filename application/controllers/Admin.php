@@ -1861,5 +1861,26 @@ class AdminController extends Yaf_Controller_Abstract {
 		//$resp->response();
 		return false;
 	}
+	
+	public function getRatesWithSamePrefixAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$prefix = $this->getRequest()->get('prefix');
+		$currentRateKey = $this->getRequest()->get('current_rate');
+		$query = array(
+			'params.prefix' => array('$in' => array($prefix)),
+			'key' => array('$ne' => $currentRateKey),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSamePrefix = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSamePrefix, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSamePrefix));
+		$response->response();
+		return false;
+	}
 
 }
