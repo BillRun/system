@@ -1866,10 +1866,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$prefix = $this->getRequest()->get('prefix');
-		$currentRateKey = $this->getRequest()->get('current_rate');
 		$query = array(
 			'params.prefix' => array('$in' => array($prefix)),
-			'key' => array('$ne' => $currentRateKey),
 			'to' => array('$gte' => new MongoDate()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));

@@ -52,8 +52,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			if (prefixIndex === undefined)
         return;
 			var prefix = $scope.entity.params.prefix[prefixIndex];
-			var currentRateKey = $scope.entity.key;
-			Database.getRatesWithSamePrefix({prefix: prefix, current_rate:currentRateKey}).then(function (res) {
+			Database.getRatesWithSamePrefix({prefix: prefix}).then(function (res) {
         var rates = res.data;
 				if (rates.length) {
 					alert("Prefix '" + prefix + "' alrady exists in the following rate\/s: " + rates);
