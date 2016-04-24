@@ -50,7 +50,6 @@ abstract class Billrun_Autorenew_Record {
 			$toTime = strtotime($dataTo);
 		}
 
-
 		$toDate = $nextRenewDate;
 
 		// Check if the 'to' is before the next renew date.
@@ -78,12 +77,8 @@ abstract class Billrun_Autorenew_Record {
 		$updaterInputUpdate['from'] = $this->data['from'];
 		$updaterInputUpdate['operation'] = $this->data['operation'];
 
-		// Check if inc
-		if ($updaterInputUpdate['operation'] == "inc") {
-			$expirationDate = $this->data['to'];
-		} else {
-			$expirationDate = $this->getUpdaterInputToTime($nextRenewDate);
-		}
+		// Always set the balance expiration date as the autorenew record 'to' field
+		$expirationDate = $this->data['to'];
 		$updaterInputUpdate['to'] = $updaterInputUpdate['expiration_date'] = $expirationDate;
 		$updaterInput['query'] = json_encode($updaterInputQuery, JSON_FORCE_OBJECT);
 		$updaterInput['upsert'] = json_encode($updaterInputUpdate, JSON_FORCE_OBJECT);
