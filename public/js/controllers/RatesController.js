@@ -47,18 +47,18 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
       var r = confirm("Are you sure you want to remove prefix " + $scope.entity.params.prefix[prefixIndex]);
       if (r) $scope.entity.params.prefix.splice(prefixIndex, 1);
     };
-		
+
 		$scope.isPrefixExists = function (prefixIndex) {
 			if (prefixIndex === undefined)
-        return;
+				return;
 			var prefix = $scope.entity.params.prefix[prefixIndex];
 			Database.getRatesWithSamePrefix({prefix: prefix}).then(function (res) {
-        var rates = res.data;
+				var rates = res.data;
 				if (rates.length) {
 					alert("Prefix '" + prefix + "' alrady exists in the following rate\/s: " + rates);
 				}
-      });
-		}
+			});
+		};
 
     $scope.addRecordType = function () {
       if (!$scope.newRecordType || !$scope.newRecordType.value)

@@ -72,9 +72,9 @@ app.factory('Database', ['$http', function ($http) {
       return $http.post(baseUrl + '/admin/removeBandwidthCap', params);
     }
 		function getRatesWithSamePrefix(params) {
-      if (params === undefined) params = {};
-      return $http.get(baseUrl + '/admin/getRatesWithSamePrefix', {params: params});
-    }
+			if (params === undefined) params = {};
+			return $http.get(baseUrl + '/admin/getRatesWithSamePrefix', {params: params});
+		}
 
     return {
       getEntity: getEntity,
@@ -90,7 +90,7 @@ app.factory('Database', ['$http', function ($http) {
       getSubscriberDetails: getSubscriberDetails,
       getBandwidthCapDetails: getBandwidthCapDetails,
       saveBandwidthCap: saveBandwidthCap,
-      removeBandwidthCap: removeBandwidthCap,
+			removeBandwidthCap: removeBandwidthCap,
 			getRatesWithSamePrefix: getRatesWithSamePrefix
     };
   }]);
