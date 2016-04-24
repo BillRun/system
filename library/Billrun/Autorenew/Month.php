@@ -32,7 +32,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 		}
 
 		// Check if the day of the start is larger, because of overlap.
-		$fromDay = date('d', strtotime($this->data['from']));
+		$fromDay = date('d', strtotime($this->data['from']->sec));
 		$dayDifference = $fromDay - date('d', $nextMonth) - 1;
 
 		if ($dayDifference <= 0) {
