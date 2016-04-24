@@ -134,7 +134,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				return false;
 			}
 			
-			$record[$field] = MongoDate($this->parseDateFieldMongoTime($field, $time));
+			$record[$field] = new MongoDate($this->parseDateFieldMongoTime($field, $time));
 		}
 
 		return true;
