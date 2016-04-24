@@ -19,17 +19,17 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 	protected function getNextRenewDate() {
 		$lastDayOfMonth = strtotime('last day of this month 23:59:59');
 		if ($this->data['eom'] == 1) {
-			return new MongoDate($lastDayOfMonth);
+			return new MongoDate($lastDayOfMonth + date_default_timezone_get());
 		}
 
 		$lastDayNextMonth = strtotime('last day of next month 23:59:59');
 		$nextMonth = strtotime("+1 month -1 day 23:59:59");
 		if ($nextMonth > $lastDayNextMonth) {
-			return new MongoDate($lastDayNextMonth);
+			return new MongoDate($lastDayNextMonth + date_default_timezone_get());
 		}
 		$firstDayNextMonth = strtotime('first day of next month 23:59:59');
 		if ($nextMonth < $firstDayNextMonth) {
-			return new MongoDate($firstDayNextMonth);
+			return new MongoDate($firstDayNextMonth + date_default_timezone_get());
 		}
 
 		// Check if the day of the start is larger, because of overlap.
@@ -41,7 +41,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 		} else {
 			$renewDate = strtotime("+$dayDifference days 23:59:59", $nextMonth);
 		}
-		return new MongoDate($renewDate);
+		return new MongoDate($renewDate + date_default_timezone_get());
 	}
 
 }
