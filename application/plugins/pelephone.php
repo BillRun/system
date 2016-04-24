@@ -678,7 +678,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		// TODO: The next line disables the XML parsing error if we have an authentication problem
 		// libxml_use_internal_errors(true);
 		$xml = simplexml_load_string($res);
-		if (!$xml || $xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
+		if (!isset($xml->PARAMS->IT_OUT_PARAMS->STATUS[0]) || $xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
 		}
 		return $res;
