@@ -148,7 +148,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$this->loadRates();
 
-		if (($this->page = $this->getPage(0)) === FALSE) {
+		if (($this->page = $this->getPage()) === FALSE) {
 			 throw new Exception('Failed getting next page');
 		}
 	}
@@ -443,7 +443,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			return $row->get('arate', false);
 		}
 	}
-
+	
+	
+	public static function isBillingCycleOver($billing_cycle, $stamp, $size){
+		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+		if ($billing_cycle->query(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0))->count() >= $zero_pages) {
+			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
+			return TRUE;
+		}		
+		return FALSE;
+	}
+	
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle
@@ -455,9 +465,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Factory::log()->log("Failed getting next page", Zend_Log::ALERT);
 			return FALSE;
 		}
-		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'count' => 0))->count() >= $zero_pages) {
-			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
+		$host = gethostname();
+		if ($this->isBillingCycleOver($this->billing_cycle, $this->stamp, $this->size) === TRUE){
+			 return FALSE;
+		}
+		$max_num_processes = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
+		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false)))->count() > $max_num_processes) {
+			Billrun_Factory::log()->log("Host ". $host. "is already running max number of ". $max_num_processes . "processes", Zend_Log::DEBUG);
 			return FALSE;
 		}
 		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
@@ -470,7 +484,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			$next_page = 0; // first page
 		}
-		$host = gethostname();
 		try {
 			$check_exists = $this->billing_cycle->findAndModify(
 				array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size), array('$setOnInsert' => array('billrun_key' => $this->stamp, 'page_number' => $next_page, 'page_size' => $this->size, 'host' => $host, 'start_time' => new MongoDate())), null, array(
@@ -486,5 +499,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		return $next_page;
 	}
+	
 
 }
