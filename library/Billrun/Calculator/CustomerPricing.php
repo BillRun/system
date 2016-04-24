@@ -515,39 +515,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return int the calculated volume
 	 */
 	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
+		$offsetPrice = 0;
 		if ($offset) {
 			$offsetPrice = static::getTotalChargeByRate($rate, $usage_type, $offset, $plan);
-			return static::getVolumeByRate($rate, $usage_type, $price + $offsetPrice, $plan) - $offset;
 		}
-		$tariff = static::getTariff($rate, $usage_type, $plan);
-		$volume = 0;
-		$lastRateFrom = 0;
-		$accessPrice = static::getAccessPrice($tariff);
-		$price = max(0, $price - $accessPrice);
-		foreach ($tariff['rate'] as $currRate) {
-			if (Billrun_Util::isEqual($price, 0, static::$precision)) {
-				break;
-			}
-
-			if (!isset($currRate['price']) || $currRate['price'] == 0) {
-				$volumeAvailableInCurrentRate = PHP_INT_MAX;
-			} else {
-				$volumeAvailableInCurrentRate = Billrun_Util::floordec($price / $currRate['price'], static::$precision) * $currRate['interval']; // In case of no limit
-			}
-
-			if (isset($currRate['from'])) {
-				$lastRateFrom = $currRate['from'];
-			}
-			$currentRateMaxVolume = $currRate['to'] - $lastRateFrom;
-			$lastRateFrom = $currRate['to']; // Support the case of rate without "from" field
-			$volumeInCurrentRate = ($volumeAvailableInCurrentRate < $currentRateMaxVolume ? $volumeAvailableInCurrentRate : $currentRateMaxVolume); // Checks limit for current rate
-			if (Billrun_Util::isEqual($volumeInCurrentRate, 0, static::$precision)) {
-				break;
-			}
-			$price -= Billrun_Util::ceildec($volumeInCurrentRate / $currRate['interval'], static::$precision) * $currRate['price'];
-			$volume += $volumeInCurrentRate;
+		// Check if the price is enough for default usagev
+		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev',  0, 'float'); // float avoid set type to int
+		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage + $offset, $plan);
+		if ($price > ($defaultUsagePrice - $offsetPrice)) {
+			return $defaultUsage;
 		}
-		return $volume;
+		// Check if the price is enough for minimum usagev
+		$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usage_type, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+		$minUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $minUsage + $offset, $plan);
+		if ($price > ($minUsagePrice - $offsetPrice)) {
+			return $minUsage;
+		}
+		return 0;
 	}
 
 	protected static function getTariff($rate, $usage_type, $planName = null) {
