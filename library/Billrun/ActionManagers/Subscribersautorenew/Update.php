@@ -283,7 +283,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		// Check if last day
 		if ($nextRenewDay === date('t', $from)) {
-			$this->data['eom'] = 1;
+			$this->data['eom'] = $set['eom'] = 1;
 			$nextRenewDay = date('t', $renewDateInitial);
 		} else if ($nextRenewDay > date('t', $renewDateInitial)) {
 			$nextRenewDay = date('t', $renewDateInitial);
