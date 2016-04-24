@@ -1,17 +1,17 @@
 var checkItems = false;
 $(function () {
-  $('#check_all').change(function () {
-    $("tbody input[type='checkbox']").prop('checked', $(this).prop('checked'));
-  });
+	$('#check_all').change(function () {
+		$("tbody input[type='checkbox']").prop('checked', $(this).prop('checked'));
+	});
 	$("#close_and_new,#duplicate").click(function () {
 		var items_checked = $('#data_table :checked');
 		checkItems = true;
 		if (items_checked.length) {
-      if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'cards' || active_collection === 'subscribers')
-        window.location = '/admin#/' + active_collection + '/' + $(this).data('type') + '/' + items_checked.eq(0).val();
-      else {
-        $(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
-      }
+			if (active_collection === 'plans' || active_collection === 'rates' || active_collection === 'cards' || active_collection === 'subscribers')
+				window.location = '/admin#/' + active_collection + '/' + $(this).data('type') + '/' + items_checked.eq(0).val();
+			else {
+				$(this).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + items_checked.eq(0).val() + '&type=' + $(this).data('type'));
+			}
 		}
 	});
 
@@ -41,34 +41,34 @@ $(function () {
 		}
 	});
 
-  $("#ratePlanPopup").on('show.bs.modal', function (event) {
-    var rate_id = $(event.relatedTarget).data('rate-id');
-    var interconnect_key = $(event.relatedTarget).data('interconnect-key');
-    var plan = $(event.relatedTarget).data('plan');
-    var usage = $(event.relatedTarget).data('usage');
-    $('#data-rates-tbody tr').remove();
-    $('#rate-interconnect-info').remove();
-    $.ajax({
-      url: baseUrl + '/admin/getRate',
-      type: "GET",
-      data: {coll: 'rates', id: rate_id, interconnect_key: interconnect_key}
-    }).done(function (res) {
-      var entity = JSON.parse(res).entity;
-      var interconnect_entity = JSON.parse(res).interconnect;
-      var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
-      if (!_.isEmpty(interconnect_entity)) {
-        var interconnect = (_.isUndefined(interconnect_entity.rates[usage][plan]) ?
-                                interconnect_entity.rates[usage]['BASE'].rate : 
-                                interconnect_entity.rates[usage][plan].rate);
-      }
-      var $tbody = $("#data-rates-tbody");
-      $('#ratePlanPopupLabel').text(entity.key + " - " + plan);
-      _.forEach(rate, function (r) {
-        var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
-        $tbody.append($row);
-      });
-      if (interconnect) {
-        var $inter_table = $("<div id='rate-interconnect-info'><hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
+	$("#ratePlanPopup").on('show.bs.modal', function (event) {
+		var rate_id = $(event.relatedTarget).data('rate-id');
+		var interconnect_key = $(event.relatedTarget).data('interconnect-key');
+		var plan = $(event.relatedTarget).data('plan');
+		var usage = $(event.relatedTarget).data('usage');
+		$('#data-rates-tbody tr').remove();
+		$('#rate-interconnect-info').remove();
+		$.ajax({
+			url: baseUrl + '/admin/getRate',
+			type: "GET",
+			data: {coll: 'rates', id: rate_id, interconnect_key: interconnect_key}
+		}).done(function (res) {
+			var entity = JSON.parse(res).entity;
+			var interconnect_entity = JSON.parse(res).interconnect;
+			var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
+			if (!_.isEmpty(interconnect_entity)) {
+				var interconnect = (_.isUndefined(interconnect_entity.rates[usage][plan]) ?
+						interconnect_entity.rates[usage]['BASE'].rate :
+						interconnect_entity.rates[usage][plan].rate);
+			}
+			var $tbody = $("#data-rates-tbody");
+			$('#ratePlanPopupLabel').text(entity.key + " - " + plan);
+			_.forEach(rate, function (r) {
+				var $row = $("<tr><td>" + r.interval + "</td><td>" + r.price + "</td><td>" + r.to + "</td></tr>");
+				$tbody.append($row);
+			});
+			if (interconnect) {
+				var $inter_table = $("<div id='rate-interconnect-info'><hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
 					<thead>\
 						<tr>\
 							<th>Interval</th>\
@@ -79,70 +79,71 @@ $(function () {
 					<tbody id='data-interconnect-tbody'>\
 					</tbody>\
 				</table></div>");
-        var $inter_tbody = $('#data-interconnect-tbody', $inter_table)
-        _.forEach(interconnect, function (inter) {
-          var $row = $("<tr><td>" + inter.interval + "</td><td>" + inter.price + "</td><td>" + inter.to + "</td></tr>");
-          $inter_tbody.append($row);
-        });
-        $('.data-rates-table').after($inter_table);
-      }
-    });
-  });
+				var $inter_tbody = $('#data-interconnect-tbody', $inter_table)
+				_.forEach(interconnect, function (inter) {
+					var $row = $("<tr><td>" + inter.interval + "</td><td>" + inter.price + "</td><td>" + inter.to + "</td></tr>");
+					$inter_tbody.append($row);
+				});
+				$('.data-rates-table').after($inter_table);
+			}
+		});
+	});
 
-  $("#SourceRefPopup").on('show.bs.modal', function (event) {
-    var line_id = $(event.relatedTarget).data('line');
-    $.ajax({
-      url: baseUrl + '/admin/getEntity',
-      type: "GET",
-      data: {coll: "lines", id: line_id}
-    }).done(function (res) {
-      var entity = JSON.parse(res).entity;
-      var $modal_body = $(".modal-body");
-      var html = "";
-      _.forEach(entity.source_ref, function (v, k) {
-        if (_.isObject(v)) return;
-        var key = _.capitalize(k.replace(/_/, ' '));
-        html += "<br/><b>" + key + ":</b> " + v;
-      });
-      $modal_body.html(html);
-    });
-  });
+	$("#SourceRefPopup").on('show.bs.modal', function (event) {
+		var line_id = $(event.relatedTarget).data('line');
+		$.ajax({
+			url: baseUrl + '/admin/getEntity',
+			type: "GET",
+			data: {coll: "lines", id: line_id}
+		}).done(function (res) {
+			var entity = JSON.parse(res).entity;
+			var $modal_body = $(".modal-body");
+			var html = "";
+			_.forEach(entity.source_ref, function (v, k) {
+				if (_.isObject(v))
+					return;
+				var key = _.capitalize(k.replace(/_/, ' '));
+				html += "<br/><b>" + key + ":</b> " + v;
+			});
+			$modal_body.html(html);
+		});
+	});
 
-  $("#chargingPlanPopup").on('show.bs.modal', function (event) {
-    var plan_name = $(event.relatedTarget).data('charging-plan-name');
-    $('#data-charging-plan-tbody tr').remove();
-    $.ajax({
-      url: baseUrl + '/admin/getEntity',
-      type: "GET",
-      data: {coll: 'plans', name: plan_name}
-    }).done(function (res) {
-      var entity = JSON.parse(res).entity;
-      var include_types = _.keys(entity.include);
-      var tbody = $("#data-charging-plan-tbody");
-      var amount, pp_includes_name;
-      _.forEach(include_types, function (include_type) {
-        if (entity.include[include_type].length) {
-          _.forEach(entity.include[include_type], function (k, i) {
-            amount = (entity.include[include_type][i].usagev ? 
-                          entity.include[include_type][i].usagev : 
-                          (entity.include[include_type][i].cost ?
-                            entity.include[include_type][i].cost :
-                            entity.include[include_type][i].value));
-            pp_includes_name = entity.include[include_type][i].pp_includes_name;
-          });
-        } else {
-          amount = (entity.include[include_type].usagev ? 
-                        entity.include[include_type].usagev : 
-                        (entity.include[include_type][i].cost ?
-                            entity.include[include_type][i].cost :
-                            entity.include[include_type][i].value));
-          pp_includes_name = entity.include[include_type].pp_includes_name;
-        }
-        var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
-        tbody.append($row);
-      })
-    });
-  });
+	$("#chargingPlanPopup").on('show.bs.modal', function (event) {
+		var plan_name = $(event.relatedTarget).data('charging-plan-name');
+		$('#data-charging-plan-tbody tr').remove();
+		$.ajax({
+			url: baseUrl + '/admin/getEntity',
+			type: "GET",
+			data: {coll: 'plans', name: plan_name}
+		}).done(function (res) {
+			var entity = JSON.parse(res).entity;
+			var include_types = _.keys(entity.include);
+			var tbody = $("#data-charging-plan-tbody");
+			var amount, pp_includes_name;
+			_.forEach(include_types, function (include_type) {
+				if (entity.include[include_type].length) {
+					_.forEach(entity.include[include_type], function (k, i) {
+						amount = (entity.include[include_type][i].usagev ?
+								entity.include[include_type][i].usagev :
+								(entity.include[include_type][i].cost ?
+										entity.include[include_type][i].cost :
+										entity.include[include_type][i].value));
+						pp_includes_name = entity.include[include_type][i].pp_includes_name;
+					});
+				} else {
+					amount = (entity.include[include_type].usagev ?
+							entity.include[include_type].usagev :
+							(entity.include[include_type][i].cost ?
+									entity.include[include_type][i].cost :
+									entity.include[include_type][i].value));
+					pp_includes_name = entity.include[include_type].pp_includes_name;
+				}
+				var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");
+				tbody.append($row);
+			})
+		});
+	});
 
 	function getInputFileContent(file, contentLoadedCB) {
 		if (isAPIAvailable()) {
@@ -354,14 +355,14 @@ $(function () {
 		selectedClass: null
 	});
 
-  $('select[id="plan"]').multiselect({
-    maxHeight: 250,
-    enableFiltering: true,
-    enableCaseInsensitiveFiltering: true,
-    includeSelectAllOption: true,
-    selectAllValue: 'all',
-    selectedClass: null
-  });
+	$('select[id="plan"]').multiselect({
+		maxHeight: 250,
+		enableFiltering: true,
+		enableCaseInsensitiveFiltering: true,
+		includeSelectAllOption: true,
+		selectAllValue: 'all',
+		selectedClass: null
+	});
 
 	$('#search-criteria').submit(function () {
 		if ($("#type").length && !$("#type :selected").length) {
@@ -407,8 +408,7 @@ $(function () {
 	var lastTab = localStorage.getItem('lastTab');
 	if (lastTab) {
 		$('#' + lastTab).tab('show');
-	}
-	else {
+	} else {
 		$('#menutab1').tab('show');
 	}
 
@@ -420,8 +420,7 @@ function removeFilter(button) {
 	$(button).siblings("input[name='manual_value[]']").val('');
 	if ($(button).parent().siblings().length) {
 		$(button).parent().remove();
-	}
-	else {
+	} else {
 		$('.advanced-options').click();
 	}
 }
@@ -433,8 +432,7 @@ function type_changed(sel) {
 		$(sel).parent().find("input[name='manual_value[]']").prop('disabled', function (_, val) {
 			return !val;
 		});
-	}
-	else {
+	} else {
 		$(sel).siblings("input[name='manual_value[]']").show().prop('disabled', false);
 		$(sel).siblings(".input-append.date").hide();
 		$(sel).parent().find(".input-append.date>input[name='manual_value[]']").prop('disabled', true);
@@ -473,20 +471,20 @@ function update_current(obj) {
 	var item_checked = $(obj).next("input[type=checkbox],input[type=hidden]");
 	checkItems = false;
 	if (item_checked.length) {
-    $(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
+		$(obj).data('remote', '/admin/edit?coll=' + active_collection + '&id=' + item_checked.eq(0).val() + '&type=' + $(obj).data('type'));
 	}
 }
 
 function editBatchCards() {
-  var batch_no = $('#batch_number').val();
-  var selected = $('tbody input[type="checkbox"]:checked');
-  var serial_numbers = [];
-  $.each(selected, function (check, elm) {
-    serial_numbers.push($(elm).parent().parent().parent().find('*[data-title="Serial Number"]').html());
-  });
-  if (batch_no) {
-    window.location = '/admin#/batch/update/' + batch_no + "?cards=[" + serial_numbers.join(',') + "]";
-  }
+	var batch_no = $('#batch_number').val();
+	var selected = $('tbody input[type="checkbox"]:checked');
+	var serial_numbers = [];
+	$.each(selected, function (check, elm) {
+		serial_numbers.push($(elm).parent().parent().parent().find('*[data-title="Serial Number"]').html());
+	});
+	if (batch_no) {
+		window.location = '/admin#/batch/update/' + batch_no + "?cards=[" + serial_numbers.join(',') + "]";
+	}
 }
 
 function isAPIAvailable() {
@@ -514,22 +512,22 @@ function isAPIAvailable() {
 $(document).ready(function () {
 	$(".config input[type='checkbox']").bootstrapSwitch();
 
-  $('table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
-  if (window.location.pathname.match(/rates/gi)) {
-    if ($('select[id="plan"]').length) {
-      $('a[data-type="update"]').each(function (i, el) {
-        var href = $(el).attr('href');
-        href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
-        $(el).attr('href', href);
-      });
-    }
-  }
-  $('#data_table tbody tr').on('click', function () {
-      $(this).addClass('highlight').siblings().removeClass('highlight');
-  });
-  $('body').on('hidden.bs.modal', '.modal', function () {
-    $(this).removeData('bs.modal');
-  });
+	$('table').stickyTableHeaders({fixedOffset: $('.navbar-fixed-top')});
+	if (window.location.pathname.match(/rates/gi)) {
+		if ($('select[id="plan"]').length) {
+			$('a[data-type="update"]').each(function (i, el) {
+				var href = $(el).attr('href');
+				href += '?plans=' + JSON.stringify($('select[id="plan"]').val());
+				$(el).attr('href', href);
+			});
+		}
+	}
+	$('#data_table tbody tr').on('click', function () {
+		$(this).addClass('highlight').siblings().removeClass('highlight');
+	});
+	$('body').on('hidden.bs.modal', '.modal', function () {
+		$(this).removeData('bs.modal');
+	});
 });
 
 /**
@@ -545,8 +543,7 @@ function openPopup(obj, direction) {
 	if (popup_group_field == 'carrier') {
 		var from_day, to_day;
 		from_day = to_day = obj.data('value');
-	}
-	else {
+	} else {
 		var from_day = $('input[name="init_from_day"]').val();
 		var to_day = $('input[name="init_to_day"]').val();
 		var carrier = obj.siblings('input.carrier').val();
@@ -560,85 +557,85 @@ function exportRates() {
 }
 
 function detailFormatter(index, row) {
-  $.ajax({
-    method: "GET",
-    url: baseUrl + "/admin/getLineDetailsFromArchive",
-    data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
-  })
-    .done(function (res) {
-      res = JSON.parse(res);
-      var lines = res.detailed;
-      var $title, $thead;
-      
-      if (lines[0] && lines[0].usaget !== "balance") {
-        var aggregated = res.aggregated;
-        // aggregated
-        $title = $("<strong>Breakdown By Balance</strong>");
-        var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-        $thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th></tr></thead>");
-        $aggregated_table.append($thead).append('<tbody>');
-        _.forEach(aggregated, function (aggregate, i) {
-          var $tr = $("<tr></tr>");
-          var idx = i + 1;
-          var usagev = (aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "";
-          var charge = (aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "";
-          if (aggregate.s_unit && aggregate.s_unit.toLowerCase() !== "nis")
-            charge = usagev;
-          //var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
-          $tr.append("<td>" + idx + "</td>");
-          $tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
-          $tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
-          $tr.append("<td>" + usagev + "</td>");
-          $tr.append("<td>" + charge + "</td>");
-          $tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "" ) + "</td>");
-          $tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
-          $tr.append("<td>" + aggregate.s_unit + "</td>");
-          $aggregated_table.append($tr);
-        });
-        $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
-      }
+	$.ajax({
+		method: "GET",
+		url: baseUrl + "/admin/getLineDetailsFromArchive",
+		data: {stamp: $('tr[data-index="' + index + '"]').data('stamp')}
+	})
+			.done(function (res) {
+				res = JSON.parse(res);
+				var lines = res.detailed;
+				var $title, $thead;
 
-      // lines
-      if (lines[0] && lines[0].usaget === "balance") {
-        $title = $("<strong>Breakdown</strong>");
-      } else {
-        $title = $("<strong>Breakdown By Intervals</strong>");
-      }
-      var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
-      $thead = $("<tr><th>#</th><th>Balance ID</th><th>Balance Name</th>");
-      if (lines[0] && lines[0].usaget !== "balance") {
-        $thead.append("<th>API Name</th>");
-      }
-      $thead.append("<th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></tr>");
-      $("<thead></thead>").append($thead);
-      $table.append($thead).append('<tbody>');
-      _.forEach(lines, function (line, i) {
-        var usagev = (line.usagev || line.usagev == 0) ? line.usagev : "";
-        var charge = (line.aprice || line.aprice == 0) ? line.aprice.toFixed(6) : "";
-        if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis")
-          charge = usagev;
-        var $tr = $("<tr></tr>");
-        var idx = i + 1;
-        var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
-        $tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
-        $tr.append("<td>" + (line.pp_includes_external_id ? line.pp_includes_external_id : "") + "</td>");
-        $tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");
-        if (line.usaget === "data")
-          $tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
-        else if (line.usaget !== "balance")
-          $tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
-        $tr.append("<td>" + usagev + "</td>");
-        $tr.append("<td>" + charge + "</td>");
-        $tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "" ) + "</td>");
-        $tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
-        $tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
-        $tr.append("<td>" + ((line.urt && line.urt.sec) ? moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') : "") + "</td>");
-        $table.append($tr);
-      });
-      if ($aggregated_table) {
-        $aggregated_table.after("<br/>", $title, "<br/>", $table);
-      } else {
-        $('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($table);
-      }
-    });
+				if (lines[0] && lines[0].usaget !== "balance") {
+					var aggregated = res.aggregated;
+					// aggregated
+					$title = $("<strong>Breakdown By Balance</strong>");
+					var $aggregated_table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
+					$thead = $("<thead><tr><th>#</th><th>Balance ID</th><th>Balance Name</th><th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th></tr></thead>");
+					$aggregated_table.append($thead).append('<tbody>');
+					_.forEach(aggregated, function (aggregate, i) {
+						var $tr = $("<tr></tr>");
+						var idx = i + 1;
+						var usagev = (aggregate.s_usagev || aggregate.s_usagev == 0) ? aggregate.s_usagev : "";
+						var charge = (aggregate.s_price || aggregate.s_price == 0) ? aggregate.s_price.toFixed(6) : "";
+						if (aggregate.s_unit && aggregate.s_unit.toLowerCase() !== "nis")
+							charge = usagev;
+						//var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=view';
+						$tr.append("<td>" + idx + "</td>");
+						$tr.append("<td>" + (aggregate._id.pp_includes_external_id ? aggregate._id.pp_includes_external_id : "") + "</td>");
+						$tr.append("<td>" + (aggregate._id.pp_includes_name ? aggregate._id.pp_includes_name : "") + "</td>");
+						$tr.append("<td>" + usagev + "</td>");
+						$tr.append("<td>" + charge + "</td>");
+						$tr.append("<td>" + (_.isNumber(aggregate.balance_before) ? aggregate.balance_before.toFixed(6) : "") + "</td>");
+						$tr.append("<td>" + (_.isNumber(aggregate.balance_after) ? aggregate.balance_after.toFixed(6) : "") + "</td>");
+						$tr.append("<td>" + aggregate.s_unit + "</td>");
+						$aggregated_table.append($tr);
+					});
+					$('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($aggregated_table);
+				}
+
+				// lines
+				if (lines[0] && lines[0].usaget === "balance") {
+					$title = $("<strong>Breakdown</strong>");
+				} else {
+					$title = $("<strong>Breakdown By Intervals</strong>");
+				}
+				var $table = $("<table class='table table-striped table-bordered table-no-more-tables table-hover'></table>");
+				$thead = $("<tr><th>#</th><th>Balance ID</th><th>Balance Name</th>");
+				if (lines[0] && lines[0].usaget !== "balance") {
+					$thead.append("<th>API Name</th>");
+				}
+				$thead.append("<th>Usage</th><th>Charge</th><th>Balance Before</th><th>Balance After</th><th>Unit</th><th>Time</th></tr>");
+				$("<thead></thead>").append($thead);
+				$table.append($thead).append('<tbody>');
+				_.forEach(lines, function (line, i) {
+					var usagev = (line.usagev || line.usagev == 0) ? line.usagev : "";
+					var charge = (line.aprice || line.aprice == 0) ? line.aprice.toFixed(6) : "";
+					if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis")
+						charge = usagev;
+					var $tr = $("<tr></tr>");
+					var idx = i + 1;
+					var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
+					$tr.append("<td><a href='#popupModal' data-remote='" + remote + "' data-type='view' data-toggle='modal' role='button' onclick='update_current(this);'>" + idx + "</a></td>");
+					$tr.append("<td>" + (line.pp_includes_external_id ? line.pp_includes_external_id : "") + "</td>");
+					$tr.append("<td>" + (line.pp_includes_name ? line.pp_includes_name : "") + "</td>");
+					if (line.usaget === "data")
+						$tr.append("<td>" + (line.record_type ? line.record_type : "") + "</td>");
+					else if (line.usaget !== "balance")
+						$tr.append("<td>" + (line.api_name ? line.api_name : "") + "</td>");
+					$tr.append("<td>" + usagev + "</td>");
+					$tr.append("<td>" + charge + "</td>");
+					$tr.append("<td>" + (_.isNumber(line.balance_before) ? line.balance_before.toFixed(6) : "") + "</td>");
+					$tr.append("<td>" + (_.isNumber(line.balance_after) ? line.balance_after.toFixed(6) : "") + "</td>");
+					$tr.append("<td>" + (line.usage_unit ? line.usage_unit : "") + "</td>");
+					$tr.append("<td>" + ((line.urt && line.urt.sec) ? moment(line.urt.sec * 1000).format('DD-MM-YYYY HH:mm:ss') : "") + "</td>");
+					$table.append($tr);
+				});
+				if ($aggregated_table) {
+					$aggregated_table.after("<br/>", $title, "<br/>", $table);
+				} else {
+					$('tr[data-index="' + index + '"]').next('tr.detail-view').find('td').append($title, "<br/>").append($table);
+				}
+			});
 }

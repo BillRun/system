@@ -1,17 +1,17 @@
 angular
-  .module('BillrunApp')
-  .controller('MenuController', MenuController);
+		.module('BillrunApp')
+		.controller('MenuController', MenuController);
 
 function MenuController($rootScope, $location) {
-  'use strict';
+	'use strict';
 
-  var vm = this;
+	var vm = this;
 
-  vm.goToPage = function (page) {
-    $rootScope.active_page = page;
-    $location.path('/' + page + "/list");
-  };
+	vm.goToPage = function (page) {
+		$rootScope.active_page = page;
+		$location.path('/' + page + "/list");
+	};
 
-  vm.init = function () {
-  };
+	vm.init = function () {
+	};
 }
