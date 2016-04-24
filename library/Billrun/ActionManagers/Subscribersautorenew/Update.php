@@ -289,8 +289,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$nextRenewDay = date('t', $renewDateInitial);
 		}
 
-		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 23:59:59");
-		$set['next_renew_date'] = new MongoDate($renewDate + 1);
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 00:00:00");
+		$set['next_renew_date'] = new MongoDate($renewDate);
 
 		unset($jsonUpdateData['migrated']);
 	}
