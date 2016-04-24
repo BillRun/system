@@ -347,7 +347,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
 		if ($to) {
-			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime('tomorrow', strtotime($to)) + date_default_timezone_get() - 1) : $to;
+			$this->recordToSet['to'] = (is_string($to)) ? new MongoDate(strtotime('tomorrow', strtotime($to)) - 1) : $to;
 		}
 
 		// Upsert is not needed so no need to go over the fields

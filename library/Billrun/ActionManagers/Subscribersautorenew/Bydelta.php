@@ -105,9 +105,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 	protected function parseDateFieldMongoTime($field, $time) {
 		if($field === "to") {
-			return strtotime("23:59:59", $time) + date_default_timezone_get();
+			return strtotime("23:59:59", $time);
 		} else if($field === "from") {
-			return strtotime("00:00:00", $time) + date_default_timezone_get();
+			return strtotime("00:00:00", $time);
 		}
 		
 		return $time;
@@ -134,7 +134,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				return false;
 			}
 			
-			$record[$field] = new MongoDate($this->parseDateFieldMongoTime($field, $time));
+			$record[$field] = MongoDate($this->parseDateFieldMongoTime($field, $time));
 		}
 
 		return true;
