@@ -522,13 +522,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		// Check if the price is enough for default usagev
 		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev',  0, 'float'); // float avoid set type to int
 		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage + $offset, $plan);
-		if ($price > ($defaultUsagePrice - $offsetPrice)) {
+		if ($price >= ($defaultUsagePrice - $offsetPrice)) {
 			return $defaultUsage;
 		}
 		// Check if the price is enough for minimum usagev
 		$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usage_type, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
 		$minUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $minUsage + $offset, $plan);
-		if ($price > ($minUsagePrice - $offsetPrice)) {
+		if ($price >= ($minUsagePrice - $offsetPrice)) {
 			return $minUsage;
 		}
 		return 0;

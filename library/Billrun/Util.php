@@ -1044,11 +1044,15 @@ class Billrun_Util {
 				}
 			}
 		}
+		$response = null;
 		try {
 			$response = $client->request();
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
+			if(!$response) {
+				$response = $e->getMessage();
+			}
 		}
 		if (empty($output)) {
 			Billrun_Factory::log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
