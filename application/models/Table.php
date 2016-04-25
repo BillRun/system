@@ -231,7 +231,7 @@ class TableModel {
 				<ul class="dropdown-menu">';
 		// TODO: move it to config
 		$ranges = array(
-			10, 50, 100, 500, 1000
+			10, 50, 100, 500, 1000, 10000
 		);
 		foreach ($ranges as $r) {
 			$ret .= '<li><a href="?listSize=' . $r . '">' . $r . '</a></li>';

@@ -1890,8 +1890,11 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		$prefix = $this->getRequest()->get('prefix');
+		$key = $this->getRequest()->get('key');
 		$query = array(
+			'key' => array('$ne' => $key),
 			'params.prefix' => array('$in' => array($prefix)),
+			'from' => array('$lte' => new MongoDate()),
 			'to' => array('$gte' => new MongoDate()),
 		);
 		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
