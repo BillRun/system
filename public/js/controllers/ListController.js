@@ -138,7 +138,7 @@ app.controller('ListController', ['$scope', '$routeParams', '$location', 'Databa
 				coll: $routeParams.collection
 			};
 			$scope.listFilter = {};
-			$scope.availableListSizes = [10, 50, 100, 500, 1000];
+			$scope.availableListSizes = [10, 50, 100, 500, 1000, 10000];
 			$scope.active = $routeParams.collection;
 			$scope.selected_items = {};
 			if ($location.search()) {
