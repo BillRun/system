@@ -246,14 +246,13 @@ class BalancesModel extends TableModel {
 	
 	protected function setRecurringData(&$item) {
 		if (!$item['recurring']) {
-			$item['recurring'] = '';
+			$item['recurring'] = false;
 			$item['next_renew_date'] = '';
 			return;
 		}
-		$item['recurring'] = 'True';
+		$item['recurring'] = true;
 		$query = Billrun_Util::getDateBoundQuery();
 		$query['sid'] = $item['sid'];
-		$query['aid'] = $item['aid'];
 		$query['include'][$item['charging_by_usaget']]['pp_includes_name'] = $item['pp_includes_name'];
 		$autoRenew = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection()->query()->cursor()->limit(1)->current();
 		$item['next_renew_date'] = (!$autoRenew->isEmpty() ? $autoRenew->get('next_renew_date') : '');
