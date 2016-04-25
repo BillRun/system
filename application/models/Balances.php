@@ -236,11 +236,27 @@ class BalancesModel extends TableModel {
 			if ($current_plan = $this->getDBRefField($item, 'current_plan')) {
 				$item['current_plan'] = $current_plan['name'];
 			}
+			$this->setRecurringData($item);
 			$ret[] = $item;
 		}
 
 		$this->_count = $resource->count(false);
 		return $ret;
+	}
+	
+	protected function setRecurringData(&$item) {
+		if (!$item['recurring']) {
+			$item['recurring'] = '';
+			$item['next_renew_date'] = '';
+			return;
+		}
+		$item['recurring'] = 'True';
+		$query = Billrun_Util::getDateBoundQuery();
+		$query['sid'] = $item['sid'];
+		$query['aid'] = $item['aid'];
+		$query['include'][$item['charging_by_usaget']]['pp_includes_name'] = $item['pp_includes_name'];
+		$autoRenew = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection()->query()->cursor()->limit(1)->current();
+		$item['next_renew_date'] = (!$autoRenew->isEmpty() ? $autoRenew->get('next_renew_date') : '');
 	}
 
 	public function getSortFields() {
