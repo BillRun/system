@@ -7,7 +7,7 @@ app.directive('prettyError', function ($timeout) {
 		link: function (scope, elm, attrs) {
 			scope.$watch('errors', function(n) {
 				if (typeof(n) !== 'undefined' &&
-						((typeof(n.summaryReport) !== 'undefined' && n.summaryReport.length) ||n.message)) {
+						((typeof(n.summaryReport) !== 'undefined' && n.summaryReport.length) || n.message)) {
 					$("body").animate({scrollTop: 0}, "fast")
 				}
 			}, true);
