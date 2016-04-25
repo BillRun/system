@@ -142,8 +142,14 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			$passThruFields = array_merge($requiredFields, $stdFields);
 			foreach ($passThruFields as $field) {
 				if (isset($rawRow[$field])) {
-					$row[$field] = $rawRow[$field];
+					if ($field == 'org_protocol'){
+						$row[$field] = (int)$rawRow[$field];
+					}
+					else{
+						$row[$field] = $rawRow[$field];
+					}
 				}
+
 			}
 		} else {
 			return $rawRow;
