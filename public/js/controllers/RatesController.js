@@ -55,7 +55,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			var prefix = $scope.entity.params.prefix[prefixIndex];
 			_.forEach($scope.entity.params.prefix, function (_pref, _index) {
 				if (_index !== prefixIndex && prefix === _pref) {
-					alert("Prefix '" + prefix + "' alrady exists in this rate");
+					alert("Prefix '" + prefix + "' already exists in this rate");
 					return;
 				}
 			});
@@ -63,7 +63,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			Database.getRatesWithSamePrefix({prefix: prefix, key: key}).then(function (res) {
 				var rates = res.data;
 				if (rates.length) {
-					alert("Prefix '" + prefix + "' alrady exists in the following rate\/s: " + rates);
+					alert("Prefix '" + prefix + "' already exists in the following rate\/s: " + rates);
 				}
 			});
 		};
