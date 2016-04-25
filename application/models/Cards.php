@@ -67,6 +67,11 @@ class CardsModel extends TableModel {
 		foreach ($names as $name) {
 			$planNames[$name['name']] = $name['name'];
 		}
+		$names = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor()->sort(array('name' => 1));
+		$serviceProvidersNames = array();
+		foreach ($names as $name) {
+			$serviceProvidersNames[$name['name']] = $name['name'];
+		}
 
 		$statuses = array('Idle' => 'Idle', 'Shipped' => 'Shipped', 'Active' => 'Active', 'Disqualified' => 'Disqualified', 'Stolen' => 'Stolen', 'Expired' => 'Expired', 'Used' => 'Used');
 		$filter_fields = array(
@@ -109,10 +114,11 @@ class CardsModel extends TableModel {
 			'service_provider' => array(
 				'key' => 'service_provider',
 				'db_key' => 'service_provider',
-				'input_type' => 'text',
-				'comparison' => 'contains',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
 				'display' => 'Service Provider',
-				'default' => '',
+				'values' => $serviceProvidersNames,
+				'default' => array(),
 			),
 			'sid' => array(
 				'key' => 'sid',
