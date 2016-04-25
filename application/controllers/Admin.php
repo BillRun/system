@@ -790,6 +790,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		  return $this->responseError($v->getErrors());
 		  }
 		 */
+		if (is_subclass_of($model, "TabledateModel") && $model->hasEntityWithOverlappingDates($data)) {
+			return $this->responseError("There's an entity with overlapping dates");
+		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));

@@ -68,6 +68,39 @@ class TabledateModel extends TableModel {
 		$to_date = strtotime($entity['to']);
 		return $to_date > time();
 	}
+	
+	public function hasEntityWithOverlappingDates($entity) {
+		$from_date = new MongoDate(strtotime($entity['from']));
+		if (!$from_date) {
+			return $this->setError("date error");
+		}
+		$to_date = new MongoDate(strtotime($entity['to']));
+		if (!$to_date) {
+			return $this->setError("date error");
+		}
+		$id = new MongoId($entity['_id']);
+		if (!$id) {
+			return $this->setError("id error");
+		}
+		$query = array(
+			'_id' => array('$ne' => $id),
+			$this->search_key => $entity[$this->search_key],
+			'$or' => array(
+				array('from' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				)),
+				array('to' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				))
+			)
+		);
+		$result = $this->collection
+			->query($query)
+			->cursor()->count();
+		return $result > 0;
+	}
 
 	public function startsInFuture($entity) {
 		$from_date = strtotime($entity['from']);
