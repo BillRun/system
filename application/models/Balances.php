@@ -254,7 +254,7 @@ class BalancesModel extends TableModel {
 		$query = Billrun_Util::getDateBoundQuery();
 		$query['sid'] = $item['sid'];
 		$query['include'][$item['charging_by_usaget']]['pp_includes_name'] = $item['pp_includes_name'];
-		$autoRenew = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection()->query()->cursor()->limit(1)->current();
+		$autoRenew = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection()->query()->cursor()->sort(array('next_renew_date' => 1))->limit(1)->current();
 		$item['next_renew_date'] = (!$autoRenew->isEmpty() ? $autoRenew->get('next_renew_date') : '');
 	}
 
