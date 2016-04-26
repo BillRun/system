@@ -241,6 +241,27 @@ $(function () {
 			}
 		}
 	});
+	
+	$("#saveVersionModal #saveVersion").click(function (event) {
+		function saveVersion(collection, name) {
+			$.ajax({
+				url: "/api/saveversion",
+				type: "POST",
+				data: {collection: collection, name: name},
+				error: function(err) { 
+					alert('Error exporting, try again');
+					$('#cancelSaveVersion').click();
+				}       
+			}).done(function (ret) {
+				alert('Exported successfully');
+				$('#cancelSaveVersion').click();
+			});
+		}
+		
+		var _collection = coll;
+		var _name = $('#versionName').val();
+		saveVersion(_collection, _name);
+	});
 
 	$("#uploadModal #upload").click(function (event) {
 		var files = $("#uploadModal #file-upload").get(0).files;
