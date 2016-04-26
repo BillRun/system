@@ -213,13 +213,18 @@ class RatesModel extends TabledateModel {
 				'plan' => array(
 					'width' => 2,
 				),
-				'showprefix' => array(
-					'width' => 2,
-				),
 			)
 		);
 		
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
+		$prefix = array(
+				'showprefix' => array(
+				'width' => 2,
+			)
+		);
+		$parentOrder = parent::getFilterFieldsOrder();
+		$parentOrder[0] = array_merge($parentOrder[0], $prefix);
+		
+		return array_merge($filter_field_order, $parentOrder);
 	}
 
 	public function applyFilter($filter_field, $value) {

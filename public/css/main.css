@@ -395,6 +395,7 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	display: inline;
 	float:left;
 	margin-right: 10px;
+	padding-top: 2px;
 }
 
 #popupModal {
