@@ -396,7 +396,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 					tomorrow.setDate(tomorrow.getDate() + 1);
 					entity.from = tomorrow;
 				}
-				$scope.title = _.capitalize($scope.action) + " " + $scope.entity.key + " Rate";
+				$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " " + $scope.entity.key + " Rate";
 				angular.element('title').text("BillRun - " + $scope.title);
 				if ($location.search().plans && $location.search().plans.length) {
 					var plans = JSON.parse($location.search().plans);

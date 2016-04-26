@@ -390,7 +390,8 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	margin:0;
 }
 
-.toolbar-rates .control-group0 {
+.toolbar-rates .control-group0,
+.toolbar-plans .control-group0 {
 	display: inline;
 	float:left;
 	margin-right: 10px;
@@ -432,7 +433,7 @@ div.billrun-logo img {
 	margin-left:3px;
 }
 .table>thead>tr>th, .table>tbody>tr>th, .table>tfoot>tr>th, .table>thead>tr>td, .table>tbody>tr>td, .table>tfoot>tr>td{ 
-	padding:5px;  
+	padding: 0 5px 0;
 	vertical-align:middle;
 	text-align:center;
 }
@@ -518,4 +519,11 @@ tr[data-index] label.checkbox {
 }
 tr[data-index] a.detail-icon {
 	margin-left:5px;
+}
+
+.inline-toolbar > .form-control {
+	margin-right: 10px;
+}
+.inline-toolbar > input[type='checkbox'] {
+	margin-left: 15px;
 }
