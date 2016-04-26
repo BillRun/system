@@ -205,28 +205,21 @@ class RatesModel extends TabledateModel {
 //			),
 			array(
 				'key' => array(
-					'width' => 2,
+					'width' => 4,
 				),
-			),
-			array(
 				'prefix' => array(
-					'width' => 2,
+					'width' => 4,
 				),
-			),
-			array(
 				'plan' => array(
 					'width' => 2,
-				)
-			)
-		);
-		$post_filter_field = array(
-			array(
+				),
 				'showprefix' => array(
 					'width' => 2,
 				),
-			),
+			)
 		);
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
+		
+		return array_merge($filter_field_order, parent::getFilterFieldsOrder());
 	}
 
 	public function applyFilter($filter_field, $value) {
