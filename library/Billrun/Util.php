@@ -908,4 +908,11 @@ class Billrun_Util {
 
 		return $output;
 	}
+	
+	public static function getTimezoneOffsetInSeconds($timezone) {
+		$sign = $timezone[0] == '+' ? 1 : -1;
+		$hours = substr($timezone, 1, 2);
+		$minutes = substr($timezone, -2, 2);
+		return $sign * ($hours * 3600 + $minutes * 60);
+	}
 }
