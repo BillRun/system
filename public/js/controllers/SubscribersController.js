@@ -62,7 +62,7 @@ app.controller('SubscribersController', ['$scope', '$window', '$routeParams', 'D
 			};
 			Database.getEntity(params).then(function (res) {
 				$scope.entity = res.data.entity;
-				$scope.title = _.capitalize($scope.action) + " Subscriber " + $scope.entity.sid;
+				$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " Subscriber " + $scope.entity.sid;
 				angular.element('title').text("BillRun - " + $scope.title);
 				$scope.autorized_write = res.data.authorized_write;
 				if ($scope.entity.imsi && _.isString($scope.entity.imsi)) {
