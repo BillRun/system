@@ -120,10 +120,8 @@ abstract class Billrun_Autorenew_Record {
 	 * @return Result of the update operation.
 	 */
 	protected function updateAutorenew($nextRenewDate) {
-		if (is_a($nextRenewDate, 'MongoDate')) {
-			$nextRenewDate->sec += 1;
-		} else {
-			$nextRenewDate = new MongoDate($nextRenewDate + 1);
+		if (!is_a($nextRenewDate, 'MongoDate')) {
+			$nextRenewDate = new MongoDate($nextRenewDate);
 		}
 
 		$this->data['last_renew_date'] = new MongoDate();

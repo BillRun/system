@@ -212,7 +212,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['last_renew_date'] = 0;
 
 		// Check if the from is in the past.
-		if ($from >= strtotime("today midnight")) {
+		if ($from >= strtotime("tomorrow midnight")) {
 			$set['next_renew_date'] = new MongoDate(strtotime("00:00:00", $from));
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
