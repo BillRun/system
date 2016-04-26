@@ -224,15 +224,43 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h3 id="saveVersionModalLabel"> Save Version</h3>
+				<h3 id="saveVersionModalLabel">Save Version</h3>
 			</div>
 			<div class="modal-body">
 				<label id="versionNameLabel">Select version name:</label>
-				<input id="versionName" type="text" class="form-control" value="<?php echo 'rates_' . date('Ymd-Hi') . '.export'?>" />
+				<input id="versionName" type="text" class="form-control" value="<?php echo $active . '_' . date('Ymd-Hi') . '.export'?>" />
 			</div>
 			<div class="modal-footer">
 				<button id="cancelSaveVersion" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
 				<span><a id='saveVersion' data-url="/api/saveversion" class="btn btn-primary">Save</a></span>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="modal fade" id="loadVersionModal" tabindex="-2" role="dialog" aria-labelledby="loadVersionModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+				<h3 id="loadVersionModalLabel">Load Previous Version</h3>
+			</div>
+			<div class="modal-body">
+				<label id="versionSelectLabel">Select version:</label>
+				<br/>
+				<?php
+				require_once APPLICATION_PATH . '/application/controllers/Action/Loadversion.php';
+				$versions = LoadversionAction::getVersions();
+				?>
+				<select id="versions-select" name="versions-select" class="form-control multiselect">
+				<?php foreach ($versions as $version) :?>
+					<option value="<?php echo $version; ?>"><?php echo $version; ?></option>";
+				<?php endforeach;?>
+				</select>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelLoadVersion" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+				<span><a id='loadVersion' data-url="/api/loadversion" class="btn btn-primary">Load</a></span>
 			</div>
 		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
