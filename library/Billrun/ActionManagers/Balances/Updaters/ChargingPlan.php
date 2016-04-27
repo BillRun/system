@@ -31,21 +31,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return MongoDate
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
-		if ($wallet->getPPID() == 1) {
-			return $wallet->getPeriod();
-		}
-		if(isset($recordToSet['to'])) {
-			$wallet->setPeriod($recordToSet['to']);
-			return $recordToSet['to'];
-		}
-		
+		// Check if the wallet has a special period.
 		$walletPeriod = $wallet->getPeriod();
 		if ($walletPeriod) {
 			return $this->getDateFromPeriod($walletPeriod);
-		} else {
-			Billrun_Factory::log("Invalid data!", Zend_Log::ERR);
-			return null;
 		}
+		$wallet->setPeriod($recordToSet['to']);
+		return $recordToSet['to'];
 	}
 
 	protected function getChargingPlanQuery($query) {
