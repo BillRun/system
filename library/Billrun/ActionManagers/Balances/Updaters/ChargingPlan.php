@@ -129,7 +129,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-
+		
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
 		if ($coreBalance !== null) {
@@ -151,6 +151,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 				$chargingByValue = array($chargingByValue);
 			}
 
+			if(!isset($chargingByValue['pp_includes_name'])) {
+				continue;
+			}
+			
 			// There is more than one value pair in the wallet.
 			foreach ($chargingByValue as $chargingByValueValue) {
 				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery);
