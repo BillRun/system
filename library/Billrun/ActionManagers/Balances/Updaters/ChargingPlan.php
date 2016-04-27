@@ -115,13 +115,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
-		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
-
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-
+		
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
 		if ($coreBalance !== null) {
@@ -142,10 +140,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			if (Billrun_Util::isAssoc($chargingByValue)) {
 				$chargingByValue = array($chargingByValue);
 			}
-
+			
 			// There is more than one value pair in the wallet.
 			foreach ($chargingByValue as $chargingByValueValue) {
-				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery);
+				$currRecordToSet = $recordToSet;
+				$this->handleExpirationDate($currRecordToSet, $chargingByValueValue);
+				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $currRecordToSet, $updateQuery);
 				if ($returnPair === false) {
 					return false;
 				}
