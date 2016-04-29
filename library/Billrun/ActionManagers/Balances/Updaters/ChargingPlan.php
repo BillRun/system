@@ -31,10 +31,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return MongoDate
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
-		if ($wallet->getPPID() == 1) {
-			return $wallet->getPeriod();
-		}
-		if(isset($recordToSet['to'])) {
+		if($wallet->getPPID() != 1 && isset($recordToSet['to'])) {
 			$wallet->setPeriod($recordToSet['to']);
 			return $recordToSet['to'];
 		}
