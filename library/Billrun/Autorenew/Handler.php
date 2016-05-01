@@ -7,7 +7,7 @@
  */
 
 /**
- * Handle the auto renew service proccess
+ * Handle the auto renew service process
  *
  */
 class Billrun_Autorenew_Handler {
@@ -20,8 +20,8 @@ class Billrun_Autorenew_Handler {
 		$or = array();
 		$or['interval'] = 'month';
 
-		$monthLower = mktime(0, 0, 0, date("n"), date("j"), date("Y"));
-		$monthUpper = mktime(23, 59, 59, date("n"), date("j"), date("Y"));
+		$monthLower = strtotime('midnight');
+		$monthUpper = strtotime('tomorrow')-1;
 
 		$or['next_renew_date'] = array('$gte' => new MongoDate($monthLower), '$lte' => new MongoDate($monthUpper));
 
@@ -33,8 +33,8 @@ class Billrun_Autorenew_Handler {
 	 * @return array - query
 	 */
 	protected function getDayAutoRenewQuery() {
-		$dayLower = mktime(0, 0, 0, date("n"), date("j"), date("Y"));
-		$dayUpper = mktime(23, 59, 59, date("n"), date("j"), date("Y"));
+		$dayLower = strtotime('midnight');
+		$dayUpper = strtotime('tomorrow')-1;
 
 		$or = array();
 		$or['next_renew_date'] = array('$gte' => new MongoDate($dayLower), '$lte' => new MongoDate($dayUpper));
