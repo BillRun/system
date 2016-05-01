@@ -173,11 +173,10 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
 
-		if (!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
+		if ($this->setToForUpdate($update, $toTime, $chargingPlan) === FALSE) {
+			return FALSE;
 		}
-
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,

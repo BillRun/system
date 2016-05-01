@@ -112,7 +112,9 @@ class RatesModel extends TabledateModel {
 		if ($this->showprefix) {
 			$columns = array(
 				'key' => 'Key',
-				'prefix' => 'Prefix'
+				'prefix' => 'Prefix',
+				'from' => 'From',
+				'to' => 'To'
 			);
 		} else {
 			$columns = array(
@@ -121,7 +123,9 @@ class RatesModel extends TabledateModel {
 				'tprice' => 'Price',
 				'tduration' => 'Interval',
 				'tunit' => 'Unit',
-				'taccess' => 'Access'
+				'taccess' => 'Access',
+				'from' => 'From',
+				'to' => 'To'
 			);
 		}
 		if (!empty($this->extra_columns)) {
@@ -201,28 +205,26 @@ class RatesModel extends TabledateModel {
 //			),
 			array(
 				'key' => array(
-					'width' => 2,
+					'width' => 4,
 				),
-			),
-			array(
 				'prefix' => array(
-					'width' => 2,
+					'width' => 4,
 				),
-			),
-			array(
 				'plan' => array(
 					'width' => 2,
-				)
+				),
 			)
 		);
-		$post_filter_field = array(
-			array(
+		
+		$prefix = array(
 				'showprefix' => array(
-					'width' => 2,
-				),
-			),
+				'width' => 2,
+			)
 		);
-		return array_merge($filter_field_order, parent::getFilterFieldsOrder(), $post_filter_field);
+		$parentOrder = parent::getFilterFieldsOrder();
+		$parentOrder[0] = array_merge($parentOrder[0], $prefix);
+		
+		return array_merge($filter_field_order, $parentOrder);
 	}
 
 	public function applyFilter($filter_field, $value) {

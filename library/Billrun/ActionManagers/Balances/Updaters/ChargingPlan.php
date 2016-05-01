@@ -31,13 +31,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return MongoDate
 	 */
 	protected function getExpirationTime($wallet, $recordToSet) {
-		// Check if the wallet has a special period.
+		if($wallet->getPPID() != 1 && isset($recordToSet['to'])) {
+			$wallet->setPeriod($recordToSet['to']);
+			return $recordToSet['to'];
+		}
+		
 		$walletPeriod = $wallet->getPeriod();
 		if ($walletPeriod) {
 			return $this->getDateFromPeriod($walletPeriod);
+		} else {
+			Billrun_Factory::log("Invalid data!", Zend_Log::ERR);
+			return null;
 		}
-		$wallet->setPeriod($recordToSet['to']);
-		return $recordToSet['to'];
 	}
 
 	protected function getChargingPlanQuery($query) {
@@ -115,13 +120,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
-		$this->handleExpirationDate($recordToSet, $chargingPlanRecord);
-
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
 		}
-
+		
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
 		if ($coreBalance !== null) {
@@ -142,10 +145,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			if (Billrun_Util::isAssoc($chargingByValue)) {
 				$chargingByValue = array($chargingByValue);
 			}
-
+			
 			// There is more than one value pair in the wallet.
 			foreach ($chargingByValue as $chargingByValueValue) {
-				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery);
+				$currRecordToSet = $recordToSet;
+				$this->handleExpirationDate($currRecordToSet, $chargingByValueValue);
+				$returnPair = $this->getReturnPair($chargingByValueValue, $chargingBy, $subscriber, $chargingPlanRecord, $currRecordToSet, $updateQuery);
 				if ($returnPair === false) {
 					return false;
 				}
@@ -380,11 +385,8 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
 
-		if (!Billrun_Util::multiKeyExists($update, 'to')) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $toTime;
-		}
-
+		$this->setToForUpdate($update, $toTime, $wallet);
+		
 		$options = array(
 			'upsert' => true,
 			'new' => true,
@@ -398,7 +400,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
 	 */
-	protected function getDefaultBalance($subscriber) {
+	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -412,17 +414,18 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$defaultBalance['aid'] = $subscriber['aid'];
 		$defaultBalance['sid'] = $subscriber['sid'];
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
+//		$defaultBalance['charging_plan_name'] = $chargingPlanRecord['name'];
 
 		// Get the ref to the subscriber's plan.
-		$planName = $subscriber['plan'];
-		$plansCollection = Billrun_Factory::db()->plansCollection();
+//		$planName = $subscriber['plan'];
+//		$plansCollection = Billrun_Factory::db()->plansCollection();
 
 		// TODO: Is this right here to use the now time or should i use the times from the charging plan?
-		$plansQuery = array(
-			"name" => $planName,
-			"to" => array('$gt', $nowTime),
-			"from" => array('$lt', $nowTime)
-		);
+//		$plansQuery = array(
+//			"name" => $planName,
+//			"to" => array('$gt', $nowTime),
+//			"from" => array('$lt', $nowTime)
+//		);
 
 		// TODO: Ofer - What are we suppose to do with the plan? we didn't check 
 		// if it exists before.

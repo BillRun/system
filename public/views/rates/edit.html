@@ -99,7 +99,7 @@
 			</h3>
 			<div id='rate-prefixes' ng-if="shown.prefix">
 				<div ng-repeat="prefix in entity.params.prefix track by $index">
-					<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" />
+					<input type="text" class="form-control" ng-model="entity.params.prefix[$index]" ng-blur="isPrefixExists($index)" />
 					<i class='glyphicon glyphicon-minus-sign' ng-click='deletePrefix($index)'></i>
 				</div>
 				<div>

@@ -33,6 +33,14 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
+		$this->initSession();
+		$this->initCommit();
+		$this->initConfig();
+		$this->initBaseUrl();
+		$this->initHtmlHeaders();
+	}
+	
+	protected function initCommit() {
 		if (Billrun_Factory::config()->isProd()) {
 			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
 				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
@@ -48,8 +56,19 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else { // all other envs do not cache
 			$this->commit = md5(time());
 		}
-
+	}
+	
+	protected function initConfig() {
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
+	}
+	
+	protected function initBaseUrl() {
 		$this->baseUrl = $this->getRequest()->getBaseUri();
+	}
+
+	protected function initHtmlHeaders() {
 		$this->addCss($this->baseUrl . '/css/bootstrap.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-datetimepicker.min.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
@@ -110,11 +129,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
-		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/menu.ini');
 	}
-
+	
+	protected function initSession() {
+		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
+		ini_set('session.gc_maxlifetime', $session_timeout);
+	}
+	
 	protected function addCss($path) {
 		$this->cssPaths[] = $path;
 	}
@@ -769,6 +790,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		  return $this->responseError($v->getErrors());
 		  }
 		 */
+		if (is_subclass_of($model, "TabledateModel") && $model->hasEntityWithOverlappingDates($data)) {
+			return $this->responseError("There's an entity with overlapping dates");
+		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
@@ -1859,6 +1883,28 @@ class AdminController extends Yaf_Controller_Abstract {
 		$resp->setHeader('Content-Type', 'application/json');
 		$resp->setBody(json_encode($answer));
 		//$resp->response();
+		return false;
+	}
+	
+	public function getRatesWithSamePrefixAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$prefix = $this->getRequest()->get('prefix');
+		$key = $this->getRequest()->get('key');
+		$query = array(
+			'key' => array('$ne' => $key),
+			'params.prefix' => array('$in' => array($prefix)),
+			'from' => array('$lte' => new MongoDate()),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSamePrefix = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSamePrefix, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSamePrefix));
+		$response->response();
 		return false;
 	}
 
