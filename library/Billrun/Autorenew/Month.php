@@ -18,7 +18,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 	 * @return Next update date.
 	 */
 	protected function getNextRenewDate() {
-		$lastDayOfMonth = strtotime('last day of month 23:59:59');
+		$lastDayOfMonth = strtotime('last day of this month 23:59:59');
 		if($this->data['eom'] == 1) {
 			return new MongoDate($lastDayOfMonth);
 		}
