@@ -59,6 +59,14 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'$set' => array('urt', 'balance_before'),
 							),
 						),
+						array(
+							'match' => array(
+								'api_name' => '/^release_call$/',
+							),
+							'update' => array(
+								'$set' => array('isup_release_cause'),
+							),
+						),
 					),
 				),
 //				'smsrt' => array(

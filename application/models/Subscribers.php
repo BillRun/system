@@ -177,5 +177,9 @@ class SubscribersModel extends TabledateModel {
 		$parentKeys = parent::getProtectedKeys($entity, $type);
 		return array_merge($parentKeys, array());
 	}
+	
+	public function hasEntityWithOverlappingDates($entity) {
+		return false;
+	}
 
 }

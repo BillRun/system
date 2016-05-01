@@ -169,13 +169,17 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			'interval' => $interval);
 
 		if (isset($jsonUpdateData['to']['sec'])) {
-			$jsonUpdateData['to'] = $set['to'] = new MongoDate($jsonUpdateData['to']['sec']);
+			$to = new MongoDate($jsonUpdateData['to']['sec']);
 		} else if (is_string($jsonUpdateData['to'])) {
-			$jsonUpdateData['to'] = $set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
+			$to = $set['to'] = new MongoDate(strtotime($jsonUpdateData['to']));
 		} else {
-			$set['to'] = $jsonUpdateData['to'];
+			$to = $jsonUpdateData['to'];
 		}
 
+		$toExtended = strtotime("23:59:59", $to->sec);
+		
+		$jsonUpdateData['to'] = $set['to'] = new MongoDate($toExtended);
+		
 		$this->populateOperation($jsonUpdateData, $set);
 
 		$set['done'] = 0;
@@ -208,25 +212,18 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$set['last_renew_date'] = 0;
 
 		// Check if the from is in the past.
-		if ($from >= strtotime("today midnight")) {
-			$set['next_renew_date'] = new MongoDate(strtotime("23:59:59", $from) + 1);
+		if ($from >= strtotime("tomorrow midnight")) {
+			$set['next_renew_date'] = new MongoDate(strtotime("00:00:00", $from));
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
 			$set['last_renew_date'] = -1;
 			$jsonUpdateData['migrated'] = true;
 		}
 
-		if (isset($jsonUpdateData['to']->sec)) {
-			$to = $jsonUpdateData['to']->sec;
-		} else {
-			$to = $jsonUpdateData['to']['sec'];
-		}
-
-
-		$set['remain'] = Billrun_Util::countMonths($from, $to);
+		$set['remain'] = Billrun_Util::countMonths($from, $toExtended);
 
 		if (isset($jsonUpdateData['migrated'])) {
-			$this->handleMigrated($jsonUpdateData, $set, $from, $to);
+			$this->handleMigrated($jsonUpdateData, $set, $from, $toExtended);
 		}
 
 		// Set the additional.
@@ -286,14 +283,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		// Check if last day
 		if ($nextRenewDay === date('t', $from)) {
-			$this->data['eom'] = 1;
+			$this->data['eom'] = $set['eom'] = 1;
 			$nextRenewDay = date('t', $renewDateInitial);
 		} else if ($nextRenewDay > date('t', $renewDateInitial)) {
 			$nextRenewDay = date('t', $renewDateInitial);
 		}
 
-		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 23:59:59");
-		$set['next_renew_date'] = new MongoDate($renewDate + 1);
+		$renewDate = strtotime("$nextRenewYear-$nextRenewMonth-$nextRenewDay 00:00:00");
+		$set['next_renew_date'] = new MongoDate($renewDate);
 
 		unset($jsonUpdateData['migrated']);
 	}

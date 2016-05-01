@@ -155,5 +155,9 @@ class SubscribersautorenewservicesModel extends TabledateModel {
 		}
 		return parent::update($params);
 	}
+	
+	public function hasEntityWithOverlappingDates($entity) {
+		return false;
+	}
 
 }

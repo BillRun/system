@@ -391,6 +391,44 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	public function getBeforeUpdate() {
 		return $this->balanceBefore;
 	}
+	
+	/**
+	 * Get the balance record that is being updated
+	 * @param Billrun_DataTypes_Wallet $wallet - The wallet for the balance record currently being updated.
+	 * @return Mongodloid_Entity
+	 */
+	protected function getRecordInProccess($wallet) {
+		$id = $wallet->getPPID();
+		if(!isset($this->balanceBefore[$id])) {
+			return null;
+		}
+		return $this->balanceBefore[$id];
+	}
+	
+	/**
+	 * Set the 'To' field to the update query
+	 * @param array $update - The update query to set the to for
+	 * @param type $to - Time value.
+	 * @param type $wallet - Wallet to handle.
+	 */
+	protected function setToForUpdate(&$update, $to, $wallet) {
+		if(Billrun_Util::multiKeyExists($update, 'to')) {
+			// to already set let's ignore
+			return;
+		}
+		
+		// Check if the value before is 0 and if so take the input values to update.
+		$balanceRecord = $this->getRecordInProccess($wallet);
+		$valueBefore = abs(Billrun_Balances_Util::getBalanceValue($balanceRecord));
+		if($valueBefore > 0) {
+			// TODO: Move the $max functionality to a trait
+			$update['$max']['to'] = $to;
+		} else {
+			// TODO: Move the $max functionality to a trait
+			$update['$set']['to'] = $to;
+		}
+	}
+
 
 	/**
 	 * Get the set part of the query.

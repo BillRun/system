@@ -6,7 +6,7 @@
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
 			foreach ($this->filter_fields_order as $key => $row_fields) {
 				echo "<div class=\"control-group control-group" . $key . "\">
-							<div class=\"controls form-inline\">";
+							<div class=\"controls form-inline inline-toolbar\">";
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {

@@ -17,29 +17,28 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 	 * @return Next update date.
 	 */
 	protected function getNextRenewDate() {
-		$lastDayOfMonth = strtotime('last day of this month 23:59:59');
-		if ($this->data['eom'] == 1) {
-			return new MongoDate($lastDayOfMonth);
+		$lastDayNextMonth = strtotime('last day of next month 00:00:00');
+		if (isset($this->data['eom']) && $this->data['eom'] == 1) {
+			return new MongoDate($lastDayNextMonth);
 		}
 
-		$lastDayNextMonth = strtotime('last day of next month 23:59:59');
-		$nextMonth = strtotime("+1 month -1 day 23:59:59");
+		$nextMonth = strtotime("+1 month 00:00:00");
 		if ($nextMonth > $lastDayNextMonth) {
 			return new MongoDate($lastDayNextMonth);
 		}
-		$firstDayNextMonth = strtotime('first day of next month 23:59:59');
+		$firstDayNextMonth = strtotime('first day of next month 00:00:00');
 		if ($nextMonth < $firstDayNextMonth) {
 			return new MongoDate($firstDayNextMonth);
 		}
 
 		// Check if the day of the start is larger, because of overlap.
-		$fromDay = date('d', strtotime($this->data['from']));
+		$fromDay = date('d', strtotime($this->data['from']->sec));
 		$dayDifference = $fromDay - date('d', $nextMonth) - 1;
 
 		if ($dayDifference <= 0) {
 			$renewDate = $nextMonth;
 		} else {
-			$renewDate = strtotime("+$dayDifference days 23:59:59", $nextMonth);
+			$renewDate = strtotime("+$dayDifference days 00:00:00", $nextMonth);
 		}
 		return new MongoDate($renewDate);
 	}

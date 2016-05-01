@@ -409,7 +409,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'COMMAND' => $slownessParams['command'],
 			),
 			'PARAMS' => array(
-				'MSISDN' => $msisdn,
+				'MSISDN' => Billrun_Util::msisdn($msisdn),
 				'SLOWDOWN_SPEED' => ($enterToDataSlowness ? $slownessParams['speed'] : ''),
 				'SLOWDOWN_SOC' => $slownessParams['soc'],
 			)
@@ -442,7 +442,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'USER_ID' => $notificationParams['userId'],
 				'SOURCE' => $notificationParams['source'],
 				'MSG' => $msg,
-				'TO_PHONE' => $msisdn,
+				'TO_PHONE' => Billrun_Util::msisdn($msisdn),
 			)
 		);
 		$params = array(
@@ -675,8 +675,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$data = $writer->outputMemory();
 
 		$res = Billrun_Util::sendRequest(Billrun_Factory::config()->getConfigValue('pelephone.ldapurl'), $data);
+		// TODO: The next line disables the XML parsing error if we have an authentication problem
+		// libxml_use_internal_errors(true);
 		$xml = simplexml_load_string($res);
-		if ($xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
+		if (!isset($xml->PARAMS->IT_OUT_PARAMS->STATUS[0]) || $xml->PARAMS->IT_OUT_PARAMS->STATUS[0] != 0) {
 			return false;
 		}
 		return $res;

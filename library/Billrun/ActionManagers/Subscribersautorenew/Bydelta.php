@@ -103,6 +103,16 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		return 0;
 	}
 
+	protected function parseDateFieldMongoTime($field, $time) {
+		if($field === "to") {
+			return strtotime("23:59:59", $time);
+		} else if($field === "from") {
+			return strtotime("00:00:00", $time);
+		}
+		
+		return $time;
+	}
+	
 	/**
 	 * Parse the date fields of a record
 	 * @param array $record - Reference to the array to parse the date fields of
@@ -123,8 +133,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 				$this->reportError($errorCode, Zend_Log::ALERT, array($record[$field]));
 				return false;
 			}
-			$mongoTime = new MongoDate($time);
-			$record[$field] = $mongoTime;
+			
+			$record[$field] = new MongoDate($this->parseDateFieldMongoTime($field, $time));
 		}
 
 		return true;

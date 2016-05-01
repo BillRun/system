@@ -175,9 +175,9 @@ class Billrun_Balance extends Mongodloid_Entity {
 
 		if ($chargingType === 'prepaid') {
 			$query['$or'] = array(
-				array("balance.totals.$usageType.usagev" => array('$lt' => $minUsage)),
-				array("balance.totals.$usageType.cost" => array('$lt' => $minCost)),
-				array("balance.cost" => array('$lt' => $minCost)),
+				array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
+				array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
+				array("balance.cost" => array('$lte' => $minCost)),
 			);
 		}
 
