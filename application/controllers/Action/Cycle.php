@@ -10,6 +10,8 @@ class CycleAction extends Action_Base {
 	
 	
 	protected $billing_cycle = null;
+	protected $size = null;
+	protected $stamp = null;
 	/**
 	 * method to execute the aggregate process
 	 * it's called automatically by the cli main controller
@@ -27,6 +29,14 @@ class CycleAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}	
+		if (is_null($options['stamp'])){
+			$next_billrun_key = Billrun_Util::getBillrunKey(time());
+			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
+			$this->stamp = $current_billrun_key;
+		}
+		if (!$options['size']){
+			$this->size = 100; // default value for size
+		}
 	
 		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 		do{
@@ -62,7 +72,7 @@ class CycleAction extends Action_Base {
 				break;
 			}
 		} 
-		while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billing_cycle, $options['stamp'], (int)$options['size']) === FALSE);
+		while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billing_cycle, $this->stamp, (int)$this->size) === FALSE);
 	} 
 	
 	
