@@ -221,7 +221,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$jsonUpdateData['migrated'] = true;
 		}
 
-		$set['remain'] = Billrun_Util::countMonths($from, $toExtended);
+		$set['remain'] = Billrun_Utils_Autorenew::countMonths($from, $toExtended);
 
 		if (isset($jsonUpdateData['migrated']) && $jsonUpdateData['migrated']) {
 			$this->handleMigrated($jsonUpdateData, $set, $from, $toExtended);
@@ -261,7 +261,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$months = $set['remain'];
 		$baseTime = $this->getBaseTime($to, $from);
 
-		$doneMonths = Billrun_Util::countMonths($from, $baseTime);
+		$doneMonths = Billrun_Utils_Autorenew::countMonths($from, $baseTime);
 		if ($from > time()) {
 			$doneMonths -= 1;
 		}

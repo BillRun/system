@@ -1228,7 +1228,7 @@ class Billrun_Util {
 	 * @param int $d1 unix timestamp
 	 * @param int $d2 unix timestamp
 	 * @return int
-	 * @deprecated since version 4.1
+	 * @deprecated since version 4.1 please use Billrun_Utils_Autorenew::countMonths
 	 * 
 	 */
 	public static function countMonths($d1, $d2) {
