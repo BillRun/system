@@ -14,19 +14,35 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class SaveversionAction extends ApiAction {
-	
-	protected $SAVE_PATH = "exports";
-
 	public function execute() {
 		Billrun_Factory::log("Execute save version", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$collection = $request['collection'];
 		$name = $request['name'];
 		Billrun_Factory::log("Exporting " . $collection, Zend_Log::INFO);
-		$basePathUrl = Billrun_Factory::config()->get('saveversion.export_base_url', '');
-		$path =  $basePathUrl . $this->SAVE_PATH . '/' . $collection . '/' . $name;
-		$cmd = 'mongoexport --db billing -c ' . $collection . ' > ' . $path;
-		system(`$cmd`);
+		
+		$path = VersionsModel::getVersionsPath($collection) . '/' . $name;
+		$collectionName = $collection . 'Collection';
+		if (!$coll = Billrun_Factory::db()->{$collectionName}()) {
+			Billrun_Factory::log('Saveversion - cannot read collection ' . $collectionName, Zend_Log::ERR);
+			return false;
+		}
+		$entries = $coll->query()->cursor();
+		if (!$file = fopen($path, "w")) {
+			Billrun_Factory::log('Saveversion - cannot open file ' . $file . ' for writing', Zend_Log::ERR);
+			return false;
+		}
+		$output = array();
+		foreach ($entries as $entry) {
+			$output[] = json_encode($entry->getRawData());
+		}
+		if (!fwrite($file, implode(VersionsModel::getDelimiter(), $output))) {
+			Billrun_Factory::log('Saveversion - cannot write to file ' . $file . '. Data: ' . print_R($output, 1), Zend_Log::ERR);
+			fclose($file);
+			return false;
+		}
+		fclose($file);
+		return true;
 	}
 
 }

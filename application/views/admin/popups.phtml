@@ -246,17 +246,24 @@
 				<h3 id="loadVersionModalLabel">Load Previous Version</h3>
 			</div>
 			<div class="modal-body">
-				<label id="versionSelectLabel">Select version:</label>
+				<div class="controls form-inline">
+					<label id="versionSelectLabel">Select version:</label>
+					<br/>
+					<?php
+					require_once APPLICATION_PATH . '/application/controllers/Action/Loadversion.php';
+					$versions = LoadversionAction::getVersions('rates'); //TODO: change to dynamic collection
+					?>
+					<select id="versions-select" name="versions-select" class="form-control multiselect">
+						  <option value=null>None Selected</option>
+					<?php foreach ($versions as $version) :?>
+						<option value="<?php echo $version; ?>"><?php echo $version; ?></option>";
+					<?php endforeach;?>
+					</select>
+				</div>
 				<br/>
-				<?php
-				require_once APPLICATION_PATH . '/application/controllers/Action/Loadversion.php';
-				$versions = LoadversionAction::getVersions();
-				?>
-				<select id="versions-select" name="versions-select" class="form-control multiselect">
-				<?php foreach ($versions as $version) :?>
-					<option value="<?php echo $version; ?>"><?php echo $version; ?></option>";
-				<?php endforeach;?>
-				</select>
+				<div class="controls form-inline">
+					<input class="span1" id="remove-new-rates" name="remove-new-rates" type="checkbox" checked="checked" > <label class="checkbox" for="remove-new-rates">Remove new rates</label>
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button id="cancelLoadVersion" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
