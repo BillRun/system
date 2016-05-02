@@ -251,7 +251,7 @@
 					<br/>
 					<?php
 					require_once APPLICATION_PATH . '/application/controllers/Action/Loadversion.php';
-					$versions = LoadversionAction::getVersions('rates'); //TODO: change to dynamic collection
+					$versions = LoadversionAction::getVersions($active);
 					?>
 					<select id="versions-select" name="versions-select" class="form-control multiselect">
 						  <option value=null>None Selected</option>
