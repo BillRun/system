@@ -18,7 +18,7 @@ class Billrun_Utils_Autorenew {
 		$from_dom = (int) date('d', $from);
 		$current_dom = (int) date('d');
 		if ($current_dom < $from_dom && $from_dom <= date('t')) { // check if we have the next renew date in the current month in the next following days
-			 $ret_ts = strtotime(date('Y-m-' . str_pad($from_dom, 2, '0')));
+			 $ret_ts = strtotime(date('Y-m-' . self::pad_date_part($from_dom)));
 		} else {
 			$first_day_of_next_month = strtotime('tomorrow', strtotime('last day of this month'));
 			$last_day_of_next_month = strtotime('last day of this month', $first_day_of_next_month); // this will be the last day of next month midnight
@@ -26,7 +26,7 @@ class Billrun_Utils_Autorenew {
 			if ($from_dom > $last_day_of_next_month_dom) { // if next month is less than from date need to handle this
 				$ret_ts = $last_day_of_next_month;
 			} else {
-				$ret_ts = strtotime(date('Y-m-' . str_pad($from_dom, 2, '0'), $first_day_of_next_month));
+				$ret_ts = strtotime(date('Y-m-' . self::pad_date_part($from_dom), $first_day_of_next_month));
 			}
 		}
 
@@ -34,6 +34,10 @@ class Billrun_Utils_Autorenew {
 			return new MongoDate($ret_ts);
 		}
 		return $ret_ts;
+	}
+	
+	protected static function pad_date_part($date_part) {
+		return str_pad($date_part, 2, '0', STR_PAD_LEFT);
 	}
 
 }
