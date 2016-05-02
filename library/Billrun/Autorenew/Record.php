@@ -71,15 +71,13 @@ abstract class Billrun_Autorenew_Record {
 
 		// Set the recurring flag for the balance update.
 		$updaterInput['recurring'] = 1;
-
 		// Build the query
 		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
-		$updaterInputUpdate['from'] = $this->data['from'];
+		$updaterInputUpdate['from'] = date('Y-m-d H:i:s', $this->data['from']->sec);
 		$updaterInputUpdate['operation'] = $this->data['operation'];
 
 		// Always set the balance expiration date as the autorenew record 'to' field
-		$expirationDate = $this->data['to'];
-		$updaterInputUpdate['to'] = $updaterInputUpdate['expiration_date'] = $expirationDate;
+		$updaterInputUpdate['to'] = $updaterInputUpdate['expiration_date'] = date('Y-m-d H:i:s', $this->data['to']->sec);
 		$updaterInput['query'] = json_encode($updaterInputQuery, JSON_FORCE_OBJECT);
 		$updaterInput['upsert'] = json_encode($updaterInputUpdate, JSON_FORCE_OBJECT);
 
