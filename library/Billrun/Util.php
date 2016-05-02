@@ -1228,27 +1228,11 @@ class Billrun_Util {
 	 * @param int $d1 unix timestamp
 	 * @param int $d2 unix timestamp
 	 * @return int
+	 * @deprecated since version 4.1
 	 * 
 	 */
 	public static function countMonths($d1, $d2) {
-		$min_date = date_timestamp_set(new DateTime(), min($d1, $d2));
-		$max_date = date_timestamp_set(new DateTime(), max($d1, $d2));
-		$months = 1; /* the first day is always counted */
-		if (($min_date->format('m') != $max_date->format('m')) || ($min_date->format('Y') != $max_date->format('Y'))) {
-			if (($max_date->format('d') >= $min_date->format('d')) || ($max_date->format('d') == $max_date->format('t'))) {
-				$months += 1;
-			}
-			$yearDiff = $max_date->format('Y') - $min_date->format('Y');
-			switch ($yearDiff) {
-				case 0:
-					$months += $max_date->format('m') - $min_date->format('m') - 1;
-					break;
-				default :
-					$months += $max_date->format('m') + 11 - $min_date->format('m') + ($yearDiff - 1) * 12;
-					break;
-			}
-		}
-		return $months;
+		Billrun_Utils_Autorenew::countMonths($d1, $d2);
 	}
 
 	/**
