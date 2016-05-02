@@ -39,13 +39,19 @@ class CycleAction extends Action_Base {
 		}
 	
 		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
+		$process_interval =  (int)Billrun_Factory::config()->getConfigValue('cycle.processes.interval');
+		if (Billrun_Factory::config()->isProd()){
+			if ($process_interval < 60){	  // 1 minute is minimum sleep time 
+				$process_interval = 60;		
+			}
+		}
 		do{
 			$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 			$pid = pcntl_fork();	
 			if ($pid == -1) {
 				die('could not fork');
 			} else if ($pid) {
-					sleep(60);
+					sleep($process_interval);
 					pcntl_wait($status);
 			} else {		
 				$this->_controller->addOutput("Loading aggregator");
