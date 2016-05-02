@@ -48,7 +48,15 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$requestBody = $request->get('request');
 		$requestUrl = $request->get('requestUrl');
 		$numOfTries = $request->get('numOfTries');
-
+		$additionalParams = $request->get('additionalParams');
+		if ($this->sendRequest($requestBody, $requestUrl, $numOfTries)) {
+			$this->updateSubscriberInDB($additionalParams);
+			return true;
+		}
+		return false;
+	}
+	
+	protected function sendRequest($requestBody, $requestUrl, $numOfTries) {
 		$logColl = Billrun_Factory::db()->logCollection();
 		$saveData = array(
 			'source' => 'pelephonePlugin',
@@ -84,6 +92,22 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 		$this->handleSendRequestError();
 		return false;
+	}
+	
+	protected function updateSubscriberInDB($additionalParams) {
+		if (isset($additionalParams['dataSlownessRequest']) && $additionalParams['dataSlownessRequest']) {
+			$enterDataSlowness = $additionalParams['enterDataSlowness'];
+			$sid = $additionalParams['sid'];
+			// Update subscriber in DB
+			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
+			if ($enterDataSlowness) {
+				$updateQuery = array('$set' => array('in_data_slowness' => true));
+			} else {
+				$updateQuery = array('$unset' => array('in_data_slowness' => 1));
+			}
+			$subscribersColl->update($findQuery, $updateQuery);
+		}
 	}
 
 	protected function handleSendRequestError() {
