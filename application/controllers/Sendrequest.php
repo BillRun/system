@@ -48,8 +48,8 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$requestBody = $request->get('request');
 		$requestUrl = $request->get('requestUrl');
 		$numOfTries = $request->get('numOfTries');
-		$additionalParams = $request->get('additionalParams');
 		if ($this->sendRequest($requestBody, $requestUrl, $numOfTries)) {
+			$additionalParams = $request->get('additionalParams');
 			$this->updateSubscriberInDB($additionalParams);
 			return true;
 		}
