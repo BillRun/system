@@ -142,7 +142,7 @@ class SubscribersautorenewservicesModel extends TabledateModel {
 	}
 
 	public function update($params) {
-		$params['remain'] = Billrun_Util::countMonths(strtotime($params['from']), strtotime($params['to']));
+		$params['remain'] = Billrun_Utils_Autorenew::countMonths(strtotime($params['from']), strtotime($params['to']));
 		if (is_string($params['next_renew_date'])) {
 			$params['next_renew_date'] = new MongoDate(strtotime($params['next_renew_date']));
 		} else if (is_array($params['next_renew_date'])) {
