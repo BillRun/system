@@ -10,8 +10,6 @@ class CycleAction extends Action_Base {
 	
 	
 	protected $billing_cycle = null;
-	protected $size = null;
-	protected $stamp = null;
 	/**
 	 * method to execute the aggregate process
 	 * it's called automatically by the cli main controller
@@ -29,15 +27,18 @@ class CycleAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}	
+
 		if (is_null($options['stamp'])){
 			$next_billrun_key = Billrun_Util::getBillrunKey(time());
 			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
-			$this->stamp = $current_billrun_key;
+			$options['stamp'] = $current_billrun_key;
 		}
+
 		if (!$options['size']){
-			$this->size = 100; // default value for size
+			// default value for size
+			$options['size'] = Billrun_Factory::config()->getConfigValue('customer.aggregator.size');
 		}
-	
+
 		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 		$process_interval =  (int)Billrun_Factory::config()->getConfigValue('cycle.processes.interval');
 		if (Billrun_Factory::config()->isProd()){
@@ -45,6 +46,7 @@ class CycleAction extends Action_Base {
 				$process_interval = 60;		
 			}
 		}
+		
 		do{
 			$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 			$pid = pcntl_fork();	
@@ -78,7 +80,7 @@ class CycleAction extends Action_Base {
 				break;
 			}
 		} 
-		while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billing_cycle, $this->stamp, (int)$this->size) === FALSE);
+		while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billing_cycle, $options['stamp'], (int)$options['size']) === FALSE);
 	} 
 	
 	
