@@ -50,10 +50,15 @@ class ApiController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		try {
 			// DB heartbeat
-			Billrun_Factory::db()->linesCollection()
-				->query()->cursor()->limit(1)->current();
-			$msg = 'SUCCESS';
-			$status = 1;
+			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
+				Billrun_Factory::db()->linesCollection()
+					->query()->cursor()->limit(1)->current();
+				$msg = 'SUCCESS';
+				$status = 1;
+			} else {
+				$msg = 'FAILED';
+				$status = 0;
+			}
 		} catch (Exception $ex) {
 			Billrun_Factory::log('API Heartbeat failed. Error ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::EMERG);
 			$msg = 'FAILED';

@@ -27,10 +27,15 @@ class HealthcheckAction extends RealtimeeventAction {
 		$this->event['usaget'] = $this->usaget = $this->getRequestData('usaget');
 		try {
 			// DB heartbeat
-			Billrun_Factory::db()->linesCollection()
-				->query()->cursor()->limit(1)->current();
-			$this->event['msg'] = 'success';
-			$this->event['status'] = 1;
+			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
+				Billrun_Factory::db()->linesCollection()
+					->query()->cursor()->limit(1)->current();
+				$msg = 'SUCCESS';
+				$status = 1;
+			} else {
+				$msg = 'FAILED';
+				$status = 0;
+			}
 		} catch (Exception $ex) {
 			Billrun_Factory::log('API health check failed. Error ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::EMERG);
 			$this->event['msg'] = 'failed';
