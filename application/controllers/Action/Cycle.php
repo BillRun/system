@@ -48,7 +48,6 @@ class CycleAction extends Action_Base {
 		}
 		
 		do{
-			$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
 			$pid = pcntl_fork();	
 			if ($pid == -1) {
 				die('could not fork');
