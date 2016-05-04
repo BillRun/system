@@ -429,6 +429,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			'$set' => array(
 				'start_process_time' => new MongoDate(time()),
 				'start_process_host' => Billrun_Util::getHostName(),
+				'start_process_ospid' => Billrun_Util::getPid(),
 			),
 		);
 		$options = array(
@@ -469,6 +470,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
+					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -476,6 +478,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
+					'w' => 1,
 				);
 			}
 			$offset = 0;
@@ -513,6 +516,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'socketTimeoutMS' => 300000,
 					'wTimeoutMS' => 300000,
+					'w' => 1,
 				);
 			} else {
 				// we are on 2.4 and lower
@@ -520,6 +524,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 					'continueOnError' => true,
 					'wtimeout' => 300000,
 					'timeout' => 300000,
+					'w' => 1,
 				);
 			}
 			$offset = 0;
@@ -602,6 +607,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			if (isset($row[$property])) {
 				$queue_row[$property] = $row[$property];
 			}
+		}
+				
+		if (!isset($queue_row['stamp'])) {
+			$queue_row['stamp'] = $row['stamp'];
 		}
 		$this->setQueueRow($queue_row);
 		return true;

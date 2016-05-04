@@ -49,8 +49,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				$volume = $row->get('basicCallInformation.TotalCallEventDuration');
 				break;
 
-			case 'data' :					
-					$volume = $row->get('download_vol') + $row->get('upload_vol');
+			case 'data' :
+				$volume = $row->get('download_vol') + $row->get('upload_vol');
 				break;
 		}
 		return $volume;
@@ -64,8 +64,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$usage_type = null;
 
 		$record_type = $row['record_type'];
-		if (isset($row['tele_srv_code']) ) {
-			$tele_service_code = $row['tele_srv_code'] ;
+		if (isset($row['tele_srv_code'])) {
+			$tele_service_code = $row['tele_srv_code'];
 			if ($tele_service_code == '11') {
 				if ($record_type == '9') {
 					$usage_type = 'call'; // outgoing call
@@ -81,10 +81,14 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 					$usage_type = 'incoming_sms';
 				}
 			}
-		} else {
-			if ($record_type == 'e') {
-				$usage_type = 'data';
+		} else if (isset($row['bearer_srv_code'])) {
+			if ($record_type == '9') {
+				$usage_type = 'call';
+			} else if ($record_type == 'a') {
+				$usage_type = 'incoming_call';
 			}
+		} else if ($record_type == 'e') {
+			$usage_type = 'data';
 		}
 
 		return $usage_type;
@@ -101,7 +105,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		$prefix_length_matched = 0;
 
 		if (!is_null($serving_network)) {
-			$call_number = isset($row['called_number']) ? $row->get('called_number') : (isset($row['calling_number']) ? $row->get('calling_number') : NULL);
+			$call_number = $this->number_to_rate($row);
 			if ($call_number) {
 				$call_number = preg_replace("/^[^1-9]*/", "", $call_number);
 				$call_number_prefixes = Billrun_Util::getPrefixes($call_number);
@@ -109,8 +113,16 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			$potential_rates = array();
 			if (isset($this->rates['by_names'][$serving_network])) {
 				foreach ($this->rates['by_names'][$serving_network] as $named_rate) {
-					if (!$sender || (isset($named_rate['params']['sending_sources']) && in_array($sender, $named_rate['params']['sending_sources']))) {
-						$potential_rates[] = $named_rate;
+					if (is_array($named_rate['params']['sending_sources'])) {
+						if (!$sender || (isset($named_rate['params']['sending_sources']) && in_array($sender, $named_rate['params']['sending_sources']))) {
+							$potential_rates[] = $named_rate;
+						}
+					} else {
+						if (is_string($named_rate['params']['sending_sources'])) {
+							if (!$sender || (isset($named_rate['params']['sending_sources']) && preg_match($named_rate['params']['sending_sources'], $sender))) {
+								$potential_rates[] = $named_rate;
+							}
+						}
 					}
 				}
 			}
@@ -118,8 +130,16 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				foreach ($this->rates['by_regex'] as $regex => $regex_rates) {
 					if (preg_match($regex, $serving_network)) {
 						foreach ($regex_rates as $regex_rate) {
-							if (!$sender || (isset($regex_rate['params']['sending_sources']) && in_array($sender, $regex_rate['params']['sending_sources']))) {
-								$potential_rates[] = $regex_rate;
+							if (is_array($regex_rate['params']['sending_sources'])) {
+								if (!$sender || (isset($regex_rate['params']['sending_sources']) && in_array($sender, $regex_rate['params']['sending_sources']))) {
+									$potential_rates[] = $regex_rate;
+								}
+							} else {
+								if (is_string($regex_rate['params']['sending_sources'])) {
+									if (!$sender || (isset($regex_rate['params']['sending_sources']) && preg_match($regex_rate['params']['sending_sources'], $sender))) {
+										$potential_rates[] = $regex_rate;
+									}
+								}
 							}
 						}
 					}
@@ -133,9 +153,16 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 							$matchedRate = $rate;
 						}
 						if (isset($call_number_prefixes) && !empty($rate['params']['prefix'])) {
-							foreach ($call_number_prefixes as $prefix) {
-								if (in_array($prefix, $rate['params']['prefix']) && strlen($prefix) > $prefix_length_matched) {
-									$prefix_length_matched = strlen($prefix);
+							if (!isset($rate['params']['fullEqual'])) {
+								foreach ($call_number_prefixes as $prefix) {
+									if (in_array($prefix, $rate['params']['prefix']) && strlen($prefix) > $prefix_length_matched) {
+										$prefix_length_matched = strlen($prefix);
+										$matchedRate = $rate;
+									}
+								}
+							} else {
+								if (in_array($call_number, $rate['params']['prefix']) && strlen($call_number) > $prefix_length_matched) {
+									$prefix_length_matched = strlen($call_number);
 									$matchedRate = $rate;
 								}
 							}
@@ -178,7 +205,7 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 			),
 		);
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			if (is_array($rate['params']['serving_networks'])) {
@@ -193,5 +220,22 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 		}
 	}
 
+	/**
+	 * "e" - data, "9" - outgoing(call/sms), "a" - incoming 
+	 * @return number to rate by
+	 */
+	protected function number_to_rate($row) {
+		if ($row['record_type'] == "e") {
+			return NULL;
+		} else if (($row['record_type'] == "9") && isset($row['called_number'])) {
+			return $row->get('called_number');
+		} else if (($row['record_type'] == "a") && isset($row['calling_number'])) {
+			return $row->get('calling_number');
+		} else {
+			Billrun_Factory::log("Couldn't find rateable number for line : {$row['stamp']}");
+		}
+	}
+
 }
+
 ?>

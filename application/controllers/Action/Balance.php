@@ -23,7 +23,9 @@ class BalanceAction extends ApiAction {
 		$stamp = Billrun_Util::getBillrunKey(time());
 		$subscribers = $request->get("subscribers");
 		if (!is_numeric($aid)) {
-			die();
+			return $this->setError("aid is not numeric", $request);
+		} else {
+			settype($aid, 'int');
 		}
 		if (is_string($subscribers)) {
 			$subscribers = explode(",", $subscribers);

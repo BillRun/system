@@ -59,7 +59,8 @@ class Generator_Golancsv extends Billrun_Generator {
 		if (isset($options['accounts_csv_filename'])) {
 			$this->accountsCsvPath = $this->export_directory . '/' . $options['account_csv_filename'] . '.csv';
 		} else {
-			$this->accountsCsvPath = $this->export_directory . '/accounts' . $this->stamp . '.csv';
+			$csv_day = $this->getFileNameDate();
+			$this->accountsCsvPath = $this->export_directory . '/accounts' . $this->stamp . '_' . $csv_day . '.csv';
 		}
 		if (isset($options['subscribers_csv_filename'])) {
 			$this->subscribersCsvPath = $this->export_directory . '/' . $options['subscriber_csv_filename'] . '.csv';
@@ -181,9 +182,9 @@ class Generator_Golancsv extends Billrun_Generator {
 		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 
 		$this->data = $billrun
-						->query('billrun_key', $this->stamp)
-						->exists('invoice_id')
-						->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+				->query('billrun_key', $this->stamp)
+				->exists('invoice_id')
+				->cursor();
 
 		Billrun_Factory::log()->log("generator entities loaded: " . $this->data->count(), Zend_Log::INFO);
 
@@ -206,6 +207,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		$num_accounts = $this->data->count();
 		$accounts_counter = 0;
 		foreach ($this->data as $account) {
+			Billrun_Factory::log()->log("Creating data for account " . $account['aid'], Zend_Log::INFO);
 			$accounts_counter++;
 			$vat = isset($account['vat']) ? $account['vat'] : floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
 			$acc_row = array();
@@ -270,17 +272,19 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getManualCorrectionCredit($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['refund']['vatable']) ? $subscriber['costs']['credit']['refund']['vatable'] : 0) +
-				floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
+			floatval(isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0);
 	}
 
 	protected function getManualCorrectionCharge($subscriber) {
 		return floatval(isset($subscriber['costs']['credit']['charge']['vatable']) ? $subscriber['costs']['credit']['charge']['vatable'] : 0) +
-				floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0);
+			floatval(isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0) +
+			floatval(isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0) +
+			floatval(isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0);
 	}
 
 	protected function getOutsidePackageNoVatTap3($subscriber) {
 		return floatval(isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0) +
-				floatval(isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0);
+			floatval(isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0);
 	}
 
 	protected function getTotalVat($subscriber) {
@@ -293,7 +297,7 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getIsAccountActive($subscriber) {
 		$is_active = 0;
-		if (isset($subscriber['breakdown']) || (isset($subscriber['subscriber_status']) && $subscriber['subscriber_status'] == "open")) {
+		if ((isset($subscriber['breakdown']) || (isset($subscriber['subscriber_status']) && $subscriber['subscriber_status'] == "open")) && $subscriber['sid'] != 0) {
 			$is_active = 1;
 		}
 		return $is_active;
@@ -333,8 +337,8 @@ class Generator_Golancsv extends Billrun_Generator {
 
 	protected function getTotalChargeVatData($subscriber, $vat) {
 		$price_before_vat = (isset($subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['in_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-				(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
-				(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
+			(isset($subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['over_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0) +
+			(isset($subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost']) ? $subscriber['breakdown']['out_plan']['base']['INTERNET_BILL_BY_VOLUME']['totals']['data']['cost'] : 0);
 		return $price_before_vat * (1 + $vat);
 	}
 
@@ -342,7 +346,7 @@ class Generator_Golancsv extends Billrun_Generator {
 		$countOfKb = 0;
 		if (isset($subscriber['lines']['data']['counters']) && is_array($subscriber['lines']['data']['counters'])) {
 			foreach ($subscriber['lines']['data']['counters'] as $data_by_day) {
-				$countOfKb+=$data_by_day['usagev'];
+					$countOfKb+=$data_by_day['usagev'];
 			}
 		}
 		return $countOfKb / static::BYTES_IN_KB;
@@ -418,11 +422,16 @@ class Generator_Golancsv extends Billrun_Generator {
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
 		}
+	}
+	
+	protected function getFileNameDate() {
+		$billrun_day = Billrun_Factory::config()->getConfigValue('billrun.charging_day',25);
+		return date('Ym').$billrun_day;
 	}
 
 }

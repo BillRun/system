@@ -42,6 +42,9 @@ class ImportPricesListAction extends ApiAction {
 		if (isset($request['remove_non_existing_usage_types'])) {
 			$this->remove_non_existing_usage_types = (boolean) $request['remove_non_existing_usage_types'];
 		}
+		if (isset($request['remove_non_existing_prefix'])) {
+			$this->remove_non_existing_prefix = (boolean) $request['remove_non_existing_prefix'];
+		}
 		if (!($ret = $this->validateList($list))) {
 			return $ret;
 		}
@@ -83,6 +86,16 @@ class ImportPricesListAction extends ApiAction {
 						unset($new_raw_data['rates'][$usage_types]);
 					}
 				}
+
+				$new_prefix = explode(',', $this->rules[$rate_key]['prefix']);
+				if (!$this->remove_non_existing_prefix) {
+					$additional_prefix = array_diff($new_prefix, $new_raw_data['params']['prefix']);
+					$combined_prefix = array_merge($new_raw_data['params']['prefix'], $additional_prefix);
+					$new_raw_data['params']['prefix'] = $combined_prefix;
+				} else {
+					$new_raw_data['params']['prefix'] = $new_prefix;
+				}
+
 				foreach ($this->rules[$rate_key]['usage_type_rates'] as $usage_type => $usage_type_rate) {
 					if (!isset($new_raw_data['rates'][$usage_type]) && (!isset($usage_type_rate['category']) || !$usage_type_rate['category'])) {
 						$missing_categories[] = $rate_key;
@@ -167,6 +180,14 @@ class ImportPricesListAction extends ApiAction {
 			} else {
 				$this->rules[$item['key']]['from'] = $item['from_date'];
 			}
+
+			if (isset($this->rules[$item['key']]['prefix']) && !empty($this->rules[$item['key']]['prefix'])) {
+				if (!empty($item['prefix']) && $this->rules[$item['key']]['prefix'] != $item['prefix']) {
+					return $this->setError('Conflict in prefix for ' . $item['key']);
+				}
+			} else {
+				$this->rules[$item['key']]['prefix'] = $item['prefix'];
+			}
 		}
 		foreach ($this->rules as $key => $rule) {
 			foreach ($rule['usage_type_rates'] as $usage_type => $usage_type_rate) {
@@ -207,4 +228,3 @@ class ImportPricesListAction extends ApiAction {
 	}
 
 }
-

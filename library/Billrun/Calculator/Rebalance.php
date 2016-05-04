@@ -50,8 +50,8 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 				}
 				$rebalance_queue->remove(array('sid' => array('$in' => $sids)));
 			} catch (Exception $exc) {
-				Billrun_Factory::log()->log('Error resetting sids ' . implode(',', $sids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getTraceAsString(), Zend_Log::ALERT);
-				return $this->setError($exc->getTraceAsString(), array('sids' => $sids, 'billrun_key' => $billrun_key));
+				Billrun_Factory::log()->log('Error resetting sids ' . implode(',', $sids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() .' : '.   $exc->getTraceAsString(), Zend_Log::ALERT);
+				return FALSE;
 			}
 		}
 		Billrun_Factory::log()->log("Success resetting sids " . implode(',', $all_sids), Zend_Log::INFO);

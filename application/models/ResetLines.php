@@ -68,8 +68,8 @@ class ResetLinesModel {
 	 * @todo support update/removal of credit lines
 	 */
 	protected function resetLines() {
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$queue_coll = Billrun_Factory::db()->queueCollection();
+		$lines_coll = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
+		$queue_coll = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
 			$offset = 0;
 			while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
@@ -104,7 +104,7 @@ class ResetLinesModel {
 				$queue_lines = array();
 				foreach ($lines as $line) {
 					$stamps[] = $line['stamp'];
-					$queue_lines[] = array(
+					$queue_line = array(
 						'calc_name' => false,
 						'calc_time' => false,
 						'stamp' => $line['stamp'],
@@ -112,6 +112,16 @@ class ResetLinesModel {
 						'urt' => $line['urt'],
 						'skip_fraud' => true,
 					);
+					
+					// todo: refactoring
+					$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
+					foreach ($advancedProperties as $property) {
+						if (isset($line[$property]) && !isset($queue_line[$property])) {
+							$queue_line[$property] = $line[$property];
+						}
+					}
+					
+					$queue_lines[] = $queue_line;
 				}
 				$stamps_query = array(
 					'stamp' => array(
@@ -136,7 +146,7 @@ class ResetLinesModel {
 						'over_plan' => 1,
 						'plan' => 1,
 						'usagesb' => 1,
-						'usagev' => 1,
+//						'usagev' => 1,
 					),
 					'$set' => array(
 						'rebalance' => new MongoDate(),

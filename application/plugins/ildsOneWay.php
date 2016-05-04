@@ -32,7 +32,14 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * List of all possible provider names. Array key is the called_number prefix.
 	 * @var array 
 	 */
-	protected $providers = array('992' => '013', '993' => 'ILD_BEZ', '994' => '019', '995' => '012', '997' => 'ILD_HOT');
+	protected $providers = array(
+		'GNTV' => 'ILD_013', // netvision
+		'GBZQ' => 'ILD_BEZ', // bezeq
+		'GBZI' => 'ILD_014', // bezeqint
+		'GSML' => 'ILD_012', // smile
+//		'996' => 'ILD_CEL', // cellcom mapa
+		'GHOT' => 'ILD_HOT'  // hot mapa
+	);
 
 	/**
 	 * the data structure of the output file, with each column's fixed width
@@ -83,12 +90,12 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->record_types = Billrun_Factory::config()->getConfigValue('016_one_way.identifications.record_types', array('30'));
 		$this->filename = date('Ymd', time()) . '.TXT';
 		$this->output_path = Billrun_Factory::config()->getConfigValue('016_one_way.export.path', '/var/www/billrun/workspace/016_one_way/Treated/') . DIRECTORY_SEPARATOR . $this->filename;
-		$this->access_price = floatval(number_format(Billrun_Factory::config()->getConfigValue('016_one_way.access_price', 1.00), 2));
+		$this->access_price = round(Billrun_Factory::config()->getConfigValue('016_one_way.access_price', 1.00), 2);
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 	}
 
 	public function afterCalculatorUpdateRow($row, $calculator) {
-		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name])) {
+		if ($calculator->getCalculatorQueueType() == 'rate' && $row['type'] == 'nsn' && in_array($row['record_type'], $this->record_types) && isset($row[$this->ild_prefix_field_name]) && ($row['usagev'] > 0)) {
 			$result = $this->createRow($row);
 			if (!empty($result)) {
 				if (!$this->createTreatedFile($result)) {
@@ -107,18 +114,27 @@ class ildsOneWayPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row->collection($this->lines_coll);
 		$res = $row->getRawData();
 		$res['file'] = 'cdrFile:' . $row['file'] . ' cdrNb:' . $row['record_number'];
-		$res['charging_start_time'] = substr($row['charging_start_time'], 2);
-		$res['charging_end_time'] = substr($row['charging_end_time'], 2);
+		if (!empty($row['charging_start_time'])) {
+			$res['charging_start_time'] = substr($row['charging_start_time'], 2);
+			$res['charging_end_time'] = substr($row['charging_end_time'], 2);
+		} else if (!empty($row['call_reference_time'])) {
+			$res['charging_start_time'] = substr($row['call_reference_time'], 2);
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['call_reference_time']) + $row['usagev']);
+		} else {
+			$res['charging_start_time'] = date('ymdhis', strtotime($row['process_time']));
+			$res['charging_end_time'] = date('ymdhis', strtotime($row['process_time']) + $row['usagev']);
+		}
 		$res['prepaid'] = '0';
 		$res['is_in_glti'] = '0';
 		$res['origin_carrier'] = $this->providers[$row[$this->ild_prefix_field_name]];
 		$res['records_type'] = '000';
 		$res['sampleDurationInSec'] = '1';
 
-		$row[$this->pricingField] =  $res['aprice'] = number_format($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
+		$row[$this->pricingField] = $res['aprice'] = round($this->access_price + Billrun_Calculator_CustomerPricing::getPriceByRate($row['arate'], $row['usaget'], $row['usagev']), 4);
 
 		if ($row['usagev'] == '0') {
-			$res['records_type'] = '005';
+			return;
+//			$res['records_type'] = '005';
 		} else if (!$row['arate']) {
 			$res['records_type'] = '002';
 			$res['sampleDurationInSec'] = '0';

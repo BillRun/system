@@ -61,7 +61,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		$this->rates = array();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);

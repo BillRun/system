@@ -198,7 +198,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$local_size = filesize($localFilePath);
 			$remote_size = $remoteFile->size();
 			if ($local_size !== $remote_size) {
-				Billrun_Factory::log()->log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . ")", Zend_Log::ERR);
+				Billrun_Factory::log()->log("FTP: The remote file size (" . $remote_size . ") is different from local file size (" . $local_size . "). File name: " . $remoteFile->name, Zend_Log::ERR);
 				return false;
 			}
 		}

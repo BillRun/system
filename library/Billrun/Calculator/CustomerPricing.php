@@ -175,6 +175,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if ($row['type'] == 'credit') {
 					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
 					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
+				} else if ($row['type'] == 'service') {
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume));
 				} else {
 					$balance = $this->getSubscriberBalance($row, $billrun_key);
 					if ($balance === FALSE) {
@@ -208,7 +210,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 			return $row;
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' carshed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
+			Billrun_Factory::log()->log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
 	}
@@ -239,9 +241,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		if (!$balance || !$balance->isValid()) {
 			Billrun_Factory::log()->log("couldn't get balance for : " . print_r(array(
-						'sid' => $row['sid'],
-						'billrun_month' => $billrun_key
-							), 1), Zend_Log::INFO);
+					'sid' => $row['sid'],
+					'billrun_month' => $billrun_key
+					), 1), Zend_Log::INFO);
 			return false;
 		} else {
 			Billrun_Factory::log()->log("Found balance " . $billrun_key . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -559,8 +561,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function isLineLegitimate($line) {
 		$arate = $this->getRateByRef($line->get('arate', true));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-				isset($line['sid']) && $line['sid'] !== false &&
-				$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
+			isset($line['sid']) && $line['sid'] !== false &&
+			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
@@ -577,7 +579,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query()->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -586,7 +588,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;

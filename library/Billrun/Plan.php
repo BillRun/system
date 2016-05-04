@@ -70,7 +70,7 @@ class Billrun_Plan {
 								)
 							))
 							->lessEq('from', $date)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
+							->cursor()
 							->current();
 					$this->data->collection(Billrun_Factory::db()->plansCollection());
 				}
@@ -88,7 +88,7 @@ class Billrun_Plan {
 	protected static function initPlans() {
 		if (empty(self::$plans)) {
 			$plans_coll = Billrun_Factory::db()->plansCollection();
-			$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+			$plans = $plans_coll->query()->cursor();
 			foreach ($plans as $plan) {
 				$plan->collection($plans_coll);
 				self::$plans['by_id'][strval($plan->getId())] = $plan;
@@ -243,8 +243,10 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * method to receive the strongest group of list of groups
-	 * currently the strongest rule is simple the first rule selected
+	 * method to receive the strongest group of list of groups 
+	 * method will init the groups list if not loaded yet
+	 * by default, the strongest rule is simple the first rule selected (in the plan)
+	 * rules can be complex with plugins (see vodafone and ird plugins for example)
 	 * 
 	 * @param array $rate the rate to check
 	 * @param string $usageType the usage type to check

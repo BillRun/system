@@ -1,5 +1,7 @@
 <?php
 
+require_once APPLICATION_PATH . '/application/helpers/Admin/Table.php';
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
@@ -21,7 +23,7 @@ class LinesModel extends TableModel {
 	 */
 	protected $garbage = false;
 	protected $lines_coll = null;
-
+	
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->lines;
 		parent::__construct($params);
@@ -47,35 +49,7 @@ class LinesModel extends TableModel {
 	public function getItem($id) {
 
 		$entity = parent::getItem($id);
-
-		if (isset($entity['urt'])) {
-			$entity['urt'] = (new Zend_Date($entity['urt']->sec, null, new Zend_Locale('he_IL')))->getIso();
-		}
-		if (isset($entity['arate'])) {
-			$data = $entity->get('arate', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['arate'] = $data->get('key');
-			}
-		}
-		if (isset($entity['pzone'])) {
-			$data = $entity->get('pzone', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['pzone'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc'])) {
-			$data = $entity->get('wsc', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc'] = $data->get('key');
-			}
-		}
-		if (isset($entity['wsc_in'])) {
-			$data = $entity->get('wsc_in', false);
-			if ($data instanceof Mongodloid_Entity) {
-				$entity['wsc_in'] = $data->get('key');
-			}
-		}
-
+		Admin_Table::setEntityFields($entity);
 		return $entity;
 	}
 
@@ -91,7 +65,7 @@ class LinesModel extends TableModel {
 			$rateEntity = $ratesColl->query('key', $data['arate'])
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+							->cursor()->current();
 			$data['arate'] = $rateEntity->createRef($ratesColl);
 		}
 		if (isset($data['plan'])) {
@@ -99,16 +73,19 @@ class LinesModel extends TableModel {
 			$planEntity = $plansColl->query('name', $data['plan'])
 							->lessEq('from', $currentDate)
 							->greaterEq('to', $currentDate)
-							->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+							->cursor()->current();
 			$data['plan_ref'] = $planEntity->createRef($plansColl);
 		}
 		parent::update($data);
 	}
 	
+	/**
+	 * Get data for the find view.
+	 * @param type $filter_query
+	 * @return type
+	 */
 	public function getData($filter_query = array()) {
-
 		$cursor = $this->collection->query($filter_query)->cursor()
-			->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
 
 		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
@@ -126,10 +103,120 @@ class LinesModel extends TableModel {
 			} else {
 				$item['arate'] = $arate;
 			}
+			if(isset($item['rat_type'])) {
+				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
+			}
 			$ret[] = $item;
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Translate an aggregated value.
+	 * @param string $key - Key of the current aggregated value.
+	 * @param string $value - Actual value extracted by the aggregated query.
+	 * @return string translated value.
+	 */
+	protected function translateAggregatedValue($key, $value) {		
+		// Translate the values.
+		if(strcasecmp($key, "Day of the Week") === 0) {
+			// Transform to zero based.
+			$value-=1;
+			return date('D', strtotime("Sunday +{$value} days"));
+		}
+
+		// Translate the values.
+		if(strcasecmp($key, "Month") === 0) {
+			// Transform to zero based.
+			$value-=1;
+			return date('M', strtotime("January +{$value} months"));
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Get the lines to display from the aggregated data.
+	 * @param Mongodloid_AggregatedCyrsor $cursor - Cursor of the aggregation query.
+	 * @param array $groupKeys - Keys of the grouping.
+	 * @return array of lines to display.
+	 */
+	protected function getAggregatedLines($cursor, $groupKeys) {
+		$ret = array();
+		// Go through the items and construct aggregated entities.
+		foreach ($cursor as $item) {
+			$values = $item->getRawData();
+			foreach ($groupKeys as $key) {
+				// Translate the values.
+				$value = $this->translateAggregatedValue($key, $values['_id'][$key]);
+				
+				// TODO: The 'group_by' constant should perheps move to a more fitting location.
+				$item->set('group_by' . '.' . $key, $value, true);
+			}
+			$item->set('_id', new MongoId(), true);
+			$ret[] = $item;
+		}
+		
+		return $ret;
+	}
+	
+	/**
+	 * Get the aggregated data to show.
+	 * @param array $filterQuery - Query to get the aggregated data for.
+	 * @return aray - Mongo entities to return.
+	 */
+	public function getAggregateData($filterQuery = array()) {
+		if (empty($filterQuery[0]['$match'])) {
+			unset($filterQuery[0]);
+			$filterQuery = array_values($filterQuery); // reset array index (required for aggregate framework)
+			$indexGroup = 0;
+		} else {
+			$indexGroup = count($filterQuery) - 1;
+		}
+		
+		$cursor = $this->collection->aggregatecursor($filterQuery)
+			->sort($this->sort)->skip($this->offset())->limit($this->size);
+		
+		$groupKeys = array_keys($filterQuery[$indexGroup]['$group']['_id']);
+				
+		$ret = $this->getAggregatedLines($cursor, $groupKeys);
+		
+		$this->_count = count($ret);// Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
+		return $ret;
+	}
+	
+	/**
+	 * method to get data aggregated
+	 * 
+	 * @param array $filter_query what to filter by
+	 * @param array $aggregate what to aggregate by
+	 * 
+	 * @return array of result
+	 */
+	public function getDataAggregated($filter_query = array(), $aggregate = array()) {
+
+		$cursor = $this->collection->aggregatecursor($filter_query, $aggregate);
+
+		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
+			$this->_count = $cursor->count(false);
+		} else {
+			$this->_count = Billrun_Factory::config()->getConfigValue('admin_panel.lines.global_limit', 10000);
+		}
+
+		$ret = array();
+		foreach ($cursor as $item) {
+//			$item->collection($this->lines_coll);
+//			if ($arate = $this->getDBRefField($item, 'arate')) {
+//				$item['arate'] = $arate['key'];
+//				$item['arate_id'] = strval($arate['_id']);
+//			} else {
+//				$item['arate'] = $arate;
+//			}
+			$ret[] = $item;
+		}
+		return $ret;
+	}
+
 	
 	public function getDistinctField($field, $filter_query = array()) {
 		if (empty($field) || empty($filter_query)) {
@@ -236,7 +323,7 @@ class LinesModel extends TableModel {
 			if ($filter_field['input_type'] == 'boolean') {
 				if (!is_null($value) && $value != $filter_field['default']) {
 					$rates_coll = Billrun_Factory::db()->ratesCollection();
-					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->createRef($rates_coll);
+					$unrated_rate = $rates_coll->query("key", "UNRATED")->cursor()->current()->createRef($rates_coll);
 					$month_ago = new MongoDate(strtotime("1 month ago"));
 					return array(
 						'$or' => array(
@@ -373,8 +460,12 @@ class LinesModel extends TableModel {
 				'date' => date(Billrun_Base::base_dateformat, $row['urt']->sec),
 				'called_number' => $row['called_number'],
 				'calling_number' => $row['calling_number'],
-				'usagev' => $row['usagev'],
+				'usagev' => !empty($row['usagev']) ? $row['usagev'] : $row['duration'],
 				'usaget' => $row['usaget'],
+				'calling_subs_first_ci' => $row['calling_subs_first_ci'],
+				'called_subs_first_ci' => $row['called_subs_first_ci'],
+				'calling_subs_first_lac' => $row['calling_subs_first_lac'],
+				'called_subs_first_lac' => $row['called_subs_first_lac'],
 			);
 		}
 		

@@ -9,7 +9,7 @@ backupBase="/mnt/mongo_backup/backups";
 syncFile=$backupBase"/sync.txt";
 lockFile=$backupBase"/lock.txt";
 logFile="/tmp/backup.log";
-mongoCmd="mongo --port 27018"
+mongoCmd="mongo --port 27018 admin -uadmin -pqsef1#2$"
 mongoSrv="mongod"
 
 backupFile=$backupBase"/`date +%Y%m%d`_`hostname`.tar.gz";

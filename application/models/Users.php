@@ -78,7 +78,7 @@ class UsersModel extends TableModel {
 		$resource = parent::getData();
 		$ret = array();
 		foreach ($resource as $item) {
-			$item['roles'] = implode(", ", $item['roles']);
+			$item['roles'] = json_encode($item['roles']);
 			$ret[] = $item;
 		}
 		return $ret;

@@ -66,6 +66,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 
 		if ($this->auto_create_dir && !file_exists($this->export_directory)) {
 			mkdir($this->export_directory, 0777, true);
+			chmod($this->export_directory, 0777);
 		}
 	}
 

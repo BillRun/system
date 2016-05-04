@@ -11,12 +11,14 @@
  */
 class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
-	use Billrun_Traits_AsnParsing, Billrun_Traits_FileSequenceChecking;
+	use Billrun_Traits_AsnParsing,
+	 Billrun_Traits_FileSequenceChecking;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
 	const FILE_READ_AHEAD_LENGTH = 16384;
 	const RECORD_PADDING = 4;
+
 	/**
 	 * plugin name
 	 *
@@ -31,7 +33,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	}
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
-
 //	/**
 //	 * method to collect data which need to be handle by event
 //	 */
@@ -83,13 +84,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			return;
 		}
 		$this->checkFilesSeq($filepaths, $hostname);
-		$path = Billrun_Factory::config()->getConfigValue($this->getName().'.thirdparty.backup_path', false, 'string');
-		if (!$path)	return;
+		$path = Billrun_Factory::config()->getConfigValue($this->getName() . '.thirdparty.backup_path', false, 'string');
+		if (!$path)
+			return;
 		if ($hostname) {
 			$path = $path . DIRECTORY_SEPARATOR . $hostname;
 		}
 		foreach ($filepaths as $filePath) {
-			if (!$receiver->backupToPath($filePath, $path, true , true)) {
+			if (!$receiver->backupToPath($filePath, $path, true, true)) {
 				Billrun_Factory::log()->log("Couldn't save file $filePath to third patry path at : $path", Zend_Log::ERR);
 			}
 		}
@@ -248,7 +250,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 //		);
 //		return $event;
 //	}
-
 	///////////////////////////////////////////// Parser ////////////////////////////////////////////
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
@@ -270,14 +271,20 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['record_type'] = $type;
 			}
 			//convert to unified time GMT  time.
-			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
+			$timeOffset =  date('P');
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
+			if (isset($cdrLine['ms_timezone'])) {
+				$cdrLine['callEventStartTimeStamp'] = (new DateTime('@' . ($cdrLine['urt']->sec + Billrun_Util::getTimezoneOffsetInSeconds($cdrLine['ms_timezone']))))->format('YmdHis');
+			}
+			else {
+				$cdrLine['callEventStartTimeStamp'] = $cdrLine['record_opening_time'];
+			}
 			if (is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 				$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
-				
+
 				foreach ($cdrLine['rating_group'] as $key => $rateVal) {
 					if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
 						$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
@@ -316,9 +323,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$nx16Data = unpack("N", substr($data, 0x16, 4));
 		$header['next_file_number'] = reset($nx16Data);
 		//Billrun_Factory::log(print_r($header,1));
-		
+
 		$header['raw'] = utf8_encode(base64_encode($data)); // Is  this  needed?
-		
+
 		return $header;
 	}
 
@@ -339,7 +346,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		if ($this->getName() != $type) {
 			return FALSE;
 		}
-		
+
 		$trailer = utf8_encode(base64_encode($data)); // Is  this  needed?
 
 		return $trailer;
@@ -351,52 +358,52 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	protected function addParsingMethods() {
 		$newParsingMethods = array(
 			'diagnostics' => function($data) {
-			$ret = false;
-			$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
-			if (!is_array($data)) {
-				$diag = intval(implode('.', unpack('C', $data)));
-				$ret = isset($diags[$diag]) ? $diags[$diag] : false;
-			} else {
-				foreach ($diags as $key => $diagnostics) {
-					if (is_array($diagnostics) && isset($data[$key])) {
-						$diag = intval(implode('.', unpack('C', $data[$key])));
-						Billrun_Factory::log()->log($diag . " : " . $diagnostics[$diag], Zend_Log::DEBUG);
-						$ret = $diagnostics[$diag];
+				$ret = false;
+				$diags = $this->ggsnConfig['fields_translate']['diagnostics'];
+				if (!is_array($data)) {
+					$diag = intval(implode('.', unpack('C', $data)));
+					$ret = isset($diags[$diag]) ? $diags[$diag] : false;
+				} else {
+					foreach ($diags as $key => $diagnostics) {
+						if (is_array($diagnostics) && isset($data[$key])) {
+							$diag = intval(implode('.', unpack('C', $data[$key])));
+							Billrun_Factory::log()->log($diag . " : " . $diagnostics[$diag], Zend_Log::DEBUG);
+							$ret = $diagnostics[$diag];
+						}
 					}
 				}
-			}
-			return $ret;
-		},
+				return $ret;
+			},
 			'timezone' => function ($data) {
-			$smode = unpack('c*', $data);
-			//$timeSaving=intval( $smode[2] & 0x3 );
-			//time zone offset is repesented by multiples of 15 minutes.
-			$quarterOffset = Billrun_Util::bcd_decode($smode[1] & 0xF7);
-			if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
-				$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
-				$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
-				return ((($smode[1] & 0x8) == 0) ? "+" : "-") . "$h:$m";
-			}
-			//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
-			return false;
-		},
+				$smode = unpack('c*', $data);
+				//$timeSaving=intval( $smode[2] & 0x3 );
+				//time zone offset is repesented by multiples of 15 minutes.
+				$quarterOffset = Billrun_Util::bcd_decode($smode[1] & 0xF7);
+				if (abs($quarterOffset) <= 52) {//data sanity check less then 13hours  offset
+					$h = str_pad(abs(intval($quarterOffset / 4)), 2, "0", STR_PAD_LEFT); // calc the offset hours
+					$m = str_pad(abs(($quarterOffset % 4) * 15), 2, "0", STR_PAD_LEFT); // calc the offset minutes
+					return ((($smode[1] & 0x8) == 0) ? "+" : "-") . "$h:$m";
+				}
+				//Billrun_Factory::log()->log($data. " : ". print_r($smode,1),Zend_Log::DEBUG );
+				return false;
+			},
 			'ch_ch_selection_mode' => function($data) {
-			$smode = intval(implode('.', unpack('C', $data)));
-			return (isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ?
-					$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] :
-					false);
-		},
+				$smode = intval(implode('.', unpack('C', $data)));
+				return (isset($this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode]) ?
+						$this->ggsnConfig['fields_translate']['ch_ch_selection_mode'][$smode] :
+						false);
+			},
 			'bcd_encode' => function($fieldData) {
-			$halfBytes = unpack('C*', $fieldData);
-			$ret = '';
-			foreach ($halfBytes as $byte) {
-				$ret .= Billrun_Util::bcd_decode($byte);
-			}
-			return $ret;
-		},
+				$halfBytes = unpack('C*', $fieldData);
+				$ret = '';
+				foreach ($halfBytes as $byte) {
+					$ret .= Billrun_Util::bcd_decode($byte);
+				}
+				return $ret;
+			},
 			'default' => function($type, $data) {
-			return (is_array($data) ? '' : implode('', unpack($type, $data)));
-		},
+				return (is_array($data) ? '' : implode('', unpack($type, $data)));
+			},
 		);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
@@ -562,6 +569,24 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				break;
 		}
 		return $ret;
+	}
+
+	/**
+	 * updates balance of subscriber, breakdown by 3g/4g
+	 * @param array $update: the update of the balance in question
+	 */
+	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
+		if ($row['type'] != "ggsn" || !isset($row['rat_type'])) {
+			return;
+		}
+		if (isset($row['rat_type']) && $row['rat_type'] == "06") { //4G
+			$group = "4G";
+		} else {
+			$group = "3G";
+		}
+		$update['$inc']['balance.groups.' . $group . '.usagev'] = $row['usagev'];
+		$update['$inc']['balance.groups.' . $group . '.cost'] = $pricingData['aprice'];
+		$update['$inc']['balance.groups.' . $group . '.count'] = 1;
 	}
 
 }

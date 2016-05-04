@@ -34,6 +34,39 @@ class Billrun_Config {
 	 */
 	protected function __construct($config) {
 		$this->config = $config;
+		if (!empty($config['configuration']['include']) && $config['configuration']['include']->valid()) {
+			foreach ($config->toArray()['configuration']['include'] as $filePath) {
+				$this->addConfig($filePath);
+			}
+		}
+		if (file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
+			$this->addConfig($env_conf);
+		}
+	}
+
+	protected function addConfig($path) {
+		$addedConf = new Yaf_Config_Ini($path);
+		$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
+	}
+
+	/**
+	 * Merge to  configuration into one overiding  the  less important config  with  a newer config
+	 * @param type $lessImportentConf the configuration array to merge into and override
+	 * @param type $moreImportantConf the  configuration array to merge from.
+	 * @return type array containing the  overriden values.
+	 */
+	protected function mergeConfigs($lessImportentConf, $moreImportantConf) {
+		if (!is_array($moreImportantConf)) {
+			return $moreImportantConf;
+		}
+
+		foreach (array_keys($moreImportantConf) as $key) {
+			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
+				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
+				$moreImportantConf[$key];
+		}
+
+		return $lessImportentConf;
 	}
 
 	/**
@@ -57,23 +90,22 @@ class Billrun_Config {
 		}
 		return self::$instance;
 	}
-	
+
 	public function loadDbConfig() {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
 				$dbConfig = $configColl->query()
-					->cursor()
+					->cursor()->setReadPreference('RP_PRIMARY_PREFERRED')
 					->sort(array('_id' => -1))
 					->limit(1)
 					->current()
 					->getRawData();
-				
+
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->config = new Yaf_Config_Simple(array_merge($iniConfig, $dbConfig));
 			}
-
 		} catch (Exception $e) {
 			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 			return false;

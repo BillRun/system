@@ -55,10 +55,11 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
+
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
+			$this->vat = self::getVATByBillrunKey($this->billrun_key);
 			if (isset($options['autoload']) && !$options['autoload']) {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
@@ -86,10 +87,10 @@ class Billrun_Billrun {
 	 */
 	protected function load() {
 		$this->data = $this->billrun_coll->query(array(
-							'aid' => $this->aid,
-							'billrun_key' => $this->billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => $this->aid,
+					'billrun_key' => $this->billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		$this->data->collection($this->billrun_coll);
 		return $this;
 	}
@@ -102,6 +103,7 @@ class Billrun_Billrun {
 	public function save() {
 		if (isset($this->data)) {
 			try {
+                                $this->data['creation_time'] = new MongoDate();
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
@@ -136,7 +138,12 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
-		foreach ($subscriber->getExtraFieldsForBillrun() as $field) {
+		$subscriber_entry['offer_id_next'] = $subscriber->offer_id_next;
+		$subscriber_entry['offer_id_curr'] = $subscriber->offer_id_curr;
+		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
+			if ($field == !$save) {
+				continue;
+			}
 			$subscriber_entry[$field] = $subscriber->{$field};
 		}
 		$subscribers[] = $subscriber_entry;
@@ -154,6 +161,23 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * filter out subscribers that have no plans and no lines
+	 * @param int $sid the  subscriber id to check.
+	 * @return boolean TRUE if the subscriber exists in the current billrun entry, FALSE otherwise.
+	 */
+	public function filter_disconected_subscribers($deactivated_subscribers) {
+		$subscribers = $this->data['subs'];
+		foreach ($subscribers as $key => $sub) {
+			foreach ($deactivated_subscribers as $ds) {
+				if ($ds['sid'] == $sub['sid']) {
+					unset($subscribers[$key]);
+				}
+			}
+		}
+		$this->data['subs'] = array_values($subscribers);
+	}
+
+	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
 	 * @param string $billrun_key the billrun key
@@ -162,10 +186,10 @@ class Billrun_Billrun {
 	public static function exists($aid, $billrun_key) {
 		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		$data = $billrun_coll->query(array(
-							'aid' => (int) $aid,
-							'billrun_key' => (string) $billrun_key,
-						))
-						->cursor()->limit(1)->current();
+					'aid' => (int) $aid,
+					'billrun_key' => (string) $billrun_key,
+				))
+				->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
 
@@ -295,6 +319,9 @@ class Billrun_Billrun {
 		if ($row['type'] == 'credit') {
 			$plan_key = 'credit';
 			$zone_key = $row['service_name'];
+		} else if ($row['type'] == 'service') {
+			$plan_key = 'service';
+			$zone_key = $row['key'];
 		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
 			$plan_key = 'in_plan';
 			if ($row['type'] == 'flat') {
@@ -387,6 +414,8 @@ class Billrun_Billrun {
 				return 'flat';
 			case 'credit':
 				return 'credit';
+			case 'service':
+				return 'service';
 			default:
 				return 'call';
 		}
@@ -425,6 +454,12 @@ class Billrun_Billrun {
 			} else {
 				$sraw['costs']['credit'][$row['credit_type']][$vat_key] += $pricingData['aprice'];
 			}
+		} else if ($row['type'] == 'service') {
+			if (!isset($sraw['costs']['service'][$vat_key])) {
+				$sraw['costs']['service'][$vat_key] = $pricingData['aprice'];
+			} else {
+				$sraw['costs']['service'][$vat_key] += $pricingData['aprice'];
+			}
 		}
 	}
 
@@ -458,6 +493,16 @@ class Billrun_Billrun {
 				$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 				$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 				$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
+				if($row['type'] == 'ggsn') {
+					if(isset($row['rat_type']) && $row['rat_type'] == '06') {
+						$data_generation = 'usage_4g';
+					} else {
+						$data_generation = 'usage_3g';
+					}
+					$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
+					$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
+					$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
+				}
 			}
 			if ($plan_key != 'in_plan' || $zone_key == 'service') {
 				$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
@@ -480,6 +525,17 @@ class Billrun_Billrun {
 			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
 			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
+			if($row['type'] == 'ggsn') {
+				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
+					$data_generation = 'usage_4g';
+				} else {
+					$data_generation = 'usage_3g';
+				}
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
+				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
+
+			}
 		}
 
 		if ($vatable) {
@@ -582,6 +638,9 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Entity the corresponding rate
 	 */
 	protected static function getRateById($id) {
+		if (empty($id)) {
+			return;
+		}
 		if (!isset(self::$rates[$id])) {
 			$rates_coll = Billrun_Factory::db()->ratesCollection();
 			self::$rates[$id] = $rates_coll->findOne($id);
@@ -595,6 +654,9 @@ class Billrun_Billrun {
 	 * @return Mongodloid_Entity the corresponding plan
 	 */
 	protected static function getPlanById($id) {
+		if (empty($id)) {
+			return false;
+		}
 		if (!isset(self::$plans[$id])) {
 			self::$plans[$id] = Billrun_Factory::db()->plansCollection()->findOne($id);
 		}
@@ -606,7 +668,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query()->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			self::$rates[strval($rate->getId())] = $rate;
@@ -618,7 +680,7 @@ class Billrun_Billrun {
 	 */
 	public static function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			self::$plans[strval($plan->getId())] = $plan;
@@ -631,11 +693,14 @@ class Billrun_Billrun {
 	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($manual_lines = array()) {
+	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
 		Billrun_Factory::log()->log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
 		$account_lines = $this->getAccountLines($this->aid);
-		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
+
 		$lines = array_merge($account_lines, $manual_lines);
+		$this->filterSubscribers($lines, $deactivated_subscribers);
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
+
 		$updatedLines = $this->processLines(array_values($lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_log::INFO);
 		$this->updateTotals();
@@ -648,7 +713,7 @@ class Billrun_Billrun {
 			// the check fix 2 issues:
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
-			if (isset($updatedLines[$line['stamp']])) { 
+			if (isset($updatedLines[$line['stamp']])) {
 				continue;
 			}
 			$line->collection($this->lines);
@@ -664,13 +729,36 @@ class Billrun_Billrun {
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
 				$this->updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 			} else {
-				$plan = self::getPlanById(strval($line->get('plan_ref', true)['$id']));
-				$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+				$plan_ref = $line->get('plan_ref', true);
+				if (!empty($plan_ref)) {
+					$plan = self::getPlanById(strval($plan_ref['$id']));
+					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+				} else {
+					Billrun_Factory::log()->log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
+				}
 			}
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
 		return $updatedLines;
+	}
+
+	/**
+	 * removes deactivated accounts from the list if they still have lines (and therfore should be in the billrun)
+	 * @param $deactivated_subscribers array of subscribers sids and their deactivation date
+	 */
+	protected function filterSubscribers($account_lines, &$deactivated_subscribers) {
+		if (empty($deactivated_subscribers) || empty($account_lines)) {
+			return;
+		}
+		foreach ($account_lines as $line) {
+			foreach ($deactivated_subscribers as $key => $ds) {
+				if ($ds['sid'] == $line['sid']) {
+					Billrun_Factory::log()->log("Subscriber " . $ds['sid'] . " has current plan null and next plan null, yet has lines", Zend_Log::NOTICE);
+					unset($deactivated_subscribers[$key]);
+				}
+			}
+		}
 	}
 
 	/**
@@ -732,10 +820,9 @@ class Billrun_Billrun {
 		do {
 			$bufferCount += $addCount;
 			$cursor = Billrun_Factory::db()->linesCollection()
-//			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>"RP_SECONDARY_PREFERRED")))->linesCollection()
-					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1)
-					->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+//			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>MongoClient::RP_SECONDARY_PREFERRED)))->linesCollection()
+				->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
+				->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
@@ -798,6 +885,32 @@ class Billrun_Billrun {
 			}
 		}
 		return $active_billrun;
+	}
+
+	/**
+	 * returns true if account has no active subscribers and no relevant lines for next billrun
+	 * @return true if account is deactivated (causes no xml to be produced for this account)
+	 */
+	public function is_deactivated() {
+		$deactivated = true;
+		foreach ($this->data['subs'] as $subscriber) {
+			$its_empty = $this->empty_subscriber($subscriber);
+			if (!$its_empty) {
+				$deactivated = false;
+				break;
+			}
+		}
+		return $deactivated;
+	}
+
+	/**
+	 * checks for a given account if its "empty" : its status is closed and it has no relevant lines for next billrun
+	 * @param type $subscriber : sid
+	 * @return true if its "emtpy"
+	 */
+	public function empty_subscriber($subscriber) {
+		$status = $subscriber['subscriber_status'];
+		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
 
 }

@@ -65,6 +65,15 @@ class QueueModel extends TableModel {
 				'values' => Billrun_Factory::config()->getConfigValue('queue.calculators'),
 				'default' => array(),
 			),
+			'type' => array(
+				'key' => 'type1',
+				'db_key' => 'type',
+				'input_type' => 'multiselect',
+				'comparison' => '$in',
+				'display' => 'Type',
+				'values' => Billrun_Factory::config()->getConfigValue('admin_panel.queue.source'),
+				'default' => array(),
+			),
 		);
 		foreach ($filter_fields['next_calculator']['values'] as $key => $val) {
 			$filter_fields['next_calculator']['values'][$val] = $val;
@@ -85,6 +94,9 @@ class QueueModel extends TableModel {
 				'next_calculator' => array(
 					'width' => 2,
 				),
+				'type' => array(
+					'width' => 2,
+				)
 			),
 		);
 		return $filter_field_order;

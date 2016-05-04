@@ -47,8 +47,8 @@ class irdPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->daily_ird) {
 			$rateUsageIncluded = 'UNLIMITED';
 		} else {
-			$rateUsageIncluded = FALSE;
-			$groupSelected = FALSE;
+			$rateUsageIncluded = FALSE; // usage is not associated with ird, let's remove it from the plan usage association
+			$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
 		}
 
 	}

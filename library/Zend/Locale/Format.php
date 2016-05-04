@@ -310,7 +310,9 @@ class Zend_Locale_Format
         // Get correct signs for this locale
         $symbols = Zend_Locale_Data::getList($options['locale'], 'symbols');
         $oenc = iconv_get_encoding('internal_encoding');
-        iconv_set_encoding('internal_encoding', 'UTF-8');
+		if (PHP_VERSION_ID < 50600) {
+			iconv_set_encoding('internal_encoding', 'UTF-8');
+		}
 
         // Get format
         $format = $options['number_format'];
@@ -781,7 +783,9 @@ class Zend_Locale_Format
         $result['locale'] = $options['locale']; // save the locale used to normalize $number (convenience)
 
         $oenc = iconv_get_encoding('internal_encoding');
-        iconv_set_encoding('internal_encoding', 'UTF-8');
+		if (PHP_VERSION_ID < 50600) {
+			iconv_set_encoding('internal_encoding', 'UTF-8');
+		}
         $day   = iconv_strpos($format, 'd');
         $month = iconv_strpos($format, 'M');
         $year  = iconv_strpos($format, 'y');
@@ -1047,7 +1051,9 @@ class Zend_Locale_Format
             }
         }
 
-        iconv_set_encoding('internal_encoding', $oenc);
+		if (PHP_VERSION_ID < 50600) {
+			iconv_set_encoding('internal_encoding', $oenc);
+		}
         return $result;
     }
 

@@ -24,19 +24,13 @@ class ResetLinesAction extends ApiAction {
 		
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
 		if (isset($request['aid'])) {
-			$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['aid']), 'int'), array(0)));
-			$stamp = Billrun_Util::getBillrunKey(time());
-			foreach ($aids as $aid) {
-				Billrun_Factory::cache()->remove(Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => $stamp))), 'balance');
-				Billrun_Factory::cache()->remove(Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => "", 'stamp' => $stamp))), 'balance');
-				Billrun_Factory::cache()->remove(Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => 0, 'stamp' => $stamp))), 'balance');
-			}
+			$this->cleanAccountCache($request['aid']);
 		}
 
 		$billrun_key = Billrun_Util::getBillrunKey(time());
 
 		// Warning: will convert half numeric strings / floats to integers
-		$sids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['sid']), 'int'), array(0)));
+		$sids = array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
 
 		if ($sids) {
 			try {
@@ -57,6 +51,35 @@ class ResetLinesAction extends ApiAction {
 				'input' => $request,
 		)));
 		return TRUE;
+	}
+	
+	/**
+	 * method to clean account cache
+	 * 
+	 * @param int $aid
+	 * 
+	 * @return true on success, else false
+	 */
+	protected function cleanAccountCache($aid) {
+		$cache = Billrun_Factory::cache();
+		if (empty($cache)) {
+			return false;
+		}
+		$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $aid), 'int'), array(0)));
+		$billrunKey = Billrun_Util::getBillrunKey(time());
+		$cachePrefix = 'balance_'; // this is not the action name because it's clear the balance cache
+		foreach ($aids as $aid) {
+			$cleanCacheKeys = array(
+				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => array(), 'stamp' => $billrunKey))),
+				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => null, 'stamp' => (int) $billrunKey))),
+				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => "", 'stamp' => (int) $billrunKey))),
+				Billrun_Util::generateArrayStamp(array_values(array('aid' => $aid, 'subscribers' => 0, 'stamp' => (int) $billrunKey))),
+			);
+			foreach ($cleanCacheKeys as $cacheKey) {
+				$cache->remove($cacheKey, $cachePrefix);
+			}
+		}
+		return true;
 	}
 
 }

@@ -1,0 +1,117 @@
+<div class="toolbar toolbar-<?php echo $active; ?>">
+	<form id="search-criteria" action="<?php echo $baseUrl . $requestUrl; ?>" method="POST" class="form-vertical">
+		<input type="hidden" id="queryType" name="queryType" value="aggregate" />
+		<?php
+		echo '<div id="match">';
+		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
+			foreach ($this->filter_fields_order as $key => $row_fields) {
+				echo "<div class=\"control-group control-group" . $key . "\">
+							<div class=\"controls form-inline\">";
+				foreach ($row_fields as $filter_field_key => $field_view) {
+					$filter_field = $this->filter_fields[$filter_field_key];
+					if ($filter_field['input_type'] == 'boolean') {
+						echo "<input class=\"form-control span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">"
+						. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
+					} else if ($filter_field['input_type'] == 'number') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
+					} else if ($filter_field['input_type'] == 'text') {
+						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
+								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key']
+						. "\" type=\"text\" value=\""
+						. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default'])
+						. "\">";
+					} else if ($filter_field['input_type'] == 'date') {
+						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
+								<div class=\"input-group date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"YYYY-MM-DD HH:mm:ss\">
+								<input name=\"" . $filter_field['key'] . "\" class=\"form-control\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">
+								<span class=\"input-group-addon\"><span class=\"glyphicon glyphicon-calendar\"></span></span>
+								</div>";
+					} else if ($filter_field['input_type'] == 'multiselect') {
+						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
+						<select id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "[]\" class=\"form-control multiselect\"" . (isset($filter_field['singleselect'])?"" : " multiple=\"multiple\"") . ">";
+						foreach ($filter_field['values'] as $value => $name) {
+							if (is_array($this->session->$filter_field['key'])) {
+								if (in_array($value, $this->session->$filter_field['key'])) {
+									$selected = " selected";
+								} else {
+									$selected = "";
+								}
+							} else if (is_array($filter_field['default']) && in_array($value, $filter_field['default'])) {
+								$selected = " selected";
+							} else {
+								$selected = "";
+							}
+							echo "<option value=\"" . $value . "\"" . $selected . ">" . $name . "</option>";
+						}
+						echo "</select>";
+					}
+				}
+				echo "</div></div>";
+			}
+
+			if ($active == 'lines') :
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+                            <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
+				if (Admin_Lines::isManualFilter($this->session)) {
+					for ($i = 0; $i < count($this->session->manual_key); $i++) {
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+					}
+				} else {
+					echo Admin_Lines::getFilterRow(); // add first manual filter on load
+				}
+				echo "</div>";
+			elseif ($active == 'rates') :
+			endif;
+			echo '</div>';
+			echo '<div id="groupBy">';
+			echo "&nbsp;<label class='control-labe'>Group by</label>
+			<select id='groupBySelect[]' name='groupBySelect[]' class='form-control multiselect' multiple='multiple'>";
+			$groupBySelect = $this->session->groupBySelect;
+			foreach ($aggregate_by_fields as $value => $name) {
+				$selected = "";
+				if (is_array($groupBySelect)	 &&
+					in_array($value, $groupBySelect)){
+						$selected = " selected";
+				}
+				
+				echo "<option value='$value' $selected>$name</option>";
+			}
+			echo "</select>";
+			echo '</div>';
+			echo "<div id='groupData'><a href='javascript:void(0)' class='groupData'>Group data <i class='" . (Admin_Lines::isGroupFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "'></i></a></div>
+				<div id = 'group_by_filters'" . (Admin_Lines::isGroupFilter($this->session) ? "" : " style='display:none'") . ">";
+			if (Admin_Lines::isGroupFilter($this->session)) {
+				for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
+					echo Admin_Table::getGroupRow($this->session->group_data_keys[$i], $this->session->group_data_operators[$i]);
+				}
+			} else {
+				echo Admin_Table::getGroupRow(); // add first manual filter on load
+			}
+			echo "</div>";
+			if (is_array($this->sort_fields) && $this->sort_fields) {
+				echo '<div id="sort">';
+				echo "Sort by: <div class=\"control-group control-group5\">
+		<div class=\"controls form-inline\">
+			 <select id=\"sort_by\" name=\"sort_by\" class=\"form-control multiselect\">";
+				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
+					if(!isset($aggregate_by_fields[$sort_field_key])) {
+						continue;
+					}
+					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
+				}
+				echo "</select>
+			<label class=\"radio inline\">
+                                <input name=\"order\" value=\"desc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") ? " checked=\"checked\"" : "") . "> Descending order
+			</label>
+			<label class=\"radio inline\">
+                                <input name=\"order\" value=\"asc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") ? "" : " checked=\"checked\"") . "> Ascending order
+			</label>
+		</div></div>";
+				echo '</div>';
+			}
+		}
+		$this->display('toolbarbuttons.phtml', array());
+		?>
+	</form>
+</div>

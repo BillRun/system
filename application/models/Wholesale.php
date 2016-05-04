@@ -98,11 +98,11 @@ class WholesaleModel {
 	 * @return array of results
 	 */
 	public function getData($group_field, $from_day, $to_day, $carrier = null) {
-		$query = 'SELECT ' . ($group_field == 'carrier' ? 'cgr_compressed.longname' : 'dayofmonth') . ' AS group_by, usaget, sum(duration) AS duration, round(sum(duration)/pow(1024,2)*0.0297,2) AS cost '
-				. 'FROM wholesale left join cgr_compressed ON wholesale.carrier=cgr_compressed.shortname '
+		$query = 'SELECT ' . ($group_field == 'carrier' ? 'cgr_compressed.company_name' : 'dayofmonth') . ' AS group_by, usaget, sum(duration) AS duration, round(sum(duration)/pow(1024,2)*0.0297,2) AS cost '
+				. 'FROM wholesale left join cgr_compressed ON wholesale.carrier=cgr_compressed.carrier '
 				. 'WHERE usaget like "data" AND wholesale.carrier NOT IN ("GT", "OTHER") AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '" ';
 		if ($carrier) {
-			$query .= ' AND longname LIKE "' . $carrier . '"';
+			$query .= ' AND company_name LIKE "' . $carrier . '"';
 		}
 		$query.= 'GROUP by group_by';
 
@@ -119,22 +119,22 @@ class WholesaleModel {
 	}
 
 	public function getCall($direction, $group_field, $from_day, $to_day, $carrier = null, $network = 'all') {
-		$sub_query = 'SELECT usaget, dayofmonth, longname as carrier, sum(duration) as seconds,'
+		$sub_query = 'SELECT usaget, dayofmonth, company_name as carrier, sum(duration) as seconds,'
 				. 'CASE WHEN network like "nr" THEN sum(duration)/60*0.053'
-				. ' WHEN carrier like "N%" and direction like "FG" THEN sum(duration)/60*0.0101002109924085'
-				. ' WHEN carrier like "I%" and direction like "FG" THEN sum(duration)/60*-0.0614842117289702'
+				. ' WHEN wholesale.carrier like "N%" and direction like "FG" THEN sum(duration)/60*0.0101002109924085'
+				. ' WHEN wholesale.carrier like "I%" and direction like "FG" THEN sum(duration)/60*-0.0614842117289702'
 				. ' ELSE sum(duration)/60*0.0614842117289702 END as cost'
-				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.shortname'
+				. ' FROM wholesale left join cgr_compressed on wholesale.carrier=cgr_compressed.carrier'
 				. ' WHERE'
 				. ' wholesale.carrier NOT IN("DDWW", "DKRT", "GPRT", "GT", "LALC", "LCEL", "NSML", "PCTI", "POPC") AND' // temporary exclude these carriers until Dror explains them
 				. ' direction like "' . $direction . '" AND network like "' . $network . '" AND dayofmonth BETWEEN "' . $from_day . '" AND "' . $to_day . '"'
 				. ' GROUP BY dayofmonth,wholesale.carrier,usaget,direction'
-				. ' ORDER BY usaget,dayofmonth,longname';
+				. ' ORDER BY usaget,dayofmonth,company_name';
 
 		$query = 'SELECT ' . $group_field . ' AS group_by, usaget ,sum(seconds) as duration, round(sum(cost),2) as cost from (' . $sub_query . ') as sq';
 
 		if ($carrier) {
-			$query .= ' WHERE carrier LIKE "' . $carrier . '"';
+			$query .= ' WHERE wholesale.carrier LIKE "' . $carrier . '"';
 		}
 
 		$query .= ' GROUP BY ' . $group_field;
@@ -504,6 +504,58 @@ class WholesaleModel {
 				'colspan' => 2,
 			),
 		);
+	}
+	
+	/**
+	 * method test wholesale data looking for inconsistencies
+	 * 
+	 */
+	public function weeklyTestWholesale() {
+		$db = Billrun_Factory::config()->getConfigValue('wholesale.db');
+		$settings = Billrun_Factory::config()->getConfigValue('cron.wholesale');
+		$this->db = Zend_Db::factory('Pdo_Mysql', array(
+				'host' => $db['host'],
+				'username' => $db['username'],
+				'password' => $db['password'],
+				'dbname' => $db['name']
+		));
+		$base_query = 'SELECT * FROM wholesale where product REGEXP "^IL" AND carrier REGEXP "^(M|N)" AND network = "all" '
+			. 'AND duration > "' . $settings['duration']['minimum'] . '" ';
+		$check_day_of_month = date("Y-m-d", strtotime($settings['checkingDay'] . ' days ago'));
+		$ref_day_of_month = date("Y-m-d", strtotime(($settings['checkingDay'] + 7) . ' days ago'));
+
+		$check_day_query = $base_query . ' AND dayofmonth ="' . $check_day_of_month . '"';
+		$ref_day_query = $base_query . ' AND dayofmonth ="' . $ref_day_of_month . '"';
+		$check_day_data = $this->db->fetchAll($check_day_query);
+		if (empty($check_day_data)) {
+			Billrun_Factory::log("wholesale error: " . $check_day_of_month . " whoelsale data is missing", Zend_Log::ERR);
+		}
+		$ref_day_data = $this->db->fetchAll($ref_day_query);
+
+		$rearranged_check_day = $this->reorder_wholesale_data($check_day_data);
+		$rearranged_ref_day = $this->reorder_wholesale_data($ref_day_data);
+		foreach ($rearranged_check_day as $carrier => $carrier_lines) {
+			foreach ($carrier_lines as $product => $line) {
+				if (!isset($rearranged_ref_day[$carrier][$product])) {
+					continue;
+				}
+				$ref_duration = $rearranged_ref_day[$carrier][$product]['duration'];
+				$diff = abs($line['duration'] / $ref_duration - 1);
+				if ($diff > $settings['duration']['diff']) {
+					$rpMessage = 'wholesale warning: carrier ' . $carrier . ' product ' . $product . ' on ' . $check_day_of_month
+						. ' differs by ' . round($diff * 100) . '%' . ' compared to ' . $ref_day_of_month;
+					Billrun_Factory::log($rpMessage, Zend_Log::ERR);
+				}
+			}
+		}
+	}
+
+	protected function reorder_wholesale_data($wholesale_data) {
+		$rearanged = array();
+		foreach ($wholesale_data as $wholesale_line) {
+			$rearanged[$wholesale_line['carrier']][$wholesale_line['product']] = $wholesale_line;
+		}
+		return $rearanged;
 	}
 
 }

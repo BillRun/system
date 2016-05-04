@@ -45,7 +45,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $min_time;
 
 	public function __construct() {
-		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time()));
+		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
 	}
 
 	/**
@@ -62,11 +62,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
 		if ($calculator->getType() == 'pricing' && method_exists($calculator, 'getPricingField') && ($pricingField = $calculator->getPricingField())) {
-			$rowPrice = isset($pricingData[$pricingField])? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
+			$rowPrice = isset($pricingData[$pricingField]) ? $pricingData[$pricingField] : 0; // if the rate wasn't billable then the line won't have a charge
 		} else {
 			return true;
 		}
-		
+
 		if (!$this->isLineLegitimate($row, $calculator)) {
 			return true;
 		}
@@ -85,7 +85,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return true;
 		}
 
-		// check if row is too "old" to be considered as a fraud. TODO: consider lowering min_time in 1-2 days.
+		// Check if row is too "old" to be considered as a fraud. Currently done by decrease X hours (default: 1.5 hours) from min_time variable
 		if ($row['urt']->sec <= $this->min_time) {
 			return true;
 		}
@@ -219,7 +219,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$usaget = $row['usaget'];
 
 		// if the limit for specific plans
-		if (isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) {
+		// @todo: make the first if-condition as override (means be able to apply limit & exclude together)
+		if (
+			(isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) ||
+			(isset($rule['excludePlans']) && is_array($rule['excludePlans']) && in_array(strtoupper($row['plan']), $rule['excludePlans']))
+		) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
 			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {
@@ -284,12 +288,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		// if the limit for specific plans
 		if (isset($rule['limitPlans']) &&
-				(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
+			(is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans']))) {
 			return false;
 		}
 		// ignore subscribers :)
 		if (isset($rule['ignoreSubscribers']) &&
-				(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
+			(is_array($rule['ignoreSubscribers']) && in_array($row['sid'], $rule['ignoreSubscribers']))) {
 			return false;
 		}
 
@@ -366,7 +370,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$newEvent['recurring'] = $recurring;
 		$newEvent['line_stamp'] = $row['stamp'];
 		$newEvent['line_urt'] = $row['urt'];
-		
+		$newEvent['line_usagev'] = $row['usagev'];
+
 		if (is_null($priority) || !is_numeric($priority)) {
 			$priority = 15;
 		}
@@ -427,6 +432,34 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
+	
+	/**
+	 * Save lines reference to the fraud DB queue to be priced by fruad.
+	 * @param type $lines
+	 */
+	public function insertToFraudQueue($lines) {
+		try {
+			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->queueCollection();
+			foreach ($lines as $line) {
+				$queueLine = array( 'stamp'=> $line['stamp'],
+									'urt'=>$line['urt'],
+									'type'=>$line['type'],
+									'calc_time' => false,
+									'calc_name' => false,
+								);
+				if(isset($line['aid']) && isset($line['sid']) ) {
+					$queueLine['aid'] =  $line['aid'];
+					$queueLine['sid'] =  $line['sid'];
+					$queueLine['calc_name'] = 'customer';
+				}
+
+				$fraud_connection->insert(new Mongodloid_Entity($queueLine), array('w' => 0));
+			}
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud queue collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
+		}
+	}
 
 	/**
 	 * TODO document
@@ -436,7 +469,25 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function insertRoamingGgsn($lines) {
 		$roamingLines = array();
 		foreach ($lines as $line) {
-			if (!preg_match('/^(?=62\.90\.|37\.26\.)/', $line['sgsn_address'])) {
+			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.)/', $line['sgsn_address'])) {
+				$roamingLines[] = $line;
+			}
+		}
+		if (!empty($roamingLines)) {
+			$this->insertToFraudLines($roamingLines);
+			$this->insertToFraudQueue($roamingLines);
+		}
+	}
+
+	protected function insertIntlNsn($lines) {
+		$roamingLines = array();
+		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
+		$record_types = array('01', '11');
+		$rates_ref_list = Billrun_Util::getIntlRateRefs();			
+		foreach ($lines as $line) {
+			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
+				$roamingLines[] = $line;
+			} else if(!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
 				$roamingLines[] = $line;
 			}
 		}
@@ -451,7 +502,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	public function afterProcessorStore($processor) {
-		if ($processor->getType() != "ggsn") {
+		$type = $processor->getType();
+		if ($type != "ggsn" && $type != "nsn") {
 			return;
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
@@ -460,18 +512,27 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($pid == 0) {
 				Billrun_Util::resetForkProcess();
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore run it in async mode', Zend_Log::INFO);
-				$this->insertRoamingGgsn($processor->getData()['data']);
+				if ($type == "ggsn") {
+					$this->insertRoamingGgsn($processor->getData()['data']);
+				} else if ($type == "nsn") {
+					$this->insertIntlNsn($processor->getData()['data']);
+				}
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
 			}
 		} else {
 			Billrun_Factory::log('Plugin fraud::afterProcessorStore runing in sync mode', Zend_Log::INFO);
-			$this->insertRoamingGgsn($processor->getData()['data']);
+			if ($type == "ggsn") {
+				$this->insertRoamingGgsn($processor->getData()['data']);
+			} else if ($type == "nsn") {
+				$this->insertIntlNsn($processor->getData()['data']);
+			}
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
 
 	public function afterCalculatorUpdateRow($line, $calculator) {
+		return;
 
 		if (!$this->isLineLegitimate($line, $calculator)) {
 			return true;
@@ -480,7 +541,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$calculator->getCalculatorQueueType() == 'rate' || $line['type'] != 'nsn') {
 			return true;
 		}
-		$rateKey = isset($line['arate']['key']) ? $line['arate']['key'] : null;
+
 		if (isset($line['called_number'])) {
 			// fire  event to increased called_number usagev
 			$this->triggerCalledNumber($line);
@@ -490,7 +551,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->triggerCallingNumber($line);
 		}
 	}
-
+	
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
@@ -513,7 +574,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - called " . $called_number . " with usagev of " . $line['usagev'] . " upserted to the fraud called collection", Zend_Log::DEBUG);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud2.db'))->calledCollection();
+			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->calledCollection();
 			$fraud_connection->update($query, $update, $options);
 		} catch (Exception $e) {
 			// @TODO: dump to file for durability

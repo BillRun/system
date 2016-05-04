@@ -68,6 +68,7 @@ print '</div>';
 				id: $('#form_id').html(),
 				coll: $('#form_coll').html(),
 				type: $('#form_type').html(),
+				duplicate_rates: $('#duplicate_rates').is(':checked'),
 				data: JSON.stringify(_jsonData)
 			},
 			success: function(data, textStatus, jqXHR) {
@@ -96,6 +97,11 @@ print '</div>';
 <!-- ./modal-body-->
 </div>
 <div class="modal-footer">
+	<?php if ($this->collectionName == 'plans' && ($this->type == 'duplicate' || $this->type == 'close_and_new')) : ?>
+	<div class="edit_checkboxes">
+	<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
+	</div>
+	<?php endif; ?>
 	<button id="cancelPopup" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
 	<?php if (AdminController::authorized('write')) : ?>
 	<button id="save" class="btn btn-primary">Save changes</button>

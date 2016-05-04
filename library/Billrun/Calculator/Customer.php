@@ -314,6 +314,15 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+		if (is_array($line)) {
+			$arate = $this->lines_coll->getRef($line['arate']);
+		} else { 
+			$line->collection(Billrun_Factory::db()->linesCollection());
+			$arate = $line->get('arate', false);
+		}
+		if (!empty($arate['skip_calc']) && in_array(self::$type, $arate['skip_calc'])) {
+			return false;
+		}
 		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
 			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
@@ -333,7 +342,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$record_type = $line['record_type'];
 			if ($record_type == '11' || $record_type == '12') {
 				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-				if (!($relevant_cg == "1001" || $relevant_cg == "1006" || ($relevant_cg >= "1201" && $relevant_cg <= "1209"))) {
+				if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
 					return false;
 				}
 				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
@@ -377,7 +386,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'$ne' => 'INTERNET_BILL_BY_VOLUME',
 			),
 		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($query)->cursor();
 		foreach ($rates as $rate) {
 			$this->intlGgsnRates[strval($rate->getId())] = $rate;
 		}

@@ -13,6 +13,7 @@
 abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 	const DEF_CALC_DB_FIELD = 'arate';
+	const DEF_RATE_KEY_DB_FIELD = 'arate_key';
 	const DEF_APR_DB_FIELD = 'apr';
 	
 
@@ -35,6 +36,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $ratingField = self::DEF_CALC_DB_FIELD;
+	protected $ratingKeyField = self::DEF_RATE_KEY_DB_FIELD;
 	protected $pricingField = Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 	protected $aprField = self::DEF_APR_DB_FIELD;
 
@@ -96,7 +98,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->ratingField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		$saveProperties = array($this->ratingField,$this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		$saveProperties = array_merge($saveProperties,$this->getAdditionalProperties());
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -142,6 +145,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
+		$additional_values = $this->getLineAdditionalValues($row);
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
 		}
@@ -150,14 +154,66 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			'usagev' => $volume,
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
+		if(isset($rate['key'])) {
+			$added_values[$this->ratingKeyField] = $rate['key'];
+		}
+		
 		if ($rate) {
 			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $usage_type, $volume);
+		}
+		if(!empty($additional_values)) {
+			$added_values = array_merge($added_values,$additional_values);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
+	}
+	
+	/**
+	 * method to get rate record by name, from and to period
+	 * 
+	 * @param string $rate_key name of the rate
+	 * @param mixed $from numeric unix timestamp or string date (ISO)
+	 * @param type $to numeric unix timestamp or string date (ISO)
+	 * 
+	 * @return Entity rate
+	 */
+	static public function getRateByName($rate_key, $from = null, $to = null) {
+		if (is_null($from)) {
+			$from = time();
+		}
+		if (is_null($to)) {
+			$to = time();
+		}
+		
+		if (is_string($from) && !is_numeric($from)) {
+			$from = strtotime($from);
+		}
+		if (is_string($to) && !is_numeric($to)) {
+			$to = strtotime($to);
+		}
+		
+		$query = array(
+			'key' => $rate_key,
+			'from' => array(
+				'$lt' => new MongoDate($from),
+			),
+			'to' => array(
+				'$gt' => new MongoDate($to),
+			)
+		);
+		$rates = Billrun_Factory::db()->ratesCollection();
+		return $rates->query($query)->cursor()->current();
+	}
+	
+	protected function getLineAdditionalValues(){
+		return array();
+	}
+	
+	protected function getAdditionalProperties() {
+		return array();
 	}
 
 }

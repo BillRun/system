@@ -124,8 +124,7 @@ class Billrun_Util {
 			$tz_offset = $offset;
 		}
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
-		$datetime = strtotime($date_formatted);
-		return $datetime;
+		return strtotime($date_formatted);
 	}
 
 	public static function startsWith($haystack, $needle) {
@@ -220,7 +219,7 @@ class Billrun_Util {
 				->query('key', 'VAT')
 				->lessEq('from', $mongo_date)
 				->greaterEq('to', $mongo_date)
-				->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current()->get('vat');
+				->cursor()->current()->get('vat');
 	}
 
 	public static function isTimestamp($timestamp) {
@@ -244,8 +243,7 @@ class Billrun_Util {
 	 * 
 	 * @return string size in requested format
 	 */
-	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, 
-		$dec_point = "." , $thousands_sep = ",") {
+	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, $dec_point = ".", $thousands_sep = ",") {
 		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
 			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
 
@@ -265,8 +263,8 @@ class Billrun_Util {
 		if ($unit == 'B') {
 			$decimals = 0;
 		} else if (!is_numeric($decimals) || $decimals < 0) {
-		// If decimals is not numeric or decimals is less than 0 
-		// then set default value
+			// If decimals is not numeric or decimals is less than 0 
+			// then set default value
 			$decimals = 2;
 		}
 
@@ -281,6 +279,25 @@ class Billrun_Util {
 
 		return 0;
 	}
+
+	/**
+	 * method to check if indexes exists in the query filters
+	 * 
+	 * @param type $filters the filters to search in
+	 * @param type $searched_filter the filter to search
+	 * 
+	 * @return boolean true if searched filter exists in the filters supply
+	 */
+	public static function filterExists($filters, $searched_filter) {
+		settype($searched_filter, 'array');
+		foreach ($filters as $k => $f) {
+			$keys = array_keys($f);
+			if (count(array_intersect($searched_filter, $keys))) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/**
 	 * convert seconds to requested format
@@ -294,7 +311,7 @@ class Billrun_Util {
 	 * 3400 sec => X minutes
 	 */
 	public static function durationFormat($seconds) {
-		if ($seconds> 3600) {
+		if ($seconds > 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
 		return gmdate('i:s', $seconds);
@@ -330,7 +347,7 @@ class Billrun_Util {
 		//sen email
 		return $mailer->send();
 	}
-	
+
 	/**
 	 * method to fork process of PHP-Web (Apache/Nginx/FPM)
 	 * 
@@ -373,7 +390,7 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd ." > /dev/null & ";
+		$syscmd = $cmd . " > /dev/null & ";
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
@@ -415,17 +432,17 @@ class Billrun_Util {
 	 * @return string phone number in msisdn format
 	 */
 	public static function msisdn($phoneNumber, $defaultPrefix = null, $cleanLeadingZeros = true) {
-		
+
 		if (empty($phoneNumber)) {
 			return $phoneNumber;
 		}
-		
+
 		settype($phoneNumber, 'string');
-		
+
 		if ($cleanLeadingZeros) {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
-		
+
 		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
 			return $phoneNumber;
 		}
@@ -436,7 +453,7 @@ class Billrun_Util {
 
 		return $defaultPrefix . $phoneNumber;
 	}
-	
+
 	/**
 	 * method to check if phone number is intl number or local number base on msisdn standard
 	 * 
@@ -446,15 +463,15 @@ class Billrun_Util {
 	 */
 	public static function isIntlNumber($phoneNumber) {
 		$cleanNumber = self::cleanLeadingZeros(self::cleanNumber($phoneNumber));
-		
+
 		//CCNDCSN - First part USA; second non-USA
 		if (preg_match("/^(1[2-9]{1}[0-9]{2}|[2-9]{1}[0-9]{1,2}[1-9]{1}[0-9]{0,2})[0-9]{7,9}$/", $cleanNumber)) {
 			return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	/**
 	 * method to clean phone number and leave only numeric characters
 	 * 
@@ -465,7 +482,7 @@ class Billrun_Util {
 	public static function cleanNumber($phoneNumber) {
 		return preg_replace("/[^0-9]/", "", $phoneNumber);
 	}
-	
+
 	/**
 	 * method to clean leading zero of phone number
 	 * 
@@ -485,7 +502,7 @@ class Billrun_Util {
 		Billrun_Factory::log()->removeWriters('Mail');
 		Billrun_Factory::log()->addWriters('Mail');
 	}
-	
+
 	/**
 	 * method to parse credit row from API
 	 * 
@@ -510,6 +527,7 @@ class Billrun_Util {
 			'plan' => array(),
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
+			'fixed' => array(),
 		);
 		$filtered_request = array();
 
@@ -607,10 +625,17 @@ class Billrun_Util {
 			unset($filtered_request['subscriber_id']);
 		}
 
-		if ($filtered_request['aid'] == 0 || $filtered_request['sid'] == 0) {
+		if ($filtered_request['aid'] == 0) {
 			return array(
 				'status' => 0,
-				'desc' => 'account, subscriber ids must be positive integers',
+				'desc' => 'account id must be positive integers',
+			);
+		}
+
+		if ($filtered_request['sid'] < 0) {
+			return array(
+				'status' => 0,
+				'desc' => 'subscriber id must be greater or equal to zero',
 			);
 		}
 
@@ -637,6 +662,20 @@ class Billrun_Util {
 	}
 
 	/**
+	 * method to update service row from API
+	 * @param array $service_row
+	 * @return $service_row after addition of fields
+	 */
+	public static function parseServiceRow($service_row, $billrun_key) {
+		$service_row['source'] = 'api';
+		$service_row['usaget'] = $service_row['type'] = 'service';
+		$service_row['urt'] = new MongoDate(Billrun_Util::getEndTime($billrun_key));
+		ksort($service_row);
+		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
+		return $service_row;
+	}
+
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert
@@ -646,19 +685,18 @@ class Billrun_Util {
 	 */
 	public static function arrayToMongoQuery($array) {
 		$query = array();
-		foreach($array as $key => $val) {			
-			if(is_array($val) && strpos($key,'$') !== 0) {
+		foreach ($array as $key => $val) {
+			if (is_array($val) && strpos($key, '$') !== 0) {
 				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
-					if(strpos($subKey,'$') === 0) {
+					if (strpos($subKey, '$') === 0) {
 						$query[$key][$subKey] = $subValue;
 					} else {
-						$query[$key.".".$subKey] = $subValue;
+						$query[$key . "." . $subKey] = $subValue;
 					}
 				}
 			} else {
 				$query[$key] = $val;
 			}
-			
 		}
 		return $query;
 	}
@@ -688,13 +726,19 @@ class Billrun_Util {
 		fwrite($fd, json_encode($row) . PHP_EOL);
 		fclose($fd);
 	}
-	
+
+	public static function logFailedServiceRow($row) {
+		$fd = fopen(Billrun_Factory::config()->getConfigValue('service.failed_credits_file', './files/failed_service.json'), 'a+');
+		fwrite($fd, json_encode($row) . PHP_EOL);
+		fclose($fd);
+	}
+
 	public static function logFailedResetLines($sids, $billrun_key) {
 		$fd = fopen(Billrun_Factory::config()->getConfigValue('resetlines.failed_sids_file', './files/failed_resetlines.json'), 'a+');
 		fwrite($fd, json_encode(array('sids' => $sids, 'billrun_key' => $billrun_key)) . PHP_EOL);
 		fclose($fd);
 	}
-	
+
 	/**
 	 * Get an array of prefixes for a given.
 	 * @param string $str the number to get prefixes to.
@@ -707,18 +751,18 @@ class Billrun_Util {
 		}
 		return $prefixes;
 	}
-	
+
 	/**
 	 * Make sure that a date start with the full year and make sure it compitibale with a given format.
 	 * @param $date the date to make sure is corrcet.
 	 * @param $foramt the fromat the date should be in.
 	 * @return mixed the fixed date sting if possible or false  if the date couldn't be fixed.
 	 */
-	public static function fixShortHandYearDate($date,$format = "Y") {
-		if( !preg_match('/^'.date($format,strtotime($date)).'/',$date) ) {
-			$date = substr(date("Y"),0,2).$date;
+	public static function fixShortHandYearDate($date, $format = "Y") {
+		if (!preg_match('/^' . date($format, strtotime($date)) . '/', $date)) {
+			$date = substr(date("Y"), 0, 2) . $date;
 		}
-		return preg_match('/^'.date($format,strtotime($date)).'/',$date) ? $date : false; 
+		return preg_match('/^' . date($format, strtotime($date)) . '/', $date) ? $date : false;
 	}
 
 	/**
@@ -727,9 +771,18 @@ class Billrun_Util {
 	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
 	 */
 	public static function getHostName() {
-		return function_exists('gethostname') ? gethostname() : false;
+		return function_exists('gethostname') ? @gethostname() : false;
 	}
-	
+
+	/**
+	 * method to get current operating system process id runnning the PHP
+	 * 
+	 * @return mixed current PHP process ID (int) or false on failure
+	 */
+	public static function getPid() {
+		return function_exists('getmypid') ? @getmypid() : false;
+	}
+
 	/**
 	 * Return the decimal value from the coded binary representation
 	 * @param int $binary
@@ -746,12 +799,120 @@ class Billrun_Util {
 	 * @param type $defaultVal
 	 * @return type
 	 */
-	public static function getNestedArrayVal($array, $fields, $defaultVal = null) {
+	public static function getNestedArrayVal($array, $fields, $defaultVal = null,$retArr = FALSE) {
 		$fields = is_array($fields) ? $fields : explode('.', $fields);
-		$field = array_shift($fields);
-		if( isset($array[$field]) ) {
-			return empty($fields) ? $array[$field] : static::getNestedArrayVal($array[$field], $fields, $defaultVal); 
+		$rawField = array_shift($fields);
+		preg_match("/\[([^\]]*)\]/", $rawField,$attr);		
+		if(!empty($attr)) {//Allow for  multiple attribute checks
+			$attr = explode("=",Billrun_Util::getFieldVal($attr[1],FALSE)); 
 		}
-		return $defaultVal;
+		$field = preg_replace("/\[[^\]]*\]/", "", $rawField); 
+		$aggregate = $retArr &&  ($field =='*') ;
+		$keys = ($field != "*") ? array($field) : array_keys($array);	
+		
+		$retVal = $aggregate ? array() : $defaultVal;
+		foreach ($keys as $key ) {
+			if( isset($array[$key]) && (empty($attr) || isset($array[$key][$attr[0]])) && (!isset($attr[1]) || $array[$key][$attr[0]] == $attr[1] ) ) {
+				if (!$aggregate) {
+					$retVal = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+					break;
+				}
+				else {
+					$retVal[] = empty($fields) ? $array[$key] : static::getNestedArrayVal($array[$key], $fields, $defaultVal,$retArr); 
+				}
+			}
+		}		
+		
+		return $retVal;
+	}
+	/**
+	 * method to retrieve internation circuit groups
+	 * 
+	 * @todo take from db (?) with cache (static variable)
+	 */
+	public static function getIntlCircuitGroups() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_cg', array());
+	}
+	/**
+	 * method to retrieve rates that ought to be included for fraud 
+	 * @return array of rate refs
+	 */
+	public static function getIntlRateRefs() {
+		$rate_key_list = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.intl_rates',array());
+		$query = array("key" => array('$in' => $rate_key_list));
+		$ratesmodle =new RatesModel(array("collection" => "rates"));
+		$rates =$ratesmodle->getRates($query);
+		$rate_ref_list=array();
+		foreach ($rates as $rate) {
+			$rate_ref_list[]=$rate->createRef(Billrun_Factory::db()->ratesCollection())['$id']->{'$id'};
+		}
+		return $rate_ref_list;
+	}
+        
+	/**
+	 * method to retrieve roaming circuit groups
+	 * 
+	 * @todo take from db (?) with cache (static variable)
+	 */
+	public static function getRoamingCircuitGroups() {
+		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.roaming_cg', array());
+	}
+	
+	/**
+	 * Send curl request
+	 * 
+	 * @param string $url full path
+	 * @param string $data parameters for the request
+	 * @param string $method should be POST or GET
+	 * 
+	 * @return array or FALSE on failure
+	 */
+	public static function sendRequest($url, array $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+		if (empty($url)) {
+			Billrun_Factory::log()->log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
+			return FALSE;
+		}
+
+		$method = strtoupper($method);
+		if (!defined("Zend_Http_Client::" . $method)) {
+			return FALSE;
+		}
+
+		$zendMethod = constant("Zend_Http_Client::" . $method);
+		$curl = new Zend_Http_Client_Adapter_Curl();
+		if (!is_null($timeout)) {
+			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		$client = new Zend_Http_Client($url);
+		$client->setHeaders($headers);
+		$client->setAdapter($curl);
+		$client->setMethod($method);
+
+		if (!empty($data)) {
+			if ($zendMethod == Zend_Http_Client::POST) {
+				$client->setParameterPost($data);
+			} else {
+				$client->setParameterGet($data);
+			}
+		}
+		try {
+			$response = $client->request();
+			$output = $response->getBody();
+		} catch (Zend_Http_Client_Exception $e) {
+			$output = null;
+		}
+		if (empty($output)) {
+			Billrun_Factory::log()->log("Bad RPC result: " . print_r($response, TRUE) . " Parameters sent: " . print_r($data, TRUE), Zend_Log::WARN);
+			return FALSE;
+		}
+
+		return $output;
+	}
+	
+	public static function getTimezoneOffsetInSeconds($timezone) {
+		$sign = $timezone[0] == '+' ? 1 : -1;
+		$hours = substr($timezone, 1, 2);
+		$minutes = substr($timezone, -2, 2);
+		return $sign * ($hours * 3600 + $minutes * 60);
 	}
 }

@@ -98,7 +98,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		$log = Billrun_Factory::db()->logCollection();
 		$lastLogFile = $log->query()->equals('source', $this->getName())->exists('received_time')
 				->equals('retrieved_from', $hostname)->
-				cursor()->sort(array('_id' => -1))->limit(1)->current();
+				cursor()->setReadPreference('RP_PRIMARY')->sort(array('_id' => -1))->limit(1)->current();
 
 		return isset($lastLogFile['file_name']) ? $lastLogFile['file_name'] : false;
 	}

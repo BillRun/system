@@ -40,7 +40,7 @@ class TabledateModel extends TableModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
@@ -104,6 +104,11 @@ class TabledateModel extends TableModel {
 
 		// open new line
 		$params[$this->search_key] = $closed_data[$this->search_key];
+		if (isset($params['_id']->{'id'})) {
+			$params['source_id'] = (string) $params['_id']->{'$id'};
+		} else if (isset($params['_id'])){
+			$params['source_id'] = (string) $params['_id'];
+		}
 		unset($params['_id']);
 		$params['from'] = new MongoDate($new_from->getTimestamp());
 		$params['to'] = new MongoDate($new_from->add(125, Zend_Date::YEAR)->getTimestamp());

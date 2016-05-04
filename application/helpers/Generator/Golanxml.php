@@ -100,13 +100,13 @@ class Generator_Golanxml extends Billrun_Generator {
 		$billrun = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
 		Billrun_Factory::log()->log('Loading ' . $this->size . ' billrun documents with offset ' . $this->offset, Zend_Log::INFO);
 		$resource = $billrun
-				->query('billrun_key', $this->stamp)
-				->exists('invoice_id')
-				->notExists('invoice_file')
-				->cursor()
-				->sort(array("aid" => 1))
-				->skip($this->offset * $this->size)
-				->limit($this->size);
+			->query('billrun_key', $this->stamp)
+			->exists('invoice_id')
+			->notExists('invoice_file')
+			->cursor()
+			->sort(array("aid" => 1))
+			->skip($this->offset * $this->size)
+			->limit($this->size);
 
 		$resource->timeout(-1);
 		// @TODO - there is issue with the timeout; need to be fixed
@@ -146,8 +146,10 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		$this->writer->openURI($invoice_file_path);
 		$this->writeXML($row, $lines);
-		if (!$this->validateXml($invoice_file_path)) {
-			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path, Zend_log::ALERT);
+		@chmod($invoice_file_path, 0777); // make the file writable for enable re-creation through admin
+		$xml_validation = $this->validateXml($invoice_file_path);
+		if ($xml_validation !== TRUE) {
+			Billrun_Factory::log('Xml file is not valid: ' . $invoice_file_path . ((is_array($xml_validation)) ? PHP_EOL . "xml errors: " . print_R($xml_validation, 1) : ''), Zend_log::ALERT);
 		}
 		$this->setFileStamp($row, $invoice_filename);
 		Billrun_Factory::log()->log("invoice file " . $invoice_filename . " created for account " . $row->get('aid'), Zend_Log::INFO);
@@ -158,7 +160,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * 
 	 * @param string $file_path xml file path on disk
 	 * 
-	 * @return boolean true if xml valid, else false
+	 * @return mixed true if xml valid, else array if xml errors raised, else false
 	 */
 	protected function validateXml($file_path) {
 		if (!$this->reader->open($file_path)) {
@@ -167,7 +169,13 @@ class Generator_Golanxml extends Billrun_Generator {
 		while ($this->reader->read()) {
 			
 		}
-		return count(libxml_get_errors()) == 0;
+		$xml_errors = libxml_get_errors();
+		if (count($xml_errors) === 0) {
+			return TRUE;
+		} else {
+			libxml_clear_errors();
+			return $xml_errors;
+		}
 	}
 
 	/**
@@ -183,7 +191,11 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction = 0;
 		$invoice_total_manual_correction_credit = 0;
 		$invoice_total_manual_correction_charge = 0;
+		$invoice_total_manual_correction_credit_fixed = 0;
+		$invoice_total_manual_correction_charge_fixed = 0;
+		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
+		$invoice_total_did_premium = 0;
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -225,6 +237,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->startElement('SUBSCRIBER_INF');
 			$this->writer->startElement('SUBSCRIBER_DETAILS');
 			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
+			$this->writer->writeElement('OFFER_ID_CURR', $subscriber['offer_id_curr']);
+			$this->writer->writeElement('OFFER_ID_NEXT', $subscriber['offer_id_next']);
 			$this->writer->endElement();
 
 			$this->writeBillingLines($subscriber, $lines);
@@ -283,6 +297,23 @@ class Generator_Golanxml extends Billrun_Generator {
 				foreach ($subscriber['breakdown']['credit']['refund_vatable'] as $key => $credit) {
 					if (strpos($key, 'CRM-REFUND_PROMOTION') !== FALSE) {
 						$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION += floatval($credit);
+					}
+				}
+			}
+
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED = 0;
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED = 0;
+			$subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED = 0;
+			if (isset($subscriber['credits']) && is_array($subscriber['credits'])) {
+				foreach ($subscriber['credits'] as $credit) {
+					$amount_without_vat = floatval($credit['amount_without_vat']);
+					if (isset($credit['fixed']) && $credit['fixed']) {
+						$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED += $amount_without_vat;
+						if (isset($credit['credit_type']) && $credit['credit_type'] == 'charge') {
+							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED += $amount_without_vat;
+						} else if (isset($credit['credit_type']) && $credit['credit_type'] == 'refund') {
+							$subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED += $amount_without_vat;
+						}
 					}
 				}
 			}
@@ -378,8 +409,13 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_PROMOTION);
 			$subscriber_sumup_TOTAL_MANUAL_CORRECTION = floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE) + floatval($subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT);
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $subscriber_sumup_TOTAL_MANUAL_CORRECTION);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED);
+			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
+			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
+			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
@@ -392,7 +428,11 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction += $subscriber_sumup_TOTAL_MANUAL_CORRECTION;
 			$invoice_total_manual_correction_credit += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT;
 			$invoice_total_manual_correction_charge += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE;
+			$invoice_total_manual_correction_credit_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CREDIT_FIXED;
+			$invoice_total_manual_correction_charge_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED;
+			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
+			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
@@ -658,6 +698,10 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION', $invoice_total_manual_correction);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT', $invoice_total_manual_correction_credit);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE', $invoice_total_manual_correction_charge);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
+		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
+		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
@@ -740,9 +784,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		);
 
 		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
-		if (rand(1, 100) >= $this->loadBalanced) {
-			$lines = $lines->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-		}
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($lines as $line) {
@@ -784,6 +825,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				case 'sms':
 				case 'mms':
 				case 'incoming_sms':
+				case 'service':
 					return $line['usagev'];
 				case 'data':
 //					if ($line['type'] == 'tap3') {
@@ -983,7 +1025,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getCalledNo($line) {
 		$called_number = '';
 		if ($line['type'] == 'tap3' // on tap3
-				|| (isset($line['out_circuit_group']) && ($line['out_circuit_group'] == "2100" || $line['out_circuit_group'] == "2101" || $line['out_circuit_group'] == "2499"))) { // or call to abroad
+			|| (isset($line['out_circuit_group']) && (in_array($line['out_circuit_group'], Billrun_Util::getIntlCircuitGroups())))) { // or call to abroad
 			if ($line['usaget'] == 'incoming_call') {
 				$called_number = $line['calling_number'];
 			} else {
@@ -1045,8 +1087,8 @@ EOI;
 				$subscriber_lines = $this->get_lines($subscriber);
 			} else {
 				$func = function($line) use ($sid) {
-							return $line['sid'] == $sid;
-						};
+					return $line['sid'] == $sid;
+				};
 				$subscriber_lines = array_filter($lines, $func);
 			}
 			$subscriber_united_lines = $this->aggregateLinesByCallReference($subscriber_lines);
@@ -1332,7 +1374,7 @@ EOI;
 				'$gte' => new MongoDate(Billrun_Util::getStartTime($this->stamp)),
 			),
 		);
-		return $rates->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->current();
+		return $rates->query($query)->cursor()->current();
 	}
 
 	/**
@@ -1340,7 +1382,7 @@ EOI;
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query()->cursor();
 		foreach ($rates as $rate) {
 			$rate->collection($rates_coll);
 			$this->rates[strval($rate->getId())] = $rate;
@@ -1353,7 +1395,7 @@ EOI;
 	 */
 	protected function loadPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$plans = $plans_coll->query()->cursor();
 		foreach ($plans as $plan) {
 			$plan->collection($plans_coll);
 			$this->plans[strval($plan->getId())] = $plan;
@@ -1423,4 +1465,3 @@ EOI;
 	}
 
 }
-

@@ -36,8 +36,8 @@ class Billrun_Log extends Zend_Log {
 	 */
 	public function __construct(Zend_Log_Writer_Abstract $writer = null) {
 		parent::__construct($writer);
-		if ($pid = getmypid()) {
-			$this->stamp = 'p' . $pid;
+		if ($pid = Billrun_Util::getPid()) {
+			$this->stamp = Billrun_Util::getHostName() .  ':p' . $pid;
 		} else {
 			$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 		}

@@ -89,6 +89,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			return;
 		}
 		$extraData['month'] = date('Ym', $file->extraData['date']);
+		$extraData['week'] = date('W', $file->extraData['date']);
 	}
 
 //	/**
@@ -243,11 +244,14 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$data['calling_number'] = Billrun_Util::msisdn($data['calling_number']);
 			}
 			if (isset($data['called_number'])) {
-				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], array('2100', '2101', '2499')) && substr($data['called_number'], 0, 2) == "10") {
+				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()) && substr($data['called_number'], 0, 2) == "10") {
 					$data['called_number'] = substr($data['called_number'], 2);
-				} else if (in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
-					$data['ild_prefix'] = substr($data['called_number'], 0, 3);
-					$data['called_number'] = substr($data['called_number'], 3);
+				} else if (in_array($data['record_type'], array('30')) && ($data['out_circuit_group'] >= '2100' && $data['out_circuit_group'] <= '2500') &&
+                                          (preg_match('/^GNTV|^GBZQ|^GBZI|^GSML|^GHOT/', $data['in_circuit_group_name']))) {
+                                                $data['ild_prefix'] = substr($data['in_circuit_group_name'], 0, 4);
+                                                if (preg_match($this->ild_called_number_regex, $data['called_number'])){
+                                                    $data['called_number'] = substr($data['called_number'], 3);
+                                                } 
 				}
 				if ((!isset($data['out_circuit_group'])) || (isset($data['out_circuit_group']) && !(($data['out_circuit_group'] >= '2000' && $data['out_circuit_group'] <= '2069') || ($data['out_circuit_group'] >= '2500' && $data['out_circuit_group'] <= '2529') || ($data['out_circuit_group'] >= '1230' && $data['out_circuit_group'] <= '1233')))) {
 					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
@@ -358,7 +362,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'hex' :
 				$retValue = '';
 				for ($i = $length - 1; $i >= 0; --$i) {
-					$retValue .= dechex(ord($data[$i]));
+					$retValue .= sprintf('%02s', dechex(ord($data[$i])));
 				}
 				break;
 
@@ -455,7 +459,9 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 				$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
 			} while (isset($bytes[self::TRAILER_LENGTH + 1]));
 		} else {
-			Billrun_Factory::log()->log("Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1), Zend_log::CRIT);
+			$msg  = "Got NSN block with unsupported version :  {$header['format_version']} , block header data : " . print_r($header, 1);
+			Billrun_Factory::log()->log($msg, Zend_log::CRIT);
+			throw new Exception($msg);
 		}
 
 		$trailer = $processor->getParser()->parseTrailer($bytes);
