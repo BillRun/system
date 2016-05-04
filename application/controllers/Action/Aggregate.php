@@ -23,7 +23,7 @@ class AggregateAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'stamp' => false,
+			'stamp' => true,
 			'page' => true,
 			'size' => true,
 			'fetchonly' => true,
@@ -34,7 +34,12 @@ class AggregateAction extends Action_Base {
 		}
 
 		$this->_controller->addOutput("Loading aggregator");
-		$aggregator = Billrun_Aggregator::getInstance($options);
+		try {
+			$aggregator = Billrun_Aggregator::getInstance($options);
+		} catch (Exception $e) {
+			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::NOTICE);
+			$aggregator = FALSE;
+		}
 		$this->_controller->addOutput("Aggregator loaded");
 
 		if ($aggregator) {
