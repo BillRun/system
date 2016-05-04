@@ -253,7 +253,15 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return $sum;
 		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
 			$duration = (!empty($row['duration']) ? $row['duration'] : 0);
-			return $duration / 10;
+			$log10size = Billrun_Factory::config()->getConfigValue('prepaid.duration.log10size', 1);
+			$ret_duration = $duration / $log10size;
+			$method = Billrun_Factory::config()->getConfigValue('prepaid.duration.method', '');
+			if (!empty($method)) {
+				$args = Billrun_Factory::config()->getConfigValue('prepaid.duration.args', array());
+				$method_args = array_merge(array($ret_duration), $args);
+				return call_user_func_array($method, $method_args);
+			}
+			return $ret_duration;
 		}
 	}
 

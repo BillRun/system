@@ -46,7 +46,15 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Call_Base extends Billr
 	 * @return reservation time in 10th of seconds
 	 */
 	protected function getReservationTime() {
-		return round($this->row['usagev'] * 10);
+		$log10size = Billrun_Factory::config()->getConfigValue('prepaid.reservation.log10size', 1);
+		$duration = $this->row['usagev'] * $log10size;
+		$method = Billrun_Factory::config()->getConfigValue('prepaid.reservation.method', '');
+		if (!empty($method)) {
+			$args = Billrun_Factory::config()->getConfigValue('prepaid.reservation.args', array());
+			$method_args = array_merge(array($duration), $args);
+			return call_user_func_array($method, $method_args);
+		}
+		return $duration;
 	}
 
 	protected function getReturnCode() {
