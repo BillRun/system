@@ -29,11 +29,11 @@ fi
 tz_from=`date -d "$day"T00:00:00 +%:z`
 tz_to=`date -d "$day"T23:59:59 +%:z`
 js_code='db.getMongo().setReadPref("secondaryPreferred");var from_date = ISODate("'$day'T00:00:00'$tz_from'");var to_date = ISODate("'$day'T23:59:59'$tz_to'");';
-nsn_end_code='.forEach(function(obj) { print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : (obj._id.k ? obj._id.k : "")) + "\t" + obj.count + "\t" + obj.usagev);})';
-data_end_code='.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev);})';
-sms_end_code='.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id.c  + "\t" + (obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev);})';
-sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS|NNTV)';
-sipregex_negative='^(?!NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS|NNTV)';
+nsn_end_code='.forEach(function(obj) { print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r ? db.rates.findOne(obj._id.r.$id).key : (obj._id.k ? obj._id.k : "")) + "\t" + obj.count + "\t" + obj.usagev + "\t'$report_name'" );})';
+data_end_code='.forEach(      function(obj) {         print("data\t" + dir + "\t" + network + "\t'$day'\t" +  (obj._id.match(/^37\.26/) ? "GT" : (obj._id.match(/^62\.90/) ? "MCEL" : "OTHER") )  +"\tINTERNET_BY_VOLUME" + "\t" + obj.count + "\t" + obj.usagev + "\t'$report_name'");})';
+sms_end_code='.forEach(      function(obj) {         print("sms\t" + dir + "\t" + network + "\t'$day'\t" +  obj._id.c  + "\t" + (obj._id.r ? db.rates.findOne(obj._id.r.$id).key : "") + "\t" + obj.count + "\t" + obj.usagev+ "\t'$report_name'");})';
+sipregex='^(?=NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS|NNTV|NXFN|VVOM|PCLB|PCTI|NAZI|PTES|IBCS)';
+sipregex_negative='^(?!NSML|NBZI|MAZI|MCLA|ISML|IBZI|ITLZ|IXFN|IMRS|IHLT|HBZI|IKRT|IKRTROM|SWAT|GSML|GNTV|GHOT|GBZQ|GBZI|GCEL|LMRS|NNTV|NXFN|VVOM|PCLB|PCTI|NAZI|PTES|IBCS)';
 nsn_grouping_out='{$group:{_id:{c:"$out_circuit_group_name",r:"$arate"}, count:{$sum:{$ifNull : ["$lcount",1]}},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
 nsn_grouping_in='{$group:{_id:{c:"$in_circuit_group_name",r:"$pzone",k:"$wholesale_rate_key"}, count:{$sum:{$ifNull : ["$lcount",1]}},usagev:{$sum:"$usagev"}}},{$project:{"_id.c":{$substr:["$_id.c",0,4]},"_id.r":1,"_id.k":1, count:1,usagev:1}},{$group:{_id:"$_id",count:{$sum:"$count"},usagev:{$sum:"$usagev"}}}';
 out_str='FG'
@@ -54,7 +54,7 @@ case $report_name in
 	js_code="$js_code$data_end_code" ;;
 
 	"all_in_call" )
-	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"12", $and: [{in_circuit_group_name:/^(?!FCEL|BICC)/},{in_circuit_group_name:/'$sipregex_negative'/}],out_circuit_group_name:/^(?=RCEL)/},{record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}],usagev:{$exists:1,$gt:0}}},'$nsn_grouping_in')';
+	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate({$match:{urt:{$gte:from_date, $lte:to_date}, type:"nsn", $or:[{record_type:"12", $and: [{in_circuit_group_name:/^(?!FCEL|BICC)/},{in_circuit_group_name:/'$sipregex_negative'/}],out_circuit_group_name:/^(?=RCEL)/},{record_type:"11",$and : [ {in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/} , {in_circuit_group_name:/'$sipregex_negative'/}],out_circuit_group_name:/^(?!FCEL|RCEL)/}],usagev:{$exists:1,$gt:0}}},'$nsn_grouping_in')';
 	js_code="$js_code$nsn_end_code" ;;
 
 	"all_out_call" )
