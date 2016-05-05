@@ -137,7 +137,7 @@ class CardsModel extends TableModel {
 				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
-		if (AdminController::authorized('read')) {
+		if (AdminController::authorized('admin')) {
 			$filter_fields['secret'] = array(
 				'key' => 'secret',
 				'db_key' => 'secret',
@@ -178,7 +178,7 @@ class CardsModel extends TableModel {
 				)
 			),
 		);
-		if (AdminController::authorized('read')) {
+		if (AdminController::authorized('admin')) {
 			$filter_field_order[0]['secret'] = array(
 				'width' => 2,
 			);
@@ -228,10 +228,7 @@ class CardsModel extends TableModel {
 	}
 	
 	protected function hashValue($val) {
-		$formatted = number_format($val, 0, '', '');
-		$codeLength = Billrun_Factory::config()->getConfigValue('importer.Cards.code_length', 12);
-		$padded = str_pad($formatted, $codeLength, "0", STR_PAD_LEFT);
-		return hash('sha512', $padded);
+		return hash('sha512', $val);
 	}
 
 }
