@@ -146,19 +146,31 @@
 							</div>
 						</div>
 						<div class='row'>
+							<div class="col-md-2">
+								PP Includes
+							</div>
+							<div class='col-md-6'>
+								<select ng-model="cost.pp_include" class="form-control"
+										ng-options="o as o.name for o in pp_includes"
+										ng-init="getPPIncludesDefaultValue(cost)"
+										ng-change="updatePPIncludes(cost)">
+								</select>
+							</div>
+						</div>
+						<div class='row hidden'>
 							<div class='col-md-2'>
 								Name
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.pp_includes_name' type='text' class='form-control' />
+								<input ng-model='cost.pp_includes_name' type='text' class='form-control'  disabled="disabled" />
 							</div>
 						</div>
-						<div class='row'>
+						<div class='row hidden'>
 							<div class='col-md-2'>
 								External Id
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' />
+								<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
 							</div>
 						</div>
 
@@ -207,18 +219,30 @@
 							</div>
 							<div class='row'>
 								<div class="col-md-2">
+									PP Includes
+								</div>
+								<div class='col-md-6'>
+									<select ng-model="includeType[$index].pp_include" class="form-control"
+											ng-options="o as o.name for o in pp_includes"
+											ng-init="getPPIncludesDefaultValue(includeType[$index])"
+											ng-change="updatePPIncludes(includeType[$index])">
+									</select>
+								</div>
+							</div>
+							<div class='row hidden'>
+								<div class="col-md-2">
 									Name
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType[$index].pp_includes_name' type='text' class='form-control' />
+									<input ng-model='includeType[$index].pp_includes_name' type='text' class='form-control' disabled="disabled" />
 								</div>
 							</div>
-							<div class='row'>
+							<div class='row hidden'>
 								<div class="col-md-2">
 									External ID
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType[$index].pp_includes_external_id' type='text' class='form-control' />
+									<input ng-model='includeType[$index].pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
 								</div>
 							</div>
 							<h5>Period</h5>
@@ -255,7 +279,7 @@
 									<input ng-model="includeType.cost" type="text" class="form-control" />
 								</div>
 							</div>
-							<div class="row">
+							<div class="row" ng-if="">
 								<div class="col-md-2">
 									Usagev
 								</div>
@@ -265,18 +289,30 @@
 							</div>
 							<div class='row'>
 								<div class="col-md-2">
+									PP Includes
+								</div>
+								<div class='col-md-6'>
+									<select ng-model="includeType.pp_include" class="form-control"
+											ng-options="o as o.name for o in pp_includes"
+											ng-init="getPPIncludesDefaultValue(includeType)"
+											ng-change="updatePPIncludes(includeType)">
+									</select>
+								</div>
+							</div>
+							<div class='row hidden'>
+								<div class="col-md-2">
 									Name
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType.pp_includes_name' type='text' class='form-control' />
+									<input ng-model='includeType.pp_includes_name' type='text' class='form-control' disabled="disabled" />
 								</div>
 							</div>
-							<div class='row'>
+							<div class='row hidden'>
 								<div class="col-md-2">
 									External ID
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' />
+									<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
 								</div>
 							</div>
 							<h5>Period</h5>
