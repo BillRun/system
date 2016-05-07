@@ -11,30 +11,30 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * Recreate invoices action class
  *
  * @package  Action
- * @since    0.5
+ * @since    4.2
  */
 class LoadversionAction extends ApiAction {
-	
+
 	protected $SAVE_PATH = "exports";
 
 	public static function getVersions($collection) {
-		$path =  VersionsModel::getVersionsPath($collection);
+		$path = VersionsModel::getVersionsPath($collection);
 		$files = scandir($path);
 		$versions = array_diff($files, array('.', '..'));
 		return $versions;
 	}
-	
+
 	public function execute() {
 		Billrun_Factory::log("Execute load version", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$fileName = $request['fileName'];
 		$collection = $request['collection'];
-		$removeNew = ($request['remove_new']  === 'true');
+		$removeNew = ($request['remove_new'] === 'true');
 		if (!$entities = $this->getPreviousVersion($fileName, $collection)) {
 			Billrun_Factory::log('Loadversion - cannot getPreviousVersion of collection ' . $collection . ' from file ' . $fileName, Zend_Log::ERR);
 			return false;
 		}
-		
+
 		$collectionName = $collection . 'Collection';
 		if (!$coll = Billrun_Factory::db()->{$collectionName}()) {
 			Billrun_Factory::log('Loadversion - cannot read collection ' . $collectionName, Zend_Log::ERR);
@@ -59,15 +59,16 @@ class LoadversionAction extends ApiAction {
 			}
 			$idsRestored[] = $_mongoId;
 		}
-		
+
 		if ($removeNew) {
 			$query = array(
 				'_id' => array('$nin' => $idsRestored)
 			);
 			$coll->remove($query);
 		}
+		$this->getController()->setOutput(array(array('status' => 1)));
 	}
-	
+
 	protected function getPreviousVersion($fileName, $collection) {
 		$path = VersionsModel::getVersionsPath($collection) . '/' . $fileName;
 		if (!$fileInput = file_get_contents($path)) {
@@ -75,7 +76,7 @@ class LoadversionAction extends ApiAction {
 		}
 		return explode(VersionsModel::getDelimiter(), $fileInput);
 	}
-	
+
 	protected function prepareDataBeforeSave(&$data) {
 		unset($data['_id']);
 		foreach ($data as $key => &$val) { // handle dates (convert to MongoDate)

@@ -11,17 +11,22 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * Recreate invoices action class
  *
  * @package  Action
- * @since    0.5
+ * @since    4.2
  */
 class SaveversionAction extends ApiAction {
+
 	public function execute() {
 		Billrun_Factory::log("Execute save version", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$collection = $request['collection'];
 		$name = $request['name'];
 		Billrun_Factory::log("Exporting " . $collection, Zend_Log::INFO);
-		
-		$path = VersionsModel::getVersionsPath($collection) . '/' . $name;
+
+		$dir = VersionsModel::getVersionsPath($collection);
+		if (!file_exists($dir)) {
+			@mkdir($dir, 0777, TRUE);
+		}
+		$path = $dir . '/' . $name;
 		$collectionName = $collection . 'Collection';
 		if (!$coll = Billrun_Factory::db()->{$collectionName}()) {
 			Billrun_Factory::log('Saveversion - cannot read collection ' . $collectionName, Zend_Log::ERR);
@@ -29,7 +34,7 @@ class SaveversionAction extends ApiAction {
 		}
 		$entries = $coll->query()->cursor();
 		if (!$file = fopen($path, "w")) {
-			Billrun_Factory::log('Saveversion - cannot open file ' . $file . ' for writing', Zend_Log::ERR);
+			Billrun_Factory::log('Saveversion - cannot open file ' . $path . ' for writing', Zend_Log::ERR);
 			return false;
 		}
 		$output = array();
@@ -42,6 +47,7 @@ class SaveversionAction extends ApiAction {
 			return false;
 		}
 		fclose($file);
+		$this->getController()->setOutput(array(array('status' => 1)));
 		return true;
 	}
 
