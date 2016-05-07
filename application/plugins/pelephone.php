@@ -546,15 +546,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
-			$rate = Billrun_Factory::db()->ratesCollection()->getRef($this->row->get('arate'));
-			$plan = Billrun_Factory::db()->plansCollection()->getRef($this->row['plan_ref']);
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
 				if (!$this->canUseDataFromCurrencyBalances($this->row, $plan)) {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
-			$pp_includes_exclude = $this->getPPIncludesToExclude($plan, $rate);
+			Billrun_Factory::log($this->row->get('plan'));
+			Billrun_Factory::log($this->row->get('arate_key'));
+			$pp_includes_exclude = $this->getPPIncludesToExclude($this->row->get('plan'), $this->row->get('arate_key'));
 			if (!empty($pp_includes_exclude)) {
 				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
 			} else {
@@ -567,9 +567,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	protected function getPPIncludesToExclude($plan, $rate) {
+	protected function getPPIncludesToExclude($plan_name, $rate_key) {
 		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
-		$query = $this->getPPIncludesNotAllowedQuery($plan['name'], $rate['key']);
+		$query = $this->getPPIncludesNotAllowedQuery($plan_name, $rate_key);
 		$ppIncludes = $prepaidIncludesCollection->query($query)->cursor();
 		$notAllowedPPIncludes = array();
 		if ($ppIncludes->count() > 0) {
