@@ -17,6 +17,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	const DEF_CALC_DB_FIELD = 'aprice';
 
 	public $pricingField = self::DEF_CALC_DB_FIELD;
+	public $interconnectChargableFlagField = 'interconnect_chargable';
 	public $interconnectChargeField = 'interconnect_aprice';
 	static protected $type = "pricing";
 	static protected $precision = 0.00001;
@@ -253,6 +254,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!empty($interconnect_arate_key)) {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
+			
+			if ($rate['params']['interconnect']) {
+				$row['interconnect_arate_key'] = $rate['key'];
+			}
 
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 			foreach ($pricingData as $key => $value) {
@@ -466,6 +471,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret = array(
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
+			);
+		} else if ($rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
+			$total = $chargeWoIC + $interconnectCharge;
+			$ret = array(
+				'interconnect' => $total,
+				'total' => $total,
 			);
 		} else {
 			$ret = array(
