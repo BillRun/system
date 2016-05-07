@@ -17,6 +17,9 @@ class SaveversionAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log("Execute save version", Zend_Log::INFO);
+		if (!AdminController::authorized('write')) {
+			return;
+		}
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$collection = $request['collection'];
 		$name = $request['name'];

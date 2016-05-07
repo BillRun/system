@@ -26,6 +26,9 @@ class LoadversionAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log("Execute load version", Zend_Log::INFO);
+		if (!AdminController::authorized('admin')) {
+			return;
+		}
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		$fileName = $request['fileName'];
 		$collection = $request['collection'];
