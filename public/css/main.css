@@ -528,3 +528,7 @@ tr[data-index] a.detail-icon {
 .inline-toolbar > input[type='checkbox'] {
 	margin-left: 15px;
 }
+
+#versionName {
+	width:50%;
+}

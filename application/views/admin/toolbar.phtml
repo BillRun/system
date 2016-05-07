@@ -137,6 +137,8 @@
 				<?php if ($active == 'rates') : ?>
 					<?php if (AdminController::authorized('write')) : ?>
 						<span><a id='import_prices' data-type="upload" href="#importPricesModal" class="btn btn-primary" data-toggle="modal" role="button"><i class="icon-upload"> </i>Import</a></span>
+						<span><a id='save_version' data-type="download" href="#saveVersionModal" class="btn btn-warning" data-toggle="modal" role="button"><i class="icon-download-alt"> </i>Save Version</a></span>
+						<span><a id='load_version' data-type="upload" href="#loadVersionModal" class="btn btn-warning" data-toggle="modal" role="button"><i class="icon-upload"> </i>Load Version</a></span>
 					<?php endif; ?>
 					<span><a id='export_prices' data-type="download" href="javascript:exportRates();" class="btn export-button"><i class="icon-download"> </i>Export to CSV</a></span>
 <?php endif; ?>
