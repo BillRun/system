@@ -20,8 +20,8 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 * @var array 'field_in_cdr' => 'should_match_this_regex'
 	 */
 	protected $legitimateValues = array(
-		'smsc' => array('cause_of_terminition' => "^100$", 'record_type' => '^1$', 'calling_msc' => "^0*9725[82]"),
-		'smpp' => array('record_type' => '1'),
+		'smsc' => array('cause_of_terminition' => "^100$", 'record_type' => '^2$', 'calling_msc' => "^0*9725[82]"),
+		'smpp' => array('record_type' => '2'),
 	);
 	
 	
@@ -51,6 +51,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
 
 		if (($row['org_protocol'] != 1) && ($row['org_protocol'] != 3)){
+			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol' , Zend_Log::ALERT);
 			return false;
 		}
 		if ($row['org_protocol'] === 1) {  //smsc
