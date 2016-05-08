@@ -49,6 +49,10 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 */
 	protected function shouldLineBeRated($row) {
 		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
+
+		if (($row['org_protocol'] != 1) && ($row['org_protocol'] != 3)){
+			return false;
+		}
 		if ($row['org_protocol'] === 1) {  //smsc
 			foreach ($this->legitimateValues['smsc'] as $key => $value) {
 				if (is_array($value)) {
