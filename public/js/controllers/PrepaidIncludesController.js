@@ -58,7 +58,7 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 	vm.save = function () {
 		$http.post(baseUrl + '/admin/savePPIncludes', {data: vm.current_entity, new_entity: vm.newent}).then(function (res) {
 			if (vm.newent)
-				vm.pp_includes.push(vm.current_entity);
+				vm.init();
 			vm.edit_mode = false;
 		});
 	};
