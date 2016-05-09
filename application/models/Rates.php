@@ -286,7 +286,8 @@ class RatesModel extends TabledateModel {
 								't' => $key,
 								'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
 								'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
-								'tunit' => $rate[$filteredPlan]['unit']
+								'tunit' => $rate[$filteredPlan]['unit'],
+								'tinterconnect' => $rate[$filteredPlan]['interconnect']
 							);
 							if (strpos($key, 'call') !== FALSE) {
 								$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
