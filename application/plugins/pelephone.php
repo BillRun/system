@@ -567,8 +567,6 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
-			Billrun_Factory::log($this->row->get('plan'));
-			Billrun_Factory::log($this->row->get('arate_key'));
 			$pp_includes_exclude = $this->getPPIncludesToExclude($this->row->get('plan'), $this->row->get('arate_key'));
 			if (!empty($pp_includes_exclude)) {
 				$unique_pp_includes_external_ids = array_merge($pp_includes_external_ids, $pp_includes_exclude);
