@@ -76,7 +76,7 @@ class Vfdays2Action extends Action_Base {
 				'count_days' => array(
 					'$max' => '$vf_count_days',
 				),
-				'last_day' => array(
+				'last_usage_time' => array(
 					'$max' => '$unified_record_time',
 				),
 			)
@@ -87,18 +87,17 @@ class Vfdays2Action extends Action_Base {
 				'_id' => false,
 				'sid' => '$_id',
 				'count_days' => '$count_days',
-//				'last_day' => '$last_day',
-//				'last_day' => array(
-//					'$dateToString' => array(
-//						'format' => '%Y-%m-%d %H:%M:%S',
-//						'date' => array(
-//							'$add' => array('$last_day', date('Z') * 1000)
-//						)
-//					)
-//				),
-//				'min_days' => array(
-//					'$literal' => $min_days,
-//				),
+				'last_usage_time' => array(
+					'$dateToString' => array(
+						'format' => '%Y-%m-%d %H:%M:%S',
+						'date' => array(
+							'$add' => array('$last_usage_time', date('Z') * 1000)
+						)
+					)
+				),
+				'min_days' => array(
+					'$literal' => $min_days,
+				),
 			)
 		);
 		
