@@ -32,7 +32,9 @@ class Vfdays2Action extends Action_Base {
 			)));
 			return;
 		}
-		$list = $this->count_days_by_lines($min_days);
+		$datetime = strval($request->get("datetime"));
+		$offset_days = intval($request->get("offset_days", 1));
+		$list = $this->count_days_by_lines($min_days, $datetime, $offset_days);
 		$this->getController()->setOutput(array(array(
 			'status' => 1,
 			'desc' => 'success',
@@ -41,13 +43,26 @@ class Vfdays2Action extends Action_Base {
 		)));
 	}
 	
-	protected function count_days_by_lines($min_days = 35) {
+	protected function count_days_by_lines($min_days = 35, $datetime = null, $offset_days = 1) {
+		if (empty($datetime)) {
+			$unix_datetime = time();
+		} else {
+			$unix_datetime = strtotime($datetime);
+		}
+		
+		if (!($offset_days >= 1 && $offset_days <= 7)) {
+			$offset_days = 1;
+		}
+
+		
+		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
+		$end = strtotime('midnight', $unix_datetime);
 		$elements = array();
 		$elements[] = array(
 			'$match' => array(
 				'unified_record_time' => array(
-					'$gte' => new MongoDate(strtotime('yesterday midnight')),
-					'$lte' => new MongoDate(strtotime('midnight'))
+					'$gte' => new MongoDate($start),
+					'$lte' => new MongoDate($end),
 				),
 				'vf_count_days' => array(
 					'$gte' => $min_days,
@@ -59,7 +74,10 @@ class Vfdays2Action extends Action_Base {
 			'$group' => array(
 				'_id' => '$sid',
 				'count_days' => array(
-					'$max' => '$vf_count_days'
+					'$max' => '$vf_count_days',
+				),
+				'last_day' => array(
+					'$max' => '$unified_record_time',
 				),
 			)
 		);
@@ -68,7 +86,19 @@ class Vfdays2Action extends Action_Base {
 			'$project' => array(
 				'_id' => false,
 				'sid' => '$_id',
-				'count_days' => '$count_days'
+				'count_days' => '$count_days',
+//				'last_day' => '$last_day',
+//				'last_day' => array(
+//					'$dateToString' => array(
+//						'format' => '%Y-%m-%d %H:%M:%S',
+//						'date' => array(
+//							'$add' => array('$last_day', date('Z') * 1000)
+//						)
+//					)
+//				),
+//				'min_days' => array(
+//					'$literal' => $min_days,
+//				),
 			)
 		);
 		
