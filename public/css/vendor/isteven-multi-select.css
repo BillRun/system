@@ -320,6 +320,7 @@
     font-weight: normal;
     font-size: 13px;
     line-height: 26px;
+	width: 125px;
 }
 
 .multiSelect .switchParent input.switch:empty
