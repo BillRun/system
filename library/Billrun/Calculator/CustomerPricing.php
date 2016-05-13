@@ -547,17 +547,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
 		}
+
 		$this->initMinBalanceValues($rate, $usage_type, $plan);
+
 		// Check if the price is enough for minimum cost
 		if ($price < $this->min_balance_cost) {
 			return 0;
 		}
 
+		if ($price == $this->min_balance_cost) {
+			return $this->min_balance_volume;
+		}
+
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
-		$currentUsage = $defaultUsage / 2;
+		$currentUsage = $defaultUsage - (abs($defaultUsage - $this->min_balance_volume) / 2);
 		$epsilon = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.epsilon', 0.5);
-		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 20);
+		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 40);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
 			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset);
 			$diff = abs($currentUsage - $previousUsage) / 2;
@@ -569,9 +575,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$currentUsage += $diff;
 			}
 		}
-		$this->initMinBalanceValues($rate, $usage_type, $plan);
+
 		// Check if the price is enough for minimum cost
-		if ($currentPrice > $this->min_balance_cost) {
+		if ($currentPrice >= $this->min_balance_cost) {
 			return floor($currentUsage);
 		}
 		return 0;
