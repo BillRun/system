@@ -496,7 +496,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$planModel = new PlansModel();
 		//$names = $planModel->getData(array('type' => $type));
 		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => $type))->cursor()->sort(array('name' => 1));
-		Billrun_Factory::log(print_r($names, 1));
 		$availablePlans = array();
 		$availablePlans['BASE'] = 'BASE';
 		foreach ($names as $name) {
