@@ -113,7 +113,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->loadRates();
 		$this->loadPlans();
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
-		$this->active_billrun = Billrun_Billrun::getActiveBillrun();
+		$cached_active_billrun = Billrun_Factory::cache()->get('active_billrun', __CLASS__);
+		if (empty($cached_active_billrun))
+		$this->getActiveBillrun();//active_billrun = Billrun_Billrun::getActiveBillrun();
 		$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
 		// max recursive retrues for value=oldValue tactic
