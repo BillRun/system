@@ -52,9 +52,11 @@ class CycleAction extends Action_Base {
 			if ($pid == -1) {
 				die('could not fork');
 			} else if ($pid) {
+				$this->_controller->addOutput("Running on PID " . $pid);
+				$this->_controller->addOutput("Going to sleep for " . $process_interval);
 				sleep($process_interval);
-				pcntl_wait($status);
 			} else {
+				$this->_controller->addOutput("Running on PID " . $pid);
 				$this->_controller->addOutput("Loading aggregator");
 				try {
 					$aggregator = Billrun_Aggregator::getInstance($options);

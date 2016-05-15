@@ -465,7 +465,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	
 	public static function isBillingCycleOver($billing_cycle, $stamp, $size){
-		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 1);
+		if (!empty($zero_pages) || !is_numeric($zero_pages)) {
+			$zero_pages = 1;
+		}
 		if ($billing_cycle->query(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0))->count() >= $zero_pages) {
 			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
 			return TRUE;
