@@ -220,7 +220,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$findQuery = array(
 				"sid" => $row['sid'],
 				"session_id" => $row['session_id'],
-				"request_num" => array('$lt' => $row['request_num'])
+				"request_num" => array('$lt' => $row['request_num']),
+				"usagev" => array(
+					'$gt' => 0,
+				),
 			);
 
 			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
@@ -230,6 +233,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"sid" => $row['sid'],
 				"call_reference" => $row['call_reference'],
 				"api_name" => array('$ne' => "release_call"),
+				"usagev" => array(
+					'$gt' => 0,
+				),
 			);
 			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('_id' => -1))->limit(1);
 			return $line;
