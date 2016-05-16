@@ -90,11 +90,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		
 		$scope.removeUnnecessaryData = function() {
 			_.forEach($scope.entity.include, function(includeData, includeName) {
-				_.forEach(includeData, function(include) {
-					if (!_.isUndefined(include.pp_include)) {
-						delete(include.pp_include);
-					}
-				});
+				if (!_.isUndefined(includeData['pp_include'])) {
+					delete(includeData['pp_include']);
+				} else {
+					_.forEach(includeData, function (include) {
+						if (!_.isUndefined(include.pp_include)) {
+							delete(include.pp_include);
+						}
+					});
+				}
 			});
 		};
 
