@@ -316,7 +316,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.isInterconnect = function () {
 			if (!_.result($scope.entity, "params.interconnect"))
 				return false;
-			return $scope.entity.params.interconnect;
+			return $scope.entity.params.interconnect && _.isUndefined($scope.entity.params.prefix);
 		};
 
 		$scope.showInterconnectDetails = function (interconnect, type, plan) {
@@ -428,6 +428,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			});
 			Database.getAvailableInterconnect().then(function (res) {
 				$scope.availableInterconnect = res.data;
+				console.log($scope.availableInterconnect);
 				$scope.availableInterconnect = [{future: false, key: ""}].concat($scope.availableInterconnect);
 			});
 			$scope.newOutCircuitGroup = {from: undefined, to: undefined};

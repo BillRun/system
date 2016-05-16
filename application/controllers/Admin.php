@@ -526,6 +526,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$query = array(
 			'params.interconnect' => TRUE,
+			'params.prefix' => array('$exists' => FALSE),
 			'to' => array('$gte' => new MongoDate()),
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
