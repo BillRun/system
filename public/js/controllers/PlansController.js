@@ -87,6 +87,16 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				return false;
 			return !_.isUndefined($scope.entity.include[include_type]);
 		};
+		
+		$scope.removeUnnecessaryData = function() {
+			_.forEach($scope.entity.include, function(includeData, includeName) {
+				_.forEach(includeData, function(include) {
+					if (!_.isUndefined(include.pp_include)) {
+						delete(include.pp_include);
+					}
+				});
+			});
+		};
 
 		$scope.save = function (redirect) {
 			$scope.err = {};
@@ -104,6 +114,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
+			$scope.removeUnnecessaryData();
 			var params = {
 				entity: $scope.entity,
 				coll: $routeParams.collection,
