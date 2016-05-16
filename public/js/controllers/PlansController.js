@@ -87,6 +87,20 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				return false;
 			return !_.isUndefined($scope.entity.include[include_type]);
 		};
+		
+		$scope.removeUnnecessaryData = function() {
+			_.forEach($scope.entity.include, function(includeData, includeName) {
+				if (!_.isUndefined(includeData['pp_include'])) {
+					delete(includeData['pp_include']);
+				} else {
+					_.forEach(includeData, function (include) {
+						if (!_.isUndefined(include.pp_include)) {
+							delete(include.pp_include);
+						}
+					});
+				}
+			});
+		};
 
 		$scope.save = function (redirect) {
 			$scope.err = {};
@@ -104,6 +118,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
+			$scope.removeUnnecessaryData();
 			var params = {
 				entity: $scope.entity,
 				coll: $routeParams.collection,
@@ -206,6 +221,37 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.entity.notifications_threshold[$scope.newThresholdNotification.id].push({value: 0, type: "", msg: ""});
 			$scope.newThresholdNotification.id = null;
 		};
+		
+		$scope.initPPIncludes = function () {
+			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+				$scope.pp_includes = res.data.ppincludes;
+			});
+		};
+		
+		$scope.getPPIncludesIndex = function (pp_include_name, pp_include_external_id) {
+				var index = -1;
+				angular.forEach($scope.pp_includes, function(pp_include, _index) {
+					if (pp_include.name == pp_include_name && pp_include.external_id == pp_include_external_id) {
+						index = _index;
+						return;
+					}
+				});
+				return index;
+		};
+		
+		$scope.getPPIncludesDefaultValue = function (includeType) {
+			var index = $scope.getPPIncludesIndex(includeType.pp_includes_name, includeType.pp_includes_external_id);
+			if (index > -1) {
+				includeType.pp_include = $scope.pp_includes[index];
+			}
+		};
+
+		$scope.updatePPIncludes = function (includeType) {
+			includeType.pp_includes_name = includeType.pp_include.name;
+			includeType.pp_includes_external_id = includeType.pp_include.external_id;
+			delete(includeType.cost);
+			delete(includeType.usagev);
+		};
 
 		$scope.init = function () {
 			angular.element('.menu-item-' + $location.search().type + 'plans').addClass('active');
@@ -217,6 +263,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.advancedMode = false;
 			$scope.action = $routeParams.action;
 			$rootScope.spinner++;
+			$scope.initPPIncludes();
 			Database.getEntity(params).then(function (res) {
 				if ($routeParams.action !== "new") {
 					$scope.entity = res.data.entity;
