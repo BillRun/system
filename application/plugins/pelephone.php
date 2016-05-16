@@ -32,6 +32,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $row;
 	
+	/**
+	 * flag to indicate that customer notification already sent and not to send another one (on balance update)
+	 * @var boolean
+	 */
 	protected $notificationSent = false;
 
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
