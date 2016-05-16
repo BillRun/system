@@ -249,6 +249,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		$scope.updatePPIncludes = function (includeType) {
 			includeType.pp_includes_name = includeType.pp_include.name;
 			includeType.pp_includes_external_id = includeType.pp_include.external_id;
+			delete(includeType.cost);
+			delete(includeType.usagev);
 		};
 
 		$scope.init = function () {
