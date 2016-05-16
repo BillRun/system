@@ -55,6 +55,7 @@ class CycleAction extends Action_Base {
 				$this->_controller->addOutput("Running on PID " . $pid);
 				$this->_controller->addOutput("Going to sleep for " . $process_interval);
 				sleep($process_interval);
+				pcntl_signal(SIGCHLD, SIG_IGN);
 			} else {
 				$this->_controller->addOutput("Running on PID " . $pid);
 				$this->_controller->addOutput("Loading aggregator");
