@@ -316,7 +316,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.isInterconnect = function () {
 			if (!_.result($scope.entity, "params.interconnect"))
 				return false;
-			return $scope.entity.params.interconnect && _.isUndefined($scope.entity.params.prefix);
+			return $scope.entity.params.interconnect;
 		};
 
 		$scope.showInterconnectDetails = function (interconnect, type, plan) {
