@@ -250,6 +250,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function reuseExistingFields(&$data, $options) {
 		$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());
 		foreach ($data['data'] as &$line) {
+			if (isset($line['record_type']) && in_array($line['record_type'], Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreRecordTypes', array()))) {
+				continue;
+			}
 			$customerCalc = $this->getCalculator('customer', $options, $line);
 			$rateCalc = $this->getCalculator('rate', $options, $line);
 			if (!$rateCalc) {
@@ -263,7 +266,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				foreach ($fieldsToIgnore as $fieldToIgnore) {
 					unset($flipedArr[$fieldToIgnore]);
 				}
-				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->current();
+				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->limit(1)->current();
 				if (!$formerLine->isEmpty()) {
 					$addArr = array_intersect_key($formerLine->getRawData(), $flipedArr);
 					$line = array_merge($addArr, $line);
