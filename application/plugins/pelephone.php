@@ -294,10 +294,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
 					if (!$this->notificationSent) {
+						$this->notificationSent = true;
 						$modifyParams = array('balance' => $balance);
 						$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
 						$this->sendNotification($notification['type'], $msg, $msisdn);
-						$this->notificationSent = true;
 					}
 					if (is_null($notificationSent[$notificationKey])) {
 						$notificationSent[$notificationKey] = array($index);
