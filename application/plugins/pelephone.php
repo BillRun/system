@@ -31,6 +31,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var array
 	 */
 	protected $row;
+	
+	protected $notificationSent = false;
 
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if ($this->isInterconnect($row)) {
@@ -291,9 +293,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					continue;
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
-					$modifyParams = array('balance' => $balance);
-					$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
-					$this->sendNotification($notification['type'], $msg, $msisdn);
+					if (!$this->notificationSent) {
+						$modifyParams = array('balance' => $balance);
+						$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+						$this->sendNotification($notification['type'], $msg, $msisdn);
+						$this->notificationSent = true;
+					}
 					if (is_null($notificationSent[$notificationKey])) {
 						$notificationSent[$notificationKey] = array($index);
 					} else {
