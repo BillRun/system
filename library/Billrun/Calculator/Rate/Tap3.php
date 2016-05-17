@@ -80,6 +80,8 @@ class Billrun_Calculator_Rate_Tap3 extends Billrun_Calculator_Rate {
 				if ($record_type == 'a') {
 					$usage_type = 'incoming_sms';
 				}
+			} else if ($tele_service_code == '12') {
+				$usage_type = 'call';
 			}
 		} else if (isset($row['bearer_srv_code'])) {
 			if ($record_type == '9') {

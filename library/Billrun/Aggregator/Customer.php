@@ -465,7 +465,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	
 	public static function isBillingCycleOver($billing_cycle, $stamp, $size){
-		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+		$zero_pages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 1);
+		if (empty($zero_pages) || !is_numeric($zero_pages)) {
+			$zero_pages = 1;
+		}
 		if ($billing_cycle->query(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0))->count() >= $zero_pages) {
 			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
 			return TRUE;
@@ -489,7 +492,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			 return FALSE;
 		}
 		$max_num_processes = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
-		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false)))->count() > $max_num_processes) {
+		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false)))->count() >= $max_num_processes) {
 			Billrun_Factory::log()->log("Host ". $host. "is already running max number of ". $max_num_processes . "processes", Zend_Log::DEBUG);
 			return FALSE;
 		}
