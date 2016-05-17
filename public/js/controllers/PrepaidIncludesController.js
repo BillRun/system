@@ -24,6 +24,30 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 			to: moment().add(100, 'years')
 		};
 	};
+	
+	vm.initMultiSelectData = function() {
+		vm.availableRatesToDisplay = {};
+		vm.allowed_in = {};
+		_.forEach(vm.availablePlans, function (planName) {
+			vm.allowed_in[planName] = [];
+			var availableRatesForMultiSelect = [];
+			_.forEach(vm.availableRates, function (rateName) {
+				availableRatesForMultiSelect.push({name: rateName, ticked: false});
+			});
+			vm.availableRatesToDisplay[planName] = availableRatesForMultiSelect;
+		});
+		
+		_.forEach(vm.current_entity.allowed_in, function (allowedIn, planName) {
+			_.forEach(allowedIn, function (allowed) {
+				_.forEach(vm.availableRatesToDisplay[planName], function(availableRate) {
+					if (availableRate.name === allowed) {
+						availableRate.ticked = true;
+						return;
+					}
+				});
+			});
+		});
+	};
 
 	vm.edit = function (external_id) {
 		$rootScope.spinner++;
@@ -40,14 +64,7 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 		vm.edit_mode = true;
 		vm.newent = false;
 		$timeout(function () {
-			$('.multiselect').multiselect({
-				maxHeight: 250,
-				enableFiltering: true,
-				enableCaseInsensitiveFiltering: true,
-				includeSelectAllOption: true,
-				selectAllValue: 'all',
-				selectedClass: null
-			});
+			vm.initMultiSelectData();
 			$rootScope.spinner--;
 		}, 0);
 	};
@@ -55,7 +72,23 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 	vm.cancel = function () {
 		vm.edit_mode = false;
 	};
+	
+	vm.setAllowedIn = function() {
+		_.forEach(vm.allowed_in, function(allowedIn, planName) {
+			vm.current_entity.allowed_in[planName] = [];
+			_.forEach(allowedIn, function(allowedRate) {
+				if (allowedRate.ticked) {
+					vm.current_entity.allowed_in[planName].push(allowedRate.name);
+				}
+			});
+			if (vm.current_entity.allowed_in[planName].length === 0) {
+				delete vm.current_entity.allowed_in[planName];
+			}
+		});
+	};
+	
 	vm.save = function () {
+		vm.setAllowedIn();
 		$http.post(baseUrl + '/admin/savePPIncludes', {data: vm.current_entity, new_entity: vm.newent}).then(function (res) {
 			if (vm.newent)
 				vm.init();

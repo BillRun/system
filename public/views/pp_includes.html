@@ -95,13 +95,17 @@
 					ng-options='rate as rate for rate in vm.availableRates'>
 			</select>
    -->
-			<multiselect
-				ng-model="vm.current_entity.allowed_in[planName]"
-				options="rate for rate in vm.availableRates"
-				data-multiple="true"
-				filter-after-rows="10"
-				scroll-after-rows="10"
-				></multiselect>
+			<div
+				isteven-multi-select
+				input-model="vm.availableRatesToDisplay[planName]"
+				output-model="vm.allowed_in[planName]"
+				item-label="name"
+				button-label="name"
+				tick-property="ticked"
+				max-height="250px"
+				max-labels="4"
+				>
+			</div>
 		</div>
 		<div class="modal-footer">
 			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
