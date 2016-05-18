@@ -73,7 +73,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	 * @return array query for 'prefix' field
 	 */
 	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
+		return array('$in' => Billrun_Util::getPrefixes($this->getCleanNumber($this->rowDataForQuery['called_number'])));
 	}
 
 	protected function getAggregateId() {

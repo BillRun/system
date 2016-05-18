@@ -347,5 +347,23 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		return false;
 	}
+	
+	/**
+	 * method to clean specific prefixes from phone number
+	 * the prefixes taken from config in the next format:
+	 * rate.{static::$type}.trimPrefixes or rate.trimPrefixes
+	 * (former takes precedence)
+	 *
+	 * @param string $number the number to handle
+	 *
+	 * @return string clean number
+	 */
+	public function getCleanNumber($number) {
+		$configurationTrimPrefixes = Billrun_Factory::config()->getConfigValue('rate.' . $this->getType() . '.trimPrefixes', Billrun_Factory::config()->getConfigValue('rate.trimPrefixes', array()));
+		if (!empty($configurationTrimPrefixes)) {
+			return preg_replace('/^(' . implode('|', array_map('preg_quote', $configurationTrimPrefixes)) . ')/', '', $number);
+		}
+		return $number;
+	}
 
 }
