@@ -45,7 +45,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param array $row
 	 * @param Billrun_Calculator_Rate $calculator calculator instance that trigger this event
 	 * 
-	 * @return array
+	 * @return void
 	 */
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if ($this->isInterconnect($row)) {
