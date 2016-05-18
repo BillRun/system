@@ -138,11 +138,12 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$row = array();
 
 		$requiredFields = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_filter', array(), 'array');
+		$fieldsToInt = Billrun_Factory::config()->getConfigValue(static::$type . '.fields_to_int', array(), 'array');
 		if (!empty($requiredFields)) {
 			$passThruFields = array_merge($requiredFields, $stdFields);
 			foreach ($passThruFields as $field) {
 				if (isset($rawRow[$field])) {
-					if ($field == 'org_protocol' || $field == 'dest_protocol'){
+					if (in_array($field, $fieldsToInt)){
 						$row[$field] = (int)$rawRow[$field];
 					}
 					else{
