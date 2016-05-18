@@ -54,7 +54,7 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 					$rowIndex++;
 					continue;
 				}
-				Billrun_Factory::log("Importing Row " . $rowIndex, Zend_Log::INFO);
+				Billrun_Factory::log("Processed row " . $rowIndex, Zend_Log::INFO);
 				$this->dataToImport[] = $this->getDataToSave($data);
 				$rowIndex++;
 			}
@@ -71,8 +71,8 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 
 	public function save() {
 		try {
-			$error = '';
 			$bulkOptions = array(
+				'ordered' => false,
 				'continueOnError' => true,
 				'socketTimeoutMS' => 300000,
 				'wTimeoutMS' => 300000,
@@ -80,19 +80,23 @@ abstract class Billrun_Importer_Csv extends Billrun_Importer_Abstract {
 			$collectionName = $this->getCollectionName();
 			$collection = Billrun_Factory::db()->getCollection($collectionName);
 			$res = $collection->batchInsert($this->dataToImport, $bulkOptions);
-			$success = $res['ok'];
-			$count = $res['nInserted'];
-			Billrun_Factory::log($count . " entries was added to " . $this->collectionName . " collection", Zend_Log::INFO);
+			$count = isset($res['nInserted']) ? $res['nInserted'] : 0;
 		} catch (\Exception $e) {
-			$error = 'Failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			Billrun_Factory::log($error, Zend_Log::ALERT);
-			$success = false;
+			if (!is_a($e, 'MongoWriteConcernException')) {
+				Billrun_Factory::log('Failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage(), Zend_Log::ALERT);
+				return false;
+			}
+			$error_doc = $e->getDocument();
+			$errors = array_column($error_doc['writeErrors'], 'errmsg');
+			array_map(array('Billrun_Factory', 'log'), $errors, array_fill(0, count($errors), Zend_Log::NOTICE));
+			if (isset($error_doc['nInserted'])) {
+				$count = $error_doc['nInserted'];
+			} else {
+				$count = 0;
+			}
 		}
-
-		if (!$success) {
-			Billrun_Factory::log('Entities:' . print_r($this->dataToImport, 1), Zend_Log::ALERT);
-			return false;
-		}
+		
+		Billrun_Factory::log($count . " entries was added to " . $this->collectionName . " collection", Zend_Log::INFO);
 
 		return true;
 	}
