@@ -38,9 +38,18 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $notificationSent = false;
 
+	/**
+	 * method to extend rate query
+	 * 
+	 * @param array $query
+	 * @param array $row
+	 * @param Billrun_Calculator_Rate $calculator calculator instance that trigger this event
+	 * 
+	 * @return void
+	 */
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if ($this->isInterconnect($row)) {
-			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $row['called_number']);
+			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row['called_number']));
 			$query[0]['$match']['params.prefix']['$in'] = $prefixes;
 			$query[3]['$match']['params_prefix']['$in'] = $prefixes;
 		}
