@@ -71,7 +71,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		if ($row['org_protocol'] === 3) {  //smpp
+		if ($row['org_protocol'] == '3') {  //smpp
 			$matchedRate = false;
 			if ($this->shouldLineBeRated($row)) {
 				$called_number = $this->extractNumber($row);

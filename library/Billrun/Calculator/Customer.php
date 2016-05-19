@@ -355,7 +355,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		} else if ($line['type'] == 'smsc') {
 			$record_type = $line['record_type'];
 			if ($record_type == '1' || $record_type == '2') {
-				if ($line['org_protocol'] === 0) {
+				if ($line['org_protocol'] == '0') {
 					return false;
 				}
 			}

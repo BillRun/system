@@ -50,11 +50,11 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	protected function shouldLineBeRated($row) {
 		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
 
-		if (($row['org_protocol'] != 1) && ($row['org_protocol'] != 3)){
+		if (($row['org_protocol'] != '1') && ($row['org_protocol'] != '3')){
 			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol, row: ' . $row['stamp'] , Zend_Log::ALERT);
 			return false;
 		}
-		if ($row['org_protocol'] === 1) {  //smsc
+		if ($row['org_protocol'] == '1') {  //smsc
 			foreach ($this->legitimateValues['smsc'] as $key => $value) {
 				if (is_array($value)) {
 					foreach ($value as $regex) {
@@ -66,7 +66,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 					return false;
 				}
 			}
-		} else if ($row['org_protocol'] === 3) {  //smpp
+		} else if ($row['org_protocol'] == '3') {  //smpp
 			foreach ($this->legitimateValues['smpp'] as $key => $value) {
 				if (!(is_array($value) && in_array($row[$key], $value) || $row[$key] == $value )) {
 					return false;
