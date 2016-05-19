@@ -50,8 +50,11 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	protected function shouldLineBeRated($row) {
 		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
 
-		if (($row['org_protocol'] != '1') && ($row['org_protocol'] != '3')){
+		if (($row['org_protocol'] != '1') && ($row['org_protocol'] != '3') && ($row['org_protocol'] != '0')){
 			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol, row: ' . $row['stamp'] , Zend_Log::ALERT);
+			return false;
+		}
+		if ($row['org_protocol'] == '0'){
 			return false;
 		}
 		if ($row['org_protocol'] == '1') {  //smsc
