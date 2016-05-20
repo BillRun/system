@@ -2,36 +2,43 @@
  * Don't modify things marked with ! - unless you know what you're doing
  */
 
+
 /* ! vertical layout */
+
 .multiSelect .vertical {
     float: none;
 }
 
 /* ! horizontal layout */
+
 .multiSelect .horizontal:not(.multiSelectGroup) {
     float: left;
 }
 
 /* ! create a "row" */
+
 .multiSelect .line {
-    padding:  2px 0px 4px 0px;
+    padding: 2px 0px 4px 0px;
     max-height: 30px;
     overflow: hidden;
     box-sizing: content-box;
 }
 
 /* ! create a "column" */
+
 .multiSelect .acol {
     display: inline-block;
     min-width: 12px;
 }
 
 /* ! */
+
 .multiSelect .inlineBlock {
     display: inline-block;
 }
 
 /* the multiselect button */
+
 .multiSelect > button {
     display: inline-block;
     position: relative;
@@ -40,7 +47,7 @@
     border: 1px solid #c6c6c6;
     padding: 1px 8px 1px 8px;
     font-size: 13px;
-    min-height : 35px !important;
+    min-height: 35px !important;
     border-radius: 4px;
     color: #555;
     -webkit-user-select: none;
@@ -48,17 +55,19 @@
     -ms-user-select: none;
     -o-user-select: none;
     user-select: none;
-    white-space:normal;
+    white-space: normal;
     background-color: #fff;
     background-image: linear-gradient(#fff, #f7f7f7);
 }
 
 /* button: hover */
+
 .multiSelect > button:hover {
     background-image: linear-gradient(#fff, #e9e9e9);
 }
 
 /* button: disabled */
+
 .multiSelect > button:disabled {
     background-image: linear-gradient(#fff, #fff);
     border: 1px solid #ddd;
@@ -66,22 +75,25 @@
 }
 
 /* button: clicked */
+
 .multiSelect .buttonClicked {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* labels on the button */
+
 .multiSelect .buttonLabel {
     display: inline-block;
     padding: 4px 0px 4px 0px;
 }
 
 /* downward pointing arrow */
+
 .multiSelect .caret {
     display: inline-block;
     width: 0;
     height: 0;
-    margin: 0px 0px 1px 12px  !important;
+    margin: 0px 0px 1px 12px !important;
     vertical-align: middle;
     border-top: 4px solid #333;
     border-right: 4px solid transparent;
@@ -90,6 +102,7 @@
 }
 
 /* the main checkboxes and helper layer */
+
 .multiSelect .checkboxLayer {
     background-color: #fff;
     position: absolute;
@@ -98,17 +111,19 @@
     border-radius: 4px;
     -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-    min-width:278px;
+    min-width: 278px;
     display: none !important;
 }
 
 /* container of helper elements */
+
 .multiSelect .helperContainer {
     border-bottom: 1px solid #ddd;
     padding: 8px 8px 0px 8px;
 }
 
 /* helper buttons (select all, none, reset); */
+
 .multiSelect .helperButton {
     display: inline;
     text-align: center;
@@ -122,16 +137,15 @@
     line-height: 1.6;
     margin: 0px 0px 8px 0px;
 }
-
-.multiSelect .helperButton.toggleSelected{
+.multiSelect .helperButton.toggleSelected {
     float: right;
 }
-
-.multiSelect .helperButton:not( .toggleSelected ) {
+.multiSelect .helperButton:not( .toggleSelected) {
     margin-right: 4px;
 }
 
 /* clear button */
+
 .multiSelect .clearButton {
     position: absolute;
     display: inline;
@@ -145,30 +159,34 @@
     color: #666;
     background-color: #f1f1f1;
     line-height: 1.4;
-    right : 2px;
+    right: 2px;
     top: 4px;
 }
 
 /* filter */
+
 .multiSelect .inputFilter {
     border-radius: 2px;
     border: 1px solid #ccc;
     height: 26px;
     font-size: 14px;
-    width:100%;
-    padding-left:7px;
-    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
-    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
-    box-sizing: border-box;         /* Opera/IE 8+ */
+    width: 100%;
+    padding-left: 7px;
+    -webkit-box-sizing: border-box;
+    /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;
+    /* Firefox, other Gecko */
+    box-sizing: border-box;
+    /* Opera/IE 8+ */
     color: #888;
     margin: 0px 0px 8px 0px;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
 }
 
 /* helper elements on hover & focus */
-.multiSelect .clearButton:hover,
-.multiSelect .helperButton:hover {
+
+.multiSelect .clearButton:hover, .multiSelect .helperButton:hover {
     border: 1px solid #ccc;
     color: #999;
     background-color: #f4f4f4;
@@ -177,17 +195,15 @@
     color: #ccc;
     border: 1px solid #ddd;
 }
-
-.multiSelect .clearButton:focus,
-.multiSelect .helperButton:focus,
-.multiSelect .inputFilter:focus {
+.multiSelect .clearButton:focus, .multiSelect .helperButton:focus, .multiSelect .inputFilter:focus {
     border: 1px solid #66AFE9 !important;
     outline: 0;
-    -webkit-box-shadow: inset 0 0 1px rgba(0,0,0,.065), 0 0 5px rgba(102, 175, 233, .6) !important;
-            box-shadow: inset 0 0 1px rgba(0,0,0,.065), 0 0 5px rgba(102, 175, 233, .6) !important;
+    -webkit-box-shadow: inset 0 0 1px rgba(0, 0, 0, .065), 0 0 5px rgba(102, 175, 233, .6) !important;
+    box-shadow: inset 0 0 1px rgba(0, 0, 0, .065), 0 0 5px rgba(102, 175, 233, .6) !important;
 }
 
 /* container of multi select items */
+
 .multiSelect .checkBoxContainer {
     display: block;
     padding: 8px;
@@ -195,11 +211,13 @@
 }
 
 /* ! to show / hide the checkbox layer above */
+
 .multiSelect .show {
     display: block !important;
 }
 
 /* item labels */
+
 .multiSelect .multiSelectItem {
     display: block;
     padding: 3px;
@@ -212,21 +230,20 @@
     user-select: none;
     border: 1px solid transparent;
     position: relative;
-    min-width:278px;
+    min-width: 278px;
     min-height: 32px;
 }
 
 /* Styling on selected items */
-.multiSelect .multiSelectItem:not(.multiSelectGroup).selected
-{
-    background-image: linear-gradient( #e9e9e9, #f1f1f1 );
+
+.multiSelect .multiSelectItem:not(.multiSelectGroup).selected {
+    background-image: linear-gradient( #e9e9e9, #f1f1f1);
     color: #555;
     cursor: pointer;
     border-top: 1px solid #e4e4e4;
     border-left: 1px solid #e4e4e4;
     border-right: 1px solid #d9d9d9;
 }
-
 .multiSelect .multiSelectItem .acol label {
     display: inline-block;
     padding-right: 30px;
@@ -236,38 +253,40 @@
 }
 
 /* item labels focus on mouse hover */
-.multiSelect .multiSelectItem:hover,
-.multiSelect .multiSelectGroup:hover {
-    background-image: linear-gradient( #c1c1c1, #999 ) !important;
+
+.multiSelect .multiSelectItem:hover, .multiSelect .multiSelectGroup:hover {
+    background-image: linear-gradient( #c1c1c1, #999) !important;
     color: #fff !important;
     cursor: pointer;
     border: 1px solid #ccc !important;
 }
 
 /* item labels focus using keyboard */
+
 .multiSelect .multiSelectFocus {
-    background-image: linear-gradient( #c1c1c1, #999 ) !important;
+    background-image: linear-gradient( #c1c1c1, #999) !important;
     color: #fff !important;
     cursor: pointer;
     border: 1px solid #ccc !important;
 }
 
 /* change mouse pointer into the pointing finger */
-.multiSelect .multiSelectItem span:hover,
-.multiSelect .multiSelectGroup span:hover
-{
+
+.multiSelect .multiSelectItem span:hover, .multiSelect .multiSelectGroup span:hover {
     cursor: pointer;
 }
 
 /* ! group labels */
+
 .multiSelect .multiSelectGroup {
     display: block;
     clear: both;
 }
 
 /* right-align the tick mark (&#10004;) */
+
 .multiSelect .tickMark {
-    display:inline-block;
+    display: inline-block;
     position: absolute;
     right: 10px;
     top: 7px;
@@ -275,6 +294,7 @@
 }
 
 /* hide the original HTML checkbox away */
+
 .multiSelect .checkbox {
     color: #ddd !important;
     position: absolute;
@@ -283,89 +303,76 @@
 }
 
 /* checkboxes currently disabled */
-.multiSelect .disabled,
-.multiSelect .disabled:hover,
-.multiSelect .disabled label input:hover ~ span {
+
+.multiSelect .disabled, .multiSelect .disabled:hover, .multiSelect .disabled label input:hover ~ span {
     color: #c4c4c4 !important;
     cursor: not-allowed !important;
 }
 
 /* If you use images in button / checkbox label, you might want to change the image style here. */
+
 .multiSelect img {
     vertical-align: middle;
-    margin-bottom:0px;
+    margin-bottom: 0px;
     max-height: 22px;
-    max-width:22px;
+    max-width: 22px;
 }
 
 .multiSelect .switchParent {
     display: inline-block;
-    margin: 0px;
-    padding: 0px;
-    width: 122px;
-    position: relative;
-    left: 0px;
+    width: 130px;
 }
-
-.multiSelect .switchParent input.switch:empty ~ label
-{
-	position: relative;
-	float: left;
-    text-indent: 36px;
-	cursor: pointer;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
+.multiSelect .switchParent .switch {    
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 27px;
+    line-height: 28px;
     font-weight: normal;
     font-size: 13px;
-    line-height: 26px;
-	width: 125px;
+    color: #666;
 }
-
-.multiSelect .switchParent input.switch:empty
-{
-	margin-left: -999px;
+.multiSelect .switchParent .switch input {
+    display: none;
 }
-
-.multiSelect .switchParent input.switch:empty ~ label:before,
-.multiSelect .switchParent input.switch:empty ~ label:after
-{
-	position: absolute;
-	display: inline-block;
-	top: -1px;
-	bottom: 0;
-	left: 0px;
-	content: ' ';
-	width: 32px;
-	background-color: #f1f1f1;
+.multiSelect .switchParent .switch .slider {
     border: 1px solid #ccc;
-	border-radius: 2px;
-	/*box-shadow: inset 0 0.2em 0 rgba(0,0,0,0.3);*/
-	-webkit-transition: all 100ms ease-in;
-	transition: all 100ms ease-in;
-    height: 26px;
+    position: absolute;
+    cursor: pointer;
+    width: 32px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #f1f1f1;
+    -webkit-transition: .4s;
+    transition: .4s;
+    margin-right: 30px;
+    border-radius: 2px;
 }
-
-.multiSelect .switchParent input.switch:empty ~ label:after
-{
-	width: 14px;
-    height: 22px;
-	top: 1px;
-	bottom: -2px;
-	margin-left: 2px;
-	background-color: #fff;
-	border-radius: 2px;
+.multiSelect .switchParent .switch .slider:before {
+    position: absolute;
     border: 1px solid #ccc;
+    content: "";
+    height: 21px;
+    width: 13px;
+    top: 2px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    margin-right: 30px;
+    border-radius: 2px;
 }
-
-.multiSelect .switchParent input.switch:checked ~ label:before
-{
-	background-color: #393;
+.multiSelect .switchParent .switch input:checked + .slider {
+    background-color: #393;
 }
-
-.multiSelect .switchParent input.switch:checked ~ label:after
-{
-	margin-left: 16px;
-    border: 1px solid #999;
+.multiSelect .switchParent .switch input:focus + .slider {
+    box-shadow: 0 0 1px #393;
+}
+.multiSelect .switchParent .switch input:checked + .slider:before {
+    -webkit-transform: translateX(13px);
+    -ms-transform: translateX(13px);
+    transform: translateX(13px);
 }
