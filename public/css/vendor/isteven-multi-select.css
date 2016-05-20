@@ -320,17 +320,18 @@
 
 .multiSelect .switchParent {
     display: inline-block;
-    width: 130px;
+    width: 140px;
 }
 .multiSelect .switchParent .switch {    
     position: relative;
     display: inline-block;
-    width: 130px;
+    width: 150px;
     height: 27px;
     line-height: 28px;
     font-weight: normal;
     font-size: 13px;
     color: #666;
+    cursor: pointer;
 }
 .multiSelect .switchParent .switch input {
     display: none;
@@ -365,6 +366,10 @@
     margin-right: 30px;
     border-radius: 2px;
 }
+.multiSelect .switchParent .switch span.switch-show-selected {
+    margin-left:35px;
+}
+
 .multiSelect .switchParent .switch input:checked + .slider {
     background-color: #393;
 }

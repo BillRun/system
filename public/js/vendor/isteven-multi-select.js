@@ -1057,7 +1057,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                         '<span class="switchParent" ng-if="helperStatus.toggleSelected">' +
                             '<label class="switch">' +
                                 '<input type="checkbox" ng-click="updateToggle()">' +
-                                '<div class="slider"></div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Show Selected' +
+                                '<div class="slider"></div><span class="switch-show-selected">Show Selected</span>' +
                             '</label>' +
                         '</span>' +
 
