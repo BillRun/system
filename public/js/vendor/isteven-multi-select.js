@@ -2,7 +2,8 @@
  * Angular JS Multi Select
  * Creates a dropdown-like button with checkboxes.
  *
- * Version: SDOC - 4.0.1
+ * Project started on: Tue, 14 Jan 2014 - 5:18:02 PM
+ * Current version: 4.0.0
  *
  * Released under the MIT License
  * --------------------------------------------------------------------------------
@@ -453,7 +454,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                 // We update the index here
                 prevTabIndex = $scope.tabIndex;
                 $scope.tabIndex = ng_repeat_index + helperItemsLength;
-                console.log( $scope.tabIndex, formElements[ $scope.tabIndex ], formElements[ $scope.tabIndex ].checked, $scope.filteredModel[ ng_repeat_index ][ $scope.tickProperty ]);
+                // console.log( $scope.tabIndex, formElements[ $scope.tabIndex ], formElements[ $scope.tabIndex ].checked, $scope.filteredModel[ ng_repeat_index ][ $scope.tickProperty ]);
 
                 // Set focus on the hidden checkbox
                 e.target.focus();
@@ -464,6 +465,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
 
                 if ( typeof attrs.selectionMode !== 'undefined' && attrs.selectionMode.toUpperCase() === 'SINGLE' ) {
                     // on single selection mode, we then hide the checkbox layer
+                    console.log( 'here1' );
                     $scope.toggleCheckboxes( e );
                 }
             }
@@ -597,7 +599,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
 
             // UI operations to show/hide checkboxes based on click event..
             $scope.toggleCheckboxes = function( e ) {
-
+                console.log( 'toggleCheckboxes()' );
                 // We grab the button
                 var clickedEl = element.children()[0];
 
@@ -610,7 +612,6 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
 
                 // close
                 if ( angular.element( checkBoxLayer ).hasClass( 'show' )) {
-
                     angular.element( checkBoxLayer ).removeClass( 'show' );
                     angular.element( clickedEl ).removeClass( 'buttonClicked' );
                     angular.element( document ).off( 'click', $scope.externalClickListener );
@@ -664,7 +665,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                             helperItemsLength--;
                         }
                     }
-                    console.log( 'helperItemsLength: ' + helperItemsLength );
+                    // console.log( 'helperItemsLength: ' + helperItemsLength );
 
                     // focus on the filter element on open.
                     if ( element[ 0 ].querySelector( '.inputFilter' ) ) {
@@ -678,9 +679,9 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                         if ( !$scope.isDisabled ) {
                             $scope.tabIndex = $scope.tabIndex + helperItemsLength;
                             if ( $scope.inputModel.length > 0 ) {
-                                console.log( 'here 2: ' + helperItemsLength + ' ' + $scope.tabIndex );
+                                // console.log( 'here 2: ' + helperItemsLength + ' ' + $scope.tabIndex );
                                 formElements[ $scope.tabIndex ].focus();
-                                console.log( formElements[ $scope.tabIndex ] )
+                                // console.log( formElements[ $scope.tabIndex ] )
                                 $scope.setFocusStyle( $scope.tabIndex );
                                 // blur button in vain
                                 angular.element( element ).children()[ 0 ].blur();
@@ -696,9 +697,14 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
             // handle clicks outside the button / multi select layer
             $scope.externalClickListener = function( e ) {
 
+                // e.stopPropagation();
+
                 var targetsArr = element.find( e.target.tagName );
+                console.log( e.target );
                 for (var i = 0; i < targetsArr.length; i++) {
+                    // console.log( e.target, targetsArr[i] );
                     if ( e.target == targetsArr[i] ) {
+                        // console.log( 'do not close yet: ' + e.target );
                         return;
                     }
                 }
@@ -813,6 +819,7 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                 if ( key === 27 ) {
                     e.preventDefault();
                     e.stopPropagation();
+                    console.log( 'here2' );
                     $scope.toggleCheckboxes( e );
                 }
 
@@ -1031,11 +1038,27 @@ angular.module( 'isteven-multi-select', ['ng'] ).directive( 'istevenMultiSelect'
                             'ng-click="select( \'reset\', $event );"' +
                             'ng-bind-html="lang.reset">'+
                         '</button> '+
-                        '<span class="switchParent"' +
-                            'ng-if="helperStatus.toggleSelected"' +
-                        '>' +
-                        	'<input type="checkbox" id="switch1" name="switch1" class="switch" ng-click="updateToggle()"/>' +
-                        	'<label for="switch1">Show Selected</label>' +
+
+                        // toggle selected
+                        /*
+                        '<button type="button" class="helperButton toggleSelected" ng-class="{toggleOn:toggleStatus}"' +
+                            'ng-if="helperStatus.all"' +
+                            'ng-click="updateToggle()"' +
+                            'ng-bind-html="lang.toggleSelected">' +
+                        '</button>'+
+                        */
+
+                        // '<span class="switchParent" ng-if="helperStatus.toggleSelected" ng-click="updateToggle()">' +
+                        //     '<label>' +
+                        // 	   '<input type="checkbox" class="switch" ng-click="updateToggle()"/>' +
+                        // 	'</label>Show Selected' +
+                        // '</span>' +
+
+                        '<span class="switchParent" ng-if="helperStatus.toggleSelected">' +
+                            '<label class="switch">' +
+                                '<input type="checkbox" ng-click="updateToggle()">' +
+                                '<div class="slider"></div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Show Selected' +
+                            '</label>' +
                         '</span>' +
 
                     '</div>' +
