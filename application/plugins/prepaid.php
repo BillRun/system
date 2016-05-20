@@ -416,4 +416,18 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
+	/**
+	 * method to override the charge on start call in cases there are access price
+	 * 
+	 * @param array $row
+	 * @param array $charges
+	 * 
+	 * @return void
+	 */
+	public function afterChargesCalculation(&$row, &$charges) {
+		if (isset($row['api_name']) && in_array($row['api_name'], array('start_call'))) {
+			$charges['total'] = 0;
+		}
+	}
+
 }
