@@ -578,6 +578,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data['external_id'] = intval($data['external_id']);
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));
+		$data['priority'] = (int) $data['priority'];
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {
