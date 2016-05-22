@@ -247,9 +247,11 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function setRowDataForQuery($row) {
 		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
 		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$mccField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.mcc_field', 'location_mcc');
 		$this->rowDataForQuery = array(
 			'line_time' => $row->get($timeField),
 			'called_number' => $row->get($calledNumberField),
+			'mcc' => $row->get($mccField),
 		);
 	}
 
@@ -308,7 +310,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-
+		
 		return $query;
 	}
 

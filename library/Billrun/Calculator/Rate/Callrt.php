@@ -75,11 +75,17 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function getPrefixMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->getCleanNumber($this->rowDataForQuery['called_number'])));
 	}
+	
+	protected function getMccMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['mcc']));
+	}
 
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',
-			"pref" => '$params.prefix');
+			"pref" => '$params.prefix',
+			"mcc" => '$params.mcc'
+		);
 	}
 
 	protected function getRatesExistsQuery() {
