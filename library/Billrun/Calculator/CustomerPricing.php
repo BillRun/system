@@ -17,6 +17,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	const DEF_CALC_DB_FIELD = 'aprice';
 
 	public $pricingField = self::DEF_CALC_DB_FIELD;
+	public $interconnectChargableFlagField = 'interconnect_chargable';
 	public $interconnectChargeField = 'interconnect_aprice';
 	static protected $type = "pricing";
 	static protected $precision = 0.00001;
@@ -254,6 +255,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
 
+			if ($rate['params']['interconnect']) {
+				$row['interconnect_arate_key'] = $rate['key'];
+			}
+
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 			foreach ($pricingData as $key => $value) {
 				$pricingDataTxt .= " " . $key . ": " . $value . ".";
@@ -467,6 +472,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
+		} else if ($rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
+			$total = $chargeWoIC + $interconnectCharge;
+			$ret = array(
+				'interconnect' => $total,
+				'total' => $total,
+			);
 		} else {
 			$ret = array(
 				'interconnect' => $interconnectCharge,
@@ -536,17 +547,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
 		}
+
 		$this->initMinBalanceValues($rate, $usage_type, $plan);
+
 		// Check if the price is enough for minimum cost
 		if ($price < $this->min_balance_cost) {
 			return 0;
 		}
 
+		if ($price == $this->min_balance_cost) {
+			return $this->min_balance_volume;
+		}
+
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
-		$currentUsage = $defaultUsage / 2;
+		$currentUsage = $defaultUsage - (abs($defaultUsage - $this->min_balance_volume) / 2);
 		$epsilon = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.epsilon', 0.5);
-		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 20);
+		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 40);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
 			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset);
 			$diff = abs($currentUsage - $previousUsage) / 2;
@@ -558,9 +575,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$currentUsage += $diff;
 			}
 		}
-		$this->initMinBalanceValues($rate, $usage_type, $plan);
+
 		// Check if the price is enough for minimum cost
-		if ($currentPrice > $this->min_balance_cost) {
+		if ($currentPrice >= $this->min_balance_cost) {
 			return floor($currentUsage);
 		}
 		return 0;

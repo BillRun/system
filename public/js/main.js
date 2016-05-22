@@ -241,6 +241,49 @@ $(function () {
 			}
 		}
 	});
+	
+	$("#saveVersionModal #saveVersion").click(function (event) {
+		function saveVersion(collection, name) {
+			$.ajax({
+				url: "/api/saveversion",
+				type: "POST",
+				data: {collection: collection, name: name},
+				error: function(err) { 
+					alert('Error exporting, try again');
+					$('#cancelSaveVersion').click();
+				}       
+			}).done(function (ret) {
+				alert('Exported successfully');
+				$('#cancelSaveVersion').click();
+			});
+		}
+		
+		var _collection = coll;
+		var _name = $('#versionName').val();
+		saveVersion(_collection, _name);
+	});
+
+	$("#loadVersionModal #loadVersion").click(function (event) {
+		function loadVersion(collection, name, remove_new) {
+			$.ajax({
+				url: "/api/loadversion",
+				type: "POST",
+				data: {collection: collection, fileName: name, remove_new: remove_new},
+				error: function(err) { 
+					alert('Error importing, try again');
+					$('#cancelLoadVersion').click();
+				}       
+			}).done(function (ret) {
+				alert('Imported successfully');
+				$('#cancelLoadVersion').click();
+			});
+		}
+		
+		var _collection = coll;
+		var _fileName = $('#versions-select').val();
+		var _removeNew = $('#remove-new-rates').is(':checked');
+		loadVersion(_collection, _fileName, _removeNew);
+	});
 
 	$("#uploadModal #upload").click(function (event) {
 		var files = $("#uploadModal #file-upload").get(0).files;

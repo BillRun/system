@@ -18,7 +18,7 @@ function ServiceProvidersController(Database, $uibModal) {
 			if (redirect) {
 				$window.location = '/admin/' + $routeParams.collection;
 			}
-			vm.serviceProviders.push(params)
+			vm.serviceProviders.push(vm.service_provider);
 		}, function (err) {
 			vm.err = err;
 			console.log(err);

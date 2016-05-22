@@ -220,7 +220,10 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$findQuery = array(
 				"sid" => $row['sid'],
 				"session_id" => $row['session_id'],
-				"request_num" => array('$lt' => $row['request_num'])
+				"request_num" => array('$lt' => $row['request_num']),
+				"usagev" => array(
+					'$gt' => 0,
+				),
 			);
 
 			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
@@ -230,6 +233,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"sid" => $row['sid'],
 				"call_reference" => $row['call_reference'],
 				"api_name" => array('$ne' => "release_call"),
+				"usagev" => array(
+					'$gt' => 0,
+				),
 			);
 			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('_id' => -1))->limit(1);
 			return $line;
@@ -253,7 +259,15 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return $sum;
 		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
 			$duration = (!empty($row['duration']) ? $row['duration'] : 0);
-			return $duration / 10;
+			$log10size = Billrun_Factory::config()->getConfigValue('prepaid.duration.log10size', 1);
+			$ret_duration = $duration / $log10size;
+			$method = Billrun_Factory::config()->getConfigValue('prepaid.duration.method', '');
+			if (!empty($method)) {
+				$args = Billrun_Factory::config()->getConfigValue('prepaid.duration.args', array());
+				$method_args = array_merge(array($ret_duration), $args);
+				return call_user_func_array($method, $method_args);
+			}
+			return $ret_duration;
 		}
 	}
 
@@ -399,6 +413,20 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 					)
 				)
 			);
+		}
+	}
+
+	/**
+	 * method to override the charge on start call in cases there are access price
+	 * 
+	 * @param array $row
+	 * @param array $charges
+	 * 
+	 * @return void
+	 */
+	public function afterChargesCalculation(&$row, &$charges) {
+		if (isset($row['api_name']) && in_array($row['api_name'], array('start_call'))) {
+			$charges['total'] = 0;
 		}
 	}
 

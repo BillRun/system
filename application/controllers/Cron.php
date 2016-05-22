@@ -130,6 +130,7 @@ class CronController extends Yaf_Controller_Abstract {
 		$match = array(
 			'$match' => array(
 				'charging_type' => 'prepaid',
+				'charging_by_usaget' => 'data',
 				'to' => array(
 					'$gt' => new MongoDate(strtotime("yesterday midnight")),
 					'$lte' => new MongoDate(strtotime("midnight")),

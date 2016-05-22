@@ -496,7 +496,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$planModel = new PlansModel();
 		//$names = $planModel->getData(array('type' => $type));
 		$names = Billrun_Factory::db()->plansCollection()->query(array('type' => $type))->cursor()->sort(array('name' => 1));
-		Billrun_Factory::log(print_r($names, 1));
 		$availablePlans = array();
 		$availablePlans['BASE'] = 'BASE';
 		foreach ($names as $name) {
@@ -527,6 +526,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		$query = array(
 			'params.interconnect' => TRUE,
+			'params.prefix' => array('$exists' => FALSE),
 			'to' => array('$gte' => new MongoDate()),
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
@@ -578,6 +578,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data['external_id'] = intval($data['external_id']);
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));
+		$data['priority'] = (int) $data['priority'];
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {

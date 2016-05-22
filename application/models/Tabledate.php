@@ -69,7 +69,7 @@ class TabledateModel extends TableModel {
 		return $to_date > time();
 	}
 	
-	public function hasEntityWithOverlappingDates($entity) {
+	public function getOverlappingDatesQuery($entity) {
 		$from_date = new MongoDate(strtotime($entity['from']));
 		if (!$from_date) {
 			return $this->setError("date error");
@@ -82,7 +82,7 @@ class TabledateModel extends TableModel {
 		if (!$id) {
 			return $this->setError("id error");
 		}
-		$query = array(
+		return array(
 			'_id' => array('$ne' => $id),
 			$this->search_key => $entity[$this->search_key],
 			'$or' => array(
@@ -96,6 +96,10 @@ class TabledateModel extends TableModel {
 				))
 			)
 		);
+	}
+	
+	public function hasEntityWithOverlappingDates($entity) {
+		$query = $this->getOverlappingDatesQuery($entity);
 		$result = $this->collection
 			->query($query)
 			->cursor()->count();

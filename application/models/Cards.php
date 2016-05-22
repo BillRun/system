@@ -137,6 +137,16 @@ class CardsModel extends TableModel {
 				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
+		if (AdminController::authorized('admin')) {
+			$filter_fields['secret'] = array(
+				'key' => 'secret',
+				'db_key' => 'secret',
+				'input_type' => 'text',
+				'comparison' => 'hash',
+				'display' => 'Secret Code',
+				'default' => '',
+			);
+		}
 		return array_merge($filter_fields, parent::getFilterFields());
 	}
 
@@ -168,6 +178,11 @@ class CardsModel extends TableModel {
 				)
 			),
 		);
+		if (AdminController::authorized('admin')) {
+			$filter_field_order[0]['secret'] = array(
+				'width' => 2,
+			);
+		}
 		return $filter_field_order;
 	}
 
@@ -186,6 +201,10 @@ class CardsModel extends TableModel {
 	}
 
 	public function applyFilter($filter_field, $value) {
+		if ($filter_field['comparison'] == 'hash') {
+			$filter_field['comparison'] = 'contains';
+			$value = $this->hashValue($value);
+		}
 		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
 			if (is_string($value)) {
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
@@ -206,6 +225,10 @@ class CardsModel extends TableModel {
 		} else {
 			return parent::applyFilter($filter_field, $value);
 		}
+	}
+	
+	protected function hashValue($val) {
+		return hash('sha512', $val);
 	}
 
 }
