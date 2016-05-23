@@ -372,5 +372,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $number;
 	}
+	
+	protected function getCountryCodeMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
+	}
 
 }

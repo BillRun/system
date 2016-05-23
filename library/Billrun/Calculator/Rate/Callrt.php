@@ -75,10 +75,6 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function getPrefixMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->getCleanNumber($this->rowDataForQuery['called_number'])));
 	}
-	
-	protected function getCountryCodeMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
-	}
 
 	protected function getAggregateId() {
 		return array(
