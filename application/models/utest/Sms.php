@@ -40,7 +40,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 			'request' => array(
 				'calling_number' => $calling_number,
 				'called_number' => $called_number,
-				'msc_id' => 'tmp',
+				'msc_id' => '972',
 				'pmt_subscriber_type' => 'tmp',
 				'discount' => $discount,
 				'association_number' => $this->controller->getReference(),
