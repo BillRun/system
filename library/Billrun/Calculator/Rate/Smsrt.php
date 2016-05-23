@@ -45,5 +45,9 @@ class Billrun_Calculator_Rate_Smsrt extends Billrun_Calculator_Rate_Callrt {
 
 		return $matchedRate;
 	}
+	
+	protected function getRatesExistsQuery() {
+		return array('$exists' => true);
+	}
 
 }
