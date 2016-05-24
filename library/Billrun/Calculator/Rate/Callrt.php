@@ -82,15 +82,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 			"pref" => '$params.prefix');
 	}
 
-	protected function getRatesExistsQuery() {
-		if ($this->usaget === 'call') {
-			return array('$exists' => true);
-		}
-		return null;
-	}
-
-	protected function getVideoCallRatesExistsQuery() {
-		if ($this->usaget === 'video_call') {
+	protected function getRatesExistsQuery($row, $key) {
+		$keyUsaget = str_replace('rates.', '', $key);
+		if ($this->usaget === $keyUsaget) {
 			return array('$exists' => true);
 		}
 		return null;

@@ -293,7 +293,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$val = $this->{$value['classMethod']}($row);
+							$val = $this->{$value['classMethod']}($row, $key);
 							if (!is_null($val)) {
 								$pipelineValue[$key] = $val;
 							}
