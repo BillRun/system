@@ -58,52 +58,56 @@ class VfdaysAction extends Action_Base {
 	 */
 	public function count_days($sid, $year = null, $max_datetime = null) {
 
-		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
-		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
+//		$ggsn_fields = Billrun_Factory::config()->getConfigValue('ggsn.fraud.groups.vodafone15');
+//		$sender = Billrun_Factory::config()->getConfigValue('nrtrde.fraud.groups.vodafone15');
 
 		$match1 = array(
 			'$match' => array(
-				'subscriber_id' => $sid,
+				'$or' => array(
+					array('subscriber_id' => $sid),
+					array('sid' => $sid),
+				)
 			),
 		);
 		$match2 = array(
 			'$match' => array(
-				'plan' => array('$in' => $this->plans),
-				'$or' => array(
-					array_merge(
-						array(
-						'type' => "ggsn",
-						'record_opening_time' => new MongoRegex("/^$year/"),
-						), $ggsn_fields
-					),
-					array(
-						'type' => "nrtrde",
-						'callEventStartTimeStamp' => new MongoRegex("/^$year/"),
-						'sender' => array('$in' => $sender),
-						'$or' => array(
-							array(
-								'record_type' => "MTC",
-								'callEventDurationRound' => array('$gt' => 0), // duration greater then 0 => call and not sms
-							),
-							array(
-								'record_type' => "MOC",
-								'connectedNumber' => new MongoRegex('/^972/')
-							),
-						),
-					),
-				),
+				'arategroup' => 'VF',
+				'callEventStartTimeStamp' => new MongoRegex("/^$year/")
+//				'$or' => array(
+//					array_merge(
+//						array(
+//						'type' => "ggsn",
+//						'record_opening_time' => new MongoRegex("/^$year/"),
+//						), $ggsn_fields
+//					),
+//					array(
+//						'type' => "nrtrde",
+//						'callEventStartTimeStamp' => new MongoRegex("/^$year/"),
+//						'sender' => array('$in' => $sender),
+//						'$or' => array(
+//							array(
+//								'record_type' => "MTC",
+//								'callEventDurationRound' => array('$gt' => 0), // duration greater then 0 => call and not sms
+//							),
+//							array(
+//								'record_type' => "MOC",
+//								'connectedNumber' => new MongoRegex('/^972/')
+//							),
+//						),
+//					),
+//				),
 			),
 		);
 
 		if (!empty($max_datetime)) {
-			$match2['$match']['unified_record_time'] = array('$lte' => new MongoDate(strtotime($max_datetime)));
+			$match2['$match']['callEventStartTimeStamp'] = array('$lte' => date('YmdHis', strtotime($max_datetime)));
 		}
 
 		$group = array(
 			'$group' => array(
 				'_id' => array('$substr' =>
 					array(
-						array('$ifNull' => array('$record_opening_time', '$callEventStartTimeStamp')),
+						'$callEventStartTimeStamp',
 						4,
 						4
 					)

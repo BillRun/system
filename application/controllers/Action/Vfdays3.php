@@ -54,21 +54,28 @@ class Vfdays3Action extends Action_Base {
 
 		$elements[] = array(
 			'$match' => array(
-				'unified_record_time' => array(
-					'$gte' => new MongoDate($from),
+//				'$or' => array(
+//					array('subscriber_id' => 410049),
+//					array('sid' => 410049),
+//				),
+//				'unified_record_time' => array(
+//					'$gte' => new MongoDate($from),
+//				),
+				'callEventStartTimeStamp' => array(
+					'$gte' => date('YmdHis', $from),
 				),
 				'arategroup' => 'VF',
 			),
 		);
 		if ($max_datetime) {
-			$elements[0]['$match']['unified_record_time']['$lte'] = new MongoDate(strtotime($max_datetime));
+			$elements[0]['$match']['callEventStartTimeStamp']['$lte'] = date('YmdHis', strtotime($max_datetime));
 		}
 		$elements[] = array(
 			'$group' => array(
 				'_id' => array(
 					'day_key' => array('$substr' =>
 						array(
-							array('$ifNull' => array('$record_opening_time', '$callEventStartTimeStamp')),
+							'$callEventStartTimeStamp',
 							4,
 							4
 						)
@@ -80,7 +87,7 @@ class Vfdays3Action extends Action_Base {
 		$elements[] = array(
 			'$sort' => array(
 				'_id.sid' => 1,
-				'_id.day_key' => -1,
+				'_id.day_key' => 1,
 			),
 		);
 		$elements[] = array(
@@ -90,7 +97,7 @@ class Vfdays3Action extends Action_Base {
 					'$sum' => 1,
 				),
 				'last_day' => array(
-					'$first' => '$_id.day_key',
+					'$last' => '$_id.day_key',
 				)
 			),
 		);
@@ -107,6 +114,9 @@ class Vfdays3Action extends Action_Base {
 				'sid' => '$_id',
 				'count_days' => '$days_num',
 				'last_date' => '$last_day',
+				'min_days' => array(
+					'$literal' => $min_days,
+				),
 				'max_days' => 45,
 			)
 		);
