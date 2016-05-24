@@ -89,6 +89,18 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'call':
 					ret = $scope.addCallRate();
 					break;
+				case 'video_call':
+					ret = $scope.addVideoCallRate();
+					break;
+				case 'roaming_incoming_call':
+					ret = $scope.addRoamingIncomingCallRate();
+					break;
+				case 'roaming_call_israel':
+					ret = $scope.addRoamingCallIsraelRate();
+					break;
+				case 'roaming_call_abroad':
+					ret = $scope.addRoamingCallAbroadRate();
+					break;
 				case 'sms':
 					ret = $scope.addSMSRate();
 					break;
@@ -103,6 +115,18 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			switch (type) {
 				case 'call':
 					ret = $scope.deleteCallRate(rateName);
+					break;
+				case 'video_call':
+					ret = $scope.deleteVideoCallRate(rateName);
+					break;
+				case 'roaming_incoming_call':
+					ret = $scope.deleteRoamingIncomingCallRate(rateName);
+					break;
+				case 'roaming_call_israel':
+					ret = $scope.deleteRoamingCallIsraelRate(rateName);
+					break;
+				case 'roaming_call_abroad':
+					ret = $scope.deleteRoamingCallAbroadRate(rateName);
 					break;
 				case 'sms':
 					ret = $scope.deleteSMSRate(rateName);
@@ -141,6 +165,126 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			var r = confirm("Are you sure you want to remove " + rateName + "?");
 			if (r)
 				delete $scope.entity.rates.call[rateName];
+		};
+		
+		$scope.addVideoCallRate = function () {
+			if (!$scope.newRate.video_call || !$scope.newRate.video_call.name)
+				return;
+			if ($scope.entity.rates.video_call === undefined)
+				$scope.entity.rates.video_call = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.video_call[$scope.newRate.video_call.name] = newPriceInterval;
+			$scope.shown.video_callRates[$scope.newRate.video_call.name] = true;
+			$scope.newRate.video_call = {name: undefined};
+		};
+
+		$scope.deleteVideoCallRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.video_call[rateName];
+		};
+		
+		$scope.addRoamingIncomingCallRate = function () {
+			if (!$scope.newRate.roaming_incoming_call || !$scope.newRate.roaming_incoming_call.name)
+				return;
+			if ($scope.entity.rates.roaming_incoming_call === undefined)
+				$scope.entity.rates.roaming_incoming_call = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.roaming_incoming_call[$scope.newRate.roaming_incoming_call.name] = newPriceInterval;
+			$scope.shown.roaming_incoming_callRates[$scope.newRate.roaming_incoming_call.name] = true;
+			$scope.newRate.roaming_incoming_call = {name: undefined};
+		};
+
+		$scope.deleteRoamingIncomingCallRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.roaming_incoming_call[rateName];
+		};
+		
+		$scope.addRoamingCallIsraelRate = function () {
+			if (!$scope.newRate.roaming_call_israel || !$scope.newRate.roaming_call_israel.name)
+				return;
+			if ($scope.entity.rates.roaming_call_israel === undefined)
+				$scope.entity.rates.roaming_call_israel = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.roaming_call_israel[$scope.newRate.roaming_call_israel.name] = newPriceInterval;
+			$scope.shown.roaming_call_israelRates[$scope.newRate.roaming_call_israel.name] = true;
+			$scope.newRate.roaming_call_israel = {name: undefined};
+		};
+
+		$scope.deleteRoamingCallIsraelRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.roaming_call_israel[rateName];
+		};
+		
+		$scope.addRoamingCallAbroadRate = function () {
+			if (!$scope.newRate.roaming_call_abroad || !$scope.newRate.roaming_call_abroad.name)
+				return;
+			if ($scope.entity.rates.roaming_call_abroad === undefined)
+				$scope.entity.rates.roaming_call_abroad = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.roaming_call_abroad[$scope.newRate.roaming_call_abroad.name] = newPriceInterval;
+			$scope.shown.roaming_call_abroadRates[$scope.newRate.roaming_call_abroad.name] = true;
+			$scope.newRate.roaming_call_abroad = {name: undefined};
+		};
+
+		$scope.deleteRoamingCallAbroadRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.roaming_call_abroad[rateName];
 		};
 
 		$scope.addDataRate = function () {
@@ -272,6 +416,18 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'call':
 					ret = $scope.callPlanExists(plan);
 					break;
+				case 'video_call':
+					ret = $scope.videoCallPlanExists(plan);
+					break;
+				case 'roaming_incoming_call':
+					ret = $scope.roamingIncomingCallPlanExists(plan);
+					break;
+				case 'roaming_call_israel':
+					ret = $scope.roamingCallIsraelPlanExists(plan);
+					break;
+				case 'roaming_call_abroad':
+					ret = $scope.roamingCallAbroadPlanExists(plan);
+					break;
 				case 'sms':
 					ret = $scope.smsPlanExists(plan);
 					break;
@@ -284,6 +440,34 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.callPlanExists = function (plan) {
 			if (plan && $scope.entity && $scope.entity.rates
 					&& $scope.entity.rates.call && $scope.entity.rates.call[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.videoCallPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.video_call && $scope.entity.rates.video_call[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.roamingIncomingCallPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.roaming_incoming_call && $scope.entity.rates.roaming_incoming_call[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.roamingCallIsraelPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.roaming_call_israel && $scope.entity.rates.roaming_call_israel[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.roamingCallAbroadPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.roaming_call_abroad && $scope.entity.rates.roaming_call_abroad[plan]) {
 				return true;
 			}
 			return false;
