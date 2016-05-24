@@ -110,7 +110,7 @@
 			<hr/>
 
 			<h2>Tariffs</h2>
-			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms", "video_call"]'>
+			<div class="row row-indent" ng-repeat='type in ["call", "data", "sms", "video_call", "roaming_incoming_call", "roaming_call_israel", "roaming_call_abroad"]'>
 				<h3>{{titlize(type)}}</h3>
 				<div style="margin-bottom: 10px;">
 					<select ng-model="newRate[type].name" class="form-control">
