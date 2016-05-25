@@ -825,6 +825,14 @@ class Billrun_Util {
 		
 		return $retVal;
 	}
+	
+	/**
+	 * method to retrieve IldsOneWay circuit groups
+	 * @return array of out_circuit_groups
+	 */
+	public static function getIldsOneWayCircuitGroups() {
+		return Billrun_Factory::config()->getConfigValue('ildsOneWay.ocg', array());
+	}
 	/**
 	 * method to retrieve internation circuit groups
 	 * 
