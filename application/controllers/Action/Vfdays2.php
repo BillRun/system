@@ -60,9 +60,17 @@ class Vfdays2Action extends Action_Base {
 		$elements = array();
 		$elements[] = array(
 			'$match' => array(
-				'unified_record_time' => array(
-					'$gte' => new MongoDate($start),
-					'$lte' => new MongoDate($end),
+//				'$or' => array(
+//					array('subscriber_id' => 410049),
+//					array('sid' => 410049),
+//				),
+////				'unified_record_time' => array(
+//					'$gte' => new MongoDate($start),
+//					'$lte' => new MongoDate($end),
+//				),
+				'callEventStartTimeStamp' => array(
+					'$gte' => date('YmdHis', $start),
+					'$lte' => date('YmdHis', $end),
 				),
 				'vf_count_days' => array(
 					'$gte' => $min_days,
@@ -77,27 +85,25 @@ class Vfdays2Action extends Action_Base {
 					'$max' => '$vf_count_days',
 				),
 				'last_usage_time' => array(
-					'$max' => '$unified_record_time',
+					'$max' => '$callEventStartTimeStamp',
 				),
 			)
 		);
 		
 		$elements[] = array(
 			'$project' => array(
-				'_id' => false,
+				'_id' => 0,
 				'sid' => '$_id',
 				'count_days' => '$count_days',
-				'last_usage_time' => array(
-					'$dateToString' => array(
-						'format' => '%Y-%m-%d %H:%M:%S',
-						'date' => array(
-							'$add' => array('$last_usage_time', date('Z') * 1000)
-						)
+				'last_date' => array(
+					'$substr' => array(
+						'$last_usage_time', 4, 4,
 					)
 				),
 				'min_days' => array(
 					'$literal' => $min_days,
 				),
+				'max_days' => 45,
 			)
 		);
 		
