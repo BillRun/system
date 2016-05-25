@@ -64,7 +64,10 @@ class Vfdays3Action extends Action_Base {
 				'callEventStartTimeStamp' => array(
 					'$gte' => date('YmdHis', $from),
 				),
-				'arategroup' => 'VF',
+				'$or' => array(
+					array('arategroup' => 'VF'),
+					array('vf_count_days' => array('$exists' => 1)),
+				),
 			),
 		);
 		if ($max_datetime) {
