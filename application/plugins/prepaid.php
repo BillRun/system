@@ -425,7 +425,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function afterChargesCalculation(&$row, &$charges) {
-		if (isset($row['api_name']) && in_array($row['api_name'], array('start_call'))) {
+		if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
 			$charges['total'] = 0;
 		}
 	}
