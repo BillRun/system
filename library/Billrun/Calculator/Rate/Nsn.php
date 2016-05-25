@@ -129,15 +129,15 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 	protected function getLineAdditionalValues($row) {
 		$circuit_groups = Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.whloesale_incoming_rate_key');
 		$rate_key = null;
-		if( in_array($row['record_type'],array('30','11')) && ($row['in_circuit_group'] > $circuit_groups['icg']['min']) && 
-			($row['in_circuit_group'] < $circuit_groups['icg']['max']) ) {
-			if(preg_match('/^(997|972)?1800016/',$row['called_number'])) {
+		if( in_array($row['record_type'],array('30','11')) &&  $this->valueWithinRanges($row['in_circuit_group'], $circuit_groups['icg']) ) {
+			if(preg_match('/^(997|972)?1800/',$row['called_number'])) {
 				$rate_key = 'IL_TF';
-			} else if(preg_match('/^(997|972)?1700016/',$row['called_number'])) {
+			} else if(preg_match('/^(997|972)?1700/',$row['called_number'])) {
 				$rate_key = 'IL_1700';
 			}
-		} else if(in_array($row['record_type'],array('12','02')) && preg_match('/(^RCEL)|(^$)/',$row['out_circuit_group_name'])
-			&& (preg_match('/^(972)?5/',$row['called_number']))) {
+		}
+		if(	in_array($row['record_type'],array('12','02','30')) &&
+					preg_match('/(^RCEL)|(^$)/',$row['out_circuit_group_name']) && (preg_match('/^(972)?5/',$row['called_number'])) ) {
 			$rate_key = 'IL_MOBILE';
 		}
 		$additional_properties = $this->getAdditionalProperties();
@@ -149,6 +149,23 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		
 	protected function getAdditionalProperties() {
 		return Billrun_Factory::config()->getConfigValue('Rate_Nsn.calculator.additional_properties');
+	}
+	
+	
+	/**
+	 * Verify  the  a given value  is within given ranges
+	 * @param type $value the  value to check
+	 * @param type $ranges the ranges to compare to  structure  as follow 
+	 *			array(array('min' => 0 , 'max' => 100)) matches values 0-100
+	 * @return boolean TRUE is the  value is within the ranges FALSE otherwise.
+	 */
+	protected function valueWithinRanges($value,$ranges) {
+			foreach($ranges as $range) {
+				if( $range['min'] >= $value && $value <= $range['max'] ) {
+					return TRUE;
+				}
+			}
+			return FALSE;
 	}
 		
 }
