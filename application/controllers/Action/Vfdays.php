@@ -71,7 +71,10 @@ class VfdaysAction extends Action_Base {
 		);
 		$match2 = array(
 			'$match' => array(
-				'arategroup' => 'VF',
+				'$or' => array(
+						array('arategroup' => 'VF'),
+						array('vf_count_days' => array('$exists' => 1)),
+				),
 				'callEventStartTimeStamp' => new MongoRegex("/^$year/")
 //				'$or' => array(
 //					array_merge(
