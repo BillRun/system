@@ -49,8 +49,16 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 */
 	protected function shouldLineBeRated($row) {
 		//return  $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/",$row["calling_msc"]) ;
-
-		if (($row['org_protocol'] != '1') && ($row['org_protocol'] != '3') && ($row['org_protocol'] != '0')){
+		
+		if (!in_array($row['record_type'], ['1','2','4'])){
+			Billrun_Factory::log()->log($row['record_type'] . ' is Illegal value for record_type, line: ' . $row['stamp'] , Zend_Log::ALERT);
+			return false;
+		}
+		if ((($row['record_type'] == 4) && ($row['org_protocol'] != 0)) || (($row['org_protocol'] == 0) && ($row['record_type'] != 4))){
+			Billrun_Factory::log()->log($row['record_type'] .' and' . $row['org_protocol'] .' is Illegal combination of values for record_type and org_protocol fields, line: ' . $line['stamp'] , Zend_Log::ALERT);
+			return false;
+		}	
+		if (!in_array($row['org_protocol'], ['0','1','3'])){
 			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol, row: ' . $row['stamp'] , Zend_Log::ALERT);
 			return false;
 		}

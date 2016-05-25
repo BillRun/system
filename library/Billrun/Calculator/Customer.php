@@ -354,11 +354,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		} else if ($line['type'] == 'smsc') {
 			$record_type = $line['record_type'];
-			if ($record_type == '1' || $record_type == '2') {
-				if ($line['org_protocol'] == '0') {
+			if ($record_type == '4') {
+				if ($line['org_protocol'] != '0') {
 					return false;
 				}
 			}
+			if (!in_array($record_type, ['1','2','4'])){
+				return false;
+			}	
 		} else {
 			if (is_array($line)) {
 				$arate = $line['arate'];
