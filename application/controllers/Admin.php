@@ -413,6 +413,36 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->responseSuccess(array("data" => $data, "status" => true));
 		return false;
 	}
+	
+	public function saveServiceProviderAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$data = $this->getRequest()->get('data');
+		unset($data['_id']);
+		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
+		$query = array(
+			'_id' => new MongoId($serviceProvider_mongoId),
+		);
+		Billrun_Factory::db()->serviceprovidersCollection()->update($query, $data);
+		$this->responseSuccess(array("status" => true));
+		return false;
+	}
+
+	public function alreadyExistsServiceProviderAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$data = $this->getRequest()->get('serviceProvider');
+		$query = array(
+			'$or' => array(
+				array('name' => $data['name']),
+				array('code' => $data['code']),
+				array('id' => $data['id']),
+			)
+		);
+		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
+		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
+		return false;
+	}
 
 	public function removeBandwidthCapAction() {
 		if (!$this->allowed('write'))
@@ -429,6 +459,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		unset($allCaps["realtimeevent"]["data"]["slowness"]['bandwidth_cap'][$cap_name]);
 		$configColl->insert($allCaps);
 		$this->responseSuccess(array("data" => $allCaps, "status" => true));
+		return false;
+	}
+	
+	public function removeServiceProviderAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
+		$query = array(
+			'_id' => new MongoId($serviceProvider_mongoId),
+		);
+		Billrun_Factory::db()->serviceprovidersCollection()->remove($query);
+		$this->responseSuccess(array("status" => true));
 		return false;
 	}
 
