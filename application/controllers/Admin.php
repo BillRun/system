@@ -1908,5 +1908,49 @@ class AdminController extends Yaf_Controller_Abstract {
 		$response->response();
 		return false;
 	}
+	
+	public function getRatesWithSameMccAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$mcc = $this->getRequest()->get('mcc');
+		$key = $this->getRequest()->get('key');
+		$query = array(
+			'key' => array('$ne' => $key),
+			'params.mcc' => array('$in' => array($mcc)),
+			'from' => array('$lte' => new MongoDate()),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSameMcc = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSameMcc, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSameMcc));
+		$response->response();
+		return false;
+	}
+	
+	public function getRatesWithSameMscAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$msc = $this->getRequest()->get('msc');
+		$key = $this->getRequest()->get('key');
+		$query = array(
+			'key' => array('$ne' => $key),
+			'params.msc' => array('$in' => array($msc)),
+			'from' => array('$lte' => new MongoDate()),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSameMsc = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSameMsc, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSameMsc));
+		$response->response();
+		return false;
+	}
 
 }

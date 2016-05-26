@@ -50,6 +50,13 @@
 	</div>
 
 	<div class="form-group row">
+		<label for="mcc" class="col-sm-4 control-label text-right">MCC</label>
+		<div class="col-sm-6">
+			<input type="text" name="mcc" value='<?php echo $mcc ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
 		<label for="scenario" class="col-sm-4 text-right">Scenario</label>
 		<div class="col-sm-6">
 			<textarea rows="6" name="scenario" class="form-control" ><?php echo $call_scenario ?></textarea>
@@ -68,6 +75,9 @@
 				<option value="1" selected>National</option>
 				<option value="2">International</option>
 				<option value="3">Video</option>
+				<option value="10">Roaming incoming</option>
+				<option value="11">Roaming call to Israel</option>
+				<option value="12">Roaming call abroad</option>
 			</select>
 		</div>
 	</div>

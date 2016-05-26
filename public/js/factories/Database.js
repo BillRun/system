@@ -82,6 +82,16 @@ app.factory('Database', ['$http', function ($http) {
 				params = {};
 			return $http.get(baseUrl + '/admin/getRatesWithSamePrefix', {params: params});
 		}
+		function getRatesWithSameMcc(params) {
+			if (params === undefined)
+				params = {};
+			return $http.get(baseUrl + '/admin/getRatesWithSameMcc', {params: params});
+		}
+		function getRatesWithSameMsc(params) {
+			if (params === undefined)
+				params = {};
+			return $http.get(baseUrl + '/admin/getRatesWithSameMsc', {params: params});
+		}
 
 		return {
 			getEntity: getEntity,
@@ -98,6 +108,8 @@ app.factory('Database', ['$http', function ($http) {
 			getBandwidthCapDetails: getBandwidthCapDetails,
 			saveBandwidthCap: saveBandwidthCap,
 			removeBandwidthCap: removeBandwidthCap,
-			getRatesWithSamePrefix: getRatesWithSamePrefix
+			getRatesWithSamePrefix: getRatesWithSamePrefix,
+			getRatesWithSameMcc: getRatesWithSameMcc,
+			getRatesWithSameMsc: getRatesWithSameMsc
 		};
 	}]);

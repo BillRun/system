@@ -54,7 +54,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$query[4]['$match']['params_prefix']['$in'] = $prefixes;
 		}
 		return;
-		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
+		if (!in_array($row['usaget'], array_merge(Billrun_Util::getCallTypes(), array('sms', 'mms')))) {
 			return;
 		}
 		$current_time = date('His');
@@ -721,5 +721,4 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}
-
 }
