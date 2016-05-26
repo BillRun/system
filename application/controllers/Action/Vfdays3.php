@@ -125,7 +125,7 @@ class Vfdays3Action extends Action_Base {
 		);
 		
 		MongoCursor::$timeout = -1;
-		$res = Billrun_Factory::db()->linesCollection()->getMongoCollection()->aggregateCursor($elements, array('allowDiskUse' => TRUE, 'maxTimeMS' => 10*60*1000))->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->timeout(-1);
+		$res = Billrun_Factory::db()->linesCollection()->getMongoCollection()->aggregateCursor($elements, array('allowDiskUse' => TRUE, 'maxTimeMS' => 30*60*1000))->setReadPreference(MongoClient::RP_SECONDARY_PREFERRED)->timeout(-1);
 		$it = iterator_to_array($res);
 		return $it;
 	}
