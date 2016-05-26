@@ -95,11 +95,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_incoming_call':
 					ret = $scope.addRoamingIncomingCallRate();
 					break;
-				case 'roaming_call_israel':
-					ret = $scope.addRoamingCallIsraelRate();
-					break;
-				case 'roaming_call_abroad':
-					ret = $scope.addRoamingCallAbroadRate();
+				case 'roaming_call':
+					ret = $scope.addRoamingCallRate();
 					break;
 				case 'sms':
 					ret = $scope.addSMSRate();
@@ -122,11 +119,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_incoming_call':
 					ret = $scope.deleteRoamingIncomingCallRate(rateName);
 					break;
-				case 'roaming_call_israel':
-					ret = $scope.deleteRoamingCallIsraelRate(rateName);
-					break;
-				case 'roaming_call_abroad':
-					ret = $scope.deleteRoamingCallAbroadRate(rateName);
+				case 'roaming_call':
+					ret = $scope.deleteRoamingCallRate(rateName);
 					break;
 				case 'sms':
 					ret = $scope.deleteSMSRate(rateName);
@@ -227,11 +221,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				delete $scope.entity.rates.roaming_incoming_call[rateName];
 		};
 		
-		$scope.addRoamingCallIsraelRate = function () {
-			if (!$scope.newRate.roaming_call_israel || !$scope.newRate.roaming_call_israel.name)
+		$scope.addRoamingCallRate = function () {
+			if (!$scope.newRate.roaming_call || !$scope.newRate.roaming_call.name)
 				return;
-			if ($scope.entity.rates.roaming_call_israel === undefined)
-				$scope.entity.rates.roaming_call_israel = {};
+			if ($scope.entity.rates.roaming_call === undefined)
+				$scope.entity.rates.roaming_call = {};
 			var newPriceInterval = {
 				access: 0,
 				interconnect: '',
@@ -244,47 +238,17 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 					}
 				]
 			};
-			$scope.entity.rates.roaming_call_israel[$scope.newRate.roaming_call_israel.name] = newPriceInterval;
-			$scope.shown.roaming_call_israelRates[$scope.newRate.roaming_call_israel.name] = true;
-			$scope.newRate.roaming_call_israel = {name: undefined};
+			$scope.entity.rates.roaming_call[$scope.newRate.roaming_call.name] = newPriceInterval;
+			$scope.shown.roaming_callRates[$scope.newRate.roaming_call.name] = true;
+			$scope.newRate.roaming_call= {name: undefined};
 		};
 
-		$scope.deleteRoamingCallIsraelRate = function (rateName) {
+		$scope.deleteRoamingCalldRate = function (rateName) {
 			if (!rateName)
 				return;
 			var r = confirm("Are you sure you want to remove " + rateName + "?");
 			if (r)
-				delete $scope.entity.rates.roaming_call_israel[rateName];
-		};
-		
-		$scope.addRoamingCallAbroadRate = function () {
-			if (!$scope.newRate.roaming_call_abroad || !$scope.newRate.roaming_call_abroad.name)
-				return;
-			if ($scope.entity.rates.roaming_call_abroad === undefined)
-				$scope.entity.rates.roaming_call_abroad = {};
-			var newPriceInterval = {
-				access: 0,
-				interconnect: '',
-				unit: $scope.availableCallUnits[0],
-				rate: [
-					{
-						interval: undefined,
-						price: undefined,
-						to: undefined
-					}
-				]
-			};
-			$scope.entity.rates.roaming_call_abroad[$scope.newRate.roaming_call_abroad.name] = newPriceInterval;
-			$scope.shown.roaming_call_abroadRates[$scope.newRate.roaming_call_abroad.name] = true;
-			$scope.newRate.roaming_call_abroad = {name: undefined};
-		};
-
-		$scope.deleteRoamingCallAbroadRate = function (rateName) {
-			if (!rateName)
-				return;
-			var r = confirm("Are you sure you want to remove " + rateName + "?");
-			if (r)
-				delete $scope.entity.rates.roaming_call_abroad[rateName];
+				delete $scope.entity.rates.roaming_call[rateName];
 		};
 
 		$scope.addDataRate = function () {
@@ -422,11 +386,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_incoming_call':
 					ret = $scope.roamingIncomingCallPlanExists(plan);
 					break;
-				case 'roaming_call_israel':
-					ret = $scope.roamingCallIsraelPlanExists(plan);
-					break;
-				case 'roaming_call_abroad':
-					ret = $scope.roamingCallAbroadPlanExists(plan);
+				case 'roaming_call':
+					ret = $scope.roamingCallPlanExists(plan);
 					break;
 				case 'sms':
 					ret = $scope.smsPlanExists(plan);
@@ -458,16 +419,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			}
 			return false;
 		};
-		$scope.roamingCallIsraelPlanExists = function (plan) {
+		$scope.roamingCallPlanExists = function (plan) {
 			if (plan && $scope.entity && $scope.entity.rates
-					&& $scope.entity.rates.roaming_call_israel && $scope.entity.rates.roaming_call_israel[plan]) {
-				return true;
-			}
-			return false;
-		};
-		$scope.roamingCallAbroadPlanExists = function (plan) {
-			if (plan && $scope.entity && $scope.entity.rates
-					&& $scope.entity.rates.roaming_call_abroad && $scope.entity.rates.roaming_call_abroad[plan]) {
+					&& $scope.entity.rates.roaming_call && $scope.entity.rates.roaming_call[plan]) {
 				return true;
 			}
 			return false;
