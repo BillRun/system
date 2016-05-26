@@ -721,4 +721,37 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}
+
+	/**
+	 * method to extend realtime data
+	 * 
+	 * @param array $event event information
+	 * @param string $usaget the usage type
+	 * 
+	 * @return void
+	 */
+	public function realtimeAfterSetEventData(&$event, &$usaget) {
+		if (in_array($usaget, Billrun_Util::getCallTypes()) || $usaget === 'forward_call') {
+			if (!isset($event['called_number'])) {
+				if (isset($event['dialed_digits'])) {
+					$event['called_number'] = $event['dialed_digits'];
+				} else if (isset($event['connected_number'])) {
+					$event['called_number'] = $event['connected_number'];
+				}
+			}
+
+			if (stripos($usaget, 'roaming') === FALSE && !empty($event['called_number']) && strlen($event['called_number']) > 3 && substr($event['called_number'], 0, 3) == '972') {
+				$called_number = $event['called_number'];
+				if (substr($event['called_number'], 0, 4) == '9721') {
+					$prefix = '';
+				} else {
+					$prefix = '0';
+				}
+				$event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number) + 3);
+			} else if ($event['call_type'] == '11') {
+				$event['called_number'] = Billrun_Util::msisdn($event['called_number']); // this will add 972
+			}
+		}
+	}
+	
 }

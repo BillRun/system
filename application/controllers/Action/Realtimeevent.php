@@ -104,32 +104,10 @@ class RealtimeeventAction extends ApiAction {
 			$this->event['sgsn_address'] = $this->getSgsn($this->event);
 		}
 		
-		// some hack for PL (@TODO - move to plugin)
 		if (isset($this->event['call_type'])) {
 			$callTypesConf = Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array());
 			$this->usaget = (isset($callTypesConf[$this->event['call_type']]) ? $callTypesConf[$this->event['call_type']] : 'call');
 		}
-		
-		if (in_array($this->usaget, Billrun_Util::getCallTypes()) || $this->usaget === 'forward_call') {
-			if (!isset($this->event['called_number'])) {
-				if (isset($this->event['dialed_digits'])) {
-					$this->event['called_number'] = $this->event['dialed_digits'];
-				} else if (isset($this->event['connected_number'])) {
-					$this->event['called_number'] = $this->event['connected_number'];
-				}
-			}
-
-			if (!empty($this->event['called_number']) && strlen($this->event['called_number']) > 3 && substr($this->event['called_number'], 0, 3) == '972') {
-				$called_number = $this->event['called_number'];
-				if (substr($this->event['called_number'], 0, 4) == '9721') {
-					$prefix = '';
-				} else {
-					$prefix = '0';
-				}
-				$this->event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number) + 3);
-			}
-		}
-
 
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		if (isset($this->event['time_date'])) {
@@ -139,10 +117,8 @@ class RealtimeeventAction extends ApiAction {
 			$this->event['urt'] = new MongoDate();
 		}
 
-		if (in_array($this->usaget, array('sms', 'mms', 'service'))) {
-			$this->event['reverse_charge'] = $this->isReverseCharge($this->event);
-			$this->event['transaction_id'] = $this->getTransactionId($this->event);
-		}
+		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
+
 	}
 
 	protected function getSgsn($event) {
@@ -266,27 +242,6 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function isPretend($event) {
 		return (in_array($this->usaget, Billrun_Util::getCallTypes()) && $event['record_type'] === 'start_call');
-	}
-
-	/**
-	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
-	 * 
-	 * @return boolean
-	 */
-	protected function isReverseCharge($event) {
-		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
-	}
-
-	/**
-	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
-	 * 
-	 * @return boolean
-	 */
-	protected function getTransactionId($event) {
-		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
-			return $event['transaction_id'];
-		}
-		return Billrun_Util::generateRandomNum(18);
 	}
 
 }

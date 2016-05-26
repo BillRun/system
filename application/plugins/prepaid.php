@@ -429,5 +429,41 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$charges['total'] = 0;
 		}
 	}
+	
+	/**
+	 * method to extend realtime data
+	 * 
+	 * @param array $event event information
+	 * @param string $usaget the usage type
+	 * 
+	 * @return void
+	 */
+	public function realtimeAfterSetEventData(&$event, &$usaget) {
+		if (in_array($usaget, array('sms', 'mms', 'service'))) {
+			$event['reverse_charge'] = $this->isReverseCharge($event);
+			$event['transaction_id'] = $this->getTransactionId($event);
+		}
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function isReverseCharge($event) {
+		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
+	}
+
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function getTransactionId($event) {
+		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
+			return $event['transaction_id'];
+		}
+		return Billrun_Util::generateRandomNum(18);
+	}
 
 }
