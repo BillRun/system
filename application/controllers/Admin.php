@@ -431,6 +431,18 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->responseSuccess(array("data" => $allCaps, "status" => true));
 		return false;
 	}
+	
+	public function removeServiceProviderAction() {
+		if (!$this->allowed('write'))
+			return false;
+		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
+		$query = array(
+			'_id' => new MongoId($serviceProvider_mongoId),
+		);
+		Billrun_Factory::db()->serviceprovidersCollection()->remove($query);
+		$this->responseSuccess(array("status" => true));
+		return false;
+	}
 
 	public function getCollectionItemsAction() {
 		if (!$this->allowed('read'))

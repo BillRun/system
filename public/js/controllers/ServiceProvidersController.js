@@ -68,4 +68,14 @@ function ServiceProvidersController(Database, $uibModal) {
 			vm.serviceProviders = res.data;
 		});
 	};
+	
+	vm.removeServiceProvider = function (serviceProvider) {
+		var serviceProvider_name = serviceProvider.name;
+		var r = confirm("Are you sure you want to remove '" + serviceProvider_name + "' ?");
+		if (r) {
+			Database.removeServiceProvider({mongo_id: serviceProvider._id}).then(function (res) {
+				vm.init();
+			});
+		}
+	};
 }

@@ -55,6 +55,9 @@
             <th>
                 ID
             </th>
+			<th>
+				
+			</th>
         </thead>
         <tbody>
             <tr ng-repeat='service_provider in vm.serviceProviders track by $index'>
@@ -70,6 +73,9 @@
                 <td>
                     {{vm.serviceProviders[$index].id}}
                 </td>
+				<td>
+					<i class="glyphicon glyphicon-trash" ng-click="vm.removeServiceProvider(vm.serviceProviders[$index])"></i>
+				</td>
             </tr>
         </tbody>
     </table>

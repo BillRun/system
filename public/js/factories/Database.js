@@ -77,6 +77,9 @@ app.factory('Database', ['$http', function ($http) {
 		function removeBandwidthCap(params) {
 			return $http.post(baseUrl + '/admin/removeBandwidthCap', params);
 		}
+		function removeServiceProvider(params) {
+			return $http.post(baseUrl + '/admin/removeServiceProvider', params);
+		}
 		function getRatesWithSamePrefix(params) {
 			if (params === undefined)
 				params = {};
@@ -98,6 +101,7 @@ app.factory('Database', ['$http', function ($http) {
 			getBandwidthCapDetails: getBandwidthCapDetails,
 			saveBandwidthCap: saveBandwidthCap,
 			removeBandwidthCap: removeBandwidthCap,
+			removeServiceProvider: removeServiceProvider,
 			getRatesWithSamePrefix: getRatesWithSamePrefix
 		};
 	}]);
