@@ -28,7 +28,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('localTimeStamp wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-		} else if ($row['type'] == 'nrtrde') {
+		} else if ($row['type'] == 'nrtrde' || $row['type'] == 'ggsn') {
 			if (isset($row['callEventStartTimeStamp'])) {
 				$this->line_type = $row['type'];
 				$this->line_time = $row['callEventStartTimeStamp'];
@@ -68,7 +68,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$dayKey = $line_year . $line_month . $line_day;
 		if($this->line_type == 'tap3') {
 			$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected, $dayKey);
-		} else if ($this->line_type == 'nrtrde') {
+		} else if ($this->line_type == 'nrtrde' || $this->line_type == 'ggsn') {
 			$results = $this->loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected, $dayKey);
 		}
 		if (!isset($this->cached_results[$sid]) || !in_array($dayKey, $this->cached_results[$sid])) {
@@ -142,7 +142,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
-				'type' => 'nrtrde',
+				'type' => array(
+					'$in' => array('nrtrde', 'ggsn')
+				),
 				'plan' => $plan->getData()->get('name'),
 				'callEventStartTimeStamp' => array(
 					'$gte' => $from,
