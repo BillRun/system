@@ -384,7 +384,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$outgoing = in_array($line['record_type'], array('01', '11'));
 		}
 		if ($line['type'] == 'smsc') {
-			$outgoing = in_array($line['record_type'], array('2'));
+			$outgoing = in_array($line['record_type'], array('2')) || ($line['org_protocol'] == '0' && $line['record_type'] == '4');
 		}
 		return $outgoing;
 	}
