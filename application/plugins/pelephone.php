@@ -51,7 +51,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->isInterconnect($row)) {
 			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row['called_number']));
 			$query[0]['$match']['params.prefix']['$in'] = $prefixes;
-			$query[3]['$match']['params_prefix']['$in'] = $prefixes;
+			$query[4]['$match']['params_prefix']['$in'] = $prefixes;
 		}
 		return;
 		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {

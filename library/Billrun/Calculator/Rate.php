@@ -247,9 +247,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function setRowDataForQuery($row) {
 		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
 		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$countryCodeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.country_code_field', 'location_mcc');
+		$countryCode = $row->get($countryCodeField);
+		if (!$countryCode) {
+			$countryCode = Billrun_Factory::config()->getConfigValue('rate.default_mcc', 425);
+		}
+		$countryCode = substr($countryCode, 0, 3);
 		$this->rowDataForQuery = array(
 			'line_time' => $row->get($timeField),
 			'called_number' => $row->get($calledNumberField),
+			'country_code' => $countryCode,
 		);
 	}
 
@@ -308,7 +315,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-
+		
 		return $query;
 	}
 
@@ -364,6 +371,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return preg_replace('/^(' . implode('|', array_map('preg_quote', $configurationTrimPrefixes)) . ')/', '', $number);
 		}
 		return $number;
+	}
+	
+	protected function getCountryCodeMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}
 
 }

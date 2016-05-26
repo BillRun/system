@@ -40,8 +40,24 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 		return 'data';
 	}
 
+	/**
+	 * return the data rate key
+	 * @return string
+	 * @deprecated since version 4.3
+	 */
 	protected function getDataRateKey() {
 		return 'INTERNET_BILL_BY_VOLUME';
+	}
+	
+	protected function getExistsQuery() {
+		return array('$exists' => 1);
+	}
+	
+	protected function getAggregateId() {
+		return array(
+			"_id" => '$_id',
+			"mcc" => '$params.mcc'
+		);
 	}
 
 }

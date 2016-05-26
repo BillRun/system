@@ -79,7 +79,9 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',
-			"pref" => '$params.prefix');
+			"pref" => '$params.prefix',
+			"mcc" => '$params.mcc'
+		);
 	}
 
 	protected function getRatesExistsQuery() {
