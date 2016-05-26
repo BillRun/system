@@ -478,16 +478,17 @@ class TableModel {
 	}
 
 	public function duplicate($params) {
-		$key = $params[$this->search_key];
+		// This already done from the controller
+//		$key = $params[$this->search_key];
 
-		if ($key) {
-			$count = $this->collection
-				->query($this->search_key, $key)
-				->count();
-			if ($count) {
-				return $this->setError("key already exists");
-			}
-		}
+//		if ($key) {
+//			$count = $this->collection
+//				->query($this->search_key, $key)
+//				->count();
+//			if ($count) {
+//				return $this->setError("key already exists");
+//			}
+//		}
 		if (isset($params['_id']->{'id'})) {
 			$params['source_id'] = (string) $params['_id']->{'$id'};
 		} else if (isset($params['_id'])) {
