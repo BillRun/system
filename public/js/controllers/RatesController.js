@@ -67,6 +67,72 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				}
 			});
 		};
+		
+		$scope.addMcc = function () {
+			if ($scope.entity.params.mcc === undefined)
+				$scope.entity.params.mcc = [];
+			$scope.entity.params.mcc.push('');
+		};
+
+		$scope.deleteMcc = function (mccIndex) {
+			if (mccIndex === undefined)
+				return;
+			var r = confirm("Are you sure you want to remove mcc " + $scope.entity.params.mcc[mccIndex]);
+			if (r)
+				$scope.entity.params.mcc.splice(mccIndex, 1);
+		};
+
+		$scope.isMccExists = function (mccIndex) {
+			if (mccIndex === undefined)
+				return;
+			var mcc = $scope.entity.params.mcc[mccIndex];
+			_.forEach($scope.entity.params.mcc, function (_mcc, _index) {
+				if (_index !== mccIndex && mcc === _mcc) {
+					alert("Mcc '" + mcc + "' already exists in this rate");
+					return;
+				}
+			});
+			var key = $scope.entity.key;
+			Database.getRatesWithSameMcc({mcc: mcc, key: key}).then(function (res) {
+				var rates = res.data;
+				if (rates.length) {
+					alert("Mcc '" + mcc + "' already exists in the following rate\/s: " + rates);
+				}
+			});
+		};
+		
+		$scope.addMsc = function () {
+			if ($scope.entity.params.msc === undefined)
+				$scope.entity.params.msc = [];
+			$scope.entity.params.msc.push('');
+		};
+
+		$scope.deleteMsc = function (mscIndex) {
+			if (mscIndex === undefined)
+				return;
+			var r = confirm("Are you sure you want to remove msc " + $scope.entity.params.msc[mscIndex]);
+			if (r)
+				$scope.entity.params.msc.splice(mscIndex, 1);
+		};
+
+		$scope.isMscExists = function (mscIndex) {
+			if (mscIndex === undefined)
+				return;
+			var msc = $scope.entity.params.msc[mscIndex];
+			_.forEach($scope.entity.params.msc, function (_msc, _index) {
+				if (_index !== mscIndex && msc === _msc) {
+					alert("Msc '" + msc + "' already exists in this rate");
+					return;
+				}
+			});
+			var key = $scope.entity.key;
+			Database.getRatesWithSameMsc({msc: msc, key: key}).then(function (res) {
+				var rates = res.data;
+				if (rates.length) {
+					alert("Msc '" + msc + "' already exists in the following rate\/s: " + rates);
+				}
+			});
+		};
 
 		$scope.addRecordType = function () {
 			if (!$scope.newRecordType || !$scope.newRecordType.value)
@@ -517,6 +583,8 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.init = function () {
 			$rootScope.spinner++;
 			$scope.shown = {prefix: false,
+				mcc: false,
+				msc: false,
 				callRates: [],
 				smsRates: [],
 				dataRates: []

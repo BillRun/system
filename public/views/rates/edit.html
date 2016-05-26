@@ -106,6 +106,36 @@
 					<a ng-click="addPrefix()" class="clickable">Add Prefix</a>
 				</div>
 			</div>
+			
+			<h3>
+				<small><i ng-click="shown.mcc = !shown.mcc" class="glyphicon glyphicon-chevron-down" ng-show="shown.mcc"></i></small>
+				<small><i ng-click="shown.mcc = !shown.mcc" class="glyphicon glyphicon-chevron-right" ng-hide="shown.mcc"></i></small>
+				<span ng-click="shown.mcc = !shown.mcc" class="clickable">MCC</span>
+			</h3>
+			<div id='rate-mcc' ng-if="shown.mcc">
+				<div ng-repeat="mcc in entity.params.mcc track by $index">
+					<input type="text" class="form-control" ng-model="entity.params.mcc[$index]" ng-blur="isMccExists($index)" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteMcc($index)'></i>
+				</div>
+				<div>
+					<a ng-click="addMcc()" class="clickable">Add MCC</a>
+				</div>
+			</div>
+
+			<h3>
+				<small><i ng-click="shown.msc = !shown.msc" class="glyphicon glyphicon-chevron-down" ng-show="shown.msc"></i></small>
+				<small><i ng-click="shown.msc = !shown.msc" class="glyphicon glyphicon-chevron-right" ng-hide="shown.msc"></i></small>
+				<span ng-click="shown.msc = !shown.msc" class="clickable">MSC</span>
+			</h3>
+			<div id='rate-mcc' ng-if="shown.msc">
+				<div ng-repeat="msc in entity.params.msc track by $index">
+					<input type="text" class="form-control" ng-model="entity.params.msc[$index]" ng-blur="isMscExists($index)" />
+					<i class='glyphicon glyphicon-minus-sign' ng-click='deleteMsc($index)'></i>
+				</div>
+				<div>
+					<a ng-click="addMsc()" class="clickable">Add MSC</a>
+				</div>
+			</div>
 
 			<hr/>
 
