@@ -52,12 +52,17 @@ class Vfdays3Action extends Action_Base {
 	public function count_days_by_lines($min_days = 35, $max_datetime = null) {
 		$from = strtotime('January 1st');
 
+//		$elements[] = array(
+//			'$match' => array(
+//				'$or' => array(
+//					array('subscriber_id' => 531464),
+//					array('sid' => 531464),
+//				),
+//			)
+//		);
+		
 		$elements[] = array(
 			'$match' => array(
-//				'$or' => array(
-//					array('subscriber_id' => 410049),
-//					array('sid' => 410049),
-//				),
 //				'unified_record_time' => array(
 //					'$gte' => new MongoDate($from),
 //				),
@@ -71,7 +76,7 @@ class Vfdays3Action extends Action_Base {
 			),
 		);
 		if ($max_datetime) {
-			$elements[0]['$match']['callEventStartTimeStamp']['$lte'] = date('YmdHis', strtotime($max_datetime));
+			$elements[count($elements)-1]['$match']['callEventStartTimeStamp']['$lte'] = date('YmdHis', strtotime($max_datetime));
 		}
 		$elements[] = array(
 			'$group' => array(

@@ -58,13 +58,18 @@ class Vfdays2Action extends Action_Base {
 		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
 		$end = strtotime('midnight', $unix_datetime);
 		$elements = array();
-		$elements[] = array(
-			'$match' => array(
+//		$elements[] = array(
+//			'$match' => array(
 //				'$or' => array(
 //					array('subscriber_id' => 410049),
 //					array('sid' => 410049),
 //				),
-////				'unified_record_time' => array(
+//			),
+//		);
+
+		$elements[] = array(
+			'$match' => array(
+//				'unified_record_time' => array(
 //					'$gte' => new MongoDate($start),
 //					'$lte' => new MongoDate($end),
 //				),
