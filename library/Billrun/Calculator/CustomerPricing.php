@@ -254,7 +254,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!empty($interconnect_arate_key)) {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
-			
+
 			if ($rate['params']['interconnect']) {
 				$row['interconnect_arate_key'] = $rate['key'];
 			}
