@@ -1,5 +1,5 @@
 <input type='text' ng-model='model[field]'  class='form-control span2' ng-if='type === "text"' />
-<input type='number' ng-model='model[field]'  class='form-control span2' ng-if='type === "number"' />
+<input type='number' disable-arrows ng-model='model[field]'  class='form-control span2' ng-if='type === "number"' />
 <input type='checkbox' ng-model='model[field]'  class='form-control span2' ng-if='type === "boolean"' />
 <select ng-model='model[field]' class='form-control span2' multiple='multiple' ng-if='type === "multiselect"'>
 	<option ng-repeat='(name, value) in fields[field].values' value='{{value}}'>{{name}}</option>
