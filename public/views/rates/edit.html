@@ -137,19 +137,19 @@
 										<i class='glyphicon glyphicon-trash' ng-click="deleteRate(type, rateName)"></i>&nbsp;&nbsp;{{rateName}}
 									</div>
 									<div class='td' style='width: 85px;' ng-class='{double: entity.rates[type][rateName].rate.length > 1}'>
-										<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].access' style='width: 75px;' />
+										<input type='number' disable-arrows step="any" class='form-control' ng-model='entity.rates[type][rateName].access' style='width: 75px;' />
 									</div>
 								</div>
 								<div class='inner-table'>
 									<div class='tr' ng-repeat='interval_price in entity.rates[type][rateName].rate track by $index'>
 										<div class='td' style='width: 100px;'>
-											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].interval' style='width: 81px;'/>
+											<input type='number' disable-arrows step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].interval' style='width: 81px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
-											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 120px;'/>
+											<input type='number' disable-arrows step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].price' style='width: 120px;'/>
 										</div>
 										<div class='td' style='width: 130px;'>
-											<input type='number' step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].to' style='width: 120px;'/>
+											<input type='number' disable-arrows step="any" class='form-control' ng-model='entity.rates[type][rateName].rate[$index].to' style='width: 120px;'/>
 										</div>
 									</div>
 								</div>
