@@ -80,7 +80,7 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		return array(
 			"_id" => '$_id',
 			"pref" => '$params.prefix',
-			"mcc" => '$params.mcc'
+			"msc" => '$params.msc'
 		);
 	}
 
