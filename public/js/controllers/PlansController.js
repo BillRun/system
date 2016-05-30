@@ -222,12 +222,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.newThresholdNotification.id = null;
 		};
 		
-		$scope.initPPIncludes = function () {
-			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
-				$scope.pp_includes = res.data.ppincludes;
-			});
-		};
-		
 		$scope.getPPIncludesIndex = function (pp_include_name, pp_include_external_id) {
 				var index = -1;
 				angular.forEach($scope.pp_includes, function(pp_include, _index) {
@@ -263,98 +257,100 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.advancedMode = false;
 			$scope.action = $routeParams.action;
 			$rootScope.spinner++;
-			$scope.initPPIncludes();
-			Database.getEntity(params).then(function (res) {
-				if ($routeParams.action !== "new") {
-					$scope.entity = res.data.entity;
-					if ($scope.entity.type === "charging") {
-						_.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
-							if (_.isUndefined($scope.entity.include[usaget]))
-								return;
-							if ($scope.entity.include[usaget].length) {
-								_.forEach($scope.entity.include[usaget], function (usage, i) {
-									if (usage.period.unit === "month")
-										$scope.entity.include[usaget][i].period.unit = "months";
-								});
-								$rootScope.spinner--;
-								return;
+			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+				$scope.pp_includes = res.data.ppincludes;
+				Database.getEntity(params).then(function (res) {
+					if ($routeParams.action !== "new") {
+						$scope.entity = res.data.entity;
+						if ($scope.entity.type === "charging") {
+							_.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
+								if (_.isUndefined($scope.entity.include[usaget]))
+									return;
+								if ($scope.entity.include[usaget].length) {
+									_.forEach($scope.entity.include[usaget], function (usage, i) {
+										if (usage.period.unit === "month")
+											$scope.entity.include[usaget][i].period.unit = "months";
+									});
+									$rootScope.spinner--;
+									return;
+								}
+								if ($scope.entity.include[usaget].period.unit === "month")
+									$scope.entity.include[usaget].period.unit = "months";
+							});
+						} else if ($scope.entity.type === "customer") {
+							if ($scope.entity.data_from_currency) {
+								if (_.isUndefined($scope.entity.max_currency)) {
+									$scope.entity.max_currency = {
+										cost: res.data.default_max_currency.cost,
+										period: res.data.default_max_currency.period
+									};
+								} else {
+									if (_.isUndefined($scope.entity.max_currency.cost))
+										$scope.entity.max_currency.cost = res.data.default_max_currency.cost;
+									if (_.isUndefined($scope.entity.max_currency.period))
+										$scope.entity.max_currency.period = res.data.deafult_max_currency.period;
+								}
 							}
-							if ($scope.entity.include[usaget].period.unit === "month")
-								$scope.entity.include[usaget].period.unit = "months";
-						});
-					} else if ($scope.entity.type === "customer") {
-						if ($scope.entity.data_from_currency) {
-							if (_.isUndefined($scope.entity.max_currency)) {
-								$scope.entity.max_currency = {
-									cost: res.data.default_max_currency.cost,
-									period: res.data.default_max_currency.period
-								};
-							} else {
-								if (_.isUndefined($scope.entity.max_currency.cost))
-									$scope.entity.max_currency.cost = res.data.default_max_currency.cost;
-								if (_.isUndefined($scope.entity.max_currency.period))
-									$scope.entity.max_currency.period = res.data.deafult_max_currency.period;
-							}
-						}
-						$scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
-								function (acc, dr) {
-									acc.push({name: dr, ticked: true});
-									return acc;
-								}, []);
-						Database.getAvailableRates().then(function (res) {
-							$scope.availableRates = _.reduce(res.data,
-									function (acc, rd) {
-										acc.push({name: rd,
-											ticked: _.includes($scope.entity.disallowed_rates, rd) ?
-													true :
-													false
-										});
+							$scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
+									function (acc, dr) {
+										acc.push({name: dr, ticked: true});
 										return acc;
 									}, []);
-						});
-						$timeout(function () {
-							$rootScope.spinner--;
-						}, 0);
+							Database.getAvailableRates().then(function (res) {
+								$scope.availableRates = _.reduce(res.data,
+										function (acc, rd) {
+											acc.push({name: rd,
+												ticked: _.includes($scope.entity.disallowed_rates, rd) ?
+														true :
+														false
+											});
+											return acc;
+										}, []);
+							});
+							$timeout(function () {
+								$rootScope.spinner--;
+							}, 0);
+						}
+						if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
+							$scope.entity.include = {};
+						if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
+							$scope.entity.pp_threshold = {};
+					} else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
+						$scope.entity = {
+							"name": "",
+							"external_id": "",
+							"service_provider": "",
+							"desc": "",
+							"type": "charging",
+							"operation": "inc",
+							"charging_type": [],
+							"from": new Date(),
+							"to": new Date(),
+							"include": {},
+							"priority": "0"
+						};
+						if ($routeParams.type === "recurring") {
+							$scope.entity.recurring = 1;
+						}
+					} else if ($routeParams.type === "customer") {
+						$scope.entity = {
+							"name": "",
+							"from": new Date(),
+							"to": new Date(),
+							"type": "customer",
+							"external_id": "",
+							"external_code": "",
+							"disallowed_rates": []
+						};
 					}
-					if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
-						$scope.entity.include = {};
-					if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
-						$scope.entity.pp_threshold = {};
-				} else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
-					$scope.entity = {
-						"name": "",
-						"external_id": "",
-						"service_provider": "",
-						"desc": "",
-						"type": "charging",
-						"operation": "inc",
-						"charging_type": [],
-						"from": new Date(),
-						"to": new Date(),
-						"include": {},
-						"priority": "0"
-					};
-					if ($routeParams.type === "recurring") {
-						$scope.entity.recurring = 1;
-					}
-				} else if ($routeParams.type === "customer") {
-					$scope.entity = {
-						"name": "",
-						"from": new Date(),
-						"to": new Date(),
-						"type": "customer",
-						"external_id": "",
-						"external_code": "",
-						"disallowed_rates": []
-					};
-				}
-				$scope.plan_rates = res.data.plan_rates;
-				$scope.authorized_write = res.data.authorized_write;
-				$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
-				angular.element('title').text("BillRun - " + $scope.title);
-				$rootScope.spinner--;
-			}, function (err) {
-				alert("Connection error!");
+					$scope.plan_rates = res.data.plan_rates;
+					$scope.authorized_write = res.data.authorized_write;
+					$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
+					angular.element('title').text("BillRun - " + $scope.title);
+					$rootScope.spinner--;
+				}, function (err) {
+					alert("Connection error!");
+				});
 			});
 
 			$scope.availableCostUnits = ['days', 'months'];
