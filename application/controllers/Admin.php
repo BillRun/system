@@ -440,6 +440,10 @@ class AdminController extends Yaf_Controller_Abstract {
 				array('id' => $data['id']),
 			)
 		);
+		$query = array_merge(Billrun_Util::getDateBoundQuery(), $query);
+		if (!empty($id = $data['_id'])) {
+			$query['_id'] =  array('$ne' => new MongoId($id));
+		}
 		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
 		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
 		return false;
