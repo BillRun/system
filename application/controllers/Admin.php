@@ -416,7 +416,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function saveServiceProviderAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$data = $this->getRequest()->get('data');
 		unset($data['_id']);
@@ -450,7 +450,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function removeBandwidthCapAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$cap_name = $this->getRequest()->get('cap_name');
 		$configColl = Billrun_Factory::db()->configCollection();
@@ -468,7 +468,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function removeServiceProviderAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
