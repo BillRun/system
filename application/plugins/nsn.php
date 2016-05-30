@@ -246,7 +246,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			if (isset($data['called_number'])) {
 				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()) && substr($data['called_number'], 0, 2) == "10") {
 					$data['called_number'] = substr($data['called_number'], 2);
-				} else if (in_array($data['record_type'], array('30')) && ($data['out_circuit_group'] >= '2100' && $data['out_circuit_group'] <= '2500') &&
+				} else if (in_array($data['record_type'], array('30')) && (in_array($data['out_circuit_group'], Billrun_Util::getIldsOneWayCircuitGroups())) &&  
                                           (preg_match('/^GNTV|^GBZQ|^GBZI|^GSML|^GHOT/', $data['in_circuit_group_name']))) {
                                                 $data['ild_prefix'] = substr($data['in_circuit_group_name'], 0, 4);
                                                 if (preg_match($this->ild_called_number_regex, $data['called_number'])){
