@@ -164,6 +164,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_call':
 					ret = $scope.addRoamingCallRate();
 					break;
+				case 'roaming_callback':
+					ret = $scope.addRoamingCallbackRate();
+					break;
 				case 'sms':
 					ret = $scope.addSMSRate();
 					break;
@@ -187,6 +190,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 					break;
 				case 'roaming_call':
 					ret = $scope.deleteRoamingCallRate(rateName);
+					break;
+				case 'roaming_callback':
+					ret = $scope.deleteRoamingCallbackRate(rateName);
 					break;
 				case 'sms':
 					ret = $scope.deleteSMSRate(rateName);
@@ -309,12 +315,42 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			$scope.newRate.roaming_call= {name: undefined};
 		};
 
-		$scope.deleteRoamingCalldRate = function (rateName) {
+		$scope.addRoamingCallbackRate = function () {
+			if (!$scope.newRate.roaming_callback || !$scope.newRate.roaming_callback.name)
+				return;
+			if ($scope.entity.rates.roaming_callback === undefined)
+				$scope.entity.rates.roaming_callback = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.roaming_callback[$scope.newRate.roaming_callback.name] = newPriceInterval;
+			$scope.shown.roaming_callbackRates[$scope.newRate.roaming_callback.name] = true;
+			$scope.newRate.roaming_callback= {name: undefined};
+		};
+
+		$scope.deleteRoamingCallRate = function (rateName) {
 			if (!rateName)
 				return;
 			var r = confirm("Are you sure you want to remove " + rateName + "?");
 			if (r)
 				delete $scope.entity.rates.roaming_call[rateName];
+		};
+		
+		$scope.deleteRoamingCallbackRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.roaming_callback[rateName];
 		};
 
 		$scope.addDataRate = function () {
@@ -455,6 +491,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_call':
 					ret = $scope.roamingCallPlanExists(plan);
 					break;
+				case 'roaming_callback':
+					ret = $scope.roamingCallbackPlanExists(plan);
+					break;
 				case 'sms':
 					ret = $scope.smsPlanExists(plan);
 					break;
@@ -488,6 +527,13 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.roamingCallPlanExists = function (plan) {
 			if (plan && $scope.entity && $scope.entity.rates
 					&& $scope.entity.rates.roaming_call && $scope.entity.rates.roaming_call[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.roamingCallbackPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.roaming_callback && $scope.entity.rates.roaming_callback[plan]) {
 				return true;
 			}
 			return false;
