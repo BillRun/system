@@ -233,13 +233,14 @@
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<hr/>
 				<h3>Rates</h3>
-				<div ng-repeat='type in ["calls", "data", "sms", "video_call", "roaming_incoming_call", "roaming_call"]'>
+				<div ng-repeat='type in ["calls", "data", "sms", "video_call", "roaming_incoming_call", "roaming_call", "roaming_callback"]'>
 					<label ng-if="type === 'calls'">Call</label>
 					<label ng-if="type === 'data'">Data</label>
 					<label ng-if="type === 'sms'">SMS</label>
 					<label ng-if="type === 'video_call'">Video Call</label>
 					<label ng-if="type === 'roaming_incoming_call'">Roaming Incoming Call</label>
 					<label ng-if="type === 'roaming_call'">Roaming Call</label>
+					<label ng-if="type === 'roaming_callback'">Roaming Callback</label>
 					<div class='table'>
 						<div class='thead'>
 							<div class='th' style='width: 320px;'>Plan</div>
