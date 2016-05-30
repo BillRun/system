@@ -532,3 +532,8 @@ tr[data-index] a.detail-icon {
 #versionName {
 	width:50%;
 }
+
+.inline-toolbar > #batch_number,
+.inline-toolbar > #serial_number {
+	width:10%;
+}
