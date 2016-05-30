@@ -113,6 +113,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/factories/Database.js');
 		$this->addJs($this->baseUrl . '/js/factories/Utils.js');
 		$this->addJs($this->baseUrl . '/js/directives/inputField.js');
+		$this->addJs($this->baseUrl . '/js/directives/numberField.js');
 		$this->addJs($this->baseUrl . '/js/directives/applyNotifier.js');
 		$this->addJs($this->baseUrl . '/js/directives/errorMessage.js');
 		$this->addJs($this->baseUrl . '/js/controllers/MenuController.js');
