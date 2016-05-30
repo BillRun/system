@@ -533,6 +533,12 @@ tr[data-index] a.detail-icon {
 	width:50%;
 }
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
 .inline-toolbar > #batch_number,
 .inline-toolbar > #serial_number {
 	width:10%;

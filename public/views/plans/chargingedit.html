@@ -49,7 +49,7 @@
 					{{utils.getDisplayValue("recurring", "plans")}}
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.recurring' type='number' class='form-control' />
+					<input ng-model='entity.recurring' type='number' disable-arrows class='form-control' />
 				</div>
 			</div>
 			<div class='row' ng-if='utils.display("charging_type", "plans")'>
@@ -67,7 +67,7 @@
 					{{utils.getDisplayValue("charging_value", "plans")}}
 				</div>
 				<div class='col-md-6'>
-					<input ng-model='entity.charging_value' type='number' class='form-control' />
+					<input ng-model='entity.charging_value' type='number' disable-arrows class='form-control' />
 				</div>
 			</div>
 			<div class='row' ng-if='utils.display("from", "plans")'>
@@ -113,7 +113,7 @@
 						{{utils.getDisplayValue("duration", "plans")}}
 					</div>
 					<div class='col-md-6'>
-						<input type='number' ng-model='entity.period.duration' class='form-control' />
+						<input type='number' disable-arrows ng-model='entity.period.duration' class='form-control' />
 					</div>
 				</div>
 			</div>
@@ -142,7 +142,7 @@
 								Value
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.value' type='number' class='form-control' />
+								<input ng-model='cost.value' type='number' disable-arrows class='form-control' />
 							</div>
 						</div>
 						<div class='row'>
@@ -214,7 +214,7 @@
 									Usagev
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType[$index].usagev' type='number' class='form-control' />
+									<input ng-model='includeType[$index].usagev' type='number' disable-arrows class='form-control' />
 								</div>
 							</div>
 							<div class='row'>
@@ -262,7 +262,7 @@
 										Duration
 									</div>
 									<div class='col-md-6'>
-										<input ng-model='includeType[$index].period.duration' type='number' class='form-control' />
+										<input ng-model='includeType[$index].period.duration' type='number' disable-arrows class='form-control' />
 									</div>
 								</div>
 							</div>
@@ -284,7 +284,7 @@
 									Usagev
 								</div>
 								<div class="col-md-6">
-									<input ng-model='includeType.usagev' type='number' class='form-control' />
+									<input ng-model='includeType.usagev' type='number' disable-arrows class='form-control' />
 								</div>
 							</div>
 							<div class='row'>
@@ -332,7 +332,7 @@
 										Duration
 									</div>
 									<div class='col-md-6'>
-										<input ng-model='includeType.period.duration' type='number' class='form-control' />
+										<input ng-model='includeType.period.duration' type='number' disable-arrows class='form-control' />
 									</div>
 								</div>
 							</div>

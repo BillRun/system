@@ -10,7 +10,7 @@
 					{{utils.getDisplayValue('sid', 'renew')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.sid" type="number" class="form-control" ng-disabled='utils.disabled("sid", "renew")' />
+					<input ng-model="entity.sid" type="number" disable-arrows class="form-control" ng-disabled='utils.disabled("sid", "renew")' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("aid", "renew")'>
@@ -18,7 +18,7 @@
 					{{utils.getDisplayValue('aid', 'renew')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.aid" type="number" class="form-control" ng-disabled='action !== "new"' />
+					<input ng-model="entity.aid" type="number" disable-arrows class="form-control" ng-disabled='action !== "new"' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("plan", "renew")'>
