@@ -91,6 +91,8 @@ class Billrun_Config {
 
 	/**
 	 * method to get the instance of the class (singleton)
+	 * @param type $config
+	 * @return Billrun_Config
 	 */
 	static public function getInstance($config = null) {
 		$stamp = Billrun_Util::generateArrayStamp($config);
@@ -99,6 +101,7 @@ class Billrun_Config {
 				$config = Yaf_Application::app()->getConfig();
 			}
 			self::$instance[$stamp] = new self($config);
+			self::$instance[$stamp]->loadDbConfig();
 		}
 		return self::$instance[$stamp];
 	}

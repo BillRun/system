@@ -160,16 +160,10 @@ class Billrun_Factory {
 	static public function db(array $options = array()) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
 		if (!isset(self::$db[$stamp])) {
-			$mainDb = 0;
 			if (empty($options)) { // get the db settings from config
 				$options = Billrun_Factory::config()->getConfigValue('db');
-				$mainDb = 1;
 			}
-
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
-			if ($mainDb) { // on load main db - load db config
-				Billrun_Factory::config()->loadDbConfig();
-			}
 		}
 
 		return self::$db[$stamp];
