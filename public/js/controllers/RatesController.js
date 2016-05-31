@@ -110,6 +110,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'data':
 					ret = $scope.deleteDataRate(rateName);
 					break;
+                                case 'video_call':
+                                        ret = $scope.deleteVideoCallRate(rateName);
+                                        break;
 			}
 			return ret;
 		};
@@ -202,6 +205,13 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			if (r)
 				delete $scope.entity.rates.sms[rateName];
 		};
+		$scope.deleteVideoCallRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.video_call[rateName];
+		};
 
 		$scope.addCallIntervalPrice = function (rate) {
 			if (rate.rate === undefined)
@@ -264,6 +274,12 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			if (planIndex === undefined)
 				return;
 			$scope.entity.rates.sms.plans.splice(planIndex, 1);
+		};
+
+		$scope.deleteVideoCallPlan = function (planIndex) {
+			if (planIndex === undefined)
+				return;
+			$scope.entity.rates.video_call.plans.splice(planIndex, 1);
 		};
 
 		$scope.planExists = function (type, plan) {
