@@ -74,8 +74,19 @@ app.factory('Database', ['$http', function ($http) {
 		function saveBandwidthCap(params) {
 			return $http.post(baseUrl + '/admin/saveBandwidthCap', params);
 		}
+
+		function saveServiceProvider(params) {
+			return $http.post(baseUrl + '/admin/saveServiceProvider', params);
+		}
+
+		function alreadyExistsServiceProvider(params) {
+			return $http.post(baseUrl + '/admin/alreadyExistsServiceProvider', params);
+		}
 		function removeBandwidthCap(params) {
 			return $http.post(baseUrl + '/admin/removeBandwidthCap', params);
+		}
+		function removeServiceProvider(params) {
+			return $http.post(baseUrl + '/admin/removeServiceProvider', params);
 		}
 		function getRatesWithSamePrefix(params) {
 			if (params === undefined)
@@ -97,7 +108,10 @@ app.factory('Database', ['$http', function ($http) {
 			getSubscriberDetails: getSubscriberDetails,
 			getBandwidthCapDetails: getBandwidthCapDetails,
 			saveBandwidthCap: saveBandwidthCap,
+			saveServiceProvider: saveServiceProvider,
+			alreadyExistsServiceProvider: alreadyExistsServiceProvider,
 			removeBandwidthCap: removeBandwidthCap,
+			removeServiceProvider: removeServiceProvider,
 			getRatesWithSamePrefix: getRatesWithSamePrefix
 		};
 	}]);
