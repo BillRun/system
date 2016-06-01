@@ -98,7 +98,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		if (isset($additionalParams['dataSlownessRequest']) && 
 			filter_var($additionalParams['dataSlownessRequest'], FILTER_VALIDATE_BOOLEAN)) {
 			$enterDataSlowness = filter_var($additionalParams['enterDataSlowness'], FILTER_VALIDATE_BOOLEAN);
-			$sid = intal($additionalParams['sid']);
+			$sid = intval($additionalParams['sid']);
 			// Update subscriber in DB
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
