@@ -36,7 +36,7 @@ class PlansModel extends TabledateModel {
 
 	public function getSortFields() {
 		$sort_fields = array(
-			'name' => 'Name',
+			'name' => 'Plan',
 			'price' => 'Price',
 			'service_provider' => 'Service Provider'
 		);
