@@ -47,39 +47,29 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			return 'views/plans/' + type + 'edit.html';
 		};
 
-		$scope.removeIncludeType = function (include_type_name, index) {
-			var r = confirm("Are you sure you want to remove " + include_type_name + " rate?");
+		$scope.removeIncludeType = function (index) {
+			var r = confirm("Are you sure you want to remove " + $scope.displayData.includeTypes[index].type + " rate?");
 			if (!r)
 				return;
-			if (index > -1)
-				$scope.entity.include[include_type_name].splice(index, 1);
-			else
-				delete $scope.entity.include[include_type_name];
+			$scope.displayData.includeTypes.splice(index, 1);
 		};
 		$scope.removeIncludeCost = function (index) {
 			$scope.entity.include.cost.splice(index, 1);
 		};
 
 		$scope.addIncludeType = function () {
-			var include_type = $scope.newIncludeType.type;
 			var new_include_type = {
 				cost: undefined,
 				usagev: undefined,
 				pp_includes_name: "",
 				pp_includes_external_id: "",
+				type: "",
 				period: {
 					duration: undefined,
 					unit: ""
 				}
 			};
-			if (_.isUndefined($scope.entity.include[include_type])) {
-				$scope.entity.include[include_type] = [new_include_type];
-			} else if (_.isArray($scope.entity.include[include_type])) {
-				$scope.entity.include[include_type].push(new_include_type);
-			} else {
-				$scope.entity.include[include_type] = [$scope.entity.include[include_type], new_include_type];
-			}
-			$scope.newIncludeType.type = '';
+			$scope.displayData.includeTypes.push(new_include_type);
 		};
 
 		$scope.includeTypeExists = function (include_type) {
@@ -101,11 +91,35 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				}
 			});
 		};
+		
+		$scope.initDurationValue = function(includeType) {
+			if (!_.isEmpty(includeType.period.duration)) {
+				return;
+			}
+			if (includeType.pp_include.name === 'CORE BALANCE') {
+				includeType.period.duration = 'UNLIMITED';
+			} else {
+				includeType.period.duration = '';
+			}
+		};
 
 		$scope.save = function (redirect) {
 			$scope.err = {};
-			if (_.isEmpty($scope.entity.include))
+			if (_.isEmpty($scope.displayData.includeTypes)) {
 				delete $scope.entity.include;
+			} else {
+				$scope.entity.include = {};
+				_.forEach($scope.displayData.includeTypes, function(includeType) {
+					var include_type = includeType.type;
+					if (_.isUndefined($scope.entity.include[include_type])) {
+						$scope.entity.include[include_type] = includeType;
+					} else if (_.isArray($scope.entity.include[include_type])) {
+						$scope.entity.include[include_type].push(includeType);
+					} else {
+						$scope.entity.include[include_type] = [$scope.entity.include[include_type], includeType];
+					}
+				});
+			}
 			if ($scope.entity.type === "customer" && $scope.disallowed_rates) {
 				if (_.isUndefined($scope.entity.disallowed_rates))
 					$scope.entity.disallowed_rates = [];
@@ -245,6 +259,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			includeType.pp_includes_external_id = includeType.pp_include.external_id;
 			delete(includeType.cost);
 			delete(includeType.usagev);
+			delete(includeType.value);
+			includeType.period.duration = '';
+			includeType.type = (includeType.pp_include.charging_by_usaget !== 'total_cost' ? includeType.pp_include.charging_by_usaget : 'cost')
 		};
 
 		$scope.init = function () {
@@ -256,6 +273,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			};
 			$scope.advancedMode = false;
 			$scope.action = $routeParams.action;
+			$scope.displayData = {
+				includeTypes: []
+			};
 			$rootScope.spinner++;
 			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
 				$scope.pp_includes = res.data.ppincludes;
@@ -266,13 +286,23 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							_.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
 								if (_.isUndefined($scope.entity.include[usaget]))
 									return;
-								if ($scope.entity.include[usaget].length) {
+								if (_.isArray($scope.entity.include[usaget])) {
 									_.forEach($scope.entity.include[usaget], function (usage, i) {
-										if (usage.period.unit === "month")
+										if (usage.period.unit === "month") {
 											$scope.entity.include[usaget][i].period.unit = "months";
+										}
+										usage.type = usaget;
+										$scope.displayData.includeTypes.push(usage);
 									});
 									$rootScope.spinner--;
 									return;
+								} else {
+									var usage = $scope.entity.include[usaget];
+									if (usage.period.unit === "month") {
+											$scope.entity.include[usaget][i].period.unit = "months";
+										}
+										usage.type = usaget;
+										$scope.displayData.includeTypes.push(usage);
 								}
 								if ($scope.entity.include[usaget].period.unit === "month")
 									$scope.entity.include[usaget].period.unit = "months";
