@@ -1643,6 +1643,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		// TODO: Change this switch case to OOP classes.
 		$returnValue = '';
 		switch ($option) {
+			case 'text':
+				$returnValue = $inputValue;
+				break;
 			case 'number':
 				$returnValue = floatval($inputValue);
 				break;
