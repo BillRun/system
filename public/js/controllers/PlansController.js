@@ -349,7 +349,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							"operation": "inc",
 							"charging_type": [],
 							"from": new Date(),
-							"to": new Date(),
+							"to": new Date("2099-12-31"),
 							"include": {},
 							"priority": "0"
 						};
@@ -360,7 +360,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 						$scope.entity = {
 							"name": "",
 							"from": new Date(),
-							"to": new Date(),
+							"to": new Date("2099-12-31"),
 							"type": "customer",
 							"external_id": "",
 							"external_code": "",
