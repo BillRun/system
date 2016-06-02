@@ -91,17 +91,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				}
 			});
 		};
-		
-		$scope.initDurationValue = function(includeType) {
-			if (!_.isEmpty(includeType.period.duration)) {
-				return;
-			}
-			if (includeType.pp_include.name === 'CORE BALANCE') {
-				includeType.period.duration = 'UNLIMITED';
-			} else {
-				includeType.period.duration = '';
-			}
-		};
 
 		$scope.save = function (redirect) {
 			$scope.err = {};
@@ -262,6 +251,11 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			delete(includeType.value);
 			includeType.period.duration = '';
 			includeType.type = (includeType.pp_include.charging_by_usaget !== 'total_cost' ? includeType.pp_include.charging_by_usaget : 'cost')
+			if (includeType.pp_include.name === 'CORE BALANCE') {
+				includeType.period.duration = 'UNLIMITED';
+			} else {
+				includeType.period.duration = '';
+			}
 		};
 
 		$scope.init = function () {
