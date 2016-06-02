@@ -10,7 +10,7 @@
  * class for mongo less than operator translator.
  *
  */
-class Admin_MongoOperatorTranslators_LessThanEquals extends Admin_MongoOperatorTranslators_Translator {
+class Admin_MongoOperatorTranslators_LessThanEqual extends Admin_MongoOperatorTranslators_Translator {
 
 	/**
 	 * Return the mongo operator string.
