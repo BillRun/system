@@ -55,7 +55,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 			return false;
 		}
 		if ((($row['record_type'] == 4) && ($row['org_protocol'] != 0)) || (($row['org_protocol'] == 0) && ($row['record_type'] != 4))){
-			Billrun_Factory::log()->log($row['record_type'] .' and' . $row['org_protocol'] .' is Illegal combination of values for record_type and org_protocol fields, line: ' . $line['stamp'] , Zend_Log::ALERT);
+			Billrun_Factory::log()->log($row['record_type'] .' and' . $row['org_protocol'] .' is Illegal combination of values for record_type and org_protocol fields, line: ' . $row['stamp'] , Zend_Log::ALERT);
 			return false;
 		}	
 		if (!in_array($row['org_protocol'], ['0','1','3'])){
