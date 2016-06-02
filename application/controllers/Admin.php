@@ -1644,6 +1644,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$returnValue = '';
 		switch ($option) {
 			case 'text':
+			case 'dbref':
 				$returnValue = $inputValue;
 				break;
 			case 'number':
@@ -1719,10 +1720,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $inputOperator - Operator for the filter.
 	 * @return pair - Operator as key and value as value.
 	 */
-	protected function setManualFilterForDbref($inputValue, $inputOperator) {
-		$collection = Billrun_Factory::db()->{$advancedOptions[$key]['collection'] . "Collection"}();
+	protected function setManualFilterForDbref($inputValue, $inputOperator, $advancedOptionsKey) {
+		$collection = Billrun_Factory::db()->{$advancedOptionsKey['collection'] . "Collection"}();
 		$pre_query = null;
-		$pre_query[$advancedOptions[$key]['collection_key']][$operator] = $inputValue;
+		$pre_query[$advancedOptionsKey['collection_key']][$inputOperator] = $inputValue;
 		$cursor = $collection->query($pre_query);
 		$value = array();
 		foreach ($cursor as $entity) {
@@ -1752,7 +1753,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		// Handle a db ref option.
 		if ($advancedOptions[$key]['type'] == 'dbref') {
-			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
+			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator, $advancedOptions[$key]));
 		}
 
 		$query[$key][$operator] = $value;
