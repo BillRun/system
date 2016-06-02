@@ -49,7 +49,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if ($this->isInterconnect($row)) {
-			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row['called_number']));
+			$numberField = $this->getNumberField($row);
+			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row[$numberField]));
 			$query[0]['$match']['params.prefix']['$in'] = $prefixes;
 			$query[4]['$match']['params_prefix']['$in'] = $prefixes;
 		}
@@ -740,18 +741,27 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 
-			if (stripos($usaget, 'roaming') === FALSE && !empty($event['called_number']) && strlen($event['called_number']) > 3 && substr($event['called_number'], 0, 3) == '972') {
-				$called_number = $event['called_number'];
-				if (substr($event['called_number'], 0, 4) == '9721') {
+			$numberField = $this->getNumberField($event);
+			if (stripos($usaget, 'roaming') === FALSE && !empty($event[$numberField]) && strlen($event[$numberField]) > 3 && substr($event[$numberField], 0, 3) == '972') {
+				$number = $event[$numberField];
+				if (substr($number, 0, 4) == '9721') {
 					$prefix = '';
 				} else {
 					$prefix = '0';
 				}
-				$event['called_number'] = $prefix . substr($called_number, (-1) * strlen($called_number) + 3);
+				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
 			} else if ($event['call_type'] == '11') {
-				$event['called_number'] = Billrun_Util::msisdn($event['called_number']); // this will add 972
+				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
 			}
 		}
 	}
 	
+	protected function getNumberField($row) {
+		return ($this->isIncomingCall($row) ? 'calling_number' : 'called_number');
+	}
+	
+	protected function isIncomingCall($row) {
+		return in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
+	}
+
 }
