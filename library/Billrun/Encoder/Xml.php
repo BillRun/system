@@ -1,12 +1,25 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+/**
+ * Xml Encoder
+ *
+ * @package  Application
+ * @subpackage Plugins
+ * @since    4.0
+ */
 class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
+
+	/**
+	 * xmlwriter object that helps to generate xml output
+	 * @var XmlWriter
+	 */
+	protected $xmlWriter;
 
 	public function encode($elem, $params = array()) {
 		$addHeader = !isset($params['addHeader']) || $params['addHeader'];
@@ -25,25 +38,33 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 		if ($addHeader) {
 			header("Content-Type:text/xml");
 		}
-		return '<?xml version="1.0" encoding="UTF-8"?>' . "<" . $root . ">" . $this->getXMLBody($array) . "</" . $root . ">";
+		$this->xmlWriter = new XMLWriter();
+		$this->xmlWriter->openMemory();
+		$this->xmlWriter->startDocument('1.0', 'UTF-8');
+		$this->xmlWriter->startElement($root);
+		$this->getXMLBody($array);
+		$this->xmlWriter->endElement();
+		$this->xmlWriter->endDocument();
+		return $this->xmlWriter->outputMemory(true);
 	}
 
 	/**
 	 * Assistance function to get inner nodes of the xml body
 	 * 
-	 * @param type $value
+	 * @param xmlwriter $value
+	 * @param array $value
 	 * @return string
 	 */
-	protected function getXMLBody($value) {
-		if (!is_array($value)) {
-			return $value;
+	protected function getXMLBody($data) {
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$this->xmlWriter->startElement($key);
+				$this->getXMLBody($this->xmlWriter, $value);
+				$this->xmlWriter->endElement();
+				continue;
+			}
+			$this->xmlWriter->writeElement($key, $value);
 		}
-
-		$ret = '';
-		foreach ($value as $key => $val) {
-			$ret .= '<' . $key . '>' . $this->getXMLBody($val) . '</' . $key . '>';
-		}
-		return $ret;
 	}
 
 }

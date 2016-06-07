@@ -488,7 +488,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		for ($i = 0; $i < $numOfTries; $i++) {
 			Billrun_Factory::log('Sending request to prov, try number ' . ($i + 1) . '. Details: ' . $request, Zend_Log::DEBUG);
-			$response = Billrun_Util::sendRequest($requestUrl, htmlentities($request));
+			$response = Billrun_Util::sendRequest($requestUrl, $request);
 			if ($response) {
 				array_push($saveData['response'], 'attempt ' . ($i + 1) . ': ' . $response);
 				Billrun_Factory::log('Got response from prov. Details: ' . $response, Zend_Log::DEBUG);
