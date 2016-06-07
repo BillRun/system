@@ -1,11 +1,18 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+/**
+ * Xml Encoder
+ *
+ * @package  Application
+ * @subpackage Plugins
+ * @since    4.0
+ */
 class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 
 	/**
