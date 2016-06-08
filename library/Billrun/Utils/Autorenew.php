@@ -20,7 +20,13 @@ class Billrun_Utils_Autorenew {
 		}
 		$from_dom = (int) date('d', $from);
 		$current_dom = (int) date('d', $relative_datetime);
-		if ($current_dom < $from_dom && $from_dom <= date('t', $relative_datetime)) { // check if we have the next renew date in the current month in the next following days
+		$current_num_of_days = date('t', $relative_datetime);
+		
+		if ($from_dom > $current_num_of_days) {
+			$from_dom = $current_num_of_days;
+		}
+		
+		if ($current_dom < $from_dom && $from_dom <= $current_num_of_days) { // check if we have the next renew date in the current month in the next following days
 			 $ret_ts = strtotime(date('Y-m-' . self::pad_date_part($from_dom)));
 		} else {
 			$first_day_of_next_month = strtotime('tomorrow', strtotime('last day of this month', $relative_datetime));
