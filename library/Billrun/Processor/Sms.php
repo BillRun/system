@@ -97,7 +97,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 								$row['usaget'] = 'sms';
 		}	
 			}
-			if (isset($row[$this->structConfig['config']['calling_number_field']]) && !preg_match('/^00*$/', $row[$this->structConfig['config']['calling_number_field']])) { 
+			if (isset($row[$this->structConfig['config']['calling_number_field']]) && !preg_match('/^00*$/', $row[$this->structConfig['config']['calling_number_field']]) && preg_match('/^[0-9]*$/', $row[$this->structConfig['config']['calling_number_field']])) { 
 				$row[$this->structConfig['config']['calling_number_field']] = Billrun_Util::msisdn($row[$this->structConfig['config']['calling_number_field']]);
 			}
 			if (isset($row[$this->structConfig['config']['called_number_field']])) {
