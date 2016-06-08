@@ -49,12 +49,13 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
 		if ($this->isInterconnect($row)) {
-			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row['called_number']));
+			$numberField = $this->getNumberField($row);
+			$prefixes = Billrun_Util::getPrefixes($row['np_code'] . $calculator->getCleanNumber($row[$numberField]));
 			$query[0]['$match']['params.prefix']['$in'] = $prefixes;
-			$query[3]['$match']['params_prefix']['$in'] = $prefixes;
+			$query[4]['$match']['params_prefix']['$in'] = $prefixes;
 		}
 		return;
-		if (!in_array($row['usaget'], array('call', 'video_call', 'sms', 'mms'))) {
+		if (!in_array($row['usaget'], array_merge(Billrun_Util::getCallTypes(), array('sms', 'mms')))) {
 			return;
 		}
 		$current_time = date('His');
@@ -720,6 +721,47 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			in_array($balance['pp_includes_external_id'], array(5, 8))) { // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
+	}
+
+	/**
+	 * method to extend realtime data
+	 * 
+	 * @param array $event event information
+	 * @param string $usaget the usage type
+	 * 
+	 * @return void
+	 */
+	public function realtimeAfterSetEventData(&$event, &$usaget) {
+		if (in_array($usaget, Billrun_Util::getCallTypes()) || $usaget === 'forward_call') {
+			if (!isset($event['called_number'])) {
+				if (isset($event['dialed_digits'])) {
+					$event['called_number'] = $event['dialed_digits'];
+				} else if (isset($event['connected_number'])) {
+					$event['called_number'] = $event['connected_number'];
+				}
+			}
+
+			$numberField = $this->getNumberField($event);
+			if (stripos($usaget, 'roaming') === FALSE && !empty($event[$numberField]) && strlen($event[$numberField]) > 3 && substr($event[$numberField], 0, 3) == '972') {
+				$number = $event[$numberField];
+				if (substr($number, 0, 4) == '9721') {
+					$prefix = '';
+				} else {
+					$prefix = '0';
+				}
+				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
+			} else if ($event['call_type'] == '11') {
+				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+			}
+		}
+	}
+	
+	protected function getNumberField($row) {
+		return ($this->isIncomingCall($row) ? 'calling_number' : 'called_number');
+	}
+	
+	protected function isIncomingCall($row) {
+		return in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
 	}
 
 }

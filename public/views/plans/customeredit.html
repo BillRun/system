@@ -72,7 +72,7 @@
 						{{utils.getDisplayValue("cost", "plans")}}
 					</div>
 					<div class='col-md-6'>
-						<input type='number' ng-model='entity.max_currency.cost' class='form-control' />
+						<input type='number' disable-arrows ng-model='entity.max_currency.cost' class='form-control' />
 					</div>
 				</div>
 			</div>
@@ -90,7 +90,7 @@
 					{{balanceName(pp)}}
 				</div>
 				<div class='col-md-6'>
-					<input type='number' step="any" class='form-control' ng-model='entity.pp_threshold[pp]' />
+					<input type='number' disable-arrows step="any" class='form-control' ng-model='entity.pp_threshold[pp]' />
 				</div>
 			</div>
 
@@ -128,7 +128,7 @@
 					</thead>
 					<tbody>
 						<tr ng-repeat='notification in notifications track by $index'>
-							<td><input type='number' ng-model='entity.notifications_threshold[id][$index].value' class='form-control' /></td>
+							<td><input type='number' disable-arrows ng-model='entity.notifications_threshold[id][$index].value' class='form-control' /></td>
 							<td><input type='text' ng-model='entity.notifications_threshold[id][$index].type' class='form-control' /></td>
 							<td><textarea ng-model='entity.notifications_threshold[id][$index].msg' class='form-control' style='width:584px; height: 73px;'></textarea></td>
 						</tr>
@@ -233,11 +233,14 @@
 			<div ng-if='!_.isEmpty(plan_rates)'>
 				<hr/>
 				<h3>Rates</h3>
-				<div ng-repeat='type in ["calls", "data", "sms", "video_call"]'>
+				<div ng-repeat='type in ["calls", "data", "sms", "video_call", "roaming_incoming_call", "roaming_call", "roaming_callback"]'>
 					<label ng-if="type === 'calls'">Call</label>
 					<label ng-if="type === 'data'">Data</label>
 					<label ng-if="type === 'sms'">SMS</label>
 					<label ng-if="type === 'video_call'">Video Call</label>
+					<label ng-if="type === 'roaming_incoming_call'">Roaming Incoming Call</label>
+					<label ng-if="type === 'roaming_call'">Roaming Call</label>
+					<label ng-if="type === 'roaming_callback'">Roaming Callback</label>
 					<div class='table'>
 						<div class='thead'>
 							<div class='th' style='width: 320px;'>Plan</div>

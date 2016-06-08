@@ -113,6 +113,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/factories/Database.js');
 		$this->addJs($this->baseUrl . '/js/factories/Utils.js');
 		$this->addJs($this->baseUrl . '/js/directives/inputField.js');
+		$this->addJs($this->baseUrl . '/js/directives/numberField.js');
 		$this->addJs($this->baseUrl . '/js/directives/applyNotifier.js');
 		$this->addJs($this->baseUrl . '/js/directives/errorMessage.js');
 		$this->addJs($this->baseUrl . '/js/controllers/MenuController.js');
@@ -415,7 +416,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function saveServiceProviderAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$data = $this->getRequest()->get('data');
 		unset($data['_id']);
@@ -439,13 +440,17 @@ class AdminController extends Yaf_Controller_Abstract {
 				array('id' => $data['id']),
 			)
 		);
+		$query = array_merge(Billrun_Util::getDateBoundQuery(), $query);
+		if (!empty($id = $data['_id'])) {
+			$query['_id'] =  array('$ne' => new MongoId($id));
+		}
 		$alreadyExists = Billrun_Factory::db()->serviceprovidersCollection()->query($query)->count() > 0;
 		$this->responseSuccess(array("alreadyExists" => $alreadyExists));
 		return false;
 	}
 
 	public function removeBandwidthCapAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$cap_name = $this->getRequest()->get('cap_name');
 		$configColl = Billrun_Factory::db()->configCollection();
@@ -463,7 +468,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	public function removeServiceProviderAction() {
-		if (!$this->allowed('write'))
+		if (!$this->allowed('admin'))
 			return false;
 		$serviceProvider_mongoId = $this->getRequest()->get('mongo_id');
 		$query = array(
@@ -1642,6 +1647,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		// TODO: Change this switch case to OOP classes.
 		$returnValue = '';
 		switch ($option) {
+			case 'text':
+			case 'dbref':
+				$returnValue = $inputValue;
+				break;
 			case 'number':
 				$returnValue = floatval($inputValue);
 				break;
@@ -1715,10 +1724,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param type $inputOperator - Operator for the filter.
 	 * @return pair - Operator as key and value as value.
 	 */
-	protected function setManualFilterForDbref($inputValue, $inputOperator) {
-		$collection = Billrun_Factory::db()->{$advancedOptions[$key]['collection'] . "Collection"}();
+	protected function setManualFilterForDbref($inputValue, $inputOperator, $advancedOptionsKey) {
+		$collection = Billrun_Factory::db()->{$advancedOptionsKey['collection'] . "Collection"}();
 		$pre_query = null;
-		$pre_query[$advancedOptions[$key]['collection_key']][$operator] = $inputValue;
+		$pre_query[$advancedOptionsKey['collection_key']][$inputOperator] = $inputValue;
 		$cursor = $collection->query($pre_query);
 		$value = array();
 		foreach ($cursor as $entity) {
@@ -1748,7 +1757,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		// Handle a db ref option.
 		if ($advancedOptions[$key]['type'] == 'dbref') {
-			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator));
+			list($operator, $value) = each($this->setManualFilterForDbref($value, $operator, $advancedOptions[$key]));
 		}
 
 		$query[$key][$operator] = $value;
@@ -1947,6 +1956,50 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($ratesWithSamePrefix));
+		$response->response();
+		return false;
+	}
+	
+	public function getRatesWithSameMccAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$mcc = $this->getRequest()->get('mcc');
+		$key = $this->getRequest()->get('key');
+		$query = array(
+			'key' => array('$ne' => $key),
+			'params.mcc' => array('$in' => array($mcc)),
+			'from' => array('$lte' => new MongoDate()),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSameMcc = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSameMcc, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSameMcc));
+		$response->response();
+		return false;
+	}
+	
+	public function getRatesWithSameMscAction() {
+		if (!$this->allowed('read'))
+			return false;
+		$msc = $this->getRequest()->get('msc');
+		$key = $this->getRequest()->get('key');
+		$query = array(
+			'key' => array('$ne' => $key),
+			'params.msc' => array('$in' => array($msc)),
+			'from' => array('$lte' => new MongoDate()),
+			'to' => array('$gte' => new MongoDate()),
+		);
+		$rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
+		$ratesWithSameMsc = array();
+		foreach ($rates as $rate) {
+			array_push($ratesWithSameMsc, $rate['key']);
+		}
+		$response = new Yaf_Response_Http();
+		$response->setBody(json_encode($ratesWithSameMsc));
 		$response->response();
 		return false;
 	}

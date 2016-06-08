@@ -18,7 +18,7 @@ class Billrun_Version {
 	public static $PRODUCT = 'BillRun';
 
 	/** @var  string  Release version. */
-	public static $RELEASE = '4.2';
+	public static $RELEASE = '4.3';
 
 	/** @var  string  Maintenance version. */
 	public static $DEV_LEVEL = '1';

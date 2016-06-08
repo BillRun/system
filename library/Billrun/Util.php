@@ -1309,5 +1309,9 @@ class Billrun_Util {
 
 		return $array;
 	}
+	
+	public static function getCallTypes() {
+		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
+	}
 
 }

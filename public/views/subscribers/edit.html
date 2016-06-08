@@ -11,7 +11,7 @@
 					{{utils.getDisplayValue('sid', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.sid" type="number"  class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
+					<input ng-model="entity.sid" type="number" disable-arrows  class="form-control" ng-disabled='utils.disabled("sid", "subscribers")' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("aid", "subscribers")'>
@@ -19,7 +19,7 @@
 					{{utils.getDisplayValue('aid', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<input ng-model="entity.aid" type="number" class="form-control" ng-disabled='action !== "new"' />
+					<input ng-model="entity.aid" type="number" disable-arrows class="form-control" ng-disabled='action !== "new"' />
 				</div>
 			</div>
 			<div class="row" ng-if='utils.display("msisdn", "subscribers") || action === "new"'>

@@ -138,6 +138,7 @@ class RatesModel extends TabledateModel {
 	public function getSortFields() {
 		$sort_fields = array(
 			'key' => 'Key',
+			'prefix' => 'Prefix',
 		);
 		return array_merge($sort_fields, parent::getSortFields());
 	}
@@ -255,6 +256,52 @@ class RatesModel extends TabledateModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array(), $fields = false) {
+		if ($this->showprefix) {
+			$aggregate = array(
+				array(
+					'$unwind' => '$params.prefix'
+				),
+				array(
+					'$match' => $filter_query
+				),
+				array(
+					'$project' => array(
+						'key' => '$key',
+						'prefix' => '$params.prefix',
+						'from' => '$from',
+						'to' => '$to',
+					),
+				),
+			);
+			if ($this->sort) {
+				$aggregate[] = array(
+					'$sort' => $this->sort,
+				);
+			}
+			// aggregate2 used for checking general count for pagination
+			$aggregate2 = $aggregate;
+			if (($offset = $this->offset())) {
+				$aggregate[] = array(
+					'$skip' => $offset,
+				);
+			}
+
+			if ($this->size) {
+				$aggregate[] = array(
+					'$limit' => $this->size,
+				);
+			}
+
+			$results = $this->collection->aggregate($aggregate);
+			$ret = iterator_to_array($results);
+			if (count($ret) < $this->size && $offset == 0) {
+				$this->_count = count($ret);
+			} else {
+				$results2 = $this->collection->aggregate($aggregate2);
+				$this->_count = count(iterator_to_array($results2));
+			}
+			return $ret;
+		}
 		$cursor = $this->getRates($filter_query);
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
@@ -305,7 +352,7 @@ class RatesModel extends TabledateModel {
 			}
 			/* else if ($this->showprefix && (isset($filter_query['$and'][0]['key']) ||
 			  isset($filter_query['$and'][0]['params.prefix']))
-			  && !empty($item->get('params.prefix'))) { */ else if ($this->showprefix && !empty($item->get('params.prefix'))) {
+			  && !empty($item->get('params.prefix'))) { */ else if ($this->showprefix && !empty($item->get('params.prefix'))) { // deprecated
 				foreach ($item->get('params.prefix') as $prefix) {
 					$item_raw_data = $item->getRawData();
 					unset($item_raw_data['params']['prefix']); // to prevent high memory usage

@@ -29,6 +29,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 	public function doTest() {
 		//Get test params
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$mcc = Billrun_Util::filter_var($this->controller->getRequest()->get('mcc'), FILTER_SANITIZE_STRING);
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
 
@@ -37,6 +38,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			$nameAndUssage = explode("|", $name);
 			$params = array(
 				'imsi' => $imsi,
+				'mcc' => $mcc,
 				'requestNum' => ($index + 1),
 				'type' => $nameAndUssage[0],
 				'sessionId' => $this->controller->getReference(),
@@ -60,6 +62,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 		$usedUnits = (int) $params['usedUnits'];
 		$requestNum = $params['requestNum'];
 		$sessionId = $params['sessionId'];
+		$mcc = $params['mcc'];
 
 		$request = array(
 			//"requestType" => "1",
@@ -82,7 +85,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 					"PdnConnectionId" => "0",
 					"PdpAddress" => "10.161.48.3",
 					"CalledStationId" => "test-sacc.labpelephone.net.il",
-					"MccMnc" => "42503",
+					"MccMnc" => $mcc,
 					"GgsnAddress" => "91.135.99.226",
 					"SgsnAddress" => "91.135.96.3",
 					"ChargingId" => "0",

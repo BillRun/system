@@ -557,6 +557,8 @@ class UtestController extends Yaf_Controller_Abstract {
 		$output['sid'] = $this->conf->getConfigValue('test.sid', '');
 		$output['aid'] = $this->conf->getConfigValue('test.aid', '');
 		$output['dialed_digits'] = $this->conf->getConfigValue('test.dialed_digits', '');
+		$output['mcc'] = $this->conf->getConfigValue('test.mcc', '');
+		$output['msc'] = $this->conf->getConfigValue('test.msc', '');
 		$output['request_method'] = $this->conf->getConfigValue('test.requestType', 'GET');
 		$output['np_codes'] = $this->conf->getConfigValue('test.npCodes', array());
 

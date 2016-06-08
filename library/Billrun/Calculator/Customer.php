@@ -396,6 +396,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if ($line['type'] == 'nsn') {
 			$outgoing = in_array($line['record_type'], array('01', '11'));
 		}
+		if (in_array($line['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()))) {
+			return false;
+		}
 		return $outgoing;
 	}
 
