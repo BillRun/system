@@ -59,7 +59,7 @@ class Billrun_Encoder_Xml extends Billrun_Encoder_Base {
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
 				$this->xmlWriter->startElement($key);
-				$this->getXMLBody($value);
+				$this->getXMLBody($this->xmlWriter, $value);
 				$this->xmlWriter->endElement();
 				continue;
 			}
