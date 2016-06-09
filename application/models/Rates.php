@@ -462,12 +462,10 @@ class RatesModel extends TabledateModel {
 		foreach ($rate['rates'] as $usage_type => $usage_type_rate) {
 			$rule['usage_type'] = $usage_type;
 			$rule['category'] = $usage_type_rate['category'];
+			$rule['access_price'] = isset($usage_type_rate['access']) ? $usage_type_rate['access'] : 0;
 			$rule_counter = 1;
-			foreach ($usage_type_rate as $plan => $rate_plan) {
-                                $rule['plan'] = $plan ;
-                                $rule['interconnect'] = isset($rate_plan['interconnect']) ? $rate_plan['interconnect'] : 'NA' ;
-			        $rule['access_price'] = isset($rate_plan['access']) ? $rate_plan['access'] : 0;
-				foreach ($rate_plan['rate'] as $rate_rule) {
+			foreach ($plans as $plan) {
+				foreach ($usage_type_rate[$plan]['rate'] as $rate_rule) {
 					$rule['rule'] = $rule_counter;
 					$rule['interval'] = $rate_rule['interval'];
 					$rule['price'] = $rate_rule['price'];
@@ -495,9 +493,9 @@ class RatesModel extends TabledateModel {
 	 */
 	public function getPricesListFileHeader($showprefix = false) {
 		if ($showprefix) {
-			return array('key', 'usage_type', 'category', 'plan', 'interconnect', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date', 'prefix');
+			return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date', 'prefix');
 		} else {
-			return array('key', 'usage_type', 'category', 'plan', 'interconnect', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
+			return array('key', 'usage_type', 'category', 'rule', 'access_price', 'interval', 'price', 'times', 'from_date');
 		}
 	}
 
