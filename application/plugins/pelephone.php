@@ -457,7 +457,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'SENDER' => $notificationParams['sender'],
 				'USER_ID' => $notificationParams['userId'],
 				'SOURCE' => $notificationParams['source'],
-				'MSG' => htmlentities($msg),
+				'MSG' => $msg,
 				'TO_PHONE' => Billrun_Util::msisdn($msisdn),
 			)
 		);
