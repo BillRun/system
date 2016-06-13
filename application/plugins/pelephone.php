@@ -511,7 +511,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 	
-	public function updateSubscriberInDB($additionalParams) {
+	protected function updateSubscriberInDB($additionalParams) {
 		if (isset($additionalParams['dataSlownessRequest']) && $additionalParams['dataSlownessRequest']) {
 			$enterDataSlowness = $additionalParams['enterDataSlowness'];
 			$sid = $additionalParams['sid'];
