@@ -230,11 +230,13 @@ class CronController extends Yaf_Controller_Abstract {
 	public function handleSendRequestErrorAction() {
 		// Get all subscribers on data slowness
 		$query = array_merge(Billrun_Util::getDateBoundQuery(), array('in_data_slowness' => true));
-		$subscribersInDataSlowness = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
-		$inDataSlownessSids = array_map(function($doc) {
-			return $doc['sid'];
-		}, iterator_to_array($subscribersInDataSlowness));
-		
+		$project = array('_id' => false, 'sid' => true);
+		$subscribersInDataSlowness = Billrun_Factory::db()->subscribersCollection()->find($query, $project);
+		if ($subscribersInDataSlowness->count() === 0) {
+			return;
+		}
+		$inDataSlownessSids = array_column(iterator_to_array($subscribersInDataSlowness), 'sid');
+
 		// Check if one of the subscriber in data slowness has valid data balance
 		$minUsagev = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.data', Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')));
 		$minCost = abs(Billrun_Factory::config()->getConfigValue('balance.minCost.data', Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')));
@@ -248,13 +250,11 @@ class CronController extends Yaf_Controller_Abstract {
 				),
 			)
 		);
-		$balances = Billrun_Factory::db()->balancesCollection()->query($query)->cursor();
+		$balances = Billrun_Factory::db()->balancesCollection()->find($query, $project);
 		if ($balances->count() === 0) {
 			return;
 		}
-		$sids = array_map(function($doc) {
-			return $doc['sid'];
-		}, iterator_to_array($balances));
+		$sids = array_column(iterator_to_array($balances), 'sid');
 		
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
 	}
