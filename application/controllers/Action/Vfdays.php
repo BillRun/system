@@ -103,7 +103,10 @@ class VfdaysAction extends Action_Base {
 		);
 
 		if (!empty($max_datetime)) {
-			$match2['$match']['callEventStartTimeStamp'] = array('$lte' => date('YmdHis', strtotime($max_datetime)));
+			$match2['$match']['callEventStartTimeStamp'] = array(
+				'$lte' => date('YmdHis', strtotime($max_datetime)),
+				'$gte' => $year,
+			);
 		}
 
 		$group = array(
