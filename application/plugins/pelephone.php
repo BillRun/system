@@ -511,7 +511,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 	
-	protected function updateSubscriberInDB($additionalParams) {
+	public function updateSubscriberInDB($additionalParams) {
 		if (isset($additionalParams['dataSlownessRequest']) && $additionalParams['dataSlownessRequest']) {
 			$enterDataSlowness = $additionalParams['enterDataSlowness'];
 			$sid = $additionalParams['sid'];
@@ -519,9 +519,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
-				$updateQuery = array('$set' => array('in_data_slowness' => true));
+				$updateQuery = array('$set' => array(
+					'in_data_slowness' => true,
+					'data_slowness_enter' => new MongoDate()
+					)
+				);
 			} else {
-				$updateQuery = array('$unset' => array('in_data_slowness' => 1));
+				$updateQuery = array(
+					'$unset' => array('in_data_slowness' => 1),
+					'$set' => array('data_slowness_exit' => new MongoDate()),
+				);
 			}
 			$subscribersColl->update($findQuery, $updateQuery);
 		}
