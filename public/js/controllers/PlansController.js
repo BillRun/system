@@ -121,6 +121,18 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
+			_.forEach($scope.notifications_threshold.on_load, function(on_load_notification, index) {
+				$scope.entity.notifications_threshold.on_load[index].pp_includes = [];
+				_.forEach(on_load_notification, function(pp) {
+					$scope.entity.notifications_threshold.on_load[index].pp_includes.push(parseInt(pp));
+				});
+			});
+			_.forEach($scope.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
+				$scope.entity.notifications_threshold.expiration_date[index].pp_includes = [];
+				_.forEach(expiration_date_notification, function(pp) {
+					$scope.entity.notifications_threshold.expiration_date[index].pp_includes.push(parseInt(pp));
+				});
+			});
 			$scope.removeUnnecessaryData();
 			var params = {
 				entity: $scope.entity,
@@ -152,6 +164,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				return found.name;
 			return _.capitalize(id.replace(/_/, ' '));
 		};
+		
+		$scope.isPPIncludeNotification = function (id) {
+			var found = _.find($scope.ppIncludes, function (bal) {
+				return bal.external_id === parseInt(id, 10);
+			});
+			return found;
+		};
 
 		$scope.getTDHeight = function (rate) {
 			var height = 32;
@@ -172,7 +191,8 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.thresholdExists = function (pp) {
-			return !_.isUndefined($scope.entity.pp_threshold[pp.external_id]);
+			return !_.isUndefined($scope.entity.pp_threshold) &&
+					!_.isUndefined($scope.entity.pp_threshold[pp.external_id]);
 		};
 
 		$scope.addPPIncludeThreshold = function () {
@@ -198,6 +218,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			if (!id)
 				return;
 			var new_notification = {value: 0, type: "", msg: ""};
+			if (!$scope.entity.notifications_threshold[id]) {
+				$scope.entity.notifications_threshold[id] = [];
+			}
 			$scope.entity.notifications_threshold[id].length ?
 					$scope.entity.notifications_threshold[id].push(new_notification) :
 					$scope.entity.notifications_threshold[id] = [new_notification];
@@ -273,6 +296,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$rootScope.spinner++;
 			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
 				$scope.pp_includes = res.data.ppincludes;
+				$scope.notifications_threshold = {on_load: [], expiration_date: []};
 				Database.getEntity(params).then(function (res) {
 					if ($routeParams.action !== "new") {
 						$scope.entity = res.data.entity;
@@ -339,6 +363,22 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							$scope.entity.include = {};
 						if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
 							$scope.entity.pp_threshold = {};
+						
+						_.forEach($scope.entity.notifications_threshold.on_load, function(notification) {
+							var pp_includes = [];
+							_.forEach(notification.pp_includes, function(pp) {
+								pp_includes.push(pp.toString());
+							});
+							$scope.notifications_threshold.on_load.push(pp_includes);
+						});
+						_.forEach($scope.entity.notifications_threshold.expiration_date, function(notification) {
+							var pp_includes = [];
+							_.forEach(notification.pp_includes, function(pp) {
+								pp_includes.push(pp.toString());
+							});
+							$scope.notifications_threshold.expiration_date.push(pp_includes);
+						});
+						
 					} else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
 						$scope.entity = {
 							"name": "",
@@ -407,6 +447,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
 			$scope.newInclude = {type: undefined, value: undefined};
 			$scope.newGroupParam = [];
-			$scope.newGroup = {name: ""};
+			$scope.newGroup = {name: ""};	
 		};
 	}]);
