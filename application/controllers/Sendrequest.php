@@ -71,7 +71,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		for ($i = 0; $i < $numOfTries; $i++) {
 			Billrun_Factory::log('Sending request to prov, try number ' . ($i + 1) . '. Details: ' . $requestBody, Zend_Log::DEBUG);
-			$response = Billrun_Util::sendRequest($requestUrl, htmlentities($requestBody));
+			$response = Billrun_Util::sendRequest($requestUrl, $requestBody);
 			if ($response) {
 				array_push($saveData['response'], 'attempt ' . ($i + 1) . ': ' . $response);
 				Billrun_Factory::log('Got response from prov. Details: ' . $response, Zend_Log::DEBUG);
