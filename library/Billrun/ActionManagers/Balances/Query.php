@@ -49,10 +49,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$rawItem = $line->getRawData();
 				$externalID = $rawItem['pp_includes_external_id'];
 				unset($this->availableBalances[$externalID]);
-				$existingBalances[] = $rawItem;
+				$existingBalances[$externalID] = $rawItem;
 			}
 
-			$returnData = array_merge($existingBalances, array_values($this->availableBalances));
+			$returnData = $existingBalances + $this->availableBalances;
+			ksort($returnData);
 			foreach ($returnData as &$row) {
 				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
@@ -62,7 +63,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			return null;
 		}
 
-		return $returnData;
+		return array_values($returnData);
 	}
 
 	/**
