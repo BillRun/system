@@ -470,7 +470,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 
 		// Check if passing the max.
 		if ($this->isIncrement) {
-			$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+			$coll = Billrun_Factory::db()->balancesCollection();
 			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
 			if (!$balanceBefore->isEmpty()) {
