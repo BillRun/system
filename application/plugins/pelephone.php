@@ -149,7 +149,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
-			'charging_by' => 'total_cost',
+			'pp_includes_external_id' => array(
+				'$in' => array(1, 2, 9, 10), // @TODO change to config values
+			),
 			'urt' => array(
 				'$gte' => new MongoDate($startTime),
 			),
