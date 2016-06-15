@@ -483,7 +483,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'process_time' => new MongoDate(),
 			'request' => $request,
 			'response' => array(),
-			'server_host' => gethostname(),
+			'server_host' => Billrun_Util::getHostName(),
+			'server_pid' => Billrun_Util::getPid(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1, 1000000),
 		);
