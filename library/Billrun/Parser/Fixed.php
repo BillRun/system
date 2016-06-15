@@ -72,4 +72,12 @@ class Billrun_Parser_Fixed extends Billrun_Parser {
 		return $this;
 	}
 
+		/**
+	 * 
+	 * @param resource $fileHandler
+	 */
+	public function setFileHandler($fileHandler) {
+		$this->fileHandler = $fileHandler;
+	}
+	
 }
