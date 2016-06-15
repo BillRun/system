@@ -1202,6 +1202,15 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Return rounded amount for charging
+	 * @param float $amount
+	 * @return float
+	 */
+	public static function getChargableAmount($amount) {
+		return number_format($amount, 2, '.', '');
+	}
+	
+	/**
 	 * Floor a decimal
 	 * @param float $num
 	 * @param float $epsilon positive number
