@@ -258,6 +258,10 @@ class TableModel {
 			$entity['to'] = (new Zend_Date($entity['to']->sec))->getIso();
 		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
 			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
+		if ($entity['data_slowness_enter'] && isset($entity['data_slowness_enter']->sec))
+			$entity['data_slowness_enter'] = (new Zend_Date($entity['data_slowness_enter']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['data_slowness_exit'] && isset($entity['data_slowness_exit']->sec))
+			$entity['data_slowness_exit'] = (new Zend_Date($entity['data_slowness_exit']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
 	}
 
@@ -276,6 +280,10 @@ class TableModel {
 			$entity['to'] = (new Zend_Date($entity['to']->sec))->getIso();
 		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
 			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
+		if ($entity['data_slowness_enter'] && isset($entity['data_slowness_enter']->sec))
+			$entity['data_slowness_enter'] = (new Zend_Date($entity['data_slowness_enter']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['data_slowness_exit'] && isset($entity['data_slowness_exit']->sec))
+			$entity['data_slowness_exit'] = (new Zend_Date($entity['data_slowness_exit']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		return $entity;
 	}
 
