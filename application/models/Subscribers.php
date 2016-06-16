@@ -192,7 +192,7 @@ class SubscribersModel extends TabledateModel {
 	}
 
 	public function getItemByName($id) {
-		$entity = parent::getItem($id);
+		$entity = parent::getItemByName($id);
 		if ($entity['data_slowness_enter'] && isset($entity['data_slowness_enter']->sec))
 			$entity['data_slowness_enter'] = (new Zend_Date($entity['data_slowness_enter']->sec))->toString('dd-MM-YYYY HH:mm:ss');
 		if ($entity['data_slowness_exit'] && isset($entity['data_slowness_exit']->sec))
