@@ -20,13 +20,17 @@ class Billrun_Calculator_Rate_Filters_Base {
 		$this->params = $params;
 	}
 
-	public function updateQuery(&$match, &$group, &$additional, &$sort, $row) {
+	public function updateQuery(&$match, &$additional, &$group, &$additionalAfterGroup, &$sort, $row) {
 		
 		$this->updateMatchQuery($match, $row);
-		$this->updateGroupQuery($group, $row);
 		$a = $this->updateAdditionalQuery($row);
 		if ($a) {
 			$additional[] = $a;
+		}
+		$this->updateGroupQuery($group, $row);
+		$a2 = $this->updateAdditionaAfterGrouplQuery($row);
+		if ($a2) {
+			$additionalAfterGroup[] = $a2;
 		}
 		$this->updateSortQuery($sort, $row);
 	}
@@ -34,10 +38,13 @@ class Billrun_Calculator_Rate_Filters_Base {
 	protected function updateMatchQuery(&$match, $row) {
 	}
 	
+	protected function updateAdditionalQuery($row) {
+	}
+	
 	protected function updateGroupQuery(&$group, $row) {
 	}
 	
-	protected function updateAdditionalQuery($row) {
+	protected function updateAdditionaAfterGrouplQuery($row) {
 	}
 	
 	protected function updateSortQuery(&$sort, $row) {

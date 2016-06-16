@@ -113,7 +113,6 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 */
 	protected function getRateByParams($row) {
 		$query = $this->getRateQuery($row);
-		//$a = print_R(json_encode($query));die;
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
@@ -133,8 +132,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 */
 	protected function getRateQuery($row) {
 		$match = $this->getBasicMatchRateQuery($row);
-		$group = $this->getBasicGroupRateQuery($row);
 		$additional = array();
+		$group = $this->getBasicGroupRateQuery($row);
+		$additionalAfterGroup = array();
 		$sort = $this->getBasicSortRateQuery($row);
 		$filters = $this->getRateCustomFilters();
 		foreach ($filters as $filter) {
@@ -143,18 +143,14 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				Billrun_Factory::log('getRateQuery: cannot find filter hander. Details: ' . print_r($filter, 1));
 				continue;
 			}
-			$handlerClass->updateQuery($match, $group, $additional, $sort, $row);
+			$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
 		}
-		
-		$queryBegin = array(
-			array('$match' => $match),
-			array('$group' => $group)
-		);
-		$queryEnd = array(
-			//'$sort' => $sort,
-			array('$limit' => 1),
-		);
-		return array_merge($queryBegin, $additional, $queryEnd);
+	
+		$sortQuery = array();
+		if (!empty($sort)) {
+			$sortQuery = array(array('$sort' => $sort));
+		}
+		return array_merge(array(array('$match' => $match)), $additional, array(array('$group' => $group)), $additionalAfterGroup, $sortQuery, array(array('$limit' => 1)));
 	}
 	
 	protected function getBasicMatchRateQuery($row) {
@@ -182,7 +178,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return array_merge(
 			Billrun_Factory::config()->getConfigValue(self::$type . '.rate_calculators.' . self::$usaget, array(), 'array'),
 			Billrun_Factory::config()->getConfigValue(self::$type . '.rate_calculators.' . 'BASE', array(), 'array')
-			);
+		);
 	}
 
 }

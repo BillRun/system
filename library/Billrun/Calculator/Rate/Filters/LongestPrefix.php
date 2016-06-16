@@ -15,15 +15,35 @@
 class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_Rate_Filters_Base {
 
 	protected function updateMatchQuery(&$match, $row) {
-	}
-	
-	protected function updateGroupQuery(&$group, $row) {
+		$match = array_merge(
+			$match, 
+			array($this->params['rate_key'] => $this->getPrefixMatchQuery($row[$this->params['line_key']]))
+		);
 	}
 	
 	protected function updateAdditionalQuery($row) {
+		return array('$unwind' => "$" . $this->params['rate_key']);
+	}
+	
+	protected function updateGroupQuery(&$group, $row) {
+		$group['_id'] = array_merge(
+			$group['_id'],
+			array("pref" => "$" . $this->params['rate_key'])
+		);
+		$group[$this->getAggregatedPrefixFieldName()] = array('$first' => "$" . $this->params['rate_key']);
+	}
+	
+	protected function updateAdditionaAfterGrouplQuery($row) {
+		return array('$match' => array($this->getAggregatedPrefixFieldName() => $this->getPrefixMatchQuery($row[$this->params['line_key']])));
+
 	}
 	
 	protected function updateSortQuery(&$sort, $row) {
+		$sort = array_merge($sort, array($this->getAggregatedPrefixFieldName() => -1));
+	}
+	
+	protected function getAggregatedPrefixFieldName() {
+		return 'prefix_field_' . str_replace('.', '_', $this->params['rate_key']);
 	}
 		
 	/**
@@ -31,8 +51,8 @@ class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_R
 	 * 
 	 * @return array query for all prefixes
 	 */
-	protected function getPrefixMatchQuery() {
-		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['called_number']));
+	protected function getPrefixMatchQuery($value) {
+		return array('$in' => Billrun_Util::getPrefixes($value));
 	}
 
 }
