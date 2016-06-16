@@ -798,7 +798,7 @@ class Billrun_Util {
 		}
 		return $query;
 	}
-
+	
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -922,7 +922,16 @@ class Billrun_Util {
 	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
 	 */
 	public static function getHostName() {
-		return function_exists('gethostname') ? gethostname() : false;
+		return function_exists('gethostname') ? @gethostname() : false;
+	}
+	
+	/**
+	 * method to get current operating system process id runnning the PHP
+	 * 
+	 * @return mixed current PHP process ID (int) or false on failure
+	 */
+	public static function getPid() {
+		return function_exists('getmypid') ? @getmypid() : false;
 	}
 
 	/**

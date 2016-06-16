@@ -149,7 +149,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
-			'charging_by' => 'total_cost',
+			'pp_includes_external_id' => array(
+				'$in' => array(1, 2, 9, 10), // @TODO change to config values
+			),
 			'urt' => array(
 				'$gte' => new MongoDate($startTime),
 			),
@@ -228,6 +230,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($subscriber['in_data_slowness']) && $subscriber['in_data_slowness']) {
 				$this->updateSubscriberInDataSlowness($subscriber, false, true);
 			}
+		}
+	}
+
+	public function handleSendRquestErrors($sids) {
+		foreach ($sids as $sid) {
+			$subscriber = $this->getSubscriber($sid);
+			if (!$subscriber) {
+				continue;
+			}
+			$this->updateSubscriberInDataSlowness($subscriber, false, true);
 		}
 	}
 
@@ -481,7 +493,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'process_time' => new MongoDate(),
 			'request' => $request,
 			'response' => array(),
-			'server_host' => gethostname(),
+			'server_host' => Billrun_Util::getHostName(),
+			'server_pid' => Billrun_Util::getPid(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1, 1000000),
 		);
@@ -519,9 +532,16 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
-				$updateQuery = array('$set' => array('in_data_slowness' => true));
+				$updateQuery = array('$set' => array(
+					'in_data_slowness' => true,
+					'data_slowness_enter' => new MongoDate()
+					)
+				);
 			} else {
-				$updateQuery = array('$unset' => array('in_data_slowness' => 1));
+				$updateQuery = array(
+					'$unset' => array('in_data_slowness' => 1),
+					'$set' => array('data_slowness_exit' => new MongoDate()),
+				);
 			}
 			$subscribersColl->update($findQuery, $updateQuery);
 		}

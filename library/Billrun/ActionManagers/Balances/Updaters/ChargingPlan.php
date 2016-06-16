@@ -67,7 +67,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function handleChargingPlan(&$query, &$updateQuery) {
 		// TODO: This function is free similar to the one in ID, should refactor code to be more generic.
-		$chargingPlansCollection = Billrun_Factory::db()->plansCollection();
+		$chargingPlansCollection = Billrun_Factory::db()->plansCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 		$charging_plan_query = $this->getChargingPlanQuery($query);
 
 		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
@@ -381,7 +381,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * @return Mongoldoid_Entity
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
 

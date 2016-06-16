@@ -511,9 +511,9 @@ class RatesModel extends TabledateModel {
 			$rule['category'] = $usage_type_rate['category'];
 			$rule_counter = 1;
 			foreach ($usage_type_rate as $plan => $rate_plan) {
-                                $rule['plan'] = $plan ;
-                                $rule['interconnect'] = isset($rate_plan['interconnect']) ? $rate_plan['interconnect'] : 'NA' ;
-			        $rule['access_price'] = isset($rate_plan['access']) ? $rate_plan['access'] : 0;
+				$rule['plan'] = $plan;
+				$rule['interconnect'] = isset($rate_plan['interconnect']) ? $rate_plan['interconnect'] : 'NA';
+				$rule['access_price'] = isset($rate_plan['access']) ? $rate_plan['access'] : 0;
 				foreach ($rate_plan['rate'] as $rate_rule) {
 					$rule['rule'] = $rule_counter;
 					$rule['interval'] = $rate_rule['interval'];
