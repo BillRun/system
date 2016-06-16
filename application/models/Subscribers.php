@@ -181,5 +181,23 @@ class SubscribersModel extends TabledateModel {
 	public function hasEntityWithOverlappingDates($entity) {
 		return false;
 	}
+	
+	public function getItem($id) {
+		$entity = parent::getItem($id);
+		if ($entity['data_slowness_enter'] && isset($entity['data_slowness_enter']->sec))
+			$entity['data_slowness_enter'] = (new Zend_Date($entity['data_slowness_enter']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['data_slowness_exit'] && isset($entity['data_slowness_exit']->sec))
+			$entity['data_slowness_exit'] = (new Zend_Date($entity['data_slowness_exit']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		return $entity;
+	}
+
+	public function getItemByName($id) {
+		$entity = parent::getItem($id);
+		if ($entity['data_slowness_enter'] && isset($entity['data_slowness_enter']->sec))
+			$entity['data_slowness_enter'] = (new Zend_Date($entity['data_slowness_enter']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		if ($entity['data_slowness_exit'] && isset($entity['data_slowness_exit']->sec))
+			$entity['data_slowness_exit'] = (new Zend_Date($entity['data_slowness_exit']->sec))->toString('dd-MM-YYYY HH:mm:ss');
+		return $entity;
+	}
 
 }
