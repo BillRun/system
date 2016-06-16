@@ -317,7 +317,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 								} else {
 									var usage = $scope.entity.include[usaget];
 									if (usage.period.unit === "month") {
-											$scope.entity.include[usaget][i].period.unit = "months";
+											$scope.entity.include[usaget].period.unit = "months";
 										}
 										usage.type = usaget;
 										$scope.displayData.includeTypes.push(usage);
@@ -364,6 +364,9 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 						if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
 							$scope.entity.pp_threshold = {};
 						
+						if (_.isUndefined($scope.entity.notifications_threshold)) {
+							$scope.entity.notifications_threshold = {};
+						}
 						_.forEach($scope.entity.notifications_threshold.on_load, function(notification) {
 							var pp_includes = [];
 							_.forEach(notification.pp_includes, function(pp) {
