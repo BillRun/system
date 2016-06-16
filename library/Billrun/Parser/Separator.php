@@ -13,7 +13,7 @@
  * @since    0.5
  * @todo should make first derivative parser text and then fixed parser will inherited text parser
  */
-class Billrun_Parser_Separator extends Billrun_Parser {
+class Billrun_Parser_Separator extends Billrun_Parser_Csv {
 
 	/**
 	 * the structure of row
@@ -34,18 +34,9 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 		if (isset($options['separator'])) {
 			$this->setSeparator((string) $options['separator']);
 		}
-	}
-
-	/**
-	 * method to set structure of the parsed file
-	 * 
-	 * @param array $structure the structure of the parsed file
-	 * 
-	 * @return Billrun_Parser_Fixed self instance
-	 */
-	public function setStructure($structure) {
-		$this->structure = $structure;
-		return $this;
+		if (isset($options['structure'])) {
+			$this->setStructure($options['structure']);
+		}
 	}
 
 	/**
@@ -77,37 +68,21 @@ class Billrun_Parser_Separator extends Billrun_Parser {
 	 * 
 	 * @return mixed
 	 */
-	public function parse() {
+	public function parseLine($line) {
 
-		$line = is_array($this->line) ? $this->line : explode($this->separator, rtrim($this->line, "{$this->separator}\t\n\r\0\x0B"));
-		//Billrun_Factory::log(print_r($line,1),Zend_Log::DEBUG);
-		$row = array_combine($this->structure, $line);
-		$row['stamp'] = md5(serialize($line));
-
+		$row = explode($this->separator, rtrim($line, "{$this->separator}\t\n\r\0\x0B"));
+		if (count($this->structure) > count($row)) {
+			Billrun_Factory::log('Incompatible number of fields for line ' . $line, Zend_Log::WARN);
+			$row = array_merge($row, array_fill(0, count($this->structure) - count($row), FALSE));
+		} else if (count($this->structure) < count($row)) {
+			Billrun_Factory::log('Incompatible number of fields for line ' . $line . '. Skipping.', Zend_Log::ALERT);
+			return FALSE;
+		}
+		$row = array_combine($this->structure, $row);
 		if ($this->return == 'array') {
 			return $row;
 		}
 		return (object) $row;
-	}
-
-	/**
-	 * method to receive the line
-	 * 
-	 * @return string the line that parsed
-	 */
-	public function getLine() {
-		return $this->line;
-	}
-
-	/**
-	 * method to set the line of the parser
-	 * 
-	 * @param string $line the line to set to the parser
-	 * @return Object the parser itself (for concatening methods)
-	 */
-	public function setLine($line) {
-		$this->line = $line;
-		return $this;
 	}
 
 }

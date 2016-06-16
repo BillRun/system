@@ -44,7 +44,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunPath($options['workspace']);
 		}
 
 		if (isset($options['path'])) {
@@ -73,7 +73,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
-			Billrun_Factory::log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("Skipping $type. Directory " . $this->srcPath . " not found!", Zend_Log::ERR);
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
@@ -95,7 +95,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			$fileData['path'] = $this->handleFile($path, $file);
 
 			if (!$fileData['path']) {
-				Billrun_Factory::log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
+				Billrun_Factory::log("Couldn't relocate file from $path.", Zend_Log::NOTICE);
 				continue;
 			}
 			if (!empty($this->backupPaths)) {

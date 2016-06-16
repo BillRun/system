@@ -41,7 +41,6 @@ class ProcessAction extends Action_Base {
 
 		$this->_controller->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
-		$this->_controller->addOutput("Processor loaded");
 
 		if (!$processor) {
 			$this->_controller->addOutput("Processor cannot be loaded");
