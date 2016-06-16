@@ -124,29 +124,6 @@ class Billrun_Processor_Csv extends Billrun_Processor {
 		return $row;
 	}
 
-	protected function buildHeader($line) {
-		$this->parser->setStructure($this->header_structure);
-		$this->parser->setLine($line);
-		$header = $this->parser->parse();
-		$header['source'] = self::$type;
-		$header['type'] = static::$type;
-		$header['file'] = basename($this->filePath);
-		$header['process_time'] = date(self::base_dateformat);
-		return $header;
-	}
-
-	protected function buildTrailer($line) {
-		$this->parser->setStructure($this->trailer_structure);
-		$this->parser->setLine($line);
-		$trailer = $this->parser->parse();
-		$trailer['source'] = self::$type;
-		$trailer['type'] = static::$type;
-		$trailer['header_stamp'] = $this->data['header']['stamp'];
-		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_dateformat);
-		return $trailer;
-	}
-
 	protected function getSeparator() {
 		return $this->config["processor.$this->usage_type.separator"];
 	}
@@ -211,6 +188,18 @@ class Billrun_Processor_Csv extends Billrun_Processor {
 			}
 		}
 		return parent::getLineType($line, $length);
+	}
+
+	protected function getLineUsageType($row) {
+		
+	}
+
+	protected function getLineVolume($row) {
+		
+	}
+
+	protected function processLines() {
+		
 	}
 
 }

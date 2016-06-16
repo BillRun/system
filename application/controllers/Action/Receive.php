@@ -38,7 +38,6 @@ class ReceiveAction extends Action_Base {
 
 		$this->getController()->addOutput("Loading receiver");
 		$receiver = Billrun_Receiver::getInstance($options);
-		$this->getController()->addOutput("Receiver loaded");
 
 		if (!$receiver) {
 			$this->getController()->addOutput("Receiver cannot be loaded");

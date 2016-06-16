@@ -39,7 +39,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * parser to processor the file
-	 * @var processor class
+	 * @var Billrun_parser processor class
 	 */
 	protected $parser = null;
 
@@ -109,15 +109,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function __construct($options) {
 
 		parent::__construct($options);
-		$this->usage_type = $this->getType();
-		$this->config = Billrun_Factory::db()->configCollection()->query(array("processor.$this->usage_type"=> array('$exists' => true)))->cursor()->sort(array('processor.process_time' => -1))->limit(1)->current();
-		//$this->config = iterator_to_array($this->config);
 
 		if (isset($options['path'])) {
 			$this->loadFile($options['path']);
 		}
-		if (!is_null($this->config["processor.$this->usage_type.parser"]) && $this->config["processor.$this->usage_type.parser"]){
-			$this->setParser($this->config["processor.$this->usage_type.parser"]);
+		
+		if (isset($options['parser']) && $options['parser'] != 'none') {
+			$this->setParser($options['parser']);
 		}
 
 		if (isset($options['processor']['line_numbers'])) {
@@ -226,7 +224,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
-			if ($this->parse() === FALSE) {
+			if ($this->processLines() === FALSE) {
 				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 				return FALSE;
 			}
@@ -241,7 +239,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 
 			if ($this->logDB() === FALSE) {
-				Billrun_Factory::log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
+				Billrun_Factory::log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
@@ -256,7 +254,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * Parse the current CDR line. 
 	 * @return array conatining the parsed data.  
 	 */
-	abstract protected function parse();
+	abstract protected function processLines();
 
 	/**
 	 * method to log the processing
@@ -592,13 +590,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function prepareQueue() {
 		foreach ($this->data['data'] as $dataRow) {
-			$queueRow = array(
-				'stamp' => $dataRow['stamp'],
-				'type' => $dataRow['type'],
-				'urt' => $dataRow['urt'],
-				'calc_name' => false,
-				'calc_time' => false
-			);
+			$queueRow = $dataRow;
+			$queueRow['calc_name'] = false;
+			$queueRow['calc_time'] = false;
 			$this->setQueueRow($queueRow);
 		}
 	}
@@ -716,7 +710,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * @param $row the line to get  the volume for.
 	 * @param the line usage type
 	 */
-	abstract protected function getLineVolume($row);
+	protected function getLineVolume($row) {
+		
+	}
 
 	/**
 	 * Get the line usage type (SMS/Call/Data/etc..)
@@ -741,7 +737,4 @@ abstract class Billrun_Processor extends Billrun_Base {
 		return $this->data['data'] + $this->doNotSaveLines;
 	}
 
-	public function getConfig() {
-		return $this->config;
-	}
 }
