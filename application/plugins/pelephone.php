@@ -243,7 +243,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function afterUpdateSubscriberAfterBalance($row, $balance, $balanceBefore) {
+	public function afterUpdateSubscriberAfterBalance($row, $balance, $balanceBefore, $balanceAfter) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
 		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceBefore);
 	}
