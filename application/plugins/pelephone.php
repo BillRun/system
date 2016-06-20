@@ -355,6 +355,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
 			return 0;
 		}
+		if ($val > 0) { // on positive value subscriber have over-due balance
+			return 0;
+		}
 		return abs(round($val));
 	}
 
