@@ -16,18 +16,25 @@ class CreditGuardAction extends ApiAction {
 
 	protected $cgConf;
 	protected $url;
+	protected $subscribers;
+	protected $CG_transaction_id;
 
 	public function execute() { 
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$today = new MongoDate();
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
 		$hash = $request->get("hash");
 		if (is_null($aid) || !is_numeric($aid)) {
 			return $this->setError("need to pass numeric aid", $request);
-		}
-
-		$calculated_hash = md5($subscriber_id . 'id2016');
+		}	
+		
+		$calculated_hash = $this->generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
 		if ($hash == $calculated_hash) {
 			$this->getToken($aid);
+			$str_response = explode('=',$this->url);
+			$this->CG_transaction_id = $str_response[1];
+			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)), array("multiple" => true));
 			$this->forceRedirect($this->url);
 		}
 	}
@@ -41,13 +48,14 @@ class CreditGuardAction extends ApiAction {
 	}
 
 	public function getToken($aid) {
-		$this->cgConf['tid'] = '0962832';
-		$this->cgConf['mid'] = 10912;
-		$this->cgConf['amount'] = 100;
-		$this->cgConf['user'] = 'SDOC';
-		$this->cgConf['password'] = 'sD#4R!3r';
-		$this->cgConf['cg_gateway_url'] = "https://kupot1t.creditguard.co.il/xpo/Relay";
+		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
+		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
+		$this->cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
+		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
+		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
+		$this->cgConf['ok_page'] = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
 
 		$poststring = 'user=' . $this->cgConf['user'];
 		$poststring .= '&password=' . $this->cgConf['password'];
@@ -60,7 +68,7 @@ class CreditGuardAction extends ApiAction {
                                                         <dateTime></dateTime>
                                                         <command>doDeal</command>
                                                         <doDeal>
-                                                                <successUrl>http://46.101.149.208/api/Okpage</successUrl>
+                                                                <successUrl>' . $this->cgConf['ok_page'] . '</successUrl>
                                                                  <terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
                                                                  <mainTerminalNumber/>
                                                                  <cardNo>CGMPI</cardNo>
@@ -99,26 +107,7 @@ class CreditGuardAction extends ApiAction {
 
 		//init curl connection
 		if (function_exists("curl_init")) {
-
-			$CR = curl_init();
-			curl_setopt($CR, CURLOPT_URL, $this->cgConf['cg_gateway_url']);
-			curl_setopt($CR, CURLOPT_POST, 1);
-			curl_setopt($CR, CURLOPT_FAILONERROR, true);
-			curl_setopt($CR, CURLOPT_POSTFIELDS, $poststring);
-			curl_setopt($CR, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($CR, CURLOPT_SSL_VERIFYPEER, 0);
-			curl_setopt($CR, CURLOPT_FAILONERROR, true);
-
-
-			//actual curl execution perfom
-			$result = curl_exec($CR);
-			$error = curl_error($CR);
-			// on error - die with error message
-			if (!empty($error)) {
-				die($error);
-			}
-
-			curl_close($CR);
+			$result= Billrun_Util::sendRequest($this->cgConf['cg_gateway_url'], $poststring, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 
 		if (function_exists("simplexml_load_string")) {
@@ -139,6 +128,10 @@ class CreditGuardAction extends ApiAction {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
+	}
+	
+	protected function generateHash($aid, $key){
+		return md5($aid . $key);
 	}
 
 }

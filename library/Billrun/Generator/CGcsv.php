@@ -19,7 +19,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 
 	protected $paymentMethods = array('Debit');
 
-		protected $terminal_id = '0962832';  
+		protected $terminal_id;  
 		protected $customers;
 		protected $subscribers;
 		protected $dd_log_file; 
@@ -31,17 +31,10 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 	protected $extraction_date;
 
 	public function __construct($options) {
+		$this->terminal_id = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->extraction_date = date('YmdHis');
 		$this->initLogFile($options['stamp']);
-		if (!isset($options['pad_string'])){
-			
-		}
-		if (!isset($options['pad_type'])){
-			
-		}
-		if (!isset($options['pad_length'])){
-			
-		}
+
 		parent::__construct($options);
 	}
 
@@ -63,13 +56,23 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 		$options = array('collect' => FALSE);
 		$this->data = array();	
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$customers_aid = array_map(function($ele){ 
+			return $ele['aid'];
+		}, $this->customers);
+		
+		$subscribers = $this->subscribers->query(array('aid' => array('$in' => $customers_aid), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)))->cursor();
+		foreach ($subscribers as $subscriber){
+			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		}
 		
 		foreach ($this->customers as $customer) {
-			$subscriber = $this->subscribers->query(array('aid' => (int)$customer['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)))->cursor()->current();
+			$subscriber = $subscribers_in_array[$customer['aid']];
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$payment = payAction::pay('debit', array($paymentParams), $options)[0];
+			$paymentParams['source'] = $customer['source'];
+			
+			$payment = payAction::pay('credit', array($paymentParams), $options)[0];
 			$line = array(
 				0 => '001',
 				1 => $this->terminal_id,
@@ -222,6 +225,9 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 				),
 				'due_date' => array(
 					'$first' => '$due_date',
+				),
+				'source' => array(
+					'$first' => '$source',
 				),
 			),
 		);

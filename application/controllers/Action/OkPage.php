@@ -20,30 +20,35 @@ class OkPageAction extends ApiAction {
 	protected $subscribers;
 	protected $aid;
 	protected $personal_id;
-	protected $CG_transaction_id;
 
 	public function execute() {
 		$request = $this->getRequest();
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$transaction_id = $request->get("txId");
 		if (is_null($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);
-		} else {
-			$this->getTransactionDetails($transaction_id);
 		}
-
+		
+		$cursor = $this->subscribers->query(array('CG_transaction_id' => $transaction_id))->cursor();
+		if (count($cursor) === 0){
+			return $this->setError("Wrong Transaction ID", $request);
+		}
+		if ($this->getTransactionDetails($transaction_id) === FALSE){
+			return $this->setError("Operation Failed. Try Again...", $request);
+		}
+		
 		$today = new MongoDate();
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'CG_transaction_id' => (string) $this->CG_transaction_id)), array("multiple" => true));
+		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)), array("multiple" => true));
 	}
 
 	public function getTransactionDetails($txId) {
 
-		$cgConf['tid'] = '0962832';
-		$cgConf['mid'] = 10912;
+		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
+		$cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$cgConf['txId'] = $txId;
-		$cgConf['user'] = 'SDOC';
-		$cgConf['password'] = 'sD#4R!3r';
-		$cgConf['cg_gateway_url'] = "https://kupot1t.creditguard.co.il/xpo/Relay";
+		$cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
+		$cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
+		$cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 
 		$poststring = '';
 		$poststring = 'user=' . $cgConf['user'];
@@ -110,7 +115,6 @@ class OkPageAction extends ApiAction {
 			$this->card_expiration = $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->aid = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->personal_id = $xmlObj->response->inquireTransactions->row->personalId;
-			$this->CG_transaction_id = $xmlObj->response->inquireTransactions->row->mpiTransactionId;
 			return true;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");

@@ -20,6 +20,7 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 	protected $header_structure;
 	protected $data_structure;
 	protected $deals_num;
+	protected $bills;
 
 	
 	/**
@@ -73,15 +74,15 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 	}
 
 	public function updateData($type, $fileHandle, \Billrun_Processor_Updater &$processor) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
+		$this->bills = Billrun_Factory::db()->billsCollection();
 		$data = $processor->getData();
  		$emailsToSend = array();
 		$rejections = Billrun_Bill_Payment::getRejections();
 		foreach ($data['data'] as $row) {
-			if ($row['ret_code'] == '000') { // 000 - Good Deal
+			if ($this->isValidTransaction($row)) { 
 				continue;
 			}else{
-				$bills = $billsColl->query('txid', $row['transaction_id'])->cursor();
+				$bills = $this->findBill($row);
 				if (count($bills) == 0) {
 					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
 				} else {
@@ -97,18 +98,49 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 						$bill->markRejected();
 
 						$processor->incrementGoodLinesCounter();
-						$emailsToSend[] = array(
-							'aid' => $bill->getAccountNo(),
-							'amount' => $bill->getAmount(),
-							'date' => $row['process_time'],
-							'reason' => $rejections[$row['ret_code']],
-						);
+						if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
+							$emailsToSend = $this->defineEmailToSend();
+						}
 					} else {
 						Billrun_Factory::log('Transaction ' . $row['transaction_id'] . ' already rejected', Zend_Log::NOTICE);
 					}
 				}
 			}
 		}
+		$this->sendEmail($emailsToSend);
+	}
+
+	/**
+	 * the structure configuration
+	 * @param type $path
+	 */
+	protected function loadConfig($path) {
+		$this->structConfig = (new Yaf_Config_Ini($path))->toArray();
+
+		$this->header_structure = $this->structConfig['header'];
+		$this->data_structure = $this->structConfig['data'];
+		$this->trailer_structure = $this->structConfig['trailer'];
+	}
+	
+	
+	protected function isValidTransaction($row){
+		if ($row['ret_code'] == '000') { // 000 - Good Deal
+			return true;
+		} else{
+			return false;
+		}
+	}
+	
+	protected function defineEmailToSend() {
+		return array(
+			'aid' => $bill->getAccountNo(),
+			'amount' => $bill->getAmount(),
+			'date' => $row['process_time'],
+			'reason' => $rejections[$row['ret_code']],
+		);
+	}
+	
+	protected function sendEmail($emailsToSend) {
 		if ($emailsToSend) {
 			$subscriber = Billrun_Factory::subscriber();
 			$data = array(
@@ -124,18 +156,9 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 		}
 	}
 	
-		/**
-	 * the structure configuration
-	 * @param type $path
-	 */
-	protected function loadConfig($path) {
-		$this->structConfig = (new Yaf_Config_Ini($path))->toArray();
-
-		$this->header_structure = $this->structConfig['header'];
-		$this->data_structure = $this->structConfig['data'];
-		$this->trailer_structure = $this->structConfig['trailer'];
+	protected function findBill($row){
+		return $this->bills->query('txid', $row['transaction_id'])->cursor();
 	}
-	
 
 }
 

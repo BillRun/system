@@ -1012,7 +1012,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1027,6 +1027,9 @@ class Billrun_Util {
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		if (!is_null($timeout)) {
 			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		if (!is_null($ssl_verify)) {
+			$curl->setCurlOption(CURLOPT_SSL_VERIFYPEER, $ssl_verify);
 		}
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders($headers);
