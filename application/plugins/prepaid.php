@@ -145,7 +145,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pricingData["balance_before"] = $balance_before;
 			$pricingData["balance_after"] = $balance_before + $balance_usage;
 			$pricingData["usage_unit"] = $balance->get('charging_by_usaget_unit');
-			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row, $balance, $pricingData["balance_after"]));
+			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row, $balance, $pricingData["balance_before"], $pricingData["balance_after"]));
 		} catch (Exception $ex) {
 			Billrun_Factory::log('prepaid plugin afterUpdateSubscriberBalance error', Zend_Log::ERR);
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);

@@ -243,9 +243,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 
-	public function afterUpdateSubscriberAfterBalance($row, $balance, $balanceAfter) {
+	public function afterUpdateSubscriberAfterBalance($row, $balance, $balanceBefore, $balanceAfter) {
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
-		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceAfter);
+		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceBefore);
 	}
 
 	protected function shouldSendNotification($source) {
@@ -293,10 +293,10 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 
-	protected function needToSendNotification($type, $notification, $balance, $balanceAfter = 0) {
+	protected function needToSendNotification($type, $notification, $balance, $balanceBefore = 0) {
 		switch ($type) {
 			case ('BALANCE_AFTER'):
-				return $balanceAfter >= $notification['value'];
+				return $balanceBefore >= $notification['value'];
 			case ('BALANCE_LOAD'):
 				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
 			case ('BALANCE_EXPIRATION'):
@@ -305,7 +305,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return false;
 	}
 
-	public function handleBalanceNotifications($type, $plan, $msisdn, $balance, $balanceAfter = 0) {
+	public function handleBalanceNotifications($type, $plan, $msisdn, $balance, $balanceBefore = 0) {
 		try {
 			if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
 				return;
@@ -318,7 +318,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($notificationSent[$notificationKey]) && in_array($index, $notificationSent[$notificationKey])) { // If the notification was already sent
 					continue;
 				}
-				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
+				if ($this->needToSendNotification($type, $notification, $balance, $balanceBefore)) {
 					if (!$this->notificationSent) {
 						$this->notificationSent = true;
 						$modifyParams = array('balance' => $balance);
