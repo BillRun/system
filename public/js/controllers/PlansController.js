@@ -44,7 +44,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.type = type;
 			if (type === 'recurring')
 				type = 'charging';
-			return 'views/plans/' + type + 'edit.html';
+			return 'views/plans/' + type + 'edit.html?' + window.commithash;
 		};
 
 		$scope.removeIncludeType = function (index) {

@@ -1443,6 +1443,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['title'] = $this->title;
 		$parameters['baseUrl'] = $this->baseUrl;
+		$parameters['commit'] = $this->commit;
+		$this->getView()->title = $this->title;
+		$this->getView()->baseUrl = $this->baseUrl;
+		$this->getView()->commit = $this->commit;
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
