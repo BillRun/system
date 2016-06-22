@@ -38,12 +38,13 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	protected function getSubscriberQuery() {
 		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('type' => $this->type));
-		foreach ($this->fields as $field => $fieldParams) {
-			if (isset($fieldParams['unique']) && $fieldParams['unique']) {
-				if (is_array($this->query[$field])) {
-					$subscriberQuery['$or'][][$field] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$field]));
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if (isset($field['unique']) && $field['unique']) {
+				if (is_array($this->query[$fieldName])) {
+					$subscriberQuery['$or'][][$fieldName] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$fieldName]));
 				}
-				$subscriberQuery['$or'][][$field] = $this->query[$field];
+				$subscriberQuery['$or'][][$fieldName] = $this->query[$fieldName];
 			}
 		}
 		return $subscriberQuery;
@@ -155,9 +156,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 	
 	protected function setGeneratedFields() {
-		foreach ($this->fields as $field => $fieldParams) {
-			if (isset($fieldParams['generated']) && $fieldParams['generated']) {
-				$this->query[$field] = Billrun_Factory::db()->subscribersCollection()->createAutoInc($field);
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if (isset($field['generated']) && $field['generated']) {
+				$this->query[$fieldName] = Billrun_Factory::db()->subscribersCollection()->createAutoInc($fieldName);
 			}
 		}
 	}
@@ -182,12 +184,13 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$invalidFields = array();
 
 		// Get only the values to be set in the update record.
-		foreach ($this->fields as $field => $fieldParams) {
-			if ((isset($fieldParams['mandatory']) && $fieldParams['mandatory']) &&
-				(!isset($queryData[$field]) || empty($queryData[$field]))) {
-				$invalidFields[] = $field;
-			} else if (isset($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if ((isset($field['mandatory']) && $field['mandatory']) &&
+				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
+				$invalidFields[] = $fieldName;
+			} else if (isset($queryData[$fieldName])) {
+				$this->query[$fieldName] = $queryData[$fieldName];
 			}
 		}
 
