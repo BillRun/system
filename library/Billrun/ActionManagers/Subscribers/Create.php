@@ -17,14 +17,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @var type Array
 	 */
 	protected $query = array();
-	
-	/**
-	 * Keeps entity's type (account/subscriber/...)
-	 * @var type 
-	 */
-	protected $type;
-	
-	protected $fields;
 
 	/**
 	 */
@@ -70,17 +62,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		return false;
 	}
-	
-	protected function setSubscriberType($data) {
-		$subscriberTypes = Billrun_Factory::config()->getConfigValue('subscribers.types', array());
-		if (empty($this->type = $data['type']) ||
-			!in_array($this->type, $subscriberTypes)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 7;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
-		}		
-		return true;
-	}
 
 	/**
 	 * Execute the action.
@@ -116,7 +97,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if (!$this->setQueryRecord($input)) {
+		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
 
@@ -136,11 +117,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
-		
-		if (!$this->setSubscriberType($jsonData)) {
-			return false;
-		}
-		
+
 		$invalidFields = $this->setQueryFields($jsonData);
 
 		// If there were errors.
@@ -149,12 +126,12 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
-		
+
 		$this->setAdditionalFields();
 
 		return $this->validate();
 	}
-	
+
 	protected function setGeneratedFields() {
 		foreach ($this->fields as $field) {
 			$fieldName = $field['field_name'];
@@ -163,12 +140,13 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			}
 		}
 	}
-	
+
 	protected function setAdditionalFields() {
+		$this->query['type'] = $this->type;
 		// Set the from and to values.
 		$this->query['from'] = new MongoDate();
 		$this->query['to'] = new MongoDate(strtotime('+100 years'));
-		
+
 		$this->setGeneratedFields();
 	}
 
@@ -178,8 +156,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
-		$this->fields = $this->getFields();
-
 		// Array of errors to report if any error occurs.
 		$invalidFields = array();
 
@@ -196,22 +172,15 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		return $invalidFields;
 	}
-	
-	protected function getFields() {
-		return array_merge(
-			Billrun_Factory::config()->getConfigValue("subscribers." . $this->type . ".fields", array()),
-			Billrun_Factory::config()->getConfigValue("subscribers.fields", array())
-		);
-	}
-	
+
 	protected function validate() {
 		if ($this->type === 'subscriber') {
 			return $this->isAccountExists($this->query['aid']);
 		}
-		
+
 		return true;
 	}
-	
+
 	protected function isAccountExists($aid) {
 		$query = array_merge(
 			Billrun_Util::getDateBoundQuery(), 
