@@ -296,9 +296,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function needToSendNotification($type, $notification, $balance, $balanceAfter = 0) {
 		switch ($type) {
 			case ('BALANCE_AFTER'):
-				return $balanceAfter >= $notification['value'];
+				if (!$this->notificationSent) {
+					$this->notificationSent = true;
+					return $balanceAfter >= $notification['value'];
+				} else {
+					return false;
+				}
 			case ('BALANCE_LOAD'):
+				if (!$this->notificationSent) {
+					$this->notificationSent = true;
 				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+				} else {
+					return false;
+				}
 			case ('BALANCE_EXPIRATION'):
 				return true;
 		}
@@ -319,12 +329,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					continue;
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceAfter)) {
-					if (!$this->notificationSent) {
-						$this->notificationSent = true;
-						$modifyParams = array('balance' => $balance);
-						$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
-						$this->sendNotification($notification['type'], $msg, $msisdn);
-					}
+					$modifyParams = array('balance' => $balance);
+					$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+					$this->sendNotification($notification['type'], $msg, $msisdn);
 					if (is_null($notificationSent[$notificationKey])) {
 						$notificationSent[$notificationKey] = array($index);
 					} else {
