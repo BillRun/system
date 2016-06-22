@@ -18,6 +18,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected $query = array();
 	protected $update = array();
+	
+	protected $time;
 
 	/**
 	 */
@@ -31,6 +33,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		try {
+			$this->time = new MongoDate();
 			if (!$oldEntity = $this->getOldEntity()) {
 				return false;
 			}
@@ -68,6 +71,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function updateEntity($oldEntity){
 		$new = $oldEntity->getRawData();
 		unset($new['_id']);
+		$new['from'] = $this->time;
 		foreach ($this->update as $field => $value) {
 			$new[$field] = $value;
 		}
@@ -77,7 +81,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 	
 	protected function closeEntity($entity) {
-		$entity['to'] = new MongoDate();
+		$entity['to'] = $this->time;
 		$this->collection->save($entity, 1);
 	}
 
