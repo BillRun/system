@@ -151,7 +151,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		
 		$this->setAdditionalFields();
 
-		return true;
+		return $this->validate();
 	}
 	
 	protected function setGeneratedFields() {
@@ -199,6 +199,27 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			Billrun_Factory::config()->getConfigValue("subscribers." . $this->type . ".fields", array()),
 			Billrun_Factory::config()->getConfigValue("subscribers.fields", array())
 		);
+	}
+	
+	protected function validate() {
+		if ($this->type === 'subscriber') {
+			return $this->isAccountExists($this->query['aid']);
+		}
+		
+		return true;
+	}
+	
+	protected function isAccountExists($aid) {
+		$query = array_merge(
+			Billrun_Util::getDateBoundQuery(), 
+			array("type" => "account", "aid" => $aid)
+		);
+		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 8;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($aid));
+			return false;
+		}
+		return true;
 	}
 
 }
