@@ -38,6 +38,15 @@ function SidePanelController(Database, Utils) {
 				if (_.isEmpty(res.data.subscriber))
 					return;
 				vm.subscriber = res.data.subscriber;
+				var format = Utils.getDateFormat().toUpperCase() + " HH:MM:SS";
+				if (vm.subscriber.data_slowness_enter && vm.subscriber.data_slowness_enter.sec) {
+					vm.subscriber.data_slowness_enter = 
+							moment(vm.subscriber.data_slowness_enter.sec * 1000 + vm.subscriber.data_slowness_enter.usec).format(format);
+				}
+				if (vm.subscriber.data_slowness_exit && vm.subscriber.data_slowness_exit.sec) {
+					vm.subscriber.data_slowness_exit = 
+							moment(vm.subscriber.data_slowness_exit.sec * 1000 + vm.subscriber.data_slowness_exit.usec).format(format);
+				}
 			} else {
 				vm.showSidePanel = false;
 			}
