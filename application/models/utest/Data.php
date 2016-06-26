@@ -81,29 +81,29 @@ class utest_DataModel extends utest_AbstractUtestModel {
 					"requestedUnits" => 1000,
 				//"usedUnits" => 1000
 				),
-				"Service" => array(
-					"PdnConnectionId" => "0",
-					"PdpAddress" => "10.161.48.3",
-					"CalledStationId" => "test-sacc.labpelephone.net.il",
-					"MccMnc" => $mcc,
-					"GgsnAddress" => "91.135.99.226",
-					"SgsnAddress" => "91.135.96.3",
-					"ChargingId" => "0",
-					"GPRSNegQoSProfile" => "0",
-					"ChargingCharacteristics" => "0800",
-					"PDPType" => "0",
-					"SGSNMCCMNC" => "42503",
-					"GGSNMCCMNC" => "0",
-					"CGAddress" => "0.0.0.0",
-					"NSAPI" => "5",
-					"SessionStopIndicator" => "0",
-					"SelectionMode" => "1",
-					"RATType" => array("1"),
-					"MSTimeZone" => array("128", "0"),
-					"ChargingRuleBaseName" => "0",
-					"FilterId" => "0"
-				)
-			)
+			),
+			"service" => array(
+				"PdnConnectionId" => "0",
+				"PdpAddress" => "10.161.48.3",
+				"CalledStationId" => "test-sacc.labpelephone.net.il",
+				"MccMnc" => $mcc,
+				"GgsnAddress" => "91.135.99.226",
+				"SgsnAddress" => "91.135.96.3",
+				"ChargingId" => "0",
+				"GPRSNegQoSProfile" => "0",
+				"ChargingCharacteristics" => "0800",
+				"PDPType" => "0",
+				"SGSNMCCMNC" => "42503",
+				"GGSNMCCMNC" => "0",
+				"CGAddress" => "0.0.0.0",
+				"NSAPI" => "5",
+				"SessionStopIndicator" => "0",
+				"SelectionMode" => "1",
+				"RATType" => array("1"),
+				"MSTimeZone" => array("128", "0"),
+				"ChargingRuleBaseName" => "0",
+				"FilterId" => "0"
+			),
 		);
 
 		switch ($type) {
