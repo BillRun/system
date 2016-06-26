@@ -12,9 +12,6 @@
  */
 class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action {
 
-	use Billrun_FieldValidator_CustomerPlan,
-	 Billrun_FieldValidator_ServiceProvider;
-
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -32,16 +29,16 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return array Query to run in the mongo.
 	 */
 	protected function getSubscriberQuery() {
-		$subscriberQueryKeys = Billrun_Factory::config()->getConfigValue('subscribers.create_query_fields');
-		foreach ($subscriberQueryKeys as $key) {
-			if (is_array($this->query[$key])) {
-				$subscriberQuery['$or'][][$key] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$key]));
+		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('type' => $this->type));
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if (isset($field['unique']) && $field['unique']) {
+				if (is_array($this->query[$fieldName])) {
+					$subscriberQuery['$or'][][$fieldName] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$fieldName]));
+				}
+				$subscriberQuery['$or'][][$fieldName] = $this->query[$fieldName];
 			}
-			$subscriberQuery['$or'][][$key] = $this->query[$key];
 		}
-
-		// Get only active subscribers.
-		$subscriberQuery['to'] = array('$gte' => new MongoDate());
 		return $subscriberQuery;
 	}
 
@@ -72,16 +69,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	public function execute() {
 		try {
-			// Create the subscriber only if it doesn't already exists.
-			if ($this->validateCustomerPlan($this->query['plan']) !== true) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 6;
-				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['plan']));
-			} elseif (!$this->validateServiceProvider($this->query['service_provider'])) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 5;
-				$this->reportError($errorCode, Zend_Log::ALERT, array($this->query['service_provider']));
-			} elseif (!$this->subscriberExists()) {
+			if (!$this->subscriberExists()) {
 				$entity = new Mongodloid_Entity($this->query);
-
 				$this->collection->save($entity, 1);
 			}
 		} catch (\Exception $e) {
@@ -108,7 +97,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if (!$this->setQueryRecord($input)) {
+		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
 
@@ -138,11 +127,27 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			return false;
 		}
 
+		$this->setAdditionalFields();
+
+		return $this->validate();
+	}
+
+	protected function setGeneratedFields() {
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if (isset($field['generated']) && $field['generated']) {
+				$this->query[$fieldName] = Billrun_Factory::db()->subscribersCollection()->createAutoInc($fieldName);
+			}
+		}
+	}
+
+	protected function setAdditionalFields() {
+		$this->query['type'] = $this->type;
 		// Set the from and to values.
-		$this->query['creation_time'] = $this->query['from'] = new MongoDate();
+		$this->query['from'] = new MongoDate();
 		$this->query['to'] = new MongoDate(strtotime('+100 years'));
 
-		return true;
+		$this->setGeneratedFields();
 	}
 
 	/**
@@ -151,36 +156,42 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
-		$queryFields = $this->getQueryFields();
-		$optionalFields = $this->getOptionalFields();
-
-		// Arrary of errors to report if any occurs.
+		// Array of errors to report if any error occurs.
 		$invalidFields = array();
 
 		// Get only the values to be set in the update record.
-		// TODO: If no update fields are specified the record's to and from values will still be updated!
-		foreach ($queryFields as $field) {
-			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if (isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
-			} else if (!in_array($field, $optionalFields)) {
-				$invalidFields[] = $field;
+		foreach ($this->fields as $field) {
+			$fieldName = $field['field_name'];
+			if ((isset($field['mandatory']) && $field['mandatory']) &&
+				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
+				$invalidFields[] = $fieldName;
+			} else if (isset($queryData[$fieldName])) {
+				$this->query[$fieldName] = $queryData[$fieldName];
 			}
 		}
 
 		return $invalidFields;
 	}
 
-	/**
-	 * Get the array of fields to be set in the query record from the user input.
-	 * @return array - Array of fields to set.
-	 */
-	protected function getQueryFields() {
-		return Billrun_Factory::config()->getConfigValue("subscribers.create_fields");
+	protected function validate() {
+		if ($this->type === 'subscriber') {
+			return $this->isAccountExists($this->query['aid']);
+		}
+
+		return true;
 	}
 
-	protected function getOptionalFields() {
-		return Billrun_Factory::config()->getConfigValue("subscribers.optional_fields");
+	protected function isAccountExists($aid) {
+		$query = array_merge(
+			Billrun_Util::getDateBoundQuery(), 
+			array("type" => "account", "aid" => $aid)
+		);
+		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 8;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($aid));
+			return false;
+		}
+		return true;
 	}
 
 }
