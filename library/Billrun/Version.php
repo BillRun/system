@@ -27,7 +27,7 @@ class Billrun_Version {
 	public static $DEV_STATUS = 'Stable';
 
 	/** @var  string  Build number. */
-	public static $BUILD = '7';
+	public static $BUILD = '8';
 
 	/** @var  string  Release date. */
 	public static $RELDATE = '23-June-2016';
