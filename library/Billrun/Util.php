@@ -1321,5 +1321,15 @@ class Billrun_Util {
 
 		return $array;
 	}
+	
+	public static function getBillRunPath($path) {
+		if (empty($path) || !is_string($path)) {
+			return FALSE;
+		}
+		if ($path[0] == DIRECTORY_SEPARATOR) {
+			return $path;
+		}
+		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
+	}
 
 }
