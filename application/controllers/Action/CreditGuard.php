@@ -11,6 +11,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * CreditGuard action class
  *
  * @package  Action
+ * @since    5.0
+ * 
  */
 class CreditGuardAction extends ApiAction {
 

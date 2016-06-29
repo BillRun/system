@@ -13,7 +13,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * Billing CreditGuard csv generator class
  * 
  * @package  Billing
- * @since    0.5
+ * @since    5.0
  */
 class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 

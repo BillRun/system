@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 
@@ -10,7 +10,7 @@
  * Billing receiver for SSH
  *
  * @package  Billing
- * @since    0.5
+ * @since    5.0
  */
 class Billrun_Receiver_Ssh extends Billrun_Receiver {
 

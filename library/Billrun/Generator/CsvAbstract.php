@@ -10,7 +10,7 @@
  * Billing Csv generator class
  *
  * @package  Billing
- * @since    0.5
+ * @since    5.0
  */
 abstract class Billrun_Generator_CsvAbstract extends Billrun_Generator_Csv {
 

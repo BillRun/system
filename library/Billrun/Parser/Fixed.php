@@ -38,6 +38,7 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 		/**
 	 * 
 	 * @param resource $fileHandler
+	 * @since    5.0
 	 */
 	public function setFileHandler($fileHandler) {
 		$this->fileHandler = $fileHandler;

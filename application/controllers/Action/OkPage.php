@@ -11,6 +11,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * OkPage action class
  *
  * @package  Action
+ * @since    5.0
+ * 
  */
 
 class OkPageAction extends ApiAction {

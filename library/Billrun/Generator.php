@@ -140,6 +140,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	
 	/**
 	 * copy the file to the location defined
+	 * @since 5.0
 	 */
 	public function move(){
 		if (!is_null($this->ssh)){

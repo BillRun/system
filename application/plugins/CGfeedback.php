@@ -7,6 +7,12 @@
  */
 
 
+
+/**
+ * Receive and process files from CG server
+ * @package  Billing
+ * @since    5.0
+ */
 class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IUpdaterProcessor {
 
 	/**
