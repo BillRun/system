@@ -60,7 +60,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$subscribers = $this->subscribers->query(array('aid' => array('$in' => $customers_aid), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today)))->cursor();
+		$subscribers = $this->subscribers->query(array('aid' => array('$in' => $customers_aid), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor();
 		foreach ($subscribers as $subscriber){
 			$subscribers_in_array[$subscriber['aid']] = $subscriber;
 		}
@@ -78,12 +78,12 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
 				1 => $this->terminal_id,
 				2 => $paymentParams['amount'],
 				3 => 1,
-				4 => '1092187729461881', //$subscriber['card_token'] ,
-				5 => '0420',             //$subscriber['card_expiration'],
+				4 => $subscriber['card_token'] ,
+				5 => $subscriber['card_expiration'],
 				6 => '01',
 				7 => 1,
 				8 => '',
-				9 => rand(100000, 999999),                 //$subscriber['transaction_id']
+				9 => $subscriber['transaction_id'],
 				10 => '',
 				11 => '',
 				12 => 4,
