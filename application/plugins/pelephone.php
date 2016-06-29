@@ -612,7 +612,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
 			if ($this->row['type'] === 'gy' && isset($this->row['plan_ref'])) {
-				if (!$this->canUseDataFromCurrencyBalances($this->row, $plan)) {
+				if (!$this->canUseDataFromCurrencyBalances($this->row)) {
 					array_push($pp_includes_external_ids, 1, 2, 9, 10); // todo: change to logic (charging_by = total_cost) instead of hard-coded values
 				}
 			}
