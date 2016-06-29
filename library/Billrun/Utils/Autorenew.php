@@ -44,15 +44,20 @@ class Billrun_Utils_Autorenew {
 	}
 	
 	public static function countMonths($d1, $d2) {
-		$min_date = min($d1, $d2);
+		$min_date = $next_min_date = min($d1, $d2);
 		$max_date = max($d1, $d2);
 		$count = 0;
-		while ($min_date < $max_date && $count < 9999) { // second arg avoid infinite loop
-			$min_date = self::getNextRenewDate($min_date, false, $min_date);
-			$count++;
+		$source_dom = date('d', $min_date);
+		while ($min_date < $max_date && $count++ < 9999) { // second arg avoid infinite loop
 //			print $count . " " . date('Y-m-d H:i:s', $min_date) . "<br />" . PHP_EOL;
+			$next_min_date = self::getNextRenewDate($min_date, false, $min_date);
+			if (date('d', $next_min_date) != $source_dom && date('t', $next_min_date) >= $source_dom) {
+				$min_date = strtotime(date('Y-m-' . $source_dom . ' H:i:s' , $next_min_date));
+			} else {
+				$min_date = $next_min_date;
+			}
 		}
 		return $count;
 	}
-
+	
 }
