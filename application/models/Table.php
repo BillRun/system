@@ -399,10 +399,10 @@ class TableModel {
 					),
 				);
 			} else {
-				if ($filter_field['key'] == 'to') {
+				if ($filter_field['db_key'] == 'to') {
 					$split = explode(' ', $value);
 					$value = $split[0] . ' 23:59:59';
-				} else if ($filter_field['key'] == 'from') {
+				} else if ($filter_field['db_key'] == 'from') {
 					$split = explode(' ', $value);
 					$value = $split[0] . ' 00:00:00';
 				}
