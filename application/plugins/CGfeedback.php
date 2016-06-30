@@ -85,14 +85,15 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
  		$emailsToSend = array();
 		$rejections = Billrun_Bill_Payment::getRejections();
 		foreach ($data['data'] as $row) {
+			$bills = $this->findBill($row);
+			$bill = Billrun_Bill_Payment::getInstanceByid($bills->current()['txid']);
+			$bill->updateConfirmation();
 			if ($this->isValidTransaction($row)) { 
 				continue;
 			}else{
-				$bills = $this->findBill($row);
 				if (count($bills) == 0) {
 					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
 				} else {
-					$bill = Billrun_Bill_Payment::getInstanceByid($bills->current()['txid']);
 					if (!$bill->isRejected()) {
 						if (!Billrun_Util::isEqual(Billrun_Util::getChargableAmount($bill->getAmount()), Billrun_Util::getChargableAmount($row['amount']), Billrun_Bill::precision)) {
 							Billrun_Factory::log('Charge not matching for transaction id ' . $row['transaction_id'] . '. Skipping.', Zend_Log::ALERT);
@@ -105,7 +106,7 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 
 						$processor->incrementGoodLinesCounter();
 						if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
-							$emailsToSend = $this->defineEmailToSend();
+							$emailsToSend = $this->defineEmailToSend($bill, $row, $rejections);
 						}
 					} else {
 						Billrun_Factory::log('Transaction ' . $row['transaction_id'] . ' already rejected', Zend_Log::NOTICE);
@@ -137,7 +138,7 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 		}
 	}
 	
-	protected function defineEmailToSend() {
+	protected function defineEmailToSend($bill, $row, $rejections) {
 		return array(
 			'aid' => $bill->getAccountNo(),
 			'amount' => $bill->getAmount(),

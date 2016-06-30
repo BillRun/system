@@ -368,5 +368,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function isCancellation() {
 		return isset($this->data['cancel']);
 	}
-
+		/**
+	 * Update payment status
+	 * @since 5.0
+	 */
+	public function updateConfirmation() {
+		$this->data['waiting_for_confirmation'] = false;
+		$this->save();
+	}
 }

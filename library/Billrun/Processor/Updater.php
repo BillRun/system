@@ -150,4 +150,7 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 		
 	}
 
+	protected function processLines(){
+		
+	}
 }
