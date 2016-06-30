@@ -230,10 +230,13 @@ class Mongodloid_Collection {
 	}
 
 	/**
-	 * @return MongoCursor a cursor for the search results.
+	 * @param boolean $mongoResult return a MongoCursor or a Mongodloid_Cursor
+	 * @return mixed a cursor for the search results.
+	 * @todo Remove $mongoResult parameter and always return Mongodloid_Cursor
 	 */
-	public function find($query, $fields = array()) {
-		return $this->_collection->find($query, $fields);
+	public function find($query, $fields = array(), $mongoResult = TRUE) {
+		$cursor = $this->_collection->find($query, $fields);
+		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
 
 	/**

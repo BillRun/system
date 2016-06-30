@@ -1322,5 +1322,15 @@ class Billrun_Util {
 	public static function getCallTypes() {
 		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
 	}
+	
+	public static function getBillRunPath($path) {
+		if (empty($path) || !is_string($path)) {
+			return FALSE;
+		}
+		if ($path[0] == DIRECTORY_SEPARATOR) {
+			return $path;
+		}
+		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
+	}
 
 }

@@ -138,6 +138,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public function getPossiblyUpdatedFields() {
 		return array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
 	}
+	
+	protected static function getRateCalculatorClassName($type) {
+		return 'Billrun_Calculator_Rate_Usage';
+	}
 
 	/**
 	 * load calculator rate by line type
@@ -151,22 +155,32 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	public static function getRateCalculator($line, array $options = array()) {
 		$type = $line['type'];
 		if (!isset(self::$calcs[$type])) {
-			// @TODO: use always the first condition for all types - it will load the config values by default
-			if ($type === 'smsc' || $type === 'smpp' || $type === 'tap3') {
-				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
-				$options = array_merge($options, $configOptions);
-			}
-
-			if ($type === 'callrt') {
-				$options = array_merge($options, array('usaget' => $line['usaget']));
-			}
-			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
-			if (!class_exists($class, true)) {
-				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line, true), Zend_Log::ERR);
-				// TODO: How to handle error?
-				return false;
-			}
+			$options = array_merge(
+				$options, 
+				array(
+					'usaget' => $line['usaget'],
+					'type' => $line['type'],
+					)
+			);
+			$class = self::getRateCalculatorClassName($type);
 			self::$calcs[$type] = new $class($options);
+			
+			// @TODO: use always the first condition for all types - it will load the config values by default
+//			if ($type === 'smsc' || $type === 'smpp' || $type === 'tap3') {
+//				$configOptions = Billrun_Factory::config()->getConfigValue('Rate_' . ucfirst($type), array());
+//				$options = array_merge($options, $configOptions);
+//			}
+//
+//			if ($type === 'callrt') {
+//				$options = array_merge($options, array('usaget' => $line['usaget']));
+//			}
+//			$class = 'Billrun_Calculator_Rate_' . ucfirst($type);
+//			if (!class_exists($class, true)) {
+//				Billrun_Factory::log("getRateCalculator '$class' is an invalid class! line:" . print_r($line, true), Zend_Log::ERR);
+//				// TODO: How to handle error?
+//				return false;
+//			}
+//			self::$calcs[$type] = new $class($options);
 		}
 		return self::$calcs[$type];
 	}

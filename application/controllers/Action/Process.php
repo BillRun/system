@@ -28,7 +28,6 @@ class ProcessAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'parser' => false,
 			'path' => true,
 			'backup' => true, // backup path
 		);
@@ -37,12 +36,11 @@ class ProcessAction extends Action_Base {
 			return;
 		}
 
-		$this->_controller->addOutput("Parser selected: " . $options['parser']);
+		$this->_controller->addOutput("Parser selected: " . $options['type']); 
 		//$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
 
 		$this->_controller->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
-		$this->_controller->addOutput("Processor loaded");
 
 		if (!$processor) {
 			$this->_controller->addOutput("Processor cannot be loaded");
