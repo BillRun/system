@@ -83,7 +83,7 @@ class TabledateModel extends TableModel {
 			return $this->setError("id error");
 		}
 		return array(
-			'_id' => array('$ne' => $id),
+//			'_id' => array('$ne' => $id),
 			$this->search_key => $entity[$this->search_key],
 			'$or' => array(
 				array('from' => array(
