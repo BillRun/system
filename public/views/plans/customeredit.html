@@ -7,7 +7,7 @@
 	<div pretty-error errors="err.data"></div>
 	<form class='form-inline' style="margin-top: 70px;">
 		<div ng-if='!advancedMode'>
-			<div class='row' ng-if='action === "new"'>
+			<div class='row' ng-if='action === "new" || action === "duplicate"'>
 				<div class='col-md-2'>Name</div>
 				<div class='col-md-6'><input ng-model='entity.name' type='text' class='form-control' /></div>
 			</div>
@@ -116,7 +116,7 @@
 				</select>
 				<a href="" ng-click="addThresholdNotification()">Add Notification</a>
 			</div>			
-			<div class='row' ng-repeat='(id, notifications) in entity.notifications_threshold' ng-if='notifications.length && isPPIncludeNotification(id)' style="margin-left: 0px;">
+			<div class='row' ng-repeat='(id, notifications) in entity.notifications_threshold track by $index' ng-if='notifications.length && isPPIncludeNotification(id)' style="margin-left: 0px;">
 				<strong>{{balanceName(id)}}</strong>&nbsp;<i class='glyphicon glyphicon-plus-sign' ng-click='addNotification(id)'></i>&nbsp;<i class='glyphicon glyphicon-minus-sign' ng-click='removeNotification(id)' ng-show='notifications.length'></i>
 				<table class='table table-striped table-bordered table-no-more-tables' ng-if='notifications.length'>
 					<thead>
