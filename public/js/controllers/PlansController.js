@@ -121,13 +121,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
-			_.forEach($scope.notifications_threshold.on_load, function(on_load_notification, index) {
+			_.forEach($scope.entity.notifications_threshold.on_load, function(on_load_notification, index) {
 				$scope.entity.notifications_threshold.on_load[index].pp_includes = [];
 				_.forEach(on_load_notification, function(pp) {
 					$scope.entity.notifications_threshold.on_load[index].pp_includes.push(parseInt(pp));
 				});
 			});
-			_.forEach($scope.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
+			_.forEach($scope.entity.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
 				$scope.entity.notifications_threshold.expiration_date[index].pp_includes = [];
 				_.forEach(expiration_date_notification, function(pp) {
 					$scope.entity.notifications_threshold.expiration_date[index].pp_includes.push(parseInt(pp));
@@ -196,8 +196,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.addPPIncludeThreshold = function () {
-			if ($scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id])
+			if (!$scope.newPPIncludeThreshold.id) return;
+			if ($scope.entity.pp_threshold && $scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id])
 				return;
+			if (_.isUndefined($scope.entity.pp_threshold)) $scope.entity.pp_threshold = {};
 			$scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id] = 0;
 			$scope.newPPIncludeThreshold.id = null;
 		};
@@ -218,12 +220,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			if (!id)
 				return;
 			var new_notification = {value: 0, type: "", msg: ""};
+			if (!$scope.entity.notifications_threshold) $scope.entity.notifications_threshold = {};
 			if (!$scope.entity.notifications_threshold[id]) {
 				$scope.entity.notifications_threshold[id] = [];
 			}
-			$scope.entity.notifications_threshold[id].length ?
-					$scope.entity.notifications_threshold[id].push(new_notification) :
-					$scope.entity.notifications_threshold[id] = [new_notification];
+			if ($scope.entity.notifications_threshold[id].length) {
+				$scope.entity.notifications_threshold[id].push(new_notification);
+			} else {
+				$scope.entity.notifications_threshold[id] = [new_notification];
+			}
 		};
 
 		$scope.removeNotification = function (id) {
@@ -240,6 +245,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.addThresholdNotification = function () {
+			if (!$scope.entity.notifications_threshold) $scope.entity.notifications_threshold = {};
 			if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id] &&
 					$scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length)
 				return;
@@ -370,14 +376,16 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 						_.forEach($scope.entity.notifications_threshold.on_load, function(notification) {
 							var pp_includes = [];
 							_.forEach(notification.pp_includes, function(pp) {
-								pp_includes.push(pp.toString());
+								if (pp)
+									pp_includes.push(pp.toString());
 							});
 							$scope.notifications_threshold.on_load.push(pp_includes);
 						});
 						_.forEach($scope.entity.notifications_threshold.expiration_date, function(notification) {
 							var pp_includes = [];
 							_.forEach(notification.pp_includes, function(pp) {
-								pp_includes.push(pp.toString());
+								if (pp)
+									pp_includes.push(pp.toString());
 							});
 							$scope.notifications_threshold.expiration_date.push(pp_includes);
 						});
