@@ -7,7 +7,7 @@
 	<div pretty-error errors="err.data"></div>
 	<form class='form-inline' style="margin-top: 70px;">
 		<div ng-if='!advancedMode'>
-			<div class='row' ng-if='action === "new"'>
+			<div class='row' ng-if='action === "new" || action === "duplicate"'>
 				<div class='col-md-2'>Name</div>
 				<div class='col-md-6'><input ng-model='entity.name' type='text' class='form-control' /></div>
 			</div>
