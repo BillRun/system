@@ -46,10 +46,14 @@ class Billrun_User {
 		return !$this->entity->isEmpty();
 	}
 
+	public function getPermissions() {
+		return  isset($this->entity['roles']) ? $this->entity['roles'] : array();
+	}	
+	
 	public function getUsername() {
 		return $this->entity['username'];
 	}
-
+	
 	public function getMongoId() {
 		return $this->entity['_id'];
 	}
