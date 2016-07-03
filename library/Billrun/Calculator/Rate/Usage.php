@@ -166,8 +166,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	}
 	
 	protected function getBasicMatchRateQuery($row, $usaget) {
-		$urt_string = explode(' ', $row['urt']->__toString());
-		$sec = $urt_string[1];
+		$sec = $row['urt']->sec;
 		return array_merge(
 			Billrun_Util::getDateBoundQuery($sec),
 			array('rates.' . $usaget => array('$exists' => true))
