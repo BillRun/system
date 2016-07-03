@@ -520,6 +520,29 @@ class Billrun_Util {
 	}
 
 	/**
+	 * method to convert msisdn to local phone number (remove country extension)
+	 * 
+	 * @param string $msisdn the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function localNumber($msisdn, $defaultPrefix = null) {
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+		if (substr($msisdn, 0, 3) != $defaultPrefix) {
+			return $msisdn;
+		}
+		if (substr($msisdn, 0, 4) == $defaultPrefix . '1') {
+			$prefix = '';
+		} else {
+			$prefix = '0';
+		}
+		return $prefix . substr($msisdn, (-1) * strlen($msisdn) + 3);
+	}
+
+	/**
 	 * method to convert phone number to msisdn
 	 * 
 	 * @param string $phoneNumber the phone number to convert
