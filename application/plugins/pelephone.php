@@ -780,7 +780,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$prefix = '0';
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
-			} else if ($event['call_type'] == '11') {
+			} else if (stripos($usaget, 'roaming') === TRUE) {
 				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
 			}
 		}
