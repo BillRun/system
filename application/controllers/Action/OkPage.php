@@ -52,12 +52,11 @@ class OkPageAction extends ApiAction {
 		$cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 
-		$poststring = '';
-		$poststring = 'user=' . $cgConf['user'];
-		$poststring .= '&password=' . $cgConf['password'];
-
-		/* Build Ashrait XML to post */
-		$poststring.='&int_in=<ashrait>
+		$post_array = array(
+			'user' => $cgConf['user'],
+			'password' => $cgConf['password'],
+			 /* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
                                                         <request>
                                                          <language>HEB</language>
                                                          <command>inquireTransactions</command>
@@ -75,8 +74,12 @@ class OkPageAction extends ApiAction {
                                                           <userData5/>
                                                          </inquireTransactions>
                                                         </request>
-                                                   </ashrait>';
+                                                   </ashrait>'
+			);
+		
+		$poststring = http_build_query($post_array);
 
+			
 		//init curl connection
 		if (function_exists("curl_init")) {
 			$CR = curl_init();

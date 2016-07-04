@@ -1331,5 +1331,9 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
+	
+		public static function generateHash($aid, $key){
+		return md5($aid . $key);
+	}
 
 }

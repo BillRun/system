@@ -31,11 +31,13 @@ class CreditGuardAction extends ApiAction {
 			return $this->setError("need to pass numeric aid", $request);
 		}	
 		
-		$calculated_hash = $this->generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
+		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
 		if ($hash == $calculated_hash) {
 			$this->getToken($aid);
-			$str_response = explode('=',$this->url);
-			$this->CG_transaction_id = $str_response[1];
+			$str_response = array();
+			parse_str($this->url, $str_response);
+			$tx_id = array_values($str_response);
+			$this->CG_transaction_id = $tx_id[0];
 			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
 			$this->forceRedirect($this->url);
 		}
@@ -48,7 +50,7 @@ class CreditGuardAction extends ApiAction {
 		header('Location: ' . $uri);
 		exit();
 	}
-
+	
 	public function getToken($aid) {
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
@@ -59,11 +61,12 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
 
-		$poststring = 'user=' . $this->cgConf['user'];
-		$poststring .= '&password=' . $this->cgConf['password'];
-
-		/* Build Ashrait XML to post */
-		$poststring.='&int_in=<ashrait>
+		
+		$post_array = array(
+			'user' => $this->cgConf['user'],
+			'password' => $this->cgConf['password'],
+			 /* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
                                                    <request>
                                                         <version>1000</version>
                                                         <language>HEB</language>
@@ -105,8 +108,12 @@ class CreditGuardAction extends ApiAction {
                                                                  </customerData>
                                                         </doDeal>
                                                    </request>
-                                                  </ashrait>';
-
+                                                  </ashrait>'
+		);
+		
+		$poststring = http_build_query($post_array);
+		
+		
 		//init curl connection
 		if (function_exists("curl_init")) {
 			$result= Billrun_Util::sendRequest($this->cgConf['cg_gateway_url'], $poststring, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -132,8 +139,5 @@ class CreditGuardAction extends ApiAction {
 		}
 	}
 	
-	protected function generateHash($aid, $key){
-		return md5($aid . $key);
-	}
 
 }
