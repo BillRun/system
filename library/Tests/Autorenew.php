@@ -7,7 +7,7 @@
  */
 
 /**
- * Test controller class
+ * Test case class for auto-renew
  *
  * @package         Tests
  * @subpackage      Auto-renew

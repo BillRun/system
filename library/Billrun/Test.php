@@ -7,7 +7,7 @@
  */
 
 /**
- * Test controller class
+ * Billrun Test entry class
  *
  * @package  Controller
  * @since    4.4
