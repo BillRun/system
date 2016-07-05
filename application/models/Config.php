@@ -33,7 +33,6 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
-	protected $parserTypes = array('separator', 'fixed');
 
 	public function __construct() {
 		// load the config data from db
@@ -99,8 +98,7 @@ class ConfigModel {
 			if (isset($data['file_type'])) {
 				if ($fileSettings = $this->getFileTypeSettings($updatedData, $data['file_type'])) {
 					$fileSettings = array_merge($fileSettings, $data);
-				}
-				else {
+				} else {
 					$fileSettings = $data;
 				}
 				$fileSettings = $this->validateFileSettings($fileSettings);
@@ -190,16 +188,34 @@ class ConfigModel {
 	}
 
 	protected function validateParserConfiguration($parserSettings) {
-		if (empty($parserSettings['type']) || !in_array($parserSettings['type'], $this->parserTypes)) {
+		if (empty($parserSettings['type']) || !in_array($parserSettings['type'], array('separator', 'fixed'))) {
 			throw new Exception('Illegal parser type');
 		}
-		if (!is_array($parserSettings['structure']) || !$parserSettings['structure']) {
-			throw new Exception('Illegal fields');
+		if ($parserSettings['type'] == 'separator')
+			if (!is_array($parserSettings['structure']) || !$parserSettings['structure']) {
+				throw new Exception('Illegal fields');
+			}
+		if ($parserSettings['type'] == 'separator') {
+			$customKeys = $parserSettings['structure'];
+			if (empty($parserSettings['separator'])) {
+				throw new Exception('Missing CSV separator');
+			}
+			if (!(is_scalar($parserSettings['separator']) && !is_bool($parserSettings['separator']))) {
+				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
+			}
+		} else {
+			$customKeys = array_keys($parserSettings['structure']);
+			$customLengths = array_values($parserSettings['structure']);
+			if ($customLengths != array_filter($customLengths, function($length) {
+					return $length == intval($length);
+				})) {
+				throw new Exception('Duplicate field names found');
+			}
 		}
-		if (count($parserSettings['structure']) != count(array_unique($parserSettings['structure']))) {
+		if ($customKeys != array_unique($customKeys)) {
 			throw new Exception('Duplicate field names found');
 		}
-		if (count($parserSettings['structure']) != count(array_filter($parserSettings['structure'], array('Billrun_Util', 'isValidCustomJsonKey')))) {
+		if ($customKeys != array_filter($customKeys, array('Billrun_Util', 'isValidCustomJsonKey'))) {
 			throw new Exception('Illegal field names');
 		}
 		foreach (array('H', 'D', 'T') as $rowKey) {

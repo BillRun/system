@@ -1322,7 +1322,7 @@ class Billrun_Util {
 	
 	public static function isValidCustomJsonKey($jsonKey) {
 		$protectedKeys = array('urt', '_id', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun');
-		return preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
 	}
 	
 	public static function isValidRegex($regex) {
