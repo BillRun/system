@@ -40,6 +40,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Imsi());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Msisdn());
 			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Sid());
+			Billrun_Subscriber_Query_Manager::register(new Billrun_Subscriber_Query_Types_Custom());
 		}
 	}
 
@@ -67,7 +68,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 		$data = $this->customerQueryDb($subscriberQuery);
 		if (!$data) {
-			Billrun_Factory::log('Failed to load subscriber data', Zend_Log::NOTICE);
+			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
 

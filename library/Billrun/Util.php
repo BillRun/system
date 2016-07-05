@@ -1332,5 +1332,14 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
+	
+	public static function isValidCustomJsonKey($jsonKey) {
+		$protectedKeys = array('urt', '_id', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun');
+		return preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+	}
+	
+	public static function isValidRegex($regex) {
+		return !(@preg_match($regex, null) === false);
+	}
 
 }
