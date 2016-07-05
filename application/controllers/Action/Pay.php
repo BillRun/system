@@ -20,6 +20,7 @@ class PayAction extends ApiAction {
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->getPost('method');
 		$jsonPayments = $request->getPost('payments');
+
 		if (!(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
@@ -137,7 +138,7 @@ class PayAction extends ApiAction {
 				}
 				if (!isset($options['collect']) || $options['collect']) {
 					$involvedAccounts = array_unique($involvedAccounts);
-					CollectAction::collect($involvedAccounts);
+//					CollectAction::collect($involvedAccounts);
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');

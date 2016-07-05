@@ -12,7 +12,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  *
  * @package  Action
  * 
- * @since    2.6
+ * @since    5.0
  */
 class AggregateAction extends ApiAction {
 
