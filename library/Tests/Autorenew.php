@@ -37,8 +37,8 @@ class Tests_Autorenew extends UnitTestCase {
             array('date1' => '2016-07-05 00:00:00', 'date2' => '2017-06-04 23:59:59', 'countMonths' => 11, 'specific_date' => '2016-09-05 00:00:01', 'next_renew_date' => '2016-10-05 00:00:00', 'remain' => 8 ), //16
             array('date1' => '2016-02-10 00:00:00', 'date2' => '2016-04-09 23:59:59', 'countMonths' => 2,  'specific_date' => '2016-02-29 00:00:01', 'next_renew_date' => '2016-03-10 00:00:00', 'remain' => 1 ), //17            
             array('date1' => '2015-07-30 00:00:00', 'date2' => '2017-06-29 23:59:59', 'countMonths' => 23, 'specific_date' => '2017-02-28 00:00:01', 'next_renew_date' => '2017-03-30 00:00:00', 'remain' => 3 ), //18
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-02-29 00:00:01', 'next_renew_date' => '2021-03-29 00:00:00', 'remain' => 12), //19
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-01-29 00:00:01', 'next_renew_date' => '2021-02-29 00:00:00', 'remain' => 11), //20
+            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-02-29 00:00:01', 'next_renew_date' => '2020-03-29 00:00:00', 'remain' => 11), //19
+            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-01-29 00:00:01', 'next_renew_date' => '2020-02-29 00:00:00', 'remain' => 12), //20
     );
 
     function testCountMonths() {
