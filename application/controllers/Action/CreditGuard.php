@@ -34,10 +34,10 @@ class CreditGuardAction extends ApiAction {
 		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
 		if ($hash == $calculated_hash) {
 			$this->getToken($aid);
+			$url_array = parse_url($this->url);
 			$str_response = array();
-			parse_str($this->url, $str_response);
-			$tx_id = array_values($str_response);
-			$this->CG_transaction_id = $tx_id[0];
+			parse_str($url_array['query'], $str_response);
+			$this->CG_transaction_id = $str_response[txId];	
 			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
 			$this->forceRedirect($this->url);
 		}
