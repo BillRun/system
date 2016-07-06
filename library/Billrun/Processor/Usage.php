@@ -25,14 +25,17 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['usaget_mapping'])) {
 			$this->usagetMapping = $options['processor']['usaget_mapping'];
 		}
-		if (empty($options['processor']['date_field']) || empty($options['processor']['date_format'])) {
+		if (empty($options['processor']['date_field'])) {
 			return FALSE;
 		}
 		if (!empty($options['processor']['volume_field'])) {
 			$this->usagevField = $options['processor']['volume_field'];
 		}
+		if (!empty($options['processor']['date_format'])){
+			$this->dateFormat = $options['processor']['date_format'];
+		}
+		
 		$this->dateField = $options['processor']['date_field'];
-		$this->dateFormat = $options['processor']['date_format'];
 	}
 
 	protected function processLines() {
@@ -57,7 +60,15 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row = $this->filterFields($rawLine);
-		$datetime = DateTime::createFromFormat($this->dateFormat, $row[$this->dateField]);
+		if (!is_null($this->dateFormat)){
+			$datetime = DateTime::createFromFormat($this->dateFormat, $row[$this->dateField]);
+		}
+		else{
+			$date = strtotime($row[$this->dateField]);
+			$datetime = new DateTime();
+			$datetime->setTimestamp($date);
+		}
+			
 		$row['urt'] = new MongoDate($datetime->format('U'));
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineUsageVolume($row);
