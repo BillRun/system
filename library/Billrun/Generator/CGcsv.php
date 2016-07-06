@@ -15,14 +15,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @package  Billing
  * @since    5.0
  */
-class Billrun_Generator_CGcsv extends Billrun_Generator_CsvAbstract {
+class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 
 	protected $paymentMethods = array('Debit');
-
-		protected $terminal_id;  
-		protected $customers;
-		protected $subscribers;
-		protected $dd_log_file; 
+	protected $terminal_id;  
+	protected $customers;
+	protected $subscribers;
+	protected $dd_log_file; 
 
 	/**
 	 *
