@@ -46,6 +46,9 @@ class GenerateAction extends Action_Base {
 		$this->_controller->addOutput("Starting to Generate. This action can take a while...");
 		$generator->generate();
 		$this->_controller->addOutput("Finished generating.");
+		$this->_controller->addOutput("Exporting the file");
+		$generator->move();
+		$this->_controller->addOutput("Finished exporting");
 	}
 
 }

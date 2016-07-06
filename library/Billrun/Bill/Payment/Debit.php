@@ -18,7 +18,7 @@ class Billrun_Bill_Payment_Debit extends Billrun_Bill_Payment {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		if (isset($options['billrun_key'], $options['dd_stamp'], $options['IBAN'], $options['RUM'])) {
+		if (isset($options['billrun_key'], $options['dd_stamp'])) {
 			$this->data['billrun_key'] = $options['billrun_key'];
 			$this->data['dd_stamp'] = $options['dd_stamp'];
 		}
