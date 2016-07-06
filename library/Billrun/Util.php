@@ -1205,15 +1205,6 @@ class Billrun_Util {
 	}
 
 	/**
-	 * Return rounded amount for charging
-	 * @param float $amount
-	 * @return float
-	 */
-	public static function getChargableAmount($amount) {
-		return number_format($amount, 2, '.', '');
-	}
-	
-	/**
 	 * Floor a decimal
 	 * @param float $num
 	 * @param float $epsilon positive number
@@ -1332,8 +1323,17 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-		public static function generateHash($aid, $key){
+	public static function generateHash($aid, $key){
 		return md5($aid . $key);
+	}
+
+	public static function isValidCustomJsonKey($jsonKey) {
+		$protectedKeys = array('urt', '_id', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun');
+		return preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+	}
+	
+	public static function isValidRegex($regex) {
+		return !(@preg_match($regex, null) === false);
 	}
 
 }
