@@ -105,6 +105,16 @@ class Billrun_Config {
 		}
 		return self::$instance[$stamp];
 	}
+	
+	public function getFileTypeSettings($fileType) {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
+			return $fileSettings['file_type'] === $fileType;
+		});
+		if ($fileType) {
+			$fileType = current($fileType);
+		}
+		return $fileType;
+	}
 
 	public function loadDbConfig() {
 		try {

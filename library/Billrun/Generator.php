@@ -38,6 +38,23 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var boolean 
 	 */
 	protected $auto_create_dir = true;
+	
+	/**
+	 * for SSH connection
+	 */
+	protected $ssh = null;
+	
+	/**
+	 * the directory where to send(copy) the file
+	 * @var string
+	 */
+	protected $export_dir; 
+	
+	/**
+	 * the name of the file to transfer
+	 * @var string
+	 */
+	protected $filename;
 
 	/**
 	 * constructor
@@ -68,6 +85,30 @@ abstract class Billrun_Generator extends Billrun_Base {
 			mkdir($this->export_directory, 0777, true);
 			chmod($this->export_directory, 0777);
 		}
+		if (isset($options['export']['type']) && $options['export']['type'] == 'ssh') {
+			if (isset($options['export']['user'])) {
+				$user = $options['export']['user'];
+			} else {
+				$user = Billrun_Factory::config()->getConfigValue(static::$type . '.export.user');
+			}
+			if (isset($options['export']['pw'])) {
+				$password = $options['export']['pw'];
+			} else {
+				$password = Billrun_Factory::config()->getConfigValue(static::$type . '.export.pw');
+			}
+			if (isset($options['export']['server'])) {
+				$server = $options['export']['server'];
+			} else {
+				$server = Billrun_Factory::config()->getConfigValue(static::$type . '.export.server');
+			}
+			$this->defineSshConnection($user, $password, $server);
+		}
+		
+		if (isset($options['export']['dir'])) {
+			$this->export_dir = $options['export']['dir'];
+		} else {
+			$this->export_dir = Billrun_Factory::config()->getConfigValue(static::$type . '.export.dir');
+		}
 	}
 
 	/**
@@ -79,4 +120,35 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * execute the generate action
 	 */
 	abstract public function generate();
+	
+	/**
+	 * connecting to server by SSH Protocol
+	 */
+	protected function defineSshConnection($user, $password, $server) {
+		
+		$port = 22;
+		$auth = array(
+			'password' => $password,
+		);			
+		$hostAndPort = $server;
+		$hostAndPort .= ':'.$port;
+				
+		$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
+		$this->ssh->connect($user);					
+	}
+	
+	
+	/**
+	 * copy the file to the location defined
+	 * @since 5.0
+	 */
+	public function move(){
+		if (!is_null($this->ssh)){
+			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename, NET_SFTP_LOCAL_FILE); // instead of test 2&3 put the name of the generated file.
+		}
+		else{
+			copy($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // change to function rename instead of copy
+		}
+	}
+	
 }

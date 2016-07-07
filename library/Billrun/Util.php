@@ -1021,7 +1021,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1036,6 +1036,9 @@ class Billrun_Util {
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		if (!is_null($timeout)) {
 			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		if (!is_null($ssl_verify)) {
+			$curl->setCurlOption(CURLOPT_SSL_VERIFYPEER, $ssl_verify);
 		}
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders($headers);
@@ -1333,13 +1336,26 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-	public static function isValidCustomJsonKey($jsonKey) {
-		$protectedKeys = array('urt', '_id', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun');
-		return preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+	public static function generateHash($aid, $key){
+		return md5($aid . $key);
 	}
 	
+	public static function isValidCustomLineKey($jsonKey) {
+		$protectedKeys = static::getBillRunProtectedLineKeys();
+		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+	}
+	
+	public static function getBillRunProtectedLineKeys() {
+		return array('_id', 'urt', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun', 'type', 'apr', 'stamp', 'source', 'file', 'log_stamp', 'process_time', 'row_number');
+	}
+
+
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
+	}
+	
+	public static function IsIntegerValue($number) {
+		return is_numeric($number) && ($number == intval($number));
 	}
 
 }

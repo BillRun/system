@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
@@ -11,7 +11,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * Pay action class
  *
  * @package  Action
- * @since    5.0
+ * @since    0.5
  */
 class PayAction extends ApiAction {
 
@@ -20,11 +20,7 @@ class PayAction extends ApiAction {
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->getPost('method');
 		$jsonPayments = $request->getPost('payments');
-		$json = '{"a":1,"b":"ab","c":3,"d":4,"e":5}';
-		$obj = json_decode($json, TRUE);
-		$paymentsArr = json_decode($jsonPayments, TRUE);
-		
-		
+
 		if (!(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
