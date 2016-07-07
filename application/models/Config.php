@@ -33,6 +33,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
+	protected $ratingAlgorithms = array('match', 'longestPrefix');
 
 	public function __construct() {
 		// load the config data from db
@@ -101,8 +102,8 @@ class ConfigModel {
 				} else {
 					$fileSettings = $data;
 				}
-				$fileSettings = $this->validateFileSettings($fileSettings);
 				$this->setFileTypeSettings($updatedData, $fileSettings);
+				$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
 			}
 		}
 		$ret = $this->collection->insert($updatedData);
@@ -128,8 +129,8 @@ class ConfigModel {
 					if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 						throw new Exception('Operation will result in illegal file settings. Aborting.');
 					}
-					$fileSettings = $this->validateFileSettings($fileSettings);
 					$this->setFileTypeSettings($updatedData, $fileSettings);
+					$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
 				}
 			}
 		}
@@ -163,7 +164,8 @@ class ConfigModel {
 		});
 	}
 
-	protected function validateFileSettings($fileSettings) {
+	protected function validateFileSettings($config, $fileType) {
+		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
 		}
@@ -184,7 +186,65 @@ class ConfigModel {
 				}
 			}
 		}
+		$this->setFileTypeSettings($config, $updatedFileSettings);
+		$updatedFileSettings = $this->checkForConflics($config, $fileType);
 		return $updatedFileSettings;
+	}
+
+	protected function checkForConflics($config, $fileType) {
+		$fileSettings = $this->getFileTypeSettings($config, $fileType);
+		if (isset($fileSettings['processor'])) {
+			$customFields = $fileSettings['parser']['custom_keys'];
+			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
+			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			$useFromStructure = $uniqueFields;
+			$usagetMappingSource = array_map(function($mapping) {
+				return $mapping['src_field'];
+			}, $fileSettings['processor']['usaget_mapping']);
+			$usagetTypes = array_map(function($mapping) {
+				return $mapping['usaget'];
+			}, $fileSettings['processor']['usaget_mapping']);
+			if (isset($fileSettings['processor']['default_usaget'])) {
+				$usagetTypes[] = $fileSettings['processor']['default_usaget'];
+				$usagetTypes = array_unique($usagetTypes);
+			}
+			if (isset($fileSettings['customer_identification_fields'])) {
+				$customerMappingSource = array_map(function($mapping) {
+					return $mapping['src_key'];
+				}, $fileSettings['customer_identification_fields']);
+				$useFromStructure = $uniqueFields = array_merge($uniqueFields, array_unique($customerMappingSource));
+				$customerMappingTarget = array_map(function($mapping) {
+					return $mapping['target_key'];
+				}, $fileSettings['customer_identification_fields']);
+				$subscriberFields = array_map(function($field){return $field['field_name'];}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
+					return !empty($field['unique']);
+				}));
+				if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
+					throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
+				}
+				if (isset($fileSettings['rate_calculators'])) {
+					$ratingUsageTypes = array_keys($fileSettings['rate_calculators']);
+					foreach ($fileSettings['rate_calculators'] as $usageRules) {
+						foreach ($usageRules as $rule) {
+							$ratingLineKeys[] = $rule['line_key'];
+						}
+					}
+					$useFromStructure = array_merge($useFromStructure, $ratingLineKeys);
+					if ($unknownUsageTypes = array_diff($ratingUsageTypes, $usagetTypes)) {
+						throw new Exception('Unknown usage type(s) in rating: ' . implode(',', $unknownUsageTypes));
+					}
+					if ($usageTypesMissingRating = array_diff($usagetTypes, $ratingUsageTypes)) {
+						throw new Exception('Missing rating rules for usage types(s): ' . implode(',', $usageTypesMissingRating));
+					}
+				}
+			}
+			if ($uniqueFields != array_unique($uniqueFields)) {
+				throw new Exception('Cannot use same field for different configurations');
+			}
+			if ($diff = array_diff($useFromStructure, $customFields)) {
+				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
+			}
+		}
 	}
 
 	protected function validateParserConfiguration($parserSettings) {
@@ -207,15 +267,16 @@ class ConfigModel {
 			$customKeys = array_keys($parserSettings['structure']);
 			$customLengths = array_values($parserSettings['structure']);
 			if ($customLengths != array_filter($customLengths, function($length) {
-					return $length == intval($length);
+					return Billrun_Util::IsIntegerValue($length);
 				})) {
 				throw new Exception('Duplicate field names found');
 			}
 		}
+		$parserSettings['custom_keys'] = $customKeys;
 		if ($customKeys != array_unique($customKeys)) {
 			throw new Exception('Duplicate field names found');
 		}
-		if ($customKeys != array_filter($customKeys, array('Billrun_Util', 'isValidCustomJsonKey'))) {
+		if ($customKeys != array_filter($customKeys, array('Billrun_Util', 'isValidCustomLineKey'))) {
 			throw new Exception('Illegal field names');
 		}
 		foreach (array('H', 'D', 'T') as $rowKey) {
@@ -230,18 +291,94 @@ class ConfigModel {
 
 	protected function validateProcessorConfiguration($processorSettings) {
 		$processorSettings['type'] = 'Usage';
+		if (isset($processorSettings['date_format'])) {
+			// TODO validate date format
+		}
+		if (!isset($processorSettings['date_field'], $processorSettings['volume_field'], $processorSettings['volume_field'], $processorSettings['usaget_mapping'])) {
+			throw new Exception('Missing mandatory processor configuration');
+		}
+		if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
+			throw new Exception('Missing mandatory processor configuration');
+		}
+		$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
+		foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
+			if (!isset($mapping['src_field'], $mapping['pattern'], $mapping['usaget']) || !Billrun_Util::isValidRegex($mapping['pattern'])) {
+				throw new Exception('Illegal usaget mapping at index' . $index);
+			}
+		}
+		if (!isset($processorSettings['orphan_files_time'])) {
+			$processorSettings['orphan_files_time'] = '6 hours';
+		}
 		return $processorSettings;
 	}
 
 	protected function validateCustomerIdentificationConfiguration($customerIdentificationSettings) {
+		if (!is_array($customerIdentificationSettings) || !$customerIdentificationSettings) {
+			throw new Exception('Illegal customer identification settings');
+		}
+		$customerIdentificationSettings = array_values($customerIdentificationSettings);
+		foreach ($customerIdentificationSettings as $index => $settings) {
+			if (!isset($settings['src_key'], $settings['target_key'])) {
+				throw new Exception('Illegal customer identification settings at index ' . $index);
+			}
+			if (iss)
+				if (array_key_exists('conditions', $settings) && (!is_array($settings['conditions']) || !$settings['conditions'] || !($settings['conditions'] == array_filter($settings['conditions'], function ($condition) {
+						return isset($condition['field'], $condition['regex']) && Billrun_Util::isValidRegex($condition['regex']);
+					})))) {
+					throw new Exception('Illegal customer identification conditions field at index ' . $index);
+				}
+			if (isset($settings['clear_regex']) && !Billrun_Util::isValidRegex($settings['clear_regex'])) {
+				throw new Exception('Invalid customer identification clear regex at index ' . $index);
+			}
+		}
 		return $customerIdentificationSettings;
 	}
 
 	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings) {
+		if (!is_array($rateCalculatorsSettings)) {
+			throw new Exception('Rate calculators settings is not an array');
+		}
+		foreach ($rateCalculatorsSettings as $usaget => $rateRules) {
+			foreach ($rateRules as $rule) {
+				if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
+					throw new Exception('Illegal rating rules for usaget ' . $usaget);
+				}
+				if (!in_array($rule['type'], $this->ratingAlgorithms)) {
+					throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
+				}
+			}
+		}
 		return $rateCalculatorsSettings;
 	}
 
 	protected function validateReceiverConfiguration($receiverSettings) {
+		if (!is_array($receiverSettings)) {
+			throw new Exception('Receiver settings is not an array');
+		}
+		if (!array_key_exists('connections', $receiverSettings) || !is_array($receiverSettings['connections']) || !$receiverSettings['connections']) {
+			throw new Exception('Receiver \'connections\' does not exist or is empty');
+		}
+		$receiverSettings['type'] = 'ftp';
+		if (isset($receiverSettings['limit'])) {
+			if (!Billrun_Util::IsIntegerValue($receiverSettings['limit']) || $receiverSettings['limit'] < 1) {
+				throw new Exception('Illegal receiver limit value ' . $receiverSettings['limit']);
+			}
+			$receiverSettings['limit'] = intval($receiverSettings['limit']);
+		} else {
+			$receiverSettings['limit'] = 3;
+		}
+		if ($receiverSettings['type'] == 'ftp') {
+			foreach ($receiverSettings['connections'] as $index => $connection) {
+				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
+					throw new Exception('Missing receiver\'s connection field at index ' . $index);
+				}
+				if (filter_var($connection['host'], FILTER_VALIDATE_IP) === FALSE) {
+					throw new Exception($connection['host'] . ' is not a valid IP addresss');
+				}
+				$connection['passive'] = $connection['passive'] ? 1 : 0;
+				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;
+			}
+		}
 		return $receiverSettings;
 	}
 
