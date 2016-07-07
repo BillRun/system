@@ -82,6 +82,9 @@ class ConfigModel {
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
 		}
+		else if ($category == 'subscribers') {
+			return $currentConfig['subscribers'];
+		}
 		throw new Exception('Unknown category ' . $category);
 	}
 
