@@ -75,7 +75,7 @@ class ConfigModel {
 		$currentConfig = $this->getConfig();
 		if ($category == 'file_types') {
 			if (empty($data['file_type'])) {
-				throw new Exception('No file type supplied');
+				return $currentConfig['file_types'];
 			}
 			if ($fileSettings = $this->getFileTypeSettings($currentConfig, $data['file_type'])) {
 				return $fileSettings;
@@ -216,9 +216,11 @@ class ConfigModel {
 				$customerMappingTarget = array_map(function($mapping) {
 					return $mapping['target_key'];
 				}, $fileSettings['customer_identification_fields']);
-				$subscriberFields = array_map(function($field){return $field['field_name'];}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-					return !empty($field['unique']);
-				}));
+				$subscriberFields = array_map(function($field) {
+					return $field['field_name'];
+				}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
+						return !empty($field['unique']);
+					}));
 				if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
 					throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 				}
