@@ -34,12 +34,13 @@ class SettingsAction extends ApiAction {
 			$this->initializeModel();
 			$category = $request->get('category');
 			$data = $request->get('data');
-			if (!(($data = json_decode($data, TRUE)) && (!json_last_error()) && is_array($data))) {
+			$data = json_decode($data, TRUE);
+			if (json_last_error() || !is_array($data)) {
 				$this->setError('No data to update or illegal data array', $request->getPost());
 				return TRUE;
 			}
-			if (!($category && $data)) {
-				$this->setError('Missing category / data parameters', $request->getPost());
+			if (!($category)) {
+				$this->setError('Missing category parameter', $request->getPost());
 				return TRUE;
 			}
 			$action = $request->get('action');
