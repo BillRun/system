@@ -65,7 +65,7 @@ class Billrun_Config {
 			return $moreImportantConf;
 		}
 
-		foreach (array_merge(array_keys($lessImportentConf), array_keys($moreImportantConf)) as $key) {
+		foreach ($moreImportantConf as $key => $value) {
 			if (!isset($moreImportantConf[$key])) {
 				continue;
 			}
