@@ -67,11 +67,16 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				$hostAndPort .= ':'.$config['port'];
 			}
 			
+			$ret = array();
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			$this->ssh->connect($config['user']);
-
+			
+			 if (!$this->ssh->connected()){
+				 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::INFO);
+				 return $ret;
+			 }
+			
 			try {
-				$ret = array();
 				$files = $this->ssh->getListOfFiles($this->ssh_path, true);
 	
 				$type = static::$type;

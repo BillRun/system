@@ -17,7 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  */
 class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 
-	protected $paymentMethods = array('Debit');
+	protected $paymentMethods = array('Credit');
 	protected $terminal_id;  
 	protected $customers;
 	protected $subscribers;
@@ -72,6 +72,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			$paymentParams['source'] = $customer['source'];
 			
 			$payment = payAction::pay('credit', array($paymentParams), $options)[0];
+
 			$line = array(
 				0 => '001',
 				1 => $this->terminal_id,
@@ -82,7 +83,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 				6 => '01',
 				7 => 1,
 				8 => '',
-				9 => $subscriber['transaction_id'],
+				9 => $payment->getId(),
 				10 => '',
 				11 => '',
 				12 => 4,

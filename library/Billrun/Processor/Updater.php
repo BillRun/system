@@ -26,14 +26,6 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 		}
 	}
 
-	protected function parse() {
-		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
-			return false;
-		}
-		return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
-	}
-
 	protected function processFinished() {
 		return Billrun_Factory::chain()->trigger('isProcessingFinished', array($this->getType(), $this->fileHandler, &$this));
 	}
@@ -53,12 +45,12 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 	public function process() {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
-		if ($this->parse() === FALSE) {
-			Billrun_Factory::log()->log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
+		if ($this->processLines() === FALSE) {
+			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
 
-		if ($this->update() === FALSE) {
+		if ($this->updateData() === FALSE) {
 			Billrun_Factory::log()->log("Billrun_Processor: cannot update by parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
@@ -72,9 +64,6 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 		return count($this->data['data']);
 	}
 
-	protected function update() {
-		return Billrun_Factory::chain()->trigger('updateData', array($this->getType(), $this->fileHandler, &$this));
-	}
 
 	/**
 	 * This function should be used to build a Data row
@@ -151,6 +140,11 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 	}
 
 	protected function processLines(){
+	}
+	
+	protected function updateData(){
 		
 	}
+	
+	
 }
