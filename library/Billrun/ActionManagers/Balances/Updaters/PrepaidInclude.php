@@ -49,7 +49,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 
 		$db = Billrun_Factory::db();
-		$prepaidIncludes = $db->prepaidincludesCollection();
+		$prepaidIncludes = $db->prepaidincludesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 8;
@@ -168,7 +168,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection();
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);

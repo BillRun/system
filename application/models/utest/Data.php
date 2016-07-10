@@ -29,6 +29,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 	public function doTest() {
 		//Get test params
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
+		$mcc = Billrun_Util::filter_var($this->controller->getRequest()->get('mcc'), FILTER_SANITIZE_STRING);
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
 
@@ -37,6 +38,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			$nameAndUssage = explode("|", $name);
 			$params = array(
 				'imsi' => $imsi,
+				'mcc' => $mcc,
 				'requestNum' => ($index + 1),
 				'type' => $nameAndUssage[0],
 				'sessionId' => $this->controller->getReference(),
@@ -60,6 +62,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 		$usedUnits = (int) $params['usedUnits'];
 		$requestNum = $params['requestNum'];
 		$sessionId = $params['sessionId'];
+		$mcc = $params['mcc'];
 
 		$request = array(
 			//"requestType" => "1",
@@ -78,29 +81,29 @@ class utest_DataModel extends utest_AbstractUtestModel {
 					"requestedUnits" => 1000,
 				//"usedUnits" => 1000
 				),
-				"Service" => array(
-					"PdnConnectionId" => "0",
-					"PdpAddress" => "10.161.48.3",
-					"CalledStationId" => "test-sacc.labpelephone.net.il",
-					"MccMnc" => "42503",
-					"GgsnAddress" => "91.135.99.226",
-					"SgsnAddress" => "91.135.96.3",
-					"ChargingId" => "0",
-					"GPRSNegQoSProfile" => "0",
-					"ChargingCharacteristics" => "0800",
-					"PDPType" => "0",
-					"SGSNMCCMNC" => "42503",
-					"GGSNMCCMNC" => "0",
-					"CGAddress" => "0.0.0.0",
-					"NSAPI" => "5",
-					"SessionStopIndicator" => "0",
-					"SelectionMode" => "1",
-					"RATType" => array("1"),
-					"MSTimeZone" => array("128", "0"),
-					"ChargingRuleBaseName" => "0",
-					"FilterId" => "0"
-				)
-			)
+			),
+			"service" => array(
+				"PdnConnectionId" => "0",
+				"PdpAddress" => "10.161.48.3",
+				"CalledStationId" => "test-sacc.labpelephone.net.il",
+				"MccMnc" => $mcc,
+				"GgsnAddress" => "91.135.99.226",
+				"SgsnAddress" => "91.135.96.3",
+				"ChargingId" => "0",
+				"GPRSNegQoSProfile" => "0",
+				"ChargingCharacteristics" => "0800",
+				"PDPType" => "0",
+				"SGSNMCCMNC" => "42503",
+				"GGSNMCCMNC" => "0",
+				"CGAddress" => "0.0.0.0",
+				"NSAPI" => "5",
+				"SessionStopIndicator" => "0",
+				"SelectionMode" => "1",
+				"RATType" => array("1"),
+				"MSTimeZone" => array("128", "0"),
+				"ChargingRuleBaseName" => "0",
+				"FilterId" => "0"
+			),
 		);
 
 		switch ($type) {

@@ -104,6 +104,9 @@ class LinesModel extends TableModel {
 			if (isset($item['rat_type'])) {
 				$item['rat_type'] = Admin_Table::translateField($item, 'rat_type');
 			}
+			
+			$callingCalledFieldName = (in_array($item['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array())) ? 'calling_number' : 'called_number');
+			$item['called_calling'] = $item[$callingCalledFieldName];
 			$ret[] = $item;
 		}
 		return $ret;

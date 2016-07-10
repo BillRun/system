@@ -41,18 +41,16 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected function queryRangeBalances() {
 		try {
-			$cursor = $this->collection->query($this->balancesQuery)->cursor();
-			$existingBalances = array();
-
+			$cursor = $this->collection->setReadPreference(MongoClient::RP_PRIMARY, array())->query($this->balancesQuery)->cursor();
+			$returnData = $this->availableBalances;
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
 				$externalID = $rawItem['pp_includes_external_id'];
-				unset($this->availableBalances[$externalID]);
-				$existingBalances[] = $rawItem;
+				$returnData[$externalID] = $rawItem;
 			}
 
-			$returnData = array_merge($existingBalances, array_values($this->availableBalances));
+			ksort($returnData);
 			foreach ($returnData as &$row) {
 				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
@@ -62,7 +60,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			return null;
 		}
 
-		return $returnData;
+		return array_values($returnData);
 	}
 
 	/**

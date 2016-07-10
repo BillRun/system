@@ -49,7 +49,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		if (!$balanceRef || !$balance = $balances_coll->getRef($balanceRef)) {
 			$validityTime = max($defaultValidityTime, 60); // protection - in case there is a problem with the balance or default value
 		} else {
-			$secondsUntilEndOfBalance = ($balance->get('to')->sec - time());
+			$secondsUntilEndOfBalance = ($balance->get('to')->sec - time()) + rand(0, 60); // the rand to spread when returning without concurrent bottlenecks
 			$validityTime = max(min($defaultValidityTime, $secondsUntilEndOfBalance), 60); // protection - in case there is a problem with the balance or default value
 		}
 		$defaultQuotaHoldingTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.quotaHoldingTime", 0);
