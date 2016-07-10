@@ -121,28 +121,33 @@
 			<div ng-if="entity.include !== undefined">
 				<hr/>
 				<h3>Include</h3>
-				<select class='form-control' ng-model='newIncludeType.type'
-						ng-options="include_type as include_type for include_type in availableIncludeTypes">
-					</option>
-				</select>
-				<a href='' ng-click='addIncludeType()'>Add Rate</a>
-				<div class="row" ng-if='!isObject(entity.include.cost) && entity.include.cost'>
-					<div class="col-md-2">
-						Cost
-					</div>
-					<div class="col-md-6">
-						<input ng-model="entity.include.cost" type="text" class="form-control" />
-					</div>
-				</div>
-				<div class="row cost" ng-repeat='cost in entity.include.cost track by $index' ng-if='isObject(entity.include.cost)'>
+				<a href='' ng-click='addIncludeType()'>Add Include (Balance)</a>
+
+				<div ng-repeat="includeType in displayData.includeTypes track by $index">
 					<fieldset>
-						<legend>Cost  <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeCost($index)"></i></small></legend>
-						<div class='row'>
-							<div class='col-md-2'>
+						<legend>{{includeType.type}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType($index)"></i></small></legend>
+						<div class="row" ng-if="includeType.pp_include.charging_by == 'cost'">
+							<div class="col-md-2">
+								Cost
+							</div>
+							<div class="col-md-6">
+								<input ng-model="includeType.cost" type="number" class="form-control" />
+							</div>
+						</div>
+						<div class="row" ng-if="includeType.pp_include.charging_by == 'usagev'">
+							<div class="col-md-2">
+								Usagev
+							</div>
+							<div class="col-md-6">
+								<input ng-model='includeType.usagev' type='number' disable-arrows class='form-control' />
+							</div>
+						</div>
+						<div class="row" ng-if="includeType.pp_include.charging_by =='total_cost'">
+							<div class="col-md-2">
 								Value
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.value' type='number' disable-arrows class='form-control' />
+								<input ng-model='includeType.value' type='number' disable-arrows class='form-control' />
 							</div>
 						</div>
 						<div class='row'>
@@ -150,194 +155,52 @@
 								PP Includes
 							</div>
 							<div class='col-md-6'>
-								<select ng-model="cost.pp_include" class="form-control"
+								<select ng-model="includeType.pp_include" class="form-control"
 										ng-options="o as o.name for o in pp_includes"
-										ng-init="getPPIncludesDefaultValue(cost)"
-										ng-change="updatePPIncludes(cost)">
+										ng-init="getPPIncludesDefaultValue(includeType)"
+										ng-change="updatePPIncludes(includeType)">
 								</select>
 							</div>
 						</div>
 						<div class='row hidden'>
-							<div class='col-md-2'>
+							<div class="col-md-2">
 								Name
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.pp_includes_name' type='text' class='form-control'  disabled="disabled" />
+								<input ng-model='includeType.pp_includes_name' type='text' class='form-control' disabled="disabled" />
 							</div>
 						</div>
 						<div class='row hidden'>
-							<div class='col-md-2'>
-								External Id
+							<div class="col-md-2">
+								External ID
 							</div>
 							<div class="col-md-6">
-								<input ng-model='cost.pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
+								<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
 							</div>
 						</div>
-
 						<h5>Period</h5>
-						<div>
+						<div class="">
 							<div class='row'>
 								<div class='col-md-2 col-indent'>
-									Unit:
+									Unit
 								</div>
 								<div class='col-md-6'>
-									<select class='form-control' ng-model='cost.period.unit'
+									<select class='form-control' ng-model='includeType.period.unit'
 											ng-options='cost as cost for cost in availableCostUnits'>
 									</select>
 								</div>
 							</div>
 							<div class='row'>
 								<div class='col-md-2 col-indent'>
-									Duration:
+									Duration
 								</div>
 								<div class='col-md-6'>
-									<input ng-model='cost.period.duration' type='text' class='form-control'/>
+									<input ng-if="includeType.pp_include.charging_by!='total_cost'" ng-model='includeType.period.duration' type='number' disable-arrows class='form-control' />
+									<input ng-if="includeType.pp_include.charging_by=='total_cost'" ng-model='includeType.period.duration' type='text' class='form-control' />
 								</div>
 							</div>
 						</div>
 					</fieldset>
-				</div>			
-				<div ng-repeat="(includeTypeName, includeType) in entity.include" ng-if='includeTypeName !== "cost"'>
-					<div ng-if="includeType.length" ng-repeat="include in includeType track by $index">
-						<fieldset>
-							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName, $index)"></i></small></legend>
-							<div class="row" ng-if="includeType[$index].pp_include.charging_by == 'cost' || includeType[$index].pp_include.charging_by =='total_cost'">
-								<div class="col-md-2">
-									Cost
-								</div>
-								<div class="col-md-6">
-									<input ng-model="includeType[$index].cost" type="text" class="form-control" />
-								</div>
-							</div>
-							<div class="row" ng-if="includeType[$index].pp_include.charging_by == 'usagev'">
-								<div class="col-md-2">
-									Usagev
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType[$index].usagev' type='number' disable-arrows class='form-control' />
-								</div>
-							</div>
-							<div class='row'>
-								<div class="col-md-2">
-									PP Includes
-								</div>
-								<div class='col-md-6'>
-									<select ng-model="includeType[$index].pp_include" class="form-control"
-											ng-options="o as o.name for o in pp_includes"
-											ng-init="getPPIncludesDefaultValue(includeType[$index])"
-											ng-change="updatePPIncludes(includeType[$index])">
-									</select>
-								</div>
-							</div>
-							<div class='row hidden'>
-								<div class="col-md-2">
-									Name
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType[$index].pp_includes_name' type='text' class='form-control' disabled="disabled" />
-								</div>
-							</div>
-							<div class='row hidden'>
-								<div class="col-md-2">
-									External ID
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType[$index].pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
-								</div>
-							</div>
-							<h5>Period</h5>
-							<div class="">
-								<div class='row'>
-									<div class='col-md-2 col-indent'>
-										Unit
-									</div>
-									<div class='col-md-6'>
-										<select class='form-control' ng-model='includeType[$index].period.unit'
-												ng-options='cost as cost for cost in availableCostUnits'>
-										</select>
-									</div>
-								</div>
-								<div class='row'>
-									<div class='col-md-2 col-indent'>
-										Duration
-									</div>
-									<div class='col-md-6'>
-										<input ng-model='includeType[$index].period.duration' type='number' disable-arrows class='form-control' />
-									</div>
-								</div>
-							</div>
-						</fieldset>
-					</div>
-					<div ng-if="isObject(includeType) && !includeType.length">
-						<fieldset>
-							<legend>{{includeTypeName}} <small><i class="glyphicon glyphicon-minus-sign" ng-click="removeIncludeType(includeTypeName)"></i></small></legend>
-							<div class="row" ng-if="includeType.pp_include.charging_by == 'cost' || includeType.pp_include.charging_by =='total_cost'">
-								<div class="col-md-2">
-									Cost
-								</div>
-								<div class="col-md-6">
-									<input ng-model="includeType.cost" type="text" class="form-control" />
-								</div>
-							</div>
-							<div class="row" ng-if="includeType.pp_include.charging_by == 'usagev'">
-								<div class="col-md-2">
-									Usagev
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType.usagev' type='number' disable-arrows class='form-control' />
-								</div>
-							</div>
-							<div class='row'>
-								<div class="col-md-2">
-									PP Includes
-								</div>
-								<div class='col-md-6'>
-									<select ng-model="includeType.pp_include" class="form-control"
-											ng-options="o as o.name for o in pp_includes"
-											ng-init="getPPIncludesDefaultValue(includeType)"
-											ng-change="updatePPIncludes(includeType)">
-									</select>
-								</div>
-							</div>
-							<div class='row hidden'>
-								<div class="col-md-2">
-									Name
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType.pp_includes_name' type='text' class='form-control' disabled="disabled" />
-								</div>
-							</div>
-							<div class='row hidden'>
-								<div class="col-md-2">
-									External ID
-								</div>
-								<div class="col-md-6">
-									<input ng-model='includeType.pp_includes_external_id' type='text' class='form-control' disabled="disabled" />
-								</div>
-							</div>
-							<h5>Period</h5>
-							<div class="">
-								<div class='row'>
-									<div class='col-md-2 col-indent'>
-										Unit
-									</div>
-									<div class='col-md-6'>
-										<select class='form-control' ng-model='includeType.period.unit'
-												ng-options='cost as cost for cost in availableCostUnits'>
-										</select>
-									</div>
-								</div>
-								<div class='row'>
-									<div class='col-md-2 col-indent'>
-										Duration
-									</div>
-									<div class='col-md-6'>
-										<input ng-model='includeType.period.duration' type='number' disable-arrows class='form-control' />
-									</div>
-								</div>
-							</div>
-						</fieldset>
-					</div>
 				</div>
 			</div>
 		</div>

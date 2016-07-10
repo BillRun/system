@@ -73,6 +73,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	}
 
 	protected function getLineVolume($row) {
+		if (in_array($row['usaget'], Billrun_Util::getCallTypes())) {
+			return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
+		}
+		
 		switch ($row['usaget']) {
 			case ('data'):
 				/* 				$sum = 0;
@@ -87,9 +91,6 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 					return 0;
 				}
 				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
-			case ('call'):
-			case ('video_call'):
-				return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
 			case ('sms'):
 			case ('mms'):
 			case ('service'):
@@ -107,7 +108,8 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 			return 'data';
 		}
 		if (isset($row['call_reference'])) {
-			return ($row['call_type'] === '3' ? 'video_call' : 'call');
+			$callTypesConf = Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array());
+			return (isset($callTypesConf[$row['call_type']]) ? $callTypesConf[$row['call_type']] : 'call');
 		}
 		if (isset($row['record_type']) && $row['record_type'] === 'sms') {
 			return 'sms';

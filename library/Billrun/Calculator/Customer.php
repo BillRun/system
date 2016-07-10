@@ -131,12 +131,21 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
 			}
 			$subscriber_field = $subscriber->{$key};
-			$row[$key] = $subscriber_field;
+			if (is_array($row[$key]) && is_array($subscriber_field)) {
+				$row[$key] = array_merge($row[$key], $subscriber_field);
+			} else {
+				$row[$key] = $subscriber_field;
+			}
 		}
+		
 		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
 			if ($this->isExtraDataRelevant($row, $key)) {
 				$subscriber_field = $subscriber->{$key};
-				$row[$key] = $subscriber_field;
+				if (is_array($row[$key]) && is_array($subscriber_field)) { // if existing value is array and in input value is array let's do merge
+					$row[$key] = array_merge($row[$key], $subscriber_field);
+				} else {
+					$row[$key] = $subscriber_field;
+				}
 			}
 		}
 		$row['subscriber_lang'] = $subscriber->language;
@@ -403,6 +412,9 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$outgoing = true;
 		if ($line['type'] == 'nsn') {
 			$outgoing = in_array($line['record_type'], array('01', '11'));
+		}
+		if (in_array($line['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()))) {
+			return false;
 		}
 		return $outgoing;
 	}

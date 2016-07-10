@@ -134,7 +134,7 @@ class CardsModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => array('$lte', '$gte'),
 				'display' => 'Active Date',
-				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+//				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
 		if (AdminController::authorized('admin')) {

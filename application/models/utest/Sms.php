@@ -29,6 +29,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 	public function doTest() {
 		//Get test params
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
+		$msc = Billrun_Util::filter_var($this->controller->getRequest()->get('msc'), FILTER_SANITIZE_STRING);
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
 		$discount = Billrun_Util::filter_var($this->controller->getRequest()->get('discount'), FILTER_SANITIZE_STRING);
 		$usaget = Billrun_Util::filter_var($this->controller->getRequest()->get('usaget'), FILTER_SANITIZE_STRING);
@@ -40,7 +41,7 @@ class utest_SmsModel extends utest_AbstractUtestModel {
 			'request' => array(
 				'calling_number' => $calling_number,
 				'called_number' => $called_number,
-				'msc_id' => 'tmp',
+				'msc_id' => $msc,
 				'pmt_subscriber_type' => 'tmp',
 				'discount' => $discount,
 				'association_number' => $this->controller->getReference(),
