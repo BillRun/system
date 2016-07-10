@@ -315,7 +315,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function isLineLegitimate($line) {
 		if (is_array($line)) {
-			$arate = $this->lines_coll->getRef($line['arate']);
+			if (isset($line['arate'])){
+				$arate = $this->lines_coll->getRef($line['arate']);
+			}
+			else{
+				$arate = false;
+			}
 		} else { 
 			$line->collection(Billrun_Factory::db()->linesCollection());
 			$arate = $line->get('arate', false);
