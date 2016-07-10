@@ -113,11 +113,11 @@ class PlansModel extends TabledateModel {
 		return parent::applyFilter($filter_field, $value);
 	}
 	
-	public function getOverlappingDatesQuery($entity) {
+	public function getOverlappingDatesQuery($entity, $new = true) {
 		$additionalQuery = array(
 			'service_provider' => $entity['service_provider'],
 		);
-		return array_merge(parent::getOverlappingDatesQuery($entity), $additionalQuery);
+		return array_merge(parent::getOverlappingDatesQuery($entity, $new), $additionalQuery);
 	}
 
 }
