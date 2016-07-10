@@ -125,6 +125,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 */
 	protected function getRateByParams($row, $usaget, $type) {
 		$query = $this->getRateQuery($row, $usaget, $type);
+		if (!$query) {
+			return FALSE;
+		}
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
@@ -149,6 +152,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		$additionalAfterGroup = array();
 		$sort = $this->getBasicSortRateQuery($row);
 		$filters = $this->getRateCustomFilters($usaget, $type);
+		if (!$filters) {
+			Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
+			return FALSE;
+		}
 		foreach ($filters as $filter) {
 			$handlerClass = Billrun_Calculator_Rate_Filters_Manager::getFilterHandler($filter);
 			if (!$handlerClass) {
@@ -187,10 +194,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	}
 	
 	protected function getRateCustomFilters($usaget, $type) {
-		return array_merge(
-			Billrun_Factory::config()->getConfigValue($type . '.rate_calculators.' . $usaget, array(), 'array'),
-			Billrun_Factory::config()->getConfigValue($type . '.rate_calculators.' . 'BASE', array(), 'array')
-		);
+		$rateRules = Billrun_Factory::config()->getFileTypeSettings($type)['rate_calculators'];
+		return Billrun_Util::getFieldVal($rateRules[$usaget], array());
 	}
 
 }
