@@ -250,7 +250,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function reuseExistingFields(&$data, $options) {
 		$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());
 		foreach ($data['data'] as &$line) {
-			if (isset($line['record_type']) && in_array($line['record_type'], Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreRecordTypes', array()))) {
+			if (!isset($sessionIdFields[$line['type']]) || (
+				isset($line['record_type']) && in_array($line['record_type'], Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreRecordTypes', array()))
+			)) {
 				continue;
 			}
 			$customerCalc = $this->getCalculator('customer', $options, $line);

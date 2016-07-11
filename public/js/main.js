@@ -58,12 +58,16 @@ $(function () {
 		}).done(function (res) {
 			var entity = JSON.parse(res).entity;
 			var interconnect_entity = JSON.parse(res).interconnect;
-			var rate = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'].rate : entity.rates[usage][plan].rate);
+			var rate_params = (_.isUndefined(entity.rates[usage][plan]) ? entity.rates[usage]['BASE'] : entity.rates[usage][plan]);
+			var rate = rate_params.rate;
 			if (!_.isEmpty(interconnect_entity)) {
-				var interconnect = (_.isUndefined(interconnect_entity.rates[usage][plan]) ?
-						interconnect_entity.rates[usage]['BASE'].rate :
-						interconnect_entity.rates[usage][plan].rate);
+				var interconnect_params = (_.isUndefined(interconnect_entity.rates[usage][plan]) ?
+						interconnect_entity.rates[usage]['BASE'] :
+						interconnect_entity.rates[usage][plan]);
+				var interconnect = interconnect_params.rate;
 			}
+			var access = (_.isUndefined(rate_params.access) ? 0 : rate_params.access);
+			$("#access-price").text(access);
 			var $tbody = $("#data-rates-tbody");
 			$('#ratePlanPopupLabel').text(entity.key + " - " + plan);
 			_.forEach(rate, function (r) {
@@ -71,7 +75,15 @@ $(function () {
 				$tbody.append($row);
 			});
 			if (interconnect) {
-				var $inter_table = $("<div id='rate-interconnect-info'><hr/><h3>Interconnect - " + interconnect_entity.key + "</h3><table class='table table-striped table-bordered data-rates-table'>\
+				var interconnect_access = (_.isUndefined(interconnect_params.access) ? 0 : interconnect_params.access);
+				var $inter_table = $("<div id='rate-interconnect-info'><hr/><h3>Interconnect - " + interconnect_entity.key + "</h3>\
+					<div class='access-price-container'>\
+						<label>Access Price: </label>\
+						<span id='interconnect-access-price'>"
+							+ interconnect_access + 
+						"</span>\
+					</div>\
+					<table class='table table-striped table-bordered data-rates-table'>\
 					<thead>\
 						<tr>\
 							<th>Interval</th>\

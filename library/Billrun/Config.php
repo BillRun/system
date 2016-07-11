@@ -65,7 +65,7 @@ class Billrun_Config {
 			return $moreImportantConf;
 		}
 
-		foreach (array_merge(array_keys($lessImportentConf), array_keys($moreImportantConf)) as $key) {
+		foreach ($moreImportantConf as $key => $value) {
 			if (!isset($moreImportantConf[$key])) {
 				continue;
 			}
@@ -104,6 +104,16 @@ class Billrun_Config {
 			self::$instance[$stamp]->loadDbConfig();
 		}
 		return self::$instance[$stamp];
+	}
+	
+	public function getFileTypeSettings($fileType) {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
+			return $fileSettings['file_type'] === $fileType;
+		});
+		if ($fileType) {
+			$fileType = current($fileType);
+		}
+		return $fileType;
 	}
 
 	public function loadDbConfig() {

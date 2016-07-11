@@ -268,7 +268,7 @@ class Mongodloid_Collection {
 		}
 		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
 	}
-	
+
 	
 	public function setTimeout($timeout) {
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {

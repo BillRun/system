@@ -41,7 +41,7 @@ class Billrun_Subscriber_Query_Manager {
 			}
 		}
 		if ($result) {
-			$result = array_merge($result, Billrun_Util::getDateBoundQuery(strtotime($params['time'])));
+			$result = array_merge($result, Billrun_Util::getDateBoundQuery(strtotime($params['time'])), array('type' => 'subscriber'));
 		}
 
 		return $result;

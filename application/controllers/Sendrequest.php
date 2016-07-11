@@ -64,7 +64,8 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			'process_time' => new MongoDate(),
 			'request' => $requestBody,
 			'response' => array(),
-			'server_host' => gethostname(),
+			'server_host' => Billrun_Util::getHostName(),
+			'server_pid' => Billrun_Util::getPid(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1, 1000000),
 		);
@@ -98,14 +99,21 @@ class SendrequestController extends Yaf_Controller_Abstract {
 		if (isset($additionalParams['dataSlownessRequest']) && 
 			filter_var($additionalParams['dataSlownessRequest'], FILTER_VALIDATE_BOOLEAN)) {
 			$enterDataSlowness = filter_var($additionalParams['enterDataSlowness'], FILTER_VALIDATE_BOOLEAN);
-			$sid = intal($additionalParams['sid']);
+			$sid = intval($additionalParams['sid']);
 			// Update subscriber in DB
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
-				$updateQuery = array('$set' => array('in_data_slowness' => true));
+				$updateQuery = array('$set' => array(
+					'in_data_slowness' => true,
+					'data_slowness_enter' => new MongoDate()
+					)
+				);
 			} else {
-				$updateQuery = array('$unset' => array('in_data_slowness' => 1));
+				$updateQuery = array(
+					'$unset' => array('in_data_slowness' => 1),
+					'$set' => array('data_slowness_exit' => new MongoDate()),
+				);
 			}
 			$subscribersColl->update($findQuery, $updateQuery);
 		}

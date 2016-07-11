@@ -142,7 +142,14 @@ abstract class Billrun_Base {
 		unset($args[0]['type']);
 		$args = $args[0];
 
-		$config_type = Billrun_Factory::config()->{$type};
+		if (!$config_type = Billrun_Factory::config()->{$type}) {
+			$config_type = array_filter(Billrun_Factory::config()->file_types->toArray(), function($fileSettings) use ($type) {
+				return $fileSettings['file_type'] === $type;
+			});
+			if ($config_type) {
+				$config_type = current($config_type);
+			}
+		}
 		$called_class = get_called_class();
 
 		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
@@ -151,9 +158,12 @@ abstract class Billrun_Base {
 
 		$class_type = $type;
 		if ($config_type) {
-			$args = array_merge($config_type->toArray(), $args);
-			if (isset($config_type->{$called_class::$type}) &&
-				isset($config_type->{$called_class::$type}->type)) {
+			if (is_object($config_type)) {
+				$config_type = $config_type->toArray();
+			}
+			$args = array_merge($config_type, $args);
+			if (isset($config_type[$called_class::$type]) &&
+				isset($config_type[$called_class::$type]['type'])) {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
 			}

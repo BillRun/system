@@ -164,7 +164,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function getLines() {
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit', 'nrtrde'));
 		return $this->getQueuedLines($query);
 	}
 
@@ -255,7 +254,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
 			
-			if ($rate['params']['interconnect']) {
+			if (isset($rate['params']['interconnect']) && $rate['params']['interconnect']) {
 				$row['interconnect_arate_key'] = $rate['key'];
 			}
 
@@ -472,7 +471,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
-		} else if ($rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
+		} else if (isset($rate['params']['interconnect'], $rate['params']['chargable']) && $rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
 			$total = $chargeWoIC + $interconnectCharge;
 			$ret = array(
 				'interconnect' => $total,
@@ -832,7 +831,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate'));
+		$arate = $this->getRateByRef($line->get('arate', TRUE));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;

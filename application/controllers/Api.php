@@ -35,8 +35,17 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		
+		//TODO add security configuration
+		if( isset($_SERVER['HTTP_ORIGIN']) ) {
+			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
+			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
+			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+			header('Access-Control-Allow-Credentials: true');
+		}
+		
 	}
-
+	
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -166,7 +175,8 @@ class ApiController extends Yaf_Controller_Abstract {
 			'request' => $this->getRequest()->getRequest(),
 			'response' => $this->output,
 			'request_php_input' => $php_input,
-			'server_host' => gethostname(),
+			'server_host' => Billrun_Util::getHostName(),
+			'server_pid' => Billrun_Util::getPid(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
 			'rand' => rand(1, 1000000),
 			'time' => (microtime(1) - $this->start_time) * 1000,

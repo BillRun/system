@@ -21,7 +21,7 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 			charging_by_usaget: "",
 			priority: 0,
 			from: new Date(),
-			to: moment().add(100, 'years')
+			to: new Date("2099-12-31")
 		};
 	};
 	

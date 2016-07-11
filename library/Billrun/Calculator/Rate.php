@@ -261,9 +261,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function setRowDataForQuery($row) {
 		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
 		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$countryCodeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.country_code_field', 'location_mcc');
+		$countryCode = $row->get($countryCodeField);
+		if (!$countryCode) {
+			$countryCode = Billrun_Factory::config()->getConfigValue('rate.default_mcc', 425);
+		}
+		$countryCode = substr($countryCode, 0, 3);
 		$this->rowDataForQuery = array(
 			'line_time' => $row->get($timeField),
 			'called_number' => $row->get($calledNumberField),
+			'country_code' => $countryCode,
 		);
 	}
 
@@ -307,7 +314,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 							if (!method_exists($this, $value['classMethod'])) {
 								continue;
 							}
-							$val = $this->{$value['classMethod']}($row);
+							$val = $this->{$value['classMethod']}($row, $key);
 							if (!is_null($val)) {
 								$pipelineValue[$key] = $val;
 							}
@@ -322,7 +329,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-
+		
 		return $query;
 	}
 
@@ -373,11 +380,19 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return string clean number
 	 */
 	public function getCleanNumber($number) {
+		$minLength = Billrun_Factory::config()->getConfigValue('rate.' . $this->getType() . '.minLengthTrimPrefixes', Billrun_Factory::config()->getConfigValue('rate.minLengthTrimPrefixes', 10));
+		if (strlen($number) < $minLength) {
+			return $number;
+		}
 		$configurationTrimPrefixes = Billrun_Factory::config()->getConfigValue('rate.' . $this->getType() . '.trimPrefixes', Billrun_Factory::config()->getConfigValue('rate.trimPrefixes', array()));
 		if (!empty($configurationTrimPrefixes)) {
 			return preg_replace('/^(' . implode('|', array_map('preg_quote', $configurationTrimPrefixes)) . ')/', '', $number);
 		}
 		return $number;
+	}
+	
+	protected function getCountryCodeMatchQuery() {
+		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}
 
 }

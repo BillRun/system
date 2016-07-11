@@ -14,6 +14,7 @@
 class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
+	protected $getRaw = FALSE;
 	
 	/**
 	 * Parameter to ensure valid construction.

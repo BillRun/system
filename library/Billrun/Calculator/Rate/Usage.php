@@ -49,6 +49,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		
 	}
 	
+	protected function getLines() {
+		return $this->getQueuedLines(array()); 
+	}
+
+	
 	protected function isRateLegitimate($rate) {
 		return !((is_null($rate) || $rate === false) ||
 			(isset($rate['key']) && $rate['key'] == "UNRATED"));
@@ -71,13 +76,20 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return $added_values;
 	}
 	
+	
+	public function isLineLegitimate($line) {
+		return true;
+		}
+	
 	/**
 	 * make the calculation
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row->getRawData();
-		$rate = $this->getLineRate($row);
+		$usaget = $row['usaget'];
+		$type = $row['type'];
+		$rate = $this->getLineRate($row, $usaget, $type);
 		if (!$this->isRateLegitimate($rate)) {
 			return false;
 		}
@@ -97,10 +109,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	protected function getLineRate($row) {
+	protected function getLineRate($row, $usaget, $type) {
 		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
 			//$this->setRowDataForQuery($row);
-			$rate = $this->getRateByParams($row);
+			$rate = $this->getRateByParams($row,$usaget,$type);
 		} else {
 			$rate = Billrun_Factory::db()->ratesCollection()->getRef($row[$this->getRatingField()]);
 		}
@@ -111,8 +123,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams($row) {
-		$query = $this->getRateQuery($row);
+	protected function getRateByParams($row, $usaget, $type) {
+		$query = $this->getRateQuery($row, $usaget, $type);
+		if (!$query) {
+			return FALSE;
+		}
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
@@ -130,13 +145,17 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery($row) {
-		$match = $this->getBasicMatchRateQuery($row);
+	protected function getRateQuery($row, $usaget, $type) {
+		$match = $this->getBasicMatchRateQuery($row, $usaget);
 		$additional = array();
 		$group = $this->getBasicGroupRateQuery($row);
 		$additionalAfterGroup = array();
 		$sort = $this->getBasicSortRateQuery($row);
-		$filters = $this->getRateCustomFilters();
+		$filters = $this->getRateCustomFilters($usaget, $type);
+		if (!$filters) {
+			Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
+			return FALSE;
+		}
 		foreach ($filters as $filter) {
 			$handlerClass = Billrun_Calculator_Rate_Filters_Manager::getFilterHandler($filter);
 			if (!$handlerClass) {
@@ -153,11 +172,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return array_merge(array(array('$match' => $match)), $additional, array(array('$group' => $group)), $additionalAfterGroup, $sortQuery, array(array('$limit' => 1)));
 	}
 	
-	protected function getBasicMatchRateQuery($row) {
-		$sec = $row->urt;
+	protected function getBasicMatchRateQuery($row, $usaget) {
+		$sec = $row['urt']->sec;
 		return array_merge(
 			Billrun_Util::getDateBoundQuery($sec),
-			array('rates.' . self::$usaget => array('$exists' => true))
+			array('rates.' . $usaget => array('$exists' => true))
 		);
 	}
 	
@@ -174,11 +193,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return array();
 	}
 	
-	protected function getRateCustomFilters() {
-		return array_merge(
-			Billrun_Factory::config()->getConfigValue(self::$type . '.rate_calculators.' . self::$usaget, array(), 'array'),
-			Billrun_Factory::config()->getConfigValue(self::$type . '.rate_calculators.' . 'BASE', array(), 'array')
-		);
+	protected function getRateCustomFilters($usaget, $type) {
+		$rateRules = Billrun_Factory::config()->getFileTypeSettings($type)['rate_calculators'];
+		return Billrun_Util::getFieldVal($rateRules[$usaget], array());
 	}
 
 }
