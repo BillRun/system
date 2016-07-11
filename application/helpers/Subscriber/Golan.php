@@ -17,6 +17,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
 	protected $next_plan = null;
+	protected $current_plan = null;
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
@@ -486,9 +487,32 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $this->next_plan;
 	}
+	
+	
+	
+	public function getCurrentPlan() {
+		if (is_null($this->current_plan)) {
+			if (is_null($this->getCurrentPlanName())) {
+				$this->current_plan = null;
+			} else {
+				$params = array(
+					'name' => $this->getCurrentPlanName(),
+					'time' => $this->time, // Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+				);
+				$this->current_plan = new Billrun_Plan($params);
+			}
+		}
+		return $this->current_plan;
+	}
+	
+	
 
-	public function getFlatPrice() {
-		return $this->getNextPlan()->getPrice();
+	public function getFlatPrice() { 
+		$billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
+		if ($billing_method == 'prepaid'){
+			return $this->getNextPlan()->getPrice();
+		}
+		return $this->getCurrentPlan()->getPrice();
 	}
 
 	/**
@@ -499,6 +523,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
 		$next_plan = $this->getNextPlan();
+		$current_plan = $this->getCurrentPlan();
+		$billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
+		if ($billing_method == 'prepaid'){
+			$plan = $next_plan;
+		}
+		else{
+			$plan = $current_plan;
+		}
+		
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
@@ -508,8 +541,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
 			'aprice' => $this->getFlatPrice(),
-			'plan' => $next_plan->getName(),
-			'plan_ref' => $next_plan->createRef(),
+			'plan' => $plan->getName(),
+			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
 			'offer_id_curr' => $this->offer_id_curr,
 			'offer_id_next' => $this->offer_id_next,
