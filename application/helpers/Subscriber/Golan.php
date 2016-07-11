@@ -497,7 +497,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			} else {
 				$params = array(
 					'name' => $this->getCurrentPlanName(),
-					'time' => $this->time, // Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+					'time' => $this->time,
 				);
 				$this->current_plan = new Billrun_Plan($params);
 			}
