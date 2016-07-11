@@ -9,7 +9,7 @@
 /**
  * This defines an empty processor that pass the processing action to extarnal plugin.
  */
-class Billrun_Processor_Updater extends Billrun_Processor {
+abstract class Billrun_Processor_Updater extends Billrun_Processor {
 
 	static protected $type = 'updater';
 	
@@ -132,19 +132,5 @@ class Billrun_Processor_Updater extends Billrun_Processor {
 		$this->goodLines++;
 	}
 	
-	protected function getLineVolume($row) {
-		
-	}
-	protected function getLineUsageType($row) {
-		
-	}
 
-	protected function processLines(){
-	}
-	
-	protected function updateData(){
-		
-	}
-	
-	
 }
