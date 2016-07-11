@@ -234,6 +234,8 @@ class Mongodloid_Collection {
 	 */
 	public function find($query, $fields = array()) {
 		return $this->_collection->find($query, $fields);
+		$cursor = $this->_collection->find($query, $fields);
+		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
 
 	/**
@@ -265,8 +267,9 @@ class Mongodloid_Collection {
 			$args = array($args);
 		}
 		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
-
 	}
+	
+	
 	public function setTimeout($timeout) {
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {
 			@MongoCursor::$timeout = (int) $timeout;

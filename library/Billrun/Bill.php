@@ -163,21 +163,36 @@ abstract class Billrun_Bill {
 		$query = array(
 			'$match' => $query,
 		);
+		$project1 = array(
+			'$project' => array(
+				'aid' => 1,
+				'waiting_for_confirmation' => 1,
+				'due' => 1,
+				'total2' => array('$cond' => array('if' => array('$ne' => array('$waiting_for_confirmation', true)), 'then' => '$due' , 'else' => 0)),
+
+			),
+		);
 		$group = array(
 			'$group' => array(
 				'_id' => '$aid',
 				'total' => array(
 					'$sum' => '$due',
 				),
+				'total2' => array(
+					'$sum' => '$total2',
+				),
 			),
 		);
-		$project = array(
+		
+		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
 				'contractor_no' => '$_id',
 				'total' => 1,
+				'total2' =>  1,
 			),
 		);
+
 		$having = array('$match' => array());
 		if ($minBalance !== FALSE) {
 			$having['$match']['total'] = array(
@@ -185,13 +200,16 @@ abstract class Billrun_Bill {
 			);
 		}
 		if ($having['$match']) {
-			$results = $billsColl->aggregate($query, $group, $project, $having);
+			$results = $billsColl->aggregate($query, $project1, $group, $project2, $having);
 		} else {
-			$results = $billsColl->aggregate($query, $group, $project);
+			$results = $billsColl->aggregate($query,$project1, $group, $project2);
 		}
+		
+		$results = iterator_to_array($results);
 		if (!$notFormatted) {
 			$results = array_map(function($ele) {
 				$ele['total'] = Billrun_Util::getChargableAmount($ele['total']);
+				$ele['total2'] = Billrun_Util::getChargableAmount($ele['total2']);
 				return $ele;
 			}, $results);
 		}
@@ -204,7 +222,7 @@ abstract class Billrun_Bill {
 		$query = array('aid' => $aid);
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
-			return current($results)['total'];
+			return array('total' => current($results)['total'], 'without_waiting' => current($results)['total2']);
 		} else if ($notFormatted) {
 			return 0;
 		} else {

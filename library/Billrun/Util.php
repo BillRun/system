@@ -1319,5 +1319,14 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
+	
+		/**
+	 * Return rounded amount for charging
+	 * @param float $amount
+	 * @return float
+	 */
+	public static function getChargableAmount($amount) {
+		return number_format($amount, 2, '.', '');
+	}
 
 }
