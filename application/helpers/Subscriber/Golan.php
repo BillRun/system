@@ -31,6 +31,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $creditCalc = null;
 	protected $pricingCalc = null;
 	protected $serviceCalc = null;
+	protected $billing_method = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -53,6 +54,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
 		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
@@ -489,30 +491,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 	
 	
-	
-	public function getCurrentPlan() {
-		if (is_null($this->current_plan)) {
-			if (is_null($this->getCurrentPlanName())) {
-				$this->current_plan = null;
-			} else {
-				$params = array(
-					'name' => $this->getCurrentPlanName(),
-					'time' => $this->time,
-				);
-				$this->current_plan = new Billrun_Plan($params);
-			}
-		}
-		return $this->current_plan;
-	}
-	
-	
-
 	public function getFlatPrice() { 
-		$billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
-		if ($billing_method == 'prepaid'){
+		if ($this->billing_method == 'prepaid'){
 			return $this->getNextPlan()->getPrice();
 		}
-		return $this->getCurrentPlan()->getPrice();
+		else if ($this->billing_method == 'postpaid'){
+			return $this->getPlan()->getPrice();
+		}
+		Billrun_Factory::log()->log('billing_method must be postpaid or prepaid' , Zend_Log::ALERT);
+		return false;
 	}
 
 	/**
@@ -522,14 +509,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-		$next_plan = $this->getNextPlan();
-		$current_plan = $this->getCurrentPlan();
-		$billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
-		if ($billing_method == 'prepaid'){
-			$plan = $next_plan;
+		if ($this->billing_method == 'prepaid'){
+			$plan = $this->getNextPlan();
 		}
 		else{
-			$plan = $current_plan;
+			$plan = $this->getPlan();;
 		}
 		
 		$flat_entry = array(
