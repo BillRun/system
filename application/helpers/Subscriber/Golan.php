@@ -53,7 +53,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
-		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging', "postpaid");
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
 		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
