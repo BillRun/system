@@ -170,13 +170,6 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater{
 		return $this->bills->query('txid', $row['transaction_id'])->cursor();
 	}
 	
-	protected function getLineVolume($row) {
-		
-	}
-	protected function getLineUsageType($row) {
-		
-	}
-	
 
 }
 

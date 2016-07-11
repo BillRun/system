@@ -706,21 +706,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	}
 
 	/**
-	 * Get a CDR line volume (duration/count/bytes used)
-	 * @param $row the line to get  the volume for.
-	 * @param the line usage type
-	 */
-	protected function getLineVolume($row) {
-		
-	}
-
-	/**
-	 * Get the line usage type (SMS/Call/Data/etc..)
-	 * @param $row the CDR line  to get the usage for.
-	 */
-	abstract protected function getLineUsageType($row);
-
-	/**
 	 * Mark a line as unneeded to be saved to the DB
 	 * @param stamp $stamp
 	 */
