@@ -17,7 +17,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	protected $plan = null;
 	protected $next_plan = null;
-	protected $current_plan = null;
 	protected $time = null;
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
@@ -54,7 +53,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
-		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging');
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flatCharging', "postpaid");
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
 		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
@@ -495,11 +494,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if ($this->billing_method == 'prepaid'){
 			return $this->getNextPlan()->getPrice();
 		}
-		else if ($this->billing_method == 'postpaid'){
-			return $this->getPlan()->getPrice();
-		}
-		Billrun_Factory::log()->log('billing_method must be postpaid or prepaid' , Zend_Log::ALERT);
-		return false;
+	
+		return $this->getPlan()->getPrice();
 	}
 
 	/**
