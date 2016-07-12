@@ -27,7 +27,8 @@ class AggregateAction extends ApiAction {
 		$config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
 
 		if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE) {
-			return $this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
+			$this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
+			return TRUE;
 		}
 		$pipelines = $this->convertToMongoIds($pipelines);
 		if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
@@ -35,6 +36,10 @@ class AggregateAction extends ApiAction {
 			}, $pipelines), $config['permitted_pipelines'])) {
 			$this->setError('Illegal pipelines(s): ' . implode(', ', $notPermittedPipelines), $request);
 			return true;
+		}
+		if (!$pipelines) {
+			$this->setError('No query found', $request);
+			return TRUE;
 		}
 		if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 			$collection = $request['collection'];
@@ -60,7 +65,8 @@ class AggregateAction extends ApiAction {
 
 			$this->getController()->setOutput($ret);
 		} else {
-			return $this->setError('Illegal collection name: ' . $request['collection'], $request);
+			$this->setError('Illegal collection name: ' . $request['collection'], $request);
+			return TRUE;
 		}
 	}
 
