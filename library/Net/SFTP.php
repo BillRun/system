@@ -766,25 +766,24 @@ class Net_SFTP extends Net_SSH2
         }
 
         $result = array();
-        foreach ($files as $value) {
-            if ($value == '.' || $value == '..') {
-                if ($relativeDir == '') {
-                    $result[] = $value;
-                }
-                continue;
-            }
-            if (is_array($this->_query_stat_cache($this->_realpath($dir . '/' . $value)))) {
-                $temp = $this->_nlist_helper($dir . '/' . $value, true, $relativeDir . $value . '/');
-                $result = array_merge($result, $temp);
-            } else {
-                $result[] = $relativeDir . $value;
-            }
-        }
+			foreach ($files as $value) {
+				if ($value == '.' || $value == '..') {
+					if ($relativeDir == '') {
+						$result[] = $value;
+					}
+					continue;
+				}
+				if (is_array($this->_query_stat_cache($this->_realpath($dir . '/' . $value)))) {
+					$temp = $this->_nlist_helper($dir . '/' . $value, true, $relativeDir . $value . '/');
+					$result = array_merge($result, $temp);
+				} else {
+					$result[] = $relativeDir . $value;
+				}
+			}
+		return $result;
+	}
 
-        return $result;
-    }
-
-    /**
+	/**
      * Returns a detailed list of files in the given directory
      *
      * @param optional String $dir

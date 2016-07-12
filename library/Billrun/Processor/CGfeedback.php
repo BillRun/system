@@ -13,55 +13,57 @@
  * @package  Billing
  * @since    5.0
  */
-class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plugin_Interface_IUpdaterProcessor {
+class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater{
 
 	/**
-	 * plugin name
+	 * processor name
 	 *
 	 * @var string
 	 */
-	protected $name = 'CGfeedback';
+	static protected $type = 'CGfeedback';
 	
 	protected $structConfig;
 	protected $header_structure;
 	protected $data_structure;
-	protected $deals_num;
 	protected $bills;
 
 	
-	/**
-	 * @see Billrun_Plugin_Interface_IProcessor::processData
-	 */
-	public function processData($type, $fileHandle, \Billrun_Processor &$processor) {	
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue($this->getName() . '.config_path'));
-		$processor->getParser()->setFileHandler($fileHandle);	
-		$processor->getParser()->setStructure($this->header_structure);
-		$line = $processor->fgetsIncrementLine($fileHandle);
-		$processor->getParser()->setLine($line);
-		$headerContents = $processor->getParser()->parse();
-
-		$processor->getParser()->setStructure($this->data_structure);
-		while ($line = $processor->fgetsIncrementLine($fileHandle)) {
-			$processor->getParser()->setLine($line);
-			$dataContents[] = $processor->getParser()->parse();
-		}
-		$fileContents = array('header' => $headerContents, 'data' => $dataContents);
-		if ($fileContents === FALSE) {
-			return FALSE;
-		}
-		$processedData = &$processor->getData();
-		$processedData['header'] = $headerContents;
-		foreach ($dataContents as $line) {
-			$row = $processor->buildDataRow();
-			$row['amount'] = $line['amount'];
-			$row['transaction_id'] = $line['deal_id'];
+	protected function processLines() {
+		$this->loadConfig(Billrun_Factory::config()->getConfigValue($this->getType() . '.config_path'));
+		$parser = $this->getParser();
+		$parser->parse($this->fileHandler);
+		$processedData = &$this->getData();
+		$processedData['header'] = array('header' => TRUE); //TODO
+		$processedData['trailer'] = array('trailer' => TRUE); //TODO
+		$parsedData = $parser->getDataRows();
+		$rowCount = 0;
+		foreach ($parsedData as $parsedRow) {
+			$row = $this->buildDataRow();
+			$row['amount'] = $parsedRow['amount'];
+			$row['transaction_id'] = $parsedRow['deal_id'];
 			$row['stamp'] = $row['transaction_id'];
-			$row['ret_code'] = $line['deal_status'];
-			$processor->addDataRow($row);
+			$row['ret_code'] = $parsedRow['deal_status'];
+
+			$this->addDataRow($row);
 		}
 
 		return true;
 	}
+	
+	
+	/**
+	 * This function should be used to build a Data row
+	 * @param $data the raw row data
+	 * @return Array that conatins all the parsed and processed data.
+	 */
+	public function buildDataRow() {
+		$row['source'] = self::$type;
+		$row['file'] = basename($this->filePath);
+		$row['log_stamp'] = $this->getFileStamp();
+		$row['process_time'] = date(self::base_dateformat);
+		return $row;
+	}
+	
 
 	protected function addAlertData(&$event) {
 		
@@ -79,9 +81,10 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 		
 	}
 
-	public function updateData($type, $fileHandle, \Billrun_Processor_Updater &$processor) {
+	
+	public function updateData() { 
 		$this->bills = Billrun_Factory::db()->billsCollection();
-		$data = $processor->getData();
+		$data = $this->getData();
  		$emailsToSend = array();
 		$rejections = Billrun_Bill_Payment::getRejections();
 		foreach ($data['data'] as $row) {
@@ -104,7 +107,7 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 						$rejection->save();
 						$bill->markRejected();
 
-						$processor->incrementGoodLinesCounter();
+						$this->incrementGoodLinesCounter();
 						if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
 							$emailsToSend = $this->defineEmailToSend($bill, $row, $rejections);
 						}
@@ -163,10 +166,10 @@ class CGfeedbackPlugin extends Billrun_Plugin_BillrunPluginFraud implements Bill
 		}
 	}
 	
-	protected function findBill($row){
+	protected function findBill($row){ 
 		return $this->bills->query('txid', $row['transaction_id'])->cursor();
 	}
+	
 
 }
 
-?>
