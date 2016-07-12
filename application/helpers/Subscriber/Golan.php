@@ -21,6 +21,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
 	protected $billrunExtraFields = array('kosher' => 1, 'credits' => 1, 'sub_services' => 0); //true to save in billrun, false not to save
+	protected $days_in_plan = null;
+
+
 
 	/**
 	 * calculator for manual charges on billable
@@ -279,8 +282,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
+							
 
 							if ($sid) {
+								$concat['data']['activation_start'] = isset($subscriber['activation_start']) ? $subscriber['activation_start'] : null;
+								$concat['data']['activation_end'] = isset($subscriber['activation_end']) ? $subscriber['activation_end'] : null;
+								$this->days_in_plan = date('j',$concat['data']['activation_end']) - date('j',$concat['data']['activation_start']);
+								$concat['data']['fraction'] = $this->days_in_plan/$days_in_current_month;
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
 								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
@@ -490,13 +498,42 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 	
 	
-	public function getFlatPrice() { 
-		if ($this->billing_method == 'prepaid'){
-			return $this->getNextPlan()->getPrice();
-		}
+//	public function getFlatPrice() { 
+//		if ($this->billing_method == 'prepaid'){
+//			return $this->getNextPlan()->getPrice();
+//		}
+//	
+//		return $this->getPlan()->getPrice();
+//	}
+//	
 	
-		return $this->getPlan()->getPrice();
+	public function getFlatPrice($fraction) { 
+		if ($this->billing_method == 'prepaid'){
+			return ($this->getNextPlan()->getPrice() * $fraction);
+		}
+		return ($this->getPlan()->getPrice() * $fraction);
 	}
+	
+	public function getFractionOfMonth(){
+		$fraction = $this->days_in_plan
+		return $fraction;
+	}
+	
+	public function getActivationStartDay(){
+		return $this->data['activation_start'];
+	}
+	
+		
+	public function getActivationEndDay(){
+		return $this->data['activation_end'];
+	}
+	
+	
+	public function getRelativeActivationDays(){
+		
+	}
+	
+	
 
 	/**
 	 * 
@@ -509,7 +546,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$plan = $this->getNextPlan();
 		}
 		else{
-			$plan = $this->getPlan();;
+			$plan = $this->getPlan();
 		}
 		
 		$flat_entry = array(
