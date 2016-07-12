@@ -234,8 +234,8 @@ class Mongodloid_Collection {
 	 */
 	public function find($query, $fields = array()) {
 		return $this->_collection->find($query, $fields);
-		$cursor = $this->_collection->find($query, $fields);
-		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
+//		$cursor = $this->_collection->find($query, $fields);
+//		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
 
 	/**

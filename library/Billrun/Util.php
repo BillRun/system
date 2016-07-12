@@ -1337,7 +1337,7 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-<<<<<<< HEAD
+
 		/**
 	 * Return rounded amount for charging
 	 * @param float $amount
@@ -1346,7 +1346,7 @@ class Billrun_Util {
 	public static function getChargableAmount($amount) {
 		return number_format($amount, 2, '.', '');
 	}
-=======
+
 	public static function generateHash($aid, $key){
 		return md5($aid . $key);
 	}
@@ -1370,6 +1370,5 @@ class Billrun_Util {
 	}
 
 
->>>>>>> braas
 
 }
