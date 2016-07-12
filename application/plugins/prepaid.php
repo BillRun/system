@@ -145,7 +145,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$pricingData["balance_before"] = $balance_before;
 			$pricingData["balance_after"] = $balance_before + $balance_usage;
 			$pricingData["usage_unit"] = $balance->get('charging_by_usaget_unit');
-			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row, $balance, $pricingData["balance_after"]));
+			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row, $balance, $pricingData["balance_before"], $pricingData["balance_after"]));
 		} catch (Exception $ex) {
 			Billrun_Factory::log('prepaid plugin afterUpdateSubscriberBalance error', Zend_Log::ERR);
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
@@ -221,12 +221,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"sid" => $row['sid'],
 				"session_id" => $row['session_id'],
 				"request_num" => array('$lt' => $row['request_num']),
-				"usagev" => array(
-					'$gt' => 0,
-				),
 			);
 
-			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1))->limit(1);
+			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1, '_id' => -1))->limit(1);
 			return $line;
 		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
 			$findQuery = array(
@@ -428,6 +425,42 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
 			$charges['total'] = 0;
 		}
+	}
+	
+	/**
+	 * method to extend realtime data
+	 * 
+	 * @param array $event event information
+	 * @param string $usaget the usage type
+	 * 
+	 * @return void
+	 */
+	public function realtimeAfterSetEventData(&$event, &$usaget) {
+		if (in_array($usaget, array('sms', 'mms', 'service'))) {
+			$event['reverse_charge'] = $this->isReverseCharge($event);
+			$event['transaction_id'] = $this->getTransactionId($event);
+		}
+	}
+	
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function isReverseCharge($event) {
+		return (isset($event['transaction_id']) && !empty($event['transaction_id']));
+	}
+
+	/**
+	 * Checks if the request is a reverse charge (when a SMS/service/MMS needs to be refunded)
+	 * 
+	 * @return boolean
+	 */
+	protected function getTransactionId($event) {
+		if (isset($event['transaction_id']) && !empty($event['transaction_id'])) {
+			return $event['transaction_id'];
+		}
+		return Billrun_Util::generateRandomNum(18);
 	}
 
 }

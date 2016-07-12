@@ -30,6 +30,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		//Get test params
 		$scenarioData = Billrun_Util::filter_var($this->controller->getRequest()->get('scenario'), FILTER_SANITIZE_STRING);
 		$scenario = array_map('trim', explode("\n", trim($scenarioData)));
+		$msc = Billrun_Util::filter_var($this->controller->getRequest()->get('msc'), FILTER_SANITIZE_STRING);
 		$calling_number = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$imsi = Billrun_Util::filter_var($this->controller->getRequest()->get('imsi'), FILTER_SANITIZE_STRING);
 		$called_number = Billrun_Util::filter_var($this->controller->getRequest()->get('called_number'), FILTER_SANITIZE_STRING);
@@ -57,7 +58,8 @@ class utest_CallModel extends utest_AbstractUtestModel {
 				'duration' => isset($nameAndUssage[1]) ? ($nameAndUssage[1] * 10) : 4800, // default 8 minutes
 				'type' => $nameAndUssage[0],
 				'call_type' => $call_type,
-				'call_tech' => $call_tech
+				'call_tech' => $call_tech,
+				'msc' => $msc
 			);
 			if ($send_np_code === 'on') {
 				$params['np_code'] = $np_code;
@@ -85,6 +87,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 		$call_type = $params['call_type'];
 		$call_tech = $params['call_tech'];
 		$dialedDigits = $params['dialedDigits'];
+		$msc = $params['msc'];
 		$time_date = isset($params['time_date']) ? $params['time_date'] : date_format(date_create(), 'Y/m/d H:i:s.000');
 
 		$data = array(
@@ -94,6 +97,7 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			'call_id' => 'rm7xxxxxxxxx',
 			'connected_number' => $dialedDigits,
 			'time_date' => $time_date,
+			'vlr' => $msc
 		);
 
 		if ($call_tech == 'UMTS') {
@@ -104,14 +108,16 @@ class utest_CallModel extends utest_AbstractUtestModel {
 			$data['np_code'] = $params['np_code'];
 		}
 
+		if (isset($params['vlr'])) {
+			$data['vlr'] = $params['vlr'];
+		}
+
 		switch ($type) {
 			case 'start_call':
 				$data['dialed_digits'] = $dialedDigits;
 				$data['event_type'] = 2;
 				$data['service_key'] = 61;
 				if ($call_tech == 'UMTS') {
-					$data['vlr'] = 972500000701;
-					$data['location_mcc'] = 425;
 					$data['location_mnc'] = 03;
 					$data['location_area'] = 7201;
 					$data['location_cell'] = 53643;

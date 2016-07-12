@@ -44,42 +44,32 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.type = type;
 			if (type === 'recurring')
 				type = 'charging';
-			return 'views/plans/' + type + 'edit.html';
+			return 'views/plans/' + type + 'edit.html?' + window.commithash;
 		};
 
-		$scope.removeIncludeType = function (include_type_name, index) {
-			var r = confirm("Are you sure you want to remove " + include_type_name + " rate?");
+		$scope.removeIncludeType = function (index) {
+			var r = confirm("Are you sure you want to remove " + $scope.displayData.includeTypes[index].type + " rate?");
 			if (!r)
 				return;
-			if (index > -1)
-				$scope.entity.include[include_type_name].splice(index, 1);
-			else
-				delete $scope.entity.include[include_type_name];
+			$scope.displayData.includeTypes.splice(index, 1);
 		};
 		$scope.removeIncludeCost = function (index) {
 			$scope.entity.include.cost.splice(index, 1);
 		};
 
 		$scope.addIncludeType = function () {
-			var include_type = $scope.newIncludeType.type;
 			var new_include_type = {
 				cost: undefined,
 				usagev: undefined,
 				pp_includes_name: "",
 				pp_includes_external_id: "",
+				type: "",
 				period: {
 					duration: undefined,
 					unit: ""
 				}
 			};
-			if (_.isUndefined($scope.entity.include[include_type])) {
-				$scope.entity.include[include_type] = [new_include_type];
-			} else if (_.isArray($scope.entity.include[include_type])) {
-				$scope.entity.include[include_type].push(new_include_type);
-			} else {
-				$scope.entity.include[include_type] = [$scope.entity.include[include_type], new_include_type];
-			}
-			$scope.newIncludeType.type = '';
+			$scope.displayData.includeTypes.push(new_include_type);
 		};
 
 		$scope.includeTypeExists = function (include_type) {
@@ -104,8 +94,21 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 
 		$scope.save = function (redirect) {
 			$scope.err = {};
-			if (_.isEmpty($scope.entity.include))
+			if (_.isEmpty($scope.displayData.includeTypes)) {
 				delete $scope.entity.include;
+			} else {
+				$scope.entity.include = {};
+				_.forEach($scope.displayData.includeTypes, function(includeType) {
+					var include_type = includeType.type;
+					if (_.isUndefined($scope.entity.include[include_type])) {
+						$scope.entity.include[include_type] = includeType;
+					} else if (_.isArray($scope.entity.include[include_type])) {
+						$scope.entity.include[include_type].push(includeType);
+					} else {
+						$scope.entity.include[include_type] = [$scope.entity.include[include_type], includeType];
+					}
+				});
+			}
 			if ($scope.entity.type === "customer" && $scope.disallowed_rates) {
 				if (_.isUndefined($scope.entity.disallowed_rates))
 					$scope.entity.disallowed_rates = [];
@@ -118,6 +121,18 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
+			_.forEach($scope.entity.notifications_threshold.on_load, function(on_load_notification, index) {
+				$scope.entity.notifications_threshold.on_load[index].pp_includes = [];
+				_.forEach(on_load_notification, function(pp) {
+					$scope.entity.notifications_threshold.on_load[index].pp_includes.push(parseInt(pp));
+				});
+			});
+			_.forEach($scope.entity.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
+				$scope.entity.notifications_threshold.expiration_date[index].pp_includes = [];
+				_.forEach(expiration_date_notification, function(pp) {
+					$scope.entity.notifications_threshold.expiration_date[index].pp_includes.push(parseInt(pp));
+				});
+			});
 			$scope.removeUnnecessaryData();
 			var params = {
 				entity: $scope.entity,
@@ -149,6 +164,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				return found.name;
 			return _.capitalize(id.replace(/_/, ' '));
 		};
+		
+		$scope.isPPIncludeNotification = function (id) {
+			var found = _.find($scope.ppIncludes, function (bal) {
+				return bal.external_id === parseInt(id, 10);
+			});
+			return found;
+		};
 
 		$scope.getTDHeight = function (rate) {
 			var height = 32;
@@ -169,12 +191,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.thresholdExists = function (pp) {
-			return !_.isUndefined($scope.entity.pp_threshold[pp.external_id]);
+			return !_.isUndefined($scope.entity.pp_threshold) &&
+					!_.isUndefined($scope.entity.pp_threshold[pp.external_id]);
 		};
 
 		$scope.addPPIncludeThreshold = function () {
-			if ($scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id])
+			if (!$scope.newPPIncludeThreshold.id) return;
+			if ($scope.entity.pp_threshold && $scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id])
 				return;
+			if (_.isUndefined($scope.entity.pp_threshold)) $scope.entity.pp_threshold = {};
 			$scope.entity.pp_threshold[$scope.newPPIncludeThreshold.id] = 0;
 			$scope.newPPIncludeThreshold.id = null;
 		};
@@ -195,9 +220,15 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			if (!id)
 				return;
 			var new_notification = {value: 0, type: "", msg: ""};
-			$scope.entity.notifications_threshold[id].length ?
-					$scope.entity.notifications_threshold[id].push(new_notification) :
-					$scope.entity.notifications_threshold[id] = [new_notification];
+			if (!$scope.entity.notifications_threshold) $scope.entity.notifications_threshold = {};
+			if (!$scope.entity.notifications_threshold[id]) {
+				$scope.entity.notifications_threshold[id] = [];
+			}
+			if ($scope.entity.notifications_threshold[id].length) {
+				$scope.entity.notifications_threshold[id].push(new_notification);
+			} else {
+				$scope.entity.notifications_threshold[id] = [new_notification];
+			}
 		};
 
 		$scope.removeNotification = function (id) {
@@ -214,18 +245,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.addThresholdNotification = function () {
+			if (!$scope.entity.notifications_threshold) $scope.entity.notifications_threshold = {};
 			if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id] &&
 					$scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length)
 				return;
 			$scope.entity.notifications_threshold[$scope.newThresholdNotification.id] = [];
 			$scope.entity.notifications_threshold[$scope.newThresholdNotification.id].push({value: 0, type: "", msg: ""});
 			$scope.newThresholdNotification.id = null;
-		};
-		
-		$scope.initPPIncludes = function () {
-			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
-				$scope.pp_includes = res.data.ppincludes;
-			});
 		};
 		
 		$scope.getPPIncludesIndex = function (pp_include_name, pp_include_external_id) {
@@ -251,6 +277,14 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			includeType.pp_includes_external_id = includeType.pp_include.external_id;
 			delete(includeType.cost);
 			delete(includeType.usagev);
+			delete(includeType.value);
+			includeType.period.duration = '';
+			includeType.type = (includeType.pp_include.charging_by_usaget !== 'total_cost' ? includeType.pp_include.charging_by_usaget : 'cost')
+			if (includeType.pp_include.name === 'CORE BALANCE') {
+				includeType.period.duration = 'UNLIMITED';
+			} else {
+				includeType.period.duration = '';
+			}
 		};
 
 		$scope.init = function () {
@@ -262,99 +296,136 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			};
 			$scope.advancedMode = false;
 			$scope.action = $routeParams.action;
+			$scope.displayData = {
+				includeTypes: []
+			};
 			$rootScope.spinner++;
-			$scope.initPPIncludes();
-			Database.getEntity(params).then(function (res) {
-				if ($routeParams.action !== "new") {
-					$scope.entity = res.data.entity;
-					if ($scope.entity.type === "charging") {
-						_.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
-							if (_.isUndefined($scope.entity.include[usaget]))
-								return;
-							if ($scope.entity.include[usaget].length) {
-								_.forEach($scope.entity.include[usaget], function (usage, i) {
-									if (usage.period.unit === "month")
-										$scope.entity.include[usaget][i].period.unit = "months";
-								});
-								$rootScope.spinner--;
-								return;
+			Database.getAvailablePPIncludes({full_objects: true}).then(function (res) {
+				$scope.pp_includes = res.data.ppincludes;
+				$scope.notifications_threshold = {on_load: [], expiration_date: []};
+				Database.getEntity(params).then(function (res) {
+					if ($routeParams.action !== "new") {
+						$scope.entity = res.data.entity;
+						if ($scope.entity.type === "charging") {
+							_.forEach(['sms', 'call', 'data', 'cost'], function (usaget) {
+								if (_.isUndefined($scope.entity.include[usaget]))
+									return;
+								if (_.isArray($scope.entity.include[usaget])) {
+									_.forEach($scope.entity.include[usaget], function (usage, i) {
+										if (usage.period.unit === "month") {
+											$scope.entity.include[usaget][i].period.unit = "months";
+										}
+										usage.type = usaget;
+										$scope.displayData.includeTypes.push(usage);
+									});
+									$rootScope.spinner--;
+									return;
+								} else {
+									var usage = $scope.entity.include[usaget];
+									if (usage.period.unit === "month") {
+											$scope.entity.include[usaget].period.unit = "months";
+										}
+										usage.type = usaget;
+										$scope.displayData.includeTypes.push(usage);
+								}
+								if ($scope.entity.include[usaget].period.unit === "month")
+									$scope.entity.include[usaget].period.unit = "months";
+							});
+						} else if ($scope.entity.type === "customer") {
+							if ($scope.entity.data_from_currency) {
+								if (_.isUndefined($scope.entity.max_currency)) {
+									$scope.entity.max_currency = {
+										cost: res.data.default_max_currency.cost,
+										period: res.data.default_max_currency.period
+									};
+								} else {
+									if (_.isUndefined($scope.entity.max_currency.cost))
+										$scope.entity.max_currency.cost = res.data.default_max_currency.cost;
+									if (_.isUndefined($scope.entity.max_currency.period))
+										$scope.entity.max_currency.period = res.data.deafult_max_currency.period;
+								}
 							}
-							if ($scope.entity.include[usaget].period.unit === "month")
-								$scope.entity.include[usaget].period.unit = "months";
-						});
-					} else if ($scope.entity.type === "customer") {
-						if ($scope.entity.data_from_currency) {
-							if (_.isUndefined($scope.entity.max_currency)) {
-								$scope.entity.max_currency = {
-									cost: res.data.default_max_currency.cost,
-									period: res.data.default_max_currency.period
-								};
-							} else {
-								if (_.isUndefined($scope.entity.max_currency.cost))
-									$scope.entity.max_currency.cost = res.data.default_max_currency.cost;
-								if (_.isUndefined($scope.entity.max_currency.period))
-									$scope.entity.max_currency.period = res.data.deafult_max_currency.period;
-							}
-						}
-						$scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
-								function (acc, dr) {
-									acc.push({name: dr, ticked: true});
-									return acc;
-								}, []);
-						Database.getAvailableRates().then(function (res) {
-							$scope.availableRates = _.reduce(res.data,
-									function (acc, rd) {
-										acc.push({name: rd,
-											ticked: _.includes($scope.entity.disallowed_rates, rd) ?
-													true :
-													false
-										});
+							$scope.disallowed_rates = _.reduce($scope.entity.disallowed_rates,
+									function (acc, dr) {
+										acc.push({name: dr, ticked: true});
 										return acc;
 									}, []);
+							Database.getAvailableRates().then(function (res) {
+								$scope.availableRates = _.reduce(res.data,
+										function (acc, rd) {
+											acc.push({name: rd,
+												ticked: _.includes($scope.entity.disallowed_rates, rd) ?
+														true :
+														false
+											});
+											return acc;
+										}, []);
+							});
+							$timeout(function () {
+								$rootScope.spinner--;
+							}, 0);
+						}
+						if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
+							$scope.entity.include = {};
+						if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
+							$scope.entity.pp_threshold = {};
+						
+						if (_.isUndefined($scope.entity.notifications_threshold)) {
+							$scope.entity.notifications_threshold = {};
+						}
+						_.forEach($scope.entity.notifications_threshold.on_load, function(notification) {
+							var pp_includes = [];
+							_.forEach(notification.pp_includes, function(pp) {
+								if (pp)
+									pp_includes.push(pp.toString());
+							});
+							$scope.notifications_threshold.on_load.push(pp_includes);
 						});
-						$timeout(function () {
-							$rootScope.spinner--;
-						}, 0);
+						_.forEach($scope.entity.notifications_threshold.expiration_date, function(notification) {
+							var pp_includes = [];
+							_.forEach(notification.pp_includes, function(pp) {
+								if (pp)
+									pp_includes.push(pp.toString());
+							});
+							$scope.notifications_threshold.expiration_date.push(pp_includes);
+						});
+						
+					} else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
+						$scope.entity = {
+							"name": "",
+							"external_id": "",
+							"service_provider": "",
+							"desc": "",
+							"type": "charging",
+							"operation": "inc",
+							"charging_type": [],
+							"from": new Date(),
+							"to": new Date("2099-12-31"),
+							"include": {},
+							"priority": "0"
+						};
+						if ($routeParams.type === "recurring") {
+							$scope.entity.recurring = 1;
+						}
+					} else if ($routeParams.type === "customer") {
+						$scope.entity = {
+							"name": "",
+							"from": new Date(),
+							"to": new Date("2099-12-31"),
+							"type": "customer",
+							"external_id": "",
+							"external_code": "",
+							"disallowed_rates": []
+						};
 					}
-					if (_.isUndefined($scope.entity.include) && $scope.entity.recurring != 1)
-						$scope.entity.include = {};
-					if ($routeParams.type === "customer" && !$scope.entity.pp_threshold)
-						$scope.entity.pp_threshold = {};
-				} else if ($location.search().type === "charging" || $routeParams.type === 'recurring') {
-					$scope.entity = {
-						"name": "",
-						"external_id": "",
-						"service_provider": "",
-						"desc": "",
-						"type": "charging",
-						"operation": "inc",
-						"charging_type": [],
-						"from": new Date(),
-						"to": new Date(),
-						"include": {},
-						"priority": "0"
-					};
-					if ($routeParams.type === "recurring") {
-						$scope.entity.recurring = 1;
-					}
-				} else if ($routeParams.type === "customer") {
-					$scope.entity = {
-						"name": "",
-						"from": new Date(),
-						"to": new Date(),
-						"type": "customer",
-						"external_id": "",
-						"external_code": "",
-						"disallowed_rates": []
-					};
-				}
-				$scope.plan_rates = res.data.plan_rates;
-				$scope.authorized_write = res.data.authorized_write;
-				$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
-				angular.element('title').text("BillRun - " + $scope.title);
-				$rootScope.spinner--;
-			}, function (err) {
-				alert("Connection error!");
+					$scope.plan_rates = res.data.plan_rates;
+					$scope.authorized_write = res.data.authorized_write;
+					$scope.title = _.capitalize($scope.action.replace(/_/g, " ")) + " " + $scope.entity.name + " " + _.capitalize($routeParams.type) + " Plan";
+					angular.element('title').text("BillRun - " + $scope.title);
+					$rootScope.spinner--;
+				}, function (err) {
+					alert("Connection error!");
+				});
 			});
 
 			$scope.availableCostUnits = ['days', 'months'];
@@ -387,6 +458,6 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 			$scope.groupParams = ["data", "call", "incoming_call", "incoming_sms", "sms"];
 			$scope.newInclude = {type: undefined, value: undefined};
 			$scope.newGroupParam = [];
-			$scope.newGroup = {name: ""};
+			$scope.newGroup = {name: ""};	
 		};
 	}]);

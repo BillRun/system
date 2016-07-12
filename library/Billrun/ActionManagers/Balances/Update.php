@@ -81,10 +81,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return $manager->getAction();
 	}
 
-	protected function setUpdateValue(&$line) {
+	protected function setUpdateValue(&$line, $wallet) {
 		$value = $line['balance_after'] - $line['balance_before'];
-
-		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost') {
+		$wallet_chargingby = $wallet->getChargingBy();
+		if ($line["charging_usaget"] == 'cost' || $line["charging_usaget"] == 'total_cost' || $wallet_chargingby == 'cost' || $wallet_chargingby == 'total_cost' ) {
 			$line["aprice"] = $value;
 		} else {
 			$line["usagev"] = $value;
@@ -112,7 +112,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		}
 		$insertLine['balance_after'] = $this->getBalanceValue($balance);
 
-		$this->setUpdateValue($insertLine);
+		$this->setUpdateValue($insertLine, $wallet);
 		$insertLine["usage_unit"] = $wallet->getChargingByUsagetUnit();
 	}
 

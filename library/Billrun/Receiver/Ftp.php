@@ -33,30 +33,20 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 * 
 	 * @param string
 	 */
-	protected $ftp_path = '/';
 	protected $ftpConfig = false;
 	protected $checkReceivedSize = true;
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->ftpConfig = isset($options['ftp']['host']) ? array($options['ftp']) : $options['ftp'];
-
-		if (isset($options['ftp']['remote_directory'])) {
-			$this->ftp_path = $options['ftp']['remote_directory'];
-		}
+		$this->ftpConfig = $options['receiver']['connections'];
 
 		if (isset($options['workspace'])) {
 			$this->workspace = $options['workspace'];
 		}
 
-		if (isset($options['received']['check_received_size'])) {
-			$this->checkReceivedSize = $options['received']['check_received_size'];
+		if (isset($options['receiver']['check_received_size'])) {
+			$this->checkReceivedSize = $options['receiver']['check_received_size'];
 		}
-
-		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
-		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
-		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');
-		Zend_Ftp_Factory::registerDirecotryType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_Nsn');
 	}
 
 	/**
@@ -68,10 +58,11 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$ret = array();
 		Billrun_Factory::dispatcher()->trigger('beforeFTPReceiveFullRun', array($this));
 
-		foreach ($this->ftpConfig as $hostName => $config) {
+		foreach ($this->ftpConfig as $config) {
 			if (!is_array($config)) {
 				continue;
 			}
+			$hostName = $config['name'];
 
 			if (is_numeric($hostName)) {
 				$hostName = '';
@@ -80,13 +71,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(isset($config['passive']) ? $config['passive'] : false);
 
-			$hostRet = "";
+			$hostRet = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
 			try {
 				$hostRet = $this->receiveFromHost($hostName, $config);
 			} catch (Exception $e) {
-				Billrun_Factory::log("FTP: Fail when downloading from : $hostName with exception : " . $e, Zend_Log::DEBUG);
-				return false;
+				Billrun_Factory::log("FTP: Fail when downloading from : $hostName with exception : " . $e->getMessage(), Zend_Log::ALERT);
+				return $ret;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterFTPReceived', array($this, $hostRet, $hostName));
 

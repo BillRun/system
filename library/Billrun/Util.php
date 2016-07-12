@@ -864,7 +864,16 @@ class Billrun_Util {
 	 * @return string host name or false when gethostname is not available (PHP 5.2 and lower)
 	 */
 	public static function getHostName() {
-		return function_exists('gethostname') ? gethostname() : false;
+		return function_exists('gethostname') ? @gethostname() : false;
+	}
+	
+	/**
+	 * method to get current operating system process id runnning the PHP
+	 * 
+	 * @return mixed current PHP process ID (int) or false on failure
+	 */
+	public static function getPid() {
+		return function_exists('getmypid') ? @getmypid() : false;
 	}
 
 	/**
@@ -1254,7 +1263,12 @@ class Billrun_Util {
 
 		return $array;
 	}
+	
+	public static function getCallTypes() {
+		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
+	}
 
+	
 	public static function getBillRunPath($path) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
@@ -1264,16 +1278,16 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
-
+	
 	public static function generateHash($aid, $key) {
 		return md5($aid . $key);
 	}
-
+	
 	public static function isValidCustomLineKey($jsonKey) {
 		$protectedKeys = static::getBillRunProtectedLineKeys();
 		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
 	}
-
+	
 	public static function getBillRunProtectedLineKeys() {
 		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
@@ -1281,9 +1295,11 @@ class Billrun_Util {
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
-
+	
 	public static function IsIntegerValue($number) {
 		return is_numeric($number) && ($number == intval($number));
 	}
+
+
 
 }
