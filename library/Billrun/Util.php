@@ -160,6 +160,40 @@ class Billrun_Util {
 	}
 
 	/**
+	 * method to receive billrun key by date
+	 * 
+	 * @param int $timestamp a unix timestamp
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getBillrunKey($timestamp, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		}
+		$format = "Ym";
+		if (date("d", $timestamp) < $dayofmonth) {
+			$key = date($format, $timestamp);
+		} else {
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
+		}
+		return $key;
+	}
+
+	public static function getFollowingBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
+	}
+
+	public static function getPreviousBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
+		return $ret;
+	}
+
+	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)
 	 * @param type $value the value to convert.
@@ -176,6 +210,30 @@ class Billrun_Util {
 		);
 
 		return $value * ($conversion[$from] / $conversion[$to]);
+	}
+
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getEndTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime('-1 second', strtotime($datetime));
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getStartTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . $dayofmonth . "000000";
+		return strtotime('-1 month', strtotime($datetime));
 	}
 
 	/**
@@ -1279,7 +1337,17 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-	public static function generateHash($aid, $key) {
+
+		/**
+	 * Return rounded amount for charging
+	 * @param float $amount
+	 * @return float
+	 */
+	public static function getChargableAmount($amount) {
+		return number_format($amount, 2, '.', '');
+	}
+
+	public static function generateHash($aid, $key){
 		return md5($aid . $key);
 	}
 	

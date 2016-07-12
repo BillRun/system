@@ -70,17 +70,17 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	/**
-	 * Get the current record the cursor is pointing to.
+	 * 
 	 * @return \Mongodloid_Entity
 	 */
 	public function current() {
 		//If before the start of the vector move to the first element.
 		// 
-		if ((method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext())){
+		if (method_exists($this->_cursor, 'hasNext') && !$this->_cursor->current() && $this->_cursor->hasNext()) {
 			$this->next();
 		}
 		
-		return new Mongodloid_Entity($this->_cursor->current());
+		return $this->getRaw ? $this->_cursor->current() :  new Mongodloid_Entity($this->_cursor->current(), null, false);
 	}
 
 	public function key() {
@@ -216,5 +216,6 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		$this->getRaw = $enabled;
 		
 		return $this;
-	}
+	} 
+
 }
