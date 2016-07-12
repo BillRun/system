@@ -92,7 +92,7 @@ class AdjustPaymentsAction extends ApiAction {
 					$newPayments[] = new $className(array_merge($adjustment['extra_data'],$rawData));
 				}
 				foreach ($newPayments as $newPayment) {
-					$newPayment->setStatus(false);
+					$newPayment->setConfirmationStatus(false);
 				}
 				
 				if ($newPayments) {

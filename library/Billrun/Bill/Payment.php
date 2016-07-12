@@ -382,7 +382,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		return is_null($status)?false:$status;
 	}
 	
-	public function setStatus($status){
+	public function setConfirmationStatus($status){
 		$this->data['waiting_for_confirmation'] = $status;
 	}
 }
