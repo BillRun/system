@@ -22,7 +22,7 @@ class RecreateInvoicesAction extends ApiAction {
 			return $this->setError('Please supply at least one account id', $request);
 		}
 
-		$billrun_key = Billrun_Util::getPreviousBillrunKey(Billrun_Util::getBillrunKey(time()));
+		$billrun_key = Billrun_Billrun::getPreviousBillrunKey(Billrun_Billrun::getBillrunKeyByTimestamp(time()));
 
 		// Warning: will convert half numeric strings / floats to integers
 		$account_ids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['account_id']), 'int'), array(0)));

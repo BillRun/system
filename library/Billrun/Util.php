@@ -767,7 +767,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Util::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
@@ -1062,7 +1062,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if(!$response) {
+			if (!$response) {
 				$response = $e->getMessage();
 			}
 		}
@@ -1357,9 +1357,8 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'urt', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun', 'type', 'apr', 'stamp', 'source', 'file', 'log_stamp', 'process_time', 'row_number');
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
-
 
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
