@@ -45,7 +45,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $min_time;
 
 	public function __construct() {
-		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
+		$this->min_time = Billrun_Billrun::getStartTime(Billrun_Billrun::getBillrunKeyByTimestamp(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
 	}
 
 	/**

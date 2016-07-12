@@ -145,7 +145,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function getSubscriberCurrencyUsageQuery($row, $period) {
-		$startTime = Billrun_Util::getStartTimeByPeriod($period);
+		$startTime = Billrun_Billrun::getStartTimeByPeriod($period);
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
