@@ -160,40 +160,6 @@ class Billrun_Util {
 	}
 
 	/**
-	 * method to receive billrun key by date
-	 * 
-	 * @param int $timestamp a unix timestamp
-	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
-	 * @return string date string of format YYYYmm
-	 */
-	public static function getBillrunKey($timestamp, $dayofmonth = null) {
-		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		}
-		$format = "Ym";
-		if (date("d", $timestamp) < $dayofmonth) {
-			$key = date($format, $timestamp);
-		} else {
-			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
-		}
-		return $key;
-	}
-
-	public static function getFollowingBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('+1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
-		return $ret;
-	}
-
-	public static function getPreviousBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_before = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_before);
-		return $ret;
-	}
-
-	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)
 	 * @param type $value the value to convert.
@@ -210,30 +176,6 @@ class Billrun_Util {
 		);
 
 		return $value * ($conversion[$from] / $conversion[$to]);
-	}
-
-	/**
-	 * returns the end timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getEndTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 second', strtotime($datetime));
-	}
-
-	/**
-	 * returns the start timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getStartTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 month', strtotime($datetime));
 	}
 
 	/**
@@ -767,7 +709,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Util::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
@@ -1053,7 +995,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if(!$response) {
+			if (!$response) {
 				$response = $e->getMessage();
 			}
 		}
@@ -1312,7 +1254,7 @@ class Billrun_Util {
 
 		return $array;
 	}
-	
+
 	public static function getBillRunPath($path) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
@@ -1322,25 +1264,24 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
-	
-	public static function generateHash($aid, $key){
+
+	public static function generateHash($aid, $key) {
 		return md5($aid . $key);
 	}
-	
+
 	public static function isValidCustomLineKey($jsonKey) {
 		$protectedKeys = static::getBillRunProtectedLineKeys();
 		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
 	}
-	
-	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'urt', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun', 'type', 'apr', 'stamp', 'source', 'file', 'log_stamp', 'process_time', 'row_number');
-	}
 
+	public static function getBillRunProtectedLineKeys() {
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+	}
 
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
-	
+
 	public static function IsIntegerValue($number) {
 		return is_numeric($number) && ($number == intval($number));
 	}
