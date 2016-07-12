@@ -72,7 +72,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			$this->ssh->connect($config['user']);
 			
 			 if (!$this->ssh->connected()){
-				 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::INFO);
+				 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
 				 return $ret;
 			 }
 			
