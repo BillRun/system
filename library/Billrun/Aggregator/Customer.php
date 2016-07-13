@@ -176,6 +176,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$billrun_key = $this->getStamp();
 		$date = date(Billrun_Base::base_dateformat, Billrun_Util::getEndTime($billrun_key));
 		$subscriber = Billrun_Factory::subscriber();
+		$subscriber->setBillrunKey($billrun_key);
 		Billrun_Factory::log()->log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		if ($this->overrideAccountIds) {
 			$this->data = array();
@@ -266,8 +267,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					}
 				} else {
 					$subscriber_status = "open";
+					$subscriber->setBillrunKey($billrun_key);
+					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay());
 					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
-					$flat_price = $subscriber->getFlatPrice();
+					$flat_price = $subscriber->getFlatPrice($fraction_of_month);
 					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
 					if (is_null($flat_price)) {
 						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
