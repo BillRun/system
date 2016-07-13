@@ -513,18 +513,17 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @return fraction from the whole month
 	 */
 	public function calcFractionOfMonth($start_date, $end_date) {
-		if (!(is_null($start_date)) && !(is_null($end_date)) && ($end_date < $start_date)) {
-			Billrun_Factory::log()->log('ERROR: ending date ' . $end_date . ' is earlier then starting date ' . $start_date . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
-			return 0;
-		}
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$billing_end_date = Billrun_Util::getEndTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);
 		$temp_start = strtotime($start_date);
-		$start_in_unix_timestamp = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
-		$end_in_unix_timestamp = strtotime($end_date);
-		$start = is_null($start_date) ? $billing_start_date : $start_in_unix_timestamp;
-		$end = is_null($end_date) ? $billing_end_date : $end_in_unix_timestamp;
+		$temp_end = is_null($end_date) ? PHP_INT_MAX : strtotime($end_date);
+		$start = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
+		$end = $billing_end_date < $temp_end ? $billing_end_date : $temp_end;
+		if ($end < $start) {
+			Billrun_Factory::log()->log('ERROR: ending date ' . $end . ' is earlier then starting date ' . $start . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
+			return 0;
+		}
 		$start_day = date('j', $start);
 		$end_day = date('j', $end);
 		$start_month = date('F', $start);
