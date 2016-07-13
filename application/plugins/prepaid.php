@@ -90,7 +90,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				)
 			)
 		);
-		if ($row['usaget'] == 'call') {
+		if ($row['type'] == 'callrt') {
 			$query[0]['$match']['call_reference'] = $row['call_reference'];
 			$query[0]['$match']['api_name'] = array('$ne' => 'start_call');
 			$query[0]['$match']['stamp'] = array('$ne' => $row['stamp']);
