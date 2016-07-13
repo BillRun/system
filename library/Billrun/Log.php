@@ -52,7 +52,7 @@ class Billrun_Log extends Zend_Log {
 			$this->stamp = substr(md5($_SERVER['REQUEST_TIME'] . rand(0, 100)), 0, 7);
 		}
 
-		if (stripos($_SERVER['REQUEST_URI'], '/admin') === 0 && ($user = Billrun_Factory::user()) !== FALSE) {
+		if (stripos(array_key_exists('REQUEST_URI', $_SERVER) && $_SERVER['REQUEST_URI'], '/admin') === 0 && ($user = Billrun_Factory::user()) !== FALSE) {
 			$this->user = $user->getUsername();
 		}
 	}

@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AggregateAction extends ApiAction {
 
-	protected $ISODatePattern = '/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/';
+	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/';
 	
 	/**
 	 * method to execute the query
@@ -110,7 +110,7 @@ class AggregateAction extends ApiAction {
 			if (is_array($value)) {
 				$this->convertMongoDates($value);
 			}
-			if (preg_match($this->ISODatePattern, $value)) {
+			else if (preg_match($this->ISODatePattern, $value)) {
 				$value = new MongoDate(strtotime($value));
 			}
 		}
