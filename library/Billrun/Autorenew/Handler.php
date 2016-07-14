@@ -11,6 +11,16 @@
  *
  */
 class Billrun_Autorenew_Handler {
+	
+	protected $activeDate;
+
+	public function __construct($params) {
+		if (!empty($params['active_date'])) {
+			$this->activeDate = $params['active_date'];
+		} else {
+			$this->activeDate = date("Y-m-d");
+		}
+	}
 
 	/**
 	 * Get the query to return the monthly auto renew records.
@@ -20,8 +30,8 @@ class Billrun_Autorenew_Handler {
 		$or = array();
 		$or['interval'] = 'month';
 
-		$monthLower = strtotime('midnight');
-		$monthUpper = strtotime('tomorrow')-1;
+		$monthLower = strtotime('midnight',  strtotime($this->activeDate));
+		$monthUpper = strtotime('tomorrow',  strtotime($this->activeDate))-1;
 
 		$or['next_renew_date'] = array('$gte' => new MongoDate($monthLower), '$lte' => new MongoDate($monthUpper));
 
@@ -33,8 +43,8 @@ class Billrun_Autorenew_Handler {
 	 * @return array - query
 	 */
 	protected function getDayAutoRenewQuery() {
-		$dayLower = strtotime('midnight');
-		$dayUpper = strtotime('tomorrow')-1;
+		$dayLower = strtotime('midnight',  strtotime($this->activeDate));
+		$dayUpper = strtotime('tomorrow',  strtotime($this->activeDate))-1;
 
 		$or = array();
 		$or['next_renew_date'] = array('$gte' => new MongoDate($dayLower), '$lte' => new MongoDate($dayUpper));
