@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AggregateAction extends ApiAction {
 
-	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/';
+	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
 	
 	/**
 	 * method to execute the query
