@@ -333,14 +333,18 @@ abstract class Billrun_Processor extends Billrun_Base {
 				return false;
 			}
 			Billrun_Factory::log("Storing " . count($this->queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
+			$queue_stamps = array_keys($this->queue_data);
 			if (!$this->bulkAddToQueue()) {
 				return false;
 			}
 		} else {
 			$this->addToCollection($lines);
 			Billrun_Factory::log("Storing " . count($queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
+			$queue_stamps = array_keys($queue_data); 
 			$this->addToQueue($queue_data);
 		}
+		$lines->update(array('stamp' => array('$in' => $queue_stamps)), array('$set' => array('in_queue' => true)), array("multiple" => true)); 
+		
 		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
 		return true;
 	}

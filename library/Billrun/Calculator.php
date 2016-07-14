@@ -335,6 +335,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue = Billrun_Factory::db()->queueCollection();
 			$queue->remove($query);
+			$lines = Billrun_Factory::db()->linesCollection();
+ 			$lines->update($query, array('$unset' => array('in_queue' => "")), array("multiple" => true));
 		}
 	}
 
