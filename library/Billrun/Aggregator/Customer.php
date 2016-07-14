@@ -265,7 +265,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
 						$deactivated_subscribers[] = array("sid" => $sid);
 					}
-				} else {
+				} 
+				$plan_to_charge = $subscriber->chargeByPlan();
+				if (!is_null($plan_to_charge) && $plan_to_charge != "NULL") {
 					$subscriber_status = "open";
 					$subscriber->setBillrunKey($billrun_key);
 					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay());

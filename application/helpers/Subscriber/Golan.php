@@ -532,7 +532,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function getActivationEndDay(){
 		return $this->data['activation_end'];
 	}
-	
+
+	public function chargeByPlan(){
+		if ($this->billing_method == 'prepaid'){
+			return $this->getNextPlanName();
+		}
+		
+		return $this->getCurrentPlanName();
+	}
 	
 	public function setBillrunKey($billrun_key){
 		$this->billrun_key = $billrun_key;
