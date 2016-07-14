@@ -15,10 +15,11 @@ class Billrun_Autorenew_Handler {
 	protected $activeDate;
 
 	public function __construct($params) {
-		if (!empty($params['active_date'])) {
+		$currentDate = date("Y-m-d");
+		if (!empty($params['active_date'] && $params['active_date'] <= $currentDate)) {
 			$this->activeDate = $params['active_date'];
 		} else {
-			$this->activeDate = date("Y-m-d");
+			$this->activeDate = $currentDate;
 		}
 	}
 
