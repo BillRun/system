@@ -1171,6 +1171,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
+		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
+		if ($show_zero_usage == 'on') {
+			$query['$and'][] = array(
+				'$or' => array(
+					array(
+						'usaget' => 'balance'
+					),
+					array(
+						'usagev' => array(
+							'$ne' => 0
+						)
+					),
+				)
+			);
+		}
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
@@ -1192,21 +1207,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
-		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
-		if ($show_zero_usage == 'on') {
-			$query['$and'][] = array(
-				'$or' => array(
-					array(
-						'usaget' => 'balance'
-					),
-					array(
-						'usagev' => array(
-							'$ne' => 0
-						)
-					),
-				)
-			);
-		}
 
 		$this->getView()->component = $this->buildTableComponent('queue', $query);
 	}
