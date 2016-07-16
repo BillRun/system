@@ -108,7 +108,10 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function autoRenewServicesAction() {
-		$handler = new Billrun_Autorenew_Handler();
+		$params = array(
+			'active_date' => $this->getRequest()->get('active_date'),
+		);
+		$handler = new Billrun_Autorenew_Handler($params);
 		$handler->autoRenewServices();
 	}
 
