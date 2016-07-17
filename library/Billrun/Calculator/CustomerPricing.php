@@ -177,10 +177,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
 				} else if ($row['type'] == 'service') {
 					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume));
-					if (isset($row['fraction'])){
+					if (isset($row['fraction'])) {
 						$pricingData['aprice'] = $pricingData['aprice'] * $row['fraction'];
-					}	
-					} else {
+					}
+				} else {
 					$balance = $this->getSubscriberBalance($row, $billrun_key);
 					if ($balance === FALSE) {
 						return false;

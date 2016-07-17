@@ -504,27 +504,43 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return ($this->getPlan()->getPrice() * $fraction);
 	}
 	
-	public function calcFractionOfMonth($start_date, $end_date){
+	
+	
+	/**
+	 * for each subscriber calculates the relative part of the month the subsriber was in the plan.
+	 * @param $start_date the date the subscriber started the plan
+	 * @param $end_date the date the subscriber was no longer in the plan
+	 * @return fraction from the whole month
+	 */
+	public function calcFractionOfMonth($start_date, $end_date) {
+		if (!(is_null($start_date)) && !(is_null($end_date)) && ($end_date < $start_date)) {
+			Billrun_Factory::log()->log('ERROR: ending date ' . $end_date . ' is earlier then starting date ' . $start_date . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
+			return 0;
+		}
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$billing_end_date = Billrun_Util::getEndTime($this->billrun_key);
-		$days_in_month = (int)date('t', $billing_start_date);			
-		$start_day = is_null($start_date)?date('j', $billing_start_date):date('j', strtotime($start_date));
-		$end_day = is_null($end_date)?date('j', $billing_end_date):date('j', strtotime($end_date));	
-		$start_month = is_null($start_date)?date('F', $billing_start_date):date('F', strtotime($start_date));
-		$end_month = is_null($end_date)?date('F', $billing_end_date):date('F', strtotime($end_date));			
-		if ($start_month == $end_month){ 
-			$days_in_plan = (int)$end_day - (int)$start_day + 1;
-		}
-		else {
-			$days_in_previous_month = $days_in_month - (int)$start_day + 1;
-			$days_in_current_month = (int)$end_day;
+		$days_in_month = (int) date('t', $billing_start_date);
+		$start_in_unix_timestamp = strtotime($start_date);
+		$end_in_unix_timestamp = strtotime($end_date);
+		$start = is_null($start_date) ? $billing_start_date : $start_in_unix_timestamp;
+		$end = is_null($end_date) ? $billing_end_date : $end_in_unix_timestamp;
+		$start_day = date('j', $start);
+		$end_day = date('j', $end);
+		$start_month = date('F', $start);
+		$end_month = date('F', $end);
+
+		if ($start_month == $end_month) {
+			$days_in_plan = (int) $end_day - (int) $start_day + 1;
+		} else {
+			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
+			$days_in_current_month = (int) $end_day;
 			$days_in_plan = $days_in_previous_month + $days_in_current_month;
 		}
-		
-		$fraction = $days_in_plan/$days_in_month;						
+
+		$fraction = $days_in_plan / $days_in_month;
 		return $fraction;
 	}
-	
+
 	public function getActivationStartDay(){
 		return $this->data['activation_start'];
 	}
