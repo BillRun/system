@@ -285,8 +285,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							
 
 							if ($sid) {
-								$concat['data']['activation_start'] = isset($subscriber['activation_start']) ? $subscriber['activation_start'] : null;
-								$concat['data']['activation_end'] = isset($subscriber['activation_end']) ? $subscriber['activation_end'] : null;
+								$concat['data']['activation_start'] = isset($subscriber['activation']) ? $subscriber['activation'] : null;
+								$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? $subscriber['deactivate'] : null;
 								$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
