@@ -153,6 +153,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @todo log response
 	 */
 	protected function apiLogAction() {
+		if (!Billrun_Factory::config()->getConfigValue('api.log.db', 1)) {
+			return;
+		}
 		$request = $this->getRequest();
 		$php_input = file_get_contents("php://input");
 		if ($request->action == 'index') {
