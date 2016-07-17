@@ -110,7 +110,7 @@ class CronController extends Yaf_Controller_Abstract {
 	public function autoRenewServicesAction() {
 		$params = array();
 		$inputDate = $this->getRequest()->get('active_date');
-		if (!is_null($inputDate)) {
+		if (!empty($inputDate)) {
 			$inputDate = strtotime($inputDate);
 			if ($inputDate > time()) {
 				Billrun_Factory::log()->log("Future input date - Current date will be used instead",zend_log::NOTICE);
