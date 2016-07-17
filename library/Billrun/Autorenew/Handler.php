@@ -17,7 +17,7 @@ class Billrun_Autorenew_Handler {
 	public function __construct($params) {
 		$this->activeDate = time();
 		if (!empty($params['active_date'])) {
-			$inputDate = strtotime($params['active_date']);
+			$inputDate = $params['active_date'];
 			if ($inputDate <= $this->activeDate) {
 				$this->activeDate = $inputDate;
 			}
