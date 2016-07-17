@@ -153,9 +153,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * @todo log response
 	 */
 	protected function apiLogAction() {
-		$api_log_db = Billrun_Factory::config()->getConfigValue('api.log.db.enable', 1); // if fraction log only fraction of the API calls
+		$api_log_db = Billrun_Factory::config()->getConfigValue('api.log.db.enable', 1, 'float'); // if fraction log only fraction of the API calls
 		$base = Billrun_Factory::config()->getConfigValue('api.log.db.base', 1000);
-		if (rand(1, $base)/$base <= $api_log_db) {
+		if ((rand(1, $base)/$base) <= $api_log_db) {
 			return;
 		}
 		$request = $this->getRequest();
