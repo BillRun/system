@@ -57,6 +57,7 @@ class Generator_Balance extends Generator_Golanxml {
 	public function load() {
 		$this->date = date(Billrun_Base::base_dateformat, $this->now);
 		$subscriber = Billrun_Factory::subscriber();
+		$subscriber->setBillrunKey($this->stamp);
 		$this->account_data = array();
 		$res = $subscriber->getList(0, 1, $this->date, $this->aid);
 		if (!empty($res)) {
@@ -91,8 +92,11 @@ class Generator_Balance extends Generator_Golanxml {
 
 					$deactivated_subscribers[] = array("sid" => $subscriber->sid);
 				}
-			} else {
+			} 
+			$plan_to_charge = $subscriber->chargeByPlan();
+			if (!is_null($plan_to_charge) && $plan_to_charge != "NULL") {
 				$subscriber_status = "open";
+				$subscriber->setBillrunKey($this->stamp);
 				$flat_entry = $subscriber->getFlatEntry($this->stamp, true);
 				$manual_lines = array_merge($manual_lines, array($flat_entry['stamp'] => $flat_entry));
 			}

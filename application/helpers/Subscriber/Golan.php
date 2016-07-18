@@ -520,7 +520,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$billing_end_date = Billrun_Util::getEndTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);
-		$start_in_unix_timestamp = strtotime($start_date);
+		$start_in_unix_timestamp = $billing_start_date > strtotime($start_date)?$billing_start_date:strtotime($start_date);
 		$end_in_unix_timestamp = strtotime($end_date);
 		$start = is_null($start_date) ? $billing_start_date : $start_in_unix_timestamp;
 		$end = is_null($end_date) ? $billing_end_date : $end_in_unix_timestamp;
