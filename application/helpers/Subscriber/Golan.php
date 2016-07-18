@@ -521,7 +521,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$billing_end_date = Billrun_Util::getEndTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);
 		$temp_start = strtotime($start_date);
-		$start_in_unix_timestamp = $billing_start_date > $temp_start?$billing_start_date:$temp_start;
+		$start_in_unix_timestamp = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
 		$end_in_unix_timestamp = strtotime($end_date);
 		$start = is_null($start_date) ? $billing_start_date : $start_in_unix_timestamp;
 		$end = is_null($end_date) ? $billing_end_date : $end_in_unix_timestamp;
@@ -542,7 +542,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $fraction;
 	}
 
-	public function getActivationStartDay(){
+	public function getActivationStartDay() {
 		return $this->data['activation_start'];
 	}
 	
