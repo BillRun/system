@@ -132,6 +132,11 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function sendNotificationsAction() {
+		$day_type = Billrun_HebrewCal::getDayType(time());
+		if ($day_type == HEBCAL_HOLIDAY || $day_type == HEBCAL_WEEKEND) {
+			Billrun_Factory::log("[Cron:sendNotifications] We are on Holiday or Saturday, disable sending notifcations.", Zend_Log::NOTICE);
+			return;
+		}
 		$this->sendBalanceExpirationdateNotifications();
 	}
 
