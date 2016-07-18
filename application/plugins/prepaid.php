@@ -222,8 +222,13 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"session_id" => $row['session_id'],
 				"request_num" => array('$lt' => $row['request_num']),
 			);
-
-			$line = $lines_archive_coll->query($findQuery)->cursor()->sort(array('request_num' => -1, '_id' => -1))->limit(1);
+			$sort = array(
+				'sid' => 1,
+				'session_id' => 1,
+				'request_num' => -1, 
+				'_id' => -1,
+			);
+			$line = $lines_archive_coll->query($findQuery)->cursor()->sort($sort)->limit(1);
 			return $line;
 		} else if ($row['type'] == 'callrt' && $row['api_name'] == 'release_call') {
 			$findQuery = array(
