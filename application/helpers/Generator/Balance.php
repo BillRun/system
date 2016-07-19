@@ -40,7 +40,14 @@ class Generator_Balance extends Generator_Golanxml {
 	 * @var string a formatted date string
 	 */
 	protected $date = null;
+	
+	/**
+	 * the billing method
+	 * @var string prepaid or postpaid
+	 */
+	protected $billing_method = null;
 
+	
 	public function __construct($options) {
 		$options['auto_create_dir'] = false;
 		parent::__construct($options);
@@ -51,6 +58,7 @@ class Generator_Balance extends Generator_Golanxml {
 		if (isset($options['subscribers']) && $options['subscribers']) {
 			$this->setSubscribers($options['subscribers']);
 		}
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$this->now = time();
 	}
 
@@ -137,7 +145,12 @@ class Generator_Balance extends Generator_Golanxml {
 	 * @return array
 	 */
 	protected function getFlatCosts($subscriber) {
-		$plan_name = $this->getNextPlanName($subscriber);
+		if ($this->billing_method == "prepaid"){
+			$plan_name = $this->getNextPlanName($subscriber);
+		}
+		else{
+			$plan_name = $this->getCurrentPlanName($subscriber);
+		}
 		if (!$plan_name) {
 			//@error
 			return array();
@@ -147,7 +160,7 @@ class Generator_Balance extends Generator_Golanxml {
 			Billrun_Factory::log("Couldn't get plan $plan_name data", Zend_Log::ALERT);
 			return array();
 		}
-		$plan_price = $planObj->get('price');
+		$plan_price = $planObj->get('price') * $subscriber['fraction'];
 		return array('vatable' => $plan_price, 'vat_free' => 0);
 	}
 
@@ -172,6 +185,28 @@ class Generator_Balance extends Generator_Golanxml {
 		}
 		return $plan_name;
 	}
+	
+	
+	
+	/**
+	 * 
+	 * @param array $subscriber subscriber entry from billrun collection
+	 */
+	protected function getCurrentPlanName($subscriber) {
+		$plan_name = false;
+		foreach ($this->account_data as $sub) {
+			if ($sub->sid == $subscriber['sid']) {
+				$current_plan = $sub->getCurrentPlanName();
+				if (!is_null($current_plan) && $current_plan != "NULL") {
+					$plan_name = $current_plan;
+				}
+				break;
+			}
+		}
+		return $plan_name;
+	}
+	
+	
 
 	protected function getInvoiceId($row) {
 		return '00000000000';
