@@ -14,6 +14,9 @@
  */
 class Billrun_Plan {
 
+	const PLAN_SPAN_YEAR = 'year';
+	const PLAN_SPAN_MONTH = 'month';
+
 	/**
 	 * container of the plan data
 	 * 
@@ -38,42 +41,39 @@ class Billrun_Plan {
 		}
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
-		} else {
-//			self::initPlans();
-			if (isset($params['id'])) {
-				$id = $params['id'];
-				if ($id instanceof Mongodloid_Id) {
-					$filter_id = strval($id->getMongoId());
-				} else if ($id instanceof MongoId) {
-					$filter_id = strval($id);
-				} else {
-					// probably a string
-					$filter_id = $id;
-				}
-				if ($plan = $this->getPlanById($filter_id)) {
-					$this->data = $plan;
-				} else {
-					$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']);
-					$this->data->collection(Billrun_Factory::db()->plansCollection());
-				}
+		} else if (isset($params['id'])) {
+			$id = $params['id'];
+			if ($id instanceof Mongodloid_Id) {
+				$filter_id = strval($id->getMongoId());
+			} else if ($id instanceof MongoId) {
+				$filter_id = strval($id);
 			} else {
-				$date = new MongoDate($params['time']);
-				if ($plan = $this->getPlanByNameAndTime($params['name'], $date)) {
-					$this->data = $plan;
-				} else {
-					$this->data = Billrun_Factory::db()->plansCollection()
-						->query(array(
-							'name' => $params['name'],
-							'$or' => array(
-								array('to' => array('$gt' => $date)),
-								array('to' => null)
-							)
-						))
-						->lessEq('from', $date)
-						->cursor()
-						->current();
-					$this->data->collection(Billrun_Factory::db()->plansCollection());
-				}
+				// probably a string
+				$filter_id = $id;
+			}
+			if ($plan = $this->getPlanById($filter_id)) {
+				$this->data = $plan;
+			} else {
+				$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']);
+				$this->data->collection(Billrun_Factory::db()->plansCollection());
+			}
+		} else {
+			$date = new MongoDate($params['time']);
+			if ($plan = self::getPlanByNameAndTime($params['name'], $date)) {
+				$this->data = $plan;
+			} else {
+				$this->data = Billrun_Factory::db()->plansCollection()
+					->query(array(
+						'name' => $params['name'],
+						'$or' => array(
+							array('to' => array('$gt' => $date)),
+							array('to' => null)
+						)
+					))
+					->lessEq('from', $date)
+					->cursor()
+					->current();
+				$this->data->collection(Billrun_Factory::db()->plansCollection());
 			}
 		}
 	}
@@ -86,23 +86,23 @@ class Billrun_Plan {
 	}
 
 	protected static function initPlans() {
-		if (empty(self::$plans)) {
-			$plans_coll = Billrun_Factory::db()->plansCollection();
-			$plans = $plans_coll->query()->cursor();
-			foreach ($plans as $plan) {
-				$plan->collection($plans_coll);
-				self::$plans['by_id'][strval($plan->getId())] = $plan;
-				self::$plans['by_name'][$plan['name']][] = array(
-					'plan' => $plan,
-					'from' => $plan['from'],
-					'to' => $plan['to'],
-				);
-			}
+		$plans_coll = Billrun_Factory::db()->plansCollection();
+		$plans = $plans_coll->query()->cursor();
+		foreach ($plans as $plan) {
+			$plan->collection($plans_coll);
+			self::$plans['by_id'][strval($plan->getId())] = $plan;
+			self::$plans['by_name'][$plan['name']][] = array(
+				'plan' => $plan,
+				'from' => $plan['from'],
+				'to' => $plan['to'],
+			);
 		}
 	}
 
 	public static function getPlans() {
-		self::initPlans();
+		if (empty(self::$plans)) {
+			self::initPlans();
+		}
 		return self::$plans;
 	}
 
@@ -127,9 +127,10 @@ class Billrun_Plan {
 	 * @param int $time unix timestamp
 	 * @return array with plan details if plan exists, else false
 	 */
-	protected function getPlanByNameAndTime($name, $time) {
-		if (isset(self::$plans['by_name'][$name])) {
-			foreach (self::$plans['by_name'][$name] as $planTimes) {
+	protected static function getPlanByNameAndTime($name, $time) {
+		$plans = static::getPlans();
+		if (isset($plans['by_name'][$name])) {
+			foreach ($plans['by_name'][$name] as $planTimes) {
 				if ($planTimes['from'] <= $time && (!isset($planTimes['to']) || is_null($planTimes['to']) || $planTimes['to'] >= $time)) {
 					return $planTimes['plan'];
 				}
@@ -357,10 +358,34 @@ class Billrun_Plan {
 
 	/**
 	 * Get the price of the current plan.
-	 * @return float the price  of the plan without VAT.
+	 * @return float the price of the plan without VAT.
 	 */
-	public function getPrice() {
-		return $this->get('price');
+	public function getPrice($firstActivation, $from, $to) {
+		$startOffset = static::getMonthsDiff($firstActivation, $from);
+		$endOffset = static::getMonthsDiff($firstActivation, $to);
+		$charge = 0;
+		if ($this->getPeriodicity() == 'month') {
+			foreach ($this->data['price'] as $index => $tariff) {
+				if ($tariff['from'] <= $startOffset && $tariff['to'] >= $endOffset) {
+					$charge += ($endOffset - $startOffset) * $tariff['price'];
+				}
+				else if ($tariff['from'] <= $startOffset && $tariff['to'] < $endOffset) {
+					$charge += ($tariff['to'] - $startOffset) * $tariff['price'];
+				}
+				else if ($tariff['from'] > $startOffset && $tariff['to'] <= $endOffset) {
+					$charge += ($endOffset - $tariff['from']) * $tariff['price'];
+				}
+			}
+		}
+		return $charge;
+	}
+
+	public function getSpan() {
+		return $this->data['recurrence']['unit'];
+	}
+
+	public function getPeriodicity() {
+		return $this->data['recurrence']['periodicity'];
 	}
 
 	public function getName() {
@@ -406,6 +431,34 @@ class Billrun_Plan {
 			$usage_class_prefix = "out_plan_";
 		}
 		return $usage_class_prefix . $usage_type;
+	}
+
+	public function isUpfrontPayment() {
+		return !empty($this->data['upfront']);
+	}
+
+	public static function getMonthsDiff($from, $to) {
+		$minDate = new DateTime($from);
+		$maxDate = new DateTime($to);
+		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
+			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
+		}
+		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
+			return $maxDate->diff((new DateTime($from))->modify('-1 day'))->m;
+		}
+		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
+			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
+		}
+		$yearDiff = $maxDate->format('Y') - $minDate->format('Y');
+		switch ($yearDiff) {
+			case 0:
+				$months = $maxDate->format('m') - $minDate->format('m') - 1;
+				break;
+			default :
+				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
+				break;
+		}
+		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + ($maxDate->format('t') - $maxDate->format('d') + 1) / $maxDate->format('t') + $months;
 	}
 
 }

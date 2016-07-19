@@ -42,7 +42,7 @@ class PayAction extends ApiAction {
 						'BIC' => $payment->getBIC(),
 						'IBAN' => $payment->getIBAN(),
 						'bank_name' => $payment->getBankName(),
-						'date' => date(Billrun_Base::base_dateformat, $payment->getTime()->sec),
+						'date' => date(Billrun_Base::base_datetimeformat, $payment->getTime()->sec),
 					);
 					$emailsToSend[$method]['entities'][] = $entity;
 				}

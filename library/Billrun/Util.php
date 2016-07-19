@@ -107,7 +107,7 @@ class Billrun_Util {
 	 * @return string the current date time formatted by the system default format
 	 */
 	public static function generateCurrentTime() {
-		return date(Billrun_Base::base_dateformat);
+		return date(Billrun_Base::base_datetimeformat);
 	}
 
 	/**
@@ -140,7 +140,7 @@ class Billrun_Util {
 		} else {
 			$tz_offset = $offset;
 		}
-		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_datetimeformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
 		$ret = strtotime($date_formatted);
 		return $ret;
 	}
@@ -210,30 +210,6 @@ class Billrun_Util {
 		);
 
 		return $value * ($conversion[$from] / $conversion[$to]);
-	}
-
-	/**
-	 * returns the end timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getEndTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 second', strtotime($datetime));
-	}
-
-	/**
-	 * returns the start timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getStartTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 month', strtotime($datetime));
 	}
 
 	/**

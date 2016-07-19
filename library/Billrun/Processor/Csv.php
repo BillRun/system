@@ -118,7 +118,7 @@ class Billrun_Processor_Csv extends Billrun_Processor {
 		$row['type'] = self::$type;
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 
 		return $row;

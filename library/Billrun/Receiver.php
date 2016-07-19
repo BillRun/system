@@ -90,7 +90,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => date(self::base_dateformat),
+			'received_time' => date(self::base_datetimeformat),
 		);
 
 		$update = array(

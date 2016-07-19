@@ -46,6 +46,25 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var array
 	 */
 	protected $customerExtraData = array();
+	protected $time;
+
+	/**
+	 * Plans the subscriber had this month
+	 * @var array
+	 */
+	protected $plans = array();
+
+	/**
+	 * The active plan at the start of the next billing cycle
+	 * @var Billrun_Plan
+	 */
+	protected $nextPlan = null;
+
+	/**
+	 * If the subscriber has a next plan, this is its first activation date
+	 * @var string
+	 */
+	protected $nextPlanActivation = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -54,6 +73,30 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
+		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
+		$dataOptions = Billrun_Util::getFieldVal($options['data'], array());
+		$plans = array();
+		if (!empty($dataOptions['plans'])) {
+			foreach ($dataOptions['plans'] as &$planArr) {
+				foreach ($planArr['active_dates'] as $activeRange) {
+					$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan(array('name' => $planArr['name'], 'time' => strtotime($activeRange['from'])))));
+				}
+			}
+			$this->plans = $plans;
+		}
+		if (isset($options['time'])) {
+			$this->time = $options['time'];
+		}
+		if (isset($dataOptions['next_plan'])) {
+			$params = array(
+				'name' => $dataOptions['next_plan'],
+				'time' => Billrun_Util::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+			);
+			$this->nextPlan = new Billrun_Plan($params);
+			$this->nextPlanActivation = $dataOptions['next_plan_activation'];
 		}
 	}
 
@@ -134,7 +177,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
-	abstract public function getList($page, $size, $time, $acc_id = null);
+	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
 	/**
 	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
@@ -142,6 +185,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	abstract public function getListFromFile($file_path, $time);
 
 	abstract public function getSubscribersByParams($params, $availableFields);
+
+	abstract public function getCredits($billrun_key, $retEntity = false);
+
+	abstract public function getServices($billrun_key, $retEntity = false);
 
 	/**
 	 * Returns field names to be saved when creating billrun
@@ -157,6 +204,80 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	public function getCustomerExtraData() {
 		return $this->customerExtraData;
+	}
+
+	public function getId() {
+		return $this->sid;
+	}
+
+	public function getNextPlanName() {
+		return $this->nextPlan;
+	}
+
+	public function getNextPlanActivationDate() {
+		return $this->nextPlanActivation;
+	}
+
+	public function getCurrentPlans() {
+		return $this->plans;
+	}
+
+	/**
+	 * 
+	 * @param string $billrunKey
+	 * @return array
+	 */
+	public function getFlatEntries($billrunKey) {
+		foreach ($this->getCurrentPlans() as $planArr) {
+			$charge = 0;
+			$plan = $planArr['plan'];
+			/* @var $plan Billrun_Plan */
+			if (!$plan->isUpfrontPayment()) {
+				if ($plan->getPeriodicity() == 'month') {
+					$charge = $plan->getPrice($planArr['plan_activation'], $planArr['from'], $planArr['to']);
+				}
+			} else {
+				if ($plan->getPeriodicity() == 'month') {
+					
+				} else if ($plan->getPeriodicity() == 'year') {
+					
+				}
+			}
+			$flatEntries[] = $this->getFlatEntry($billrunKey, $plan, $planArr['from'], $charge);
+		}
+		$nextPlan = $this->getNextPlan();
+		if ($nextPlan && $nextPlan->isUpfrontPayment()) {
+			$charge = $plan->getPrice($this->getNextPlanActivationDate(), date(Billrun_Base::base_dateformat, $this->time), Billrun_Billrun::getEndTime($billrunKey));
+		}
+		return $flatEntries;
+	}
+
+	protected function getFlatEntry($billrunKey, $plan, $start, $charge) {
+		$startTimestamp = strtotime($start);
+		$flatEntry = new Mongodloid_Entity(array(
+			'aid' => $this->aid,
+			'sid' => $this->sid,
+			'source' => 'billrun',
+			'billrun' => $billrunKey,
+			'type' => 'flat',
+			'usaget' => 'flat',
+			'urt' => new MongoDate($startTimestamp),
+			'aprice' => $charge,
+			'plan' => $plan->getName(),
+			'plan_ref' => $plan->createRef(),
+			'process_time' => new MongoDate(),
+		));
+		$stamp = md5($this->aid . '_' . $this->sid . $plan->getName() . '_' . $start . $billrunKey);
+		$flatEntry['stamp'] = $stamp;
+		return $flatEntry;
+	}
+
+	/**
+	 * 
+	 * @return Billrun_Plan
+	 */
+	public function getNextPlan() {
+		return $this->nextPlan;
 	}
 
 }
