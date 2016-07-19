@@ -167,6 +167,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_callback':
 					ret = $scope.addRoamingCallbackRate();
 					break;
+				case 'roaming_callback_short':
+					ret = $scope.addRoamingCallbackShortRate();
+					break;
 				case 'sms':
 					ret = $scope.addSMSRate();
 					break;
@@ -193,6 +196,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 					break;
 				case 'roaming_callback':
 					ret = $scope.deleteRoamingCallbackRate(rateName);
+					break;
+				case 'roaming_callback_short':
+					ret = $scope.deleteRoamingCallbackShortRate(rateName);
 					break;
 				case 'sms':
 					ret = $scope.deleteSMSRate(rateName);
@@ -340,6 +346,28 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			$scope.newRate.roaming_callback= {name: undefined};
 		};
 
+		$scope.addRoamingCallbackShortRate = function () {
+			if (!$scope.newRate.roaming_callback_short || !$scope.newRate.roaming_callback_short.name)
+				return;
+			if ($scope.entity.rates.roaming_callback_short === undefined)
+				$scope.entity.rates.roaming_callback_short = {};
+			var newPriceInterval = {
+				access: 0,
+				interconnect: '',
+				unit: $scope.availableCallUnits[0],
+				rate: [
+					{
+						interval: undefined,
+						price: undefined,
+						to: undefined
+					}
+				]
+			};
+			$scope.entity.rates.roaming_callback_short[$scope.newRate.roaming_callback_short.name] = newPriceInterval;
+			$scope.shown.roaming_callback_shortRates[$scope.newRate.roaming_callback_short.name] = true;
+			$scope.newRate.roaming_callback_short = {name: undefined};
+		};
+
 		$scope.deleteRoamingCallRate = function (rateName) {
 			if (!rateName)
 				return;
@@ -354,6 +382,14 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			var r = confirm("Are you sure you want to remove " + rateName + "?");
 			if (r)
 				delete $scope.entity.rates.roaming_callback[rateName];
+		};
+
+		$scope.deleteRoamingCallbackShortRate = function (rateName) {
+			if (!rateName)
+				return;
+			var r = confirm("Are you sure you want to remove " + rateName + "?");
+			if (r)
+				delete $scope.entity.rates.roaming_callback_short[rateName];
 		};
 
 		$scope.addDataRate = function () {
@@ -510,6 +546,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'roaming_callback':
 					ret = $scope.roamingCallbackPlanExists(plan);
 					break;
+				case 'roaming_callback_short':
+					ret = $scope.roamingCallbackShortPlanExists(plan);
+					break;
 				case 'sms':
 					ret = $scope.smsPlanExists(plan);
 					break;
@@ -550,6 +589,13 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.roamingCallbackPlanExists = function (plan) {
 			if (plan && $scope.entity && $scope.entity.rates
 					&& $scope.entity.rates.roaming_callback && $scope.entity.rates.roaming_callback[plan]) {
+				return true;
+			}
+			return false;
+		};
+		$scope.roamingCallbackShortPlanExists = function (plan) {
+			if (plan && $scope.entity && $scope.entity.rates
+					&& $scope.entity.rates.roaming_callback_short && $scope.entity.rates.roaming_callback_short[plan]) {
 				return true;
 			}
 			return false;
@@ -649,7 +695,12 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				msc: false,
 				callRates: [],
 				smsRates: [],
-				dataRates: []
+				dataRates: [],
+				video_callRates: [],
+				roaming_incoming_callRates: [],
+				roaming_callRates: [],
+				roaming_callbackRates: [],
+				roaming_callback_shortRates: []
 			};
 			$scope.advancedMode = false;
 			$scope.initEdit(function (entity) {
@@ -676,6 +727,11 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 							$scope.shown.callRates[plans] = true;
 							$scope.shown.smsRates[plans] = true;
 							$scope.shown.dataRates[plans] = true;
+							$scope.shown.video_callRates[plans] = true;
+							$scope.shown.roaming_incoming_callRates[plans] = true;
+							$scope.shown.roaming_callRates[plans] = true;
+							$scope.shown.roaming_callbackRates[plans] = true;
+							$scope.shown.roaming_callback_shortRates[plans] = true;
 							$location.hash(plans);
 							$anchorScroll.yOffset = 120;
 							$anchorScroll();
