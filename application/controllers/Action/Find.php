@@ -27,14 +27,17 @@ class FindAction extends ApiAction {
 		$config = Billrun_Factory::config()->getConfigValue('api.config.find');
 
 		if (($query = $this->getArrayParam($request['query'])) === FALSE) {
-			return $this->setError('Illegal query: ' . $request['query'], $request);
+			$this->setError('Illegal query: ' . $request['query'], $request);
+			return TRUE;
 		}
 		$query = $this->convertToMongoIds($query);
 		if (($project = $this->getArrayParam($request['project'])) === FALSE) {
-			return $this->setError('Illegal project: ' . $request['project'], $request);
+			$this->setError('Illegal project: ' . $request['project'], $request);
+			return TRUE;
 		}
 		if (($sort = $this->getArrayParam($request['sort'])) === FALSE) {
-			return $this->setError('Illegal sort: ' . $request['sort'], $request);
+			$this->setError('Illegal sort: ' . $request['sort'], $request);
+			return TRUE;
 		}
 
 		if (isset($request['page']) && is_numeric($request['page'])) {
@@ -57,7 +60,8 @@ class FindAction extends ApiAction {
 			try {
 				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->find($query, $project)->sort($sort)->skip($page * $size)->limit($size));
 			} catch (Exception $e) {
-				return $this->setError($e->getMessage(), $request);
+				$this->setError($e->getMessage(), $request);
+				return TRUE;
 			}
 
 			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
@@ -72,7 +76,8 @@ class FindAction extends ApiAction {
 
 			$this->getController()->setOutput($ret);
 		} else {
-			return $this->setError('Illegal collection name: ' . $request['collection'], $request);
+			$this->setError('Illegal collection name: ' . $request['collection'], $request);
+			return TRUE;
 		}
 	}
 

@@ -119,7 +119,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
 		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');

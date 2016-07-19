@@ -298,7 +298,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', date(self::base_dateformat));
+			$resource->set('process_time', date(self::base_datetimeformat));
 			return $log->save($resource);
 		} else {
 			// backward compatibility
