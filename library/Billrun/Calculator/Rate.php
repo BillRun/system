@@ -380,6 +380,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @return string clean number
 	 */
 	public function getCleanNumber($number) {
+		$minLength = Billrun_Factory::config()->getConfigValue('rate.' . $this->getType() . '.minLengthTrimPrefixes', Billrun_Factory::config()->getConfigValue('rate.minLengthTrimPrefixes', 10));
+		if (strlen($number) < $minLength) {
+			return $number;
+		}
 		$configurationTrimPrefixes = Billrun_Factory::config()->getConfigValue('rate.' . $this->getType() . '.trimPrefixes', Billrun_Factory::config()->getConfigValue('rate.trimPrefixes', array()));
 		if (!empty($configurationTrimPrefixes)) {
 			return preg_replace('/^(' . implode('|', array_map('preg_quote', $configurationTrimPrefixes)) . ')/', '', $number);

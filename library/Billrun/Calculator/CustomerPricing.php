@@ -154,8 +154,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->loadRates();
 			$this->loadPlans();
 			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
-			$this->active_billrun_end_time = Billrun_Util::getEndTime($this->active_billrun);
-			$this->next_active_billrun = Billrun_Util::getFollowingBillrunKey($this->active_billrun);
+			$this->active_billrun_end_time = Billrun_Billrun::getEndTime($this->active_billrun);
+			$this->next_active_billrun = Billrun_Billrun::getFollowingBillrunKey($this->active_billrun);
 		}
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -164,7 +164,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	protected function getLines() {
 		$query = array();
-		$query['type'] = array('$in' => array('ggsn', 'smpp', 'mmsc', 'smsc', 'nsn', 'tap3', 'credit', 'nrtrde'));
 		return $this->getQueuedLines($query);
 	}
 
@@ -472,7 +471,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
-		} else if ($rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
+		} else if (isset($rate['params']['interconnect'], $rate['params']['chargable']) && $rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
 			$total = $chargeWoIC + $interconnectCharge;
 			$ret = array(
 				'interconnect' => $total,
@@ -811,7 +810,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	public function removeBalanceTx($row) {
 		$query = array(
-			'_id' => $this->balance->getId()->getMongoID(),
+			'sid' => $row['sid'],
+			'from' => array(
+				'$lte' => $row['urt'],
+			),
+			'to' => array(
+				'$gt' => $row['urt'],
+			),
 		);
 		$values = array(
 			'$unset' => array(
@@ -832,7 +837,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate'));
+		$arate = $this->getRateByRef($line->get('arate', TRUE));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;

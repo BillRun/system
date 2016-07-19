@@ -230,13 +230,12 @@ class Mongodloid_Collection {
 	}
 
 	/**
-	 * @param boolean $mongoResult return a MongoCursor or a Mongodloid_Cursor
-	 * @return mixed a cursor for the search results.
-	 * @todo Remove $mongoResult parameter and always return Mongodloid_Cursor
+	 * @return MongoCursor a cursor for the search results.
 	 */
-	public function find($query, $fields = array(), $mongoResult = TRUE) {
-		$cursor = $this->_collection->find($query, $fields);
-		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
+	public function find($query, $fields = array()) {
+		return $this->_collection->find($query, $fields);
+//		$cursor = $this->_collection->find($query, $fields);
+//		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
 
 	/**
@@ -268,8 +267,9 @@ class Mongodloid_Collection {
 			$args = array($args);
 		}
 		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
-
 	}
+
+	
 	public function setTimeout($timeout) {
 		if ($this->_db->compareClientVersion('1.5.3', '<')) {
 			@MongoCursor::$timeout = (int) $timeout;

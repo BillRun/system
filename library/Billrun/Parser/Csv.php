@@ -25,6 +25,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	 */
 	protected $headerStructure;
 	protected $trailerStructure;
+	protected $dataStructure;
 
 	/**
 	 *
@@ -33,15 +34,24 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	protected $structure;
 	protected $lineTypes;
 
+	
 	public function __construct($options) {
 		parent::__construct($options);
-		if (isset($options['structure'])) {
-			$this->setStructure($options['structure']);
+		if (isset($options['data_structure'])) {
+			$this->dataStructure = $options['data_structure'];
+		}
+		if (isset($options['header_structure'])){
+			$this->headerStructure = $options['header_structure'];
+		}
+		if (isset($options['trailer_structure'])){
+			$this->trailerStructure= $options['trailer_structure'];
 		}
 		if (isset($options['line_types'])) {
 			$this->setLineTypes($options['line_types']);
 		}
+
 	}
+
 
 	/**
 	 * method to set structure of the parsed file
@@ -53,6 +63,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		$this->structure = $structure;
 		return $this;
 	}
+
 
 	public function setLineTypes($lineTypes) {
 		$this->lineTypes = $lineTypes;
@@ -70,7 +81,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 			$record_type = $this->getLineType($line);
 			switch ($record_type) {
 				case static::DATA_LINE:
-					$this->setStructure($this->structure);
+					$this->setStructure($this->dataStructure);
 					if ($parsedLine = $this->parseLine($line)) {
 						$this->dataRows[] = $parsedLine;
 					}
@@ -107,6 +118,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		} else if (preg_match($this->lineTypes['T'], $line)) {
 			return static::TRAILER_LINE;
 		}
+			
 		return FALSE;
 	}
 

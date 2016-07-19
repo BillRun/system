@@ -767,7 +767,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Util::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
@@ -798,7 +798,7 @@ class Billrun_Util {
 		}
 		return $query;
 	}
-	
+
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -1062,7 +1062,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if(!$response) {
+			if (!$response) {
 				$response = $e->getMessage();
 			}
 		}
@@ -1325,6 +1325,7 @@ class Billrun_Util {
 	public static function getCallTypes() {
 		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
 	}
+
 	
 	public static function getBillRunPath($path) {
 		if (empty($path) || !is_string($path)) {
@@ -1336,6 +1337,16 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
+
+		/**
+	 * Return rounded amount for charging
+	 * @param float $amount
+	 * @return float
+	 */
+	public static function getChargableAmount($amount) {
+		return number_format($amount, 2, '.', '');
+	}
+
 	public static function generateHash($aid, $key){
 		return md5($aid . $key);
 	}
@@ -1346,7 +1357,7 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'urt', 'usagev', 'usaget', 'plan', 'aprice', 'arate', 'billrun', 'type', 'apr', 'stamp', 'source', 'file', 'log_stamp', 'process_time', 'row_number');
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
 
@@ -1357,5 +1368,7 @@ class Billrun_Util {
 	public static function IsIntegerValue($number) {
 		return is_numeric($number) && ($number == intval($number));
 	}
+
+
 
 }

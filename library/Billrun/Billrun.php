@@ -222,7 +222,7 @@ class Billrun_Billrun {
 	 */
 	public static function getVATByBillrunKey($billrun_key) {
 		if (!isset(self::$vatsByBillrun[$billrun_key])) {
-			$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+			$billrun_end_time = self::getEndTime($billrun_key);
 			self::$vatsByBillrun[$billrun_key] = self::getVATAtDate($billrun_end_time);
 			if (is_null(self::$vatsByBillrun[$billrun_key])) {
 				self::$vatsByBillrun[$billrun_key] = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
@@ -907,13 +907,13 @@ class Billrun_Billrun {
 		$fields = array(
 			'billrun_key' => 1,
 		);
-		$runtime_billrun_key = Billrun_Util::getBillrunKey($now);
+		$runtime_billrun_key = self::getBillrunKeyByTimestamp($now);
 		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
-			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
-			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
+			$active_billrun = Billrun_Billrun::getFollowingBillrunKey($last['billrun_key']);
+			$billrun_start_time = self::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
@@ -949,13 +949,33 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * method to receive billrun key by date
+	 * 
+	 * @param int $timestamp a unix timestamp
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getBillrunKeyByTimestamp($timestamp, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+		}
+		$format = "Ym";
+		if (date("d", $timestamp) < $dayofmonth) {
+			$key = date($format, $timestamp);
+		} else {
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
+		}
+		return $key;
+	}
+
+	/**
 	 * returns the end timestamp of the input billing period
 	 * @param date $date
 	 */
 	public static function getBillrunEndTimeByDate($date) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
-		return strtotime('-1 second', strtotime($datetime));
+		$dateTimestamp = strtotime($date);
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
+		return self::getEndTime($billrunKey);
 	}
 
 	/**
@@ -963,9 +983,47 @@ class Billrun_Billrun {
 	 * @param date $date
 	 */
 	public static function getBillrunStartTimeByDate($date) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
+		$dateTimestamp = strtotime($date);
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
+		return self::getStartTime($billrunKey);
+	}
+
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getEndTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return strtotime('-1 second', strtotime($datetime));
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getStartTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 		return strtotime('-1 month', strtotime($datetime));
+	}
+
+	public static function getFollowingBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
+	}
+
+	public static function getPreviousBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
+		return $ret;
 	}
 
 }

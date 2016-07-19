@@ -145,7 +145,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function getSubscriberCurrencyUsageQuery($row, $period) {
-		$startTime = Billrun_Util::getStartTimeByPeriod($period);
+		$startTime = Billrun_Billrun::getStartTimeByPeriod($period);
 		$match = array(
 			'type' => 'gy',
 			'sid' => $row['sid'],
@@ -214,11 +214,11 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterSubscriberBalanceAutoRenewUpdate($autoRenewRecord) {
-		$subscriber = $this->getSubscriber($autoRenewRecord['sid'])->getRawData();
+		$subscriber = $this->getSubscriber($autoRenewRecord['sid']);
 		if (!$subscriber) {
 			return false;
 		}
-		$this->updateSubscriberInDataSlowness($subscriber, false, true);
+		$this->updateSubscriberInDataSlowness($subscriber->getRawData(), false, true);
 	}
 
 	public function subscribersPlansEnded($sids) {
@@ -780,8 +780,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$prefix = '0';
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
-			} else if ($event['call_type'] == '11') {
+			} else if (stripos($usaget, 'roaming') === TRUE) {
 				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+			}
+			// backward compatibility to local calls without vlr
+			if (empty($event['vlr']) && stripos($usaget, 'roaming') === FALSE) {
+				$event['vlr'] = '97250';
 			}
 		}
 	}

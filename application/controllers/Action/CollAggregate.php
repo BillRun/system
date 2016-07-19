@@ -16,6 +16,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AggregateAction extends ApiAction {
 
+	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/';
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -27,14 +29,20 @@ class AggregateAction extends ApiAction {
 		$config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
 
 		if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE) {
-			return $this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
+			$this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
+			return TRUE;
 		}
 		$pipelines = $this->convertToMongoIds($pipelines);
+		$this->convertMongoDates($pipelines);
 		if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
 				return key($pipeline);
 			}, $pipelines), $config['permitted_pipelines'])) {
 			$this->setError('Illegal pipelines(s): ' . implode(', ', $notPermittedPipelines), $request);
 			return true;
+		}
+		if (!$pipelines) {
+			$this->setError('No query found', $request);
+			return TRUE;
 		}
 		if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 			$collection = $request['collection'];
@@ -60,7 +68,8 @@ class AggregateAction extends ApiAction {
 
 			$this->getController()->setOutput($ret);
 		} else {
-			return $this->setError('Illegal collection name: ' . $request['collection'], $request);
+			$this->setError('Illegal collection name: ' . $request['collection'], $request);
+			return TRUE;
 		}
 	}
 
@@ -94,6 +103,17 @@ class AggregateAction extends ApiAction {
 			}
 		}
 		return $query;
+	}
+	
+	protected function convertMongoDates(&$arr) {
+		foreach ($arr as &$value) {
+			if (is_array($value)) {
+				$this->convertMongoDates($value);
+			}
+			else if (preg_match($this->ISODatePattern, $value)) {
+				$value = new MongoDate(strtotime($value));
+			}
+		}
 	}
 
 }

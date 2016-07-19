@@ -171,7 +171,7 @@ class LinesModel extends TableModel {
 		$billruns = array();
 		$timestamp = time();
 		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
+			$billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp($timestamp);
 			if ($billrun_key >= '201401') {
 				$billruns[$billrun_key] = $billrun_key;
 			} else {
