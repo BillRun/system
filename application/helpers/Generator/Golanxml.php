@@ -438,6 +438,18 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_after_vat);
+			
+			$subscriber_sumup_ACTIVATION_DATE = isset($subscriber['activation_start']) ? $subscriber['activation_start'] : 0;
+			if ($subscriber_sumup_ACTIVATION_DATE){
+				$this->writer->writeElement('ACTIVATION_DATE', $subscriber_sumup_ACTIVATION_DATE);
+			}	
+			$subscriber_sumup_DEACTIVATION_DATE = isset($subscriber['activation_end']) ? $subscriber['activation_end'] : 0;
+			if ($subscriber_sumup_DEACTIVATION_DATE){
+				$this->writer->writeElement('DEACTIVATION_DATE', $subscriber_sumup_DEACTIVATION_DATE);
+			}
+			$subscriber_sumup_FRACTION_OF_MONTH = floatval((isset($subscriber['fraction']) ? $subscriber['fraction'] : 0));
+				$this->writer->writeElement('FRACTION_OF_MONTH', $subscriber_sumup_FRACTION_OF_MONTH);
+
 
 			$invoice_total_gift+= $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
