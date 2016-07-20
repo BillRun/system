@@ -99,6 +99,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 	}
 
+	
+	
+	public function prepareData($lines) {
+		if ($this->isBulk()) {
+			$this->loadSubscribers($lines);
+		}
+	}
+
 	/**
 	 * make the  calculation
 	 */
@@ -287,7 +295,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 		return $this->subscriber->load($params);
 	}
-
+	
 	protected function getIdentityParams($row) {
 		$params = array();
 		$customer_identification_translation = Billrun_Util::getFieldVal($this->translateCustomerIdentToAPI[$row['type']], array());
