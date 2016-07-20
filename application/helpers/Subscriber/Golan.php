@@ -521,7 +521,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		$start = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
 		$end = $billing_end_date < $temp_end ? $billing_end_date : $temp_end;
 		if ($end < $start) {
-			Billrun_Factory::log()->log('ERROR: ending date ' . $end . ' is earlier then starting date ' . $start . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
+//			Billrun_Factory::log()->log('ERROR: ending date ' . $end . ' is earlier then starting date ' . $start . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
 			return 0;
 		}
 		$start_day = date('j', $start);
