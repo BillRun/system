@@ -100,6 +100,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				$scope.entity.include = {};
 				_.forEach($scope.displayData.includeTypes, function(includeType) {
 					var include_type = includeType.type;
+					delete includeType.type;
 					if (_.isUndefined($scope.entity.include[include_type])) {
 						$scope.entity.include[include_type] = includeType;
 					} else if (_.isArray($scope.entity.include[include_type])) {
