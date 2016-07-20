@@ -21,6 +21,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $save_crm_output = false;
 	protected $crm_output_dir = null;
 	protected $billrunExtraFields = array('kosher' => 1, 'credits' => 1, 'sub_services' => 0); //true to save in billrun, false not to save
+	protected $billrun_key;
+
+
 
 	/**
 	 * calculator for manual charges on billable
@@ -30,6 +33,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $creditCalc = null;
 	protected $pricingCalc = null;
 	protected $serviceCalc = null;
+	protected $billing_method = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -52,6 +56,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
 		$pricingCalcOptions = array_merge(array('type' => 'customerPricing', 'autoload' => false), Billrun_Factory::config()->getConfigValue('customerPricing.calculator', array()));
@@ -277,8 +282,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
+							
 
 							if ($sid) {
+								$concat['data']['activation_start'] = isset($subscriber['activation']) ? $subscriber['activation'] : null;
+								$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? $subscriber['deactivate'] : null;
+								$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
 								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
@@ -333,6 +342,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								foreach ($reduced as $service_name => $service_count) {
 									$service = array();
 									$service['service_name'] = $service_name;
+									$service['fraction'] = $concat['data']['fraction'];
 									$service['count'] = $service_count;
 									$service['aid'] = $concat['data']['aid'];
 									$service['sid'] = $concat['data']['sid'];
@@ -440,7 +450,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("service cannot be calc pricing for subscriber " . $service['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($service, 1), Zend_log::ALERT);
 				continue;
 			}
-
+			
 			if ($retEntity && !($insertRow instanceof Mongodloid_Entity)) {
 				$ret[$insertRow['stamp']] = new Mongodloid_Entity($insertRow);
 			} else if (!$retEntity && ($insertRow instanceof Mongodloid_Entity)) {
@@ -486,9 +496,69 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $this->next_plan;
 	}
+	
+	public function getFlatPrice($fraction) { 
+		if ($this->billing_method == 'prepaid'){
+			return ($this->getNextPlan()->getPrice() * $fraction);
+		}
+		return ($this->getPlan()->getPrice() * $fraction);
+	}
+	
+	
+	
+	/**
+	 * for each subscriber calculates the relative part of the month the subsriber was in the plan.
+	 * @param $start_date the date the subscriber started the plan
+	 * @param $end_date the date the subscriber was no longer in the plan
+	 * @return fraction from the whole month
+	 */
+	public function calcFractionOfMonth($start_date, $end_date) {
+		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
+		$billing_end_date = Billrun_Util::getEndTime($this->billrun_key);
+		$days_in_month = (int) date('t', $billing_start_date);
+		$temp_start = strtotime($start_date);
+		$temp_end = is_null($end_date) ? PHP_INT_MAX : strtotime($end_date);
+		$start = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
+		$end = $billing_end_date < $temp_end ? $billing_end_date : $temp_end;
+		if ($end < $start) {
+			Billrun_Factory::log()->log('ERROR: ending date ' . $end . ' is earlier then starting date ' . $start . 'for subscriber: stamp: ' . $this->stamp, Zend_Log::ALERT);
+			return 0;
+		}
+		$start_day = date('j', $start);
+		$end_day = date('j', $end);
+		$start_month = date('F', $start);
+		$end_month = date('F', $end);
 
-	public function getFlatPrice() {
-		return $this->getNextPlan()->getPrice();
+		if ($start_month == $end_month) {
+			$days_in_plan = (int) $end_day - (int) $start_day + 1;
+		} else {
+			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
+			$days_in_current_month = (int) $end_day;
+			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+		}
+
+		$fraction = $days_in_plan / $days_in_month;
+		return $fraction;
+	}
+
+	public function getActivationStartDay() {
+		return $this->data['activation_start'];
+	}
+	
+	public function getActivationEndDay(){
+		return $this->data['activation_end'];
+	}
+
+	public function chargeByPlan(){
+		if ($this->billing_method == 'prepaid'){
+			return $this->getNextPlanName();
+		}
+		
+		return $this->getCurrentPlanName();
+	}
+	
+	public function setBillrunKey($billrun_key){
+		$this->billrun_key = $billrun_key;
 	}
 
 	/**
@@ -498,7 +568,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 */
 	public function getFlatEntry($billrun_key, $retEntity = false) {
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-		$next_plan = $this->getNextPlan();
+		$fraction = $this->calcFractionOfMonth($this->getActivationStartDay(), $this->getActivationEndDay());
+		if ($this->billing_method == 'prepaid'){
+			$plan = $this->getNextPlan();
+		}
+		else{
+			$plan = $this->getPlan();
+		}
+		
 		$flat_entry = array(
 			'aid' => $this->aid,
 			'sid' => $this->sid,
@@ -507,9 +584,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
-			'aprice' => $this->getFlatPrice(),
-			'plan' => $next_plan->getName(),
-			'plan_ref' => $next_plan->createRef(),
+			'aprice' => $this->getFlatPrice($fraction),
+			'plan' => $plan->getName(),
+			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),
 			'offer_id_curr' => $this->offer_id_curr,
 			'offer_id_next' => $this->offer_id_next,
