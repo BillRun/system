@@ -28,12 +28,20 @@ div#listSize {
 .form_protect {
 	margin-left:30px;
 }
+.add-group-data,
 .add-filter{
 	display: none;
 }
+
+.add-filter.shown {
+	display: inline-block;
+}
+
+div:last-of-type>.add-group-data,
 div:last-of-type>.add-filter{
 	display: inline-block;
 }
+div:nth-of-type(n+5)>.add-group-data,
 div:nth-of-type(n+5)>.add-filter{
 	display: none;
 }
@@ -108,6 +116,11 @@ td[data-title="Rate"] a{
     white-space: nowrap;
     width: 90px;
 }
+
+.btn-group {
+	margin-right: 3px;
+}
+
 .center {
 	margin: 50px auto 0;
 	display: block;
@@ -157,7 +170,7 @@ tr.progress td, tr.progress th {
 .toolbar-buttons, .control-group1 {
 	margin:10px auto;
 }
-#manual_filters .controls-row {
+#manual_filters .controls-row, #group_by_filters .controls-row {
 	margin-top:5px;
 }
 .toolbar-buttons, .control-group4 {
@@ -205,10 +218,12 @@ input[type=text].advanced-filter, .toolbar-lines input[type=text].span2{
 	background-color: darkblue;
 }
 
+.remove-group-data, .add-group-data,
 .remove-filter, .add-filter {
 	color:black;
 	text-decoration:none;
 }
+.remove-group-data:hover, .add-group-data:hover,
 .remove-filter:hover, .add-filter:hover {
 	text-decoration:none;
 }
@@ -299,4 +314,29 @@ div.billrun-logo img {
 .edit_checkboxes {
 /* clear: both; */
 float: left;
+}
+
+.control-row-group {
+	margin-top:5px;
+}
+
+#groupBy {
+	margin-bottom: 5px;
+	margin-top: 3px;
+}
+
+#AdvancedAndAggregated {
+	display: inline-block;
+	width: 1000px;
+	min-height: 20px;
+}
+
+#AdvancedParentDiv {
+	display: inline-block;
+	width: 50%;
+	float: left; 
+}
+
+#AggregateParentDiv {
+	display: inline-block;
 }

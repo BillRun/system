@@ -246,9 +246,12 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			if (isset($data['called_number'])) {
 				if (isset($data['out_circuit_group']) && in_array($data['out_circuit_group'], Billrun_Util::getIntlCircuitGroups()) && substr($data['called_number'], 0, 2) == "10") {
 					$data['called_number'] = substr($data['called_number'], 2);
-				} else if (in_array($data['record_type'], array('30', '31')) && preg_match($this->ild_called_number_regex, $data['called_number'])) {
-					$data['ild_prefix'] = substr($data['called_number'], 0, 3);
-					$data['called_number'] = substr($data['called_number'], 3);
+				} else if (in_array($data['record_type'], array('30')) && (in_array($data['out_circuit_group'], Billrun_Util::getIldsOneWayCircuitGroups())) &&  
+                                          (preg_match('/^GNTV|^GBZQ|^GBZI|^GSML|^GHOT/', $data['in_circuit_group_name']))) {
+                                                $data['ild_prefix'] = substr($data['in_circuit_group_name'], 0, 4);
+                                                if (preg_match($this->ild_called_number_regex, $data['called_number'])){
+                                                    $data['called_number'] = substr($data['called_number'], 3);
+                                                } 
 				}
 				if ((!isset($data['out_circuit_group'])) || (isset($data['out_circuit_group']) && !(($data['out_circuit_group'] >= '2000' && $data['out_circuit_group'] <= '2069') || ($data['out_circuit_group'] >= '2500' && $data['out_circuit_group'] <= '2529') || ($data['out_circuit_group'] >= '1230' && $data['out_circuit_group'] <= '1233')))) {
 					$data['called_number'] = Billrun_Util::msisdn($data['called_number']);
@@ -359,7 +362,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			case 'hex' :
 				$retValue = '';
 				for ($i = $length - 1; $i >= 0; --$i) {
-					$retValue .= dechex(ord($data[$i]));
+					$retValue .= sprintf('%02s', dechex(ord($data[$i])));
 				}
 				break;
 

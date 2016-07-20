@@ -271,8 +271,14 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 				$cdrLine['record_type'] = $type;
 			}
 			//convert to unified time GMT  time.
-			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
+			$timeOffset =  date('P');
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
+			if (isset($cdrLine['ms_timezone'])) {
+				$cdrLine['callEventStartTimeStamp'] = (new DateTime('@' . ($cdrLine['urt']->sec + Billrun_Util::getTimezoneOffsetInSeconds($cdrLine['ms_timezone']))))->format('YmdHis');
+			}
+			else {
+				$cdrLine['callEventStartTimeStamp'] = $cdrLine['record_opening_time'];
+			}
 			if (is_array($cdrLine['rating_group'])) {
 				$fbc_uplink_volume = $fbc_downlink_volume = 0;
 				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];

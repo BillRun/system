@@ -42,7 +42,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'required' => array(
 						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
 						'match' => array(
-							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|176\.12\.158\.(\d$|[1]\d$|2[10]$))/',
+							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.)/',
 						),
 					),
 					'date_seperation' => 'Ymd',
@@ -152,7 +152,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if ($archivedLinesCount > 0) {
 			try {
 				Billrun_Factory::log('Saving ' . $archivedLinesCount . ' source lines to archive.', Zend_Log::INFO);
-				$archLinesColl->batchInsert($this->archivedLines);
+				$archLinesColl->batchInsert($this->archivedLines, array('w' => 0)); // we put 0 in case insert was failed on previous run and this is recovery
 				$this->data = array_diff_key($this->data, $this->archivedLines);
 				$linesArchivedStamps = array_keys($this->archivedLines);
 			} catch (Exception $e) {
@@ -324,7 +324,8 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isNsnLineLegitimate($line) {
-		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && $line['usaget'] == 'incoming_call' && isset($line['sid']))) {
+		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && (isset($line['sid']) || (isset($line['record_type']) && ($line['record_type'] == '30' || $line['record_type'] == '31')))) ||
+			(in_array($line['out_circuit_group'], array('2090','2091','2092')) || in_array($line['in_circuit_group'], array('2090','2091','2092')))) {
 			return false;
 		}
 		return true;
@@ -374,7 +375,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$query = array('stamp' => $unifiedStamp);
 
 		$update = array('$pullAll' => array('tx' => $lineStamps));
-		Billrun_Factory::db()->linesCollection()->update($query, $update);
+		Billrun_Factory::db()->linesCollection()->update($query, $update, array('w' => 1));
 	}
 
 	/**

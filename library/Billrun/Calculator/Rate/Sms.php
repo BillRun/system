@@ -53,7 +53,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
 	protected function getLineUsageType($row) {
-		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
+		return $row['usaget'];
 	}
 
 	/**
@@ -62,8 +62,8 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ($row['type'] == 'smpp' && $row['record_type'] == '1') || // also remove these numbers before commiting
-				($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
+		return ($row['type'] == 'smpp' && $row['record_type'] == '2') || // also remove these numbers before commiting
+				($row['type'] == 'smsc' && $row['record_type'] == '2' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
 				($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
 
@@ -71,7 +71,25 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		if ($this->shouldLineBeRated($row)) {
+		if ($row['org_protocol'] == '3') {  //smpp
+			$matchedRate = false;
+			if ($this->shouldLineBeRated($row)) {
+				$called_number = $this->extractNumber($row);
+				$line_time = $row['urt'];
+				if (isset($this->rates[$called_number])) {
+					foreach ($this->rates[$called_number] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								$matchedRate = $rate;
+								break;
+							}
+						}
+					}
+				}
+			}
+			return $matchedRate;
+		}
+		else if ($this->shouldLineBeRated($row)) {
 			$matchedRate = $this->rates['UNRATED'];
 			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];

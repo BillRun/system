@@ -55,10 +55,11 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
+
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
+			$this->vat = self::getVATByBillrunKey($this->billrun_key);
 			if (isset($options['autoload']) && !$options['autoload']) {
 				if (isset($options['data']) && !$options['data']->isEmpty()) {
 					$this->data = $options['data'];
@@ -102,6 +103,7 @@ class Billrun_Billrun {
 	public function save() {
 		if (isset($this->data)) {
 			try {
+                                $this->data['creation_time'] = new MongoDate();
 				$this->data->save(NULL, 1);
 				return true;
 			} catch (Exception $ex) {
@@ -136,6 +138,8 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		$subscriber_entry['offer_id_next'] = $subscriber->offer_id_next;
+		$subscriber_entry['offer_id_curr'] = $subscriber->offer_id_curr;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;

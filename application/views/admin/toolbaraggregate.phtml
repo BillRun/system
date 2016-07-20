@@ -1,9 +1,8 @@
 <div class="toolbar toolbar-<?php echo $active; ?>">
 	<form id="search-criteria" action="<?php echo $baseUrl . $requestUrl; ?>" method="POST" class="form-vertical">
-		<input type="hidden" id="queryType" name="queryType" value="find" />
+		<input type="hidden" id="queryType" name="queryType" value="aggregate" />
 		<?php
-//		print_R($this->filter_fields_order);
-//		print_R($this->filter_fields);die;
+		echo '<div id="match">';
 		if (is_array($this->filter_fields_order) && is_array($this->filter_fields)) {
 			foreach ($this->filter_fields_order as $key => $row_fields) {
 				echo "<div class=\"control-group control-group" . $key . "\">
@@ -52,88 +51,53 @@
 			}
 
 			if ($active == 'lines') :
-				$groupBySelect = $this->session->groupBySelect;
-				$isGroupBy = is_array($groupBySelect);
-				$isGroupFilter = $isGroupBy && Admin_Lines::isGroupFilter($this->session);
-				$isManualFilter = Admin_Lines::isManualFilter($this->session);
-				echo "<div id=\"AdvancedAndAggregated\">";
-					echo "<div id=\"AdvancedParentDiv\">";
-						echo "<div>"
-								. "<a href=\"javascript:void(0)\" class=\"advanced-options\">"
-									. "<i class=\"glyphicon glyphicon-" . ($isManualFilter ? "minus" : "plus") . "-sign\"></i>"
-								. " Advanced options "	
-						   		. "</a>"
-							. "</div>";
-						echo "<div id = \"manual_filters\"" . ($isManualFilter ? "" : " style=\"display:none;\"") . ">";
-							echo '<div class="filters">';
-								if ($isManualFilter) {
-									for ($i = 0; $i < count($this->session->manual_key); $i++) {
-										echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
-									}
-								} else {
-									echo Admin_Lines::getFilterRow(); // add first manual filter on load
-								}
-
-							echo '</div>';
-						echo '</div>';
-					echo '</div>';
-				
-					echo "<div id=\"AggregateParentDiv\">";
-						echo "<div id='groupData'>";
-							echo "<a href='javascript:void(0)' class='groupData'>" .
-									"<i class=\"glyphicon glyphicon-" . ($isGroupFilter ? "minus" : "plus") . "-sign\"></i>" .
-								" Group options" .
-								 "</a>" .
-							"</div>";
-						echo "<div id = 'groupBy' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
-							echo "&nbsp;<label class='control-label'>Group by</label>
-							<select id='groupBySelect[]' name='groupBySelect[]' class='form-control multiselect' multiple='multiple'>";
-								foreach ($aggregate_by_fields as $value => $name) {
-									$selected = "";
-									if ($isGroupBy	 &&
-										(in_array($value, $groupBySelect))){
-											$selected = " selected";
-									}
-
-									echo "<option value='$value' $selected>$name</option>";
-								}
-							echo "</select>";
-						echo '</div>';
-						echo "<div id = 'group_by_filters' " . ($isGroupFilter ? "" : " style=\"display:none;\"") . ">";
-								if ($isGroupFilter) {
-									for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
-										echo Admin_Lines::getGroupRow($this->session->group_data_keys[$i], null, $this->session->group_data_operators[$i], $this->session->group_value[$i]);
-									}
-								} else {
-									echo Admin_Lines::getGroupRow(); // add first manual filter on load
-								}
-						echo '</div>';
-					echo "</div>";
+				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
+                            <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
+				if (Admin_Lines::isManualFilter($this->session)) {
+					for ($i = 0; $i < count($this->session->manual_key); $i++) {
+						echo Admin_Lines::getFilterRow($this->session->manual_key[$i], isset($this->session->manual_type[$i]) ? $this->session->manual_type[$i] : NULL, $this->session->manual_operator[$i], $this->session->manual_value[$i]);
+					}
+				} else {
+					echo Admin_Lines::getFilterRow(); // add first manual filter on load
+				}
 				echo "</div>";
 			elseif ($active == 'rates') :
 			endif;
-			if ($active == 'lines' || $active == 'rates' || $active == 'balances' || $active == 'events'):
-				echo "<div class=\"control-group control-group4\"><div id=\"extra_columns\" class=\"controls form-inline\">"
-				. "&nbsp;<label class=\"control-label\">Display fields</label>
-						<select name=\"extra_columns[]\" class=\"form-control multiselect\" multiple=\"multiple\">";
-				foreach ($this->extra_columns as $value => $name) {
-					$selected = "";
-					if (is_array($this->session->extra_columns) && in_array($value, $this->session->extra_columns)) {
+			echo '</div>';
+			echo '<div id="groupBy">';
+			echo "&nbsp;<label class='control-labe'>Group by</label>
+			<select id='groupBySelect[]' name='groupBySelect[]' class='form-control multiselect' multiple='multiple'>";
+			$groupBySelect = $this->session->groupBySelect;
+			foreach ($aggregate_by_fields as $value => $name) {
+				$selected = "";
+				if (is_array($groupBySelect)	 &&
+					in_array($value, $groupBySelect)){
 						$selected = " selected";
-					}
-					echo "<option value=\"" . $value . "\"" . $selected . ">" . $name . "</option>";
 				}
-				echo "</select>";
-				echo "</div></div>";
-			endif;
+				
+				echo "<option value='$value' $selected>$name</option>";
+			}
+			echo "</select>";
+			echo '</div>';
+			echo "<div id='groupData'><a href='javascript:void(0)' class='groupData'>Group data <i class='" . (Admin_Lines::isGroupFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "'></i></a></div>
+				<div id = 'group_by_filters'" . (Admin_Lines::isGroupFilter($this->session) ? "" : " style='display:none'") . ">";
+			if (Admin_Lines::isGroupFilter($this->session)) {
+				for ($i = 0; $i < count($this->session->group_data_keys); $i++) {
+					echo Admin_Table::getGroupRow($this->session->group_data_keys[$i], $this->session->group_data_operators[$i]);
+				}
+			} else {
+				echo Admin_Table::getGroupRow(); // add first manual filter on load
+			}
+			echo "</div>";
 			if (is_array($this->sort_fields) && $this->sort_fields) {
+				echo '<div id="sort">';
 				echo "Sort by: <div class=\"control-group control-group5\">
 		<div class=\"controls form-inline\">
 			 <select id=\"sort_by\" name=\"sort_by\" class=\"form-control multiselect\">";
 				foreach ($this->sort_fields as $sort_field_key => $sort_field_display) {
-//					if($isGroupBy && !isset($aggregate_by_fields[$sort_field_key])) {
-//						continue;
-//					}
+					if(!isset($aggregate_by_fields[$sort_field_key])) {
+						continue;
+					}
 					echo "<option value=\"" . $sort_field_key . "\"" . (isset($this->session->sort_by) && $this->session->sort_by == $sort_field_key ? " selected=\"selected\"" : "") . ">" . $sort_field_display . "</option>";
 				}
 				echo "</select>
@@ -144,6 +108,7 @@
                                 <input name=\"order\" value=\"asc\" type=\"radio\"" . ((isset($this->session->order) && $this->session->order == "desc") ? "" : " checked=\"checked\"") . "> Ascending order
 			</label>
 		</div></div>";
+				echo '</div>';
 			}
 		}
 		$this->display('toolbarbuttons.phtml', array());

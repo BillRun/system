@@ -97,7 +97,7 @@ print '</div>';
 <!-- ./modal-body-->
 </div>
 <div class="modal-footer">
-	<?php if ($this->collectionName == 'plans' && $this->type == 'duplicate') : ?>
+	<?php if ($this->collectionName == 'plans' && ($this->type == 'duplicate' || $this->type == 'close_and_new')) : ?>
 	<div class="edit_checkboxes">
 	<input class="span1" id="duplicate_rates" name="duplicate_rates" type="checkbox" value="on" checked> <label class="span1" for="duplicate_rates">Duplicate rates</label>
 	</div>

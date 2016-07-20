@@ -49,6 +49,11 @@ class CronController extends Yaf_Controller_Abstract {
 		}
 	}
 
+	public function checkWholesaleAction() {
+		$wh = new WholesaleModel();
+		$wh->weeklyTestWholesale();
+	}
+
 	protected function locate($process) {
 		$logsModel = new LogModel();
 		$empty_types = array();
@@ -69,7 +74,7 @@ class CronController extends Yaf_Controller_Abstract {
 
 	protected function sendAlerts($process, $empty_types) {
 		if (empty($empty_types)) {
-			return ;
+			return;
 		}
 		$events_string = implode(', ', $empty_types);
 		Billrun_Factory::log("Send alerts for " . $process, Zend_Log::INFO);

@@ -124,8 +124,7 @@ class Billrun_Util {
 			$tz_offset = $offset;
 		}
 		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
-		$datetime = strtotime($date_formatted);
-		return $datetime;
+		return strtotime($date_formatted);
 	}
 
 	public static function startsWith($haystack, $needle) {
@@ -281,6 +280,25 @@ class Billrun_Util {
 		return 0;
 	}
 
+	/**
+	 * method to check if indexes exists in the query filters
+	 * 
+	 * @param type $filters the filters to search in
+	 * @param type $searched_filter the filter to search
+	 * 
+	 * @return boolean true if searched filter exists in the filters supply
+	 */
+	public static function filterExists($filters, $searched_filter) {
+		settype($searched_filter, 'array');
+		foreach ($filters as $k => $f) {
+			$keys = array_keys($f);
+			if (count(array_intersect($searched_filter, $keys))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -807,6 +825,14 @@ class Billrun_Util {
 		
 		return $retVal;
 	}
+	
+	/**
+	 * method to retrieve IldsOneWay circuit groups
+	 * @return array of out_circuit_groups
+	 */
+	public static function getIldsOneWayCircuitGroups() {
+		return Billrun_Factory::config()->getConfigValue('ildsOneWay.ocg', array());
+	}
 	/**
 	 * method to retrieve internation circuit groups
 	 * 
@@ -890,5 +916,11 @@ class Billrun_Util {
 
 		return $output;
 	}
-
+	
+	public static function getTimezoneOffsetInSeconds($timezone) {
+		$sign = $timezone[0] == '+' ? 1 : -1;
+		$hours = substr($timezone, 1, 2);
+		$minutes = substr($timezone, -2, 2);
+		return $sign * ($hours * 3600 + $minutes * 60);
+	}
 }
