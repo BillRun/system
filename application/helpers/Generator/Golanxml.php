@@ -67,6 +67,21 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @var boolean
 	 */
 	protected $buffer = false;
+	
+	
+	/**
+	 * the billing method
+	 * @var string prepaid or postpaid
+	 */
+	protected $billing_method = null;
+	
+	/**
+	 * the plan the customer had for billing
+	 * @var string name of the plan
+	 */
+	protected $plan_to_charge = null;
+
+
 
 	public function __construct($options) {
 		libxml_use_internal_errors(TRUE);
@@ -90,7 +105,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
-
+		
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 		$this->writer = new XMLWriter(); //create a new xmlwriter object
 		$this->reader = new XMLReader(); //create a new xmlwriter object
@@ -209,7 +225,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
-			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
+			$subscriber_flat_costs = $this->getFlatCosts($subscriber);		
+			$this->plan_to_charge = ($this->billing_method == 'postpaid') ? $this->getPlanName($subscriber) : $this->getNextPlanName($subscriber);
 			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
 				continue;
 			}
@@ -434,12 +451,12 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
 			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
-
+						
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 			$this->writer->startElement('BREAKDOWN_TOPIC');
 			$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 			$this->writer->startElement('BREAKDOWN_ENTRY');
-			$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber));
+			$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->plan_to_charge);
 			$this->writer->writeElement('UNITS', 1);
 			$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown']['in_plan']['base']['service']['cost']) ? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0;
 			$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
@@ -977,7 +994,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getTariffItem($line, $subscriber) {
 		$tariffItem = '';
 		if ($line['type'] == 'flat') {
-			$tariffItem = 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
+			$tariffItem = 'GIFT-GC_GOLAN-' . $this->plan_to_charge;
 		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
 			$tariffItem = $line['service_name'];
 		} else {
