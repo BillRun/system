@@ -395,7 +395,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$newEvent['stamp'] = md5(serialize($newEvent));
-		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+		$newEvent['creation_time'] = date(Billrun_Base::base_datetimeformat);
 
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);

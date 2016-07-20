@@ -60,7 +60,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater{
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		return $row;
 	}
 	

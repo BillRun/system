@@ -54,7 +54,7 @@ class Billrun_Billrun {
 	 */
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
-		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
@@ -189,7 +189,7 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
-		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
@@ -263,7 +263,7 @@ class Billrun_Billrun {
 	 */
 	public function close($min_id) {
 		$billrun_entity = $this->getRawData();
-		$ret = $this->billrun_coll->createAutoIncForEntity("invoice_id", $min_id);
+		$ret = $this->billrun_coll->createAutoIncForEntity($billrun_entity, "invoice_id", $min_id);
 		if (is_null($ret)) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
@@ -532,7 +532,7 @@ class Billrun_Billrun {
 		if ($plan_key == 'credit') {
 			$zone += $pricingData['aprice'];
 		} else {
-			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key);
+			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 		}
 		if (isset($row['arategroup'])) {
 			if (isset($row['in_plan'])) {
@@ -995,9 +995,9 @@ class Billrun_Billrun {
 	 * @todo move to BillRun object
 	 */
 	public static function getEndTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
-		return strtotime('-1 second', strtotime($datetime));
+		return strtotime($datetime);
 	}
 
 	/**
@@ -1007,7 +1007,7 @@ class Billrun_Billrun {
 	 * @todo move to BillRun object
 	 */
 	public static function getStartTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 		return strtotime('-1 month', strtotime($datetime));
 	}
