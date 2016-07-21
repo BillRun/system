@@ -555,9 +555,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return 0;
 		}
 
-		if ($price == $this->min_balance_cost) {
-			return $this->min_balance_volume;
-		}
+		// we removed this in case we have rate tiers
+//		if ($price == $this->min_balance_cost) {
+//			return $this->min_balance_volume;
+//		}
 
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
