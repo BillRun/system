@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><?php echo $this->company_name ?></title>
+	<meta name="viewport" content="width=1040" />
+	<meta name="MobileOptimized" content="1040" />
+	<link media="all" rel="stylesheet" href=<?php echo $this->css_path ?>>
+	<script>
+	  function loaded() {
+		  var body = document.body, html = document.documentElement;
+		  var pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+//		  if (pageHeight < 2094) { // invoice will fit in two pages
+//			document.getElementById('page2-mention').style.display = "block";
+//		  }
+		};
+	</script>
+	<style type="text/css">
+		.break{
+			display: block;
+			clear: both;
+			page-break-after: always;
+		}
+	</style>
+</head>
+<body onload="loaded()">
+<?php
+		print $this->render($this->sumup_template);
+		print '<div class="break"></div>';
+		print $this->render($this->details_template);
+		print '<div class="break"></div>';
+		print $this->render($this->lines_template);
+?>
+</body>
+</html>
+

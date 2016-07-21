@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link media="all" rel="stylesheet" href="all.css">
+	<meta charset="utf-8">
+	<script>function subst() {
+		var vars={};
+		var x=window.location.search.substring(1).split('&');
+		for (var i in x) {var z=x[i].split('=',2);vars[z[0]] = unescape(z[1]);}
+		var x=['frompage','topage','page','webpage','section','subsection','subsubsection'];
+		for (var i in x) {
+		  var y = document.getElementsByClassName(x[i]);
+		  for (var j=0; j<y.length; ++j) y[j].textContent = vars[x[i]];
+		}
+		if(vars['page'] == vars['topage'] &&  2  < parseInt(vars['page'])) {
+		// show  leagal
+			document.getElementById('legal').style.display = "block";
+		}
+		if(2  >= parseInt(vars['page']) ) {
+		// hide regular legal when coupon exists on the page 
+			document.getElementById('siege').style.display = "none";
+		}
+	  }
+	</script>
+</head>
+	<body style="border:0; margin: 0;height:100px;position:relative;width:100%;" onload="subst()">
+
+		<footer id="footer" >
+            <div id="footer-pager" class="pager"><span class="paging"> Page <span class="page"  ></span> from <span class="topage" ></span> </span></div>
+			<div>Some Footer information</div>
+		</footer>
+
+</body>
+</html>

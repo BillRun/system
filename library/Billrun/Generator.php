@@ -55,6 +55,12 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 * @var string
 	 */
 	protected $filename;
+	
+	/**
+	 * whether to move the exported
+	 * @var boolean
+	 */
+	protected $move_exported;
 
 	/**
 	 * constructor
@@ -67,12 +73,18 @@ abstract class Billrun_Generator extends Billrun_Base {
 
 		if (isset($options['export_directory'])) {
 			if (!isset($options['disable_stamp_export_directory']) || !$options['disable_stamp_export_directory']) {
-				$this->export_directory = $options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp;
+				$this->export_directory = APPLICATION_PATH . $options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp;
 			} else {
-				$this->export_directory = $options['export_directory'];
+				$this->export_directory = APPLICATION_PATH . $options['export_directory'];
 			}
 		} else {
-			$this->export_directory = Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
+			$this->export_directory = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
+		}
+
+		if (isset($options['move_exported'])) {
+			$this->move_exported = $options['move_exported'];
+		} else {
+			$this->move_exported = Billrun_Factory::config()->getConfigValue(static::$type . '.move_exported', false);
 		}
 
 		if (isset($options['auto_create_dir'])) {
@@ -147,7 +159,20 @@ abstract class Billrun_Generator extends Billrun_Base {
 			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename, NET_SFTP_LOCAL_FILE); // instead of test 2&3 put the name of the generated file.
 		}
 		else{
-			copy($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // change to function rename instead of copy
+			if ($this->move_exported) {
+				copy($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // change to function rename instead of copy
+			}
+		}
+	}
+	
+	/*
+	* if folder doesnt exists add it and change permission to write to it 
+	*/
+	public function addFolder($path) {
+		if (!file_exists($path)) {
+			$old_umask = umask(0);
+			mkdir($path, 0777, true);
+			umask($old_umask);
 		}
 	}
 	

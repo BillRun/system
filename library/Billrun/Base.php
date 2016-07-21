@@ -51,6 +51,14 @@ abstract class Billrun_Base {
 	protected $limit = 10000;
 
 	/**
+	 * Page
+	 * number of page to retrieve (starting from 0)
+	 *
+	 * @var int
+	 */
+	protected $page = 0;
+
+	/**
 	 * constructor
 	 * 
 	 * @param array $options
