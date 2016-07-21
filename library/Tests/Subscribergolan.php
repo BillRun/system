@@ -20,32 +20,105 @@ Mock::generate('Subscriber_Golan');
 
 class Tests_SubscriberGolan extends UnitTestCase {
 	
-	protected $tests = array(
-            array('date1' => '2016-02-10', 'date2' => '2016-03-10', 'result' => 1), //00
-            array('date1' => '2016-02-10', 'date2' => '2016-03-09', 'result' => 1), //01
-            array('date1' => '2014-01-31', 'date2' => '2016-12-30', 'countMonths' => 35, 'specific_date' => '2016-04-08 00:00:01', 'next_renew_date' => '2016-04-30 00:00:00', 'remain' => 8 ), //02
-            array('date1' => '2014-01-31 00:00:00', 'date2' => '2016-12-30 23:59:59', 'countMonths' => 35, 'specific_date' => '2016-05-08 00:00:01', 'next_renew_date' => '2016-05-31 00:00:00', 'remain' => 7 ), //03
-            array('date1' => '2014-01-31 00:00:00', 'date2' => '2016-12-30 23:59:59', 'countMonths' => 35, 'specific_date' => '2016-04-30 00:00:01', 'next_renew_date' => '2016-05-31 00:00:00', 'remain' => 7 ), //04
-            array('date1' => '2014-01-31 00:00:00', 'date2' => '2016-12-30 23:59:59', 'countMonths' => 35, 'specific_date' => '2016-05-30 00:00:01', 'next_renew_date' => '2016-05-31 00:00:00', 'remain' => 7 ), //05
-            array('date1' => '2015-04-30 00:00:00', 'date2' => '2017-03-29 23:59:59', 'countMonths' => 23, 'specific_date' => '2016-05-31 00:00:01', 'next_renew_date' => '2016-06-30 00:00:00', 'remain' => 9 ), //06
-            array('date1' => '2015-04-30 00:00:00', 'date2' => '2017-03-29 23:59:59', 'countMonths' => 23, 'specific_date' => '2016-05-30 00:00:01', 'next_renew_date' => '2016-06-30 00:00:00', 'remain' => 9 ), //07
-            array('date1' => '2015-04-30 00:00:00', 'date2' => '2017-03-29 23:59:59', 'countMonths' => 23, 'specific_date' => '2016-05-29 00:00:01', 'next_renew_date' => '2016-05-30 00:00:00', 'remain' => 10), //08
-            array('date1' => '2015-02-28 00:00:00', 'date2' => '2017-02-27 23:59:59', 'countMonths' => 24, 'specific_date' => '2016-03-28 00:00:01', 'next_renew_date' => '2016-04-28 00:00:00', 'remain' => 10), //09
-            array('date1' => '2015-02-28 00:00:00', 'date2' => '2017-02-27 23:59:59', 'countMonths' => 24, 'specific_date' => '2016-03-27 00:00:01', 'next_renew_date' => '2016-03-28 00:00:00', 'remain' => 11), //10
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2017-02-28 23:59:59', 'countMonths' => 13, 'specific_date' => '2016-03-28 00:00:01', 'next_renew_date' => '2016-03-29 00:00:00', 'remain' => 12), //11
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2017-02-27 23:59:59', 'countMonths' => 12, 'specific_date' => '2016-03-28 00:00:01', 'next_renew_date' => '2016-03-29 00:00:00', 'remain' => 11), //12
-            array('date1' => '2016-02-28 00:00:00', 'date2' => '2017-02-27 23:59:59', 'countMonths' => 12, 'specific_date' => '2016-03-28 00:00:01', 'next_renew_date' => '2016-04-28 00:00:00', 'remain' => 10), //13
-            array('date1' => '2016-07-31 00:00:00', 'date2' => '2017-07-30 23:59:59', 'countMonths' => 12, 'specific_date' => '2016-07-05 00:00:01', 'next_renew_date' => '2016-07-31 00:00:00', 'remain' => 12), //14
-            array('date1' => '2016-07-31 00:00:00', 'date2' => '2017-06-29 23:59:59', 'countMonths' => 11, 'specific_date' => '2016-07-05 00:00:01', 'next_renew_date' => '2016-07-31 00:00:00', 'remain' => 11), //15
-            array('date1' => '2016-07-05 00:00:00', 'date2' => '2017-06-04 23:59:59', 'countMonths' => 11, 'specific_date' => '2016-09-05 00:00:01', 'next_renew_date' => '2016-10-05 00:00:00', 'remain' => 8 ), //16
-            array('date1' => '2016-02-10 00:00:00', 'date2' => '2016-04-09 23:59:59', 'countMonths' => 2,  'specific_date' => '2016-02-29 00:00:01', 'next_renew_date' => '2016-03-10 00:00:00', 'remain' => 1 ), //17            
-            array('date1' => '2015-07-30 00:00:00', 'date2' => '2017-06-29 23:59:59', 'countMonths' => 23, 'specific_date' => '2017-02-28 00:00:01', 'next_renew_date' => '2017-03-30 00:00:00', 'remain' => 3 ), //18
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-02-29 00:00:01', 'next_renew_date' => '2020-03-29 00:00:00', 'remain' => 11), //19
-            array('date1' => '2016-02-29 00:00:00', 'date2' => '2021-02-27 23:59:59', 'countMonths' => 60, 'specific_date' => '2020-01-29 00:00:01', 'next_renew_date' => '2020-02-29 00:00:00', 'remain' => 12), //20
+	// Tests to check for positive logic
+	protected $positiveTests = array(
+            array('year' => '2015', 'month' => '02', 'days' => 28, 'nextYear' => '2015', 'nextMonth' => '03', 'nextMonthDays' => 31), // 28 days
+            array('year' => '2016', 'month' => '02', 'days' => 29, 'nextYear' => '2016', 'nextMonth' => '03', 'nextMonthDays' => 31), // 29 days
+            array('year' => '2016', 'month' => '03', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '04', 'nextMonthDays' => 30), // 31 days
+            array('year' => '2016', 'month' => '04', 'days' => 30, 'nextYear' => '2016', 'nextMonth' => '05', 'nextMonthDays' => 31), // 30 day
+            array('year' => '2015', 'month' => '01', 'days' => 31, 'nextYear' => '2015', 'nextMonth' => '02', 'nextMonthDays' => 28), // 30 day
+            array('year' => '2016', 'month' => '01', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '02', 'nextMonthDays' => 29), // 30 day
+            array('year' => '2015', 'month' => '12', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '01', 'nextMonthDays' => 31), // 30 day
     );
 	
-	function testCalcFractionOfMonth() {
-		$subscriber = new MockSubscriber_Golan();
-		$subscriber->calcFractionOfMonth();
+	// Tests to check for negative logic
+	protected $negativeTests = array(
+            array('key' => '201502', 'start' => 28, 'end' => 10), // 28 days
+            array('key' => '201602', 'days' => 29), //00
+            array('key' => '201603', 'days' => 31), //31 days
+            array('key' => '201604', 'days' => 30), //30 day
+    );
+	
+	/**
+	 * Testing for positive logic
+	 */
+	function testCalcFractionOfMonthPositiveTest() {
+		$subscriber = new Subscriber_Golan();
+		$cycleStart = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 15);
+		$cycleEnd = $cycleStart - 1;
+		
+		foreach ($this->positiveTests as $testCase) {
+			$startMonth = $testCase['month'];
+			$days = $testCase['days'];
+			$daysNextMonth = $testCase['nextMonthDays'];
+			$startYear = $testCase['year'];
+			
+			$nextYear = $testCase['nextYear'];
+			$nextMonth = $testCase['nextMonth'];
+			
+			$key = $nextYear . $nextMonth;
+			$subscriber->setBillrunKey($key);
+			
+			$totalDays = $days;
+			
+			$isNextMonthStart = false;
+			
+			$dayIndex = $cycleStart;
+			do {
+				if($dayIndex == 0) {
+					$dayIndex = 1;
+				}
+				
+				// Check if we moved to the next month
+				if(!$isNextMonthStart && ($dayIndex < $cycleStart)) {
+					$isNextMonthStart = true;
+					$startMonth = $nextMonth;
+					$startYear = $nextYear;
+					$days = $daysNextMonth;
+				}
+				
+				$endMonth = $startMonth;
+				$endYear = $startYear;
+			
+				$isNextMonthEnd = false;
+				
+				// Advance the day index
+				for ($endDayIndex = $dayIndex; 
+				     (!(($endMonth == $nextMonth) && ($endDayIndex == $cycleStart))); 
+					 $endDayIndex = (($endDayIndex + 1) % $days)) {
+						 
+					if($endDayIndex == 0) {
+						$endDayIndex = 1;
+					}
+						 
+					// Check if we moved to the next month
+					if(!$isNextMonthEnd && ($endDayIndex < $cycleEnd)) {
+						$isNextMonthEnd = true;
+						$endMonth = $nextMonth;
+						$endYear = $nextYear;
+					}
+					
+					$startDate = $startYear . '-' . $startMonth . '-' . str_pad($dayIndex, 2, "0", STR_PAD_LEFT);
+					$endDate = $endYear . '-' . $endMonth . '-' . str_pad($endDayIndex, 2, "0", STR_PAD_LEFT);
+				
+					// Counting the last day as well
+					$daysPassed = $endDayIndex - $dayIndex + 1;
+					
+					// Spreading over more than a month.
+					if($startMonth != $endMonth) {
+						$daysPassed = $totalDays - $dayIndex + 1;
+						$daysPassed += $endDayIndex;
+					}
+					$expectation = $daysPassed / $totalDays;
+					
+					$fraction = $subscriber->calcFractionOfMonth($startDate, $endDate);
+					$message = "Start: " . $startDate . " End: " . $endDate . " Expected: " . $expectation . " Received: " . $fraction . " TestCase: " . print_r($testCase, 1);
+					$this->assertEqual($expectation, $fraction, $message);
+				} 
+				
+				// Advance the day index
+				$dayIndex = ($dayIndex + 1) % $days;
+			} while ($dayIndex != $cycleStart);
+		}
 	}
 }
