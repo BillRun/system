@@ -36,7 +36,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$this->stamp.'/',
 			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$this->stamp.'/',
-			'tmp' => $this->export_directory.DIRECTORY_SEPARATOR.'tmp/',
+			'tmp' => sys_get_temp_dir() . '/' . $this->getCompanyName() . '/' . $this->stamp . '/',
 		);
 		
 		$this->tmp_paths = array(
@@ -121,7 +121,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
 			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
-			$this->removeTemporaryFiles();
 	}
 	
 	protected function getDetailsKeys() {
@@ -154,16 +153,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		file_put_contents($this->tmp_paths['footer'], $footerContent);
 	}
 	
-	protected function removeTemporaryFiles() {
-		exec('rm -R ' .  $this->paths['tmp']);
-	}
-	
 	protected function getLogoPath() {
 		return APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.logo', '');
 	}
 	
 	protected function getCompanyName() {
-		return Billrun_Factory::config()->getConfigValue('wkpdf.company_name', 'aa');
+		return Billrun_Factory::config()->getConfigValue('wkpdf.company_name', '');
 	}
 	
 	protected function getHeaderDate() {
