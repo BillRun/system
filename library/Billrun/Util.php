@@ -1368,6 +1368,8 @@ class Billrun_Util {
 		return is_numeric($number) && ($number == intval($number));
 	}
 
-
+	public static function getCompanyName() {
+		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
 
 }

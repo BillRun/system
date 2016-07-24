@@ -171,7 +171,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	public function addFolder($path) {
 		if (!file_exists($path)) {
 			$old_umask = umask(0);
-			mkdir($path, 0777, true);
+			mkdir($path, 0754, true);
 			umask($old_umask);
 		}
 	}

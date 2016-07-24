@@ -57,7 +57,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('css_path',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.theme'));
 		$this->view->assign('decimal_mark',  Billrun_Factory::config()->getConfigValue('wkpdf.decimal_mark', '.'));
 		$this->view->assign('thousands_separator',  Billrun_Factory::config()->getConfigValue('wkpdf.thousands_separator', ','));
-		$this->view->assign('company_name',  Billrun_Factory::config()->getConfigValue('wkpdf.company_name', ''));
+		$this->view->assign('company_name', Billrun_Util::getCompanyName());
 		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.sumup_template', ''));
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.details_template', ''));
 		$this->view->assign('lines_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.lines_template', ''));
@@ -158,7 +158,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getCompanyName() {
-		return Billrun_Factory::config()->getConfigValue('wkpdf.company_name', '');
+		return Billrun_Util::getCompanyName();
 	}
 	
 	protected function getHeaderDate() {

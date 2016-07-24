@@ -12,14 +12,6 @@
 		  var y = document.getElementsByClassName(x[i]);
 		  for (var j=0; j<y.length; ++j) y[j].textContent = vars[x[i]];
 		}
-		if(vars['page'] == vars['topage'] &&  2  < parseInt(vars['page'])) {
-		// show  leagal
-			document.getElementById('legal').style.display = "block";
-		}
-		if(2  >= parseInt(vars['page']) ) {
-		// hide regular legal when coupon exists on the page 
-			document.getElementById('siege').style.display = "none";
-		}
 	  }
 	</script>
 </head>

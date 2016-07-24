@@ -7,15 +7,6 @@
 	<meta name="viewport" content="width=1040" />
 	<meta name="MobileOptimized" content="1040" />
 	<link media="all" rel="stylesheet" href=<?php echo $this->css_path ?>>
-	<script>
-	  function loaded() {
-		  var body = document.body, html = document.documentElement;
-		  var pageHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-//		  if (pageHeight < 2094) { // invoice will fit in two pages
-//			document.getElementById('page2-mention').style.display = "block";
-//		  }
-		};
-	</script>
 	<style type="text/css">
 		.break{
 			display: block;
@@ -24,7 +15,7 @@
 		}
 	</style>
 </head>
-<body onload="loaded()">
+<body>
 <?php
 		print $this->render($this->sumup_template);
 		print '<div class="break"></div>';
