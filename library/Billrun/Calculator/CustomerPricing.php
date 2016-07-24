@@ -472,7 +472,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				'interconnect' => $interconnectCharge,
 				'total' => $interconnectCharge + $chargeWoIC,
 			);
-		} else if ($rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
+		} else if (isset($rate['params']['interconnect']) && $rate['params']['interconnect'] && isset($rate['params']['chargable']) && $rate['params']['chargable']) { // the rate charge is interconnect charge
 			$total = $chargeWoIC + $interconnectCharge;
 			$ret = array(
 				'interconnect' => $total,

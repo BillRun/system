@@ -795,7 +795,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	protected function isIncomingCall($row) {
-		return in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
+		return isset($row['usaget']) && in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
 	}
 
 }
