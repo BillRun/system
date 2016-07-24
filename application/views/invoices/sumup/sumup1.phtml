@@ -30,8 +30,8 @@
 						<td class="info-data"><?php echo $data->get('invoice_id') ?></td>
 					</tr>
 					<tr>
-						<td class="info-label">Invoice Date : </td>
-						<td class="info-data"><?php print(date("d/m/Y", $this->data['creation_time']->sec)); ?></td>
+						<td class="info-label">Invoice For : </td>
+						<td class="info-data"><?php print(substr($this->data['billrun_key'], 4, 2) . '/' . substr($this->data['billrun_key'], 0, 4)); ?></td>
 					</tr>
 				</table>
 				<table class="payment-info">
