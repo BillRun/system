@@ -36,7 +36,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$this->stamp.'/',
 			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$this->stamp.'/',
-			'tmp' => sys_get_temp_dir() . '/' . $this->getCompanyName() . '/' . $this->stamp . '/',
+			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $this->stamp . '/',
 		);
 		
 		$this->tmp_paths = array(
