@@ -119,5 +119,52 @@ class PlansModel extends TabledateModel {
 		);
 		return array_merge(parent::getOverlappingDatesQuery($entity, $new), $additionalQuery);
 	}
+	
+	public function validate($data, $type) {
+		$validationMethods = array('validateMandatoryFields', 'validateDateFields', 'validatePrice', 'validateRecurring');
+		foreach ($validationMethods as $validationMethod) {
+			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
+				return $this->validationResponse(false, $res);
+			}
+		}
+		return $this->validationResponse(true);
+	}
+	
+	protected function validatePrice($data) {		
+		foreach ($data['price'] as $price) {
+			if (!isset($price['price']) || !isset($price['duration'])|| !isset($price['duration']['from'])|| !isset($price['duration']['to'])) {
+				return "Illegal price structure";
+			}
+			if (!Billrun_Util::IsFloatValue($price['price'])) {
+				return "price must be a number";
+			}
+			
+			if (!Billrun_Util::isDateValue($price['duration']['from'])) {
+				return "duration from must be in date format";
+			}
+			if (!Billrun_Util::isDateValue($price['duration']['to'])) {
+				return "duration to must be in date format";
+			}
+		}
+		
+		return true;
+	}
+	
+	protected function validateRecurring($data) {
+		if (!isset($data['recurring']['duration']) || !isset($data['recurring']['unit'])) {
+			return 'Illegal recurring stracture';
+		}
+		
+		$availableUnits = array('day', 'week', 'month', 'year');
+		if (!in_array($data['recurring']['unit'], $availableUnits)) {
+			return $data['recurring']['unit'] . ' is not a valid value for "unit". Available values are: ' . implode(', ', $availableUnits);
+		}
+		
+		if (!Billrun_Util::IsIntegerValue($data['recurring']['duration'])) {
+			return "Recurring duration must be a number";
+		}
+		
+		return true;
+	}
 
 }

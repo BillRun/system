@@ -596,5 +596,49 @@ class RatesModel extends TabledateModel {
 				->cursor()->current();
 		return $plansColl->createRefByEntity($planEntity);
 	}
+	
+	public function validate($data, $type) {
+		$validationMethods = array('validateMandatoryFields', 'validateDateFields', 'validateRates');
+		foreach ($validationMethods as $validationMethod) {
+			if (($res = $this->{$validationMethod}($data)) !== true) {
+				return $this->validationResponse(false, $res);
+			}
+		}
+		return $this->validationResponse(true);
+	}
+	
+	protected function validateRates($data) {
+		foreach ($data['rates'] as $usaget => $plans) {
+			foreach ($plans as $plan => $rate) {
+				if (!isset($rate['rate'])) {
+					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
+				}
+				$lastInterval = 0;
+				foreach ($rate['rate'] as $interval) {
+					if (!isset($interval['from']) || !isset($interval['to']) || !isset($interval['price']) || !isset($interval['interval'])) {
+						return 'Illegal rate structure';
+					}
+					if (!Billrun_Util::IsIntegerValue($interval['interval'])) {
+						return 'Interval must be a number';
+					}
+					if (!Billrun_Util::IsIntegerValue($interval['from'])) {
+						return 'Interval from must be a number';
+					}
+					if (!Billrun_Util::IsIntegerValue($interval['to'])) {
+						return 'Interval to must be a number';
+					}
+					if (!Billrun_Util::IsFloatValue($interval['price'])) {
+						return 'Interval to must be a number';
+					}
+					if ($interval['from'] != $lastInterval) {
+						return 'Rate intervals must be continuous';
+					}
+					$lastInterval = $interval['to'];
+				}
+			}
+		}
+		
+		return true;
+	}
 
 }

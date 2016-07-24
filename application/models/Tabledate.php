@@ -32,6 +32,7 @@ class TabledateModel extends TableModel {
 		if (isset($params['date'])) {
 			$this->date = $params['date'];
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/validation.ini');
 	}
 
 	/**
@@ -222,6 +223,43 @@ class TabledateModel extends TableModel {
 			'to' => 'To',
 		);
 		return $sort_fields;
+	}
+	
+	public function validate($data, $type) {
+		return $this->validationResponse(true);
+	}
+	
+	protected function validationResponse($result, $errorMsg = '') {
+		return array(
+			'validate' => $result,
+			'errorMsg' => $errorMsg,
+		);
+	}
+	
+	protected function validateMandatoryFields($data) {
+		$mandatoryFields = Billrun_Factory::config()->getConfigValue('validation.' . $this->collection_name . '.mandatoryFields', array());
+		$missingFields = array();
+		
+		foreach ($mandatoryFields as $field) {
+			if (!isset($data[$field]) || empty($data[$field])) {
+				$missingFields[] = $field;
+			}
+		}
+		
+		if (!empty($missingFields)) {
+			return "The following fields are missing: " . implode(', ', $missingFields);
+		}
+		return true;
+	}
+	
+	protected function validateDateFields($data) {
+		if (!Billrun_Util::isDateValue($data['from'])) {
+			return '"from" field must be in valid date format';
+		}
+		if (!Billrun_Util::isDateValue($data['to'])) {
+			return '"to" field must be in valid date format';
+		}
+		return true;
 	}
 
 }
