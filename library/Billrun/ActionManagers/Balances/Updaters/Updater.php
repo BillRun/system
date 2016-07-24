@@ -251,6 +251,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 		$updateResult = $balancesColl->update($query, $updateQuery, $options);
 		$updateResult['max'] = $maxValue;
+		
+		if($forceMaxValue) {
+			$updateResult['min'] = 1;
+		}
 		return $updateResult;
 	}
 
