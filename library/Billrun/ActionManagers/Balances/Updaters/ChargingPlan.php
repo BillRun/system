@@ -248,7 +248,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['before'] = $beforeNormalizing - $wallet->getValue();
 			$returnPair['normalized']['after'] = $beforeNormalizing;
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
-			$returnPair['updated'] = ($normalizeResult['min'] === 1) || ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+			$returnPair['updated'] = (isset($normalizeResult['min'])) || ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
 		}
 
 		unset($returnPair['query']);
