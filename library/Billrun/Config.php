@@ -223,7 +223,7 @@ class Billrun_Config {
 	}
 	
 	protected function isCompanyInProd() {
-		return (stripos($this->getInstance()->getConfigValue("env"), 'prod') !== FALSE);
+		return (stripos($this->getInstance()->getConfigValue("environment"), 'prod') !== FALSE);
 	}
 
 }
