@@ -212,11 +212,23 @@ class Billrun_Config {
 		if ($this->checkEnv(array('prod', 'product', 'production'))) {
 			return true;
 		}
+		if ($this->isCompanyInProd()) {
+			return true;
+		}
 		return false;
 	}
 
 	public function toArray() {
 		return $this->config->toArray();
+	}
+	
+	protected function isCompanyInProd() {
+		try {
+			new Yaf_Config_Ini(BILLRUN_CONFIG_PATH, "production");
+		} catch (Yaf_Exception $e) {
+			return false;
+		}
+		return true;
 	}
 
 }
