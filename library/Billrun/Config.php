@@ -223,12 +223,7 @@ class Billrun_Config {
 	}
 	
 	protected function isCompanyInProd() {
-		try {
-			new Yaf_Config_Ini(BILLRUN_CONFIG_PATH, "production");
-		} catch (Yaf_Exception $e) {
-			return false;
-		}
-		return true;
+		return (stripos($this->getInstance()->getConfigValue("env"), 'prod') !== FALSE);
 	}
 
 }
