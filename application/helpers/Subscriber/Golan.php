@@ -342,7 +342,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								foreach ($reduced as $service_name => $service_count) {
 									$service = array();
 									$service['service_name'] = $service_name;
-									$service['fraction'] = $concat['data']['fraction'];
+									//$service['fraction'] = $concat['data']['fraction']; return when need DID
 									$service['count'] = $service_count;
 									$service['aid'] = $concat['data']['aid'];
 									$service['sid'] = $concat['data']['sid'];
