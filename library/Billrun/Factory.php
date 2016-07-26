@@ -347,6 +347,9 @@ class Billrun_Factory {
 		$stamp = Billrun_Util::generateArrayStamp($username);
 		if (!isset(self::$users[$stamp])) {
 			$read = Billrun_Factory::auth()->getStorage()->read();
+			if(!isset($read['current_user'])) {
+				return FALSE;
+			}
 			$entity = new Mongodloid_Entity($read['current_user']);
 			self::$users[$stamp] = new Billrun_User($entity);
 		}
