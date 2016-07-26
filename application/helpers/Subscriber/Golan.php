@@ -285,18 +285,18 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								),
 							);
 							
-
-							if ($sid) {
-								$concat['data']['activation_start'] = isset($subscriber['activation']) ? $subscriber['activation'] : null;
-								$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? $subscriber['deactivate'] : null;
-								$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? $subscriber['freeze']['from_date'] : null;
-								$this->freeze_start = $concat['data']['freeze_start_date']; 
-								$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? $subscriber['freeze']['to_date'] : null;
-								$this->freeze_end = $concat['data']['freeze_end_date'];
-								$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
-								if ($this->isFreezeExists()){
-									$concat['data']['freeze_amount'] = $this->calcFreezeAmount($concat['data']['freeze_start_date'],$concat['data']['freeze_end_date']);
+							$concat['data']['activation_start'] = isset($subscriber['activation']) ? $subscriber['activation'] : null;
+							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? $subscriber['deactivate'] : null;
+							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? $subscriber['freeze']['from_date'] : null;
+							$this->freeze_start = $concat['data']['freeze_start_date']; 
+							$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? $subscriber['freeze']['to_date'] : null;
+							$this->freeze_end = $concat['data']['freeze_end_date'];
+							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
+							if ($this->isFreezeExists()){
+								$concat['data']['freeze_amount'] = $this->calcFreezeAmount($concat['data']['freeze_start_date'],$concat['data']['freeze_end_date']);
 								}
+						
+							if ($sid) {
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
 								$concat['data']['offer_id_next'] = isset($subscriber['offer_id_next']) ? $subscriber['offer_id_next'] : null;
@@ -540,10 +540,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 
 	public function getFreezeStartDay() {
 		if (is_null($this->freeze_start)) {
-			if (is_null($this->data['freeze_start_date'])) {
-				return null;
+			if (isset($this->data['freeze_start_date']) && !is_null($this->data['freeze_start_date'])) {
+				return $this->data['freeze_start_date'];
 			}
-			return $this->data['freeze_start_date'];
+			return null;
 		}
 		return $this->freeze_start;
 	}
@@ -627,7 +627,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		else {
 			$plan = $this->getPlan();
 		}
-		$price = $this->isFreezeExists() ? $this->calcFreezeAmount($this->getFreezeStartDay(), $this->getFreezeEndDay()) + $this->getFlatPrice($fraction) : $this->getFlatPrice($fraction);
+		//$price = $this->isFreezeExists() ? $this->calcFreezeAmount($this->getFreezeStartDay(), $this->getFreezeEndDay()) + $this->getFlatPrice($fraction) : $this->getFlatPrice($fraction);
 
 		$flat_entry = array(
 			'aid' => $this->aid,
@@ -637,7 +637,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'urt' => new MongoDate($billrun_end_time),
-			'aprice' => $price,
+			'aprice' => $this->getFlatPrice($fraction),
 			'plan' => $plan->getName(),
 			'plan_ref' => $plan->createRef(),
 			'process_time' => date(Billrun_Base::base_dateformat),

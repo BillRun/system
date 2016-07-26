@@ -437,6 +437,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_before_vat);
+			$subscriber_sumup_FREEZE_AMOUNT = floatval((isset($subscriber['freeze_amount']) ? $subscriber['freeze_amount'] : 0));
+			$this->writer->writeElement('FREEZE_AMOUNT', $subscriber_sumup_FREEZE_AMOUNT);
 			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_after_vat);
 			
 			$subscriber_sumup_ACTIVATION_DATE = isset($subscriber['activation_start']) ? $subscriber['activation_start'] : 0;
@@ -450,8 +452,6 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_sumup_FRACTION_OF_MONTH = floatval((isset($subscriber['fraction']) ? $subscriber['fraction'] : 0));
 			$this->writer->writeElement('FRACTION_OF_MONTH', $subscriber_sumup_FRACTION_OF_MONTH);
 
-			$subscriber_sumup_FREEZE_AMOUNT = floatval((isset($subscriber['freeze_amount']) ? $subscriber['freeze_amount'] : 0));
-			$this->writer->writeElement('FREEZE_AMOUNT', $subscriber_sumup_FREEZE_AMOUNT);
 
 			$invoice_total_gift+= $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
@@ -1333,7 +1333,10 @@ EOI;
 	 * @return int
 	 */
 	protected function getSubscriberTotalBeforeVat($subscriber) {
-		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
+		if (!isset($subscriber['freeze_amount'])){
+			$subscriber['freeze_amount'] = 0;
+		}
+		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] + $subscriber['freeze_amount']: 0; //freeze amount for xml for now need to add to totals!
 	}
 
 	/**
@@ -1342,7 +1345,10 @@ EOI;
 	 * @return int
 	 */
 	protected function getSubscriberTotalAfterVat($subscriber) {
-		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+		if (!isset($subscriber['freeze_amount'])){
+			$subscriber['freeze_amount'] = 0;
+		}
+		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] + 1.17 * $subscriber['freeze_amount'] : 0; // freeze amount for xml for now need to add to totals!
 	}
 
 	protected function getAccTotalBeforeVat($row) {
