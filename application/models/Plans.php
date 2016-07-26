@@ -121,7 +121,7 @@ class PlansModel extends TabledateModel {
 	}
 	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateDateFields', 'validatePrice', 'validateRecurring');
+		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence');
 		foreach ($validationMethods as $validationMethod) {
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
@@ -132,38 +132,49 @@ class PlansModel extends TabledateModel {
 	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {
-			if (!isset($price['price']) || !isset($price['duration'])|| !isset($price['duration']['from'])|| !isset($price['duration']['to'])) {
+			if (!isset($price['price']) || !isset($price['from'])|| !isset($price['to'])) {
 				return "Illegal price structure";
 			}
-			if (!Billrun_Util::IsFloatValue($price['price'])) {
-				return "price must be a number";
-			}
 			
-			if (!Billrun_Util::isDateValue($price['duration']['from'])) {
-				return "duration from must be in date format";
-			}
-			if (!Billrun_Util::isDateValue($price['duration']['to'])) {
-				return "duration to must be in date format";
+			$typeFields = array(
+				'price' => 'float',
+				'from' => 'date',
+				'to' => 'date',
+			);
+			$validateTypes = $this->validateTypes($price, $typeFields);
+			if ($validateTypes !== true) {
+				return $validateTypes;
 			}
 		}
 		
 		return true;
 	}
 	
-	protected function validateRecurring($data) {
-		if (!isset($data['recurring']['duration']) || !isset($data['recurring']['unit'])) {
-			return 'Illegal recurring stracture';
+	protected function validateRecurrence($data) {
+		if (!isset($data['recurrence']['periodicity']) || !isset($data['recurrence']['unit'])) {
+			return 'Illegal "recurrence" stracture';
 		}
 		
-		$availableUnits = array('day', 'week', 'month', 'year');
-		if (!in_array($data['recurring']['unit'], $availableUnits)) {
-			return $data['recurring']['unit'] . ' is not a valid value for "unit". Available values are: ' . implode(', ', $availableUnits);
+		$typeFields = array(
+			'unit' => 'integer',
+			'periodicity' => array('type' => 'in_array', 'params' => array('month', 'year')),
+		);
+		$validateTypes = $this->validateTypes($data['recurrence'], $typeFields);
+		if ($validateTypes !== true) {
+			return $validateTypes;
 		}
 		
-		if (!Billrun_Util::IsIntegerValue($data['recurring']['duration'])) {
-			return "Recurring duration must be a number";
+		if ($data['recurrence']['unit'] !== 1) {
+			return 'Temporarily, recurrence "unit" must be 1';
 		}
 		
+		return true;
+	}
+	
+	protected function validateYearlyPeriodicity($data) {
+		if ($data['recurrence']['periodicity'] === 'year' && !$data['upfron']) {
+			return 'Plans with a yearly periodicity must be paid upfront';
+		}
 		return true;
 	}
 

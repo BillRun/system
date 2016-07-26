@@ -598,7 +598,7 @@ class RatesModel extends TabledateModel {
 	}
 	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateDateFields', 'validateRates');
+		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validateRates');
 		foreach ($validationMethods as $validationMethod) {
 			if (($res = $this->{$validationMethod}($data)) !== true) {
 				return $this->validationResponse(false, $res);
@@ -618,17 +618,16 @@ class RatesModel extends TabledateModel {
 					if (!isset($interval['from']) || !isset($interval['to']) || !isset($interval['price']) || !isset($interval['interval'])) {
 						return 'Illegal rate structure';
 					}
-					if (!Billrun_Util::IsIntegerValue($interval['interval'])) {
-						return 'Interval must be a number';
-					}
-					if (!Billrun_Util::IsIntegerValue($interval['from'])) {
-						return 'Interval from must be a number';
-					}
-					if (!Billrun_Util::IsIntegerValue($interval['to'])) {
-						return 'Interval to must be a number';
-					}
-					if (!Billrun_Util::IsFloatValue($interval['price'])) {
-						return 'Interval to must be a number';
+					
+					$typeFields = array(
+						'interval' => 'integer',
+						'from' => 'integer',
+						'to' => 'integer',
+						'price' => 'float',
+					);
+					$validateTypes = $this->validateTypes($interval, $typeFields);
+					if ($validateTypes !== true) {
+						return $validateTypes;
 					}
 					if ($interval['from'] != $lastInterval) {
 						return 'Rate intervals must be continuous';

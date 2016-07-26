@@ -252,14 +252,54 @@ class TabledateModel extends TableModel {
 		return true;
 	}
 	
-	protected function validateDateFields($data) {
-		if (!Billrun_Util::isDateValue($data['from'])) {
-			return '"from" field must be in valid date format';
+	protected function validateTypeOfFields($data) {
+		$typeFields = Billrun_Factory::config()->getConfigValue('validation.' . $this->collection_name . '.fieldsTypes', array());
+		return $this->validateTypes($data, $typeFields);
+	}
+	
+	protected function validateTypes($data, $typeFields) {
+		$wrongTypes = array();
+		
+		foreach ($typeFields as $fieldName => $fieldType) {
+			$type = (!is_array($fieldType) ? $fieldType : $fieldType['type']);
+			$params = (!is_array($fieldType) ? array() : $fieldType['params']);
+			if (isset($data[$fieldName]) && !$this->validateType($data[$fieldName], $type, $params)) {
+				$wrongTypes[$fieldName] = $fieldType;
+			}
 		}
-		if (!Billrun_Util::isDateValue($data['to'])) {
-			return '"to" field must be in valid date format';
+		
+		if (!empty($wrongTypes)) {
+			$ret = array();
+			foreach ($wrongTypes as $fieldName => $fieldType) {
+				$ret[] = $this->getErrorMessage($fieldName, $data[$fieldName], $fieldType);
+			}
+			return implode(', ', $ret);
 		}
 		return true;
+	}
+
+	protected function getErrorMessage($fieldName, $fieldValue, $fieldType) {
+		if (is_array($fieldType)) {
+			return '"' . $fieldValue . '" is not a valid value for "' . $fieldType['type'] .'". Available values are: ' . implode(', ', $fieldType['params']);
+		}
+		return 'field "' . $fieldName . '" must be of type ' . $fieldType;
+	}
+
+	protected function validateType($value, $type, $params) {
+		switch ($type) {
+			case ('integer'):
+				return Billrun_Util::IsIntegerValue($value);
+			case ('float'):
+				return Billrun_Util::IsFloatValue($value);
+			case ('date'):
+				return Billrun_Util::isDateValue($value);
+			case ('boolean'):
+				return is_bool($value);
+			case ('in_array'):
+				return in_array($value, $params);
+		}
+		
+		return false;
 	}
 
 }
