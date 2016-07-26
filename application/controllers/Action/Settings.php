@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class SettingsAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $model;
 
 	/**
@@ -29,6 +30,7 @@ class SettingsAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		try {
 			$this->initializeModel();
@@ -62,6 +64,10 @@ class SettingsAction extends ApiAction {
 			return TRUE;
 		}
 		return TRUE;
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_WRITE;
 	}
 
 }

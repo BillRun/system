@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class StatisticsAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $model;
 
 	protected function initializeModel() {
@@ -67,6 +68,7 @@ class StatisticsAction extends ApiAction {
 	}
 
 	public function execute() {
+		$this->allowed();
 		$method = $this->getRequest()->get('method');
 		if (empty($method)) {
 			$output = array(
@@ -84,6 +86,10 @@ class StatisticsAction extends ApiAction {
 			);
 		}
 		$this->getController()->setOutput(array($output));
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_WRITE;
 	}
 
 }

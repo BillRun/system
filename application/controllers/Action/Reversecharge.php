@@ -24,6 +24,7 @@ class ReversechargeAction extends RealtimeeventAction {
 	 * method to execute reverse charge event
 	 */
 	public function execute() {
+		$this->allowed();
 		$this->event = $this->getRequestData('event');
 		$this->usaget = $this->getRequestData('usaget');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/reversecharge/conf.ini');

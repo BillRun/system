@@ -15,12 +15,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class RemoveAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	/**
 	 * method to execute remove of billing lines (only credit and active)
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute api remove", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::INFO);
@@ -70,6 +72,10 @@ class RemoveAction extends ApiAction {
 				'desc' => 'success',
 				'input' => $request,
 		)));
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_WRITE;
 	}
 
 }

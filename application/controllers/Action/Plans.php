@@ -15,8 +15,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class PlansAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute plans api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
@@ -188,6 +190,10 @@ class PlansAction extends ApiAction {
 			}
 		}
 		return $retParam;
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_READ;
 	}
 
 }

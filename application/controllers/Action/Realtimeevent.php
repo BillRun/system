@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class RealtimeeventAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	protected $event = null;
 	protected $usaget = null;
@@ -23,6 +24,7 @@ class RealtimeeventAction extends ApiAction {
 	 * method to execute realtime event
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->event = $this->getRequestData();
 		$this->setEventData();
@@ -242,6 +244,10 @@ class RealtimeeventAction extends ApiAction {
 	 */
 	protected function isPretend($event) {
 		return (in_array($this->usaget, Billrun_Util::getCallTypes()) && $event['record_type'] === 'start_call');
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_WRITE;
 	}
 
 }

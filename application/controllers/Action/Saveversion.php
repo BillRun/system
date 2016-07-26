@@ -14,8 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    4.2
  */
 class SaveversionAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute save version", Zend_Log::INFO);
 		if (!AdminController::authorized('write')) {
 			return;
@@ -52,6 +54,10 @@ class SaveversionAction extends ApiAction {
 		fclose($file);
 		$this->getController()->setOutput(array(array('status' => 1)));
 		return true;
+	}
+
+	protected function getPermissionLevel() {
+		return PERMISSION_WRITE;
 	}
 
 }
