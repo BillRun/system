@@ -40,7 +40,7 @@ class CreditGuardAction extends ApiAction {
 			$url_array = parse_url($this->url);
 			$str_response = array();
 			parse_str($url_array['query'], $str_response);
-			$this->CG_transaction_id = $str_response[txId];	
+			$this->CG_transaction_id = $str_response['txId'];	
 			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
 			$this->forceRedirect($this->url);
 		}
