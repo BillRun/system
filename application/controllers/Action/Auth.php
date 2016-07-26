@@ -15,10 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @author eran
  */
 class AuthAction extends ApiAction  {
-	use Billrun_Traits_Api_UserPermissions;
 		
 	public function execute() {
-		$this->allowed();
 		$params = array_merge($this->getRequest()->getRequest(), $this->getRequest()->getPost());
 		switch(Billrun_Util::getFieldVal($params['action'],'')) {
 			case 'logout':
@@ -131,9 +129,4 @@ class AuthAction extends ApiAction  {
 		}
 		return FALSE;
 	}
-
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-	}
-
 }
