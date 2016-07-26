@@ -6,10 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-const PERMISSION_READ = "read";
-const PERMISSION_WRITE = "write";
-const PERMISSION_ADMIN = "admin";
-
 /**
  * This Trait is used for API modules that handle additional input.
  *
@@ -27,7 +23,13 @@ trait Billrun_Traits_Api_UserPermissions {
 	 *
 	 */
 	protected function allowed() {
-		return $this->authorizeUser($this->getPermissionLevel());
+		if($this->authorizeUser($this->getPermissionLevel())) {
+			return;
+		}
+		
+		$error = "No permission to execute this action";
+		Billrun_Factory::log($error, Zend_Log::NOTICE);
+		throw new Exception($error);
 	}
 	
 	/**
@@ -47,15 +49,5 @@ trait Billrun_Traits_Api_UserPermissions {
 		}
 
 		return $user->allowed($permission);
-	}
-
-	protected function init23() {
-		if($this->allowed()) {
-			return;
-		}
-		
-		$error = "No permission to execute this action";
-		Billrun_Factory::log($error, Zend_Log::NOTICE);
-		throw new Exception($error);
 	}
 }

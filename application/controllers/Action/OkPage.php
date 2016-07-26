@@ -129,7 +129,7 @@ class OkPageAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return PERMISSION_READ;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

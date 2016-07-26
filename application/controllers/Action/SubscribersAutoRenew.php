@@ -88,7 +88,7 @@ class SubscribersAutoRenewAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return PERMISSION_WRITE;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }
