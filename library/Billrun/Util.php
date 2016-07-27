@@ -1313,7 +1313,7 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-
+	
 		/**
 	 * Return rounded amount for charging
 	 * @param float $amount
