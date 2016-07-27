@@ -73,12 +73,12 @@ abstract class Billrun_Generator extends Billrun_Base {
 
 		if (isset($options['export_directory'])) {
 			if (!isset($options['disable_stamp_export_directory']) || !$options['disable_stamp_export_directory']) {
-				$this->export_directory = APPLICATION_PATH . $options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp;
+				$this->export_directory = Billrun_Util::getBillRunSharedFolderPath($options['export_directory'] . DIRECTORY_SEPARATOR . $this->stamp);
 			} else {
-				$this->export_directory = APPLICATION_PATH . $options['export_directory'];
+				$this->export_directory = Billrun_Util::getBillRunSharedFolderPath($options['export_directory']);
 			}
 		} else {
-			$this->export_directory = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp; //__DIR__ . '/../files/';
+			$this->export_directory = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR . $this->stamp); //__DIR__ . '/../files/';
 		}
 
 		if (isset($options['move_exported'])) {
