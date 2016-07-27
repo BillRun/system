@@ -193,15 +193,30 @@ class CronController extends Yaf_Controller_Abstract {
 			$subscribersInPlan = $this->getSubscribersInPlan($planNotification['plan_name']);
 			foreach ($subscribersInPlan as $subscriber) {
 				$balances = $this->getBalancesToNotify($subscriber->get('sid'), $planNotification['notification']);
-				if ($balances) {
-					foreach ($balances as $balance) {
-						Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
-					}
+				if (!$balances) {
+					continue;
 				}
+				
+				$this->notifyForBalances($subscriber, $balances);
 			}
 		}
 	}
-
+	
+	/**
+	 * Notify on all balances per a subscriber
+	 * @param array $subscriber - Current subscriber to notify
+	 * @param array $balances - Array of balances record to try and notify on
+	 */
+	protected function notifyForBalances($subscriber, $balances) {
+		foreach ($balances as $balance) {
+			// Do not notify on an empty balance
+			if(Billrun_Balances_Util::getBalanceValue($balance) == 0) {
+				continue;
+			}
+			Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
+		}
+	}
+	
 	protected function getBalancesToNotify($subscriberId, $notification) {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$query = array(
