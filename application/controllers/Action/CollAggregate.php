@@ -45,28 +45,30 @@ class AggregateAction extends ApiAction {
 				$this->setError('No query found', $request);
 				return TRUE;
 			}
-			if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-				$collection = $request['collection'];
-				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines));
-				$entities = array_map(function($ele) {
-					return $ele->getRawData();
-				}, $entities);
-
-				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-				$ret = array(
-					array(
-						'status' => 1,
-						'desc' => 'success',
-						'input' => $request,
-						'details' => $entities,
-					)
-				);
-
-				$this->getController()->setOutput($ret);
-			} else {
+			if (empty($request['collection']) || !in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
-				return TRUE;
+				return TRUE;		
 			}
+			
+			$collection = $request['collection'];
+			// Set timeout of 1 minute
+			$options = array('$maxTimeMS' => 60000);
+			$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines, $options));
+			$entities = array_map(function($ele) {
+				return $ele->getRawData();
+			}, $entities);
+
+			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+			$ret = array(
+				array(
+					'status' => 1,
+					'desc' => 'success',
+					'input' => $request,
+					'details' => $entities,
+				)
+			);
+
+			$this->getController()->setOutput($ret);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
