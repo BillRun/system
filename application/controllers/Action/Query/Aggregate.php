@@ -82,6 +82,20 @@ class QueryaggregateAction extends QueryAction {
 	}
 
 	/**
+	 * Get the array of options to use for the query.
+	 * @param array $request - Input request array.
+	 * @return array Options array for the query.
+	 */
+	protected function getQueryOptions($request) {
+		$options = parent::getQueryOptions($request);
+		
+		// Set timeout
+		$options['$maxTimeMS'] = 60000;
+		
+		return $options;
+	}
+	
+	/**
 	 * Get the groupby keys by the input pararmters.
 	 * @param array $params - Input paramters to get the keys by.
 	 * @return array of group by keys.
