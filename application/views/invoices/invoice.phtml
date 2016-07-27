@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title><?php echo $this->company_name ?></title>
+	<meta name="viewport" content="width=1040" />
+	<meta name="MobileOptimized" content="1040" />
+	<link media="all" rel="stylesheet" href=<?php echo $this->css_path ?>>
+	<style type="text/css">
+		.break{
+			display: block;
+			clear: both;
+			page-break-after: always;
+		}
+	</style>
+</head>
+<body>
+<?php
+		print $this->render($this->sumup_template);
+		print '<div class="break"></div>';
+		print $this->render($this->details_template);
+		print '<div class="break"></div>';
+		print $this->render($this->lines_template);
+?>
+</body>
+</html>
+

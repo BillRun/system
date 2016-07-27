@@ -68,7 +68,7 @@ class AccountInvoicesAction extends ApiAction {
 		$billrun_key = $request->get('billrun_key');
 		$invoiceId = $request->get('iid');
 		
-		$files_path = Billrun_Factory::config()->getConfigValue('wkpdf.export',APPLICATION_PATH . '/files/invoices/');		
+		$files_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.export','/files/invoices/');		
 		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
 		$pdf = $files_path . 'pdf/' . $billrun_key . '/' . $file_name;
 
