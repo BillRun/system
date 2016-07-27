@@ -137,8 +137,7 @@ class CronController extends Yaf_Controller_Abstract {
 			Billrun_Factory::log("[Cron:sendNotifications] We are on Holiday or Saturday, disable sending notifcations.", Zend_Log::NOTICE);
 			return;
 		}
-		$handler = new Billrun_Balances_Handler();
-		$handler->sendBalanceExpirationdateNotifications();
+		$this->sendBalanceExpirationdateNotifications();
 	}
 
 	public function cancelSlownessByEndedPlans() {
@@ -186,6 +185,76 @@ class CronController extends Yaf_Controller_Abstract {
 
 	protected function getSmsList() {
 		return Billrun_Factory::config()->getConfigValue('cron.log.sms_recipients', array());
+	}
+
+	protected function sendBalanceExpirationdateNotifications() {
+		$plansNotifications = $this->getAllPlansWithExpirationDateNotification();
+		foreach ($plansNotifications as $planNotification) {
+			$subscribersInPlan = $this->getSubscribersInPlan($planNotification['plan_name']);
+			foreach ($subscribersInPlan as $subscriber) {
+				$balances = $this->getBalancesToNotify($subscriber->get('sid'), $planNotification['notification']);
+				if (!$balances) {
+					continue;
+				}
+				
+				$this->notifyForBalances($subscriber, $balances);
+			}
+		}
+	}
+	
+	/**
+	 * Notify on all balances per a subscriber
+	 * @param array $subscriber - Current subscriber to notify
+	 * @param array $balances - Array of balances record to try and notify on
+	 */
+	protected function notifyForBalances($subscriber, $balances) {
+		foreach ($balances as $balance) {
+			// Do not notify on an empty balance
+			if(Billrun_Balances_Util::getBalanceValue($balance) == 0) {
+				continue;
+			}
+			Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
+		}
+	}
+	
+	protected function getBalancesToNotify($subscriberId, $notification) {
+		$balancesCollection = Billrun_Factory::db()->balancesCollection();
+		$query = array(
+			'sid' => $subscriberId,
+			'to' => array(
+				'$gte' => new MongoDate(strtotime('+' . $notification['value'] . ' days midnight')),
+				'$lte' => new MongoDate(strtotime('+' . ($notification['value'] + 1) . ' days midnight')),
+			),
+			'pp_includes_external_id' => array('$in' => $notification['pp_includes']),
+		);
+		$balances = $balancesCollection->query($query)->cursor();
+		if ($balances->count() == 0) {
+			return false;
+		}
+		return $balances;
+	}
+
+	protected function getSubscribersInPlan($planName) {
+		$subscribersCollection = Billrun_Factory::db()->subscribersCollection();
+		$query = Billrun_Util::getDateBoundQuery();
+		$query['plan'] = $planName;
+		$subscribers = $subscribersCollection->query($query)->cursor();
+		if ($subscribers->count() == 0) {
+			return false;
+		}
+		return $subscribers;
+	}
+
+	protected function getAllPlansWithExpirationDateNotification() {
+		$match = Billrun_Util::getDateBoundQuery();
+		$match["notifications_threshold.expiration_date"] = array('$exists' => 1);
+		$unwind = '$notifications_threshold.expiration_date';
+		$plansCollection = Billrun_Factory::db()->plansCollection();
+		$plans = $plansCollection->aggregate(array('$match' => $match), array('$unwind' => $unwind));
+		$plansNotifications = array_map(function($doc) {
+			return array('plan_name' => $doc['name'], 'notification' => $doc['notifications_threshold']['expiration_date']);
+		}, iterator_to_array($plans));
+		return $plansNotifications;
 	}
 	
 	public function handleSendRequestErrorAction() {
