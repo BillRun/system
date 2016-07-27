@@ -44,7 +44,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = Billrun_Util::getBillRunPath($options['workspace']);
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		}
 
 		if (isset($options['path'])) {

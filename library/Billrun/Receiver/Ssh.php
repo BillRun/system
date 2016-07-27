@@ -31,7 +31,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 		}
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		}
 
 		if (isset($options['backup_path'])) {

@@ -41,7 +41,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$this->ftpConfig = $options['receiver']['connections'];
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		}
 
 		if (isset($options['receiver']['check_received_size'])) {
