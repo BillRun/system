@@ -417,5 +417,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			return $plan['external_id'];
 		}
 	}
+        
+        protected function getServiceProvider($value, $parameters, $line) {
+            return $this->serviceProviders[$line[$parameters['key']]][$line[$parameters['field']]];		
+	}
 
 }
