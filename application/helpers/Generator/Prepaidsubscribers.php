@@ -62,16 +62,17 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 				array(array('$limit' => $subscribersLimit))
 			);
 			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
-			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('$allowDiskUse' => true)); //TODO how to perform it on the secondaries?
+			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('allowDiskUse' => true)); //TODO how to perform it on the secondaries?
 			
 			$sids = array();
 			foreach ($this->data as $line) {
 				if ($this->isLineEligible($line)) {
-					$sids[] = $line['sid'];
+					$sids[] = $line['subscriber_no'];
 				}
 			}
 			
 			$this->loadBalancesForBulk($sids);
+                        $this->loadTransactions($sids);
 
 			$hasData = false;
 			foreach ($this->data as $line) {
@@ -106,10 +107,25 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		$balances = $this->db->balancesCollection()
 			->query(array('sid' => array('$in' => $sids), 'from' => array('$lt' => $this->startMongoTime), 'to' => array('$gt' => $this->startMongoTime)));
 		foreach ($balances as $balance) {
-			$this->balances[$balance['subscriber_no']][] = $balance;
+			$this->balances[$balance['sid']][] = $balance;
 		}
 	}
 	
+        protected function loadTransactions($sids) {
+                unset($this->transactions);
+		$this->transactions = array();
+		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
+                    array('$project' => array('sid'=>1,'urt'=>1,'type'=>1,
+                                                'urt_recharge'=> array('$cond' => array('if' => array('$eq'=>array('$type','')),'then'=>'$urt','else'=> 0)),
+                                                'urt_transaction'=> array('$cond' => array('if' => array('$ne'=>array('$type','')),'then'=>'$urt','else'=> 0))
+                        )),
+                    array('$group'=>array('_id'=>'$sid', 'sid'=> array('$first'=>'$sid'), 'urt_transaction' =>array('$max'=>'$urt_transaction'), 'urt_recharge'=> array('$max'=>'$urt_recharge') )) 
+                ), array('$allowDiskUse' => true));
+		foreach ($transactions as $transaction) {
+			$this->transactions[$transaction['sid']] = $transaction;
+		}
+        }
+        
 	protected function countBalances($sid, $parameters, &$line) {
 
 		return count($this->getBalancesForSid($sid));
@@ -139,12 +155,8 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		return $value * $parameters;
 	}
 
-	protected function lastSidTransactionDate($value, $parameters, $line) {
-		return ''; // This query takes long time, so, currently, we are disabling it
-//		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid' => $value), $parameters['query']))->cursor()->sort(array('urt' => -1))->limit(1)->current();
-//		if (!$usage->isEmpty()) {
-//			return $this->translateUrt($usage['urt'], $parameters);
-//		}
+	protected function lastSidTransactionDate($sid, $parameters, $line) {
+		return isset($this->transactions[$sid]) ? $this->translateUrt($this->transactions[$sid][$parameters['field']], $parameters) : ''; // This query takes long time, so, currently, we are disabling it
 	}
 	protected function getBalancesForSid($sid) {
 		return (isset($this->balances[$sid]) ? $this->balances[$sid] : array());
