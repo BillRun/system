@@ -63,7 +63,11 @@ class FindAction extends ApiAction {
 		$collection = $request['collection'];
 		try {
 			$db = Billrun_Factory::db()->{$collection . 'Collection'}();
-			$find = $db->find($query, $project, array('$maxTimeMS' => 60000))->sort($sort)->skip($page * $size)->limit($size);
+			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size);
+			
+			// Get timeout
+			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
+			$find->timeout($timeout);
 			$entities = iterator_to_array($find);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);

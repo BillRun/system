@@ -55,7 +55,8 @@ class AggregateAction extends ApiAction {
 			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
 			
 			// Set timeout of 1 minute
-			$cursor->timeout(60000);
+			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
+			$cursor->timeout($timeout);
 			$entities = iterator_to_array($cursor);
 			$entities = array_map(function($ele) {
 				return $ele->getRawData();
