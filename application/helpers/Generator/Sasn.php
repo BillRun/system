@@ -43,7 +43,9 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 			if ($line['data_volume_gprs_downlink'] > static::$ONE_GB) {
 				while ($line['data_volume_gprs_downlink'] > 0) {
 					$brokenLine = $line->getRawData();
-					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 ? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB : $line['orig_data_volume_gprs_downlink']) : 0;
+					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 
+												? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['orig_data_volume_gprs_downlink']) 
+												: 0;
 					$brokenLine['data_volume_gprs_downlink'] = $line['data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB : $line['data_volume_gprs_downlink'];
 					$this->writeRowToFile($this->translateCdrFields($brokenLine, $this->translations), $this->fieldDefinitions);
 					$line['record_opening_time'] = new MongoDate($line['record_opening_time']->sec + 1);
