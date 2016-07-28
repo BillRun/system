@@ -25,30 +25,115 @@ class CreditGuardAction extends ApiAction {
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$today = new MongoDate();
 		$request = $this->getRequest();
-		$aid = $request->get("aid");
-		$hash = $request->get("hash");
-		if (is_null($aid) || !is_numeric($aid)) {
+		
+		// Validate the data.
+		$data = $this->validateData($request);
+		if($data === null) {
+			return $this->setError("Failed to authenticate", $request);
+		}
+		
+		$jsonData = json_decode($data, true);
+		if (!isset($jsonData['aid']) || is_null(($aid = $jsonData['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
 			return $this->setError("need to pass numeric aid", $request);
-		}	
+		}
+		
+		if(!isset($jsonData['hash']) || is_null(($hash = $jsonData['hash']))) {
+			return $this->setError("Invalid arguments", $request);			
+		}
 		
 		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
-		if ($hash == $calculated_hash) {
-			$this->getToken($aid);
-			$url_array = parse_url($this->url);
-			$str_response = array();
-			parse_str($url_array['query'], $str_response);
-			$this->CG_transaction_id = $str_response['txId'];	
-			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
-			$this->forceRedirect($this->url);
+		if ($hash != $calculated_hash) {
+			return $this->setError("Failed to validate request.", $request);						
 		}
+		
+		// Signal starting process.
+		$this->signalStartingProcess($aid);
+		
+		$this->getToken($aid);
+		$url_array = parse_url($this->url);
+		$str_response = array();
+		parse_str($url_array['query'], $str_response);
+		$this->CG_transaction_id = $str_response['txId'];	
+		$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
+		$this->forceRedirect($this->url);
 	}
 
+	protected function signalStartingProcess($aid) {
+		// TODO: Maybe we should use $this->cache but I can't understand it
+		$cache = Billrun_Factory::cache();
+		if(empty($cache)) {
+			// TODO: This can be a security breach
+			return;
+		}
+		
+		// Get is started
+		$isStartedKey = "credit_in_process." . $aid;
+		$startedIndication = $cache->get($isStartedKey);
+		if(!empty($startedIndication)) {
+			list($started, $when) = each($startedIndication);
+			
+			// Check how long has passed.
+			$timePassed = time() - $when;
+			
+			// TODO: Two hours, should we change it?
+			if($timePassed < 7200) {
+				// Block the request
+				$cache->set($isStartedKey, array(false => $when));
+				return;
+			}
+		}
+		
+		// Signal start process
+		$cache->set($isStartedKey, array(true => time()));
+	}
+	
 	protected function forceRedirect($uri) {
 		if (empty($uri)) {
 			$uri = '/';
 		}
 		header('Location: ' . $uri);
 		exit();
+	}
+	
+	/**
+	 * Validates the input data.
+	 * @return data - Request data if validated, null if error.
+	 */
+	public function validateData($request) {
+		// TODO: Validate all the fields in the data! Timestamp etc, we need to define those fields!
+		// Get the public key file.
+		$publicKey = pathinfo(BILLRUN_CONFIG_PATH, PATHINFO_FILENAME) . ".pem";
+		
+		// Make sure it exists
+		if(!file_exists($publicKey)) {
+			Billrun_Factory::log("No public key for client!", Zend_Log::CRIT);
+			return null;
+		}
+		
+		// fetch public key from certificate and ready it
+		$pubkeyid = openssl_pkey_get_public($publicKey);
+		
+		$data = $request->get("data");
+		$signature = $request->get("signature");
+
+		// state whether signature is okay or not
+		$ok = openssl_verify($data, $signature, $pubkeyid);
+		$validData = null;
+		
+		// TODO: I am leaving this code here, for testing while we are 
+		// still in development
+		if ($ok == 1) {
+			echo "good";
+			$validData = $data;
+		} elseif ($ok == 0) {
+			echo "bad";
+		} else {
+			echo "ugly, error checking signature";
+		}
+		// free the key from memory
+		openssl_free_key($pubkeyid);
+		
+		return $validData;
 	}
 	
 	public function getToken($aid) {

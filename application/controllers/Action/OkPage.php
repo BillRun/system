@@ -39,10 +39,55 @@ class OkPageAction extends ApiAction {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
+		// Validate the process.
+		
+		
 		$today = new MongoDate();
 		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
 	}
 
+	/**
+	 * Check that the process that has now ended, actually started, and not too long ago.
+	 * @return boolean
+	 */
+	protected function validateCreditGuardProcess() {
+		// TODO: Maybe we should use $this->cache but I can't understand it
+		$cache = Billrun_Factory::cache();
+		if(empty($cache)) {
+			// TODO: This can be a security breach
+			return true;
+		}
+		
+		// Get is started
+		$isStartedKey = "credit_in_process." . $this->aid;
+		$startedIndication = $cache->get($isStartedKey);
+		if(empty($startedIndication)) {
+			return false;
+		}
+		
+		// Remove the value from the cache
+		$cache->remove($isStartedKey);
+		
+		list($started, $when) = each($startedIndication);
+		
+		if($started !== true) {
+			// TODO: If we put too many different error message, it can leak information
+			// about how are code looks
+			return false;
+		}
+		
+		// Check how long has passed.
+		$timePassed = time() - $when;
+		
+		// Three minutes
+		// TODO: What value should we put here?
+		if($timePassed > 180) {
+			return false;
+		}
+		
+		return true;
+	}
+	
 	public function getTransactionDetails($txId) {
 
 		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
