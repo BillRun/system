@@ -115,12 +115,13 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
+                    array('$match' => array('sid' => array('$in' => $sids)) ),
                     array('$project' => array('sid'=>1,'urt'=>1,'type'=>1,
                                                 'urt_recharge'=> array('$cond' => array('if' => array('$eq'=>array('$type','')),'then'=>'$urt','else'=> 0)),
                                                 'urt_transaction'=> array('$cond' => array('if' => array('$ne'=>array('$type','')),'then'=>'$urt','else'=> 0))
                         )),
                     array('$group'=>array('_id'=>'$sid', 'sid'=> array('$first'=>'$sid'), 'urt_transaction' =>array('$max'=>'$urt_transaction'), 'urt_recharge'=> array('$max'=>'$urt_recharge') )) 
-                ), array('$allowDiskUse' => true));
+                ), array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']] = $transaction;
 		}
