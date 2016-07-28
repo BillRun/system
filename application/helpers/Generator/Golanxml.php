@@ -432,10 +432,10 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
-			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
+			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
-			$subscriber_sumup_FREEZE_FLAT_RATE = floatval((isset($subscriber['freeze_amount']) ? $subscriber['freeze_amount'] : 0));
-			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_FREEZE_FLAT_RATE);
+			$subscriber_sumup_TOTAL_FREEZE_FLAT_RATE = floatval((isset($subscriber['freeze_amount']) ? $subscriber['freeze_amount'] : 0));
+			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
@@ -466,7 +466,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
 			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
-			$invoice_total_freeze_flat_rate += $subscriber_sumup_FREEZE_FLAT_RATE;
+			$invoice_total_freeze_flat_rate += $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 						
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
