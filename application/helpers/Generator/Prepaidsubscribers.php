@@ -15,7 +15,18 @@
 class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	static $type = 'prepaidsubscribers';
+	
+	protected $startMongoTime;
+	
+	protected $balances = array();
+	protected $plans = array();
 
+	public function __construct($options) {
+		parent::__construct($options);
+		$this->startMongoTime = new MongoDate($this->startTime);
+		$this->loadPlans();
+	}
+	
 	public function generate() {
 		$fileData = $this->getNextFileData();
 		$this->writeRows();
@@ -27,6 +38,13 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 
 		return array('seq' => $seq, 'filename' => 'PREPAID_SUBSCRIBERS_' . date('YmdHi'), 'source' => static::$type);
 	}
+	
+	public function load() {
+		$this->data = array();
+		//Billrun_Factory::log("generator entities loaded: " . count($this->data), Zend_Log::INFO);
+
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
+	}
 
 	//--------------------------------------------  Protected ------------------------------------------------
 
@@ -34,11 +52,36 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		if (!empty($this->headers)) {
 			$this->writeHeaders();
 		}
-		foreach ($this->data as $line) {
-			if ($this->isLineEligible($line)) {
-				$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+		$subscribersLimit = Billrun_Factory::config()->getConfigValue('prepaidsubscribers.generator.subscribers_limit', 10000);
+		$page = 0;
+		
+		do {
+			$aggregation_array = array_merge(
+				$this->aggregation_array, 
+				array(array('$skip' => $subscribersLimit * $page)),
+				array(array('$limit' => $subscribersLimit))
+			);
+			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
+			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('$allowDiskUse' => true)); //TODO how to perform it on the secondaries?
+			
+			$sids = array();
+			foreach ($this->data as $line) {
+				if ($this->isLineEligible($line)) {
+					$sids[] = $line['sid'];
+				}
 			}
-		}
+			
+			$this->loadBalancesForBulk($sids);
+
+			$hasData = false;
+			foreach ($this->data as $line) {
+				$hasData = true;
+				if ($this->isLineEligible($line)) {
+					$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+				}
+			}
+			$page++;
+		} while ($hasData);
 		$this->markFileAsDone();
 	}
 
@@ -57,15 +100,23 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
+	protected function loadBalancesForBulk($sids) {
+		unset($this->balances);
+		$this->balances = array();
+		$balances = $this->db->balancesCollection()
+			->query(array('sid' => array('$in' => $sids), 'from' => array('$lt' => $this->startMongoTime), 'to' => array('$gt' => $this->startMongoTime)));
+		foreach ($balances as $balance) {
+			$this->balances[$balance['subscriber_no']][] = $balance;
+		}
+	}
+	
 	protected function countBalances($sid, $parameters, &$line) {
-		$time = new MongoDate();
 
-		return $this->db->balancesCollection()->query(array('sid' => $sid, 'from' => array('$lt' => $time), 'to' => array('$gt' => $time)))->cursor()->count(true);
+		return count($this->getBalancesForSid($sid));
 	}
 
 	protected function flattenBalances($sid, $parameters, &$line) {
-		$time = new MongoDate();
-		$balances = $this->db->balancesCollection()->query(array('sid' => $sid, 'from' => array('$lt' => $time), 'to' => array('$gt' => $time)));
+		$balances = $this->getBalancesForSid($sid);
 		return $this->flattenArray($balances, $parameters, $line);
 	}
 
@@ -89,9 +140,30 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	}
 
 	protected function lastSidTransactionDate($value, $parameters, $line) {
-		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid' => $value), $parameters['query']))->cursor()->sort(array('urt' => -1))->limit(1)->current();
-		if (!$usage->isEmpty()) {
-			return $this->translateUrt($usage['urt'], $parameters);
+		return ''; // This query takes long time, so, currently, we are disabling it
+//		$usage = Billrun_Factory::db()->linesCollection()->query(array_merge(array('sid' => $value), $parameters['query']))->cursor()->sort(array('urt' => -1))->limit(1)->current();
+//		if (!$usage->isEmpty()) {
+//			return $this->translateUrt($usage['urt'], $parameters);
+//		}
+	}
+	protected function getBalancesForSid($sid) {
+		return (isset($this->balances[$sid]) ? $this->balances[$sid] : array());
+	}
+	
+	protected function loadPlans() {
+		$plans = Billrun_Factory::db()->plansCollection()
+			->query(array('from' => array('$lt' => $this->startMongoTime), 'to' => array('$gt' => $this->startMongoTime)))
+			->cursor()->sort(array('urt' => -1));
+		foreach ($plans as $plan) {
+			if (!isset($this->plans[$plan['name']])) {
+				$this->plans[$plan['name']] = $plan;
+			}
+		}
+	}
+	
+	protected function getPlanId($value, $parameters, $line) {
+		if (isset($this->plans[$value])) {
+			return $this->plans[$value]['external_id'];
 		}
 	}
 
