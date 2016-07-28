@@ -55,30 +55,36 @@ class FindAction extends ApiAction {
 			$size = intval($config['maximum_page_size']);
 		}
 
-		if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-			$collection = $request['collection'];
-			try {
-				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->find($query, $project)->sort($sort)->skip($page * $size)->limit($size));
-			} catch (Exception $e) {
-				$this->setError($e->getMessage(), $request);
-				return TRUE;
-			}
-
-			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-			$ret = array(
-				array(
-					'status' => 1,
-					'desc' => 'success',
-					'input' => $request,
-					'details' => $entities,
-				)
-			);
-
-			$this->getController()->setOutput($ret);
-		} else {
+		if (empty($request['collection']) || !(in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array())))) {
 			$this->setError('Illegal collection name: ' . $request['collection'], $request);
 			return TRUE;
+		}	
+		
+		$collection = $request['collection'];
+		try {
+			$db = Billrun_Factory::db()->{$collection . 'Collection'}();
+			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size);
+			
+			// Get timeout
+			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
+			$find->timeout($timeout);
+			$entities = iterator_to_array($find);
+		} catch (Exception $e) {
+			$this->setError($e->getMessage(), $request);
+			return TRUE;
 		}
+
+		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+		$ret = array(
+			array(
+				'status' => 1,
+				'desc' => 'success',
+				'input' => $request,
+				'details' => $entities,
+			)
+		);
+
+		$this->getController()->setOutput($ret);
 	}
 
 	/**
