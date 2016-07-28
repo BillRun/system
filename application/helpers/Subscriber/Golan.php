@@ -338,6 +338,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$count--;
 								}
 							}
+							
+							if ($this->isFreezeExists()){
+								$subscriber['services'][] = 'FREEZE_FLAT_RATE';
+							}
 
 							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
 								$reduced = array();
@@ -352,7 +356,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								foreach ($reduced as $service_name => $service_count) {
 									$service = array();
 									$service['service_name'] = $service_name;
-							//		$service['fraction'] = $concat['data']['fraction'];
+									if ($service_name == "FREEZE_FLAT_RATE"){
+										$service['freeze_fraction'] = $this->calcFreezeFraction($this->getFreezeStartDay(), $this->getFreezeEndDay());	
+									}
 									$service['count'] = $service_count;
 									$service['aid'] = $concat['data']['aid'];
 									$service['sid'] = $concat['data']['sid'];
@@ -558,11 +564,20 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function calcFreezeAmount($freeze_start, $freeze_end) {
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);
-		$freeze_charge = (int) Billrun_Factory::config()->getConfigValue('golan.freeze_charging');
+		$freeze_charge = Billrun_Factory::config()->getConfigValue('golan.freeze_charging');
 		$freeze_days = $this->getNumberOfDays($freeze_start, $freeze_end);
 		$freeze_pricing = ($freeze_days / $days_in_month) * $freeze_charge;
 		
 		return $freeze_pricing;
+	}
+	
+	
+	public function calcFreezeFraction($freeze_start, $freeze_end) {
+		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
+		$days_in_month = (int) date('t', $billing_start_date);
+		$freeze_days = $this->getNumberOfDays($freeze_start, $freeze_end);
+		
+		return ($freeze_days / $days_in_month);
 	}
 
 	public function isFreezeExists(){
@@ -627,7 +642,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		else {
 			$plan = $this->getPlan();
 		}
-		//$price = $this->isFreezeExists() ? $this->calcFreezeAmount($this->getFreezeStartDay(), $this->getFreezeEndDay()) + $this->getFlatPrice($fraction) : $this->getFlatPrice($fraction);
 
 		$flat_entry = array(
 			'aid' => $this->aid,
@@ -644,13 +658,54 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'offer_id_curr' => $this->offer_id_curr,
 			'offer_id_next' => $this->offer_id_next,
 		);
-		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $billrun_end_time);
+		$stamp = md5($flat_entry['aid'] . $flat_entry['sid'] . $flat_entry['type'] . $billrun_end_time);
 		$flat_entry['stamp'] = $stamp;
 		if ($retEntity) {
 			return new Mongodloid_Entity($flat_entry);
 		}
 		return $flat_entry;
 	}
+	
+
+	/**
+	 * 
+	 * @param string $billrun_key
+	 * @return array
+	 */
+	public function getFreezeEntry($billrun_key, $retEntity = false) {
+		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+		$freeze_amount = $this->calcFreezeAmount($this->getFreezeStartDay(), $this->getFreezeEndDay());
+		if ($this->billing_method == 'prepaid'){
+			$plan = $this->getNextPlan();
+		}
+		else {
+			$plan = $this->getPlan();
+		}
+
+		$freeze_entry = array(
+			'aid' => $this->aid,
+			'sid' => $this->sid,
+			'source' => 'billrun',
+			'billrun' => $billrun_key,
+			'type' => 'service',
+			'key' => 'FREEZE_FLAT_RATE',
+			'usaget' => 'service',
+			'urt' => new MongoDate($billrun_end_time),
+			'aprice' => $freeze_amount,
+			'plan' => $plan->getName(),
+			'plan_ref' => $plan->createRef(),
+			'process_time' => date(Billrun_Base::base_dateformat),
+			'offer_id_curr' => $this->offer_id_curr,
+			'offer_id_next' => $this->offer_id_next,
+		);
+		$stamp = md5($freeze_entry['aid'] . $freeze_entry['sid'] . $freeze_entry['type'] . $billrun_end_time);
+		$freeze_entry['stamp'] = $stamp;
+		if ($retEntity) {
+			return new Mongodloid_Entity($freeze_entry);
+		}
+		return $freeze_entry;
+	}
+	
 
 	public function getSubscribersByParams($params_arr, $availableFields) {
 		$subscribers = array();

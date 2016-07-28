@@ -272,9 +272,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$subscriber->setBillrunKey($billrun_key);
 					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
 					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay());
-
+					
 					if ($subscriber->isFreezeExists()){
-						$flat_price = $subscriber->calcFreezeAmount($subscriber->getFreezeStartDay() , $subscriber->getFreezeEndDay()) + $subscriber->getFlatPrice($fraction_of_month); // plan price + freeze price
+						$flat_price = $subscriber->getFlatPrice($fraction_of_month); 
+						$freeze_price = $subscriber->calcFreezeAmount($subscriber->getFreezeStartDay() , $subscriber->getFreezeEndDay());
 					} else{	
 						$flat_price = $subscriber->getFlatPrice($fraction_of_month);
 					}
@@ -288,6 +289,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$flat = $this->saveFlatLine($subscriber, $billrun_key);
 					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
+				}
+				if ($subscriber->isFreezeExists()){
+					$freeze = $this->saveFreezeLine($subscriber, $billrun_key);
+					$manual_lines = array_merge($manual_lines, array($freeze['stamp'] => $freeze));	
 				}
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
 				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
@@ -361,6 +366,27 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 		}
 		return $flat_entry;
+	}
+	
+	/**
+	 * Creates and saves a freeze line to the db
+	 * @param Billrun_Subscriber $subscriber the subscriber to create a freeze line to
+	 * @param string $billrun_key the billrun for which to add the freeze line
+	 * @return array the inserted line or the old one if it already exists
+	 */
+	protected function saveFreezeLine($subscriber, $billrun_key) {
+		$freeze_entry = $subscriber->getFreezeEntry($billrun_key, true);
+		try {
+			$this->lines->insert($freeze_entry->getRawData(), array("w" => 1));
+		} catch (Exception $e) {
+			if ($e->getCode() == 11000) {
+				Billrun_Factory::log("Freeze line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_log::ALERT);
+			} else {
+				Billrun_Factory::log("Problem inserting freeze line for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_log::ALERT);
+				Billrun_Util::logFailedCreditRow($freeze_entry->getRawData());
+			}
+		}
+		return $freeze_entry;
 	}
 
 	/**

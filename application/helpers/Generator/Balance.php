@@ -160,7 +160,7 @@ class Generator_Balance extends Generator_Golanxml {
 			Billrun_Factory::log("Couldn't get plan $plan_name data", Zend_Log::ALERT);
 			return array();
 		}
-		$plan_price = $planObj->get('price') * $subscriber['fraction']; // need to add freeze
+		$plan_price = $planObj->get('price') * $subscriber['fraction'];
 		return array('vatable' => $plan_price, 'vat_free' => 0);
 	}
 
