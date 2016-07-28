@@ -63,10 +63,15 @@ trait Billrun_Traits_TypeAll {
 	 */
 	protected function isTimeoutPassed($type, $timeout) {
 		$cache = Billrun_Factory::cache();
-		
+		// If we fail to get cache, it means that we are on a dev environment, 
+		// trigger the process anyway.
+		if (!empty($cache)) {
+			Billrun_Factory::log("No cache available. Ignoring timeout: Executing type -all", Zend_Log::WARN);
+			return true;
+		}
 		$key = $type . "_timeout";
-		$prefix = Billrun_Factory::config()->getEnv() . '_' . $this->getNameType();
-		
+		$prefix = $this->getNameType();
+
 		// Check if the buffer timeout has passed
 		$lastRun = $cache->get($key, $prefix);
 		if($lastRun) {
