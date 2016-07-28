@@ -77,7 +77,7 @@ class Billrun_Cache {
 		// If we are using the tenant prefix, remove it from the get return value.
 		if($this->useTenantPrefix) {
 			$tenantName = Billrun_Factory::config()->getEnv();
-			$prefix = str_replace($tenantName . "_", "", $prefix);
+			$prefix = preg_replace('/^' . $tenantName . "_/", "", $prefix);
 		}
 		
 		return $prefix;
