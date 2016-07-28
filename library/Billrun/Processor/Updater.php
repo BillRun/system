@@ -74,7 +74,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		return $row;
 	}
 	
@@ -114,7 +114,7 @@ abstract class Billrun_Processor_Updater extends Billrun_Processor {
 				$resource->set('trailer', $trailer, true);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName(), true);
-			$resource->set('process_time', date(self::base_dateformat), true);
+			$resource->set('process_time', date(self::base_datetimeformat), true);
 			return $log->save($resource);
 		} else {
 			// backward compatibility

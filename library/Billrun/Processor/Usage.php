@@ -77,7 +77,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		return $row;
 	}
 
@@ -111,7 +111,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 //		$header['source'] = self::$type;
 //		$header['type'] = static::$type;
 //		$header['file'] = basename($this->filePath);
-//		$header['process_time'] = date(self::base_dateformat);
+//		$header['process_time'] = date(self::base_datetimeformat);
 //		return $header;
 //	}
 
@@ -123,7 +123,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_dateformat);
+		$trailer['process_time'] = date(self::base_datetimeformat);
 		return $trailer;
 	}
 

@@ -140,7 +140,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * make the calculation
 	 */
 	abstract public function updateRow($row);
+	
+	
+	abstract public function prepareData($lines);
 
+	
+	
 	/**
 	 * execute the calculation process
 	 */
@@ -148,6 +153,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculateData', array('data' => $this->data));
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$lines = $this->pullLines($this->lines);
+		$this->prepareData($lines);
 		foreach ($lines as $line) {
 			if ($line) {
 				Billrun_Factory::log("Calculating row: " . $line['stamp'], Zend_Log::DEBUG);

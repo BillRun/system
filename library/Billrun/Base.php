@@ -37,9 +37,14 @@ abstract class Billrun_Base {
 	static protected $instance = array();
 
 	/**
+	 * constant for base datetime format
+	 */
+	const base_datetimeformat = 'Y-m-d H:i:s';
+
+	/**
 	 * constant for base date format
 	 */
-	const base_dateformat = 'Y-m-d H:i:s';
+	const base_dateformat = 'Y-m-d';
 
 	/**
 	 * Limit iterator
@@ -49,6 +54,14 @@ abstract class Billrun_Base {
 	 * @var int
 	 */
 	protected $limit = 10000;
+
+	/**
+	 * Page
+	 * number of page to retrieve (starting from 0)
+	 *
+	 * @var int
+	 */
+	protected $page = 0;
 
 	/**
 	 * constructor

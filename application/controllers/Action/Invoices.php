@@ -53,7 +53,7 @@ class AccountInvoicesAction extends ApiAction {
 			"billrun_key" => array('$in' => $billrun_keys)
 		);
 
-		$db = Billrun_Factory::db(array("name"=> "billrun"));
+		$db = Billrun_Factory::db();
 		$result = $db->billrunCollection()->query($params);
 		$retValue = array();
 		foreach ($result as $key => $value) {
@@ -68,7 +68,7 @@ class AccountInvoicesAction extends ApiAction {
 		$billrun_key = $request->get('billrun_key');
 		$invoiceId = $request->get('iid');
 		
-		$files_path = Billrun_Factory::config()->getConfigValue('wkpdf.export',APPLICATION_PATH . '/files/invoices/');		
+		$files_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.export','/files/invoices/');		
 		$file_name = $billrun_key . '_' . $aid . '_' . $invoiceId . ".pdf";
 		$pdf = $files_path . 'pdf/' . $billrun_key . '/' . $file_name;
 
@@ -85,7 +85,7 @@ class AccountInvoicesAction extends ApiAction {
 	}
 	
 	protected function queryIvoices($query, $sort = FALSE) {
-		$billrunColl = Billrun_Factory::db(array("name"=> "billrun"))->billrunCollection();
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		Billrun_Plan::initPlans();
 		$q = json_decode($query, JSON_OBJECT_AS_ARRAY);
 		if (is_array($q['creation_date'])) {

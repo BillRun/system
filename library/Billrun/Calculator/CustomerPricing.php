@@ -92,21 +92,20 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Balance $balance
 	 */
 	protected $balance;
-	
+
 	/**
 	 * prepaid minimum balance volume
 	 * 
 	 * @var float
 	 */
 	protected $min_balance_volume = null;
-	
+
 	/**
 	 * prepaid minimum balance cost
 	 * 
 	 * @var float
 	 */
 	protected $min_balance_cost = null;
-
 
 	/**
 	 * call offset
@@ -173,6 +172,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public function getCallOffset() {
 		return $this->call_offset;
+	}
+	
+	public function prepareData($lines) {
+		
 	}
 
 	/**
@@ -253,7 +256,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!empty($interconnect_arate_key)) {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
-			
+
 			if (isset($rate['params']['interconnect']) && $rate['params']['interconnect']) {
 				$row['interconnect_arate_key'] = $rate['key'];
 			}
@@ -498,8 +501,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$isNegative = false;
 		}
-		$price = 0;
-		foreach ($tariff['rate'] as $currRate) {
+		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume);
+		$ret = $accessPrice + $price;
+		return ($isNegative ? $ret * (-1) : $ret);
+	}
+
+	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
+		$charge = 0;
+		foreach ($tariffs as $currRate) {
 			if (!isset($currRate['from'])) {
 				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
 			}
@@ -517,15 +526,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ceil = true;
 			}
 			if ($ceil) {
-				$price += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
+				$charge += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
 			} else {
-				$price += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
+				$charge += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
 			}
 			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
 			$lastRate = $currRate;
 		}
-		$ret = $accessPrice + $price;
-		return ($isNegative ? $ret * (-1) : $ret);
+		return $charge;
 	}
 
 	/**
@@ -541,7 +549,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
 		// Check if the price is enough for default usagev
-		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev',  0, 'float'); // float avoid set type to int
+		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 0, 'float'); // float avoid set type to int
 		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset);
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
@@ -782,7 +790,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
 	}
-	
+
 	protected function initMinBalanceValues($rate, $usaget, $plan) {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
