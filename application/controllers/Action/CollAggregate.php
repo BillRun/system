@@ -29,7 +29,7 @@ class AggregateAction extends ApiAction {
 			Billrun_Factory::log()->log("Aggregate API Input: " . print_R($request, 1), Zend_Log::DEBUG);
 			$config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
 
-			if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE) {
+			if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE || (!is_array($pipelines))) {
 				$this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
 				return TRUE;
 			}
@@ -46,23 +46,23 @@ class AggregateAction extends ApiAction {
 				return TRUE;
 			}
 			if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-				$collection = $request['collection'];
+			$collection = $request['collection'];
 				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines));
-				$entities = array_map(function($ele) {
-					return $ele->getRawData();
-				}, $entities);
+			$entities = array_map(function($ele) {
+				return $ele->getRawData();
+			}, $entities);
 
-				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-				$ret = array(
-					array(
-						'status' => 1,
-						'desc' => 'success',
-						'input' => $request,
-						'details' => $entities,
-					)
-				);
+			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+			$ret = array(
+				array(
+					'status' => 1,
+					'desc' => 'success',
+					'input' => $request,
+					'details' => $entities,
+				)
+			);
 
-				$this->getController()->setOutput($ret);
+			$this->getController()->setOutput($ret);
 			} else {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
 				return TRUE;
