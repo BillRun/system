@@ -115,15 +115,13 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                    array('$match' => array('sid' => array('$in' => $sids)) ),
-                    array('$project' => array('sid'=>1,'urt'=>1,'type'=>1,
-                                                'urt_recharge'=> array('$cond' => array('if' => array('$eq'=>array('$type','')),'then'=>'$urt','else'=> 0)),
-                                                'urt_transaction'=> array('$cond' => array('if' => array('$ne'=>array('$type','')),'then'=>'$urt','else'=> 0))
+                            array('$match' => array('sid' => array('$in' => $sids)) ),
+                            array('$project' => array('sid'=>1,'urt'=>1,'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
                         )),
-                    array('$group'=>array('_id'=>'$sid', 'sid'=> array('$first'=>'$sid'), 'urt_transaction' =>array('$max'=>'$urt_transaction'), 'urt_recharge'=> array('$max'=>'$urt_recharge') )) 
+                    array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$max'=>'$urt') )) 
                 ), array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
-			$this->transactions[$transaction['sid']] = $transaction;
+			$this->transactions[$transaction['sid']][$transaction['type']] = $transaction['urt'];
 		}
         }
         
@@ -157,7 +155,9 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	}
 
 	protected function lastSidTransactionDate($sid, $parameters, $line) {
-		return isset($this->transactions[$sid]) ? $this->translateUrt($this->transactions[$sid][$parameters['field']], $parameters) : ''; // This query takes long time, so, currently, we are disabling it
+		return isset($this->transactions[$sid][$parameters['field']]) ? 
+                                $this->translateUrt($this->transactions[$sid][$parameters['field']], $parameters) :
+                                '';
 	}
 	protected function getBalancesForSid($sid) {
 		return (isset($this->balances[$sid]) ? $this->balances[$sid] : array());
