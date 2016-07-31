@@ -147,7 +147,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getLastRunDate($type) {
-		$lastRun = $this->db->logCollection()->query(array('source' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
+		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
 		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof MongoDate) ? new MongoDate(0) : $lastRun['generated_time'];
 	}
 
@@ -164,7 +164,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getNextSequenceData($type) {
-		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source' => $type))->cursor()->sort(array('seq' => -1))->limit(1)->current();
+		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('seq' => -1))->limit(1)->current();
 		$seq = empty($lastFile['seq']) ? 0 : $lastFile['seq'];
 
 		return ( ++$seq) % 10000;
@@ -217,7 +217,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 					} else if (function_exists($trans['translation']['function'])) {
 						$line[$key] = call_user_func($trans['translation']['function'], $line[$key]);
 					} else {
-						Billrun_Factory::log("WTF");
+						Billrun_Factory::log("Couldn't translate field $key",Zend_Log::ERR);
 					}
 					break;
 				case 'regex' :
@@ -416,6 +416,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		if (!$plan->isEmpty()) {
 			return $plan['external_id'];
 		}
+	}
+        
+        protected function getServiceProvider($value, $parameters, $line) {
+            return $this->serviceProviders[$line[$parameters['key']]][$line[$parameters['field']]];		
 	}
 
 }

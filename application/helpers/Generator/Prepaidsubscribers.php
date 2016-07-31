@@ -36,13 +36,11 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PREPAID_SUBSCRIBERS_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PREPAID_SUBSCRIBERS_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 	
 	public function load() {
 		$this->data = array();
-		//Billrun_Factory::log("generator entities loaded: " . count($this->data), Zend_Log::INFO);
-
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
 	}
 
@@ -62,7 +60,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 				array(array('$limit' => $subscribersLimit))
 			);
 			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
-			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('allowDiskUse' => true)); //TODO how to perform it on the secondaries?
+			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('allowDiskUse' => true));
 			
 			$sids = array();
 			foreach ($this->data as $line) {
