@@ -42,44 +42,39 @@ class CreditGuardAction extends ApiAction {
 		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
 		// Validating that not too much time passed.
 		
-		// Signal starting process.
-		$this->signalStartingProcess($aid, $timestamp);
-		
 		$this->getToken($aid);
 		$url_array = parse_url($this->url);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
 		$this->CG_transaction_id = $str_response['txId'];	
+		
+		// Signal starting process.
+		$this->signalStartingProcess($aid, $timestamp);
+		
 		$this->forceRedirect($this->url);
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
-		// TODO: Maybe we should use $this->cache but I can't understand it
-		$cache = Billrun_Factory::cache();
-		if(empty($cache)) {
-			// TODO: This can be a security breach
+		$cgColl = Billrun_Factory::db()->creditguardCollection();
+		
+		// Get is started
+		// TODO: Move to DB
+		$query = array("tx" => $this->CG_transaction_id, "aid" => $aid);
+		$cgRow = $cgColl->query($query)->cursor()->current();
+		
+		if(!$cgRow->isEmpty()) {
+			if(isset($cgRow['done'])) { 
+			   // Blocking relayed message.
+			   return;
+			}
+			
+			// TODO: Still blocking? Relaying a mesage after the first did not finish?
 			return;
 		}
 		
-		// Get is started
-		$isStartedKey = "credit_in_process." . $aid;
-		$startedIndication = $cache->get($isStartedKey);
-		if(!empty($startedIndication)) {
-			list($started, $when) = each($startedIndication);
-			
-			// Check how long has passed.
-			$timePassed =  $timestamp - $when;
-			
-			// TODO: Two hours, should we change it?
-			if($timePassed < 7200) {
-				// Block the request
-				$cache->set($isStartedKey, array(false => $when));
-				return;
-			}
-		}
-		
 		// Signal start process
-		$cache->set($isStartedKey, array(true => $timestamp));
+		$query['t'] = $timestamp;
+		$cgColl->insert($query);
 	}
 	
 	protected function forceRedirect($uri) {
@@ -95,26 +90,15 @@ class CreditGuardAction extends ApiAction {
 	 * @return data - Request data if validated, null if error.
 	 */
 	public function validateData($request) {
-		// TODO: Validate all the fields in the data! Timestamp etc, we need to define those fields!
-		// Get the public key file.
-//		$publicKey = pathinfo(BILLRUN_CONFIG_PATH, PATHINFO_FILENAME) . ".pem";
-		
-		// Make sure it exists
-//		if(!file_exists($publicKey)) {
-//			Billrun_Factory::log("No public key for client!", Zend_Log::CRIT);
-//			return null;
-//		}
-		
-		// fetch public key from certificate and ready it
-//		$pubkeyid = openssl_pkey_get_public($publicKey);
-		
 		$data = $request->get("data");
 		$signature = $request->get("signature");
 
 		$creditGuardColl = Billrun_Factory::db()->creditguardCollection();
+		
 		// Get the password.
-		$creditGuardRow = $creditGuardColl->query(array("client" => Billrun_Factory::config()->getEnv()))->cursor()->current();
-		if($creditGuardRow->isEmpty() || isset($creditGuardRow['s'])) {
+		$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
+		$creditGuardRow = $creditGuardColl->query($passQuery)->cursor()->current();
+		if($creditGuardRow->isEmpty() || !isset($creditGuardRow['s'])) {
 			return null;
 		}
 		
@@ -122,31 +106,15 @@ class CreditGuardAction extends ApiAction {
 		$secret = $creditGuardRow['s'];
 		
 		// TODO: Validate the secret (length, non zero etc.)
-		$hashResult = hash_hmac("sha256", $data, $secret);
+		$hashResult = hash_hmac("sha512", $data, $secret);
 		
 		// state whether signature is okay or not
-//		$ok = openssl_verify($data, $signature, $pubkeyid);
 		$validData = null;
 	
 		if(hash_equals($signature, $hashResult)) {
 			$validData = $data;
 		}
 		return $validData;
-		
-//		// TODO: I am leaving this code here, for testing while we are 
-//		// still in development
-//		if ($ok == 1) {
-//			echo "good";
-//			$validData = $data;
-//		} elseif ($ok == 0) {
-//			echo "bad";
-//		} else {
-//			echo "ugly, error checking signature";
-//		}
-//		// free the key from memory
-//		openssl_free_key($pubkeyid);
-//		
-//		return $validData;
 	}
 	
 	public function getToken($aid) {

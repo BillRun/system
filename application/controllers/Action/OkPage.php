@@ -31,16 +31,12 @@ class OkPageAction extends ApiAction {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
-//		$cursor = $this->subscribers->query(array('CG_transaction_id' => $transaction_id))->cursor();
-//		if (count($cursor) === 0){
-//			return $this->setError("Wrong Transaction ID", $request);
-//		}
 		if ($this->getTransactionDetails($transaction_id) === FALSE){
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
 		// Validate the process.
-		if(!$this->validateCreditGuardProcess()) {
+		if(!$this->validateCreditGuardProcess($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);			
 		}
 	}
@@ -49,42 +45,35 @@ class OkPageAction extends ApiAction {
 	 * Check that the process that has now ended, actually started, and not too long ago.
 	 * @return boolean
 	 */
-	protected function validateCreditGuardProcess() {
-		// TODO: Maybe we should use $this->cache but I can't understand it
-		$cache = Billrun_Factory::cache();
-		if(empty($cache)) {
-			// TODO: This can be a security breach
-			return true;
-		}
+	protected function validateCreditGuardProcess($transaction_id) {
+		$cgColl = Billrun_Factory::db()->creditguardCollection();
 		
 		// Get is started
-		$isStartedKey = "credit_in_process." . $this->aid;
-		$startedIndication = $cache->get($isStartedKey);
-		if(empty($startedIndication)) {
-			return false;
-		}
-		
-		// Remove the value from the cache
-		$cache->remove($isStartedKey);
-		
-		list($started, $when) = each($startedIndication);
-		
-		if($started !== true) {
-			// TODO: If we put too many different error message, it can leak information
-			// about how are code looks
+		$query = array("tx" => $transaction_id, "aid" => $this->aid);
+		$cgRow = $cgColl->query($query)->cursor()->current();
+		if($cgRow->isEmpty()) {
+			// Received message for completed charge, 
+			// but no indication for charge start
 			return false;
 		}
 		
 		// Check how long has passed.
-		$timePassed = time() - $when;
+		$timePassed = time() - $cgRow['t'];
 		
 		// Three minutes
 		// TODO: What value should we put here?
-		if($timePassed > 180) {
-			return false;
+		// TODO: Change to 4 hours, move to conf
+		if($timePassed > 60*60*4) {
+			// Change indication in DB for failure.
+			$cgRow['done'] = false;
+		} else {
+			// Signal done
+			$cgRow['done'] = true;	
 		}
 		
-		return true;
+		$cgColl->updateEntity($cgRow);
+		
+		return $cgRow['done'];
 	}
 	
 	public function getTransactionDetails($txId) {
