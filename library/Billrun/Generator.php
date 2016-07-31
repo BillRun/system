@@ -117,9 +117,9 @@ abstract class Billrun_Generator extends Billrun_Base {
 		}
 		
 		if (isset($options['export']['dir'])) {
-			$this->export_dir = $options['export']['dir'];
+			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath($options['export']['dir']);
 		} else {
-			$this->export_dir = Billrun_Factory::config()->getConfigValue(static::$type . '.export.dir');
+			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export.dir'));
 		}
 	}
 
