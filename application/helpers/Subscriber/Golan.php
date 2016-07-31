@@ -325,7 +325,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										$credit['subscriber_id'] = $sid;
 										$credit['plan'] = 'ACCOUNT';
 									}
-									$credit['amount_without_vat'] = $credit['amount_without_vat'] * $concat['data']['fraction'];
+									$credit['source_amount_without_vat'] = $credit['amount_without_vat'];
+									$credit['amount_without_vat'] = $this->isFractionNeeded($credit) ? ($credit['amount_without_vat'] * $concat['data']['fraction']) : $credit['amount_without_vat'];
 									$credits[] = $credit;
 								}
 								$concat['data']['credits'] = $credits;
@@ -512,6 +513,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $this->next_plan;
 	}
+	
+	
+	public function isFractionNeeded($credit){
+		if (($credit['promotion'] == true) || ($credit['sid'] == 0)){
+			return true;
+		}
+		return false;
+	}
+	
 	
 	public function getFlatPrice($fraction = 1) {
 		if ($this->billing_method == 'prepaid') {
