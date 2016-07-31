@@ -48,9 +48,9 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		}
 
 		if (isset($options['path'])) {
-			$this->srcPath = $options['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['path']);
 		} else if (isset($options['receiver']['path'])) {
-			$this->srcPath = $options['receiver']['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['receiver']['path']);
 		}
 
 		if (isset($options['receiver']['sort'])) {
