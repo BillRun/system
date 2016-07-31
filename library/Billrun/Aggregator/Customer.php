@@ -234,14 +234,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						Billrun_Factory::log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
 						$deactivated_subscribers[] = array("sid" => $sid);
 					}
-				}
-				else {
+				} else {
 					$subscriber_status = "open";
 				}
 				foreach ($deactivated_subscribers as $value) {
 					
 				}
-				$manual_lines = $this->saveFlatLines($subscriber, $billrun_key);
+				$manual_lines = array_merge($manual_lines, $this->saveFlatLines($subscriber, $billrun_key));
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
 				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
@@ -256,18 +255,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
 				continue;
 			}
-			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::INFO);
+			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
 			if ($account_billrun->save() === false) {
 				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
 				continue;
 			}
 			$this->successfulAccounts[] = $accid;
-			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::INFO);
+			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
 
 			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
-			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_Log::INFO);
+			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
 			$account_billrun->close($this->min_invoice_id);
-			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_Log::INFO);
+			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
 			if ($this->bulkAccountPreload) {
 				Billrun_Billrun::clearPreLoadedLines(array($accid));
@@ -301,10 +300,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function saveFlatLines($subscriber, $billrun_key) {
 		$flatEntries = $subscriber->getFlatEntries($billrun_key, true);
 		try {
-			$flatEntriesRaw = array_map(function($obj){return $obj->getRawData();}, $flatEntries);
-			$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
-			if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
-				Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
+			if ($flatEntries) {
+				$flatEntriesRaw = array_map(function($obj) {
+					return $obj->getRawData();
+				}, $flatEntries);
+				$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
+				if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
+					Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
+				}
 			}
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {

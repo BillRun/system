@@ -129,7 +129,6 @@ class Billrun_Billrun {
 	public function addSubscriber($subscriber, $status) {
 		$current_plan_name = $subscriber->plan;
 		if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-			Billrun_Factory::log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
 			$current_plan_ref = null;
 		} else {
 			$current_plan_ref = $subscriber->getPlan()->createRef();
@@ -725,15 +724,15 @@ class Billrun_Billrun {
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
-		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
+		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
 		$account_lines = $this->getAccountLines($this->aid);
 
 		$lines = array_merge($account_lines, $manual_lines);
 		$this->filterSubscribers($lines, $deactivated_subscribers);
-		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
-		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::INFO);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::DEBUG);
 		$this->updateTotals();
 		return $updatedLines;
 	}
@@ -849,7 +848,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 
-		Billrun_Factory::log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);
 		$addCount = $bufferCount = 0;
 		do {
 			$bufferCount += $addCount;
@@ -861,7 +860,7 @@ class Billrun_Billrun {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);
 		foreach ($aids as $aid) {
 			if (!isset($ret[$aid])) {
 				$ret[$aid] = array();

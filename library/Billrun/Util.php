@@ -1323,7 +1323,7 @@ class Billrun_Util {
 		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
 	}
 	
-
+	
 		/**
 	 * Return rounded amount for charging
 	 * @param float $amount
