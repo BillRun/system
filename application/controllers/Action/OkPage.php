@@ -25,16 +25,16 @@ class OkPageAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+//		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$transaction_id = $request->get("txId");
 		if (is_null($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
-		$cursor = $this->subscribers->query(array('CG_transaction_id' => $transaction_id))->cursor();
-		if (count($cursor) === 0){
-			return $this->setError("Wrong Transaction ID", $request);
-		}
+//		$cursor = $this->subscribers->query(array('CG_transaction_id' => $transaction_id))->cursor();
+//		if (count($cursor) === 0){
+//			return $this->setError("Wrong Transaction ID", $request);
+//		}
 		if ($this->getTransactionDetails($transaction_id) === FALSE){
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
