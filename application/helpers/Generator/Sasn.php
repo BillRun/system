@@ -33,7 +33,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'SASN_PREP_' . sprintf('%05.5d', $seq) . '_' . date('YmdHis'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'SASN_PREP_' . sprintf('%05.5d', $seq) . '_' . date('YmdHis',$this->startTime), 'source' => static::$type);
 	}
 
 	//--------------------------------------------  Protected ------------------------------------------------

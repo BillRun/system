@@ -25,7 +25,7 @@ class Generator_Payments extends Billrun_Generator_ConfigurableCDRAggregationCsv
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'Brun_PS_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'Brun_PS_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 
 	// ------------------------------------ Protected -----------------------------------------
