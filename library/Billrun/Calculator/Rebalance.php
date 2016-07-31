@@ -83,5 +83,9 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 	public function removeFromQueue() {
 		
 	}
+	
+	public function prepareData($lines) {
+		
+	}
 
 }

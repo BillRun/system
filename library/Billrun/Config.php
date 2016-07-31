@@ -120,12 +120,15 @@ class Billrun_Config {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
 			if ($configColl) {
-				$dbConfig = $configColl->query()
+				$dbCursor = $configColl->query()
 					->cursor()->setReadPreference('RP_PRIMARY')
 					->sort(array('_id' => -1))
 					->limit(1)
-					->current()
-					->getRawData();
+					->current();
+				if ($dbCursor->isEmpty()) {
+					return true;
+				}
+				$dbConfig = $dbCursor->getRawData();
 
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
@@ -133,6 +136,7 @@ class Billrun_Config {
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
+			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			return false;
 		}
 	}

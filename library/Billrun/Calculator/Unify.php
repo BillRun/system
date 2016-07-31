@@ -485,5 +485,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		}
 		return self::$calcs[$type];
 	}
+	
+	public function prepareData($lines) {
+		
+	}
 
 }
