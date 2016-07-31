@@ -1313,7 +1313,7 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 	
-
+	
 		/**
 	 * Return rounded amount for charging
 	 * @param float $amount
@@ -1345,6 +1345,8 @@ class Billrun_Util {
 		return is_numeric($number) && ($number == intval($number));
 	}
 
-
+	public static function getCompanyName() {
+		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
 
 }

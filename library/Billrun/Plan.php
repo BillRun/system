@@ -361,19 +361,31 @@ class Billrun_Plan {
 	 * @return float the price of the plan without VAT.
 	 */
 	public function getPrice($firstActivation, $from, $to) {
-		$startOffset = static::getMonthsDiff($firstActivation, $from);
+		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
 		$endOffset = static::getMonthsDiff($firstActivation, $to);
 		$charge = 0;
-		if ($this->getPeriodicity() == 'month') {
-			foreach ($this->data['price'] as $index => $tariff) {
-				if ($tariff['from'] <= $startOffset && $tariff['to'] >= $endOffset) {
-					$charge += ($endOffset - $startOffset) * $tariff['price'];
+		if (!$this->isUpfrontPayment()) {
+			if ($this->getPeriodicity() == 'month') {
+				foreach ($this->data['price'] as $tariff) {
+					if ($tariff['from'] <= $startOffset && $tariff['to'] >= $endOffset) {
+						$charge += ($endOffset - $startOffset) * $tariff['price'];
+					} else if ($startOffset >= $tariff['from'] && $startOffset <= $tariff['to'] && $endOffset >= $tariff['to']) {
+						$charge += ($tariff['to'] - $startOffset) * $tariff['price'];
+					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['to']) {
+						$charge += ($tariff['to'] - $tariff['from']) * $tariff['price'];
+					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['from'] && $endOffset < $tariff['to']) {
+						$charge += ($endOffset - $tariff['from']) * $tariff['price'];
+					}
 				}
-				else if ($tariff['from'] <= $startOffset && $tariff['to'] < $endOffset) {
-					$charge += ($tariff['to'] - $startOffset) * $tariff['price'];
-				}
-				else if ($tariff['from'] > $startOffset && $tariff['to'] <= $endOffset) {
-					$charge += ($endOffset - $tariff['from']) * $tariff['price'];
+			}
+		} else {
+			if ($this->getPeriodicity() == 'year') {
+				$startOffset = $startOffset / 12;
+			}
+			foreach ($this->data['price'] as $tariff) {
+				if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
+					$charge = $tariff['price'];
+					break;
 				}
 			}
 		}
@@ -437,6 +449,12 @@ class Billrun_Plan {
 		return !empty($this->data['upfront']);
 	}
 
+	/**
+	 * Function calculates inclusive diff. i.e. identical dates return diff > 0
+	 * @param type $from
+	 * @param type $to
+	 * @return type
+	 */
 	public static function getMonthsDiff($from, $to) {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
@@ -458,7 +476,35 @@ class Billrun_Plan {
 				$months = $maxDate->format('m') + 11 - $minDate->format('m') + ($yearDiff - 1) * 12;
 				break;
 		}
-		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + ($maxDate->format('t') - $maxDate->format('d') + 1) / $maxDate->format('t') + $months;
+		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
+	}
+
+	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {
+		$billing_start_date = Billrun_Billrun::getStartTime($billrunKey);
+		$billing_end_date = Billrun_Billrun::getEndTime($billrunKey);
+		$days_in_month = (int) date('t', $billing_start_date);
+		$temp_start = strtotime($start_date);
+		$temp_end = is_null($end_date) ? PHP_INT_MAX : strtotime($end_date);
+		$start = $billing_start_date > $temp_start ? $billing_start_date : $temp_start;
+		$end = $billing_end_date < $temp_end ? $billing_end_date : $temp_end;
+		if ($end < $start) {
+			return 0;
+		}
+		$start_day = date('j', $start);
+		$end_day = date('j', $end);
+		$start_month = date('F', $start);
+		$end_month = date('F', $end);
+
+		if ($start_month == $end_month) {
+			$days_in_plan = (int) $end_day - (int) $start_day + 1;
+		} else {
+			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
+			$days_in_current_month = (int) $end_day;
+			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+		}
+
+		$fraction = $days_in_plan / $days_in_month;
+		return $fraction;
 	}
 
 }
