@@ -111,7 +111,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['path'])) {
-			$this->loadFile($options['path']);
+			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
 		}
 		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
@@ -141,9 +141,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
 		if (isset($options['backup_path'])) {
-			$this->backupPaths = $options['backup_path'];
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} else {
-			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType()));
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType())));
 		}
 	}
 
