@@ -531,15 +531,16 @@ class Billrun_Util {
 		if (is_null($defaultPrefix)) {
 			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
 		}
-		if (substr($msisdn, 0, 3) != $defaultPrefix) {
+		$prefixLength = strlen($defaultPrefix);
+		if (substr($msisdn, 0, $prefixLength) != $defaultPrefix) {
 			return $msisdn;
 		}
-		if (substr($msisdn, 0, 4) == $defaultPrefix . '1') {
+		if (substr($msisdn, 0, $prefixLength+1) == $defaultPrefix . '1') {
 			$prefix = '';
 		} else {
 			$prefix = '0';
 		}
-		return $prefix . substr($msisdn, (-1) * strlen($msisdn) + 3);
+		return $prefix . substr($msisdn, (-1) * strlen($msisdn) + $prefixLength);
 	}
 
 	/**
