@@ -15,10 +15,12 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class RatesAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	protected $model;
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute rates api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$this->model = new RatesModel(array('sort' => array('provider' => 1, 'from' => 1)));
@@ -170,6 +172,10 @@ class RatesAction extends ApiAction {
 			}
 		}
 		return $retParam;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

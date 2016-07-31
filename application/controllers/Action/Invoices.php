@@ -9,8 +9,10 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 class AccountInvoicesAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		try {
 			
@@ -123,5 +125,9 @@ class AccountInvoicesAction extends ApiAction {
 		}
 		return $arr;
 	}
-	
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+	}
+
 }
