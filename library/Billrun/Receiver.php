@@ -66,6 +66,8 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900) {
 			$this->file_fetch_orphan_time = $options['receiver']['orphan_time'];
 		}
+		
+		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 	}
 
 	/**
