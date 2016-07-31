@@ -22,8 +22,6 @@ class CreditGuardAction extends ApiAction {
 	protected $CG_transaction_id;
 
 	public function execute() { 
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-		$today = new MongoDate();
 		$request = $this->getRequest();
 		
 		// Validate the data.
@@ -37,28 +35,25 @@ class CreditGuardAction extends ApiAction {
 			return $this->setError("need to pass numeric aid", $request);
 		}
 		
-		if(!isset($jsonData['hash']) || is_null(($hash = $jsonData['hash']))) {
+		if(!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
 			return $this->setError("Invalid arguments", $request);			
 		}
 		
-		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
-		if ($hash != $calculated_hash) {
-			return $this->setError("Failed to validate request.", $request);						
-		}
+		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
+		// Validating that not too much time passed.
 		
 		// Signal starting process.
-		$this->signalStartingProcess($aid);
+		$this->signalStartingProcess($aid, $timestamp);
 		
 		$this->getToken($aid);
 		$url_array = parse_url($this->url);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
 		$this->CG_transaction_id = $str_response['txId'];	
-		$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
 		$this->forceRedirect($this->url);
 	}
 
-	protected function signalStartingProcess($aid) {
+	protected function signalStartingProcess($aid, $timestamp) {
 		// TODO: Maybe we should use $this->cache but I can't understand it
 		$cache = Billrun_Factory::cache();
 		if(empty($cache)) {
@@ -73,7 +68,7 @@ class CreditGuardAction extends ApiAction {
 			list($started, $when) = each($startedIndication);
 			
 			// Check how long has passed.
-			$timePassed = time() - $when;
+			$timePassed =  $timestamp - $when;
 			
 			// TODO: Two hours, should we change it?
 			if($timePassed < 7200) {
@@ -84,7 +79,7 @@ class CreditGuardAction extends ApiAction {
 		}
 		
 		// Signal start process
-		$cache->set($isStartedKey, array(true => time()));
+		$cache->set($isStartedKey, array(true => $timestamp));
 	}
 	
 	protected function forceRedirect($uri) {
@@ -102,38 +97,56 @@ class CreditGuardAction extends ApiAction {
 	public function validateData($request) {
 		// TODO: Validate all the fields in the data! Timestamp etc, we need to define those fields!
 		// Get the public key file.
-		$publicKey = pathinfo(BILLRUN_CONFIG_PATH, PATHINFO_FILENAME) . ".pem";
+//		$publicKey = pathinfo(BILLRUN_CONFIG_PATH, PATHINFO_FILENAME) . ".pem";
 		
 		// Make sure it exists
-		if(!file_exists($publicKey)) {
-			Billrun_Factory::log("No public key for client!", Zend_Log::CRIT);
-			return null;
-		}
+//		if(!file_exists($publicKey)) {
+//			Billrun_Factory::log("No public key for client!", Zend_Log::CRIT);
+//			return null;
+//		}
 		
 		// fetch public key from certificate and ready it
-		$pubkeyid = openssl_pkey_get_public($publicKey);
+//		$pubkeyid = openssl_pkey_get_public($publicKey);
 		
 		$data = $request->get("data");
 		$signature = $request->get("signature");
 
-		// state whether signature is okay or not
-		$ok = openssl_verify($data, $signature, $pubkeyid);
-		$validData = null;
-		
-		// TODO: I am leaving this code here, for testing while we are 
-		// still in development
-		if ($ok == 1) {
-			echo "good";
-			$validData = $data;
-		} elseif ($ok == 0) {
-			echo "bad";
-		} else {
-			echo "ugly, error checking signature";
+		$creditGuardColl = Billrun_Factory::db()->creditguardCollection();
+		// Get the password.
+		$creditGuardRow = $creditGuardColl->query(array("client" => Billrun_Factory::config()->getEnv()))->cursor()->current();
+		if($creditGuardRow->isEmpty() || isset($creditGuardRow['s'])) {
+			return null;
 		}
-		// free the key from memory
-		openssl_free_key($pubkeyid);
 		
+		// Get the secret
+		$secret = $creditGuardRow['s'];
+		
+		// TODO: Validate the secret (length, non zero etc.)
+		$hashResult = hash_hmac("sha256", $data, $secret);
+		
+		// state whether signature is okay or not
+//		$ok = openssl_verify($data, $signature, $pubkeyid);
+		$validData = null;
+	
+		if(hash_equals($signature, $hashResult)) {
+			$validData = $data;
+		}
 		return $validData;
+		
+//		// TODO: I am leaving this code here, for testing while we are 
+//		// still in development
+//		if ($ok == 1) {
+//			echo "good";
+//			$validData = $data;
+//		} elseif ($ok == 0) {
+//			echo "bad";
+//		} else {
+//			echo "ugly, error checking signature";
+//		}
+//		// free the key from memory
+//		openssl_free_key($pubkeyid);
+//		
+//		return $validData;
 	}
 	
 	public function getToken($aid) {

@@ -43,9 +43,6 @@ class OkPageAction extends ApiAction {
 		if(!$this->validateCreditGuardProcess()) {
 			return $this->setError("Operation Failed. Try Again...", $request);			
 		}
-		
-		$today = new MongoDate();
-		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
 	}
 
 	/**
