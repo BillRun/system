@@ -784,6 +784,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
 			} else if (stripos($usaget, 'roaming') === TRUE) {
+				if ($usaget == 'roaming_callback') {
+					$event['called_number'] = $event['destination_number'];
+				}
 				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
 			}
 			// backward compatibility to local calls without vlr
