@@ -127,18 +127,18 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				),
 				'$or' => array(
 					array(
-						'from' => array(
-							'$lt' => $endTimeMongoDate,
+						'from' => array(// plan started during billing cycle
 							'$gte' => $startTimeMongoDate,
+							'$lt' => $endTimeMongoDate,
 						),
 					),
 					array(
-						'to' => array(
-							'$lt' => $endTimeMongoDate,
+						'to' => array(// plan ended during billing cycle
 							'$gte' => $startTimeMongoDate,
+							'$lt' => $endTimeMongoDate,
 						),
 					),
-					array(
+					array(// plan started before billing cycle and ends after
 						'from' => array(
 							'$lt' => $startTimeMongoDate
 						),
@@ -146,7 +146,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 							'$gte' => $endTimeMongoDate,
 						),
 					),
-					array(// used for prepaid plans
+					array(// searches for a next plan. used for prepaid plans
 						'from' => array(
 							'$lte' => $endTimeMongoDate,
 						),
@@ -158,7 +158,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			)
 		);
 		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = $aid;
+			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
 		}
 		$pipelines[] = array(
 			'$sort' => array(
@@ -180,6 +180,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'from' => '$from',
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
+						'plan_deactivation' => '$plan_deactivation',
 					),
 				),
 			),
@@ -205,6 +206,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'from' => '$sub_plans.from',
 						'to' => '$sub_plans.to',
 						'plan_activation' => '$sub_plans.plan_activation',
+						'plan_deactivation' => '$sub_plans.plan_deactivation',
 					),
 				),
 			),
@@ -246,7 +248,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					$subscriberEntry['sid'] = $sid;
 					$subscriberEntry['next_plan'] = NULL;
 					$subscriberEntry['next_plan_activation'] = NULL;
-					$subscriberEntry['time'] = $endTime - 1;
+					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
 					$activeDates = array();
 					foreach ($subscriberPlan['plan_dates'] as $dates) {
 						if ($dates['to']->sec > $endTime) { // we found the next_plan
@@ -258,16 +260,29 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						}
 						$from = date(Billrun_Base::base_dateformat, max($startTime, $dates['from']->sec));
 						$to = date(Billrun_Base::base_dateformat, min($endTime - 1, $dates['to']->sec)); // make the 'to' inclusive
-						$planActivation = date(Billrun_Base::base_dateformat, max($startTime, $dates['plan_activation']->sec));
+						$planActivation = date(Billrun_Base::base_dateformat, $dates['plan_activation']->sec);
+						if (!empty($dates['plan_deactivation'])) {
+							$planDeactivation = date(Billrun_Base::base_dateformat, $dates['plan_deactivation']->sec);
+						} else {
+							$planDeactivation = NULL;
+						}
 						if ($activeDates) {
 							$lastTo = &$activeDates[count($activeDates) - 1]['to'];
 							if ((($lastTo != $from) && (date(Billrun_Base::base_dateformat, strtotime('+1 day', strtotime($lastTo))) == $from)) || $lastTo == $from) {
 								$lastTo = $to;
 							} else {
-								$activeDates[] = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+								$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+								if (!empty($planDeactivation)) {
+									$activeDateArr['plan_deactivation'] = $planDeactivation;
+								}
+								$activeDates[] = $activeDateArr;
 							}
 						} else {
-							$activeDates[] = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+							$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+							if (!empty($planDeactivation)) {
+								$activeDateArr['plan_deactivation'] = $planDeactivation;
+							}
+							$activeDates[] = $activeDateArr;
 						}
 					}
 					$subscriberEntry['plans'][] = array('name' => $plan, 'active_dates' => $activeDates);
@@ -310,14 +325,13 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	public function getListFromFile($file_path, $time) {
 		
 	}
-	
+
 	public function getCredits($billrun_key, $retEntity = false) {
 		return array();
 	}
-	
+
 	public function getServices($billrun_key, $retEntity = false) {
 		return array();
 	}
-
 
 }
