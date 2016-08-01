@@ -14,10 +14,12 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class AdjustPaymentsAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $payment_methods = array('cash', 'cheque', 'credit', 'wire_transfer', 'write_off');
 
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('AdjustPayment API call with params: ' . print_r($request, 1), Zend_Log::INFO);
 		try {
@@ -117,6 +119,10 @@ class AdjustPaymentsAction extends ApiAction {
 		} catch (Exception $ex) {
 			return $this->setError($ex->getMessage(), $request->getPost());
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

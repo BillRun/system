@@ -15,12 +15,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class FindAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log()->log("Execute find api", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log()->log("Find API Input: " . print_R($request, 1), Zend_Log::DEBUG);
@@ -117,6 +119,10 @@ class FindAction extends ApiAction {
 			}
 		}
 		return $query;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

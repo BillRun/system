@@ -14,8 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class BillAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		try {
 			switch ($request->get('action')) {
@@ -134,6 +136,10 @@ class BillAction extends ApiAction {
 			return FALSE;
 		}
 		return Billrun_Bill::getContractorsInCollection($aids);
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

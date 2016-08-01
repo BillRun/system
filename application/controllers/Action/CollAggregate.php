@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class AggregateAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
 
 	/**
@@ -23,6 +24,8 @@ class AggregateAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
+		
 		try {
 			Billrun_Factory::log()->log("Executed aggregate api", Zend_Log::INFO);
 			$request = $this->getRequest()->getRequest(); // supports GET / POST requests
@@ -119,6 +122,10 @@ class AggregateAction extends ApiAction {
 				$value = new MongoDate(strtotime($value));
 			}
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

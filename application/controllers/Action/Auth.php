@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @author eran
  */
 class AuthAction extends ApiAction  {
+		
 	public function execute() {
 		$params = array_merge($this->getRequest()->getRequest(), $this->getRequest()->getPost());
 		switch(Billrun_Util::getFieldVal($params['action'],'')) {

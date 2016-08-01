@@ -14,12 +14,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Credit.php';
  * @since    0.8
  */
 class BulkCreditAction extends CreditAction {
-
+	
 	/**
 	 * method to execute the bulk credit
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest()->getPost();
 //		$request = $this->getRequest()->getQuery();
 //		$request = $this->getRequest()->getRequest(); // supports GET / POST requests

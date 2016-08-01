@@ -27,6 +27,13 @@ class Billrun_Config {
 	 * @var Yaf_Config
 	 */
 	protected $config;
+	
+	/**
+	 * save all available values for environment while running in production
+	 * 
+	 * @var array
+	 */
+	protected $productionValues = array('prod', 'product', 'production');
 
 	/**
 	 * constructor of the class
@@ -213,7 +220,10 @@ class Billrun_Config {
 	 * @return boolean true if it's production, else false
 	 */
 	public function isProd() {
-		if ($this->checkEnv(array('prod', 'product', 'production'))) {
+		if ($this->checkEnv($this->productionValues)) {
+			return true;
+		}
+		if ($this->isCompanyInProd()) {
 			return true;
 		}
 		return false;
@@ -221,6 +231,10 @@ class Billrun_Config {
 
 	public function toArray() {
 		return $this->config->toArray();
+	}
+	
+	protected function isCompanyInProd() {
+		return in_array($this->getInstance()->getConfigValue("environment"), $this->productionValues);
 	}
 
 }

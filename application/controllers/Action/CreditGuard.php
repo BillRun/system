@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $cgConf;
 	protected $url;
 	protected $subscribers;
@@ -204,6 +205,9 @@ class CreditGuardAction extends ApiAction {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+	}
 
 }
