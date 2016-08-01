@@ -11,7 +11,8 @@
  *
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action {
-
+	use Billrun_ActionManagers_Subscribers_Validator;
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -75,13 +76,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		foreach ($this->update as $field => $value) {
 			$new[$field] = $value;
 		}
-		$newEntity = new Mongodloid_Entity($new);
+		$newEntity = new Billrun_Subscriber_Entity($new, $oldEntity['plan']);
 		$this->collection->save($newEntity, 1);
 		return $newEntity;
 	}
 	
 	protected function closeEntity($entity) {
 		$entity['to'] = $this->time;
+		$entity['plan_deactivation'] = $this->time;
 		$this->collection->save($entity, 1);
 	}
 
@@ -94,8 +96,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
-
-		return true;
+		
+		return $this->validate();
 	}
 
 	/**
@@ -176,6 +178,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		}
 		
 		return true;
+	}
+
+	protected function getSubscriberData() {
+		return $this->update;
 	}
 
 }
