@@ -185,9 +185,41 @@ class Billrun_Config {
 			settype($currConf, $type);
 		}
 
+		// Check if the value is complex.
+		if($this->isComplex($currConf)) {
+			return $this->getComplexValue($currConf);
+		}
+		
 		return $currConf;
 	}
 
+	protected function getComplexValue($complex) {
+		// Get complex wrapper.
+		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
+		if(!@class_exists($name)) {
+			return null;
+		}
+		
+		$wrapper = new $name($complex);
+		return $wrapper->value();
+	}
+	
+	/**
+	 * Check if an object is complex (not primitive or array).
+	 * @return true if complex.
+	 */
+	protected function isComplex($obj) {
+		if(is_scalar($obj)) {
+			return false;
+		}
+		
+		if(!is_array($obj)) {
+			return true;
+		}
+		
+		return isset($obj['t']) && isset($obj['v']);
+	}
+	
 	/**
 	 * method to receive the environment the app running
 	 * 
