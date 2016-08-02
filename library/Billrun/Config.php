@@ -186,21 +186,46 @@ class Billrun_Config {
 		}
 
 		// Check if the value is complex.
-		if($this->isComplex($currConf)) {
-			return $this->getComplexValue($currConf);
+		if($this::isComplex($currConf)) {
+			return $this::getComplexValue($currConf);
 		}
 		
 		return $currConf;
 	}
 
-	protected function getComplexValue($complex) {
+	/**
+	 * Return a wrapper for input data.
+	 * @param mixed $complex - Data to wrap with complex wrapper.
+	 * @return \Billrun_DataTypes_Conf_Base
+	 */
+	public static function getComplexWrapper ($complex) {
 		// Get complex wrapper.
 		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
 		if(!@class_exists($name)) {
 			return null;
 		}
 		
-		$wrapper = new $name($complex);
+		return new $name($complex);
+	}
+	
+	/**
+	 * Check if complex data set is valid by creating a wrapper and validating.
+	 * @param mixed $complex - Complex data
+	 * @return boolean - True if valid.
+	 */
+	public static function isComplexValid($complex) {
+		$wrapper = $this::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return false;
+		}
+		return $wrapper->valid();
+	}
+	
+	protected static function getComplexValue($complex) {
+		$wrapper = $this::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return null;
+		}
 		return $wrapper->value();
 	}
 	
@@ -208,7 +233,7 @@ class Billrun_Config {
 	 * Check if an object is complex (not primitive or array).
 	 * @return true if complex.
 	 */
-	protected function isComplex($obj) {
+	public static function isComplex($obj) {
 		if(is_scalar($obj)) {
 			return false;
 		}
