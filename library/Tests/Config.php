@@ -69,6 +69,26 @@ class Tests_Config extends UnitTestCase {
 			array('v' => null, 't' => "String", "valid" => false, "re" => "/c.*g/", "msg" => "Null instead of string + RE"),
 			array('v' => "defghij", 't' => "String", "valid" => false, "re" => 1, "msg" => "Number as RE"),
 			array('v' => "defghij", 't' => "String", "valid" => true, "re" => null, "msg" => "Null as RE"),
+		
+			// Datetime tests
+			array('v' => "3 seconds", 't' => "DateString", "valid" => true, "msg" => "Valid seconds date"),
+			array('v' => "5 hours", 't' => "DateString", "valid" => true, "msg" => "Valid hours date"),
+			array('v' => "3 days", 't' => "DateString", "valid" => true, "msg" => "Valid days date"),
+			array('v' => "next month", 't' => "DateString", "valid" => true, "msg" => "Valid next month"),
+			array('v' => "2016-05-12", 't' => "DateString", "valid" => true, "msg" => "Valid date"),
+			array('v' => "2016-05-12 00:00:30", 't' => "DateString", "valid" => true, "msg" => "Valid date+time"),
+			array('v' => "July 1st, 2008", 't' => "DateString", "valid" => true, "msg" => "Valid excplicit"),
+		
+			array('v' => "05.2016.12", 't' => "DateString", "valid" => false, "msg" => "Invalid date"),
+			array('v' => "2016-05/12 00:00:30", 't' => "DateString", "valid" => false, "msg" => "Invalid date+time"),
+			array('v' => "Bob 1st, 2008", 't' => "DateString", "valid" => false, "msg" => "Invalid excplicit"),
+		
+			array('v' => "3.9 seconds", 't' => "DateString", "valid" => false, "msg" => "Invalid seconds date"),
+			array('v' => "bla hours", 't' => "DateString", "valid" => false, "msg" => "Invalid hours date"),
+			array('v' => 100, 't' => "DateString", "valid" => false, "msg" => "Invalid positive number date"),
+			array('v' => -100, 't' => "DateString", "valid" => false, "msg" => "Invalid negative number date"),
+			array('v' => null, 't' => "DateString", "valid" => false, "msg" => "Invalid null date"),
+			array('v' => "", 't' => "DateString", "valid" => false, "msg" => "Invalid empty date"),
 		);
 	
 	public function testValid() {
