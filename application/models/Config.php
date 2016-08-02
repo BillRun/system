@@ -98,17 +98,44 @@ class ConfigModel {
 	public function updateConfig($category, $data) {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
+		
+		if(!isset($updatedData[$category])) {
+			// TODO: Do we allow setting values with NEW keys into the settings?
+			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
+			return 0;
+		}
+		
 		if ($category === 'file_types') {
-			if (isset($data['file_type'])) {
-				if ($fileSettings = $this->getFileTypeSettings($updatedData, $data['file_type'])) {
-					$fileSettings = array_merge($fileSettings, $data);
-				} else {
-					$fileSettings = $data;
+			$rawFileSettings = $this->getFileTypeSettings($updatedData, $data['file_type']);
+			if ($rawFileSettings) {
+				$fileSettings = array_merge($rawFileSettings, $data);
+			} else {
+				$fileSettings = $data;
+			}
+			$this->setFileTypeSettings($updatedData, $fileSettings);
+			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+		} else {
+			$record = $updatedData[$category];
+			// Check if complex object.
+			if(!Billrun_Config::isComplex($record)) {
+				// TODO: Do we allow setting?
+				Billrun_Factory::log("Encountered a problem", Zend_Log::NOTICE);
+				return 0;
+			} else {
+				// Set the value for the complex object,
+				$record['v'] = $data;
+				
+				// Validate the complex object.
+				if(!Billrun_Config::isComplexValid($record)) {
+					Billrun_Factory::log("Invalid complex object " . print_r($record,1), Zend_Log::NOTICE);
+					return 0;
 				}
-				$this->setFileTypeSettings($updatedData, $fileSettings);
-				$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+				
+				// Update the config.
+				$updatedData[$category] = $record;
 			}
 		}
+		
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
