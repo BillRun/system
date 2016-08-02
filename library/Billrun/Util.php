@@ -1312,6 +1312,16 @@ class Billrun_Util {
 		}
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
+
+	public static function getBillRunSharedFolderPath($path) {
+		if (empty($path) || !is_string($path)) {
+			return FALSE;
+		}
+		if ($path[0] == DIRECTORY_SEPARATOR) {
+			return $path;
+		}
+		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
+	}
 	
 	
 		/**
