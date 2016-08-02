@@ -16,11 +16,15 @@ class Billrun_DataTypes_Conf_String extends Billrun_DataTypes_Conf_Base {
 		
 		// Check if has reg ex
 		if(!empty($this->reg)) {
+			Billrun_Factory::log("Preg isString: " . is_string($this->reg) . " isValid " . (@preg_match($this->reg, null) === false));
+			
 			// Validate regex.
 			// http://stackoverflow.com/questions/4440626/how-can-i-validate-regex
 			if(!is_string($this->reg) || (@preg_match($this->reg, null) === false)) {
 				return false;
 			}
+			
+			Billrun_Factory::log("Preg matching!");
 			
 			// Validate the regex
 			return (preg_match($this->reg, $this->val) === 1);
