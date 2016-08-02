@@ -68,7 +68,7 @@ class Tests_Config extends UnitTestCase {
 			array('v' => 1, 't' => "String", "valid" => false, "re" => "/c.*g/", "msg" => "Number instead of string + RE"),
 			array('v' => null, 't' => "String", "valid" => false, "re" => "/c.*g/", "msg" => "Null instead of string + RE"),
 			array('v' => "defghij", 't' => "String", "valid" => false, "re" => 1, "msg" => "Number as RE"),
-			array('v' => "defghij", 't' => "String", "valid" => false, "re" => null, "msg" => "Null as RE"),
+			array('v' => "defghij", 't' => "String", "valid" => true, "re" => null, "msg" => "Null as RE"),
 		);
 	
 	public function testValid() {
