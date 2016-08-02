@@ -7,92 +7,44 @@
  */
 $env = null;
 
+$envParamsNames = array('env:', 'environment:');
+$cliArgs = getopt('', array_merge($envParamsNames, array('tenant:')));
+	
 if (!defined('APPLICATION_ENV')) {
-	defineEnvironment();
-}
-define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
-validateEnvironment();
-
-if (!defined('APPLICATION_TENANT')) {
-	$a = getenv('APPLICATION_MULTITENANT');
-	$b = php_sapi_name();
-	if (getenv('APPLICATION_MULTITENANT') && php_sapi_name() === 'cli') { 
-		defineTenant();
-	}
-}
-
-/**
- * Get a value from the CLI context
- * @return string valu to set up
- */
-function getValueFromCLI($opt) {
-	if (!is_array($opt)) {
-		$opt = arra($opt);
-	}
-	$envs = getopt('', $opt);
-	if (!$envs) {
-		return null;
-	}
-	
-	$opts = array_values($envs);
-	if (isset($opts[0])) {
-		return $opts[0];
-	}
-	
-	return null;
-}
-
-/**
- * Define the environment if not yet defined
- */
-function defineEnvironment() {
 	$env = getenv('APPLICATION_ENV');
-
+	
 	// if APPLICATION_ENV not defined and the getenv not find it (not through web server), let's take it by cli opt
 	if (empty($env)) {
-		$env = getValueFromCLI(array('env:', 'environment:'));
-	}
-	
-	// Failed to get environment
-	if (empty($env)) {
-		$errorMessage = 'Environment could not be setup';
-		error_log($errorMessage);
-		die($errorMessage . PHP_EOL);
+		foreach ($envParamsNames as $envParamsName) {
+			$key = str_replace(':', '', $envParamsName);
+			if (isset($cliArgs[$key])) {
+				$env = $cliArgs[$key];
+				break;
+			}
+		}
 	}
 
+	if (empty($env)) {
+		error_log('Environment did not setup!');
+		die('Environment did not setup!' . PHP_EOL);
+	}
+	
 	define('APPLICATION_ENV', $env);
 }
 
-/**
- * Validate the invironment name
- */
-function validateEnvironment() {
-	if (file_exists(BILLRUN_CONFIG_PATH)) {
-		return;
-	}
+define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
-	$errorMessage = 'Configuration file did not found';
-	error_log($errorMessage);
-	die($errorMessage);
+if (!file_exists(BILLRUN_CONFIG_PATH)) {
+	error_log('Configuration file did not found');
+	die('Configuration file did not found');
 }
 
-/**
- * Define the tenant if not yet defined
- */
-function defineTenant() {
-	$tenant = getenv('APPLICATION_TENANT');
-
-	// if APPLICATION_TENANT not defined and the getenv not find it (not through web server), let's take it by cli opt
+if (!defined('APPLICATION_TENANT')) {
+	$tenant = $cliArgs['tenant'];
 	if (empty($tenant)) {
-		$tenant = getValueFromCLI('tenant');
+		error_log('Tenant was not setup!');
+		die('Tenant was not setup!' . PHP_EOL);
 	}
 	
-	// Failed to get tenant
-	if (empty($tenant)) {
-		$errorMessage = 'Tenant could not be setup';
-		error_log($errorMessage);
-		die($errorMessage . PHP_EOL);
-	}
-
-	define('APPLICATION_TENANT', $tenant);
+	define('APPLICATION_TEANANT', $tenant);
 }
