@@ -36,7 +36,7 @@ if (!file_exists(BILLRUN_CONFIG_PATH)) {
 	die('Configuration file did not found');
 }
 
-if (!defined('APPLICATION_TENANT')) {
+if (!defined('APPLICATION_TENANT') && php_sapi_name() === 'cli') {
 	$tenant = $cliArgs['tenant'];
 	if (empty($tenant)) {
 		error_log('Tenant was not setup!');
