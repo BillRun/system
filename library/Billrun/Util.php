@@ -750,6 +750,54 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Get a value from an array by a mongo format key, seperated with dots.
+	 * @param array $array - Array to get value of.
+	 * @param string $key - Dot seperated key.
+	 */
+	public static function getValueByMongoIndex($array, $key) {
+		if(!is_string($key)) {
+			return null;
+		}
+		
+		$value = $array;
+		
+		// Explode the keys.
+		$keys = explode(".", $key);
+		foreach ($keys as $innerKey) {
+			if(!isset($value[$innerKey])) {
+				return null;
+			}
+			
+			$value = $value[$innerKey];
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Set a value to an array by a mongo format key, seperated with dots.
+	 * @param mixed $value - Value to set
+	 * @param array &$array - Array to set value to, passed by reference.
+	 * @param string $key - Dot seperated key.
+	 * @return boolean - True if successful.
+	 */
+	public static function setValueByMongoIndex($value, &$array, $key) {
+		if(!is_string($key)) {
+			return false;
+		}
+		
+		$result = &$array;
+		$keys = explode('.', $key);
+		foreach ($keys as $innerKey) {
+			$result = &$result[$innerKey];
+		}
+
+		$result = $value;
+		
+		return true;
+	}
+	
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert
