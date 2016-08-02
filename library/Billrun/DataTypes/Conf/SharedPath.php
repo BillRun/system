@@ -12,8 +12,7 @@ class Billrun_DataTypes_Conf_SharedPath extends Billrun_DataTypes_Conf_Base {
 	public function __construct($obj) {
 		$path = $obj['v'];
 		// Convert to shared path.
-		// TODO: Yonatan! How do I convert to shared path??????
-		$sharedPath = $path;
+		$sharedPath = Billrun_Util::getBillRunSharedFolderPath($path);
 		
 		$this->val = $sharedPath;
 	}
