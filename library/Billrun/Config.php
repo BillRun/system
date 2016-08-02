@@ -217,7 +217,9 @@ class Billrun_Config {
 			return true;
 		}
 		
-		return isset($obj['t']) && isset($obj['v']);
+		// TODO: that means that 't' is a sensitive value! If a simple array 
+		// will have a 't' field, we will treat it as a complex object.
+		return isset($obj['t']);
 	}
 	
 	/**
