@@ -21,5 +21,9 @@ class TestController extends Yaf_Controller_Abstract {
 		Billrun_Test::getInstance($this->getRequest()->action);
 		$this->getRequest()->action = 'index';
 	}
+	
+	public function indexAction() {
+		
+	}
 
 }
