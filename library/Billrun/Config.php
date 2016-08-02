@@ -186,8 +186,8 @@ class Billrun_Config {
 		}
 
 		// Check if the value is complex.
-		if($this::isComplex($currConf)) {
-			return $this::getComplexValue($currConf);
+		if(self::isComplex($currConf)) {
+			return self::getComplexValue($currConf);
 		}
 		
 		return $currConf;
@@ -214,15 +214,15 @@ class Billrun_Config {
 	 * @return boolean - True if valid.
 	 */
 	public static function isComplexValid($complex) {
-		$wrapper = $this::getComplexWrapper($complex);
+		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return false;
 		}
-		return $wrapper->valid();
+		return $wrapper->validate();
 	}
 	
 	public static function getComplexValue($complex) {
-		$wrapper = $this::getComplexWrapper($complex);
+		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return null;
 		}
