@@ -29,9 +29,9 @@ class Billrun_Config {
 	protected $config;
 	
 	/**
-	 * the config container
+	 * the name of the tenant (or null if not running with tenant)
 	 * 
-	 * @var Yaf_Config
+	 * @var string
 	 */
 	protected $tenant = null;
 	
