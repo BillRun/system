@@ -22,8 +22,8 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->getRequest()->action = 'index';
 	}
 	
-	public function indexAction() {
-		
-	}
+//	public function indexAction() {
+//		
+//	}
 
 }
