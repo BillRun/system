@@ -80,6 +80,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$options['disable_stamp_export_directory'] = true;
 		}
 
+                $this->loadServiceProviders();
+                
 		parent::__construct($options);
 	}
 
@@ -335,6 +337,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 		return $result['ok'] == 1;
 	}
+        
+        protected function loadServiceProviders() {
+            $serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
+            foreach ($serviceProviders as $provider) {
+                $this->serviceProviders[$provider['name']] = $provider->getRawData();
+            }
+        }
 
 	//---------------------- Manage files/cdrs function ------------------------
 
@@ -418,8 +427,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 	}
         
-        protected function getServiceProvider($value, $parameters, $line) {
-            return $this->serviceProviders[$line[$parameters['key']]][$line[$parameters['field']]];		
+        
+        protected function getServiceProviderValues($value, $parameters, $line) {
+            if(!isset($this->serviceProviders[$line[$parameters['key']]][$parameters['field']]) ) {
+                Billrun_Factory::log("Couldn't Identify service provider {$line[$parameters['key']]}." , Zend_Log::WARN);
+                return $line[$parameters['key']];
+            }
+            return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];		
 	}
 
 }
