@@ -73,6 +73,10 @@ class ConfigModel {
 
 	public function getFromConfig($category, $data) {
 		$currentConfig = $this->getConfig();
+		if(!isset($currentConfig[$category])) {
+			throw new Exception('Unknown category ' . $category);
+		}
+		
 		if ($category == 'file_types') {
 			if (empty($data['file_type'])) {
 				return $currentConfig['file_types'];
@@ -84,6 +88,9 @@ class ConfigModel {
 		}
 		else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
+		} else if(Billrun_Config::isComplex($currentConfig[$category])) {
+			// Get the complex object.
+			return Billrun_Config::getComplexValue($currentConfig[$category]);
 		}
 		throw new Exception('Unknown category ' . $category);
 	}
