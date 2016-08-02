@@ -9,13 +9,18 @@
  * Wrapper class for a complex float value object
  */
 class Billrun_DataTypes_Conf_Float extends Billrun_DataTypes_Conf_Base {
-	protected $range = array();
+	use Billrun_DataTypes_Conf_Range;	
 	public function __construct($obj) {
 		$this->val = $obj['v'];
-		if(isset($obj['Range'])) {
-			$this->range['max'] = $obj['Range']['M'];
-			$this->range['min'] = $obj['Range']['m'];
+		$this->getRange($obj);
+	}
+
+	protected function validateRangeType() {
+		if(filter_var($this->range['min'], FILTER_VALIDATE_FLOAT) === false || 
+		   filter_var($this->range['max'], FILTER_VALIDATE_FLOAT) === false) {
+			 return false;
 		}
+		return true;
 	}
 	
 	public function validate() {
@@ -24,19 +29,8 @@ class Billrun_DataTypes_Conf_Float extends Billrun_DataTypes_Conf_Base {
 			return false;
 		}
 		
-		// Check if has range
-		if(!empty($this->range)) {
-			// Validate numeric.
-			if(filter_var($this->range['min'], FILTER_VALIDATE_FLOAT) === false || 
-			   filter_var($this->range['max'], FILTER_VALIDATE_FLOAT) === false) {
-				return false;
-			}
-			
-			// Check range.
-			if(($this->val > $this->range['max']) ||
-			   ($this->val < $this->range['min'])) {
-				return false;
-			}
+		if(!$this->validateRange()) {
+			return false;
 		}
 		
 		return true;

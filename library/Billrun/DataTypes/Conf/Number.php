@@ -9,13 +9,10 @@
  * Wrapper class for a complex number value object
  */
 class Billrun_DataTypes_Conf_Number extends Billrun_DataTypes_Conf_Base {
-	protected $range = array();
+	use Billrun_DataTypes_Conf_Range;
 	public function __construct($obj) {
 		$this->val = $obj['v'];
-		if(isset($obj['Range'])) {
-			$this->range['max'] = $obj['Range']['M'];
-			$this->range['min'] = $obj['Range']['m'];
-		}
+		$this->getRange($obj);
 	}
 	
 	public function validate() {
@@ -24,21 +21,18 @@ class Billrun_DataTypes_Conf_Number extends Billrun_DataTypes_Conf_Base {
 			return false;
 		}
 		
-		// Check if has range
-		if(!empty($this->range)) {
-			// Validate numeric.
-			if(!Billrun_Util::IsIntegerValue($this->range['min']) || 
-			   !Billrun_Util::IsIntegerValue($this->range['max'])) {
-				return false;
-			}
-			
-			// Check range.
-			if(($this->val > $this->range['max']) ||
-			   ($this->val < $this->range['min'])) {
-				return false;
-			}
+		if(!$this->validateRange()) {
+			return false;
 		}
-		
+		return true;
+	}
+	
+	protected function validateRangeType() {
+		// Validate numeric.
+		if(!Billrun_Util::IsIntegerValue($this->range['min']) || 
+		   !Billrun_Util::IsIntegerValue($this->range['max'])) {
+			return false;
+		}
 		return true;
 	}
 }
