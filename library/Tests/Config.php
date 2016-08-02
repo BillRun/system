@@ -73,7 +73,7 @@ class Tests_Config extends UnitTestCase {
 	
 	public function testValid() {
 		foreach ($this->tests as $test) {
-			$wrapper = $this->getWrapper($test);
+			$wrapper = Billrun_Config::getComplexWrapper($test);
 			if($wrapper === null) {
 				continue;
 			}
