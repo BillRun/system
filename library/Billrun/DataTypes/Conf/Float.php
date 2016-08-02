@@ -11,15 +11,16 @@ class Billrun_DataTypes_Conf_Float extends Billrun_DataTypes_Conf_Base {
 	}
 	
 	public function validate() {
-		if(empty($this->val) || !is_float($this->val)) {
+		if((($this->val !== 0) && (empty($this->val))) || 
+			!filter_var($this->val, FILTER_VALIDATE_FLOAT)) {
 			return false;
 		}
 		
 		// Check if has range
 		if(!empty($this->range)) {
 			// Validate numeric.
-			if(!is_float($this->range['min']) || 
-			   !is_float($this->range['max'])) {
+			if(!filter_var($this->range['min'], FILTER_VALIDATE_FLOAT) || 
+			   !filter_var($this->range['max'], FILTER_VALIDATE_FLOAT)) {
 				return false;
 			}
 			
