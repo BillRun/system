@@ -1365,5 +1365,18 @@ class Billrun_Util {
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
 	}
+	
+	/**
+	 * Returns params for a command (cmd).
+	 * if running with multi tenant adds the tenant to the command.
+	 * 
+	 */
+	public static function getCmdEnvParams() {
+		$ret = '--env ' . Billrun_Factory::config()->getEnv();
+		if (defined(APPLICATION_MULTITENANT) && APPLICATION_MULTITENANT) {
+			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
+		}
+		return $ret;
+	}
 
 }
