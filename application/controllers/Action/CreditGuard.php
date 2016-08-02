@@ -29,6 +29,12 @@ class CreditGuardAction extends ApiAction {
 		$today = new MongoDate();
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
+		$return_url = get("return_url");
+		if (empty($return_url)){
+			$config_coll = Billrun_Factory::db()->configCollection(); //TODO: verify from where in config collection i get the return url
+			// $config_coll_return = put here query to get it from collection config 
+			$return_url = $config_coll_return;
+		}
 		$hash = $request->get("hash");
 		if (is_null($aid) || !is_numeric($aid)) {
 			return $this->setError("need to pass numeric aid", $request);
@@ -36,7 +42,7 @@ class CreditGuardAction extends ApiAction {
 		
 		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
 		if ($hash == $calculated_hash) {
-			$this->getToken($aid);
+			$this->getToken($aid, $return_url);
 			$url_array = parse_url($this->url);
 			$str_response = array();
 			parse_str($url_array['query'], $str_response);
@@ -54,7 +60,7 @@ class CreditGuardAction extends ApiAction {
 		exit();
 	}
 	
-	public function getToken($aid) {
+	public function getToken($aid, $return_url) {
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
@@ -63,6 +69,7 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
+		$this->cgConf['return_url'] = $return_url;
 
 		
 		$post_array = array(
@@ -99,7 +106,7 @@ class CreditGuardAction extends ApiAction {
                                                                  <clientIP/>
                                                                  <customerData>
                                                                   <userData1>' . $this->cgConf['aid'] . '</userData1>
-                                                                  <userData2/>
+                                                                  <userData2>' . $this->cgConf['return_url'] . '</userData2>
                                                                   <userData3/>
                                                                   <userData4/>
                                                                   <userData5/>
