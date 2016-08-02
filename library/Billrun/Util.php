@@ -1373,7 +1373,7 @@ class Billrun_Util {
 	 */
 	public static function getCmdEnvParams() {
 		$ret = '--env ' . Billrun_Factory::config()->getEnv();
-		if (defined(APPLICATION_MULTITENANT) && APPLICATION_MULTITENANT) {
+		if (defined('APPLICATION_MULTITENANT')) {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;
