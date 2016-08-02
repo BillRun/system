@@ -1,3 +1,4 @@
+
 <?php
 
 /**
@@ -39,6 +40,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				return false;
 			}
 			$newEntity = $this->updateEntity($oldEntity);
+			
+			// Check if changed plans.
+			if($newEntity['plan'] !== $oldEntity['plan']) {
+				$oldEntity['plan_deactivation'] = new MongoDate();
+			}
+			
 			$this->closeEntity($oldEntity);
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
@@ -83,7 +90,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	
 	protected function closeEntity($entity) {
 		$entity['to'] = $this->time;
-		$entity['plan_deactivation'] = $this->time;
 		$this->collection->save($entity, 1);
 	}
 

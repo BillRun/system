@@ -11,10 +11,6 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 		if(($lastPlan === null) || (isset($values['plan']) && ($values['plan'] != $lastPlan))) {
 			$values['plan_activation'] = new MongoDate();
 		}
-		// TODO: I Assume that if the last plan is null then we must have a plan.
-		if(($lastPlan !== null) && (isset($values['plan'])) && ($values['plan'] != $lastPlan)) {
-			$values['plan_deactivation'] = new MongoDate();
-		}
 		
 		parent::__construct($values, $collection);
 	}
