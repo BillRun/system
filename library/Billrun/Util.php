@@ -1361,11 +1361,19 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 
-	public static function getBillRunSharedFolderPath($path) {
+	/**
+	 * Get the shared folder path of the input path.
+	 * @param string $path - Path to convert to relative shared folder path.
+	 * @param boolean $strict - If true, and the path is a root folder, we return
+	 * the absoulute path, not the shared folder path! False by default.
+	 * @return string Relative file path in the shared folder.
+	 * @TODO: Add validation that if the input $path is already in the shared folder, return just the path.
+	 */
+	public static function getBillRunSharedFolderPath($path, $strict=false) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
 		}
-		if ($path[0] == DIRECTORY_SEPARATOR) {
+		if ($strict && ($path[0] == DIRECTORY_SEPARATOR)) {
 			return $path;
 		}
 		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
