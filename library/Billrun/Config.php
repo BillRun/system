@@ -221,7 +221,7 @@ class Billrun_Config {
 		return $wrapper->valid();
 	}
 	
-	protected static function getComplexValue($complex) {
+	public static function getComplexValue($complex) {
 		$wrapper = $this::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return null;
