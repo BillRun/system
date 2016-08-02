@@ -6,24 +6,15 @@
  */
 
 /**
- * Wrapper class for a complex shared path value object
+ * Wrapper class for a complex date string value object
  */
-class Billrun_DataTypes_Conf_SharedPath extends Billrun_DataTypes_Conf_Base {
-	public function __construct($obj) {
-		$path = $obj['v'];
-		// Convert to shared path.
-		$sharedPath = Billrun_Util::getBillRunSharedFolderPath($path);
-		
-		$this->val = $sharedPath;
-	}
-	
+class Billrun_DataTypes_Conf_Datestring extends Billrun_DataTypes_Conf_String {
 	public function validate() {
-		// TODO: Should we check here file exists???? I am not sure, it might
-		// not have been created yet.
-		if(empty($this->val) || !is_string($this->val)) {
+		if(!parent::validate()) {
 			return false;
 		}
 		
-		return true;
+		// Check if valid date string.
+		return (strtotime($this->val) !== false);
 	}
 }

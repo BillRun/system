@@ -8,7 +8,7 @@
 /**
  * Wrapper class for a complex shared path value object
  */
-class Billrun_DataTypes_Conf_SharedPath extends Billrun_DataTypes_Conf_Base {
+class Billrun_DataTypes_Conf_Sharedpath extends Billrun_DataTypes_Conf_Base {
 	public function __construct($obj) {
 		$path = $obj['v'];
 		// Convert to shared path.
