@@ -37,8 +37,8 @@ class SettingsAction extends ApiAction {
 			$category = $request->get('category');
 			$rawData = $request->get('data');
 			$data = json_decode($rawData, TRUE);
-			if (json_last_error() || !is_array($data)) {
-				$this->setError('No data to update or illegal data array', $request->getPost());
+			if (json_last_error()) {
+				$this->setError('Illegal data', $request->getPost());
 				return TRUE;
 			}
 			if (!($category)) {
