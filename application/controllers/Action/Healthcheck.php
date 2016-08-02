@@ -23,6 +23,7 @@ class HealthcheckAction extends RealtimeeventAction {
 	 * method to execute health check event
 	 */
 	public function execute() {
+		$this->allowed();
 		$this->event = $this->getRequestData('event');
 		$this->event['usaget'] = $this->usaget = $this->getRequestData('usaget');
 		try {
@@ -47,5 +48,9 @@ class HealthcheckAction extends RealtimeeventAction {
 	
 	protected function getRequestData($key) {
 		return $this->_request->getParam($key);
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }
