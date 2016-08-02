@@ -7,20 +7,17 @@
  */
 $env = null;
 
-$envParamsNames = array('env:', 'environment:');
-$cliArgs = getopt('', array_merge($envParamsNames, array('tenant:')));
+$cliArgs = getopt('', array('env:', 'environment:', 'tenant:'));
 	
 if (!defined('APPLICATION_ENV')) {
 	$env = getenv('APPLICATION_ENV');
 	
 	// if APPLICATION_ENV not defined and the getenv not find it (not through web server), let's take it by cli opt
 	if (empty($env)) {
-		foreach ($envParamsNames as $envParamsName) {
-			$key = str_replace(':', '', $envParamsName);
-			if (isset($cliArgs[$key])) {
-				$env = $cliArgs[$key];
-				break;
-			}
+		if (isset($cliArgs['env'])) {
+			$env = $cliArgs['env'];
+		} else if (isset($cliArgs['environment'])) {
+			$env = $cliArgs['environment'];
 		}
 	}
 
