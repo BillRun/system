@@ -1,5 +1,13 @@
 <?php
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
 
+/**
+ * Wrapper class for a complex float value object
+ */
 class Billrun_DataTypes_Conf_Float extends Billrun_DataTypes_Conf_Base {
 	protected $range = array();
 	public function __construct($obj) {
