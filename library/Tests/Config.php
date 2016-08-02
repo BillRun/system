@@ -79,6 +79,9 @@ class Tests_Config extends UnitTestCase {
 			array('v' => "2016-05-12 00:00:30", 't' => "DateString", "valid" => true, "msg" => "Valid date+time"),
 			array('v' => "July 1st, 2008", 't' => "DateString", "valid" => true, "msg" => "Valid excplicit"),
 		
+			array('v' => "next month", 't' => "DateString", "Range" => array("m" => "last year", "M" => "next year"), "valid" => true, "msg" => "Valid next month with range"),
+			array('v' => "next month", 't' => "DateString", "Range" => array("m" => "last week", "M" => "next week"), "valid" => false, "msg" => "Valid next month with invalid range"),
+		
 			array('v' => "05.2016.12", 't' => "DateString", "valid" => false, "msg" => "Invalid date"),
 			array('v' => "2016-05/12 00:00:30", 't' => "DateString", "valid" => false, "msg" => "Invalid date+time"),
 			array('v' => "Bob 1st, 2008", 't' => "DateString", "valid" => false, "msg" => "Invalid excplicit"),
