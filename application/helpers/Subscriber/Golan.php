@@ -319,6 +319,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									}
 									$credit['aid'] = $concat['data']['aid'];
 									$credit['sid'] = $concat['data']['sid'];
+									$credit['activation'] = $this->getActivationStartDay();
+									$credit['deactivation'] = $this->getActivationEndDay();
 									if ($sid) {
 										$credit['plan'] = $concat['data']['plan'];
 									} else {
