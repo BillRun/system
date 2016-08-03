@@ -32,16 +32,16 @@ abstract class Billrun_Responder extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('response.workspace'));
 		}
 
 		if (isset($options['backup'])) {
-			$this->workspace = $options['backup'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['backup']);
 		} else {
 			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
-			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type . '.backup', $defBackup);
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::type . '.backup', $defBackup));
 		}
 	}
 

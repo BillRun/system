@@ -51,9 +51,9 @@ abstract class Billrun_Receiver extends Billrun_Base {
 			$this->preserve_timestamps = $options['receiver']['preserve_timestamps'];
 		}
 		if (isset($options['backup_path'])) {
-			$this->backupPaths = $options['backup_path'];
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} else {
-			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType()));
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType())));
 		}
 		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
 			$this->setGranularity((int) $options['receiver']['backup_granularity']);
@@ -66,6 +66,8 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['receiver']['orphan_time']) && ((int) $options['receiver']['orphan_time']) > 900) {
 			$this->file_fetch_orphan_time = $options['receiver']['orphan_time'];
 		}
+		
+		$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Util::getFieldVal($options['workspace'], 'workspace'));
 	}
 
 	/**
