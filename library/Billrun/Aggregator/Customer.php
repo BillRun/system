@@ -290,10 +290,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat));
 					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
-//				if ($subscriber->isFreezeExists()){
-//					$freeze = $this->saveFreezeLine($subscriber, $billrun_key);
-//					$manual_lines = array_merge($manual_lines, array($freeze['stamp'] => $freeze));	
-//				}
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
 				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);

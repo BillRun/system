@@ -923,4 +923,8 @@ class Billrun_Util {
 		$minutes = substr($timezone, -2, 2);
 		return $sign * ($hours * 3600 + $minutes * 60);
 	}
+	
+	public static function convertToBillrunDate($date){
+		return date(Billrun_Base::base_dateformat, strtotime($date));
+	}
 }

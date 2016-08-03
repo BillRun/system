@@ -285,11 +285,11 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								),
 							);
 					
-							$concat['data']['activation_start'] = isset($subscriber['activation']) ? date(Billrun_Base::base_dateformat, strtotime($subscriber['activation'])) : null;
-							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? date(Billrun_Base::base_dateformat, strtotime($subscriber['deactivate'])) : null;
-							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? date(Billrun_Base::base_dateformat, strtotime($subscriber['freeze']['from_date'])) : null;
+							$concat['data']['activation_start'] = isset($subscriber['activation']) ? Billrun_Util::convertToBillrunDate($subscriber['activation']) : null;
+							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? Billrun_Util::convertToBillrunDate($subscriber['deactivate']) : null;
+							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['from_date']) : null;
 							$this->freeze_start = $concat['data']['freeze_start_date']; 
-							$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? date(Billrun_Base::base_dateformat, strtotime($subscriber['freeze']['to_date'])) : null;
+							$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['to_date']) : null;
 							$this->freeze_end = $concat['data']['freeze_end_date'];
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
 							if ($this->isFreezeExists()){
@@ -586,17 +586,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $freeze_pricing;
 	}
 	
-	
-//	public function calcFreezeFraction($freeze_start, $freeze_end) {
-//		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
-//		$days_in_month = (int) date('t', $billing_start_date);
-//		$freeze_days = $this->getNumberOfDays($freeze_start, $freeze_end);
-//		
-//		return ($freeze_days / $days_in_month);
-//	}
-	
-	
-	
 	public function calcServiceFraction($service_start, $service_end) {
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);
@@ -693,48 +682,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $flat_entry;
 	}
 	
-
-	/**
-	 * 
-	 * @param string $billrun_key
-	 * @return array
-	 */
-//	public function getFreezeEntry($billrun_key, $retEntity = false) {
-//		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
-//		$freeze_amount = $this->calcFreezeAmount($this->getFreezeStartDay(), $this->getFreezeEndDay());
-//		if ($this->billing_method == 'prepaid'){
-//			$plan = $this->getNextPlan();
-//		}
-//		else {
-//			$plan = $this->getPlan();
-//		}
-//
-//		$freeze_entry = array(
-//			'aid' => $this->aid,
-//			'sid' => $this->sid,
-//			'from_date' => $this->getFreezeStartDay(),
-//			'to_date' => $this->getFreezeEndDay(),
-//			'source' => 'billrun',
-//			'billrun' => $billrun_key,
-//			'type' => 'service',
-//			'key' => 'FREEZE_FLAT_RATE',
-//			'usaget' => 'freeze',
-//			'urt' => new MongoDate($billrun_end_time),
-//			'aprice' => $freeze_amount,
-//			'plan' => $plan->getName(),
-//			'plan_ref' => $plan->createRef(),
-//			'process_time' => date(Billrun_Base::base_dateformat),
-//			'offer_id_curr' => $this->offer_id_curr,
-//			'offer_id_next' => $this->offer_id_next,
-//		);
-//		$stamp = md5($freeze_entry['aid'] . $freeze_entry['sid'] . $freeze_entry['type'] . $billrun_end_time);
-//		$freeze_entry['stamp'] = $stamp;
-//		if ($retEntity) {
-//			return new Mongodloid_Entity($freeze_entry);
-//		}
-//		return $freeze_entry;
-//	}
-//	
 
 	public function getSubscribersByParams($params_arr, $availableFields) {
 		$subscribers = array();
