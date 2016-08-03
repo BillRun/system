@@ -65,7 +65,7 @@ trait Billrun_Traits_TypeAll {
 		$cache = Billrun_Factory::cache();
 		// If we fail to get cache, it means that we are on a dev environment, 
 		// trigger the process anyway.
-		if (!empty($cache)) {
+		if (empty($cache)) {
 			Billrun_Factory::log("No cache available. Ignoring timeout: Executing type -all", Zend_Log::WARN);
 			return true;
 		}
