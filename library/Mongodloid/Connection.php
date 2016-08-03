@@ -95,6 +95,7 @@ class Mongodloid_Connection {
 				'context' => @stream_context_create($options['context'])
 			);
 			unset($options['context']);
+			$options['ssl'] = true;
 		} else {
 			$driver_options = array();
 		}

@@ -14,8 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class BalanceAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
 		Billrun_Factory::log("Execute balance api call to " . $aid, Zend_Log::INFO);
@@ -57,6 +59,10 @@ class BalanceAction extends ApiAction {
 		$generator->load();
 		$output = $generator->generate();
 		return $output;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

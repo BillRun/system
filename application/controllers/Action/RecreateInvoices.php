@@ -14,8 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class RecreateInvoicesAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute recreate invoices", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		if (empty($request['account_id'])) {
@@ -53,6 +55,10 @@ class RecreateInvoicesAction extends ApiAction {
 				'successfulAccounts' => $successfulAccounts,
 		)));
 		return TRUE;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

@@ -15,12 +15,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class FindAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log()->log("Execute find api", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log()->log("Find API Input: " . print_R($request, 1), Zend_Log::DEBUG);
@@ -55,30 +57,36 @@ class FindAction extends ApiAction {
 			$size = intval($config['maximum_page_size']);
 		}
 
-		if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-			$collection = $request['collection'];
-			try {
-				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->find($query, $project)->sort($sort)->skip($page * $size)->limit($size));
-			} catch (Exception $e) {
-				$this->setError($e->getMessage(), $request);
-				return TRUE;
-			}
-
-			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-			$ret = array(
-				array(
-					'status' => 1,
-					'desc' => 'success',
-					'input' => $request,
-					'details' => $entities,
-				)
-			);
-
-			$this->getController()->setOutput($ret);
-		} else {
+		if (empty($request['collection']) || !(in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array())))) {
 			$this->setError('Illegal collection name: ' . $request['collection'], $request);
 			return TRUE;
+		}	
+		
+		$collection = $request['collection'];
+		try {
+			$db = Billrun_Factory::db()->{$collection . 'Collection'}();
+			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size);
+			
+			// Get timeout
+			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
+			$find->timeout($timeout);
+			$entities = iterator_to_array($find);
+		} catch (Exception $e) {
+			$this->setError($e->getMessage(), $request);
+			return TRUE;
 		}
+
+		Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+		$ret = array(
+			array(
+				'status' => 1,
+				'desc' => 'success',
+				'input' => $request,
+				'details' => $entities,
+			)
+		);
+
+		$this->getController()->setOutput($ret);
 	}
 
 	/**
@@ -111,6 +119,10 @@ class FindAction extends ApiAction {
 			}
 		}
 		return $query;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

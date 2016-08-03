@@ -14,12 +14,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class CreditAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * method to execute the refund
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
+		
 		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 
@@ -85,6 +88,10 @@ class CreditAction extends ApiAction {
 					'calc_time' => false,
 			));
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

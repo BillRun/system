@@ -30,10 +30,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			$this->ssh_path = $options['ssh']['remote_directory'];
 		}
 
-		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
-		}
-
 		if (isset($options['backup_path'])) {
 			$this->backup = $options['backup_path'];
 		}

@@ -15,12 +15,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class QueryAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		$this->preExecute();
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		Billrun_Factory::log("Input: " . print_R($request, 1), Zend_Log::DEBUG);
@@ -292,6 +294,10 @@ class QueryAction extends ApiAction {
 	 */
 	protected function getBillrunQuery($billrun) {
 		return array('$in' => Billrun_Util::verify_array($this->getArrayParam($billrun), 'str'));
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

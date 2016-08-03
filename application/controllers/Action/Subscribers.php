@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class SubscribersAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $model;
 
 	/**
@@ -47,6 +48,7 @@ class SubscribersAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/subscribers/conf.ini');
 		$this->initializeModel();
 
@@ -89,6 +91,10 @@ class SubscribersAction extends ApiAction {
 			$ret[] = $row->getRawData();
 		}
 		return $ret;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

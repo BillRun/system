@@ -26,9 +26,9 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/'));
 		}
 	}
 

@@ -173,6 +173,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function getCallOffset() {
 		return $this->call_offset;
 	}
+	
+	public function prepareData($lines) {
+		
+	}
 
 	/**
 	 * execute the calculation process

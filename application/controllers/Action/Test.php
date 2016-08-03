@@ -15,9 +15,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    4.0
  */
 class TestAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		$this->getController()->setOutput(array(array("test" => "action"), true));
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

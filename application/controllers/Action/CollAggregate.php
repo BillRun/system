@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    5.0
  */
 class AggregateAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
 
@@ -23,6 +24,8 @@ class AggregateAction extends ApiAction {
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
+		
 		try {
 			Billrun_Factory::log()->log("Executed aggregate api", Zend_Log::INFO);
 			$request = $this->getRequest()->getRequest(); // supports GET / POST requests
@@ -45,28 +48,34 @@ class AggregateAction extends ApiAction {
 				$this->setError('No query found', $request);
 				return TRUE;
 			}
-			if (!empty($request['collection']) && in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-			$collection = $request['collection'];
-				$entities = iterator_to_array(Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines));
-			$entities = array_map(function($ele) {
-				return $ele->getRawData();
-			}, $entities);
-
-			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-			$ret = array(
-				array(
-					'status' => 1,
-					'desc' => 'success',
-					'input' => $request,
-					'details' => $entities,
-				)
-			);
-
-			$this->getController()->setOutput($ret);
-			} else {
+			if (empty($request['collection']) || !in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
-				return TRUE;
+				return TRUE;		
 			}
+			
+				$collection = $request['collection'];
+			
+			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
+			
+			// Set timeout of 1 minute
+			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
+			$cursor->timeout($timeout);
+			$entities = iterator_to_array($cursor);
+				$entities = array_map(function($ele) {
+					return $ele->getRawData();
+				}, $entities);
+
+				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+				$ret = array(
+					array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request,
+						'details' => $entities,
+					)
+				);
+
+				$this->getController()->setOutput($ret);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
@@ -113,6 +122,10 @@ class AggregateAction extends ApiAction {
 				$value = new MongoDate(strtotime($value));
 			}
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

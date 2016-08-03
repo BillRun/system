@@ -14,8 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    0.5
  */
 class PayAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
 		$method = $request->getPost('method');
@@ -147,6 +149,10 @@ class PayAction extends ApiAction {
 			throw new Exception('Unknown payment method');
 		}
 		return $payments;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }
