@@ -1358,4 +1358,43 @@ class Billrun_Util {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
 	}
 
+	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
+		if(empty($searchKeys)) {
+			return "Empty search keys";
+		}
+		$from_date = new MongoDate(strtotime($searchKeys['from']));
+		if (!$from_date) {
+			return "date error";
+		}
+		unset($searchKeys['from']);
+		$to_date = new MongoDate(strtotime($searchKeys['to']));
+		if (!$to_date) {
+			return "date error";
+		}
+		unset($searchKeys['to']);
+		
+		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId($searchKeys['_id']))) {
+			return "id error";
+		}
+		unset($searchKeys['_id']);
+		
+		$ret = array();
+		foreach ($searchKeys as $pair) {
+			$ret[] = $pair;
+		}
+		$ret['$or'] = array(
+				array('from' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				)),
+				array('to' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				))
+			);
+		if (!$new) {
+			$ret['_id'] = array('$ne' => $id);
+		}
+		return $ret;
+	}
 }
