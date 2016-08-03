@@ -6,6 +6,7 @@
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 $env = null;
+define('RUNNING_FROM_CLI', php_sapi_name() === 'cli');
 
 $cliArgs = getopt('', array('env:', 'environment:', 'tenant:'));
 	
@@ -36,7 +37,7 @@ if (!file_exists(BILLRUN_CONFIG_PATH)) {
 	die('Configuration file did not found');
 }
 
-if (!defined('APPLICATION_TENANT') && php_sapi_name() === 'cli') {
+if (!defined('APPLICATION_TENANT') && RUNNING_FROM_CLI) {
 	$tenant = $cliArgs['tenant'];
 	if (empty($tenant)) {
 		error_log('Tenant was not setup!');

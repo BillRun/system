@@ -1319,7 +1319,7 @@ class Billrun_Util {
 	 * if a full path is given, return it as is
 	 * 
 	 * @param type $path - relative or full path
-	 * @return full path
+	 * @return full path, FALSE on error
 	 */
 	public static function getBillRunSharedFolderPath($path) {
 		if (empty($path) || !is_string($path)) {
@@ -1373,7 +1373,7 @@ class Billrun_Util {
 	 */
 	public static function getCmdEnvParams() {
 		$ret = '--env ' . Billrun_Factory::config()->getEnv();
-		if (defined('APPLICATION_MULTITENANT')) {
+		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;
