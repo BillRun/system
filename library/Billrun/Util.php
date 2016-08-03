@@ -528,6 +528,8 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'activation' => array(),
+			'deactivation' => array()
 		);
 		$filtered_request = array();
 
@@ -652,7 +654,6 @@ class Billrun_Util {
 				'desc' => 'vatable could be either "0" or "1"',
 			);
 		}
-
 		$filtered_request['source'] = 'api';
 		$filtered_request['usaget'] = $filtered_request['type'] = 'credit';
 		ksort($filtered_request);
