@@ -1357,5 +1357,9 @@ class Billrun_Util {
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
 	}
+	
+	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
+		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
+	}
 
 }

@@ -21,6 +21,7 @@ class Billrun_Billrun {
 	protected static $runtime_billrun_key;
 	protected static $vatAtDates = array();
 	protected static $vatsByBillrun = array();
+	protected static $fileTypes = null;
 
 	/**
 	 * lines collection
@@ -310,62 +311,22 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Returns the breakdown keys for the row
+	 * Returns the breakdown key for the row
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
-	 * @param array $pricingData the output array from updateSubscriberBalance function
-	 * @param boolean $vatable is the line vatable or not
-	 * @return array an array containing the plan, category & zone keys respectively
+	
+	 * @return breakdown key
 	 */
-	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
-		if ($row['type'] != 'flat') {
-			//$rate = $row['arate'];
-			$rate = self::getRowRate($row);
+	protected static function getBreakdownKey($row) {
+		if (in_array($row['type'], array('flat', 'service'))) {
+			return $row['type'];
 		}
-		if ($row['type'] == 'credit') {
-			$plan_key = 'credit';
-			$zone_key = $row['service_name'];
-		} else if ($row['type'] == 'service') {
-			$plan_key = 'service';
-			$zone_key = $row['key'];
-		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
-			$plan_key = 'in_plan';
-			if ($row['type'] == 'flat') {
-				$zone_key = 'service';
-			}
-		} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) { // over plan
-			$plan_key = 'over_plan';
-		} else { // out plan
-			$plan_key = "out_plan";
-		}
-
-		if ($row['type'] == 'credit') {
-			$category_key = $row['credit_type'] . "_" . ($vatable ? "vatable" : "vat_free");
-		} else if (isset($rate['rates'][$row['usaget']]['category'])) {
-			$category = $rate['rates'][$row['usaget']]['category'];
-			switch ($category) {
-				case "roaming":
-					$category_key = "roaming";
-					$zone_key = $row['serving_network'];
-					break;
-				case "special":
-					$category_key = "special";
-					break;
-				case "intl":
-					$category_key = "intl";
-					break;
-				default:
-					$category_key = "base";
-					break;
-			}
-		} else {
-			$category_key = "base";
-		}
-
-		if (!isset($zone_key)) {
-			//$zone_key = $row['arate']['key'];
-			$zone_key = self::getRowRate($row)['key'];
-		}
-		return array($plan_key, $category_key, $zone_key);
+		
+		if (in_array($row['type'], self::getFileTypes())) {
+			return 'usage';
+		} 
+		
+		// LOG error
+		return FALSE;
 	}
 
 	/**
@@ -512,6 +473,20 @@ class Billrun_Billrun {
 		}
 		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 	}
+	
+	protected function updateBreakdown(&$sraw, $breakdownKey, $rate, $cost, $count) {
+		if (!isset($sraw['breakdown'][$breakdownKey])) {
+			$sraw['breakdown'][$breakdownKey] = array();
+		}
+		foreach ($sraw['breakdown'][$breakdownKey] as &$breakdowns) {
+			if ($breakdowns['name'] === $rate) {
+				$breakdowns['cost'] += $cost;
+				$breakdowns['count'] += $count;
+				return;
+			}
+		}
+		$sraw['breakdown'][$breakdownKey][] = array('name' => '', 'count' => '', 'cost' => '');
+	}
 
 	/**
 	 * Add pricing and usage counters to the subscriber billrun breakdown.
@@ -524,40 +499,44 @@ class Billrun_Billrun {
 	 * @todo remove billrun_key parameter
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
-		$usage_type = self::getGeneralUsageType($row['usaget']);
-		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+		//$usage_type = self::getGeneralUsageType($row['usaget']);
+		$breakdownKey = self::getBreakdownKey($row);
+		$rate = self::getRowRate($row);
+		$cost = 10;
+		$count = 1;
+		$this->updateBreakdown($sraw, $breakdownKey, $rate, $cost, $count);
+		//$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
 
 		if ($plan_key == 'credit') {
 			$zone += $pricingData['aprice'];
 		} else {
 			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 		}
-		if (isset($row['arategroup'])) {
-			if (isset($row['in_plan'])) {
-				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
-			}
-			if (isset($row['over_plan'])) {
-				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
-				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
-			}
-		}
-		if ($usage_type == 'data' && $row['type'] != 'tap3') {
-			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
-			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
-			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
-			if ($row['type'] == 'ggsn') {
-				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
-					$data_generation = 'usage_4g';
-				} else {
-					$data_generation = 'usage_3g';
-				}
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
-			}
-		}
+//		if (isset($row['arategroup'])) {
+//			if (isset($row['in_plan'])) {
+//				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
+//			}
+//			if (isset($row['over_plan'])) {
+//				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
+//				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
+//			}
+//		}
+//		if ($usage_type == 'data' && $row['type'] != 'tap3') {
+//			$date_key = date("Ymd", $row['urt']->sec);
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
+//			if ($row['type'] == 'ggsn') {
+//				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
+//					$data_generation = 'usage_4g';
+//				} else {
+//					$data_generation = 'usage_3g';
+//				}
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
+//			}
+//		}
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
@@ -744,7 +723,7 @@ class Billrun_Billrun {
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
 			if (isset($updatedLines[$line['stamp']])) {
-				continue;
+				//continue; //TODO: REMOVE!!!!
 			}
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
@@ -857,7 +836,9 @@ class Billrun_Billrun {
 					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
 			foreach ($cursor as $line) {
-				$ret[$line['aid']][$line['stamp']] = $line;
+				$s = (string)rand(0, 100000000);
+				$ret[$line['aid']][$s] = $line; //TODO: remove!!!
+				//$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
 		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);
@@ -1023,6 +1004,17 @@ class Billrun_Billrun {
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
 		return $ret;
+	}
+	
+	public function setBillrunAccountFields($data) {
+		$this->data['attributes'] = $data['attributes'];
+	}
+	
+	protected static function getFileTypes() {
+		if (empty(self::$fileTypes)) {
+			self::$fileTypes = Billrun_Factory::config()->getFileTypes();
+		}
+		return self::$fileTypes;
 	}
 
 }

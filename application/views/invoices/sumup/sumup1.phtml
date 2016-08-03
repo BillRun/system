@@ -9,11 +9,11 @@
 					</tr>
 					<tr>
 						<td class="info-label">Name : </td>
-						<td class="info-data"><?php echo $data->get('name') ?></td>
+						<td class="info-data"><?php echo $data->get('attributes')['name'] ?></td>
 					</tr>
 					<tr>
 						<td class="info-label">Address : </td>
-						<td class="info-data"><?php echo $data->get('address') ?></td>
+						<td class="info-data"><?php echo $data->get('attributes')['address'] ?></td>
 					</tr>
 					<tr>
 						<td class="info-label">Invoice Date : </td>
@@ -33,7 +33,7 @@
 				<table class="payment-info">
 					<tr>
 						<td class="info-label">Payment Details : </td>
-						<td class="info-data"><?php echo $data->get('payment_details') ?></td>
+						<td class="info-data"><?php echo $data->get('attributes')['payment_details'] ?></td>
 					</tr>
 				</table>
 			</div>

@@ -123,6 +123,16 @@ class Billrun_Config {
 		return $fileType;
 	}
 
+	public function getFileTypes() {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
+			return $fileSettings['file_type'] === $fileType;
+		});
+		if ($fileType) {
+			$fileType = current($fileType);
+		}
+		return $fileType;
+	}
+
 	public function loadDbConfig() {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
