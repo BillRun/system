@@ -15,7 +15,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
-	use Billrun_Traits_Api_UserPermissions;
 	
 	protected $cgConf;
 	protected $url;
@@ -142,8 +141,5 @@ class CreditGuardAction extends ApiAction {
 		}
 	}
 
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-	}
 
 }
