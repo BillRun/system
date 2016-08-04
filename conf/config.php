@@ -42,3 +42,7 @@ if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT') && !defined('APPLICAT
 
 	define('APPLICATION_TEANANT', $cliArgs['tenant']);
 }
+
+if (!RUNNING_FROM_CLI && !defined('APPLICATION_MULTITENANT') && $multitenant = getenv('APPLICATION_MULTITENANT')) {
+	define('APPLICATION_TEANANT', $multitenant);
+}
