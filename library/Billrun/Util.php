@@ -1376,7 +1376,7 @@ class Billrun_Util {
 		if ($strict && ($path[0] == DIRECTORY_SEPARATOR)) {
 			return $path;
 		}
-		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
+		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getTenant() . DIRECTORY_SEPARATOR . $path;
 	}
 	
 	
