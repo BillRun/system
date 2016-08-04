@@ -153,7 +153,10 @@ class Billrun_Config {
 					return true;
 				}
 				$dbConfig = $dbCursor->getRawData();
-
+				
+				// Set the timezone from the config.
+				$this->setTenantTimezone($dbConfig);
+				
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
@@ -165,6 +168,29 @@ class Billrun_Config {
 		}
 	}
 
+	/**
+	 * Refresh the values from the config in the DB.
+	 */
+	public static function refresh() {
+		$this->setTenantTimezone($this->toArray());
+	}
+	
+	protected function setTenantTimezone($dbConfig) {
+		if(!isset($dbConfig['timezone'])){
+			return;
+		}
+		
+		// Get the timezone.
+		$timezone = $this->getComplexValue($dbConfig['timezone']);
+		if(empty($timezone)) {
+			return;
+		}
+		
+		// Setting the default timezone.
+		$setTimezone = @date_default_timezone_set($timezone);
+		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
+	}
+	
 	/**
 	 * method to get config value
 	 * 

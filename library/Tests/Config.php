@@ -92,6 +92,19 @@ class Tests_Config extends UnitTestCase {
 			array('v' => -100, 't' => "DateString", "valid" => false, "msg" => "Invalid negative number date"),
 			array('v' => null, 't' => "DateString", "valid" => false, "msg" => "Invalid null date"),
 			array('v' => "", 't' => "DateString", "valid" => false, "msg" => "Invalid empty date"),
+		
+			array('v' => "UTC", 't' => "Timezone", "valid" => true, "msg" => "Valid UTC timezone"),
+			array('v' => "Africa/Addis_Ababa", 't' => "Timezone", "valid" => true, "msg" => "Valid Africa Addis Ababa"),
+			array('v' => "Asia/Jerusalem", 't' => "Timezone", "valid" => true, "msg" => "Valid Jerusalem"),
+			array('v' => "Australia/Lord_Howe", 't' => "Timezone", "valid" => true, "msg" => "Valid Australia/Lord_Howe"),
+		
+			array('v' => "Israel/Bla", 't' => "Timezone", "valid" => false, "msg" => "Invalid string timezone"),
+			array('v' => "Africa", 't' => "Timezone", "valid" => false, "msg" => "Invalid Africa"),
+			array('v' => "Jerusalem", 't' => "Timezone", "valid" => false, "msg" => "Invalid Jerusalem"),
+			array('v' => "Asia/", 't' => "Timezone", "valid" => false, "msg" => "Invalid Asia"),
+			array('v' => null, 't' => "Timezone", "valid" => false, "msg" => "Invalid null timezone"),
+			array('v' => 100, 't' => "Timezone", "valid" => false, "msg" => "Invalid number timezone"),
+			array('v' => "", 't' => "Timezone", "valid" => false, "msg" => "Invalid empty timezone"),
 		);
 	
 	public function testValid() {
@@ -105,13 +118,13 @@ class Tests_Config extends UnitTestCase {
 		}
     }
 	
-	protected function getWrapper($complex) {
-		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
-		if(!@class_exists($name)) {
-			return null;
-		}
-		
-		$wrapper = new $name($complex);
-		return $wrapper;
-	}
+//	protected function getWrapper($complex) {
+//		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
+//		if(!@class_exists($name)) {
+//			return null;
+//		}
+//		
+//		$wrapper = new $name($complex);
+//		return $wrapper;
+//	}
 }
