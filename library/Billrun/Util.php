@@ -750,6 +750,54 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Get a value from an array by a mongo format key, seperated with dots.
+	 * @param array $array - Array to get value of.
+	 * @param string $key - Dot seperated key.
+	 */
+	public static function getValueByMongoIndex($array, $key) {
+		if(!is_string($key)) {
+			return null;
+		}
+		
+		$value = $array;
+		
+		// Explode the keys.
+		$keys = explode(".", $key);
+		foreach ($keys as $innerKey) {
+			if(!isset($value[$innerKey])) {
+				return null;
+			}
+			
+			$value = $value[$innerKey];
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Set a value to an array by a mongo format key, seperated with dots.
+	 * @param mixed $value - Value to set
+	 * @param array &$array - Array to set value to, passed by reference.
+	 * @param string $key - Dot seperated key.
+	 * @return boolean - True if successful.
+	 */
+	public static function setValueByMongoIndex($value, &$array, $key) {
+		if(!is_string($key)) {
+			return false;
+		}
+		
+		$result = &$array;
+		$keys = explode('.', $key);
+		foreach ($keys as $innerKey) {
+			$result = &$result[$innerKey];
+		}
+
+		$result = $value;
+		
+		return true;
+	}
+	
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert
@@ -1313,11 +1361,19 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 
-	public static function getBillRunSharedFolderPath($path) {
+	/**
+	 * Get the shared folder path of the input path.
+	 * @param string $path - Path to convert to relative shared folder path.
+	 * @param boolean $strict - If true, and the path is a root folder, we return
+	 * the absoulute path, not the shared folder path! False by default.
+	 * @return string Relative file path in the shared folder.
+	 * @TODO: Add validation that if the input $path is already in the shared folder, return just the path.
+	 */
+	public static function getBillRunSharedFolderPath($path, $strict=false) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
 		}
-		if ($path[0] == DIRECTORY_SEPARATOR) {
+		if ($strict && ($path[0] == DIRECTORY_SEPARATOR)) {
 			return $path;
 		}
 		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;

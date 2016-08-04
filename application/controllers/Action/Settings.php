@@ -35,16 +35,17 @@ class SettingsAction extends ApiAction {
 		try {
 			$this->initializeModel();
 			$category = $request->get('category');
-			$data = $request->get('data');
-			$data = json_decode($data, TRUE);
-			if (json_last_error() || !is_array($data)) {
-				$this->setError('No data to update or illegal data array', $request->getPost());
+			$rawData = $request->get('data');
+			$data = json_decode($rawData, TRUE);
+			if (json_last_error()) {
+				$this->setError('Illegal data', $request->getPost());
 				return TRUE;
 			}
 			if (!($category)) {
 				$this->setError('Missing category parameter', $request->getPost());
 				return TRUE;
 			}
+			// TODO: Create action managers for the settings module.
 			$action = $request->get('action');
 			if ($action === 'set') {
 				$output = $this->model->updateConfig($category, $data);
