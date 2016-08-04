@@ -1402,6 +1402,7 @@ class Billrun_Util {
 		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
+
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
@@ -1412,6 +1413,19 @@ class Billrun_Util {
 
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
+	
+	/**
+	 * Returns params for a command (cmd).
+	 * if running with multi tenant adds the tenant to the command.
+	 * 
+	 */
+	public static function getCmdEnvParams() {
+		$ret = '--env ' . Billrun_Factory::config()->getEnv();
+		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
+			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
+		}
+		return $ret;
 	}
 
 	public static function getOverlappingDatesQuery($searchKeys, $new = true) {

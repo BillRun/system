@@ -5,30 +5,44 @@
  * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
+define('RUNNING_FROM_CLI', php_sapi_name() === 'cli');
+
 $env = null;
+$cliArgs = getopt('', array('env:', 'environment:', 'tenant:'));
 
 if (!defined('APPLICATION_ENV')) {
 	$env = getenv('APPLICATION_ENV');
-	
+
 	// if APPLICATION_ENV not defined and the getenv not find it (not through web server), let's take it by cli opt
-	if (empty($env) && ($envs = getopt('', array('env:', 'environment:')))) {
-		$envOpts = array_values($envs);
-		if (isset($envOpts[0])) {
-			$env = $envOpts[0];
+	if (empty($env)) {
+		if (isset($cliArgs['env'])) {
+			$env = $cliArgs['env'];
+		} else if (isset($cliArgs['environment'])) {
+			$env = $cliArgs['environment'];
 		}
 	}
 
 	if (empty($env)) {
-		error_log('Environment did not setup!');
 		die('Environment did not setup!' . PHP_EOL);
 	}
-	
+
 	define('APPLICATION_ENV', $env);
 }
 
 define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
 if (!file_exists(BILLRUN_CONFIG_PATH)) {
-	error_log('Configuration file did not found');
 	die('Configuration file did not found');
+}
+
+if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT') && !defined('APPLICATION_TENANT')) {
+	if (empty($cliArgs['tenant'])) {
+		die('Tenant was not setup!' . PHP_EOL);
+	}
+
+	define('APPLICATION_TEANANT', $cliArgs['tenant']);
+}
+
+if (!RUNNING_FROM_CLI && !defined('APPLICATION_MULTITENANT') && $multitenant = getenv('APPLICATION_MULTITENANT')) {
+	define('APPLICATION_MULTITENANT', $multitenant);
 }
