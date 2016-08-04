@@ -664,6 +664,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			'sid' => $this->sid,
 			'activation' => $this->getActivationStartDay(),
 			'deactivation' => $this->getActivationEndDay(),
+			'fraction' => $fraction,
 			'source' => 'billrun',
 			'billrun' => $billrun_key,
 			'type' => 'flat',
