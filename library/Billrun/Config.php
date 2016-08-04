@@ -60,8 +60,10 @@ class Billrun_Config {
 		
 		if (defined(APPLICATION_TENANT)) { // specific defined tenant
 			$this->tenant = APPLICATION_TENANT;
+			$this->loadTenantConfig();
 		} else if (defined(APPLICATION_MULTITENANT) && php_sapi_name() != "cli") { // running from web and with multitenant
-			$this->setTenantConfig();
+			$this->initTenant();
+			$this->loadTenantConfig();
 		} else {
 			$this->tenant = $this->getEnv();
 		}
@@ -227,12 +229,11 @@ class Billrun_Config {
 	/**
 	 * method to set the tenant support
 	 */
-	protected function setTenantConfig() {
-		$this->initTenant();
+	protected function loadTenantConfig() {
 		if (isset($this->config['billrun']['multitenant']['basedir'])) {
 			$multitenant_basedir = $this->config['billrun']['multitenant']['basedir'] . DIRECTORY_SEPARATOR;
 		} else {
-			$multitenant_basedir = APPLICATION_PATH . '/conf/';
+			$multitenant_basedir = APPLICATION_PATH . '/conf/tenants/';
 		}
 		if (file_exists($tenant_conf = $multitenant_basedir . $this->tenant . '.ini')) {
 			$this->addConfig($tenant_conf);
