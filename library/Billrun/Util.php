@@ -1346,6 +1346,7 @@ class Billrun_Util {
 		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
+
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
