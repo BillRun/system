@@ -8,8 +8,6 @@
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', dirname(__DIR__));
 
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
-header('Access-Control-Allow-Credentials: true');
-header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 
 try {

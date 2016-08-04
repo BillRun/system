@@ -10,7 +10,7 @@
  * Billing paypage controller class
  *
  * @package  Controller
- * @since    0.5
+ * @since    5.0
  */
 class PaypageController extends Yaf_Controller_Abstract {
 
