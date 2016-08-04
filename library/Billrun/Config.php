@@ -151,6 +151,13 @@ class Billrun_Config {
 		}
 	}
 
+	/**
+	 * Refresh the values from the config in the DB.
+	 */
+	public static function refresh() {
+		$this->setTenantTimezone($this->toArray());
+	}
+	
 	protected function setTenantTimezone($dbConfig) {
 		if(!isset($dbConfig['timezone'])){
 			return;

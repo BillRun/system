@@ -171,7 +171,13 @@ class ConfigModel {
 		}
 		
 		$ret = $this->collection->insert($updatedData);
-		return !empty($ret['ok']);
+		$saveResult = !empty($ret['ok']);
+		if($saveResult) {
+			// Reload timezone.
+			Billrun_Config::refresh();
+		}
+		
+		return $saveResult;
 	}
 
 	public function unsetFromConfig($category, $data) {
