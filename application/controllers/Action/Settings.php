@@ -68,7 +68,7 @@ class SettingsAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

@@ -40,6 +40,9 @@ trait Billrun_Traits_Api_UserPermissions {
 	 * @return boolean true if have access, else false
 	 *
 	 * @todo: refactoring to core
+	 * @todo Add the posibbility of authorizing per page, maybe using a type
+	 * implementing the UserPermissions trait or creating a container for this trait
+	 * with extended capabilities.
 	 */
 	protected function authorizeUser($permission) {
 		$user = Billrun_Factory::user();
