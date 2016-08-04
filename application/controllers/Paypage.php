@@ -50,7 +50,6 @@ class PaypageController extends Yaf_Controller_Abstract {
 			"subscriber" => json_encode($request)
 		);
 		$jsonObject = new Billrun_AnObj($query);
-		Billrun_Factory::log(print_r($jsonObject, 1));
 		if (!$create->parse($jsonObject)) {
 			/* TODO: HANDLE ERROR! */
 			return false;
