@@ -74,4 +74,11 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 		);
 	}
 
+	/**
+	* Get the array of fields to be set in the query record from the user input.
+	* @return array - Array of fields to set.
+	*/
+	protected function getQueryFields() {
+		return Billrun_Factory::config()->getConfigValue('subscribers.query_fields');
+	}	
 }
