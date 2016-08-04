@@ -17,8 +17,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class AggregateAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 
-	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
-
 	/**
 	 * method to execute the query
 	 * it's called automatically by the api main controller
@@ -37,7 +35,7 @@ class AggregateAction extends ApiAction {
 				return TRUE;
 			}
 			$pipelines = $this->convertToMongoIds($pipelines);
-			$this->convertMongoDates($pipelines);
+			Billrun_Util::convertQueryMongoDates($pipelines);
 			if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
 					return key($pipeline);
 				}, $pipelines), $config['permitted_pipelines'])) {
@@ -112,16 +110,6 @@ class AggregateAction extends ApiAction {
 			}
 		}
 		return $query;
-	}
-
-	protected function convertMongoDates(&$arr) {
-		foreach ($arr as &$value) {
-			if (is_array($value)) {
-				$this->convertMongoDates($value);
-			} else if (preg_match($this->ISODatePattern, $value)) {
-				$value = new MongoDate(strtotime($value));
-			}
-		}
 	}
 
 	protected function getPermissionLevel() {
