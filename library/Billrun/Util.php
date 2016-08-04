@@ -1313,6 +1313,14 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 
+	/**
+	 * Returns a path of the received path within the shared folder for the current tenant.
+	 * if a relative path is given, adds to it's beginning the shared folder of the tenant.
+	 * if a full path is given, return it as is
+	 * 
+	 * @param type $path - relative or full path
+	 * @return full path, FALSE on error
+	 */
 	public static function getBillRunSharedFolderPath($path) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
@@ -1320,7 +1328,7 @@ class Billrun_Util {
 		if ($path[0] == DIRECTORY_SEPARATOR) {
 			return $path;
 		}
-		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
+		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getTenant() . DIRECTORY_SEPARATOR . $path;
 	}
 	
 	
@@ -1357,6 +1365,19 @@ class Billrun_Util {
 
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
+	
+	/**
+	 * Returns params for a command (cmd).
+	 * if running with multi tenant adds the tenant to the command.
+	 * 
+	 */
+	public static function getCmdEnvParams() {
+		$ret = '--env ' . Billrun_Factory::config()->getEnv();
+		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
+			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
+		}
+		return $ret;
 	}
 
 	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
