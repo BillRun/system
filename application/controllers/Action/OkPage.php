@@ -16,8 +16,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 
 class OkPageAction extends ApiAction {
-	use Billrun_Traits_Api_UserPermissions;
-	
 	protected $card_token;
 	protected $card_expiration;
 	protected $subscribers;
@@ -126,10 +124,6 @@ class OkPageAction extends ApiAction {
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
-	}
-
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

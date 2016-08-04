@@ -61,7 +61,7 @@ class Billrun_Cache {
 	protected function setPrefix($prefix) {
 		if($this->useTenantPrefix) {
 			// Append the tenant prefix
-			$prefix = Billrun_Factory::config()->getEnv() . "_" . $prefix;
+			$prefix = Billrun_Factory::config()->getTenant() . "_" . $prefix;
 		}
 		$this->cache->setOption(self::cachePrefixKey, $prefix);
 	}
@@ -76,7 +76,7 @@ class Billrun_Cache {
 		
 		// If we are using the tenant prefix, remove it from the get return value.
 		if($this->useTenantPrefix) {
-			$tenantName = Billrun_Factory::config()->getEnv();
+			$tenantName = Billrun_Factory::config()->getTenant();
 			$prefix = preg_replace('/^' . $tenantName . "_/", "", $prefix);
 		}
 		

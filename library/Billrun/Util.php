@@ -1313,6 +1313,14 @@ class Billrun_Util {
 		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
 	}
 
+	/**
+	 * Returns a path of the received path within the shared folder for the current tenant.
+	 * if a relative path is given, adds to it's beginning the shared folder of the tenant.
+	 * if a full path is given, return it as is
+	 * 
+	 * @param type $path - relative or full path
+	 * @return full path, FALSE on error
+	 */
 	public static function getBillRunSharedFolderPath($path) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
@@ -1320,7 +1328,7 @@ class Billrun_Util {
 		if ($path[0] == DIRECTORY_SEPARATOR) {
 			return $path;
 		}
-		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . APPLICATION_ENV . DIRECTORY_SEPARATOR . $path;
+		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getTenant() . DIRECTORY_SEPARATOR . $path;
 	}
 	
 	
@@ -1346,6 +1354,7 @@ class Billrun_Util {
 		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
+
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
@@ -1357,7 +1366,7 @@ class Billrun_Util {
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
 	}
-	
+
 	public static function convertQueryMongoDates(&$arr) {
 		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
 		foreach ($arr as &$value) {
@@ -1369,4 +1378,56 @@ class Billrun_Util {
 		}
 	}
 
+	/**
+	 * Returns params for a command (cmd).
+	 * if running with multi tenant adds the tenant to the command.
+	 * 
+	 */
+	public static function getCmdEnvParams() {
+		$ret = '--env ' . Billrun_Factory::config()->getEnv();
+		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
+			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
+		}
+		return $ret;
+	}
+
+	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
+		if(empty($searchKeys)) {
+			return "Empty search keys";
+		}
+		$from_date = new MongoDate(strtotime($searchKeys['from']));
+		if (!$from_date) {
+			return "date error";
+		}
+		unset($searchKeys['from']);
+		$to_date = new MongoDate(strtotime($searchKeys['to']));
+		if (!$to_date) {
+			return "date error";
+		}
+		unset($searchKeys['to']);
+		
+		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId($searchKeys['_id']))) {
+			return "id error";
+		}
+		unset($searchKeys['_id']);
+		
+		$ret = array();
+		foreach ($searchKeys as $pair) {
+			$ret[] = $pair;
+		}
+		$ret['$or'] = array(
+				array('from' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				)),
+				array('to' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				))
+			);
+		if (!$new) {
+			$ret['_id'] = array('$ne' => $id);
+		}
+		return $ret;
+	}
 }
