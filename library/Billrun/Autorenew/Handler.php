@@ -80,13 +80,17 @@ class Billrun_Autorenew_Handler {
 
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
-			$record = $manager->getAction($autoRenewRecord);
-			if (!$record) {
-				Billrun_Factory::log("Auto renew services failed to create record handler", Zend_Log::ALERT);
-				continue;
+			try {				
+				$record = $manager->getAction($autoRenewRecord);
+				if (!$record) {
+					Billrun_Factory::log("Auto renew services failed to create record handler", Zend_Log::ALERT);
+					continue;
+				}
+				$record->update();
+				Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
+			} catch (Exception $ex) {
+				Billrun_Factory::log("Error on autorenew handler. " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			}
-			$record->update();
-			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
 		}
 	}
 
