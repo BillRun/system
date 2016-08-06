@@ -528,6 +528,8 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'activation' => array(),
+			'deactivation' => array()
 		);
 		$filtered_request = array();
 
@@ -652,7 +654,6 @@ class Billrun_Util {
 				'desc' => 'vatable could be either "0" or "1"',
 			);
 		}
-
 		$filtered_request['source'] = 'api';
 		$filtered_request['usaget'] = $filtered_request['type'] = 'credit';
 		ksort($filtered_request);
@@ -922,5 +923,9 @@ class Billrun_Util {
 		$hours = substr($timezone, 1, 2);
 		$minutes = substr($timezone, -2, 2);
 		return $sign * ($hours * 3600 + $minutes * 60);
+	}
+	
+	public static function convertToBillrunDate($date){
+		return date(Billrun_Base::base_dateformat, strtotime($date));
 	}
 }
