@@ -108,6 +108,8 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function autoRenewServicesAction() {
+		set_time_limit(9999);
+		ini_set('max_execution_time', 9999);
 		$params = array();
 		$inputDate = $this->getRequest()->get('active_date');
 		if (!empty($inputDate)) {
