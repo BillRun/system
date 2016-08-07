@@ -37,7 +37,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 //			if (!file_exists($this->workspace)) {
 //				mkdir($this->workspace, 0755, true);
 //			}

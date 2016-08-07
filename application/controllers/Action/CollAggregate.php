@@ -16,8 +16,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class AggregateAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
-	
-	protected $ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
 
 	/**
 	 * method to execute the query
@@ -32,12 +30,12 @@ class AggregateAction extends ApiAction {
 			Billrun_Factory::log()->log("Aggregate API Input: " . print_R($request, 1), Zend_Log::DEBUG);
 			$config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
 
-			if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE) {
+			if (($pipelines = $this->getArrayParam($request['pipelines'])) === FALSE || (!is_array($pipelines))) {
 				$this->setError('Illegal pipelines: ' . $request['pipelines'], $request);
 				return TRUE;
 			}
 			$pipelines = $this->convertToMongoIds($pipelines);
-			$this->convertMongoDates($pipelines);
+			Billrun_Util::convertQueryMongoDates($pipelines);
 			if ($notPermittedPipelines = array_diff(array_map(function($pipeline) {
 					return key($pipeline);
 				}, $pipelines), $config['permitted_pipelines'])) {
@@ -53,7 +51,7 @@ class AggregateAction extends ApiAction {
 				return TRUE;		
 			}
 			
-			$collection = $request['collection'];
+				$collection = $request['collection'];
 			
 			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
 			
@@ -61,21 +59,21 @@ class AggregateAction extends ApiAction {
 			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
 			$cursor->timeout($timeout);
 			$entities = iterator_to_array($cursor);
-			$entities = array_map(function($ele) {
-				return $ele->getRawData();
-			}, $entities);
+				$entities = array_map(function($ele) {
+					return $ele->getRawData();
+				}, $entities);
 
-			Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-			$ret = array(
-				array(
-					'status' => 1,
-					'desc' => 'success',
-					'input' => $request,
-					'details' => $entities,
-				)
-			);
+				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
+				$ret = array(
+					array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request,
+						'details' => $entities,
+					)
+				);
 
-			$this->getController()->setOutput($ret);
+				$this->getController()->setOutput($ret);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
@@ -112,16 +110,6 @@ class AggregateAction extends ApiAction {
 			}
 		}
 		return $query;
-	}
-
-	protected function convertMongoDates(&$arr) {
-		foreach ($arr as &$value) {
-			if (is_array($value)) {
-				$this->convertMongoDates($value);
-			} else if (preg_match($this->ISODatePattern, $value)) {
-				$value = new MongoDate(strtotime($value));
-			}
-		}
 	}
 
 	protected function getPermissionLevel() {

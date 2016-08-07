@@ -15,7 +15,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
-	use Billrun_Traits_Api_UserPermissions;
 	
 	protected $cgConf;
 	protected $url;
@@ -118,7 +117,7 @@ class CreditGuardAction extends ApiAction {
 		return $validData;
 	}
 	
-	public function getToken($aid) {
+	public function getToken($aid, $return_url) {
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
@@ -127,6 +126,7 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
+		$this->cgConf['return_url'] = $return_url;
 
 		
 		$post_array = array(
@@ -163,7 +163,7 @@ class CreditGuardAction extends ApiAction {
                                                                  <clientIP/>
                                                                  <customerData>
                                                                   <userData1>' . $this->cgConf['aid'] . '</userData1>
-                                                                  <userData2/>
+                                                                  <userData2>' . $this->cgConf['return_url'] . '</userData2>
                                                                   <userData3/>
                                                                   <userData4/>
                                                                   <userData5/>
@@ -206,8 +206,5 @@ class CreditGuardAction extends ApiAction {
 		}
 	}
 
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-	}
 
 }

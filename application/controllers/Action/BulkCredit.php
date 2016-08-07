@@ -79,8 +79,7 @@ class BulkCreditAction extends CreditAction {
 	}
 
 	protected function processBulkCredit() {
-		$env = Billrun_Factory::config()->getEnv();
-		$cmd = 'php -t ' . APPLICATION_PATH . ' ' . APPLICATION_PATH . '/public/index.php --environment ' . $env . ' --process --type credit --parser none';
+		$cmd = 'php -t ' . APPLICATION_PATH . ' ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --process --type credit --parser none';
 		Billrun_Util::forkProcessCli($cmd);
 	}
 

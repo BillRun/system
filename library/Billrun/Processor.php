@@ -111,7 +111,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['path'])) {
-			$this->loadFile($options['path']);
+			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
 		}
 		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
@@ -141,9 +141,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
 		if (isset($options['backup_path'])) {
-			$this->backupPaths = $options['backup_path'];
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} else {
-			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType()));
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType())));
 		}
 	}
 
@@ -327,6 +327,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$lines = Billrun_Factory::db()->linesCollection();
 		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
 		$queue_data = $this->getQueueData();
+		$queue_stamps = array_keys($queue_data);
+		$line_stamps = array_keys($this->data['data']);
+		$lines_in_queue = array_intersect($line_stamps, $queue_stamps);
+		foreach ($lines_in_queue as $key => $value) {
+			$this->data['data'][$value]['in_queue'] = true;
+		}
+
 		if ($this->bulkInsert) {
 			settype($this->bulkInsert, 'int');
 			if (!$this->bulkAddToCollection($lines)) {
@@ -341,6 +348,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Storing " . count($queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
 			$this->addToQueue($queue_data);
 		}
+
 		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
 		return true;
 	}

@@ -16,13 +16,12 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 
 class OkPageAction extends ApiAction {
-	use Billrun_Traits_Api_UserPermissions;
-	
 	protected $card_token;
 	protected $card_expiration;
 	protected $subscribers;
 	protected $aid;
 	protected $personal_id;
+	protected $return_url;
 
 	public function execute() {
 		$this->allowed();
@@ -154,15 +153,12 @@ class OkPageAction extends ApiAction {
 			$this->card_token = $xmlObj->response->inquireTransactions->row->cardId;
 			$this->card_expiration = $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->aid = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
+			$this->return_url = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$this->personal_id = $xmlObj->response->inquireTransactions->row->personalId;
 			return true;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
-	}
-
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }
