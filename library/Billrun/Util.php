@@ -1345,7 +1345,7 @@ class Billrun_Util {
 	}
 	
 	public static function IsFloatValue($number) {
-		return is_float(floatval($number)) || Billrun_Util::IsIntegerValue(intval($number));
+		return is_numeric($number);
 	}
 	
 	public static function IsIntegerValue($number) {
