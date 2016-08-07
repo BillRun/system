@@ -29,11 +29,9 @@ class CreditGuardAction extends ApiAction {
 		$today = new MongoDate();
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
-		$return_url = get("return_url");
+		$return_url = $request->get("return_url");
 		if (empty($return_url)){
-			$config_coll = Billrun_Factory::db()->configCollection(); //TODO: verify from where in config collection i get the return url
-			// $config_coll_return = put here query to get it from collection config 
-			$return_url = $config_coll_return;
+			$return_url = Billrun_Factory::config()->getConfigValue('cg_return_url');
 		}
 		$hash = $request->get("hash");
 		if (is_null($aid) || !is_numeric($aid)) {
