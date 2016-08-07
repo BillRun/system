@@ -47,16 +47,25 @@ class SettingsAction extends ApiAction {
 			}
 			// TODO: Create action managers for the settings module.
 			$action = $request->get('action');
+			$success = true;
+			$output = array();
 			if ($action === 'set') {
-				$output = $this->model->updateConfig($category, $data);
+				$success = $this->model->updateConfig($category, $data);
+				
+				// Get all the errors.
+				$errors = $this->model->getInvalidFields();
+				if(!empty($errors)) {
+					$output = $errors;
+				}
 			} else if ($action === 'unset') {
-				$output = $this->model->unsetFromConfig($category, $data);
+				$success = $this->model->unsetFromConfig($category, $data);
 			} else {
-				$output = $this->model->getFromConfig($category, $data);
+				$success = $this->model->getFromConfig($category, $data);
 			}
+			
 			$this->getController()->setOutput(array(array(
-					'status' => $output ? 1 : 0,
-					'desc' => $output ? 'success' : 'error',
+					'status' => $success ? 1 : 0,
+					'desc' => $success ? 'success' : 'error',
 					'input' => $request->getPost(),
 					'details' => is_bool($output)? array() : $output,
 			)));

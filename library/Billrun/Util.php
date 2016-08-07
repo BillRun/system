@@ -797,6 +797,26 @@ class Billrun_Util {
 		return true;
 	}
 	
+	public static function mongoArrayToPHPArray($array) {
+		if(!is_string($array)) {
+			return null;
+		}
+		
+		$parts = explode(".", $array);
+		$result = array();
+		$previous = null;
+		$iter = &$result;
+		foreach ($parts as $value) {
+			if($previous !== null) {
+				$iter[$previous] = array($value => false);
+				$iter = &$iter[$previous];
+			}
+			$previous = $value;
+		}
+		
+		return $result;
+	}
+	
 	/**
 	 * convert assoc array to MongoDB query
 	 * 
