@@ -369,7 +369,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		foreach ($queries as $query) {
 			$match = true;
 			foreach ($query as $fieldKey => $regex) {
-				$match &= preg_match($regex, $line[$fieldKey]);
+				$match &= is_string($line[$fieldKey]) && preg_match($regex, $line[$fieldKey]);
 			}
 			if ($match) {
 				return TRUE;
