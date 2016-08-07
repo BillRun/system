@@ -508,11 +508,6 @@ class Billrun_Billrun {
 		}
 		$rate = self::getRowRate($row);
 		$this->updateBreakdown($sraw, $breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
-		
-		if (!isset($sraw['totals'][$breakdownKey])) {
-			$sraw['totals'][$breakdownKey] = 0;
-		}
-		$sraw['totals'][$breakdownKey] += $pricingData['aprice'];
 
 //		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
 //		if ($plan_key == 'credit') {
@@ -548,15 +543,22 @@ class Billrun_Billrun {
 //				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
 //			}
 //		}
+		
+		if (!isset($sraw['totals'][$breakdownKey])) {
+			$sraw['totals'][$breakdownKey] = array();
+		}
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
+			$sraw['totals'][$breakdownKey]['vatable'] = $sraw['totals']['vatable'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
 		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
+		$sraw['totals'][$breakdownKey]['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
+		$sraw['totals'][$breakdownKey]['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
 	}
 
 	/**
@@ -607,15 +609,25 @@ class Billrun_Billrun {
 		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		  $rawData['totals']['vatable'] = $pricingData['aprice'];
 		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0, 'flat' => 0, 'service' => 0, 'usage' => 0);
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0, 
+			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
+		);
 		foreach ($this->data['subs'] as $sub) {
 			//Billrun_Factory::log(print_r($sub));
 			$newTotals['before_vat'] += $this->getFieldVal($sub['totals']['before_vat'], 0);
 			$newTotals['after_vat'] += $this->getFieldVal($sub['totals']['after_vat'], 0);
 			$newTotals['vatable'] += $this->getFieldVal($sub['totals']['vatable'], 0);
-			$newTotals['flat'] += $this->getFieldVal($sub['totals']['flat'], 0);
-			$newTotals['service'] += $this->getFieldVal($sub['totals']['service'], 0);
-			$newTotals['usage'] += $this->getFieldVal($sub['totals']['usage'], 0);
+			$newTotals['flat']['before_vat'] += $this->getFieldVal($sub['totals']['flat']['before_vat'], 0);
+			$newTotals['flat']['after_vat'] += $this->getFieldVal($sub['totals']['flat']['after_vat'], 0);
+			$newTotals['flat']['vatable'] += $this->getFieldVal($sub['totals']['flat']['vatable'], 0);
+			$newTotals['service']['before_vat'] += $this->getFieldVal($sub['totals']['service']['before_vat'], 0);
+			$newTotals['service']['after_vat'] += $this->getFieldVal($sub['totals']['service']['after_vat'], 0);
+			$newTotals['service']['vatable'] += $this->getFieldVal($sub['totals']['service']['vatable'], 0);
+			$newTotals['usage']['before_vat'] += $this->getFieldVal($sub['totals']['usage']['before_vat'], 0);
+			$newTotals['usage']['after_vat'] += $this->getFieldVal($sub['totals']['usage']['after_vat'], 0);
+			$newTotals['usage']['vatable'] += $this->getFieldVal($sub['totals']['usage']['vatable'], 0);
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
