@@ -122,13 +122,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
-			_.forEach($scope.entity.notifications_threshold.on_load, function(on_load_notification, index) {
+			_.forEach($scope.notifications_threshold.on_load, function(on_load_notification, index) {
 				$scope.entity.notifications_threshold.on_load[index].pp_includes = [];
 				_.forEach(on_load_notification, function(pp) {
 					$scope.entity.notifications_threshold.on_load[index].pp_includes.push(parseInt(pp));
 				});
 			});
-			_.forEach($scope.entity.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
+			_.forEach($scope.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
 				$scope.entity.notifications_threshold.expiration_date[index].pp_includes = [];
 				_.forEach(expiration_date_notification, function(pp) {
 					$scope.entity.notifications_threshold.expiration_date[index].pp_includes.push(parseInt(pp));
