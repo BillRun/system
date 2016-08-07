@@ -529,7 +529,8 @@ class Billrun_Util {
 			'promotion' => array(),
 			'fixed' => array(),
 			'activation' => array(),
-			'deactivation' => array()
+			'deactivation' => array(),
+			'fraction' => array()
 		);
 		$filtered_request = array();
 
