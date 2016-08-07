@@ -797,18 +797,25 @@ class Billrun_Util {
 		return true;
 	}
 	
-	public static function mongoArrayToPHPArray($array) {
+	/**
+	 * Coverts a $seperator seperated array to an haierchy tree
+	 * @param string $array - Input string
+	 * @param string $seperator 
+	 * @param mixed $toSet - Value to be set to inner level of array
+	 * @return array
+	 */
+	public static function mongoArrayToPHPArray($array, $seperator, $toSet) {
 		if(!is_string($array)) {
 			return null;
 		}
 		
-		$parts = explode(".", $array);
+		$parts = explode($seperator, $array);
 		$result = array();
 		$previous = null;
 		$iter = &$result;
 		foreach ($parts as $value) {
 			if($previous !== null) {
-				$iter[$previous] = array($value => false);
+				$iter[$previous] = array($value => $toSet);
 				$iter = &$iter[$previous];
 			}
 			$previous = $value;

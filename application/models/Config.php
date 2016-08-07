@@ -200,7 +200,7 @@ class ConfigModel {
 		// Validate the complex object.
 		if(!Billrun_Config::isComplexValid($valueInCategory)) {
 			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory,1), Zend_Log::NOTICE);
-			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category);
+			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
 			return 0;
 		}
 
