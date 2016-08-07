@@ -12,14 +12,14 @@ trait Billrun_DataTypes_Conf_Range {
 	protected $range = array();
 	
 	protected function getRange($obj) {
-		if(!isset($obj['Range'])) {
+		if(!isset($obj['range'])) {
 			return;
 		}
 		
 		// TODO: Should we validate max and min existing? Set defaults?
 		// I prefer strictly forcing using both max and min.
-		$this->range['max'] = $obj['Range']['M'];
-		$this->range['min'] = $obj['Range']['m'];
+		$this->range['max'] = $obj['range']['max'];
+		$this->range['min'] = $obj['range']['min'];
 	}
 	
 	protected function validateRange() {
