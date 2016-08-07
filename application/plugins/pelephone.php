@@ -360,7 +360,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getNotificationExpireDate($obj) {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
-
+	
+	/**
+	 * @param type $obj
+	 * @param type $data
+	 * @return int
+	 */
 	protected function getPositiveValue($obj, $data) {
 		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
 			return 0;
@@ -369,6 +374,28 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return 0;
 		}
 		return abs(round($val));
+	}
+	
+	/**
+	 * 
+	 * @param obj $obj
+	 * @param array $data
+	 * @return type
+	 */
+	protected function getPositiveValuePrettifyDuration($obj, $data) {
+		$timePositiveValue = $this->getPositiveValue($obj, $data);
+		return Billrun_Util::durationFormat($timePositiveValue, true);
+	}
+	
+	/**
+	 * @param type $obj
+	 * @param type $data
+	 * @return type
+	 */
+	protected function getDataValuePrettify($obj, $data) {
+		$val = $this->getPositiveValue($obj, $data);
+		$dataUnit = isset($data['units'])? $data['units']: '';
+		return Billrun_Util::byteFormat($val, $dataUnit);
 	}
 
 	protected function modifyNotificationMessage($str, $params) {
