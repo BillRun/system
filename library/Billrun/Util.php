@@ -1407,6 +1407,14 @@ class Billrun_Util {
 		return !(@preg_match($regex, null) === false);
 	}
 	
+	public static function isDateValue($val) {
+		return (strtotime($val) === false ? false : true);
+	}
+	
+	public static function IsFloatValue($number) {
+		return is_numeric($number);
+	}
+	
 	public static function IsIntegerValue($number) {
 		return is_numeric($number) && ($number == intval($number));
 	}
@@ -1414,7 +1422,18 @@ class Billrun_Util {
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
 	}
-	
+
+	public static function convertQueryMongoDates(&$arr) {
+		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
+		foreach ($arr as &$value) {
+			if (is_array($value)) {
+				self::convertQueryMongoDates($value);
+			} else if (preg_match($ISODatePattern, $value)) {
+				$value = new MongoDate(strtotime($value));
+			}
+		}
+	}
+
 	/**
 	 * Returns params for a command (cmd).
 	 * if running with multi tenant adds the tenant to the command.
