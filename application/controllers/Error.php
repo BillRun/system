@@ -4,7 +4,7 @@
  * Controller for error handling
  * 
  * @package  Controller
- * @since    4
+ * @since    5
  */
 class ErrorController extends Yaf_Controller_Abstract {
 	
