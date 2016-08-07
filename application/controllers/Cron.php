@@ -20,6 +20,8 @@ class CronController extends Yaf_Controller_Abstract {
 
 	public function init() {
 		Billrun_Factory::log("BillRun Cron is running", Zend_Log::INFO);
+		set_time_limit(9999);
+		ini_set('max_execution_time', 9999);
 		$this->smser = Billrun_Factory::smser();
 		$this->mailer = Billrun_Factory::mailer();
 	}
