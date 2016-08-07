@@ -265,6 +265,7 @@ class Billrun_Billrun {
 	public function close($min_id) {
 		$billrun_entity = $this->getRawData();
 		$ret = $this->billrun_coll->createAutoIncForEntity($billrun_entity, "invoice_id", $min_id);
+		$this->billrun_coll->save($billrun_entity);
 		if (is_null($ret)) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
@@ -507,6 +508,11 @@ class Billrun_Billrun {
 		}
 		$rate = self::getRowRate($row);
 		$this->updateBreakdown($sraw, $breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
+		
+		if (!isset($sraw['totals'][$breakdownKey])) {
+			$sraw['totals'][$breakdownKey] = 0;
+		}
+		$sraw['totals'][$breakdownKey] += $pricingData['aprice'];
 
 //		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
 //		if ($plan_key == 'credit') {
@@ -601,12 +607,15 @@ class Billrun_Billrun {
 		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		  $rawData['totals']['vatable'] = $pricingData['aprice'];
 		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0);
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0, 'flat' => 0, 'service' => 0, 'usage' => 0);
 		foreach ($this->data['subs'] as $sub) {
 			//Billrun_Factory::log(print_r($sub));
 			$newTotals['before_vat'] += $this->getFieldVal($sub['totals']['before_vat'], 0);
 			$newTotals['after_vat'] += $this->getFieldVal($sub['totals']['after_vat'], 0);
 			$newTotals['vatable'] += $this->getFieldVal($sub['totals']['vatable'], 0);
+			$newTotals['flat'] += $this->getFieldVal($sub['totals']['flat'], 0);
+			$newTotals['service'] += $this->getFieldVal($sub['totals']['service'], 0);
+			$newTotals['usage'] += $this->getFieldVal($sub['totals']['usage'], 0);
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
@@ -1010,6 +1019,7 @@ class Billrun_Billrun {
 	}
 	
 	public function setBillrunAccountFields($data) {
+		$this->data['creation_time'] = new MongoDate();
 		$this->data['attributes'] = $data['attributes'];
 	}
 	

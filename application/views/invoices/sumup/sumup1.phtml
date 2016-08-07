@@ -50,15 +50,15 @@
 					<tbody>
 						<tr>
 							<td class="sumup-title">Flat</td>
-							<td class="sumup-data"><?php echo number_format(reset($data->get('totals.flat')), 2) ?></td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.flat'), 2) ?></td>
 						</tr>
 						<tr>
 							<td class="sumup-title">Services</td>
-							<td class="sumup-data"><?php echo number_format(reset($data->get('totals.services')), 2) ?></td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.service'), 2) ?></td>
 						</tr>
 						<tr>
 							<td class="sumup-title">Extras</td>
-							<td class="sumup-data"><?php echo number_format(reset($data->get('totals.usage')), 2) ?></td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.usage'), 2) ?></td>
 						</tr>
 						<tr class="table-holder"></tr>
 						<tr class="total-price">
