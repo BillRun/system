@@ -394,8 +394,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getDataValuePrettify($obj, $data) {
 		$val = $this->getPositiveValue($obj, $data);
-		$dataUnit = isset($data['units'])? $data['units']: '';
-		return Billrun_Util::byteFormat($val, $dataUnit);
+		$dataUnit = isset($data['units']) ? $data['units'] : 'MB';
+		return Billrun_Util::byteFormat($val, $dataUnit, 2, true);
 	}
 
 	protected function modifyNotificationMessage($str, $params) {
