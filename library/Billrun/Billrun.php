@@ -145,6 +145,7 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		$subscriber_entry['name'] = $subscriber->name;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;
@@ -325,7 +326,7 @@ class Billrun_Billrun {
 			return 'usage';
 		} 
 		
-		// LOG error
+		Billrun_Factory::log("Cannot get type for line. Details: " . print_R($row, 1), Zend_Log::ALERT);
 		return FALSE;
 	}
 
@@ -478,14 +479,15 @@ class Billrun_Billrun {
 		if (!isset($sraw['breakdown'][$breakdownKey])) {
 			$sraw['breakdown'][$breakdownKey] = array();
 		}
+		$rate_key = $rate['key'];
 		foreach ($sraw['breakdown'][$breakdownKey] as &$breakdowns) {
-			if ($breakdowns['name'] === $rate) {
+			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
 				return;
 			}
 		}
-		$sraw['breakdown'][$breakdownKey][] = array('name' => '', 'count' => '', 'cost' => '');
+		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count' => $count, 'cost' => $cost);
 	}
 
 	/**
@@ -499,28 +501,31 @@ class Billrun_Billrun {
 	 * @todo remove billrun_key parameter
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
-		//$usage_type = self::getGeneralUsageType($row['usaget']);
-		$breakdownKey = self::getBreakdownKey($row);
-		$rate = self::getRowRate($row);
-		$cost = 10;
-		$count = 1;
-		$this->updateBreakdown($sraw, $breakdownKey, $rate, $cost, $count);
-		//$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
-
-		if ($plan_key == 'credit') {
-			$zone += $pricingData['aprice'];
-		} else {
-			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
+//		$usage_type = self::getGeneralUsageType($row['usaget']);
+		if (!$breakdownKey = self::getBreakdownKey($row)) {
+			return;
 		}
-//		if (isset($row['arategroup'])) {
-//			if (isset($row['in_plan'])) {
-//				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
-//			}
-//			if (isset($row['over_plan'])) {
-//				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
-//				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
-//			}
+		$rate = self::getRowRate($row);
+		$this->updateBreakdown($sraw, $breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
+
+//		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+//		if ($plan_key == 'credit') {
+//			$zone += $pricingData['aprice'];
+//		} else {
+//			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 //		}
+		
+		// TODO: apply arategroup to new billrun object
+		if (isset($row['arategroup'])) {
+			if (isset($row['in_plan'])) {
+				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
+			}
+			if (isset($row['over_plan'])) {
+				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
+				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
+			}
+		}
+		
 //		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 //			$date_key = date("Ymd", $row['urt']->sec);
 //			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
@@ -723,7 +728,7 @@ class Billrun_Billrun {
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
 			if (isset($updatedLines[$line['stamp']])) {
-				//continue; //TODO: REMOVE!!!!
+				continue;
 			}
 			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
@@ -836,9 +841,7 @@ class Billrun_Billrun {
 					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
 					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
 			foreach ($cursor as $line) {
-				$s = (string)rand(0, 100000000);
-				$ret[$line['aid']][$s] = $line; //TODO: remove!!!
-				//$ret[$line['aid']][$line['stamp']] = $line;
+				$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
 		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);

@@ -124,13 +124,9 @@ class Billrun_Config {
 	}
 
 	public function getFileTypes() {
-		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
-		});
-		if ($fileType) {
-			$fileType = current($fileType);
-		}
-		return $fileType;
+		return array_map(function($fileSettings) {
+			return $fileSettings['file_type'];
+		}, $this->getConfigValue('file_types'));
 	}
 
 	public function loadDbConfig() {
