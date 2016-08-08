@@ -124,11 +124,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getDetailsKeys() {
-		return array(
-			'flat' => 'flat',
-			'services' => 'service',
-			'extras' => 'usage',
-		);
+		return Billrun_Factory::config()->getConfigValue('billrun.breakdowns', array());
 	}
 	
 	protected function getTranslations() {
