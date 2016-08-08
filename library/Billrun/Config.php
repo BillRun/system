@@ -159,7 +159,10 @@ class Billrun_Config {
 					return true;
 				}
 				$dbConfig = $dbCursor->getRawData();
-
+				
+				// Set the timezone from the config.
+				$this->setTenantTimezone($dbConfig);
+				
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
@@ -171,6 +174,29 @@ class Billrun_Config {
 		}
 	}
 
+	/**
+	 * Refresh the values from the config in the DB.
+	 */
+	public function refresh() {
+		$this->setTenantTimezone($this->toArray());
+	}
+	
+	protected function setTenantTimezone($dbConfig) {
+		if(!isset($dbConfig['timezone'])){
+			return;
+		}
+		
+		// Get the timezone.
+		$timezone = $this->getComplexValue($dbConfig['timezone']);
+		if(empty($timezone)) {
+			return;
+		}
+		
+		// Setting the default timezone.
+		$setTimezone = @date_default_timezone_set($timezone);
+		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
+	}
+	
 	/**
 	 * method to get config value
 	 * 
@@ -208,9 +234,68 @@ class Billrun_Config {
 			settype($currConf, $type);
 		}
 
+		// Check if the value is complex.
+		if(self::isComplex($currConf)) {
+			return self::getComplexValue($currConf);
+		}
+		
 		return $currConf;
 	}
 
+	/**
+	 * Return a wrapper for input data.
+	 * @param mixed $complex - Data to wrap with complex wrapper.
+	 * @return \Billrun_DataTypes_Conf_Base
+	 */
+	public static function getComplexWrapper ($complex) {
+		// Get complex wrapper.
+		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
+		if(!@class_exists($name)) {
+			return null;
+		}
+		
+		return new $name($complex);
+	}
+	
+	/**
+	 * Check if complex data set is valid by creating a wrapper and validating.
+	 * @param mixed $complex - Complex data
+	 * @return boolean - True if valid.
+	 */
+	public static function isComplexValid($complex) {
+		$wrapper = self::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return false;
+		}
+		return $wrapper->validate();
+	}
+	
+	public static function getComplexValue($complex) {
+		$wrapper = self::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return null;
+		}
+		return $wrapper->value();
+	}
+	
+	/**
+	 * Check if an object is complex (not primitive or array).
+	 * @return true if complex.
+	 */
+	public static function isComplex($obj) {
+		if(is_scalar($obj)) {
+			return false;
+		}
+		
+		if(!is_array($obj)) {
+			return true;
+		}
+		
+		// TODO: that means that 't' is a sensitive value! If a simple array 
+		// will have a 't' field, we will treat it as a complex object.
+		return isset($obj['t']);
+	}
+	
 	/**
 	 * method to receive the environment the app running
 	 * 
