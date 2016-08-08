@@ -514,7 +514,7 @@ class Billrun_Util {
 		// @TODO: take to config
 		$required_fields = array(
 			array('credit_type', 'charge_type'), // charge_type is for backward compatibility
-			'source_amount_without_vat',
+			'amount_without_vat',
 			'reason',
 			'account_id',
 			'subscriber_id',
@@ -530,7 +530,8 @@ class Billrun_Util {
 			'fixed' => array(),
 			'activation' => array(),
 			'deactivation' => array(),
-			'fraction' => array()
+			'fraction' => array(),
+			'source_amount_without_vat' => array()
 		);
 		$filtered_request = array();
 
@@ -579,27 +580,32 @@ class Billrun_Util {
 				'desc' => 'credit_type could be either "charge" or "refund"',
 			);
 		}
-
-		$source_amount_without_vat = Billrun_Util::filter_var($filtered_request['source_amount_without_vat'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-		if (!is_numeric($filtered_request['source_amount_without_vat']) || $source_amount_without_vat === false) {
+		if (isset($filtered_request['source_amount_without_vat']) && $filtered_request['fraction'] == 0) {
+			$amount = $filtered_request['source_amount_without_vat'];
+		}
+		else{
+			$amount = $filtered_request['amount_without_vat'];
+		}
+		$amount_without_vat = Billrun_Util::filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+		if (!is_numeric($amount) || $amount_without_vat === false) {
 			return array(
 				'status' => 0,
 				'desc' => 'amount_without_vat is not a number',
 			);
-		} else if ($source_amount_without_vat == 0) {
+		} else if ($amount_without_vat == 0) {
 			return array(
 				'status' => 0,
 				'desc' => 'amount_without_vat equal zero',
 			);
 		} else {
 			// TODO: Temporary conversion. Remove it once they send negative values!
-			if ($filtered_request['credit_type'] == 'refund' && floatval($source_amount_without_vat) > 0) {
-				$filtered_request['source_amount_without_vat'] = -floatval($source_amount_without_vat);
+			$amount_without_vat = Billrun_Util::filter_var($filtered_request['amount_without_vat'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+			if ($filtered_request['credit_type'] == 'refund' && floatval($amount_without_vat) > 0) {
+				$filtered_request['amount_without_vat'] = -floatval($amount_without_vat);
 			} else {
-				$filtered_request['source_amount_without_vat'] = floatval($source_amount_without_vat);
+				$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
 			}
 		}
-
 		if (is_string($filtered_request['reason'])) {
 			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots)
 		} else {

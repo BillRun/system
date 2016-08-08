@@ -355,11 +355,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 							}
 
-							if (isset($reduced) && !empty($reduced)) {
+							if (!empty($reduced)) {
 								$services = array();
 								foreach ($reduced as $service_name => $service_count) {
 									$service = array();
-									$service_stamps = array();
 									$service['service_name'] = $service_name;
 									$service['usaget'] = $service_types[$service_name]['usaget'];
 									$service_dates = $subscriber[$service['usaget']];
@@ -378,24 +377,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										} else {
 											$service['plan'] = 'ACCOUNT';
 										}
-										$stamp = md5($service['service_name'] . $service['from_date'] . $service['to_date'] . $service['aid'] . $service['sid']);
-										if (in_array($stamp, array_keys($service_stamps))) {
-											$service_stamps[$stamp]['count'] ++;
-											if ($this->isLastServiceIteration($index, $service_count)) {
-												foreach ($service_stamps as $service) {
-													$services[] = $service;
-												}
-											}
+										$stamp = $this->calcServiceStamp($service['service_name'], $service['from_date'], $service['to_date'], $service['aid'], $service['sid']);
+										if (in_array($stamp, array_keys($services))) {
+											$services[$stamp]['count'] ++;
 											continue;
 										}
-										$service_stamps[$stamp] = $service;
-										if ($this->isLastServiceIteration($index, $service_count)) {
-											foreach ($service_stamps as $service) {
-												$services[] = $service;
-											}
-										}
+										$services[$stamp] = $service;
 									}
 								}
+								$services = array_values($services);
 								$concat['data']['sub_services'] = $services;
 							}
 
@@ -462,7 +452,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $ret;
 	}
-
+	
 	/**
 	 * for each service type create a row, add required fields for lines collection, rate and price
 	 * @param type $billrun_key
@@ -507,18 +497,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $ret;
 	}
 	
-	
-	/**
-	 * checks if last iteration for each service a subscriber has
-	 * @param $index - index of the iteration 
-	 * @param $service_count - number of services for the same service kind.
-	 */
-	public function isLastServiceIteration($index, $service_count) {
-		if ($index == $service_count - 1) {
-			return true;
-		}
-		return false;
+	protected function calcServiceStamp($service_name, $from, $to, $aid, $sid){
+		return md5($service_name . $from . $to . $aid . $sid);
 	}
+
 
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
