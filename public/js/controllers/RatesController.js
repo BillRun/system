@@ -179,6 +179,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			}
 			return ret;
 		};
+		
 		$scope.deleteRate = function (type, rateName) {
 			var ret = true;
 			switch (type) {
@@ -215,7 +216,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addCallRate = function () {
 			if (!$scope.newRate.call || !$scope.newRate.call.name)
 				return;
-			if ($scope.entity.rates.call === undefined)
+			if ($scope.entity.rates.call === undefined || angular.isArray($scope.entity.rates.call))
 				$scope.entity.rates.call = {};
 			var newPriceInterval = {
 				access: 0,
@@ -245,7 +246,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addVideoCallRate = function () {
 			if (!$scope.newRate.video_call || !$scope.newRate.video_call.name)
 				return;
-			if ($scope.entity.rates.video_call === undefined)
+			if ($scope.entity.rates.video_call === undefined || angular.isArray($scope.entity.rates.video_call))
 				$scope.entity.rates.video_call = {};
 			var newPriceInterval = {
 				access: 0,
@@ -275,7 +276,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addRoamingIncomingCallRate = function () {
 			if (!$scope.newRate.roaming_incoming_call || !$scope.newRate.roaming_incoming_call.name)
 				return;
-			if ($scope.entity.rates.roaming_incoming_call === undefined)
+			if ($scope.entity.rates.roaming_incoming_call === undefined || angular.isArray($scope.entity.rates.roaming_incoming_call))
 				$scope.entity.rates.roaming_incoming_call = {};
 			var newPriceInterval = {
 				access: 0,
@@ -305,7 +306,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addRoamingCallRate = function () {
 			if (!$scope.newRate.roaming_call || !$scope.newRate.roaming_call.name)
 				return;
-			if ($scope.entity.rates.roaming_call === undefined)
+			if ($scope.entity.rates.roaming_call === undefined || angular.isArray($scope.entity.rates.roaming_call))
 				$scope.entity.rates.roaming_call = {};
 			var newPriceInterval = {
 				access: 0,
@@ -327,7 +328,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addRoamingCallbackRate = function () {
 			if (!$scope.newRate.roaming_callback || !$scope.newRate.roaming_callback.name)
 				return;
-			if ($scope.entity.rates.roaming_callback === undefined)
+			if ($scope.entity.rates.roaming_callback === undefined || angular.isArray($scope.entity.rates.roaming_callback))
 				$scope.entity.rates.roaming_callback = {};
 			var newPriceInterval = {
 				access: 0,
@@ -347,6 +348,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		};
 
 		$scope.addRoamingCallbackShortRate = function () {
+			
 			if (!$scope.newRate.roaming_callback_short || !$scope.newRate.roaming_callback_short.name)
 				return;
 			if ($scope.entity.rates.roaming_callback_short === undefined)
@@ -366,6 +368,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			$scope.entity.rates.roaming_callback_short[$scope.newRate.roaming_callback_short.name] = newPriceInterval;
 			$scope.shown.roaming_callback_shortRates[$scope.newRate.roaming_callback_short.name] = true;
 			$scope.newRate.roaming_callback_short = {name: undefined};
+			
 		};
 
 		$scope.deleteRoamingCallRate = function (rateName) {
@@ -425,7 +428,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addSMSRate = function () {
 			if (!$scope.newRate.sms || !$scope.newRate.sms.name)
 				return;
-			if ($scope.entity.rates.sms === undefined)
+			if ($scope.entity.rates.sms === undefined || angular.isArray($scope.entity.rates.sms))
 				$scope.entity.rates.sms = {};
 			var newPriceInterval = {
 				unit: "counter",
