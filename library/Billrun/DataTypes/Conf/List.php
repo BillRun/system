@@ -56,15 +56,22 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 	protected function validateEditable() {
 		// Check if the value already exists.
 		$name = $this->val[$this->matchKey];
-		$found = array_filter($this->list, function($k,$v) use($name) {
-			return $k == $this->matchKey && $v == $name;
-		}, ARRAY_FILTER_USE_BOTH);
+		$editing = array();
+		foreach ($this->list as $block) {
+			$found = array_filter($block, function($v, $k) use($name) {
+				return $k == $this->matchKey && $v == $name;
+			}, ARRAY_FILTER_USE_BOTH);
+			if(!empty($found)) {
+				$editing['allowed'] = $block['editable'];
+				break;
+			}
+		}
 		
-		if(!empty($found)) {
+		if(!empty($editing)) {
 			// TODO: Use the permissions to check if the document is editable, if the
 			// document is editable on system permissions, check for admin permissions 
 			// of the user.
-			return false;
+			return $editing['allowed'];
 		}
 		
 		return true;
