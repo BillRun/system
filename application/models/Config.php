@@ -200,8 +200,11 @@ class ConfigModel {
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		if(is_array($data)) {
 			foreach ($data as $key => $value) {
-				return $this->_updateConfig($currentConfig, $category . "."  . $key, $value);
+				if(!$this->_updateConfig($currentConfig, $category . "."  . $key, $value)) {
+					return 0;
+				}
 			}
+			return 1;
 		}
 		
 		$valueInCategory = 
@@ -232,6 +235,8 @@ class ConfigModel {
 		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
 			return 0;
 		}
+		
+		return 1;
 	}
 	
 		
