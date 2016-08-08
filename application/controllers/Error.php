@@ -12,14 +12,11 @@ class ErrorController extends Yaf_Controller_Abstract {
       * you can also call to Yaf_Request_Abstract::getException to get the 
       * un-caught exception.
       */
-     public function errorAction($exception) {
-		$backtrace = debug_backtrace()[0];
-		$func = @$backtrace['function'];
-		$fileName = @$backtrace['file'];
+     public function errorAction(Exception $exception) {
+		$fileName = $exception->getFile();
 			
 		// Check if recursive call.
-		if($fileName === __FILE__ && 
-		   $func     === __FUNCTION__) {
+		if($fileName === __FILE__) {
 			// Prevent recursive calls.
 			echo "CRITICAL ERROR";
 			die();
