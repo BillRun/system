@@ -810,7 +810,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$prefix = '0';
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
-			} else if (stripos($usaget, 'roaming') === TRUE) {
+			} else if (stripos($usaget, 'roaming') !== FALSE) {
 				if ($usaget == 'roaming_callback') {
 					$event['called_number'] = $event['destination_number'];
 				}
