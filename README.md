@@ -11,6 +11,6 @@ The system built on integration of YAF PHP Framework, for high performance, with
 
 The database is MongoDB that can support for different type of documents, no matter the size and type, what make the system easy to maintain. In addition, MongoDB is the most widely used NoSQL database that can be scale easily with minimal efforts.
 
-BillRun built by S.D.O.C. Ltd. - company that support Open-Source in wide different fields and innovations.
+BillRun built by BillRun Technologies Ltd. - company that support Open-Source in wide different fields and innovations.
 
 

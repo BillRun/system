@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU General Public License version 2 or later; see LICENSE.txt
  */
 define('RUNNING_FROM_CLI', php_sapi_name() === 'cli');
