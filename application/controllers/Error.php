@@ -12,16 +12,7 @@ class ErrorController extends Yaf_Controller_Abstract {
       * you can also call to Yaf_Request_Abstract::getException to get the 
       * un-caught exception.
       */
-     public function errorAction(Exception $exception) {
-		$fileName = $exception->getFile();
-			
-		// Check if recursive call.
-		if($fileName === __FILE__) {
-			// Prevent recursive calls.
-			echo "CRITICAL ERROR";
-			die();
-		}
-		
+     public function errorAction(Exception $exception) {	
         /* error occurs */
         switch ($exception->getCode()) {
             case YAF_ERR_NOTFOUND_MODULE:
