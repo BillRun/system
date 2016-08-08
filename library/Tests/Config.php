@@ -60,6 +60,14 @@ class Tests_Config extends UnitTestCase {
 			array('v' => null, 't' => "String", "valid" => false, "msg" => "Null string test"),
 			array('v' => "", 't' => "String", "valid" => false, "msg" => "Empty string test"),
 		
+			// String range
+			array('v' => "a", 't' => "String", "valid" => true, "range" => array() ,"msg" => "Valid string no range"),
+			array('v' => "a", 't' => "String", "valid" => true, "range" => array("a", "b", "c") ,"msg" => "Valid string in range"),
+			array('v' => "Bla", 't' => "String", "valid" => true,"range" => array("a", "Bla", "c"), "msg" => "Valid string in range 2"),
+		
+			array('v' => "b", 't' => "String", "valid" => false,"range" => array("a", "Bla", "c"), "msg" => "Invalid string not in range"),
+			array('v' => "Bla", 't' => "String", "valid" => false,"range" => array("a", "b", "c"), "msg" => "Invalid string not in range 2"),
+		
 			// Regex tests
 			array('v' => "127.0.0.1", 't' => "String", "valid" => true, "re" => "/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/", "msg" => "Valid re IP test"),
 			array('v' => "Hello.World", 't' => "String", "valid" => false, "re" => "/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/", "msg" => "Invalid re IP test"),
