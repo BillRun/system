@@ -33,6 +33,7 @@ class FindAction extends ApiAction {
 			return TRUE;
 		}
 		$query = $this->convertToMongoIds($query);
+		Billrun_Util::convertQueryMongoDates($query);
 		if (($project = $this->getArrayParam($request['project'])) === FALSE) {
 			$this->setError('Illegal project: ' . $request['project'], $request);
 			return TRUE;

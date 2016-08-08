@@ -3,13 +3,10 @@ body {
     font-family: Roboto, sans-serif;
 }
 
-/* temp Overide bootstrap CSS*/
-/* label { */
-/*     font-weight: normal; */
-/* } */
-* {
-    box-sizing: content-box;
+.form-control {
+    height: 44px!important;
 }
+
 .container{
   padding-right: 0;
   padding-left: 0;

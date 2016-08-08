@@ -12,6 +12,10 @@
  */
 class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_Subscribers_Action {
 
+	use Billrun_ActionManagers_Subscribers_Validator {
+		validate as baseValidate;
+	}
+	
 	/**
 	 * Field to hold the data to be written in the DB.
 	 * @var type Array
@@ -145,6 +149,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$this->query['type'] = $this->type;
 		// Set the from and to values.
 		$this->query['from'] = new MongoDate();
+		$this->query['plan_activation'] = new MongoDate();
 		$this->query['to'] = new MongoDate(strtotime('+100 years'));
 
 		$this->setGeneratedFields();
@@ -174,11 +179,11 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 
 	protected function validate() {
-		if ($this->type === 'subscriber') {
-			return $this->isAccountExists($this->query['aid']);
+		if (($this->type === 'subscriber') && (!$this->isAccountExists($this->query['aid']))) {
+				return false;
 		}
-
-		return true;
+		
+		return $this->baseValidate();
 	}
 
 	protected function isAccountExists($aid) {
@@ -192,6 +197,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			return false;
 		}
 		return true;
+	}
+
+	protected function getSubscriberData() {
+		return $this->query;
 	}
 
 }

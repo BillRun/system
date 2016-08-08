@@ -29,6 +29,13 @@ class Billrun_Config {
 	protected $config;
 	
 	/**
+	 * the name of the tenant (or null if not running with tenant)
+	 * 
+	 * @var string
+	 */
+	protected $tenant = null;
+	
+	/**
 	 * save all available values for environment while running in production
 	 * 
 	 * @var array
@@ -49,6 +56,16 @@ class Billrun_Config {
 		}
 		if (!isset($config['disableHostConfigLoad']) && file_exists($env_conf = APPLICATION_PATH . '/conf/' . Billrun_Util::getHostName() . '.ini')) {
 			$this->addConfig($env_conf);
+		}
+		
+		if (defined(APPLICATION_TENANT)) { // specific defined tenant
+			$this->tenant = APPLICATION_TENANT;
+			$this->loadTenantConfig();
+		} else if (defined('APPLICATION_MULTITENANT') && php_sapi_name() != "cli") { // running from web and with multitenant
+			$this->initTenant();
+			$this->loadTenantConfig();
+		} else {
+			$this->tenant = $this->getEnv();
 		}
 	}
 
@@ -196,7 +213,51 @@ class Billrun_Config {
 	public function getEnv() {
 		return APPLICATION_ENV;
 	}
+	
+	/**
+	 * method to retrieve the tenant name
+	 * 
+	 * @return string
+	 */
+	public function getTenant() {
+		if (empty($this->tenant)) {
+			return $this->getEnv();
+		}
+		return $this->tenant;
+	}
 
+	/**
+	 * method to set the tenant support
+	 */
+	protected function loadTenantConfig() {
+		if (isset($this->config['billrun']['multitenant']['basedir'])) {
+			$multitenant_basedir = $this->config['billrun']['multitenant']['basedir'] . DIRECTORY_SEPARATOR;
+		} else {
+			$multitenant_basedir = APPLICATION_PATH . '/conf/tenants/';
+		}
+		if (file_exists($tenant_conf = $multitenant_basedir . $this->tenant . '.ini')) {
+			$this->addConfig($tenant_conf);
+		}
+	}
+	
+	/**
+	 * method to initialize tenanat
+	 */
+	protected function initTenant() {
+		if(!isset($_SERVER['HTTP_HOST'])) {
+			return die('no tenant declare');
+		}
+
+		$server = $_SERVER['HTTP_HOST'];
+
+		$subDomains = explode(".", $server);
+
+		if (!isset($subDomains[0])) {
+			return die('no tenant declare');
+		}
+		$this->tenant = $subDomains[0];
+	}
+	
 	/**
 	 * method to check if the environment is set under some specific environment
 	 * 
