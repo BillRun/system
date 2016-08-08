@@ -288,13 +288,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 							);
 
 							$concat['data']['activation_start'] = isset($subscriber['activation']) ? Billrun_Util::convertToBillrunDate($subscriber['activation']) : null;
-							if (is_null($concat['data']['activation_start'])){
-								Billrun_Factory::log("No activation field for account id: " . $aid . " and subscriber id: " . $sid , Zend_log::ALERT);
-							}
 							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? Billrun_Util::convertToBillrunDate($subscriber['deactivate']) : null;
-							if (is_null($concat['data']['activation_end'])){
-								Billrun_Factory::log("No deactivate field for account id: " . $aid . " and subscriber id: " . $sid , Zend_log::ALERT);
-							}
 							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['from_date']) : null;
 							$this->freeze_start = $concat['data']['freeze_start_date'];
 							$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['to_date']) : null;

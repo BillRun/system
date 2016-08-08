@@ -30,7 +30,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row, $usage_type) {
-		return $row['amount_without_vat'];
+		return $row['source_amount_without_vat'];
 	}
 
 	/**
