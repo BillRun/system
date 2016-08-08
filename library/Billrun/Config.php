@@ -58,7 +58,7 @@ class Billrun_Config {
 			$this->addConfig($env_conf);
 		}
 		
-		if (defined(APPLICATION_TENANT)) { // specific defined tenant
+		if (defined('APPLICATION_TENANT')) { // specific defined tenant
 			$this->tenant = APPLICATION_TENANT;
 			$this->loadTenantConfig();
 		} else if (defined('APPLICATION_MULTITENANT') && php_sapi_name() != "cli") { // running from web and with multitenant
