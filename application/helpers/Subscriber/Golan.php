@@ -377,8 +377,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										} else {
 											$service['plan'] = 'ACCOUNT';
 										}
-										$stamp = $this->calcServiceStamp($service['service_name'], $service['from_date'], $service['to_date'], $service['aid'], $service['sid']);
-										if (in_array($stamp, array_keys($services))) {
+										$stamp = $this->calcServiceStamp($service);
+										if (isset($services[$stamp])) {
 											$services[$stamp]['count'] ++;
 											continue;
 										}
@@ -497,8 +497,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $ret;
 	}
 	
-	protected function calcServiceStamp($service_name, $from, $to, $aid, $sid){
-		return md5($service_name . $from . $to . $aid . $sid);
+	protected function calcServiceStamp($service){
+		return md5($service['service_name'] . $service['from_date'] . $service['to_date'] . $service['aid'] . $service['sid']);
 	}
 
 
