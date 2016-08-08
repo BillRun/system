@@ -110,7 +110,7 @@ class ConfigModel {
 	}
 
 	protected function _getFromConfig($currentConfig, $category, $data) {
-		if(is_array($data)) {
+		if(is_array($data) && !empty($data)) {
 			foreach ($data as $key => $_) {
 				$result[] = $this->_getFromConfig($currentConfig, $category . "."  . $key, null);
 			}
@@ -123,13 +123,36 @@ class ConfigModel {
 		if($valueInCategory === null) {
 			throw new Exception('Unknown category ' . $category);
 		}
-		
-		if(Billrun_Config::isComplex($valueInCategory)) {
+
+		return $this->extractComplexValue($valueInCategory);
+	}
+	
+	protected function extractComplexValue($toExtract) {	
+		if(Billrun_Config::isComplex($toExtract)) {
 			// Get the complex object.
-			return Billrun_Config::getComplexValue($valueInCategory);
+			return Billrun_Config::getComplexValue($toExtract);
 		} 
 		
-		return $valueInCategory;
+		if(is_array($toExtract)) {
+			return $this->extractComplexFromArray($toExtract);
+		}
+		
+		return $toExtract;
+	}
+	
+	protected function extractComplexFromArray($array) {
+		$returnData = array();
+		// Check for complex objects.
+		foreach ($array as $key => $value) {
+			if(Billrun_Config::isComplex($value)) {
+				// Get the complex object.
+				$returnData[$key] = Billrun_Config::getComplexValue($value);
+			} else {
+				$returnData[$key] = $value;
+			}
+		}
+		
+		return $returnData;
 	}
 	
 	/**
