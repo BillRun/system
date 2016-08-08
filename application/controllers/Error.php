@@ -13,7 +13,7 @@ class ErrorController extends Yaf_Controller_Abstract {
       * un-caught exception.
       */
      public function errorAction($exception) {
-		$backtrace = debug_backtrace();
+		$backtrace = debug_backtrace()[0];
 		$func = @$backtrace['function'];
 		$fileName = @$backtrace['file'];
 			
