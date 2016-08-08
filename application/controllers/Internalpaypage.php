@@ -6,40 +6,24 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/application/controllers/Externalpaypage.php';
+
 /**
  * Billing paypage controller class
  *
  * @package  Controller
  * @since    5.0
  */
-class PaypageController extends Yaf_Controller_Abstract {
+
+class InternalPaypageController extends ExternalPaypageController {
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function init() {
 		Billrun_Factory::db();
 	}
-
-	public function indexAction() {
-		$view = new Yaf_View_Simple(Billrun_Factory::config()->getConfigValue('application.directory') . '/views/paypage');
-		$request = $this->getRequest()->getRequest();
-		$query = array(
-			'type' => 'account',
-			'aid' => intval($request['aid'])
-		);
-		$account = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->getRawData();
-		$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->current()->getRawData();
-		$plans = Billrun_Factory::db()->plansCollection()->query()->cursor();
-		$planNames = array();
-		foreach ($plans as $plan) {
-			$p = $plan->getRawData();
-			$planNames[] = $p['name'];
-		}
-		$this->getView()->assign('account', $account);
-		$this->getView()->assign('config', $config['subscribers']['account']['fields']);
-		$this->getView()->assign('plans', $planNames);
-		return $view->render();
-	}
-
+	
 	public function createAction() {
+		$this->allowed();
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
 		$type = empty($request['aid']) ? 'account' : 'subscriber';
@@ -59,17 +43,23 @@ class PaypageController extends Yaf_Controller_Abstract {
 			return false;
 		}
 		$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
-		$creditGuardRow = $creditGuardColl->query($passQuery)->cursor()->current();
-		$secret = $creditGuardRow['s'];
+		$creditGuardRow = Billrun_Factory::db()->creditGuardCollection()->query($passQuery)->cursor()->current();
+		$secret = $creditGuardRow['bs'];
 		$data = array(
 			"aid" => $res['details']['aid'],
 			"t" => time()
 		);
 		$hashResult = hash_hmac("sha512", json_encode($data), $secret);
-		$query = array(
+		$sendData = array(
 			"data" => $data,
-			"sig" => $hashResult
+			"signature" => $hashResult
 		);
-	}
 
+		$this->redirect('/api/creditguard', json_encode($sendData));
+		return false;
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
 }
