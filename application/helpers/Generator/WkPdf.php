@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2013 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -124,11 +124,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getDetailsKeys() {
-		return array(
-			'flat' => 'flat',
-			'services' => 'service',
-			'extras' => 'usage',
-		);
+		return Billrun_Factory::config()->getConfigValue('billrun.breakdowns', array());
 	}
 	
 	protected function getTranslations() {

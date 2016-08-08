@@ -20,9 +20,9 @@
 								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
 									<tr>
 										<td><?php echo date('d/m/Y H:i:s', $line['urt']->sec); ?></td>
-										<td><?php echo $line['usaget']; ?></td>
+										<td><?php echo $line['type']; ?></td>
 										<td><?php echo number_format($line['usagev'], 2); ?></td>
-										<td><?php echo $line['rate_key']; ?></td>
+										<td><?php echo $line['arate_key']; ?></td>
 										<td><?php echo number_format($line['aprice'], 2); ?></td>
 									</tr>
 								<?php } ?>
