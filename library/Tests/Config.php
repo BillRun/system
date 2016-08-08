@@ -105,6 +105,15 @@ class Tests_Config extends UnitTestCase {
 			array('v' => null, 't' => "Timezone", "valid" => false, "msg" => "Invalid null timezone"),
 			array('v' => 100, 't' => "Timezone", "valid" => false, "msg" => "Invalid number timezone"),
 			array('v' => "", 't' => "Timezone", "valid" => false, "msg" => "Invalid empty timezone"),
+		
+			array('t' => "List", 'v' => array("field_name" => "a", "editable" => false), "valid" => true, "msg" => "Simple valid list 1", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+			array('t' => "List", 'v' => array("field_name" => "a", "editable" => true,  "generated" => true), "valid" => true, "msg" => "Simple valid list 2", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+			array('t' => "List", 'v' => array("field_name" => "a", "editable" => false, "unique" => true), "valid" => true, "msg" => "Simple valid list 3", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+		
+			array('t' => "List", 'v' => array("editable" => true), "valid" => false, "msg" => "Invalid missing mendatory field", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+			array('t' => "List", 'v' => array("field_name" => true), "valid" => false, "msg" => "Invalid missing mendatory field 2", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+			array('t' => "List", 'v' => array("field_name" => true, "unique" => true), "valid" => false, "msg" => "Invalid missing mendatory field 3", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
+			array('t' => "List", 'v' => array("editable" => true, "unique" => true), "valid" => false, "msg" => "Invalid missing mendatory field 4", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true)),
 		);
 	
 	public function testComplexWrappers() {
