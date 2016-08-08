@@ -25,5 +25,7 @@ class ErrorController extends Yaf_Controller_Abstract {
                 echo "INVALID ACTION";
                 break;
         }
+		
+		Billrun_Factory::log()->logCrash($exception);
      } 
 }
