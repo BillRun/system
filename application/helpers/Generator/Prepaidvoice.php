@@ -31,7 +31,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'Brun_PN_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'Brun_PN_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 
 	//--------------------------------------------  Protected ------------------------------------------------

@@ -149,9 +149,9 @@ $(function () {
 				} else {
 					amount = (entity.include[include_type].usagev ?
 							entity.include[include_type].usagev :
-							(entity.include[include_type][i].cost ?
-									entity.include[include_type][i].cost :
-									entity.include[include_type][i].value));
+							(entity.include[include_type].cost ?
+									entity.include[include_type].cost :
+									entity.include[include_type].value));
 					pp_includes_name = entity.include[include_type].pp_includes_name;
 				}
 				var $row = $("<tr><td>" + include_type + "</td><td>" + amount + "</td><td>" + pp_includes_name + "</td></tr>");

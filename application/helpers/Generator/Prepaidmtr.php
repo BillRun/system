@@ -25,7 +25,7 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PREPAID_MTR_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PREPAID_MTR_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 
 	// ------------------------------------ Protected -----------------------------------------

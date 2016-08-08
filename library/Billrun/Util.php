@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
@@ -13,7 +12,8 @@
  * @since    0.5
  */
 class Billrun_Util {
-
+        public static $computerUnit = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
+			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
 	/**
 	 * method to filter user input
 	 * 
@@ -267,20 +267,18 @@ class Billrun_Util {
 	 * @return string size in requested format
 	 */
 	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, $dec_point = ".", $thousands_sep = ",") {
-		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
-			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
-
+		$unit = strtoupper($unit);
 		$value = 0;
 		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
-			if (!array_key_exists($unit, $units)) {
+			if (!array_key_exists($unit, self::$computerUnit)) {
 				$pow = floor(log(abs($bytes)) / log(1024));
-				$unit = array_search($pow, $units);
+				$unit = array_search($pow, self::$computerUnit);
 			}
 
 			// Calculate byte value by prefix
-			$value = ($bytes / pow(1024, floor($units[$unit])));
+			$value = ($bytes / pow(1024, floor(self::$computerUnit[$unit])));
 		}
 
 		if ($unit == 'B') {
@@ -304,21 +302,52 @@ class Billrun_Util {
 	}
 
 	/**
+         * convert KB/MB/GB/TB/PB/EB/ZB/YB to bytes
+         * @param string $unitSizeToByte 
+         * @param string $convertToOtherUnit use when we want to return different unit size
+         * @param int $decimals 
+         * @param string $dec_point sets the separator for the decimal point
+         * @return int of bytes
+         */
+        public static function computerUnitToBytes($unitSizeToByte = '0B', $convertToOtherUnit = 'B', $decimals = 0 , $dec_point = ".", $thousands_sep = ","){
+            $unitSizeAndType = [];
+            $pattern = '/(\d+\.\d+|\d+)(\w+)$/';
+            preg_match($pattern, $unitSizeToByte, $unitSizeAndType);
+            $unitSize = $unitSizeAndType[1];
+            $unitType = $unitSizeAndType[2];
+            $bytes = 0;
+            $powerCalc = self::$computerUnit[$unitType] - self::$computerUnit[$convertToOtherUnit];
+            
+            if(isset(self::$computerUnit[$unitType]) && !empty($unitSize)){
+                if($powerCalc >= 0){
+                    $bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep );
+                }else{
+					$decimals = 6;
+                    $bytes = number_format($unitSize / pow(1024, floor(abs($powerCalc))), $decimals, $dec_point, $thousands_sep );
+                }
+            }
+            
+            return $bytes;
+        }
+        
+	/**
 	 * convert seconds to requested format
 	 * 
-	 * @param string $bytes
-	 * 
+	 * @param string $seconds
+	 * @param bool $toMinutesSecondFormat if true returning minutes and second format
 	 * @return string size in requested foramt
 	 * 
 	 * 60 sec => 1 min
 	 * 10 sec => 10 sec
 	 * 3400 sec => X minutes
 	 */
-	public static function durationFormat($seconds) {
-		if ($seconds > 3600) {
+	public static function durationFormat($seconds, $formatSeconds = false) {
+		if ($seconds >= 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		//return gmdate('i:s', $seconds);
+		if ($formatSeconds) {
+			return gmdate('i:s', $seconds);
+		}
 		return $seconds;
 	}
 
@@ -493,6 +522,30 @@ class Billrun_Util {
 		return array_filter($ar, function($var) {
 			return is_string($var) || is_numeric($var);
 		});
+	}
+
+	/**
+	 * method to convert msisdn to local phone number (remove country extension)
+	 * 
+	 * @param string $msisdn the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function localNumber($msisdn, $defaultPrefix = null) {
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+		$prefixLength = strlen($defaultPrefix);
+		if (substr($msisdn, 0, $prefixLength) != $defaultPrefix) {
+			return $msisdn;
+		}
+		if (substr($msisdn, 0, $prefixLength+1) == $defaultPrefix . '1') {
+			$prefix = '';
+		} else {
+			$prefix = '0';
+		}
+		return $prefix . substr($msisdn, (-1) * strlen($msisdn) + $prefixLength);
 	}
 
 	/**
@@ -849,7 +902,7 @@ class Billrun_Util {
 		}
 		return $query;
 	}
-
+	
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -1113,7 +1166,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if (!$response) {
+			if(!$response) {
 				$response = $e->getMessage();
 			}
 		}

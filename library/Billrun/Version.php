@@ -30,7 +30,7 @@ class Billrun_Version {
 	public static $BUILD = '0';
 
 	/** @var  string  Release date. */
-	public static $RELDATE = '10-July-2016';
+	public static $RELDATE = '19-July-2016';
 
 	/** @var  string  Link text. */
 	public static $URL = '<a href="https://bill.run">BillRun</a>';

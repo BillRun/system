@@ -25,7 +25,7 @@ class Generator_Prepaidtransactions extends Billrun_Generator_ConfigurableCDRAgg
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PREPAID_TRANSACTIONS_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PREPAID_TRANSACTIONS_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 
 	// ------------------------------------ Protected -----------------------------------------
