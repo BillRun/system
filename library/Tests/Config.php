@@ -16,7 +16,7 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 class Tests_Config extends UnitTestCase {
-	protected $tests = array(
+	protected $complexWrapperTests = array(
 			// Numbers
 			array('v' => 1, 't' => "Number", "valid" => true, "msg" => "Positive number test"),
 			array('v' => 10, 't' => "Number", "valid" => true, "msg" => "Positive number test"),
@@ -107,8 +107,8 @@ class Tests_Config extends UnitTestCase {
 			array('v' => "", 't' => "Timezone", "valid" => false, "msg" => "Invalid empty timezone"),
 		);
 	
-	public function testValid() {
-		foreach ($this->tests as $test) {
+	public function testComplexWrappers() {
+		foreach ($this->complexWrapperTests as $test) {
 			$wrapper = Billrun_Config::getComplexWrapper($test);
 			if($wrapper === null) {
 				continue;

@@ -181,8 +181,10 @@ class ConfigModel {
 			}
 			$this->setFileTypeSettings($updatedData, $fileSettings);
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
-		} else {			
-			$this->_updateConfig($updatedData, $category, $data);
+		} else {
+			if(!$this->_updateConfig($updatedData, $category, $data)) {
+				return 0;
+			}
 		}
 		
 		$ret = $this->collection->insert($updatedData);
@@ -195,10 +197,10 @@ class ConfigModel {
 		return $saveResult;
 	}
 
-	protected function _updateConfig($currentConfig, $category, $data) {
+	protected function _updateConfig(&$currentConfig, $category, $data) {
 		if(is_array($data)) {
 			foreach ($data as $key => $value) {
-				$this->_updateConfig($currentConfig, $category . "."  . $key, $value);
+				return $this->_updateConfig($currentConfig, $category . "."  . $key, $value);
 			}
 		}
 		
@@ -211,6 +213,46 @@ class ConfigModel {
 			return 0;
 		}
 		
+		// Check if complex object.
+		if(!Billrun_Config::isComplex($valueInCategory)) {
+			// TODO: Do we allow setting?
+			return Billrun_Util::setValueByMongoIndex($data, $currentConfig, $category);
+		}
+		// Set the value for the complex object,
+		$valueInCategory['v'] = $data;
+
+		// Validate the complex object.
+		if(!Billrun_Config::isComplexValid($valueInCategory)) {
+			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory,1), Zend_Log::NOTICE);
+			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
+			return 0;
+		}
+
+		// Update the config.
+		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
+			return 0;
+		}
+	}
+	
+		
+	protected function setConfigValue(&$config, $category, $toSet) {		
+		// Check if complex object.
+		if(Billrun_Config::isComplex($toSet)) {
+			return $this->setComplexValue($toSet);
+		}
+		
+		if(is_array($toSet)) {
+			return $this->setConfigArrayValue($toSet);
+		}
+		
+		return Billrun_Util::setValueByMongoIndex($toSet, $config, $category);
+	}
+	
+	protected function setConfigArrayValue($toSet) {		
+		
+	}
+	
+	protected function setComplexValue($toSet) {		
 		// Check if complex object.
 		if(!Billrun_Config::isComplex($valueInCategory)) {
 			// TODO: Do we allow setting?
@@ -231,6 +273,17 @@ class ConfigModel {
 		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
 			return 0;
 		}
+		
+		if(Billrun_Config::isComplex($toSet)) {
+			// Get the complex object.
+			return Billrun_Config::getComplexValue($toSet);
+		} 
+		
+		if(is_array($toSet)) {
+			return $this->extractComplexFromArray($toSet);
+		}
+		
+		return $toSet;
 	}
 	
 	public function unsetFromConfig($category, $data) {
