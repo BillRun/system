@@ -13,6 +13,18 @@ class ErrorController extends Yaf_Controller_Abstract {
       * un-caught exception.
       */
      public function errorAction($exception) {
+		$backtrace = debug_backtrace();
+		$func = @$backtrace['function'];
+		$fileName = @$backtrace['file'];
+			
+		// Check if recursive call.
+		if($fileName === __FILE__ && 
+		   $func     === __FUNCTION__) {
+			// Prevent recursive calls.
+			echo "CRITICAL ERROR";
+			die();
+		}
+		
         /* error occurs */
         switch ($exception->getCode()) {
             case YAF_ERR_NOTFOUND_MODULE:
