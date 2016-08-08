@@ -60,7 +60,7 @@ class SettingsAction extends ApiAction {
 			} else if ($action === 'unset') {
 				$success = $this->model->unsetFromConfig($category, $data);
 			} else {
-				$success = $this->model->getFromConfig($category, $data);
+				$output = $this->model->getFromConfig($category, $data);
 			}
 			
 			$this->getController()->setOutput(array(array(

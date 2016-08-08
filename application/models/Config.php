@@ -111,7 +111,7 @@ class ConfigModel {
 
 	protected function _getFromConfig($currentConfig, $category, $data) {
 		if(is_array($data)) {
-			foreach ($data as $key) {
+			foreach ($data as $key => $_) {
 				$result[] = $this->_getFromConfig($currentConfig, $category . "."  . $key, null);
 			}
 			return $result;
