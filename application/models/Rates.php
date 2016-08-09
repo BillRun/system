@@ -610,6 +610,9 @@ class RatesModel extends TabledateModel {
 	protected function validateRates($data) {
 		foreach ($data['rates'] as $usaget => $plans) {
 			foreach ($plans as $plan => $rate) {
+				if (!PlansModel::isPlanExists($plan)) {
+					return 'Plan "' . $plan . '" does not exists';
+				}
 				if (!isset($rate['rate'])) {
 					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
 				}

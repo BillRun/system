@@ -177,5 +177,10 @@ class PlansModel extends TabledateModel {
 		}
 		return true;
 	}
+	
+	public static function isPlanExists($planName) {
+		$query = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $planName));
+		return $planName === 'BASE' || (Billrun_Factory::db()->plansCollection()->query($query)->cursor()->count() > 0);
+	}
 
 }
