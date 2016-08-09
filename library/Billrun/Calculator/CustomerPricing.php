@@ -176,7 +176,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$accessPrice = isset($rate['rates'][$usage_type]['access']) ? $rate['rates'][$usage_type]['access'] : 0;
 					$pricingData = array($this->pricingField => $accessPrice + self::getPriceByRate($rate, $usage_type, $volume));
 				} else if ($row['type'] == 'service') {
-					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $usage_type, $volume));
+					$pricingData = array($this->pricingField => self::getPriceByRate($rate, $row['type'], $volume));
 					if (isset($row['fraction'])) {
 						$pricingData['aprice'] = $pricingData['aprice'] * $row['fraction'];
 					}
