@@ -1,7 +1,7 @@
 <?php
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -9,12 +9,14 @@
  * Wrapper class for a complex string value object
  */
 class Billrun_DataTypes_Conf_String extends Billrun_DataTypes_Conf_Base {
+	use Billrun_DataTypes_Conf_Stringrange;
 	protected $reg = "";
 	public function __construct($obj) {
 		$this->val = $obj['v'];
 		if(isset($obj['re'])) {
 			$this->reg = $obj['re'];
 		}
+		$this->getRange($obj);
 	}
 	
 	public function validate() {
@@ -32,6 +34,10 @@ class Billrun_DataTypes_Conf_String extends Billrun_DataTypes_Conf_Base {
 			
 			// Validate the regex
 			return (preg_match($this->reg, $this->val) === 1);
+		}
+		
+		if(!$this->validateRange()) {
+			return false;
 		}
 		
 		return true;
