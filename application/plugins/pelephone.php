@@ -814,7 +814,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				if ($usaget == 'roaming_callback') {
 					$event['called_number'] = $event['destination_number'];
 				}
-				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
+					$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				}
 			}
 			// backward compatibility to local calls without vlr
 			if (empty($event['vlr']) && stripos($usaget, 'roaming') === FALSE) {
