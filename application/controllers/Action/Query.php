@@ -165,7 +165,9 @@ class QueryAction extends ApiAction {
 			$lines = $model->getData($query);
 			foreach ($lines as &$line) {
 				if (isset($line['source_ref'])) {
-					$line['source_ref_value'] = $line->get('source_ref', false)->getRawData();
+					$row = $line->get('source_ref', false)->getRawData();
+					unset($row['tx'], $row['_id'], $row['notifications_sent']);
+					$line['source_ref_value'] = $row;
 				}
 				$line = Billrun_Util::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));
 			}

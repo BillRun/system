@@ -263,7 +263,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 */
 	protected function setRowDataForQuery($row) {
 		$timeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.time_field', 'urt');
-		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number');
+		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . $row['usaget'] . '.called_number_field', Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number'));
 		$countryCodeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.country_code_field', 'location_mcc');
 		$countryCode = $row->get($countryCodeField);
 		if (!$countryCode) {
