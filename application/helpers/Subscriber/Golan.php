@@ -377,7 +377,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 										} else {
 											$service['plan'] = 'ACCOUNT';
 										}
-										$stamp = $this->calcServiceStamp($service);
+										$stamp = Billrun_Util::generateArrayStamp($service);
 										if (isset($services[$stamp])) {
 											$services[$stamp]['count'] ++;
 											continue;
@@ -497,11 +497,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $ret;
 	}
 	
-	protected function calcServiceStamp($service){
-		return md5($service['service_name'] . $service['from_date'] . $service['to_date'] . $service['aid'] . $service['sid']);
-	}
-
-
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
 		$arr = @json_decode($json, true);
