@@ -207,9 +207,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 				case 'data':
 					ret = $scope.deleteDataRate(rateName);
 					break;
-                                case 'video_call':
-                                        ret = $scope.deleteVideoCallRate(rateName);
-                                        break;
+				case 'video_call':
+								ret = $scope.deleteVideoCallRate(rateName);
+								break;
 			}
 			return ret;
 		};
@@ -351,7 +351,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			
 			if (!$scope.newRate.roaming_callback_short || !$scope.newRate.roaming_callback_short.name)
 				return;
-			if ($scope.entity.rates.roaming_callback_short === undefined)
+			if ($scope.entity.rates.roaming_callback_short === undefined || angular.isArray($scope.entity.rates.roaming_callback_short))
 				$scope.entity.rates.roaming_callback_short = {};
 			var newPriceInterval = {
 				access: 0,
@@ -398,7 +398,7 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 		$scope.addDataRate = function () {
 			if (!$scope.newRate.data || !$scope.newRate.data.name)
 				return;
-			if ($scope.entity.rates.data === undefined)
+			if ($scope.entity.rates.data === undefined || angular.isArray($scope.entity.rates.data))
 				$scope.entity.rates.data = {};
 			var newPriceInterval = {
 				access: 0,
