@@ -650,7 +650,7 @@ class RatesModel extends TabledateModel {
 	}
 	
 	protected function isUsagetValid($usaget) {
-		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types')[0]);
+		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
 	}
 
 }

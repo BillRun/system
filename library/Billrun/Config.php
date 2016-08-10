@@ -247,7 +247,7 @@ class Billrun_Config {
 	 * @param mixed $complex - Data to wrap with complex wrapper.
 	 * @return \Billrun_DataTypes_Conf_Base
 	 */
-	public static function getComplexWrapper ($complex) {
+	public static function getComplexWrapper (&$complex) {
 		// Get complex wrapper.
 		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
 		if(!@class_exists($name)) {
@@ -262,15 +262,18 @@ class Billrun_Config {
 	 * @param mixed $complex - Complex data
 	 * @return boolean - True if valid.
 	 */
-	public static function isComplexValid($complex) {
+	public static function isComplexValid(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return false;
 		}
-		return $wrapper->validate();
+		if (!$wrapper->validate()) {
+			return false;
+		}
+		return true;
 	}
 	
-	public static function getComplexValue($complex) {
+	public static function getComplexValue(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return null;

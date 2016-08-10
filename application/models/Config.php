@@ -198,7 +198,8 @@ class ConfigModel {
 	}
 
 	protected function _updateConfig(&$currentConfig, $category, $data) {
-		if(is_array($data)) {
+		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
+		if(Billrun_Util::isAssoc($data)) {
 			foreach ($data as $key => $value) {
 				if(!$this->_updateConfig($currentConfig, $category . "."  . $key, $value)) {
 					return 0;
@@ -230,7 +231,7 @@ class ConfigModel {
 			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
 			return 0;
 		}
-
+		
 		// Update the config.
 		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
 			return 0;
