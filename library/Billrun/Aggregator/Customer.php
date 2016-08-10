@@ -526,7 +526,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		$max_num_processes = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
 		if ($this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false)))->count() >= $max_num_processes) {
-			Billrun_Factory::log()->log("Host ". $host. "is already running max number of ". $max_num_processes . "processes", Zend_Log::DEBUG);
+			Billrun_Factory::log()->log("Host ". $host. " is already running max number of ". $max_num_processes . " processes", Zend_Log::DEBUG);
 			return FALSE;
 		}
 		$current_document = $this->billing_cycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size))->cursor()->sort(array('page_number' => -1))->limit(1)->current();
