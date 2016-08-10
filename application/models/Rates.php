@@ -608,9 +608,18 @@ class RatesModel extends TabledateModel {
 	}
 	
 	protected function validateRates($data) {
+		if (empty($data['rates'])) {
+			return '"rates" field must be set in rate';
+		}
 		foreach ($data['rates'] as $usaget => $plans) {
+			if (!$this->isUsagetValid($usaget)) {
+				return 'Usage type "' . $usaget . '" is not valid';
+			}
 			foreach ($plans as $plan => $rate) {
-				if (!isset($rate['rate'])) {
+				if (!PlansModel::isPlanExists($plan)) {
+					return 'Plan "' . $plan . '" does not exists';
+				}
+				if (empty($rate['rate'])) {
 					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
 				}
 				$lastInterval = 0;
@@ -638,6 +647,10 @@ class RatesModel extends TabledateModel {
 		}
 		
 		return true;
+	}
+	
+	protected function isUsagetValid($usaget) {
+		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
 	}
 
 }
