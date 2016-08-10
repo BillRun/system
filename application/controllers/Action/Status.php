@@ -24,7 +24,7 @@ class StatusAction extends ApiAction {
 	protected $personal_id;
 
 	protected function getStatus($tx, $aid) {
-		$cgColl = Billrun_Factory::db()->creditguardCollection();
+		$cgColl = Billrun_Factory::db()->creditproxyCollection();
 		
 		// Get is started
 		$query = array("tx" => $tx, "aid" => $aid);

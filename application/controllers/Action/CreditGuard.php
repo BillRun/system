@@ -55,7 +55,7 @@ class CreditGuardAction extends ApiAction {
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
-		$cgColl = Billrun_Factory::db()->creditguardCollection();
+		$cgColl = Billrun_Factory::db()->creditproxyCollection();
 		
 		// Get is started
 		// TODO: Move to DB

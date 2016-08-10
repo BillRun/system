@@ -47,7 +47,7 @@ class OkPageAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function validateCreditGuardProcess($transaction_id) {
-		$cgColl = Billrun_Factory::db()->creditguardCollection();
+		$cgColl = Billrun_Factory::db()->creditproxyCollection();
 		
 		// Get is started
 		$query = array("tx" => $transaction_id, "aid" => $this->aid);
