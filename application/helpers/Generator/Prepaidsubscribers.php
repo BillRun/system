@@ -113,10 +113,11 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('sid' => array('$in' => $sids)) ,'urt'=> array('$gt'=>new Mongodate(0)) ),
+                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new Mongodate(0)) )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
-                            array('$project' => array('sid'=>1,'urt'=>1,'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
-                        )),
+                            array('$project' => array('sid'=>1,'urt'=>1,
+                                                        'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
+                                                    )),
                     array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$last'=>'$urt') ))
                 ), array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
