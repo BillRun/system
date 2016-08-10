@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -94,7 +94,22 @@ class Billrun_DataTypes_Wallet {
 			$this->valueFieldName = 'balance.' . str_replace("total_", "", $chargingBy);
 			$this->value = isset($chargingByValue['value']) ? $chargingByValue['value'] : $chargingByValue;
 		} else {
-			list($chargingBy, $this->value) = each($chargingByValue);
+//			list($chargingBy, $this->value) = each($chargingByValue);
+			$isValid = false;
+			foreach (array("usagev", "cost", "total_cost", "value") as $fieldName) {
+				// If more than one field name exists PRIORITIZE THE FIRST VALUE
+				if(isset($chargingByValue[$fieldName])) {
+					$chargingBy = $fieldName;
+					$this->value = $chargingByValue[$fieldName];
+					$isValid = true;
+					break;
+				}
+			}
+			if(!$isValid) {
+				$error = "Invalid plan record, no value to charge " . print_r($chargingByValue, 1);
+				Billrun_Factory::log($error, Zend_Log::ERR);
+				throw new Exception($error);
+			}
 			$this->valueFieldName = 'balance.totals.' . $chargingByUsaget . '.' . $chargingBy;
 		}
 

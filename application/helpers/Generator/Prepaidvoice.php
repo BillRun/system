@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -31,7 +31,7 @@ class Generator_Prepaidvoice extends Billrun_Generator_ConfigurableCDRAggregatio
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'Brun_PN_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'Brun_PN_' . sprintf('%05.5d', $seq) . '_' . date('YmdHi',$this->startTime), 'source' => static::$type);
 	}
 
 	//--------------------------------------------  Protected ------------------------------------------------

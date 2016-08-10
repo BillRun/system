@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -58,7 +58,7 @@ class Billrun_Config {
 			$this->addConfig($env_conf);
 		}
 		
-		if (defined(APPLICATION_TENANT)) { // specific defined tenant
+		if (defined('APPLICATION_TENANT')) { // specific defined tenant
 			$this->tenant = APPLICATION_TENANT;
 			$this->loadTenantConfig();
 		} else if (defined('APPLICATION_MULTITENANT') && php_sapi_name() != "cli") { // running from web and with multitenant
@@ -138,6 +138,12 @@ class Billrun_Config {
 			$fileType = current($fileType);
 		}
 		return $fileType;
+	}
+
+	public function getFileTypes() {
+		return array_map(function($fileSettings) {
+			return $fileSettings['file_type'];
+		}, $this->getConfigValue('file_types'));
 	}
 
 	public function loadDbConfig() {

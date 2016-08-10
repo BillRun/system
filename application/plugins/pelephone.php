@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -244,6 +244,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	public function afterUpdateSubscriberAfterBalance($row, $balance, $balanceBefore, $balanceAfter) {
+		if (Billrun_Util::isEqual($balanceBefore, $balanceAfter, 0.00001)) {
+			return;
+		}
 		$plan = Billrun_Factory::db()->plansCollection()->getRef($row['plan_ref']);
 		$this->handleBalanceNotifications("BALANCE_AFTER", $plan, Billrun_Util::msisdn($row['sid']), $balance, $balanceBefore);
 	}
@@ -357,7 +360,12 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getNotificationExpireDate($obj) {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
-
+	
+	/**
+	 * @param type $obj
+	 * @param type $data
+	 * @return int
+	 */
 	protected function getPositiveValue($obj, $data) {
 		if (!isset($data['field']) || !is_numeric($val = $obj->get($data['field']))) {
 			return 0;
@@ -366,6 +374,28 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			return 0;
 		}
 		return abs(round($val));
+	}
+	
+	/**
+	 * 
+	 * @param obj $obj
+	 * @param array $data
+	 * @return type
+	 */
+	protected function getPositiveValuePrettifyDuration($obj, $data) {
+		$timePositiveValue = $this->getPositiveValue($obj, $data);
+		return Billrun_Util::durationFormat($timePositiveValue, true);
+	}
+	
+	/**
+	 * @param type $obj
+	 * @param type $data
+	 * @return type
+	 */
+	protected function getDataValuePrettify($obj, $data) {
+		$val = $this->getPositiveValue($obj, $data);
+		$dataUnit = isset($data['units']) ? $data['units'] : 'MB';
+		return Billrun_Util::byteFormat($val, $dataUnit, 2, true);
 	}
 
 	protected function modifyNotificationMessage($str, $params) {
@@ -781,6 +811,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
 			} else if (stripos($usaget, 'roaming') === TRUE) {
+				if ($usaget == 'roaming_callback') {
+					$event['called_number'] = $event['destination_number'];
+				}
 				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
 			}
 			// backward compatibility to local calls without vlr
@@ -795,7 +828,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	protected function isIncomingCall($row) {
-		return in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
+		return isset($row['usaget']) && in_array($row['usaget'], Billrun_Factory::config()->getConfigValue('realtimeevent.incomingCallUsageTypes', array()));
 	}
 
 }
