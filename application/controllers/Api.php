@@ -13,15 +13,15 @@
  * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
-
+	use Billrun_Traits_Api_Logger;
+	
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
 	 * @var mixed
 	 */
 	protected $output;
-	protected $start_time = 0;
-
+	
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
@@ -157,36 +157,6 @@ class ApiController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 * method to log api request
-	 * 
-	 * @todo log response
-	 */
-	protected function apiLogAction() {
-		$request = $this->getRequest();
-		$php_input = file_get_contents("php://input");
-		if ($request->action == 'index') {
-			return;
-		}
-		$this->logColl = Billrun_Factory::db()->logCollection();
-		$saveData = array(
-			'source' => 'api',
-			'type' => $request->action,
-			'process_time' => new MongoDate(),
-			'request' => $this->getRequest()->getRequest(),
-			'response' => $this->output,
-			'request_php_input' => $php_input,
-			'server_host' => Billrun_Util::getHostName(),
-			'server_pid' => Billrun_Util::getPid(),
-			'request_host' => $_SERVER['REMOTE_ADDR'],
-			'rand' => rand(1, 1000000),
-			'time' => (microtime(1) - $this->start_time) * 1000,
-		);
-		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
-		$this->logColl->save(new Mongodloid_Entity($saveData), 0);
-	}
-	
-
-	/**
 	 * render override to handle HTTP 1.0 requests
 	 * 
 	 * @param string $tpl template name
@@ -201,5 +171,16 @@ class ApiController extends Yaf_Controller_Abstract {
 		return $ret;
 	}
 
+	protected function outputToLog() {
+		return $this->output;
+	}
+
+	/**
+	 * Get the source to log
+	 * @return string
+	 */
+	protected function sourceToLog() {
+		return "api";
+	}
 
 }

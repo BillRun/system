@@ -13,6 +13,8 @@
  * @since    4.0
  */
 class CreditguardController extends ApiController {
+	use Billrun_Traits_Api_Logger;
+	
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -21,31 +23,10 @@ class CreditguardController extends ApiController {
 	}
 
 	/**
-	 * method to log api request
-	 * 
-	 * @todo log response
+	 * Get the source to log
+	 * @return string
 	 */
-	protected function apiLogAction() {
-		$request = $this->getRequest();
-		$php_input = file_get_contents("php://input");
-		if ($request->action == 'index') {
-			return;
-		}
-		$this->logColl = Billrun_Factory::db()->logCollection();
-		$saveData = array(
-			'source' => 'creditguard',
-			'type' => $request->action,
-			'process_time' => new MongoDate(),
-			'request' => $this->getRequest()->getRequest(),
-			'response' => $this->output,
-			'request_php_input' => $php_input,
-			'server_host' => Billrun_Util::getHostName(),
-			'server_pid' => Billrun_Util::getPid(),
-			'request_host' => $_SERVER['REMOTE_ADDR'],
-			'rand' => rand(1, 1000000),
-			'time' => (microtime(1) - $this->start_time) * 1000,
-		);
-		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
-		$this->logColl->save(new Mongodloid_Entity($saveData), 0);
+	protected function sourceToLog() {
+		return "creditguard";
 	}
 }
