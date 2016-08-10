@@ -14,8 +14,6 @@
  */
 class CreditguardController extends ApiController {
 
-	use Billrun_Traits_Api_Logger;
-
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */

@@ -8,7 +8,8 @@
 
 /**
  * This Trait enables API modules to log actions.
- *
+ * @todo Currently we can inherit from API controller, 
+ * if we will ever have a more complicated controller logic this trait might be needed
  */
 trait Billrun_Traits_Api_Logger {
 
