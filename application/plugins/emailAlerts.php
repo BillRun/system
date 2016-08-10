@@ -138,9 +138,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return Array an array containg the events pulled from the data base.
 	 */
 	protected function gatherEvents($types) {
+                $allowedAlertsDelay = Billrun_Factory::config()->getConfigValue('fraud.alerts.allowed_delay', '-1 months');
 		$events = Billrun_Factory::db()->eventsCollection()->query(array(
 			'source' => array('$in' => $types),
-			'notify_time' => array('$exists' => true),
+			'notify_time' => array('$gt' => new MongoDate(strtotime($allowedAlertsDelay))),
 			'email_sent' => array('$exists' => false),
 			'$where' => "this.deposit_stamp == this.stamp",
 		));
@@ -174,10 +175,17 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $event the event to mark as dealt with.
 	 */
 	protected function markSentEmailEvents($events) {
+                $eventIds = array();
 		foreach ($events as $event) {
-			$event['email_sent'] = true;
-			$event->save(Billrun_Factory::db()->eventsCollection());
+			//$event['email_sent'] = true;
+			//$event->save(Billrun_Factory::db()->eventsCollection());
+                        $eventIds[]= $event['_id']->getMongoID();
 		}
+                Billrun_Factory::db()->eventsCollection()->update(
+                                                            array('_id'=>array('$in'=>$eventIds)),
+                                                            array('$set'=>array('email_sent'=>true)),
+                                                            array('multiple'=>true) 
+                                                        );
 	}
 
 	/**
