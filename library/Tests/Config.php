@@ -117,15 +117,28 @@ class Tests_Config extends UnitTestCase {
 			array('t' => "List", 'v' => array("field_name" => "a", "editable" => false), "valid" => true, "msg" => "Simple valid list 1", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "list" => array(), "k"=>"field_name"),
 			array('t' => "List", 'v' => array("field_name" => "a", "editable" => true,  "generated" => true), "valid" => true, "msg" => "Simple valid list 2", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true),"k"=>"field_name", "list" => array()),
 			array('t' => "List", 'v' => array("field_name" => "a", "editable" => false, "unique" => true), "valid" => true, "msg" => "Simple valid list 3", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
+			array('t' => "List", 'v' => array("field_name" => "a", "editable" => false, "unique" => true), "valid" => true, "msg" => "Simple valid list 4", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array(array("field_name" => "b", "editable"=>true))),
 		
+			array('t' => "List", 'v' => array(), "valid" => false, "msg" => "Invalid empty", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
+			array('t' => "List", 'v' => null, "valid" => false, "msg" => "Invalid null", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
+			array('t' => "List", 'v' => 10, "valid" => false, "msg" => "Invalid number", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
 			array('t' => "List", 'v' => array("editable" => true), "valid" => false, "msg" => "Invalid missing mendatory field", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
 			array('t' => "List", 'v' => array("field_name" => true), "valid" => false, "msg" => "Invalid missing mendatory field 2", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
 			array('t' => "List", 'v' => array("field_name" => true, "unique" => true), "valid" => false, "msg" => "Invalid missing mendatory field 3", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "Nonsense"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
 			array('t' => "List", 'v' => array("editable" => true, "unique" => true), "valid" => false, "msg" => "Invalid missing mendatory field 4", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "k"=>false, "editable"=>true), "k"=>"field_name", "list" => array()),
 		
-			array('t' => "List", 'v' => array("field_name" => "a", "editable" => true), "valid" => false, "msg" => "Already existing", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "k"=>false, "editable"=>true), "k"=>"field_name", "list" => array(array("field_name" => "a", "editable"=>false))),
+			array('t' => "List", 'v' => array("field_name" => "a", "editable" => true), "valid" => false, "msg" => "Already existing", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "k"=>false, "editable"=>true), "k"=>"field_name", "list" => array(array("system" => true, "field_name" => "a", "editable"=>false))),
 			array('t' => "List", 'v' => array("field_name" => "a", "editable" => true), "valid" => true, "msg" => "Already existing", "template" => array("field_name"=>true, "generated"=>false, "unique"=>false, "k"=>false, "editable"=>true), "k"=>"field_name", "list" => array(array("field_name" => "a", "editable"=>true))),
 		
+			array('t' => "Array", 'array' => array(), 'v' => 'a', "valid" => true, "expected" => array('a'), "msg" => "Adding value to an empty array"),
+			array('t' => "Array", 'array' => array(), 'v' => array('a', 'b'), "valid" => true, "expected" => array('a', 'b'), "msg" => "Adding array to an empty array"),
+			array('t' => "Array", 'array' => array('a'), 'v' => 'b', "valid" => true, "expected" => array('a', 'b'), "msg" => "Adding value to an existing array"),
+			array('t' => "Array", 'array' => array('a'), 'v' => array('b', 'c'), "valid" => true, "expected" => array('a', 'b', 'c'), "msg" => "Adding array to an existing array"),
+			array('t' => "Array", 'array' => array('a', 'b', 'c'), 'v' => array('d', 'e', 'f'), "valid" => true, "expected" => array('a', 'b', 'c', 'd', 'e', 'f'), "msg" => "Adding array to an array"),
+			array('t' => "Array", 'array' => array('a', 'b', 'c'), 'v' => array('b', 'c'), "valid" => true, "expected" => array('a', 'b', 'c'), "msg" => "Adding array with already exists values"),
+			array('t' => "Array", 'array' => array('a', 'b', 'c'), 'v' => array(1, 'c'), "valid" => true, "expected" => array('a', 'b', 'c', 1), "msg" => "Adding values of different types"),
+			array('t' => "Array", 'array' => array('a', 'b', 'c'), 'v' => 1, "valid" => true, "expected" => array('a', 'b', 'c', 1), "msg" => "Adding value of different type"),
+			array('t' => "Array", 'array' => array('a', 'b'), 'v' => null, "valid" => false, "msg" => "Adding invalid value"),
 		
 		);
 	
@@ -137,6 +150,11 @@ class Tests_Config extends UnitTestCase {
 			}
 			$result = $wrapper->validate();
 			$this->assertEqual($result, $test['valid'], $test['msg']);
+			
+			if (isset($test['expected'])) {
+				$actualResult = $wrapper->value();
+				$this->assertEqual($actualResult, $test['expected'], $test['msg']);
+			}
 		}
     }
 	
