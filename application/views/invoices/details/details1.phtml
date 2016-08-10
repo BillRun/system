@@ -3,7 +3,7 @@
 		<div class="wrap">
 			<div class="details-wrapper">
 				<?php foreach ($data->get('subs') as $sub) { ?>
-					<h2 class="details-subscriber-header">Subscriber <?php echo $sub['name']; ?></h2>
+					<h2 class="details-subscriber-header">Subscriber <?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h2>
 					<br/>
 					<?php foreach ($details_keys as $title => $key) { ?>
 						<?php if (!empty($sub['breakdown'][$key])) { ?>
