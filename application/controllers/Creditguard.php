@@ -13,8 +13,9 @@
  * @since    4.0
  */
 class CreditguardController extends ApiController {
+
 	use Billrun_Traits_Api_Logger;
-	
+
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -29,4 +30,5 @@ class CreditguardController extends ApiController {
 	protected function sourceToLog() {
 		return "creditguard";
 	}
+
 }

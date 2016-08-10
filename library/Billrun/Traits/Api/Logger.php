@@ -13,17 +13,17 @@
 trait Billrun_Traits_Api_Logger {
 
 	protected $start_time = 0;
-		
+
 	/**
 	 * Get the source to log for API log
 	 */
 	protected abstract function sourceToLog();
-	
+
 	/**
 	 * Get the output to log for API log
 	 */
 	protected abstract function outputToLog();
-	
+
 	/**
 	 * method to log api request
 	 * 
@@ -52,4 +52,5 @@ trait Billrun_Traits_Api_Logger {
 		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
 		$logColl->save(new Mongodloid_Entity($saveData), 0);
 	}
+
 }
