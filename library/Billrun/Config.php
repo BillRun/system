@@ -85,7 +85,10 @@ class Billrun_Config {
 	 * @return type array containing the  overriden values.
 	 */
 	protected function mergeConfigs($lessImportentConf, $moreImportantConf) {
-		if (!is_array($moreImportantConf)) {
+		// If the config value is not an array, or is a complex object then we
+		// there is no further level to retrieve.
+		// Return the conf value.
+		if (!is_array($moreImportantConf) || self::isComplex($moreImportantConf)) {
 			return $moreImportantConf;
 		}
 
@@ -94,9 +97,14 @@ class Billrun_Config {
 				continue;
 			}
 
-			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
-				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
-				$moreImportantConf[$key];
+			// If the key exists in the less importent config array then we have
+			// another level of config values to process.
+			if(isset($lessImportentConf[$key])) {
+				$confValue = $this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			} else {
+				$confValue = $moreImportantConf[$key];
+			}
+			$lessImportentConf[$key] = $confValue;
 		}
 
 		return $lessImportentConf;
