@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -58,7 +58,7 @@ class Billrun_Config {
 			$this->addConfig($env_conf);
 		}
 		
-		if (defined(APPLICATION_TENANT)) { // specific defined tenant
+		if (defined('APPLICATION_TENANT')) { // specific defined tenant
 			$this->tenant = APPLICATION_TENANT;
 			$this->loadTenantConfig();
 		} else if (defined('APPLICATION_MULTITENANT') && php_sapi_name() != "cli") { // running from web and with multitenant
@@ -85,7 +85,10 @@ class Billrun_Config {
 	 * @return type array containing the  overriden values.
 	 */
 	protected function mergeConfigs($lessImportentConf, $moreImportantConf) {
-		if (!is_array($moreImportantConf)) {
+		// If the config value is not an array, or is a complex object then we
+		// there is no further level to retrieve.
+		// Return the conf value.
+		if (!is_array($moreImportantConf) || self::isComplex($moreImportantConf)) {
 			return $moreImportantConf;
 		}
 
@@ -94,9 +97,14 @@ class Billrun_Config {
 				continue;
 			}
 
-			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
-				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
-				$moreImportantConf[$key];
+			// If the key exists in the less importent config array then we have
+			// another level of config values to process.
+			if(isset($lessImportentConf[$key])) {
+				$confValue = $this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			} else {
+				$confValue = $moreImportantConf[$key];
+			}
+			$lessImportentConf[$key] = $confValue;
 		}
 
 		return $lessImportentConf;
@@ -140,6 +148,12 @@ class Billrun_Config {
 		return $fileType;
 	}
 
+	public function getFileTypes() {
+		return array_map(function($fileSettings) {
+			return $fileSettings['file_type'];
+		}, $this->getConfigValue('file_types'));
+	}
+
 	public function loadDbConfig() {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
@@ -153,7 +167,10 @@ class Billrun_Config {
 					return true;
 				}
 				$dbConfig = $dbCursor->getRawData();
-
+				
+				// Set the timezone from the config.
+				$this->setTenantTimezone($dbConfig);
+				
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
@@ -165,6 +182,29 @@ class Billrun_Config {
 		}
 	}
 
+	/**
+	 * Refresh the values from the config in the DB.
+	 */
+	public function refresh() {
+		$this->setTenantTimezone($this->toArray());
+	}
+	
+	protected function setTenantTimezone($dbConfig) {
+		if(!isset($dbConfig['timezone'])){
+			return;
+		}
+		
+		// Get the timezone.
+		$timezone = $this->getComplexValue($dbConfig['timezone']);
+		if(empty($timezone)) {
+			return;
+		}
+		
+		// Setting the default timezone.
+		$setTimezone = @date_default_timezone_set($timezone);
+		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
+	}
+	
 	/**
 	 * method to get config value
 	 * 
@@ -202,9 +242,71 @@ class Billrun_Config {
 			settype($currConf, $type);
 		}
 
+		// Check if the value is complex.
+		if(self::isComplex($currConf)) {
+			return self::getComplexValue($currConf);
+		}
+		
 		return $currConf;
 	}
 
+	/**
+	 * Return a wrapper for input data.
+	 * @param mixed $complex - Data to wrap with complex wrapper.
+	 * @return \Billrun_DataTypes_Conf_Base
+	 */
+	public static function getComplexWrapper (&$complex) {
+		// Get complex wrapper.
+		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
+		if(!@class_exists($name)) {
+			return null;
+		}
+		
+		return new $name($complex);
+	}
+	
+	/**
+	 * Check if complex data set is valid by creating a wrapper and validating.
+	 * @param mixed $complex - Complex data
+	 * @return boolean - True if valid.
+	 */
+	public static function isComplexValid(&$complex) {
+		$wrapper = self::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return false;
+		}
+		if (!$wrapper->validate()) {
+			return false;
+		}
+		return true;
+	}
+	
+	public static function getComplexValue(&$complex) {
+		$wrapper = self::getComplexWrapper($complex);
+		if(!$wrapper) {
+			return null;
+		}
+		return $wrapper->value();
+	}
+	
+	/**
+	 * Check if an object is complex (not primitive or array).
+	 * @return true if complex.
+	 */
+	public static function isComplex($obj) {
+		if(is_scalar($obj)) {
+			return false;
+		}
+		
+		if(!is_array($obj)) {
+			return true;
+		}
+		
+		// TODO: that means that 't' is a sensitive value! If a simple array 
+		// will have a 't' field, we will treat it as a complex object.
+		return isset($obj['t']);
+	}
+	
 	/**
 	 * method to receive the environment the app running
 	 * 

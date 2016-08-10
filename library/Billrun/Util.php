@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -13,7 +12,8 @@
  * @since    0.5
  */
 class Billrun_Util {
-
+        public static $computerUnit = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
+			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
 	/**
 	 * method to filter user input
 	 * 
@@ -267,20 +267,18 @@ class Billrun_Util {
 	 * @return string size in requested format
 	 */
 	public static function byteFormat($bytes, $unit = "", $decimals = 2, $includeUnit = false, $dec_point = ".", $thousands_sep = ",") {
-		$units = array('B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
-			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8);
-
+		$unit = strtoupper($unit);
 		$value = 0;
 		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
-			if (!array_key_exists($unit, $units)) {
+			if (!array_key_exists($unit, self::$computerUnit)) {
 				$pow = floor(log(abs($bytes)) / log(1024));
-				$unit = array_search($pow, $units);
+				$unit = array_search($pow, self::$computerUnit);
 			}
 
 			// Calculate byte value by prefix
-			$value = ($bytes / pow(1024, floor($units[$unit])));
+			$value = ($bytes / pow(1024, floor(self::$computerUnit[$unit])));
 		}
 
 		if ($unit == 'B') {
@@ -304,21 +302,52 @@ class Billrun_Util {
 	}
 
 	/**
+         * convert KB/MB/GB/TB/PB/EB/ZB/YB to bytes
+         * @param string $unitSizeToByte 
+         * @param string $convertToOtherUnit use when we want to return different unit size
+         * @param int $decimals 
+         * @param string $dec_point sets the separator for the decimal point
+         * @return int of bytes
+         */
+        public static function computerUnitToBytes($unitSizeToByte = '0B', $convertToOtherUnit = 'B', $decimals = 0 , $dec_point = ".", $thousands_sep = ","){
+            $unitSizeAndType = [];
+            $pattern = '/(\d+\.\d+|\d+)(\w+)$/';
+            preg_match($pattern, $unitSizeToByte, $unitSizeAndType);
+            $unitSize = $unitSizeAndType[1];
+            $unitType = $unitSizeAndType[2];
+            $bytes = 0;
+            $powerCalc = self::$computerUnit[$unitType] - self::$computerUnit[$convertToOtherUnit];
+            
+            if(isset(self::$computerUnit[$unitType]) && !empty($unitSize)){
+                if($powerCalc >= 0){
+                    $bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep );
+                }else{
+					$decimals = 6;
+                    $bytes = number_format($unitSize / pow(1024, floor(abs($powerCalc))), $decimals, $dec_point, $thousands_sep );
+                }
+            }
+            
+            return $bytes;
+        }
+        
+	/**
 	 * convert seconds to requested format
 	 * 
-	 * @param string $bytes
-	 * 
+	 * @param string $seconds
+	 * @param bool $toMinutesSecondFormat if true returning minutes and second format
 	 * @return string size in requested foramt
 	 * 
 	 * 60 sec => 1 min
 	 * 10 sec => 10 sec
 	 * 3400 sec => X minutes
 	 */
-	public static function durationFormat($seconds) {
-		if ($seconds > 3600) {
+	public static function durationFormat($seconds, $formatSeconds = false) {
+		if ($seconds >= 3600) {
 			return gmdate('H:i:s', $seconds);
 		}
-		//return gmdate('i:s', $seconds);
+		if ($formatSeconds) {
+			return gmdate('i:s', $seconds);
+		}
 		return $seconds;
 	}
 
@@ -493,6 +522,30 @@ class Billrun_Util {
 		return array_filter($ar, function($var) {
 			return is_string($var) || is_numeric($var);
 		});
+	}
+
+	/**
+	 * method to convert msisdn to local phone number (remove country extension)
+	 * 
+	 * @param string $msisdn the phone number to convert
+	 * @param string $defaultPrefix the default prefix to add
+	 * 
+	 * @return string phone number in msisdn format
+	 */
+	public static function localNumber($msisdn, $defaultPrefix = null) {
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+		$prefixLength = strlen($defaultPrefix);
+		if (substr($msisdn, 0, $prefixLength) != $defaultPrefix) {
+			return $msisdn;
+		}
+		if (substr($msisdn, 0, $prefixLength+1) == $defaultPrefix . '1') {
+			$prefix = '';
+		} else {
+			$prefix = '0';
+		}
+		return $prefix . substr($msisdn, (-1) * strlen($msisdn) + $prefixLength);
 	}
 
 	/**
@@ -750,6 +803,81 @@ class Billrun_Util {
 	}
 
 	/**
+	 * Get a value from an array by a mongo format key, seperated with dots.
+	 * @param array $array - Array to get value of.
+	 * @param string $key - Dot seperated key.
+	 */
+	public static function getValueByMongoIndex($array, $key) {
+		if(!is_string($key)) {
+			return null;
+		}
+		
+		$value = $array;
+		
+		// Explode the keys.
+		$keys = explode(".", $key);
+		foreach ($keys as $innerKey) {
+			if(!isset($value[$innerKey])) {
+				return null;
+			}
+			
+			$value = $value[$innerKey];
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Set a value to an array by a mongo format key, seperated with dots.
+	 * @param mixed $value - Value to set
+	 * @param array &$array - Array to set value to, passed by reference.
+	 * @param string $key - Dot seperated key.
+	 * @return boolean - True if successful.
+	 */
+	public static function setValueByMongoIndex($value, &$array, $key) {
+		if(!is_string($key)) {
+			return false;
+		}
+		
+		$result = &$array;
+		$keys = explode('.', $key);
+		foreach ($keys as $innerKey) {
+			$result = &$result[$innerKey];
+		}
+
+		$result = $value;
+		
+		return true;
+	}
+	
+	/**
+	 * Coverts a $seperator seperated array to an haierchy tree
+	 * @param string $array - Input string
+	 * @param string $seperator 
+	 * @param mixed $toSet - Value to be set to inner level of array
+	 * @return array
+	 */
+	public static function mongoArrayToPHPArray($array, $seperator, $toSet) {
+		if(!is_string($array)) {
+			return null;
+		}
+		
+		$parts = explode($seperator, $array);
+		$result = array();
+		$previous = null;
+		$iter = &$result;
+		foreach ($parts as $value) {
+			if($previous !== null) {
+				$iter[$previous] = array($value => $toSet);
+				$iter = &$iter[$previous];
+			}
+			$previous = $value;
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert
@@ -774,7 +902,7 @@ class Billrun_Util {
 		}
 		return $query;
 	}
-
+	
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -1038,7 +1166,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if (!$response) {
+			if(!$response) {
 				$response = $e->getMessage();
 			}
 		}
@@ -1314,18 +1442,18 @@ class Billrun_Util {
 	}
 
 	/**
-	 * Returns a path of the received path within the shared folder for the current tenant.
-	 * if a relative path is given, adds to it's beginning the shared folder of the tenant.
-	 * if a full path is given, return it as is
-	 * 
-	 * @param type $path - relative or full path
-	 * @return full path, FALSE on error
+	 * Get the shared folder path of the input path.
+	 * @param string $path - Path to convert to relative shared folder path.
+	 * @param boolean $strict - If true, and the path is a root folder, we return
+	 * the absoulute path, not the shared folder path! False by default.
+	 * @return string Relative file path in the shared folder.
+	 * @TODO: Add validation that if the input $path is already in the shared folder, return just the path.
 	 */
-	public static function getBillRunSharedFolderPath($path) {
+	public static function getBillRunSharedFolderPath($path, $strict=false) {
 		if (empty($path) || !is_string($path)) {
 			return FALSE;
 		}
-		if ($path[0] == DIRECTORY_SEPARATOR) {
+		if ($strict && ($path[0] == DIRECTORY_SEPARATOR)) {
 			return $path;
 		}
 		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getTenant() . DIRECTORY_SEPARATOR . $path;
@@ -1373,6 +1501,10 @@ class Billrun_Util {
 
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
+	
+	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
+		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
 	}
 
 	public static function convertQueryMongoDates(&$arr) {

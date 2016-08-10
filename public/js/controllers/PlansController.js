@@ -100,6 +100,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				$scope.entity.include = {};
 				_.forEach($scope.displayData.includeTypes, function(includeType) {
 					var include_type = includeType.type;
+					delete includeType.type;
 					if (_.isUndefined($scope.entity.include[include_type])) {
 						$scope.entity.include[include_type] = includeType;
 					} else if (_.isArray($scope.entity.include[include_type])) {
@@ -121,13 +122,13 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 							return acc;
 						}, []);
 			}
-			_.forEach($scope.entity.notifications_threshold.on_load, function(on_load_notification, index) {
+			_.forEach($scope.notifications_threshold.on_load, function(on_load_notification, index) {
 				$scope.entity.notifications_threshold.on_load[index].pp_includes = [];
 				_.forEach(on_load_notification, function(pp) {
 					$scope.entity.notifications_threshold.on_load[index].pp_includes.push(parseInt(pp));
 				});
 			});
-			_.forEach($scope.entity.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
+			_.forEach($scope.notifications_threshold.expiration_date, function(expiration_date_notification, index) {
 				$scope.entity.notifications_threshold.expiration_date[index].pp_includes = [];
 				_.forEach(expiration_date_notification, function(pp) {
 					$scope.entity.notifications_threshold.expiration_date[index].pp_includes.push(parseInt(pp));

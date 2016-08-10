@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -92,14 +92,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Balance $balance
 	 */
 	protected $balance;
-
+	
 	/**
 	 * prepaid minimum balance volume
 	 * 
 	 * @var float
 	 */
 	protected $min_balance_volume = null;
-
+	
 	/**
 	 * prepaid minimum balance cost
 	 * 
@@ -173,7 +173,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function getCallOffset() {
 		return $this->call_offset;
 	}
-	
+
 	public function prepareData($lines) {
 		
 	}
@@ -256,7 +256,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (!empty($interconnect_arate_key)) {
 				$row['interconnect_arate_key'] = $interconnect_arate_key;
 			}
-
+			
 			if (isset($rate['params']['interconnect']) && $rate['params']['interconnect']) {
 				$row['interconnect_arate_key'] = $rate['key'];
 			}
@@ -549,7 +549,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 */
 	protected function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
 		// Check if the price is enough for default usagev
-		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 0, 'float'); // float avoid set type to int
+		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev',  0, 'float'); // float avoid set type to int
 		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset);
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
@@ -562,9 +562,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			return 0;
 		}
 
-		if ($price == $this->min_balance_cost) {
-			return $this->min_balance_volume;
-		}
+		// we removed this in case we have rate tiers
+//		if ($price == $this->min_balance_cost) {
+//			return $this->min_balance_volume;
+//		}
 
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
@@ -790,7 +791,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
 	}
-
+	
 	protected function initMinBalanceValues($rate, $usaget, $plan) {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int

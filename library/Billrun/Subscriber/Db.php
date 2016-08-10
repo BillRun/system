@@ -3,7 +3,7 @@
 /**
  * 
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -121,37 +121,50 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		}
 		$pipelines[] = array(
 			'$match' => array(
-				'type' => 'subscriber',
-				'plan' => array(
-					'$exists' => 1
-				),
 				'$or' => array(
-					array(
-						'from' => array(// plan started during billing cycle
-							'$gte' => $startTimeMongoDate,
-							'$lt' => $endTimeMongoDate,
+					array( // Subscriber records
+						'type' => 'subscriber',
+						'plan' => array(
+							'$exists' => 1
 						),
+						'$or' => array(
+							array(
+								'from' => array(// plan started during billing cycle
+									'$gte' => $startTimeMongoDate,
+									'$lt' => $endTimeMongoDate,
+								),
+							),
+							array(
+								'to' => array(// plan ended during billing cycle
+									'$gte' => $startTimeMongoDate,
+									'$lt' => $endTimeMongoDate,
+								),
+							),
+							array(// plan started before billing cycle and ends after
+								'from' => array(
+									'$lt' => $startTimeMongoDate
+								),
+								'to' => array(
+									'$gte' => $endTimeMongoDate,
+								),
+							),
+							array(// searches for a next plan. used for prepaid plans
+								'from' => array(
+									'$lte' => $endTimeMongoDate,
+								),
+								'to' => array(
+									'$gt' => $endTimeMongoDate,
+								),
+							),
+						)
 					),
-					array(
-						'to' => array(// plan ended during billing cycle
-							'$gte' => $startTimeMongoDate,
-							'$lt' => $endTimeMongoDate,
-						),
-					),
-					array(// plan started before billing cycle and ends after
-						'from' => array(
-							'$lt' => $startTimeMongoDate
-						),
-						'to' => array(
-							'$gte' => $endTimeMongoDate,
-						),
-					),
-					array(// searches for a next plan. used for prepaid plans
+					array( // Account records
+						'type' => 'account',
 						'from' => array(
 							'$lte' => $endTimeMongoDate,
 						),
 						'to' => array(
-							'$gt' => $endTimeMongoDate,
+							'$gte' => $startTimeMongoDate,
 						),
 					),
 				)
@@ -175,13 +188,20 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				),
 				'sub_plans' => array(
 					'$push' => array(
+						'type' => '$type',
 						'sid' => '$sid',
 						'plan' => '$plan',
 						'from' => '$from',
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
 						'plan_deactivation' => '$plan_deactivation',
+						'firstname' => '$firstname',
+						'lastname' => '$lastname',
+						'address' => '$address',
 					),
+				),
+				'card_token' => array(
+					'$first' => '$card_token'
 				),
 			),
 		);
@@ -199,7 +219,11 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				'_id' => array(
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
-					'plan' => '$sub_plans.plan'
+					'plan' => '$sub_plans.plan',
+					'firstname' => '$sub_plans.firstname',
+					'lastname' => '$sub_plans.lastname',
+					'type' => '$sub_plans.type',
+					'address' => '$sub_plans.address',
 				),
 				'plan_dates' => array(
 					'$push' => array(
@@ -209,6 +233,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'plan_deactivation' => '$sub_plans.plan_deactivation',
 					),
 				),
+				'card_token' => array(
+					'$first' => '$card_token'
+				),
 			),
 		);
 		$pipelines[] = array(
@@ -216,6 +243,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				'_id' => 0,
 				'id' => '$_id',
 				'plan_dates' => 1,
+				'card_token' => 1,
 			)
 		);
 		$coll = Billrun_Factory::db()->subscribersCollection();
@@ -236,7 +264,20 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			if (is_array($outputArr) && !empty($outputArr)) {
 				$retData = array();
 				$lastSid = null;
+				$accountData = array();
 				foreach ($outputArr as $subscriberPlan) {
+					$type = $subscriberPlan['id']['type'];
+					$firstname = $subscriberPlan['id']['firstname'];
+					$lastname = $subscriberPlan['id']['lastname'];
+					if ($type === 'account') {
+						$accountData['attributes'] = array(
+							'firstname' => $firstname,
+							'lastname' => $lastname,
+							'address' => $subscriberPlan['id']['address'],
+							'payment_details' => $this->getPaymentDetails($subscriberPlan),
+						);
+						continue;
+					}
 					$aid = $subscriberPlan['id']['aid'];
 					$sid = $subscriberPlan['id']['sid'];
 					$plan = $subscriberPlan['id']['plan'];
@@ -246,6 +287,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					}
 					$subscriberEntry['aid'] = $aid;
 					$subscriberEntry['sid'] = $sid;
+					$subscriberEntry['firstname'] = $firstname;
+					$subscriberEntry['lastname'] = $lastname;
 					$subscriberEntry['next_plan'] = NULL;
 					$subscriberEntry['next_plan_activation'] = NULL;
 					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
@@ -290,6 +333,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					$lastSid = $sid;
 				}
 				$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
+				$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
 //				foreach ($outputArr as $account) {
 //					if (isset($account['subscribers'])) {
 //						foreach ($account['subscribers'] as $subscriber) {
@@ -332,6 +376,13 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 
 	public function getServices($billrun_key, $retEntity = false) {
 		return array();
+	}
+	
+	protected function getPaymentDetails($details) {
+		if (!empty($token = $details['card_token'])) {
+			return Billrun_Util::getTokenToDisplay($token);
+		}
+		return '';
 	}
 
 }

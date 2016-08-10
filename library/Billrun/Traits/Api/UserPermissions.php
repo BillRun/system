@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -29,7 +29,7 @@ trait Billrun_Traits_Api_UserPermissions {
 		
 		$error = "No permission to execute this action";
 		Billrun_Factory::log($error, Zend_Log::NOTICE);
-		throw new Exception($error);
+		throw new Exception($error,  Billrun_Traits_Api_IUserPermissions::NO_PERMISSION_ERROR_CODE);
 	}
 	
 	/**

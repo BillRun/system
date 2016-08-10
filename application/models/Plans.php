@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -176,6 +176,11 @@ class PlansModel extends TabledateModel {
 			return 'Plans with a yearly periodicity must be paid upfront';
 		}
 		return true;
+	}
+	
+	public static function isPlanExists($planName) {
+		$query = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $planName));
+		return $planName === 'BASE' || (Billrun_Factory::db()->plansCollection()->query($query)->cursor()->count() > 0);
 	}
 
 }

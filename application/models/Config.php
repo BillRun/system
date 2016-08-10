@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -32,6 +32,7 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $options;
+	protected $invalidFields = array();
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
 
@@ -46,6 +47,12 @@ class ConfigModel {
 		return $this->options;
 	}
 
+	public function getInvalidFields() {
+		$result = $this->invalidFields;
+		$this->invalidFields = array();
+		return $result;
+	}
+	
 	protected function loadConfig() {
 		$ret = $this->collection->query()
 			->cursor()
@@ -60,6 +67,13 @@ class ConfigModel {
 		return $this->data;
 	}
 
+	/**
+	 * 
+	 * @param int $data
+	 * @return type
+	 * @deprecated since version Now
+	 * @todo Remove this function?
+	 */
 	public function setConfig($data) {
 		$updatedData = array_merge($this->getConfig(), $data);
 		unset($updatedData['_id']);
@@ -73,7 +87,13 @@ class ConfigModel {
 
 	public function getFromConfig($category, $data) {
 		$currentConfig = $this->getConfig();
+		
+		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
+			if(!is_array($data)) {
+				Billrun_Factory::log("Invalid data for file types.");
+				return 0;
+			}
 			if (empty($data['file_type'])) {
 				return $currentConfig['file_types'];
 			}
@@ -84,10 +104,57 @@ class ConfigModel {
 		}
 		else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
-		}
-		throw new Exception('Unknown category ' . $category);
+		} 
+		
+		return $this->_getFromConfig($currentConfig, $category, $data);
 	}
 
+	protected function _getFromConfig($currentConfig, $category, $data) {
+		if(is_array($data) && !empty($data)) {
+			foreach ($data as $key => $_) {
+				$result[] = $this->_getFromConfig($currentConfig, $category . "."  . $key, null);
+			}
+			return $result;
+		}
+		
+		$valueInCategory = 
+			Billrun_Util::getValueByMongoIndex($currentConfig, $category);
+		
+		if($valueInCategory === null) {
+			throw new Exception('Unknown category ' . $category);
+		}
+
+		return $this->extractComplexValue($valueInCategory);
+	}
+	
+	protected function extractComplexValue($toExtract) {	
+		if(Billrun_Config::isComplex($toExtract)) {
+			// Get the complex object.
+			return Billrun_Config::getComplexValue($toExtract);
+		} 
+		
+		if(is_array($toExtract)) {
+			return $this->extractComplexFromArray($toExtract);
+		}
+		
+		return $toExtract;
+	}
+	
+	protected function extractComplexFromArray($array) {
+		$returnData = array();
+		// Check for complex objects.
+		foreach ($array as $key => $value) {
+			if(Billrun_Config::isComplex($value)) {
+				// Get the complex object.
+				$returnData[$key] = Billrun_Config::getComplexValue($value);
+			} else {
+				$returnData[$key] = $value;
+			}
+		}
+		
+		return $returnData;
+	}
+	
 	/**
 	 * 
 	 * @param string $category
@@ -98,21 +165,133 @@ class ConfigModel {
 	public function updateConfig($category, $data) {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
+		
+		// TODO: Create a config class to handle just file_types.
 		if ($category === 'file_types') {
-			if (isset($data['file_type'])) {
-				if ($fileSettings = $this->getFileTypeSettings($updatedData, $data['file_type'])) {
-					$fileSettings = array_merge($fileSettings, $data);
-				} else {
-					$fileSettings = $data;
-				}
-				$this->setFileTypeSettings($updatedData, $fileSettings);
-				$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+			if(!is_array($data)) {
+				Billrun_Factory::log("Invalid data for file types.");
+				return 0;
+			}
+			
+			$rawFileSettings = $this->getFileTypeSettings($updatedData, $data['file_type']);
+			if ($rawFileSettings) {
+				$fileSettings = array_merge($rawFileSettings, $data);
+			} else {
+				$fileSettings = $data;
+			}
+			$this->setFileTypeSettings($updatedData, $fileSettings);
+			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+		} else {
+			if(!$this->_updateConfig($updatedData, $category, $data)) {
+				return 0;
 			}
 		}
+		
 		$ret = $this->collection->insert($updatedData);
-		return !empty($ret['ok']);
+		$saveResult = !empty($ret['ok']);
+		if($saveResult) {
+			// Reload timezone.
+			Billrun_Config::getInstance()->refresh();
+		}
+		
+		return $saveResult;
 	}
 
+	protected function _updateConfig(&$currentConfig, $category, $data) {
+		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
+		if(Billrun_Util::isAssoc($data)) {
+			foreach ($data as $key => $value) {
+				if(!$this->_updateConfig($currentConfig, $category . "."  . $key, $value)) {
+					return 0;
+				}
+			}
+			return 1;
+		}
+		
+		$valueInCategory = 
+			Billrun_Util::getValueByMongoIndex($currentConfig, $category);
+				
+		if($valueInCategory === null) {
+			// TODO: Do we allow setting values with NEW keys into the settings?
+			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
+			return 0;
+		}
+		
+		// Check if complex object.
+		if(!Billrun_Config::isComplex($valueInCategory)) {
+			// TODO: Do we allow setting?
+			return Billrun_Util::setValueByMongoIndex($data, $currentConfig, $category);
+		}
+		// Set the value for the complex object,
+		$valueInCategory['v'] = $data;
+
+		// Validate the complex object.
+		if(!Billrun_Config::isComplexValid($valueInCategory)) {
+			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory,1), Zend_Log::NOTICE);
+			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
+			return 0;
+		}
+		
+		// Update the config.
+		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
+			return 0;
+		}
+		
+		return 1;
+	}
+	
+		
+	protected function setConfigValue(&$config, $category, $toSet) {		
+		// Check if complex object.
+		if(Billrun_Config::isComplex($toSet)) {
+			return $this->setComplexValue($toSet);
+		}
+		
+		if(is_array($toSet)) {
+			return $this->setConfigArrayValue($toSet);
+		}
+		
+		return Billrun_Util::setValueByMongoIndex($toSet, $config, $category);
+	}
+	
+	protected function setConfigArrayValue($toSet) {		
+		
+	}
+	
+	protected function setComplexValue($toSet) {		
+		// Check if complex object.
+		if(!Billrun_Config::isComplex($valueInCategory)) {
+			// TODO: Do we allow setting?
+			Billrun_Factory::log("Encountered a problem", Zend_Log::NOTICE);
+			return 0;
+		}
+		// Set the value for the complex object,
+		$valueInCategory['v'] = $data;
+
+		// Validate the complex object.
+		if(!Billrun_Config::isComplexValid($valueInCategory)) {
+			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory,1), Zend_Log::NOTICE);
+			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
+			return 0;
+		}
+
+		// Update the config.
+		if(!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
+			return 0;
+		}
+		
+		if(Billrun_Config::isComplex($toSet)) {
+			// Get the complex object.
+			return Billrun_Config::getComplexValue($toSet);
+		} 
+		
+		if(is_array($toSet)) {
+			return $this->extractComplexFromArray($toSet);
+		}
+		
+		return $toSet;
+	}
+	
 	public function unsetFromConfig($category, $data) {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);

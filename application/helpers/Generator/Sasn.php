@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -33,7 +33,7 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'SASN_PREP_' . sprintf('%05.5d', $seq) . '_' . date('YmdHis'), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'SASN_PREP_' . sprintf('%05.5d', $seq) . '_' . date('YmdHis',$this->startTime), 'source' => static::$type);
 	}
 
 	//--------------------------------------------  Protected ------------------------------------------------
@@ -43,7 +43,9 @@ class Generator_Sasn extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 			if ($line['data_volume_gprs_downlink'] > static::$ONE_GB) {
 				while ($line['data_volume_gprs_downlink'] > 0) {
 					$brokenLine = $line->getRawData();
-					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 ? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB : $line['orig_data_volume_gprs_downlink']) : 0;
+					$brokenLine['orig_data_volume_gprs_downlink'] = $brokenLine['orig_data_volume_gprs_downlink'] > 0 
+												? ($line['orig_data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB  :  $line['orig_data_volume_gprs_downlink']) 
+												: 0;
 					$brokenLine['data_volume_gprs_downlink'] = $line['data_volume_gprs_downlink'] > static::$ONE_GB ? static::$ONE_GB : $line['data_volume_gprs_downlink'];
 					$this->writeRowToFile($this->translateCdrFields($brokenLine, $this->translations), $this->fieldDefinitions);
 					$line['record_opening_time'] = new MongoDate($line['record_opening_time']->sec + 1);
