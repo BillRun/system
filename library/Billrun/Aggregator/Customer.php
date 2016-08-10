@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -216,6 +216,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			if ($this->overrideAccountIds) {
 				$account_billrun->resetBillrun();
 			}
+			
+			$account_billrun->setBillrunAccountFields($account);
+			
 			$manual_lines = array();
 			$deactivated_subscribers = array();
 			foreach ($account['subscribers'] as $subscriber) {
@@ -429,6 +432,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			return $row->get('arate', false);
 		}
+	}
+	
+	protected function addAccountFieldsToBillrun($billrun, $account) {
+		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
+		$billrun->populateBillrunWithAccountData($account,$options);
 	}
 
 }

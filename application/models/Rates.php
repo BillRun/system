@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -595,6 +595,49 @@ class RatesModel extends TabledateModel {
 				->greaterEq('to', $currentDate)
 				->cursor()->current();
 		return $plansColl->createRefByEntity($planEntity);
+	}
+	
+	public function validate($data, $type) {
+		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validateRates');
+		foreach ($validationMethods as $validationMethod) {
+			if (($res = $this->{$validationMethod}($data)) !== true) {
+				return $this->validationResponse(false, $res);
+			}
+		}
+		return $this->validationResponse(true);
+	}
+	
+	protected function validateRates($data) {
+		foreach ($data['rates'] as $usaget => $plans) {
+			foreach ($plans as $plan => $rate) {
+				if (!isset($rate['rate'])) {
+					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
+				}
+				$lastInterval = 0;
+				foreach ($rate['rate'] as $interval) {
+					if (!isset($interval['from']) || !isset($interval['to']) || !isset($interval['price']) || !isset($interval['interval'])) {
+						return 'Illegal rate structure';
+					}
+					
+					$typeFields = array(
+						'interval' => 'integer',
+						'from' => 'integer',
+						'to' => 'integer',
+						'price' => 'float',
+					);
+					$validateTypes = $this->validateTypes($interval, $typeFields);
+					if ($validateTypes !== true) {
+						return $validateTypes;
+					}
+					if ($interval['from'] != $lastInterval) {
+						return 'Rate intervals must be continuous';
+					}
+					$lastInterval = $interval['to'];
+				}
+			}
+		}
+		
+		return true;
 	}
 
 }

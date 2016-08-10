@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -838,8 +838,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		  return $this->responseError($v->getErrors());
 		  }
 		 */
-		if (is_subclass_of($model, "TabledateModel") && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
-			return $this->responseError("There's an entity with overlapping dates");
+		if (is_subclass_of($model, "TabledateModel")) {
+			if ($model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+				return $this->responseError("There's an entity with overlapping dates");
+			}
+			$validate = $model->validate($data, $type);
+			if (!$validate['validate']) {
+				return $this->responseError(array("message" => $validate['errorMsg'], "status" => false));
+			}
 		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
@@ -1171,6 +1177,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		$session = $this->getSession($table);
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
+		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
+		if ($show_zero_usage == 'on') {
+			$query['$and'][] = array(
+				'$or' => array(
+					array(
+						'usaget' => 'balance'
+					),
+					array(
+						'usagev' => array(
+							'$ne' => 0
+						)
+					),
+				)
+			);
+		}
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}

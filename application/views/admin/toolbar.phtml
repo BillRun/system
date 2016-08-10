@@ -51,6 +51,7 @@
 			}
 
 			if ($active == 'lines') :
+				echo "<div><label class='inline'><input type='checkbox' id='show-zero-usage' name='show_zero_usage' " . ($this->session->show_zero_usage == 'on' ? " checked='true' " : "") . " />Show zero-usage lines</label></div>";
 				echo "<div><a href=\"javascript:void(0)\" class=\"advanced-options\">Advanced options <i class=\"" . (Admin_Lines::isManualFilter($this->session) ? "icon-chevron-up" : "icon-chevron-down") . "\"></i></a></div>
                             <div id = \"manual_filters\"" . (Admin_Lines::isManualFilter($this->session) ? "" : " style=\"display:none;\"") . ">";
 				if (Admin_Lines::isManualFilter($this->session)) {
@@ -60,7 +61,6 @@
 				} else {
 					echo Admin_Lines::getFilterRow(); // add first manual filter on load
 				}
-				echo "<label class='inline'><input type='checkbox' id='show-zero-usage' name='show_zero_usage' " . ($this->session->show_zero_usage == 'on' ? " checked='true' " : "") . " />Show zero-usage lines</label>";
 				echo "</div>";
 			elseif ($active == 'rates') :
 			endif;

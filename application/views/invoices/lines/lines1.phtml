@@ -3,7 +3,7 @@
 		<div class="wrap">
 			<div class="details-wrapper">
 				<?php foreach ($data->get('subs') as $sub) { ?>
-					<h2 class="lines-subscriber-header">Subscriber <?php echo $sub['name']; ?></h2>
+					<h2 class="lines-subscriber-header">Subscriber <?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h2>
 					<br/>
 					<table class="subscriber-lines">
 						<thead>
@@ -20,9 +20,9 @@
 								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
 									<tr>
 										<td><?php echo date('d/m/Y H:i:s', $line['urt']->sec); ?></td>
-										<td><?php echo $line['usaget']; ?></td>
+										<td><?php echo $line['type']; ?></td>
 										<td><?php echo number_format($line['usagev'], 2); ?></td>
-										<td><?php echo $line['rate_key']; ?></td>
+										<td><?php echo $line['arate_key']; ?></td>
 										<td><?php echo number_format($line['aprice'], 2); ?></td>
 									</tr>
 								<?php } ?>

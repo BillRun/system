@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
@@ -18,12 +18,11 @@ class Billrun_Cards_Handler {
 	 * @return array - query
 	 */
 	protected function getExpiredQuery() {
-		$query = array();
-
-		// TODO: What should be in this array? It shouldn't be hard coded.
-		$query['status'] = array('$nin' => array("Expired", "Stolen"));
-		$query['to'] = array('$lte' => new MongoDate());
-
+		$query = array(
+			'status' => array('$in' => array("Active", "Idle")), // TODO: What should be in this array? It shouldn't be hard coded.
+			'to' => array('$lt' => new MongoDate()),
+		);
+		
 		return $query;
 	}
 
@@ -33,7 +32,10 @@ class Billrun_Cards_Handler {
 	 */
 	protected function getUpdateQuery() {
 		$query = array();
-		$query['$set'] = array('status' => 'Expired');
+		$query['$set'] = array(
+			'status' => 'Expired',
+			'expired_on' => new MongoDate(),
+		);
 		return $query;
 	}
 

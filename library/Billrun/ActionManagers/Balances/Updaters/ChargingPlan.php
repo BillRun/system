@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -248,7 +248,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			$returnPair['normalized']['before'] = $beforeNormalizing - $wallet->getValue();
 			$returnPair['normalized']['after'] = $beforeNormalizing;
 			$returnPair['normalized']['normalized'] = $normalizeResult['max'];
-			$returnPair['updated'] = ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
+			$returnPair['updated'] = (isset($normalizeResult['min'])) || ($normalizeResult['max'] > $beforeNormalizing - $wallet->getValue());
 		}
 
 		unset($returnPair['query']);

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -341,6 +341,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue = Billrun_Factory::db()->queueCollection();
 			$queue->remove($query);
+			$lines = Billrun_Factory::db()->linesCollection();
+ 			$lines->update($query, array('$unset' => array('in_queue' => "")), array("multiple" => true));
 		}
 	}
 

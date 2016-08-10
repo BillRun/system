@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -61,7 +61,7 @@ class Billrun_Cache {
 	protected function setPrefix($prefix) {
 		if($this->useTenantPrefix) {
 			// Append the tenant prefix
-			$prefix = Billrun_Factory::config()->getEnv() . "_" . $prefix;
+			$prefix = Billrun_Factory::config()->getTenant() . "_" . $prefix;
 		}
 		$this->cache->setOption(self::cachePrefixKey, $prefix);
 	}
@@ -76,7 +76,7 @@ class Billrun_Cache {
 		
 		// If we are using the tenant prefix, remove it from the get return value.
 		if($this->useTenantPrefix) {
-			$tenantName = Billrun_Factory::config()->getEnv();
+			$tenantName = Billrun_Factory::config()->getTenant();
 			$prefix = preg_replace('/^' . $tenantName . "_/", "", $prefix);
 		}
 		

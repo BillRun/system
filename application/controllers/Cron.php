@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -20,6 +20,8 @@ class CronController extends Yaf_Controller_Abstract {
 
 	public function init() {
 		Billrun_Factory::log("BillRun Cron is running", Zend_Log::INFO);
+		set_time_limit(9999);
+		ini_set('max_execution_time', 9999);
 		$this->smser = Billrun_Factory::smser();
 		$this->mailer = Billrun_Factory::mailer();
 	}
@@ -108,7 +110,17 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function autoRenewServicesAction() {
-		$handler = new Billrun_Autorenew_Handler();
+		$params = array();
+		$inputDate = $this->getRequest()->get('active_date');
+		if (!empty($inputDate)) {
+			$inputDate = strtotime($inputDate);
+			if ($inputDate > time()) {
+				Billrun_Factory::log()->log("Future input date - Current date will be used instead",zend_log::NOTICE);
+			} else {
+				$params['active_date'] = $inputDate;
+			}
+		}		
+		$handler = new Billrun_Autorenew_Handler($params);
 		$handler->autoRenewServices();
 	}
 
@@ -122,6 +134,11 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	public function sendNotificationsAction() {
+		$day_type = Billrun_HebrewCal::getDayType(time());
+		if ($day_type == HEBCAL_HOLIDAY || $day_type == HEBCAL_WEEKEND) {
+			Billrun_Factory::log("[Cron:sendNotifications] We are on Holiday or Saturday, disable sending notifcations.", Zend_Log::NOTICE);
+			return;
+		}
 		$this->sendBalanceExpirationdateNotifications();
 	}
 
@@ -178,15 +195,30 @@ class CronController extends Yaf_Controller_Abstract {
 			$subscribersInPlan = $this->getSubscribersInPlan($planNotification['plan_name']);
 			foreach ($subscribersInPlan as $subscriber) {
 				$balances = $this->getBalancesToNotify($subscriber->get('sid'), $planNotification['notification']);
-				if ($balances) {
-					foreach ($balances as $balance) {
-						Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
-					}
+				if (!$balances) {
+					continue;
 				}
+				
+				$this->notifyForBalances($subscriber, $balances);
 			}
 		}
 	}
-
+	
+	/**
+	 * Notify on all balances per a subscriber
+	 * @param array $subscriber - Current subscriber to notify
+	 * @param array $balances - Array of balances record to try and notify on
+	 */
+	protected function notifyForBalances($subscriber, $balances) {
+		foreach ($balances as $balance) {
+			// Do not notify on an empty balance
+			if(Billrun_Balances_Util::getBalanceValue($balance) == 0) {
+				continue;
+			}
+			Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
+		}
+	}
+	
 	protected function getBalancesToNotify($subscriberId, $notification) {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$query = array(
