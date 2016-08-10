@@ -20,9 +20,9 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 	 * @var string 
 	 */
 	protected $matchKey = "";
-	public function __construct($obj) {
-		$this->val = $obj['v'];
-		$this->list = $obj['list'];
+	public function __construct(&$obj) {
+		$this->val = &$obj['v'];
+		$this->list = &$obj['list'];
 		$this->matchKey = $obj['k'];
 		if(isset($obj['template'])) {
 			$this->template = $obj['template'];
@@ -49,6 +49,12 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 		if(!$this->validateEditable()) {
 			return false;
 		}
+				
+		// Set in the list.
+		if($this->val !== null) {
+			$this->list[] = $this->val;
+			$this->val = null;
+		}
 		
 		return true;
 	}
@@ -57,12 +63,14 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 		// Check if the value already exists.
 		$name = $this->val[$this->matchKey];
 		$editing = array();
-		foreach ($this->list as $block) {
+		$foundBlock = null;
+		foreach ($this->list as &$block) {
 			$found = array_filter($block, function($v, $k) use($name) {
 				return $k == $this->matchKey && $v == $name;
 			}, ARRAY_FILTER_USE_BOTH);
 			if(!empty($found)) {
 				$editing['allowed'] = $block['editable'];
+				$foundBlock = &$block;
 				break;
 			}
 		}
@@ -71,7 +79,12 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 			// TODO: Use the permissions to check if the document is editable, if the
 			// document is editable on system permissions, check for admin permissions 
 			// of the user.
-			return $editing['allowed'];
+			if(!$editing['allowed']) {
+				return false;
+			}
+			// Remove the existing object.
+			$foundBlock = $this->val;
+			$this->val = null;
 		}
 		
 		return true;
@@ -91,10 +104,8 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 	}
 	
 	public function value() {
-		$this->list[] = $this->val;
 		return $this->list;
 	}
-
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
