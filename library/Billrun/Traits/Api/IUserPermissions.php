@@ -14,4 +14,6 @@ interface Billrun_Traits_Api_IUserPermissions {
 	const PERMISSION_READ = "read";
 	const PERMISSION_WRITE = "write";
 	const PERMISSION_ADMIN = "admin";
+	
+	const NO_PERMISSION_ERROR_CODE = 17575;
 }
