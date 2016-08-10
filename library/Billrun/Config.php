@@ -88,8 +88,11 @@ class Billrun_Config {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
-		if (!is_array($moreImportantConf) || self::isComplex($moreImportantConf)) {
+		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
+		}
+		if(self::isComplex($moreImportantConf)) {
+			return self::getComplexValue($moreImportantConf);
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
