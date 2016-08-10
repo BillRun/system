@@ -93,19 +93,12 @@ class CreditGuardAction extends ApiAction {
 		$data = $request->get("data");
 		$signature = $request->get("signature");
 
-		$creditGuardColl = Billrun_Factory::db()->creditguardCollection();
-		
-		// Get the password.
-		$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
-		$creditGuardRow = $creditGuardColl->query($passQuery)->cursor()->current();
-		if($creditGuardRow->isEmpty() || !isset($creditGuardRow['s'])) {
+		// Get the secret
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
+		if(!$this->validateSecret($secret)) {
 			return null;
 		}
 		
-		// Get the secret
-		$secret = $creditGuardRow['s'];
-		
-		// TODO: Validate the secret (length, non zero etc.)
 		$hashResult = hash_hmac("sha512", $data, $secret);
 		
 		// state whether signature is okay or not
@@ -115,6 +108,17 @@ class CreditGuardAction extends ApiAction {
 			$validData = $data;
 		}
 		return $validData;
+	}
+	
+	protected function validateSecret($secret) {
+		if(empty($secret) || !is_string($secret)) {
+			return false;
+		}
+		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
+		$calculatedCrc = hash("crc32b", $secret);
+		
+		// Validate checksum
+		return hash_equals($crc, $calculatedCrc);
 	}
 	
 	public function getToken($aid, $return_url) {
