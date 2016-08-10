@@ -69,24 +69,25 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 				return $k == $this->matchKey && $v == $name;
 			}, ARRAY_FILTER_USE_BOTH);
 			if(!empty($found)) {
-				$editing['allowed'] = $block['editable'];
+				// TODO: Do something with the 'system' magic value, magic values
+				// are bad.
+				$editing['block'] = (isset($block['system']) && $block['system']);
 				$foundBlock = &$block;
 				break;
 			}
 		}
 		
-		if(!empty($editing)) {
-			// TODO: Use the permissions to check if the document is editable, if the
-			// document is editable on system permissions, check for admin permissions 
-			// of the user.
-			if(!$editing['allowed']) {
-				return false;
-			}
-			// Remove the existing object.
-			$foundBlock = $this->val;
-			$this->val = null;
+		if(empty($editing)) {
+			return true;
 		}
 		
+		if(isset($editing['block']) && $editing['block']) {
+			return false;
+		}
+		// Remove the existing object.
+		$foundBlock = $this->val;
+		$this->val = null;
+
 		return true;
 	}
 	
