@@ -13,19 +13,28 @@ class ErrorController extends Yaf_Controller_Abstract {
       * un-caught exception.
       */
      public function errorAction(Exception $exception) {	
+		$output = array();
+		$output['status'] = 0;
+		$output['code'] = 500;
+		
         /* error occurs */
         switch ($exception->getCode()) {
             case YAF_ERR_NOTFOUND_MODULE:
             case YAF_ERR_NOTFOUND_CONTROLLER:
             case YAF_ERR_NOTFOUND_ACTION:
             case YAF_ERR_NOTFOUND_VIEW:
-                echo 404, ":", $exception->getMessage();
+                $output['data']['message'] = $exception->getMessage();
+                $output['code'] = 404;
                 break;
+			case Billrun_Traits_Api_IUserPermissions::NO_PERMISSION_ERROR_CODE:
+				$output['data']['message'] = "No permissions";
+				break;
             default :
-                echo "INVALID ACTION";
+                $output['data']['message'] = "Error";
                 break;
         }
 		
+		echo json_encode($output);
 		Billrun_Factory::log()->logCrash($exception);
      } 
 }

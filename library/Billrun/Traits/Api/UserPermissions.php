@@ -29,7 +29,7 @@ trait Billrun_Traits_Api_UserPermissions {
 		
 		$error = "No permission to execute this action";
 		Billrun_Factory::log($error, Zend_Log::NOTICE);
-		throw new Exception($error);
+		throw new Exception($error,  Billrun_Traits_Api_IUserPermissions::NO_PERMISSION_ERROR_CODE);
 	}
 	
 	/**
