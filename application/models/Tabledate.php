@@ -230,6 +230,9 @@ class TabledateModel extends TableModel {
 	}
 	
 	protected function validationResponse($result, $errorMsg = '') {
+		if (!$result) {
+			Billrun_Factory::log('Validation errors: ' . $errorMsg, Zend_Log::INFO);
+		}
 		return array(
 			'validate' => $result,
 			'errorMsg' => $errorMsg,
@@ -237,12 +240,12 @@ class TabledateModel extends TableModel {
 	}
 	
 	protected function validateMandatoryFields($data) {
-		$mandatoryFields = Billrun_Factory::config()->getConfigValue('validation.' . $this->collection_name . '.mandatoryFields', array());
+		$fields = Billrun_Factory::config()->getConfigValue($this->collection_name . '.fields', array());
 		$missingFields = array();
 		
-		foreach ($mandatoryFields as $field) {
-			if (!isset($data[$field]) || empty($data[$field])) {
-				$missingFields[] = $field;
+		foreach ($fields as $field) {
+			if ($field['mandatory'] && !array_key_exists($field['field_name'], $data)) {
+				$missingFields[] = $field['field_name'];
 			}
 		}
 		
@@ -253,7 +256,13 @@ class TabledateModel extends TableModel {
 	}
 	
 	protected function validateTypeOfFields($data) {
-		$typeFields = Billrun_Factory::config()->getConfigValue('validation.' . $this->collection_name . '.fieldsTypes', array());
+		$fields = Billrun_Factory::config()->getConfigValue($this->collection_name . '.fields', array());
+		$typeFields = array();
+		foreach ($fields as $field) {
+			if (isset($field['type'])) {
+				$typeFields[$field['field_name']] = $field['type'];
+			}
+		}
 		return $this->validateTypes($data, $typeFields);
 	}
 	
