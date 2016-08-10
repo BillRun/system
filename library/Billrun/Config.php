@@ -88,8 +88,11 @@ class Billrun_Config {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
-		if (!is_array($moreImportantConf) || self::isComplex($moreImportantConf)) {
+		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
+		}
+		if(self::isComplex($moreImportantConf)) {
+			return self::getComplexValue($moreImportantConf);
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -174,6 +177,7 @@ class Billrun_Config {
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
+				Billrun_Factory::log(print_r($this->toArray()['pricing'],1));
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
