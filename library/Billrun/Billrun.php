@@ -145,7 +145,8 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
-		$subscriber_entry['name'] = $subscriber->name;
+		$subscriber_entry['firstname'] = $subscriber->firstname;
+		$subscriber_entry['lastname'] = $subscriber->lastname;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;

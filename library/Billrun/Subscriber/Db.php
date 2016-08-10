@@ -195,7 +195,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
 						'plan_deactivation' => '$plan_deactivation',
-						'name' => '$name',
+						'firstname' => '$firstname',
+						'lastname' => '$lastname',
 						'address' => '$address',
 					),
 				),
@@ -219,7 +220,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
-					'name' => '$sub_plans.name',
+					'firstname' => '$sub_plans.firstname',
+					'lastname' => '$sub_plans.lastname',
 					'type' => '$sub_plans.type',
 					'address' => '$sub_plans.address',
 				),
@@ -265,10 +267,12 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				$accountData = array();
 				foreach ($outputArr as $subscriberPlan) {
 					$type = $subscriberPlan['id']['type'];
-					$name = $subscriberPlan['id']['name'];
+					$firstname = $subscriberPlan['id']['firstname'];
+					$lastname = $subscriberPlan['id']['lastname'];
 					if ($type === 'account') {
 						$accountData['attributes'] = array(
-							'name' => $name,
+							'firstname' => $firstname,
+							'lastname' => $lastname,
 							'address' => $subscriberPlan['id']['address'],
 							'payment_details' => $this->getPaymentDetails($subscriberPlan),
 						);
@@ -283,7 +287,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					}
 					$subscriberEntry['aid'] = $aid;
 					$subscriberEntry['sid'] = $sid;
-					$subscriberEntry['name'] = $name;
+					$subscriberEntry['firstname'] = $firstname;
+					$subscriberEntry['lastname'] = $lastname;
 					$subscriberEntry['next_plan'] = NULL;
 					$subscriberEntry['next_plan_activation'] = NULL;
 					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
