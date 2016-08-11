@@ -26,27 +26,57 @@ class OkPageAction extends ApiAction {
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+//		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$transaction_id = $request->get("txId");
-		
 		if (is_null($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
-		$cursor = $this->subscribers->query(array('CG_transaction_id' => $transaction_id))->cursor();
-		if (count($cursor) === 0){
-			return $this->setError("Wrong Transaction ID", $request);
-		}
 		if ($this->getTransactionDetails($transaction_id) === FALSE){
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		
-		$today = new MongoDate();
-		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
-	
-		// TODO: what to do with return-url? 
+		// Validate the process.
+		if(!$this->validateCreditGuardProcess($transaction_id)) {
+			return $this->setError("Operation Failed. Try Again...", $request);			
+		}
 	}
 
+	/**
+	 * Check that the process that has now ended, actually started, and not too long ago.
+	 * @return boolean
+	 */
+	protected function validateCreditGuardProcess($transaction_id) {
+		$cgColl = Billrun_Factory::db()->creditproxyCollection();
+		
+		// Get is started
+		$query = array("tx" => $transaction_id, "aid" => $this->aid);
+		$cgRow = $cgColl->query($query)->cursor()->current();
+		if($cgRow->isEmpty()) {
+			// Received message for completed charge, 
+			// but no indication for charge start
+			return false;
+		}
+		
+		// Check how long has passed.
+		$timePassed = time() - $cgRow['t'];
+		
+		// Three minutes
+		// TODO: What value should we put here?
+		// TODO: Change to 4 hours, move to conf
+		if($timePassed > 60*60*4) {
+			// Change indication in DB for failure.
+			$cgRow['done'] = false;
+		} else {
+			// Signal done
+			$cgRow['done'] = true;	
+		}
+		
+		$cgColl->updateEntity($cgRow);
+		
+		return $cgRow['done'];
+	}
+	
 	public function getTransactionDetails($txId) {
 
 		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
