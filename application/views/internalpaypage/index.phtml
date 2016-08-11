@@ -13,7 +13,7 @@
 			<div className="contents">
 				<div class="container">
 					<h3>Company Name</h3>
-					<form class="form-horizontal" action="/paypage/create">
+					<form class="form-horizontal" action="/internalpaypage/create">
 						<div class="panel panel-primary">
 							<div class="panel-heading">
 								<h4>Account Information</h4>
@@ -26,7 +26,7 @@
 									echo "<div class='form-group'>";
 									echo "<div class='col-md-3'>"
 									. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
-									. "<input class='form-control' type='text' name='" . $c['field_name'] . "' " . (!empty($account) ? 'disabled=disabled' : '') . " "
+									. "<input class='form-control' type='text' name='" . $c['field_name'] . "' " . (!empty($account) ? 'readonly' : '') . " "
 										. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
 										. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
 									. "</div>";
