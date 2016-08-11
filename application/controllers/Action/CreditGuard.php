@@ -22,39 +22,103 @@ class CreditGuardAction extends ApiAction {
 	protected $CG_transaction_id;
 
 	public function execute() { 
-		$this->allowed();
-		
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-		$today = new MongoDate();
 		$request = $this->getRequest();
-		$aid = $request->get("aid");
-		$return_url = $request->get("return_url");
-		if (empty($return_url)){
-			$return_url = Billrun_Factory::config()->getConfigValue('cg_return_url');
-		}
-		$hash = $request->get("hash");
-		if (is_null($aid) || !is_numeric($aid)) {
-			return $this->setError("need to pass numeric aid", $request);
-		}	
 		
-		$calculated_hash = Billrun_Util::generateHash($aid, Billrun_Factory::config()->getConfigValue('CG.key_for_hash'));
-		if ($hash == $calculated_hash) {
-			$this->getToken($aid, $return_url);
-			$url_array = parse_url($this->url);
-			$str_response = array();
-			parse_str($url_array['query'], $str_response);
-			$this->CG_transaction_id = $str_response['txId'];	
-			$this->subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('CG_transaction_id' => (string) $this->CG_transaction_id)));
-			$this->forceRedirect($this->url);
+		// Validate the data.
+		$data = $this->validateData($request);
+		if($data === null) {
+			return $this->setError("Failed to authenticate", $request);
 		}
+		
+		$jsonData = json_decode($data, true);
+		if (!isset($jsonData['aid']) || is_null(($aid = $jsonData['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
+			return $this->setError("need to pass numeric aid", $request);
+		}
+		
+		if(!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
+			return $this->setError("Invalid arguments", $request);			
+		}
+		
+		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
+		// Validating that not too much time passed.
+		
+		$this->getToken($aid);
+		$url_array = parse_url($this->url);
+		$str_response = array();
+		parse_str($url_array['query'], $str_response);
+		$this->CG_transaction_id = $str_response['txId'];	
+		
+		// Signal starting process.
+		$this->signalStartingProcess($aid, $timestamp);
+		
+		$this->forceRedirect($this->url);
 	}
 
+	protected function signalStartingProcess($aid, $timestamp) {
+		$cgColl = Billrun_Factory::db()->creditproxyCollection();
+		
+		// Get is started
+		// TODO: Move to DB
+		$query = array("tx" => $this->CG_transaction_id, "aid" => $aid);
+		$cgRow = $cgColl->query($query)->cursor()->current();
+		
+		if(!$cgRow->isEmpty()) {
+			if(isset($cgRow['done'])) { 
+			   // Blocking relayed message.
+			   return;
+			}
+			
+			// TODO: Still blocking? Relaying a mesage after the first did not finish?
+			return;
+		}
+		
+		// Signal start process
+		$query['t'] = $timestamp;
+		$cgColl->insert($query);
+	}
+	
 	protected function forceRedirect($uri) {
 		if (empty($uri)) {
 			$uri = '/';
 		}
 		header('Location: ' . $uri);
 		exit();
+	}
+	
+	/**
+	 * Validates the input data.
+	 * @return data - Request data if validated, null if error.
+	 */
+	public function validateData($request) {
+		$data = $request->get("data");
+		$signature = $request->get("signature");
+
+		// Get the secret
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
+		if(!$this->validateSecret($secret)) {
+			return null;
+		}
+		
+		$hashResult = hash_hmac("sha512", $data, $secret);
+		
+		// state whether signature is okay or not
+		$validData = null;
+	
+		if(hash_equals($signature, $hashResult)) {
+			$validData = $data;
+		}
+		return $validData;
+	}
+	
+	protected function validateSecret($secret) {
+		if(empty($secret) || !is_string($secret)) {
+			return false;
+		}
+		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
+		$calculatedCrc = hash("crc32b", $secret);
+		
+		// Validate checksum
+		return hash_equals($crc, $calculatedCrc);
 	}
 	
 	public function getToken($aid, $return_url) {
