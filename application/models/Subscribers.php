@@ -182,7 +182,7 @@ class SubscribersModel extends TabledateModel {
 		return array_merge($parentKeys, array());
 	}
 	
-	public function hasEntityWithOverlappingDates($entity) {
+	public function hasEntityWithOverlappingDates($entity, $new = true) {
 		return false;
 	}
 	

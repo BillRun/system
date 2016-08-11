@@ -846,7 +846,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		  }
 		 */
 		if (is_subclass_of($model, "TabledateModel")) {
-			if ($model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+			if ($type != 'update' && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
 				return $this->responseError("There's an entity with overlapping dates");
 			}
 			$validate = $model->validate($data, $type);
