@@ -27,10 +27,11 @@ class InternalPaypageController extends ExternalPaypageController {
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
 		$type = empty($request['aid']) ? 'account' : 'subscriber';
-		if (empty($request['aid']))
+		if (empty($request['aid'])) {
 			unset($request['aid']);
-		else
+		} else {
 			$request['aid'] = intval($request['aid']);
+		}
 		$query = array(
 			"type" => $type,
 			"subscriber" => json_encode($request)
@@ -44,7 +45,6 @@ class InternalPaypageController extends ExternalPaypageController {
 			/* TODO: HANDLE ERROR! */
 			return false;
 		}
-		//$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
@@ -56,7 +56,6 @@ class InternalPaypageController extends ExternalPaypageController {
 			"signature" => $hashResult
 		);
 
-		//$this->redirect('/creditguard/creditguard', json_encode($sendData));
 		header("Location: /api/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
 	}

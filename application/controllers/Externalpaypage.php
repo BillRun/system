@@ -42,8 +42,11 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
 		$type = empty($request['aid']) ? 'account' : 'subscriber';
-		if (empty($request['aid']))
+		if (empty($request['aid'])) {
 			unset($request['aid']);
+		} else {
+			$request['aid'] = intval($request['aid']);
+		}
 		$query = array(
 			"type" => $type,
 			"subscriber" => json_encode($request)
@@ -57,9 +60,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			/* TODO: HANDLE ERROR! */
 			return false;
 		}
-		$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
-		$creditGuardRow = Billrun_Factory::db()->creditGuardCollection()->query($passQuery)->cursor()->current();
-		$secret = $creditGuardRow['s'];
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
 			"t" => time()
@@ -70,7 +71,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			"signature" => $hashResult
 		);
 
-		$this->redirect('/api/creditguard', json_encode($sendData));
+		header("Location: /api/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
 	}
 
