@@ -12,8 +12,7 @@
  * @package  Controller
  * @since    5.0
  */
-class PaypageController extends Yaf_Controller_Abstract {
-
+class ExternalPaypageController extends Yaf_Controller_Abstract {
 	public function init() {
 		Billrun_Factory::db();
 	}
@@ -43,8 +42,11 @@ class PaypageController extends Yaf_Controller_Abstract {
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
 		$type = empty($request['aid']) ? 'account' : 'subscriber';
-		if (empty($request['aid']))
+		if (empty($request['aid'])) {
 			unset($request['aid']);
+		} else {
+			$request['aid'] = intval($request['aid']);
+		}
 		$query = array(
 			"type" => $type,
 			"subscriber" => json_encode($request)
@@ -58,18 +60,19 @@ class PaypageController extends Yaf_Controller_Abstract {
 			/* TODO: HANDLE ERROR! */
 			return false;
 		}
-		$passQuery = array("tenant" => Billrun_Factory::config()->getEnv());
-		$creditGuardRow = $creditGuardColl->query($passQuery)->cursor()->current();
-		$secret = $creditGuardRow['s'];
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
 			"t" => time()
 		);
 		$hashResult = hash_hmac("sha512", json_encode($data), $secret);
-		$query = array(
+		$sendData = array(
 			"data" => $data,
-			"sig" => $hashResult
+			"signature" => $hashResult
 		);
+
+		header("Location: /api/creditguard?signature=".$hashResult."&data=".json_encode($data));
+		return false;
 	}
 
 }

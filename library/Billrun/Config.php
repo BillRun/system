@@ -92,8 +92,14 @@ class Billrun_Config {
 	 * @return type array containing the  overriden values.
 	 */
 	protected function mergeConfigs($lessImportentConf, $moreImportantConf) {
+		// If the config value is not an array, or is a complex object then we
+		// there is no further level to retrieve.
+		// Return the conf value.
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
+		}
+		if(self::isComplex($moreImportantConf)) {
+			return self::getComplexValue($moreImportantConf);
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -101,9 +107,14 @@ class Billrun_Config {
 				continue;
 			}
 
-			$lessImportentConf[$key] = isset($lessImportentConf[$key]) ?
-				$this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]) :
-				$moreImportantConf[$key];
+			// If the key exists in the less importent config array then we have
+			// another level of config values to process.
+			if(isset($lessImportentConf[$key])) {
+				$confValue = $this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+			} else {
+				$confValue = $moreImportantConf[$key];
+			}
+			$lessImportentConf[$key] = $confValue;
 		}
 
 		return $lessImportentConf;
@@ -254,7 +265,7 @@ class Billrun_Config {
 	 * @param mixed $complex - Data to wrap with complex wrapper.
 	 * @return \Billrun_DataTypes_Conf_Base
 	 */
-	public static function getComplexWrapper ($complex) {
+	public static function getComplexWrapper (&$complex) {
 		// Get complex wrapper.
 		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
 		if(!@class_exists($name)) {
@@ -269,15 +280,18 @@ class Billrun_Config {
 	 * @param mixed $complex - Complex data
 	 * @return boolean - True if valid.
 	 */
-	public static function isComplexValid($complex) {
+	public static function isComplexValid(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return false;
 		}
-		return $wrapper->validate();
+		if (!$wrapper->validate()) {
+			return false;
+		}
+		return true;
 	}
 	
-	public static function getComplexValue($complex) {
+	public static function getComplexValue(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {
 			return null;
