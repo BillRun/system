@@ -374,6 +374,41 @@ class Billrun_Util {
 		}
 		return $seconds;
 	}
+	
+	/**
+	 * convert seconds to readable format [English]
+	 * 
+	 * @param int $seconds seconds to convert
+	 * 
+	 * @return string readable format
+	 */
+	public static function durationReadableFormat($seconds) {
+		$units = array(
+			"year" => 220752000, // 365 * 7 * 24 * 60 * 60
+			"week" => 604800, // 7 * 24 * 60 * 60
+			"day" => 86400, // 24 * 60 * 60
+			"hour" => 3600, // 60 * 60
+			"minute" => 60,
+			"second" => 1,
+		);
+
+		if ($seconds == 0) {
+			return "0 seconds";
+		}
+		$s = array();
+		foreach ($units as $name => $div) {
+			$quot = intval($seconds / $div);
+			if ($quot) {
+				$unit = $name;
+				if (abs($quot) > 1) {
+					$unit .= "s";
+				}
+				$s[] = $quot . " " . $unit;
+				$seconds -= $quot * $div;
+			}
+		}
+		return implode($s, ', ');
+	}
 
 	/**
 	 * convert megabytes to bytes
