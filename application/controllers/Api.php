@@ -97,7 +97,8 @@ class ApiController extends Yaf_Controller_Abstract {
 		} else {
 			$var = $args;
 		}
-		$ret = $this->setOutputVar($var);
+		$readable = Billrun_Util::convertMongoDatesToReadable($var);
+		$ret = $this->setOutputVar($readable);
 		$this->apiLogAction();
 		return $ret;
 	}
@@ -111,12 +112,12 @@ class ApiController extends Yaf_Controller_Abstract {
 			}
 			return true;
 		} else if ($num_args == 1) {
-			$this->output = Billrun_Util::convertMongoDatesToReadable($args[0]);
+			$this->output = $args[0];
 			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
-			$this->output->$key = Billrun_Util::convertMongoDatesToReadable($value);
+			$this->output->$key = $value;
 			return true;
 		}
 		return false;
