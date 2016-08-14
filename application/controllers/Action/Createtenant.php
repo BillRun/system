@@ -20,6 +20,7 @@ class CreatetenantAction extends ApiAction {
 	protected $status = true;
 	protected $desc = '';
 	
+	protected $db;
 	protected $userName;
 	protected $password;
 	protected $tenant;
@@ -37,10 +38,11 @@ class CreatetenantAction extends ApiAction {
 		
 		$this->init();
 		
-		if (!$this->generateDbUsernameAndPassword() ||
+		if (!$this->createUserInBillrun()			||
+			!$this->generateDbUsernameAndPassword() ||
 			!$this->createConfigFile()				||
-			!$this->createBillrunUser()				||
-			!$this->createDB() ||
+			!$this->createDB()						||
+			!$this->createUserInTenantBillrun()		||
 			!$this->createDbConfig()) {
 			$this->status = false;
 		}
@@ -74,6 +76,15 @@ class CreatetenantAction extends ApiAction {
 		return false;
 	}
 	
+	/**
+	 * Create a subscriber in Billrun's env
+	 * 
+	 * @todo complete function - with API
+	 */
+	protected function createUserInBillrun() {
+		
+	}
+	
 	protected function replaceConfigValues($config) {
 		$host = '127.0.0.1:27017';
 		$port = '';
@@ -82,6 +93,11 @@ class CreatetenantAction extends ApiAction {
 		return str_replace($search, $replace, $config);
 	}
 	
+	/**
+	 * craete a .ini file for the tenant (with db connection parameters)
+	 * 
+	 * @return boolean
+	 */
 	protected function createConfigFile() {
 		if (empty($configFileBasePath = Billrun_Config::getMultitenantConfigPath())) {
 			$this->desc = 'System does not work in multi-tenant method or cannot get multi-tenant config base path.';
@@ -93,37 +109,103 @@ class CreatetenantAction extends ApiAction {
 			return false;
 		}
 		$config = $this->replaceConfigValues($baseConfig);
-		$configPath = $configFileBasePath . $this->tenant;
+		$configPath = $configFileBasePath . $this->tenant . '.ini';
 		if (!file_put_contents($configPath, $config)) {
 			$this->desc = 'Cannot save config file to path: "' . $configPath . '"';
 			return false;
 		}
-		//Billrun_Factory::config()->addConfig($configPath);
+		Billrun_Factory::config()->addConfig($configPath);
 		return true;
 	}
 	
+	/**
+	 * create a user and a db for the tenant
+	 * 
+	 * @return boolean
+	 */
 	protected function createDB() {
-		//$options = Billrun_Factory::config()->getConfigValue('db', array());
-		//$db = Billrun_Db::getInstance($options);
-		return true;
+		$permissions = Billrun_Factory::config()->getConfigValue('create_tenant.db_permissions', 'readWrite');
+		$createDbPath = Billrun_Factory::config()->getConfigValue('create_tenant.create_db_path', '');
+		$cmd = $createDbPath . ' ' . $this->db_name . ' ' . $this->db_user . ' ' . $this->db_pass . ' ' . $permissions;
+		exec($cmd, $output);
+		$err = $output[2];
+		if (strpos($err, 'Error') !== false) {
+			$this->desc = $err;
+			return false;
+		}
+		return $this->connectToDb();
 	}
-
-	protected function createDbConfig() {
-		return true;
-	}
-
-	protected function createBillrunUser() {
-		$query = array(
-			'username' => $this->userName,
-			'password' => password_hash($this->password, PASSWORD_DEFAULT),
-			'roles' => array('read'),
-		);
-		if (!Billrun_Factory::db()->usersCollection()->insert($query)) {
+	
+	protected function connectToDb() {
+		$options = Billrun_Factory::config()->getConfigValue('db');
+		$this->db = Billrun_Factory::db($options);
+		if (empty($this->db)) {
 			return false;
 		}
 		return true;
 	}
 	
+	protected function createSercret() {
+		$key = bin2hex(openssl_random_pseudo_bytes(16));
+		$crc = hash("crc32b", $key);
+		return array(
+			'key' => $key,
+			'crc' => $crc
+		);
+	}
+	
+	protected function addDbConfigData(&$dbConfig) {
+		$dbConfig['shared_secret'] = $this->createSercret();
+		$dbConfig['company_name'] = $this->tenant;
+	}
+
+	/**
+	 * create a config in DB for the tenant
+	 * 
+	 * @return boolean
+	 */
+	protected function createDbConfig() {
+		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue('create_tenant.db_base_config', '');
+		if (empty($baseDbConfigJson = file_get_contents($baseDbConfigPath))) {
+			$this->desc = 'Basic db config was not found in path: "' . $baseDbConfigPath . '"';
+			return false;
+		}
+
+		if (empty($dbConfig = json_decode($baseDbConfigJson, JSON_OBJECT_AS_ARRAY))) {
+			$this->desc = 'Cannot parse basic DB config. Content: "' . $baseDbConfigJson . '"';
+			return false;
+		}
+		$this->addDbConfigData($dbConfig);
+		if (!$this->db->configCollection()->insert($dbConfig)) {
+			$this->desc = 'Cannot save config to DB.';
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * create an admin user in the tenant's Billrun instance
+	 * 
+	 * @return boolean
+	 */
+	protected function createUserInTenantBillrun() {
+		$query = array(
+			'username' => $this->userName,
+			'password' => password_hash($this->password, PASSWORD_DEFAULT),
+			'roles' => array('admin'),
+		);
+		if (!$this->db->usersCollection()->insert($query)) {
+			$this->desc = 'Cannot create user in DB.';
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * create a username and password for the tenant's DB
+	 * 
+	 * @return boolean
+	 */
 	protected function generateDbUsernameAndPassword() {
 		$this->db_user = 'user_' . $this->tenant;
 		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());

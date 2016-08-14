@@ -61,7 +61,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.sumup_template', ''));
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.details_template', ''));
 		$this->view->assign('lines_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.lines_template', ''));
-		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('wkpdf.currency', ''));
+		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 	}
 	
 	/*
