@@ -1836,7 +1836,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}
-
+		session_destroy();
 		$this->forceRedirect('/admin/login');
 	}
 
