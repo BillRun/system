@@ -126,7 +126,6 @@ class CreditGuardAction extends ApiAction {
 		$request = $this->getRequest();
 		$pageRoot = $request->getServer()['HTTP_HOST'];
 		$okPageUrl = sprintf($okTemplate, $pageRoot);
-		Billrun_Factory::log(print_r($okPageUrl,1));
 		return $okPageUrl;
 	}
 	
