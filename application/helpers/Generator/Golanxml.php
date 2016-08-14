@@ -434,7 +434,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
 			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
-			$subscriber_sumup_TOTAL_FREEZE_FLAT_RATE = floatval((isset($subscriber['freeze_amount']) ? $subscriber['freeze_amount'] : 0));
+			$subscriber_sumup_TOTAL_FREEZE_FLAT_RATE = floatval((isset($subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost']) ? $subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
