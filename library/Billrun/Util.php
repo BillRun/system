@@ -1518,6 +1518,12 @@ class Billrun_Util {
 		}
 	}
 	
+	/**
+	 * convert all MongoDate objects in the data received into ISO dates
+	 * 
+	 * @param mixed $data
+	 * @return mixed $data with ISO dates
+	 */
 	public static function convertMongoDatesToReadable($data) {
 		if ($data instanceof MongoDate) {
 			return date(DATE_ISO8601, $data->sec);
