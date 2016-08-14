@@ -91,24 +91,24 @@ class OkPageAction extends ApiAction {
 			'password' => $cgConf['password'],
 			 /* Build Ashrait XML to post */
 			'int_in' => '<ashrait>
-                                                        <request>
-                                                         <language>HEB</language>
-                                                         <command>inquireTransactions</command>
-                                                         <inquireTransactions>
-                                                          <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
-                                                          <mainTerminalNumber/>
-                                                          <queryName>mpiTransaction</queryName>
-                                                          <mid>' . $cgConf['mid'] . '</mid>
-                                                          <mpiTransactionId>' . $cgConf['txId'] . '</mpiTransactionId>
-                                                          <mpiValidation>Token</mpiValidation>
-                                                          <userData1/>
-                                                          <userData2/>
-                                                          <userData3/>
-                                                          <userData4/>
-                                                          <userData5/>
-                                                         </inquireTransactions>
-                                                        </request>
-                                                   </ashrait>'
+							<request>
+							 <language>HEB</language>
+							 <command>inquireTransactions</command>
+							 <inquireTransactions>
+							  <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
+							  <mainTerminalNumber/>
+							  <queryName>mpiTransaction</queryName>
+							  <mid>' . $cgConf['mid'] . '</mid>
+							  <mpiTransactionId>' . $cgConf['txId'] . '</mpiTransactionId>
+							  <mpiValidation>Token</mpiValidation>
+							  <userData1/>
+							  <userData2/>
+							  <userData3/>
+							  <userData4/>
+							  <userData5/>
+							 </inquireTransactions>
+							</request>
+					   </ashrait>'
 			);
 		
 		$poststring = http_build_query($post_array);
@@ -155,6 +155,7 @@ class OkPageAction extends ApiAction {
 			$this->aid = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->return_url = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$this->personal_id = $xmlObj->response->inquireTransactions->row->personalId;
+			
 			return true;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
