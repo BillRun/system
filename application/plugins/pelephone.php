@@ -811,7 +811,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
 			} else if (stripos($usaget, 'roaming') !== FALSE) {
-				if ($usaget == 'roaming_callback') {
+				if ($usaget == 'roaming_callback' && !empty($event['destination_number'])) {
 					$event['called_number'] = $event['destination_number'];
 				}
 				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
