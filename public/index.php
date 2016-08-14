@@ -7,6 +7,8 @@
  */
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', dirname(__DIR__));
 
+/* Set expiration time to one hour */
+session_set_cookie_params(60 * 60);
 require_once(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'conf' . DIRECTORY_SEPARATOR . 'config.php');
 $app = new Yaf_Application(BILLRUN_CONFIG_PATH);
 $app->bootstrap()->run();
