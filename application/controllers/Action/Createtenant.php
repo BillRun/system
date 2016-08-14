@@ -35,6 +35,9 @@ class CreatetenantAction extends ApiAction {
 		if (!AdminController::authorized('write')) {
 			return;
 		}
+		if (!$this->isWhiteListed()) {
+			return false;
+		}
 		
 		$this->init();
 		
@@ -50,6 +53,13 @@ class CreatetenantAction extends ApiAction {
 		$this->response();
 	}
 	
+	protected function isWhiteListed() {
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$whiteList = Billrun_Factory::config()->getConfigValue('create_tenant.remotes.white_list', array());
+		return in_array($ip, $whiteList);
+	}
+
+
 	protected function init() {
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
 		$this->tenant = Billrun_Factory::config()->getTenant();
@@ -82,7 +92,7 @@ class CreatetenantAction extends ApiAction {
 	 * @todo complete function - with API
 	 */
 	protected function createUserInBillrun() {
-		
+		return true;
 	}
 	
 	protected function replaceConfigValues($config) {
