@@ -135,6 +135,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function initSession() {
 		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
 		ini_set('session.gc_maxlifetime', $session_timeout);
+		
+		/* Set expiration time to one hour */
+		session_set_cookie_params(60 * 60);
 	}
 	
 	protected function addCss($path) {

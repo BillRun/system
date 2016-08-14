@@ -27,6 +27,10 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		
+		/* Set expiration time to one hour */
+		session_set_cookie_params(60 * 60);
+		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class
 		$this->output = new stdClass();
