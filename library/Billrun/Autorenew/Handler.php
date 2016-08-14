@@ -80,6 +80,16 @@ class Billrun_Autorenew_Handler {
 
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
+			// Check if the record is invalid.
+			// TODO: This validation is also done inside the autorenew action manager,
+			// we should consider this check for debug purposes, or create a proper validatio
+			// for each record (which is probably an overkill - corrupted records are a rare incident
+			// which is already supposed to be reported in the autorenew action manager).
+			if(!isset($autoRenewRecord['sid'])) {
+				Billrun_Factory::log("Invalid autorenew record: " . print_r($autoRenewRecord,1), Zend_Log::ERR);
+				continue;
+			}
+			
 			try {				
 				$record = $manager->getAction($autoRenewRecord);
 				if (!$record) {
