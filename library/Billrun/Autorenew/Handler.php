@@ -86,6 +86,7 @@ class Billrun_Autorenew_Handler {
 					Billrun_Factory::log("Auto renew services failed to create record handler", Zend_Log::ALERT);
 					continue;
 				}
+				Billrun_Factory::log("Updating autorenew record for sid: " . $autoRenewRecord['sid']);
 				$record->update();
 				Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
 			} catch (Exception $ex) {
