@@ -24,6 +24,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $billrun_key;
 	protected $freeze_start = null;
 	protected $freeze_end = null;
+	protected $services = null;
 
 
 
@@ -58,6 +59,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
+		$this->services = Billrun_Factory::config()->getConfigValue('golan.services');
 		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -284,18 +286,14 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
-					
+
 							$concat['data']['activation_start'] = isset($subscriber['activation']) ? Billrun_Util::convertToBillrunDate($subscriber['activation']) : null;
 							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? Billrun_Util::convertToBillrunDate($subscriber['deactivate']) : null;
 							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['from_date']) : null;
-							$this->freeze_start = $concat['data']['freeze_start_date']; 
+							$this->freeze_start = $concat['data']['freeze_start_date'];
 							$concat['data']['freeze_end_date'] = isset($subscriber['freeze']['to_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['to_date']) : null;
 							$this->freeze_end = $concat['data']['freeze_end_date'];
 							$concat['data']['fraction'] = $this->calcFractionOfMonth($concat['data']['activation_start'], $concat['data']['activation_end']);
-							if ($this->isFreezeExists()){
-								$concat['data']['freeze_amount'] = $this->calcFreezeAmount($concat['data']['freeze_start_date'],$concat['data']['freeze_end_date']);
-								}
-						
 							if ($sid) {
 								$concat['data']['plan'] = isset($subscriber['curr_plan']) ? $subscriber['curr_plan'] : null;
 								$concat['data']['next_plan'] = isset($subscriber['next_plan']) ? $subscriber['next_plan'] : null;
@@ -321,6 +319,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									$credit['sid'] = $concat['data']['sid'];
 									$credit['activation'] = $concat['data']['activation_start'];
 									$credit['deactivation'] = $concat['data']['activation_end'];
+									$credit['fraction'] = $concat['data']['fraction'];
 									if ($sid) {
 										$credit['plan'] = $concat['data']['plan'];
 									} else {
@@ -334,49 +333,55 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								$concat['data']['credits'] = $credits;
 							}
 
-							if (isset($subscriber['did_premium'])) {
-								$count = intval($subscriber['did_premium']);
-								while ($count > 0) {
-									$subscriber['services'][] = 'DID_PREMIUM';
-									$count--;
+							$service_types = array();
+							foreach ($this->services as $service_name => $usaget) {
+								if (isset($subscriber[$usaget])) {
+									$service_types[$service_name] = array('usaget' => $usaget);
 								}
 							}
-							
-							if ($this->isFreezeExists()){
-								$subscriber['services'][] = 'FREEZE_FLAT_RATE';
+							$reduced = array();
+							foreach ($service_types as $service_name => $service) {
+								if (isset($subscriber[$service['usaget']])) {
+									if (is_array(current($subscriber[$service['usaget']]))) {
+										$count = count($subscriber[$service['usaget']]);
+									} else {
+										$count = 1;
+									}
+									$reduced[$service_name] = $count;
+								}
 							}
 
-							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
-								$reduced = array();
-								foreach ($subscriber['services'] as $service_name) {
-									if (!isset($reduced[$service_name])) {
-										$reduced[$service_name] = 1;
-									} else {
-										$reduced[$service_name]+=1;
-									}
-								}
+							if (!empty($reduced)) {
 								$services = array();
 								foreach ($reduced as $service_name => $service_count) {
 									$service = array();
 									$service['service_name'] = $service_name;
-									if ($service_name == 'FREEZE_FLAT_RATE'){
-										$service['fraction'] = $this->calcServiceFraction($this->getFreezeStartDay(), $this->getFreezeEndDay());	
-										$service['from_date'] = $this->getFreezeStartDay();
-										$service['to_date'] = $this->getFreezeEndDay();
+									$service['usaget'] = $service_types[$service_name]['usaget'];
+									$service_dates = $subscriber[$service['usaget']];
+									if (!is_array(current($service_dates))) {
+										$service_dates = array($service_dates);
 									}
-									if ($service_name == 'DID_PREMIUM'){
-										$service['fraction'] = 1;
+									for ($index = 0; $index < $service_count; $index++) {
+										$service['from_date'] = $service_dates[$index]['from_date'];
+										$service['to_date'] = $service_dates[$index]['to_date'];
+										$service['fraction'] = $this->calcServiceFraction($service['from_date'], $service['to_date']);
+										$service['count'] = 1;
+										$service['aid'] = $concat['data']['aid'];
+										$service['sid'] = $concat['data']['sid'];
+										if ($sid) {
+											$service['plan'] = $concat['data']['plan'];
+										} else {
+											$service['plan'] = 'ACCOUNT';
+										}
+										$stamp = Billrun_Util::generateArrayStamp($service);
+										if (isset($services[$stamp])) {
+											$services[$stamp]['count'] ++;
+											continue;
+										}
+										$services[$stamp] = $service;
 									}
-									$service['count'] = $service_count;
-									$service['aid'] = $concat['data']['aid'];
-									$service['sid'] = $concat['data']['sid'];
-									if ($sid) {
-										$service['plan'] = $concat['data']['plan'];
-									} else {
-										$service['plan'] = 'ACCOUNT';
-									}
-									$services[] = $service;
 								}
+								$services = array_values($services);
 								$concat['data']['sub_services'] = $services;
 							}
 
@@ -443,7 +448,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $ret;
 	}
-
+	
 	/**
 	 * for each service type create a row, add required fields for lines collection, rate and price
 	 * @param type $billrun_key
@@ -460,6 +465,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("Service cannot be parsed for subscriber. aid or sid or both not exists. service details: " . print_R($service, 1), Zend_log::ALERT);
 				continue;
 			}
+			$usaget = $service['usaget'];
 			$parsedRow = Billrun_Util::parseServiceRow($service, $billrun_key);
 			$parsedRow['billrun'] = $billrun_key;
 
@@ -468,7 +474,8 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				Billrun_Factory::log("service cannot be rated for subscriber " . $service['sid'] . " for billrun " . $billrun_key . " service details: " . print_R($service, 1), Zend_log::ALERT);
 				continue;
 			}
-
+			
+			$ratedRow['usaget'] = $usaget;
 			// add billrun, price
 			if (($insertRow = $this->pricingCalc->updateRow($ratedRow)) === FALSE) {
 				Billrun_Factory::log("service cannot be calc pricing for subscriber " . $service['sid'] . " for billrun " . $billrun_key . " credit details: " . print_R($service, 1), Zend_log::ALERT);
@@ -485,7 +492,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return $ret;
 	}
-
+	
 	public function getListFromFile($file_path, $time) {
 		$json = @file_get_contents($file_path);
 		$arr = @json_decode($json, true);
@@ -523,7 +530,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	
 	
 	public function isFractionNeeded($credit){
-		if (($credit['promotion'] == true) || ($credit['sid'] == 0)){
+		if (((isset($credit['promotion'])) && ($credit['promotion'] == true)) || ($credit['sid'] == 0)) {
 			return true;
 		}
 		return false;
@@ -554,11 +561,17 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	public function getActivationStartDay() {
-		return $this->data['activation_start'];
+		if (isset($this->data['activation_start'])){
+			return $this->data['activation_start'];
+		}
+		return null;
 	}
 
 	public function getActivationEndDay() {
-		return $this->data['activation_end'];
+		if (isset($this->data['activation_end'])){
+			return $this->data['activation_end'];
+		}
+		return null;
 	}
 
 	public function getFreezeStartDay() {
@@ -578,16 +591,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		return $this->freeze_end;
 	}
 
-	public function calcFreezeAmount($freeze_start, $freeze_end) {
-		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
-		$days_in_month = (int) date('t', $billing_start_date);
-		$freeze_charge = Billrun_Factory::config()->getConfigValue('golan.freeze_charging');
-		$freeze_days = $this->getNumberOfDays($freeze_start, $freeze_end);
-		$freeze_pricing = ($freeze_days / $days_in_month) * $freeze_charge;
-		
-		return $freeze_pricing;
-	}
-	
 	public function calcServiceFraction($service_start, $service_end) {
 		$billing_start_date = Billrun_Util::getStartTime($this->billrun_key);
 		$days_in_month = (int) date('t', $billing_start_date);

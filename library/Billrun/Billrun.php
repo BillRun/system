@@ -142,7 +142,6 @@ class Billrun_Billrun {
 		if ($subscriber->isFreezeExists()) {
 			$subscriber_entry['freeze_start_date'] = $subscriber->getFreezeStartDay();
 			$subscriber_entry['freeze_end_date'] = $subscriber->getFreezeEndDay();
-			$subscriber_entry['freeze_amount'] = $subscriber->calcFreezeAmount($subscriber_entry['freeze_start_date'], $subscriber_entry['freeze_end_date']);
 		}
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
