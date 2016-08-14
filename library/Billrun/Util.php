@@ -1517,6 +1517,19 @@ class Billrun_Util {
 			}
 		}
 	}
+	
+	public static function convertMongoDatesToReadable($data) {
+		if ($data instanceof MongoDate) {
+			return date(DATE_ISO8601, $data->sec);
+		}
+		if (!is_array($data)) {
+			return $data;
+		}
+		foreach ($data as $key => $value) {
+			$data[$key] = self::convertMongoDatesToReadable($value);
+		}
+		return $data;
+	}
 
 	/**
 	 * Returns params for a command (cmd).
