@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
+	use Billrun_Traits_Api_PageRedirect;
 	
 	protected $cgConf;
 	protected $url;
@@ -23,7 +24,7 @@ class CreditGuardAction extends ApiAction {
 
 	public function execute() { 
 		$request = $this->getRequest();
-		
+
 		// Validate the data.
 		$data = $this->validateData($request);
 		if($data === null) {
@@ -42,7 +43,12 @@ class CreditGuardAction extends ApiAction {
 		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
 		// Validating that not too much time passed.
 		
-		$this->getToken($aid);
+		$return_url = $request->get("return_url");
+		if(empty($return_url)) {
+			$return_url = Billrun_Factory::config()->getConfigValue('cg_return_url');
+		}
+		
+		$this->getToken($aid, $return_url);
 		$url_array = parse_url($this->url);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
@@ -77,14 +83,6 @@ class CreditGuardAction extends ApiAction {
 		$cgColl->insert($query);
 	}
 	
-	protected function forceRedirect($uri) {
-		if (empty($uri)) {
-			$uri = '/';
-		}
-		header('Location: ' . $uri);
-		exit();
-	}
-	
 	/**
 	 * Validates the input data.
 	 * @return data - Request data if validated, null if error.
@@ -92,7 +90,10 @@ class CreditGuardAction extends ApiAction {
 	public function validateData($request) {
 		$data = $request->get("data");
 		$signature = $request->get("signature");
-
+		if(empty($signature)) {
+			return false;
+		}
+		
 		// Get the secret
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		if(!$this->validateSecret($secret)) {
@@ -121,6 +122,14 @@ class CreditGuardAction extends ApiAction {
 		return hash_equals($crc, $calculatedCrc);
 	}
 	
+	protected function getOkPage() {
+		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
+		$request = $this->getRequest();
+		$pageRoot = $request->getServer()['HTTP_HOST'];
+		$okPageUrl = sprintf($okTemplate, $pageRoot);
+		return $okPageUrl;
+	}
+	
 	public function getToken($aid, $return_url) {
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
@@ -129,7 +138,7 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
-		$this->cgConf['ok_page'] = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
+		$this->cgConf['ok_page'] = $this->getOkPage();
 		$this->cgConf['return_url'] = $return_url;
 
 		
@@ -138,48 +147,48 @@ class CreditGuardAction extends ApiAction {
 			'password' => $this->cgConf['password'],
 			 /* Build Ashrait XML to post */
 			'int_in' => '<ashrait>                                      
-                                                   <request>
-                                                        <version>1000</version>
-                                                        <language>HEB</language>
-                                                        <dateTime></dateTime>
-                                                        <command>doDeal</command>
-                                                        <doDeal>
-                                                                <successUrl>' . $this->cgConf['ok_page'] . '</successUrl>
-                                                                 <terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
-                                                                 <mainTerminalNumber/>
-                                                                 <cardNo>CGMPI</cardNo>
-                                                                 <total>' . $this->cgConf['amount'] . '</total>
-                                                                 <transactionType>Debit</transactionType>
-                                                                 <creditType>RegularCredit</creditType>
-                                                                 <currency>ILS</currency>
-                                                                 <transactionCode>Phone</transactionCode>
-                                                                 <authNumber/>
-                                                                 <numberOfPayments/>
-                                                                 <firstPayment/>
-                                                                 <periodicalPayment/>
-                                                                 <validation>TxnSetup</validation>
-                                                                 <dealerNumber/>
-                                                                 <user>something</user>
-                                                                 <mid>' . $this->cgConf['mid'] . '</mid>
-                                                                 <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-                                                                 <mpiValidation>Normal</mpiValidation>
-                                                                 <email>someone@creditguard.co.il</email>
-                                                                 <clientIP/>
-                                                                 <customerData>
-                                                                  <userData1>' . $this->cgConf['aid'] . '</userData1>
-                                                                  <userData2>' . $this->cgConf['return_url'] . '</userData2>
-                                                                  <userData3/>
-                                                                  <userData4/>
-                                                                  <userData5/>
-                                                                  <userData6/>
-                                                                  <userData7/>
-                                                                  <userData8/>
-                                                                  <userData9/>
-                                                                  <userData10/>
-                                                                 </customerData>
-                                                        </doDeal>
-                                                   </request>
-                                                  </ashrait>'
+							<request>
+								 <version>1000</version>
+								 <language>HEB</language>
+								 <dateTime></dateTime>
+								 <command>doDeal</command>
+								 <doDeal>
+										 <successUrl>' . $this->cgConf['ok_page'] . '</successUrl>
+										  <terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
+										  <mainTerminalNumber/>
+										  <cardNo>CGMPI</cardNo>
+										  <total>' . $this->cgConf['amount'] . '</total>
+										  <transactionType>Debit</transactionType>
+										  <creditType>RegularCredit</creditType>
+										  <currency>ILS</currency>
+										  <transactionCode>Phone</transactionCode>
+										  <authNumber/>
+										  <numberOfPayments/>
+										  <firstPayment/>
+										  <periodicalPayment/>
+										  <validation>TxnSetup</validation>
+										  <dealerNumber/>
+										  <user>something</user>
+										  <mid>' . $this->cgConf['mid'] . '</mid>
+										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
+										  <mpiValidation>Normal</mpiValidation>
+										  <email>someone@creditguard.co.il</email>
+										  <clientIP/>
+										  <customerData>
+										   <userData1>' . $this->cgConf['aid'] . '</userData1>
+										   <userData2>' . $this->cgConf['return_url'] . '</userData2>
+										   <userData3/>
+										   <userData4/>
+										   <userData5/>
+										   <userData6/>
+										   <userData7/>
+										   <userData8/>
+										   <userData9/>
+										   <userData10/>
+										  </customerData>
+								 </doDeal>
+							</request>
+						   </ashrait>'
 		);
 		
 		$poststring = http_build_query($post_array);
