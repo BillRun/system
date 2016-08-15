@@ -15,6 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
+	use Billrun_Traits_API_PageRedirect;
 	
 	protected $cgConf;
 	protected $url;
@@ -80,14 +81,6 @@ class CreditGuardAction extends ApiAction {
 		// Signal start process
 		$query['t'] = $timestamp;
 		$cgColl->insert($query);
-	}
-	
-	protected function forceRedirect($uri) {
-		if (empty($uri)) {
-			$uri = '/';
-		}
-		header('Location: ' . $uri);
-		exit();
 	}
 	
 	/**

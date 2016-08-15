@@ -16,6 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 
 class OkPageAction extends ApiAction {
+	use Billrun_Traits_API_PageRedirect;
 	protected $card_token;
 	protected $card_expiration;
 	protected $subscribers;
@@ -40,6 +41,8 @@ class OkPageAction extends ApiAction {
 		if(!$this->validateCreditGuardProcess($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);			
 		}
+		
+		$this->forceRedirect($this->return_url);
 	}
 
 	/**
