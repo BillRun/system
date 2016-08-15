@@ -13,7 +13,8 @@
  * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
-
+	use Billrun_Traits_AuthenticatingController;
+	
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
@@ -29,7 +30,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
 		
 		/* Set expiration time to one hour */
-		session_set_cookie_params(60 * 60);
+		$this->initSession();
 		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class

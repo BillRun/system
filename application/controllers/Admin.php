@@ -13,7 +13,8 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
-
+	use Billrun_Traits_AuthenticatingController;
+	
 	/**
 	 * use for page title
 	 *
@@ -130,14 +131,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
-	}
-	
-	protected function initSession() {
-		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
-		ini_set('session.gc_maxlifetime', $session_timeout);
-		
-		/* Set expiration time to one hour */
-		session_set_cookie_params(60 * 60);
 	}
 	
 	protected function addCss($path) {

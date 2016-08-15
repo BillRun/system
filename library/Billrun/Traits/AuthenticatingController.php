@@ -12,7 +12,7 @@
 trait Billrun_Traits_AuthenticatingController {
 	/**
 	 * Init the session expiration
-	 * @param int $defaultTimeout - Default timeout in seconds.
+	 * @param int $defaultTimeout - Default timeout in seconds, one hour by default.
 	 */
 	protected function initSession($defaultTimeout=3600) {
 		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', $defaultTimeout);
