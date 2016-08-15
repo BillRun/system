@@ -186,10 +186,15 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			// TODO: Create some sort of polymorphic behaviour to correctly handle
 			// the updating fields.
 			if($fieldName === 'services') {
-				$toSet = $this->setSubscriberServices($updateData['services']);
+				$toSet = $this->getSubscriberServices($updateData['services']);
 			} else {
 				$toSet = $updateData[$fieldName];
 			}
+			
+			if(empty($toSet)) {
+				continue;
+			}
+			
 			$this->update[$fieldName] = $toSet;
 		}
 		
