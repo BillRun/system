@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  */
 class CreditGuardAction extends ApiAction {
-	use Billrun_Traits_API_PageRedirect;
+	use Billrun_Traits_Api_PageRedirect;
 	
 	protected $cgConf;
 	protected $url;
@@ -90,7 +90,10 @@ class CreditGuardAction extends ApiAction {
 	public function validateData($request) {
 		$data = $request->get("data");
 		$signature = $request->get("signature");
-
+		if(empty($signature)) {
+			return false;
+		}
+		
 		// Get the secret
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		if(!$this->validateSecret($secret)) {
