@@ -24,7 +24,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected $update = array();
 	protected $oldEntity = array();
 	protected $time;
-
+	
 	/**
 	 */
 	public function __construct() {
@@ -128,7 +128,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		return $this->baseValidateOverlap(false);
 	}
 
-	/**
+		/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
