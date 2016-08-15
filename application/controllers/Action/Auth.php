@@ -129,7 +129,6 @@ class AuthAction extends ApiAction  {
 		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}			
-
 		session_destroy();
 		Billrun_Factory::log('User ' . $username . ' logged out from IP: ' . $ip, Zend_log::INFO);
 		return TRUE;
