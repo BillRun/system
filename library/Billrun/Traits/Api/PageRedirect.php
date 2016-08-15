@@ -10,7 +10,7 @@
  * This Trait is used for API modules that handle additional input.
  *
  */
-trait Billrun_Traits_API_PageRedirect {
+trait Billrun_Traits_Api_PageRedirect {
 	/**
 	 * Force redirecting to an input url.
 	 * @param string $uri - URI to direct to.
