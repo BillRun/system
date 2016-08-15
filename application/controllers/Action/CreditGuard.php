@@ -42,7 +42,12 @@ class CreditGuardAction extends ApiAction {
 		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
 		// Validating that not too much time passed.
 		
-		$this->getToken($aid);
+		$returnUrl = $request->get("return_url");
+		if(empty($returnUrl)) {
+			$returnUrl = Billrun_Factory::config()->getConfigValue('cg_return_url');
+		}
+		
+		$this->getToken($aid, $returnUrl);
 		$url_array = parse_url($this->url);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
