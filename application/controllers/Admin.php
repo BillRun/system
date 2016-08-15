@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
-	use Billrun_Traits_AuthenticatingController, Billrun_Traits_API_PageRedirect;
+	use Billrun_Traits_Api_PageRedirect;
 	
 	/**
 	 * use for page title
@@ -34,7 +34,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
-		$this->initSession();
+		session_set_cookie_params(1);
+//		$this->initSession();
 		$this->initCommit();
 		$this->initConfig();
 		$this->initBaseUrl();
@@ -1824,6 +1825,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}
+		session_unset();
 		session_destroy();
 		$this->forceRedirect('/admin/login');
 	}
