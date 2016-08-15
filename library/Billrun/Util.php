@@ -1565,7 +1565,7 @@ class Billrun_Util {
 		}
 		unset($searchKeys['to']);
 		
-		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId($searchKeys['_id']))) {
+		if(!$new && !isset($searchKeys['_id']) || !(isset($searchKeys['_id']) && $id = new MongoId($searchKeys['_id']))) {
 			return "id error";
 		}
 		unset($searchKeys['_id']);
