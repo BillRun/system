@@ -19,17 +19,8 @@ class Billrun_DataTypes_Subscriberservice {
 			return;
 		}
 		
-		// Get the date strings.
-		$from = strtotime($options['from']);
-		$to = strtotime($options['to']);
-		
-		// Validate
-		if($from === -1 || $to === -1) {
-			return;
-		}
-		
-		$this->to = $to;
-		$this->from = $from;
+		$this->to = $options['to'];
+		$this->from = $options['from'];
 		$this->name = $options['name'];
 	}
 	
@@ -42,18 +33,35 @@ class Billrun_DataTypes_Subscriberservice {
 			return false;
 		}
 		
+		// Get the date strings.
+		$from = strtotime($this->from);
+		$to = strtotime($this->to);
+		
+		// Validate
+		if($from === -1 || $to === -1) {
+			return;
+		}
+		
 		// Validate the dates.
-		if(($this->from > $this->to)) {
+		if($from > $to) {
 			return false;
 		}
 		
 		// Check in the mongo.
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery($this->from, true);
+		$serviceQuery = Billrun_Util::getDateBoundQuery($from, true);
 		$serviceQuery['name'] = $this->name;
 		$serviceQuery['type'] = 'service';
 		$service = $ratesColl->query($serviceQuery)->cursor()->current();
 		
 		return !$service->isEmpty();
+	}
+	
+	/**
+	 * Get the subscriber service in array format
+	 * @return array
+	 */
+	public function getService() {
+		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
 	}
 }
