@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
-	use Billrun_Traits_AuthenticatingController;
+	use Billrun_Traits_AuthenticatingController, Billrun_Traits_API_PageRedirect;
 	
 	/**
 	 * use for page title
@@ -1363,14 +1363,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data = $this->getRequest()->getRequest();
 		$model->setConfig($data);
 		$this->forceRedirect('/admin/config');
-	}
-
-	protected function forceRedirect($uri) {
-		if (empty($uri)) {
-			$uri = '/';
-		}
-		header('Location: ' . $uri);
-		exit();
 	}
 
 	/**
