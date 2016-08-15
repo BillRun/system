@@ -16,7 +16,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 
 class OkPageAction extends ApiAction {
-	use Billrun_Traits_API_PageRedirect;
+	use Billrun_Traits_Api_PageRedirect;
 	protected $card_token;
 	protected $card_expiration;
 	protected $subscribers;
