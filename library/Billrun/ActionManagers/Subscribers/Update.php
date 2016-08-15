@@ -12,7 +12,8 @@
  *
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action {
-	use Billrun_ActionManagers_Subscribers_Validator;
+	use Billrun_ActionManagers_Subscribers_Validator,
+		Billrun_ActionManagers_Subscribers_Servicehandler;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -178,9 +179,18 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			if (isset($field['editable']) && !$field['editable']) {
 				continue;
 			}
-			if (isset($updateData[$fieldName])) {
-				$this->update[$fieldName] = $updateData[$fieldName];
+			if (!isset($updateData[$fieldName])) {
+				continue;
 			}
+			
+			// TODO: Create some sort of polymorphic behaviour to correctly handle
+			// the updating fields.
+			if($fieldName === 'services') {
+				$toSet = $this->setSubscriberServices($updateData['services']);
+			} else {
+				$toSet = $updateData[$fieldName];
+			}
+			$this->update[$fieldName] = $toSet;
 		}
 		
 		return true;
@@ -189,5 +199,4 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function getSubscriberData() {
 		return $this->update;
 	}
-
 }

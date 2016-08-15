@@ -15,6 +15,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	use Billrun_ActionManagers_Subscribers_Validator {
 		validate as baseValidate;
 	}
+	use Billrun_ActionManagers_Subscribers_Servicehandler;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -170,9 +171,19 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
 				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
 				$invalidFields[] = $fieldName;
-			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
+			} else if (!isset($queryData[$fieldName])) {
+				continue;
 			}
+			
+			// TODO: Create some sort of polymorphic behaviour to correctly handle
+			// the updating fields.
+			if($fieldName === 'services') {
+				$toSet = $this->setSubscriberServices($queryData['services']);
+			} else {
+				$toSet = $queryData[$fieldName];
+			}
+			
+			$this->query[$fieldName] = $toSet;
 		}
 
 		return $invalidFields;
