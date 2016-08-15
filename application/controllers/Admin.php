@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
-	use Billrun_Traits_API_PageRedirect;
+	use Billrun_Traits_Api_PageRedirect;
 	
 	/**
 	 * use for page title
