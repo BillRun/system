@@ -7,71 +7,54 @@
  */
 trait Billrun_ActionManagers_Subscribers_Validator {
 	abstract protected function getSubscriberData();
-	protected $validatorData;	
-	
+		
 	public function validate() {
-		$this->validatorData = $this->getSubscriberData();
 		if(!$this->validateOverlap()) {
-			// [Subscribers error 1000]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['sid']));
 			return false;
 		}
 		
 		if(!$this->validateServiceprovider()) {
-			// [Subscribers error 1040]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 40;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['service_provider']));
 			return false;
 		}
 		
 		if(!$this->validatePlan()) {
-			// [Subscribers error 1041]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 41;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['plan']));
 			return false;
 		}
 		
 		return true;
 	}
 	
-	/**
-	 * Validate that there is no overlapping record with the same SID
-	 * @param type $new
-	 * @return type
-	 */
-	protected function validateOverlap($new = true) {
-		// Get overlapping query.
-		$overlapQuery = Billrun_Util::getOverlappingDatesQuery($this->validatorData, $new);
-		if(is_string($overlapQuery)) {
-			Billrun_Factory::log("Invalid query: " . $overlapQuery);
-			return false;
-		}
+	protected function validateOverlap() {
+		$data = $this->getSubscriberData();
 		
+		// Get overlapping query.
+		$overlapQuery = Billrun_Util::getOverlappingDatesQuery($data);
 		$overlap = $this->collection->query($overlapQuery)->cursor()->current();
 		return $overlap->isEmpty();
 	}
 	
 	protected function validateServiceprovider() {
-		if (!isset($this->validatorData['service_provider'])) {
+		$data = $this->getSubscriberData();
+		if (!isset($data['service_provider'])) {
 			return true;
 		}
 
 		$query = Billrun_Util::getDateBoundQuery();
-		$query["name"] = $this->validatorData['service_provider'];
+		$query["name"] = $data['service_provider'];
 		$coll = Billrun_Factory::db()->serviceprovidersCollection();
 		$serviceProvider = $coll->query($query)->cursor()->current();
 		return !$serviceProvider->isEmpty();
 	}
 	
 	protected function validatePlan() {
-		if (!isset($this->validatorData['plan'])) {
+		$data = $this->getSubscriberData();
+		if (!isset($data['plan'])) {
 			return true;
 		}
 
 		$planQuery = Billrun_Util::getDateBoundQuery();
-		$planQuery["name"] = $this->validatorData['plan'];
-		$planQuery["service_provider"] = $this->validatorData['service_provider'];
+		$planQuery["name"] = $data['plan'];
+		$planQuery["service_provider"] = $data['service_provider'];
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$planEntity = $plansColl->query($planQuery)->cursor()->current();
 		return !$planEntity->isEmpty();

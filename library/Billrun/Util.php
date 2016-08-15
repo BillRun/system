@@ -1550,17 +1550,7 @@ class Billrun_Util {
 		return $ret;
 	}
 
-	/**
-	 * Get an overlapping dates query
-	 * @param type $searchKeys - Array, must include the from and to fields.
-	 * @param type $new
-	 * @return string|\MongoId
-	 */
 	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
-		if(!isset($searchKeys['from'], $searchKeys['to'])) {
-			return 'missing date keys';
-		}
-		
 		if(empty($searchKeys)) {
 			return "Empty search keys";
 		}

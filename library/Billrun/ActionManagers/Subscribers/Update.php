@@ -12,10 +12,8 @@
  *
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action {
-	use Billrun_ActionManagers_Subscribers_Validator {
-		validateOverlap as baseValidateOverlap;
-	}
 	use Billrun_ActionManagers_Subscribers_Servicehandler;
+	use Billrun_ActionManagers_Subscribers_Validator;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -23,9 +21,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected $query = array();
 	protected $update = array();
-	protected $oldEntity = array();
-	protected $time;
 	
+	protected $time;
+
 	/**
 	 */
 	public function __construct() {
@@ -42,14 +40,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			if (!$oldEntity = $this->getOldEntity()) {
 				return false;
 			}
-			$newEntity = $this->updateEntity($this->oldEntity);
-				
+			$newEntity = $this->updateEntity($oldEntity);
+			
 			// Check if changed plans.
-			if($newEntity['plan'] !== $this->oldEntity['plan']) {
-				$this->oldEntity['plan_deactivation'] = new MongoDate();
+			if($newEntity['plan'] !== $oldEntity['plan']) {
+				$oldEntity['plan_deactivation'] = new MongoDate();
 			}
 			
-			$this->closeEntity($this->oldEntity);
+			$this->closeEntity($oldEntity);
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -106,30 +104,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		$this->oldEntity = $this->getOldEntity();
-		if($this->oldEntity === false) {
-			// [SUBSCRIBERS error 1037]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
-		}
-		
 		return $this->validate();
 	}
 
-	protected function validateOverlap() {
-		$this->validatorData['_id'] = $this->oldEntity['_id'];
-		if(!isset($this->validatorData['sid'])) {
-			$this->validatorData['sid'] = $this->query['sid'];
-		}
-		if(!isset($this->validatorData['aid'])) {
-			$this->validatorData['aid'] = $this->query['aid'];
-		}
-		$this->validatorData['type'] = $this->type;
-		return $this->baseValidateOverlap(false);
-	}
-
-		/**
+	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
 	 * @return true if successful false otherwise.
@@ -169,7 +147,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected function setQueryFields($queryData) {
 		$this->query = Billrun_Util::getDateBoundQuery();
-		$this->query['type'] = $this->type;
 		if ($this->type === 'account') {
 			$queryMandatoryFields = array('aid');
 		} else {
@@ -227,4 +204,5 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function getSubscriberData() {
 		return $this->update;
 	}
+
 }
