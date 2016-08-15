@@ -150,7 +150,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		if (!$record || $record->isEmpty()) {
 			// [Balances error 1211]
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 11;
-			$this->reportError($errorCode, Zend_Log::NOTICE, print_r($queryToUse,1));
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($queryToUse,1)));
 			return null;
 		}
 
