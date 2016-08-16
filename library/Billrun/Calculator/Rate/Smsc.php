@@ -65,7 +65,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 		if ($row['org_protocol'] == '0'){
 			return false;
 		}
-		if ($row['org_protocol'] == '1') {  //smsc
+		if (($row['org_protocol'] == '1') && ($row['dest_protocol'] != '3')) {  //smsc
 			foreach ($this->legitimateValues['smsc'] as $key => $value) {
 				if (is_array($value)) {
 					foreach ($value as $regex) {
@@ -77,7 +77,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 					return false;
 				}
 			}
-		} else if ($row['org_protocol'] == '3') {  //smpp
+		} else if ($row['dest_protocol'] == '3') {  //smpp
 			foreach ($this->legitimateValues['smpp'] as $key => $value) {
 				if (!(is_array($value) && in_array($row[$key], $value) || $row[$key] == $value )) {
 					return false;
