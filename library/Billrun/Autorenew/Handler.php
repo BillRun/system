@@ -72,14 +72,18 @@ class Billrun_Autorenew_Handler {
 	}
 
 	public function autoRenewServices() {
-		$queryDate = $this->getAutoRenewServicesQuery();
+		$queryDate =array();// $this->getAutoRenewServicesQuery();
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		Billrun_Factory::log("Autorenew handler load " . $autoRenewCursor->count() . " records", Zend_Log::INFO);
 		$manager = new Billrun_Autorenew_Manager();
 
+		$counter = 0;
+		$counterDone = 0;
+		
 		// Go through the records.
 		foreach ($autoRenewCursor as $autoRenewRecord) {
+			$counter++;
 			// Check if the record is invalid.
 			// TODO: This validation is also done inside the autorenew action manager,
 			// we should consider this check for debug purposes, or create a proper validatio
@@ -99,10 +103,13 @@ class Billrun_Autorenew_Handler {
 				Billrun_Factory::log("Updating autorenew record for sid: " . $autoRenewRecord['sid']);
 				$record->update();
 				Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceAutoRenewUpdate', array($autoRenewRecord));
+				$counterDone++;
 			} catch (Exception $ex) {
 				Billrun_Factory::log("Error on autorenew handler. " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			}
 		}
+		
+		Billrun_Factory::log("Finished autorenew handler | Counted: " . $counter . " Done: " . $counterDone);
 	}
 
 	/**
