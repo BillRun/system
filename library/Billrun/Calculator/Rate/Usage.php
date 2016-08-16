@@ -56,6 +56,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	
 	protected function isRateLegitimate($rate) {
 		return !((is_null($rate) || $rate === false) ||
+			// TODO: Rate without a type field is used as a normal rate entity for
+			// backward compatability.
+			// This should be changed.
+			(isset($rate['type']) && $rate['type'] == "service") || 
 			(isset($rate['key']) && $rate['key'] == "UNRATED"));
 	}
 	
