@@ -101,11 +101,11 @@ abstract class Billrun_Autorenew_Record {
 		// Anonymous object
 		$jsonObject = new Billrun_AnObj($updaterInput);
 		if (!$updater->parse($jsonObject)) {
-			// TODO: What do I do here?
+			Billrun_Factory::log("Updating by autorenew: Failed parsing balance. sid:" . $this->data['sid']);
 			return false;
 		}
 		if (!$updater->execute()) {
-			// TODO: What do I do here?
+			Billrun_Factory::log("Updating by autorenew: Failed executing. sid:" . $this->data['sid']);
 			return false;
 		}
 
