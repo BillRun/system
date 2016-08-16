@@ -12,8 +12,28 @@
  * @since    0.5
  */
 class Billrun_Util {
-        public static $computerUnit = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
-			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
+	public static $dataUnits = array(
+		'B' => 0, 
+		'KB' => 1, 
+		'MB' => 2, 
+		'GB' => 3, 
+		'TB' => 4,
+		'PB' => 5, 
+		'EB' => 6, 
+		'ZB' => 7, 
+		'YB' => 8
+	);
+	
+	public static $timeUnits = array(
+		"second" => 1,
+		"minute" => 60,
+		"hour" => 3600, // 60 * 60
+		"day" => 86400, // 24 * 60 * 60
+		"week" => 604800, // 7 * 24 * 60 * 60
+		"year" => 220752000, // 365 * 7 * 24 * 60 * 60
+	);
+
+	
 	/**
 	 * method to filter user input
 	 * 
@@ -296,13 +316,13 @@ class Billrun_Util {
 		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
-			if (!array_key_exists($unit, self::$computerUnit)) {
+			if (!array_key_exists($unit, self::$dataUnits)) {
 				$pow = floor(log(abs($bytes)) / log(1024));
-				$unit = array_search($pow, self::$computerUnit);
+				$unit = array_search($pow, self::$dataUnits);
 			}
 
 			// Calculate byte value by prefix
-			$value = ($bytes / pow(1024, floor(self::$computerUnit[$unit])));
+			$value = ($bytes / pow(1024, floor(self::$dataUnits[$unit])));
 		}
 
 		if ($unit == 'B') {
@@ -340,9 +360,9 @@ class Billrun_Util {
             $unitSize = $unitSizeAndType[1];
             $unitType = $unitSizeAndType[2];
             $bytes = 0;
-            $powerCalc = self::$computerUnit[$unitType] - self::$computerUnit[$convertToOtherUnit];
+            $powerCalc = self::$dataUnits[$unitType] - self::$dataUnits[$convertToOtherUnit];
             
-            if(isset(self::$computerUnit[$unitType]) && !empty($unitSize)){
+            if(isset(self::$dataUnits[$unitType]) && !empty($unitSize)){
                 if($powerCalc >= 0){
                     $bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep );
                 }else{
@@ -373,6 +393,45 @@ class Billrun_Util {
 			return gmdate('i:s', $seconds);
 		}
 		return $seconds;
+	}
+	
+	/**
+	 * method to convert seconds to closest unit or by specific unit
+	 * 
+	 * @param int $seconds seconds value to convert
+	 * @param string $unit the unit to convert (empty to automatically convert to closest unit)
+	 * @param int $decimals decimal point
+	 * @param bool $includeUnit output unit on return
+	 * @param string $round_method method to round with the return value
+	 * @param string $decimal_sep the decimal point separator
+	 * @param string $thousands_sep the thousands separator
+	 * 
+	 * @return string the seconds formatted with the specific unit
+	 */
+	public static function secondFormat($seconds, $unit = "", $decimals = 2, $includeUnit = false, $round_method = 'none', $decimal_sep = ".", $thousands_sep = ",") {
+		if (empty($unit) || !array_key_exists($unit, self::$timeUnits)) {
+			$units = array_reverse(self::$timeUnits);
+			foreach ($units as $k => $v) {
+				if ($seconds >= $v) {
+					$unit = $k;
+					break;
+				}
+			}
+		}
+		
+		$value = $seconds / self::$timeUnits[$unit];
+		
+		if ($round_method != 'none' && function_exists($round_method)) {
+			$value = call_user_func_array($round_method, array($value));
+		}
+		
+		$number = number_format($value, $decimals, $decimal_sep, $thousands_sep);
+		
+		if ($includeUnit) {
+			return $number . ' ' . $unit . ($value > 1 || $value == 0 ? 's' : '');
+		}
+		return $number;
+		
 	}
 	
 	/**

@@ -384,7 +384,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getPositiveValuePrettifyDuration($obj, $data) {
 		$timePositiveValue = $this->getPositiveValue($obj, $data);
-		return ceil($timePositiveValue / 60);
+		return Billrun_Util::secondFormat($timePositiveValue, 'minute', 0, false, 'ceil', '', '');
 	}
 	
 	/**
