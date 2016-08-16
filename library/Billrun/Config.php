@@ -412,7 +412,6 @@ class Billrun_Config {
 	}
 	
 	public static function getMultitenantConfigPath() {
-		return APPLICATION_PATH . '/conf/tenants/';
 		return self::$multitenantDir;
 	}
 

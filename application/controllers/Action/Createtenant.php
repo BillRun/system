@@ -10,8 +10,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 /**
  * Recreate invoices action class
  *
- * @package  Action
- * @since    4.2
+ * @package	Braas
+ * @since	5.0
  */
 class CreatetenantAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
@@ -155,7 +155,7 @@ class CreatetenantAction extends ApiAction {
 		return true;
 	}
 	
-	protected function createSercret() {
+	protected function createSecret() {
 		$key = bin2hex(openssl_random_pseudo_bytes(16));
 		$crc = hash("crc32b", $key);
 		return array(
@@ -165,7 +165,7 @@ class CreatetenantAction extends ApiAction {
 	}
 	
 	protected function addDbConfigData(&$dbConfig) {
-		$dbConfig['shared_secret'] = $this->createSercret();
+		$dbConfig['shared_secret'] = $this->createSecret();
 		$dbConfig['company_name'] = $this->tenant;
 	}
 
