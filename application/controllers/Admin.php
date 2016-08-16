@@ -802,8 +802,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		// $v->LengthValidator("sasa111","1212",array("min"=>10));
 		//print_R($v->getErrors());
 
-		if (!$this->allowed('write'))
-			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
+//		if (!$this->allowed('write'))
+//			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
 
 		$flatData = $this->getRequest()->get('data');
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
