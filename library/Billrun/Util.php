@@ -1564,18 +1564,26 @@ class Billrun_Util {
 		if(empty($searchKeys)) {
 			return "Empty search keys";
 		}
-		$from_date = new MongoDate(strtotime($searchKeys['from']));
+		if ($searchKeys['from'] instanceof MongoDate) {
+			$from_date = $searchKeys['from'];
+		} else {
+			$from_date = new MongoDate(strtotime($searchKeys['from']));
+		}
 		if (!$from_date) {
 			return "date error";
 		}
 		unset($searchKeys['from']);
-		$to_date = new MongoDate(strtotime($searchKeys['to']));
+		if ($searchKeys['to'] instanceof MongoDate) {
+			$to_date = $searchKeys['to'];
+		} else {
+			$to_date = new MongoDate(strtotime($searchKeys['to']));
+		}
 		if (!$to_date) {
 			return "date error";
 		}
 		unset($searchKeys['to']);
 		
-		if(!$new && !isset($searchKeys['_id']) || !(isset($searchKeys['_id']) && $id = new MongoId($searchKeys['_id']))) {
+		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId(isset($searchKeys['_id'])? $searchKeys['_id'] : NULL))) {
 			return "id error";
 		}
 		unset($searchKeys['_id']);
