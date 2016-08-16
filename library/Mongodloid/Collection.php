@@ -473,6 +473,11 @@ class Mongodloid_Collection {
 			} else {
 				$lastSeq++;
 			}
+			if (is_string($oid)) {
+				$oidDelimiter = '#bk#';
+				$splitted = preg_split('/' . $oidDelimiter . '\d+$/', $oid);
+				$oid = $splitted[0] . $oidDelimiter . $lastSeq;
+			}
 			$insert = array(
 				'coll' => $collection_name,
 				'oid' => $oid,
@@ -498,7 +503,7 @@ class Mongodloid_Collection {
 		}
 		return $lastSeq;
 	}
-
+	
 	public function getAutoInc($oid) {
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
