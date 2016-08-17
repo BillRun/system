@@ -181,7 +181,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 			);
 		}
 
-		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $this));
+		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, $this));
 
 		return $query;
 	}

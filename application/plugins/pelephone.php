@@ -637,7 +637,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo change the values to be with flag taken from pp_includes into balance object
 	 * 
 	 */
-	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
+	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
@@ -656,7 +656,19 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
-		}
+			
+ 			// roaming calls should also work with call balances
+ 			if (stripos($usageType, 'roaming') !== FALSE) {
+ 				$query['$or'][] = array("balance.totals.call.usagev" => array('$lte' => $minUsage));
+ 				$query['$or'][] = array("balance.totals.call.cost" => array('$lte' => $minCost));
+ 			}
+ 		}
+ 	}
+ 	
+ 	public function beforeUpdateSubscriberBalance($balance, &$row, $rate, &$balance_totals_key, $calculator) {
+ 		if (stripos($row['usaget'], 'roaming') !== FALSE) {
+ 			$balance_totals_key = 'call';
+ 		}
 	}
 
 	protected function getPPIncludesToExclude($plan_name, $rate_key) {
