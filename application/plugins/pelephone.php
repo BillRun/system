@@ -610,7 +610,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if not under PL network else false
 	 */
 	protected function isInterconnect($row) {
-		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2;
+		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2 && (!isset($row['call_type']) || !in_array($row['call_type'], array("11", "12")));
 	}
 
 	/**
