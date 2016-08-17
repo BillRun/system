@@ -87,7 +87,10 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	protected function getRatesExistsQuery($row, $key) {
 		$keyUsaget = str_replace('rates.', '', $key);
 		if ($this->usaget === $keyUsaget) {
-			return array('$exists' => true);
+			return array(
+				'$exists' => true,
+				'$ne' => array(),
+			);
 		}
 		return null;
 	}
