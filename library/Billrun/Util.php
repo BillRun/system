@@ -628,12 +628,19 @@ class Billrun_Util {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
 
-		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+
+		$phoneLength = strlen($phoneNumber);
+		$prefixLength = strlen($defaultPrefix);
+
+		if ($phoneLength >= $prefixLength && substr($phoneNumber, 0, $prefixLength) == $defaultPrefix) {
 			return $phoneNumber;
 		}
 
-		if (is_null($defaultPrefix)) {
-			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		if (self::isIntlNumber($phoneNumber) || $phoneLength > 12) { // len>15 means not msisdn
+			return $phoneNumber;
 		}
 
 		return $defaultPrefix . $phoneNumber;
@@ -676,7 +683,7 @@ class Billrun_Util {
 	 * @return string the number without leading zeros
 	 */
 	public static function cleanLeadingZeros($number) {
-		return ltrim($number, "0");
+		return ltrim($number, "+0");
 	}
 
 	/**
