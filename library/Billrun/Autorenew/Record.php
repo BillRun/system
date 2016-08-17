@@ -148,7 +148,9 @@ abstract class Billrun_Autorenew_Record {
 
 		// The next auto renew is one second after the balance expiration input
 		$updateResult = $this->updateAutorenew($nextRenewDate);
-		Billrun_Factory::log("Update result: [ok]=>" . $updateResult['ok']);
+		if(isset($updateResult['ok'])) {
+			Billrun_Factory::log("Update result: [ok]=>" . $updateResult['ok']);
+		}
 		return $updateResult;
 	}
 

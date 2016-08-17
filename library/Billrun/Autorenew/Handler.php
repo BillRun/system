@@ -72,7 +72,7 @@ class Billrun_Autorenew_Handler {
 	}
 
 	public function autoRenewServices() {
-		$queryDate =array();// $this->getAutoRenewServicesQuery();
+		$queryDate = $this->getAutoRenewServicesQuery();
 		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 		$autoRenewCursor = $collection->query($queryDate)->cursor();
 		Billrun_Factory::log("Autorenew handler load " . $autoRenewCursor->count() . " records", Zend_Log::INFO);
