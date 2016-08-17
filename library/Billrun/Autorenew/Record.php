@@ -101,11 +101,11 @@ abstract class Billrun_Autorenew_Record {
 		// Anonymous object
 		$jsonObject = new Billrun_AnObj($updaterInput);
 		if (!$updater->parse($jsonObject)) {
-			// TODO: What do I do here?
+			Billrun_Factory::log("Updating by autorenew: Failed parsing balance. sid:" . $this->data['sid']);
 			return false;
 		}
 		if (!$updater->execute()) {
-			// TODO: What do I do here?
+			Billrun_Factory::log("Updating by autorenew: Failed executing. sid:" . $this->data['sid']);
 			return false;
 		}
 
@@ -142,11 +142,16 @@ abstract class Billrun_Autorenew_Record {
 		if (!$this->updateBalance($nextRenewDate)) {
 			// TODO: This means that if we failed to update the balance we do not
 			// update the auto renew record!!!
+			Billrun_Factory::log("Failed updating balance sid:" . $this->data['sid'], Zend_Log::WARN);
 			return false;
 		}
 
 		// The next auto renew is one second after the balance expiration input
-		return $this->updateAutorenew($nextRenewDate);
+		$updateResult = $this->updateAutorenew($nextRenewDate);
+		if(isset($updateResult['ok'])) {
+			Billrun_Factory::log("Update result: [ok]=>" . $updateResult['ok']);
+		}
+		return $updateResult;
 	}
 
 }
