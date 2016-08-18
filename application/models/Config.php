@@ -369,8 +369,7 @@ class ConfigModel {
 			}
 		}
 		$this->setFileTypeSettings($config, $updatedFileSettings);
-		$updatedFileSettings = $this->checkForConflics($config, $fileType);
-		return $updatedFileSettings;
+		return $this->checkForConflics($config, $fileType);
 	}
 
 	protected function checkForConflics($config, $fileType) {
@@ -429,6 +428,7 @@ class ConfigModel {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
 			}
 		}
+		return true;
 	}
 
 	protected function validateParserConfiguration($parserSettings) {
@@ -486,8 +486,8 @@ class ConfigModel {
 		}
 		$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 		foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-			if (!isset($mapping['src_field'], $mapping['pattern'], $mapping['usaget']) || !Billrun_Util::isValidRegex($mapping['pattern'])) {
-				throw new Exception('Illegal usaget mapping at index' . $index);
+			if (!isset($mapping['src_field'], $mapping['pattern']) || !Billrun_Util::isValidRegex($mapping['pattern']) || empty($mapping['usaget'])) {
+				throw new Exception('Illegal usaget mapping at index ' . $index);
 			}
 		}
 		if (!isset($processorSettings['orphan_files_time'])) {
@@ -505,12 +505,11 @@ class ConfigModel {
 			if (!isset($settings['src_key'], $settings['target_key'])) {
 				throw new Exception('Illegal customer identification settings at index ' . $index);
 			}
-			if (iss)
-				if (array_key_exists('conditions', $settings) && (!is_array($settings['conditions']) || !$settings['conditions'] || !($settings['conditions'] == array_filter($settings['conditions'], function ($condition) {
-						return isset($condition['field'], $condition['regex']) && Billrun_Util::isValidRegex($condition['regex']);
-					})))) {
-					throw new Exception('Illegal customer identification conditions field at index ' . $index);
-				}
+			if (array_key_exists('conditions', $settings) && (!is_array($settings['conditions']) || !$settings['conditions'] || !($settings['conditions'] == array_filter($settings['conditions'], function ($condition) {
+					return isset($condition['field'], $condition['regex']) && Billrun_Util::isValidRegex($condition['regex']);
+				})))) {
+				throw new Exception('Illegal customer identification conditions field at index ' . $index);
+			}
 			if (isset($settings['clear_regex']) && !Billrun_Util::isValidRegex($settings['clear_regex'])) {
 				throw new Exception('Invalid customer identification clear regex at index ' . $index);
 			}
