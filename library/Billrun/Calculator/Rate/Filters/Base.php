@@ -10,7 +10,7 @@
  * Billing basic base filter
  *
  * @package  calculator
- * @since braas
+ * @since 5.0
  */
 class Billrun_Calculator_Rate_Filters_Base {
 	
