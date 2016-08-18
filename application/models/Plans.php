@@ -45,8 +45,7 @@ class PlansModel extends TabledateModel {
 
 	public function update($params) {
 		$entity = parent::update($params);
-		$duplicate = $params['duplicate_rates'];
-		if ($duplicate) {
+		if (!empty($params['duplicate_rates'])) {
 			$source_id = $params['source_id'];
 			unset($params['source_id']); // we don't save because admin ref issues
 			unset($params['duplicate_rates']);
@@ -111,13 +110,6 @@ class PlansModel extends TabledateModel {
 			return;
 		}
 		return parent::applyFilter($filter_field, $value);
-	}
-	
-	public function getOverlappingDatesQuery($entity, $new = true) {
-		$additionalQuery = array(
-			'service_provider' => $entity['service_provider'],
-		);
-		return array_merge(parent::getOverlappingDatesQuery($entity, $new), $additionalQuery);
 	}
 	
 	public function validate($data, $type) {
