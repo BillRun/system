@@ -82,6 +82,48 @@ class Tests_Plan extends UnitTestCase {
             array('year' => '2015', 'month' => '12', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '01', 'nextMonthDays' => 31), // 30 day
     );
 	
+	// Tests to check for positive logic
+	protected $monthsDiffTests = array(
+            array('msg' => "1.Months diff same month", 'start' => '01-02-2015', 'end' => '10-02-2015', 'expected' => 10/28),
+            array('msg' => "2.Months diff same month", 'start' => '01-02-2015', 'end' => '15-02-2015', 'expected' => 15/28),
+            array('msg' => "3.Months diff same month", 'start' => '01-02-2016', 'end' => '10-02-2016', 'expected' => 10/29),
+            array('msg' => "4.Months diff same month", 'start' => '01-02-2016', 'end' => '15-02-2016', 'expected' => 15/29),
+            array('msg' => "5.Months diff same month", 'start' => '01-03-2016', 'end' => '10-03-2016', 'expected' => 10/31),
+            array('msg' => "6.Months diff same month", 'start' => '01-03-2016', 'end' => '15-03-2016', 'expected' => 15/31),
+            array('msg' => "7.Months diff same month", 'start' => '01-04-2016', 'end' => '10-04-2016', 'expected' => 10/30),
+            array('msg' => "8.Months diff same month", 'start' => '01-04-2016', 'end' => '15-04-2016', 'expected' => 15/30),
+		
+			array('msg' => "1.Months diff same month and day", 'start' => '15-02-2016', 'end' => '15-02-2016', 'expected' => 1/29),
+		
+			array('msg' => "1.Months diff next month", 'start' => '01-02-2015', 'end' => '10-03-2015', 'expected' => 1 + (10/31)),
+            array('msg' => "2.Months diff next month", 'start' => '01-02-2015', 'end' => '15-03-2015', 'expected' => 1 + (15/31)),
+			array('msg' => "3.Months diff next month", 'start' => '06-02-2015', 'end' => '10-03-2015', 'expected' => (23/28) + (10/31)),
+            array('msg' => "4.Months diff next month", 'start' => '06-02-2015', 'end' => '15-03-2015', 'expected' => (23/28) + (15/31)),
+		
+            array('msg' => "5.Months diff next month", 'start' => '01-02-2016', 'end' => '10-03-2016', 'expected' => 1 + (10/31)),
+            array('msg' => "6.Months diff next month", 'start' => '01-02-2016', 'end' => '15-03-2016', 'expected' => 1 + (15/31)),
+			array('msg' => "7.Months diff next month", 'start' => '06-02-2016', 'end' => '10-03-2016', 'expected' => (24/29) + (10/31)),
+            array('msg' => "8.Months diff next month", 'start' => '06-02-2016', 'end' => '15-03-2016', 'expected' => (24/29) + (15/31)),
+		
+            array('msg' => "9.Months diff next month", 'start' => '01-03-2016', 'end' => '10-04-2016', 'expected' => 1 + (10/30)),
+            array('msg' => "10.Months diff next month", 'start' => '01-03-2016', 'end' => '15-04-2016', 'expected' => 1+ (15/30)),
+            array('msg' => "11.Months diff next month", 'start' => '06-03-2016', 'end' => '10-04-2016', 'expected' => (26/31) + (10/30)),
+            array('msg' => "12.Months diff next month", 'start' => '06-03-2016', 'end' => '15-04-2016', 'expected' => (26/31) + (15/30)),
+		
+            array('msg' => "1.Months diff next month next year", 'start' => '01-12-2015', 'end' => '10-01-2016', 'expected' => 1 + (20/31)),
+            array('msg' => "2.Months diff next month next year", 'start' => '01-12-2015', 'end' => '15-01-2016', 'expected' => 1 + (15/31)),
+		
+		    array('msg' => "1.Months diff three months", 'start' => '01-02-2015', 'end' => '10-04-2015', 'expected' => 2 + (10/30)),
+            array('msg' => "2.Months diff three months", 'start' => '01-02-2015', 'end' => '15-04-2015', 'expected' => 2 + (15/30)),
+		    array('msg' => "3.Months diff three months", 'start' => '06-02-2015', 'end' => '10-04-2015', 'expected' => (23/28) + 1 + (10/30)),
+            array('msg' => "4.Months diff three months", 'start' => '06-02-2015', 'end' => '15-04-2015', 'expected' => (23/28) + 1 + (15/30)),
+		    array('msg' => "5.Months diff three months", 'start' => '01-02-2016', 'end' => '10-04-2016', 'expected' => 2 + (10/30)),
+            array('msg' => "6.Months diff three months", 'start' => '01-02-2016', 'end' => '15-04-2016', 'expected' => 2 + (15/30)),
+		    array('msg' => "7.Months diff three months", 'start' => '06-02-2016', 'end' => '10-04-2016', 'expected' => (24/29) + 1 + (10/30)),
+            array('msg' => "8.Months diff three months", 'start' => '06-02-2016', 'end' => '15-04-2016', 'expected' => (24/29) + 1 + (15/30)),
+
+    );
+	
 	// Tests to check for negative logic
 	protected $negativeTests = array(
             array('key' => '201502', 'start' => 28, 'end' => 10), // 28 days
@@ -176,6 +218,16 @@ class Tests_Plan extends UnitTestCase {
 					$dayIndex = 1;
 				}
 			} while ($dayIndex != $cycleStart);
+		}
+	}
+	
+	function testGetMonthsDiff() {
+		foreach ($this->monthsDiffTests as $test) {
+			$start = $test['start'];
+			$end = $test['end'];
+			$expected = $test['expected'];
+			$result = Billrun_Plan::getMonthsDiff($start, $end);
+			$this->assertEqual($result, $expected, $test['msg'] . " expected: " . $expected . " result: " . $result);
 		}
 	}
 	
