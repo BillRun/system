@@ -71,6 +71,114 @@ class Tests_Plan extends UnitTestCase {
             array('msg' => '6.Valid take tariff to', 'expected' => 3,'tariff' => array('price' => 3, 'from' => 0, 'to' => 50), 'start' => 49, 'end' => 56), //00
     );
 
+	// Tests to check for positive logic
+	protected $fractionOfMonthTests = array(
+            array('year' => '2015', 'month' => '02', 'days' => 28, 'nextYear' => '2015', 'nextMonth' => '03', 'nextMonthDays' => 31), // 28 days
+            array('year' => '2016', 'month' => '02', 'days' => 29, 'nextYear' => '2016', 'nextMonth' => '03', 'nextMonthDays' => 31), // 29 days
+            array('year' => '2016', 'month' => '03', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '04', 'nextMonthDays' => 30), // 31 days
+            array('year' => '2016', 'month' => '04', 'days' => 30, 'nextYear' => '2016', 'nextMonth' => '05', 'nextMonthDays' => 31), // 30 day
+            array('year' => '2015', 'month' => '01', 'days' => 31, 'nextYear' => '2015', 'nextMonth' => '02', 'nextMonthDays' => 28), // 30 day
+            array('year' => '2016', 'month' => '01', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '02', 'nextMonthDays' => 29), // 30 day
+            array('year' => '2015', 'month' => '12', 'days' => 31, 'nextYear' => '2016', 'nextMonth' => '01', 'nextMonthDays' => 31), // 30 day
+    );
+	
+	// Tests to check for negative logic
+	protected $negativeTests = array(
+            array('key' => '201502', 'start' => 28, 'end' => 10), // 28 days
+            array('key' => '201602', 'days' => 29), //00
+            array('key' => '201603', 'days' => 31), //31 days
+            array('key' => '201604', 'days' => 30), //30 day
+    );
+	
+	/**
+	 * Testing for positive logic
+	 */
+	function testCalcFractionOfMonthPositiveTest() {
+		$cycleStart = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 15);
+		$cycleEnd = $cycleStart - 1;
+		
+		foreach ($this->fractionOfMonthTests as $testCase) {
+			$startMonth = $testCase['month'];
+			$days = $testCase['days'];
+			$daysNextMonth = $testCase['nextMonthDays'];
+			$startYear = $testCase['year'];
+			
+			$nextYear = $testCase['nextYear'];
+			$nextMonth = $testCase['nextMonth'];
+			
+			$key = $nextYear . $nextMonth;
+			
+			$totalDays = $days;
+			
+			$isNextMonthStart = false;
+			
+			$dayIndex = $cycleStart;
+			do {
+				if($dayIndex == 0) {
+					$dayIndex = 1;
+				}
+				
+				// Check if we moved to the next month
+				if(!$isNextMonthStart && ($dayIndex < $cycleStart)) {
+					$isNextMonthStart = true;
+					$startMonth = $nextMonth;
+					$startYear = $nextYear;
+					$days = $daysNextMonth;
+				}
+				
+				$endMonth = $startMonth;
+				$endYear = $startYear;
+			
+				$isNextMonthEnd = false;
+				
+				// Advance the day index
+				for ($endDayIndex = $dayIndex; 
+				     (!(($endMonth == $nextMonth) && ($endDayIndex == $cycleStart))); 
+					 $endDayIndex = (($endDayIndex + 1) % $days)) {
+						 
+					// Check if we moved to the next month
+					if(!$isNextMonthEnd && (($endDayIndex < $cycleEnd) || (($cycleEnd == 0) && ($endDayIndex == 0)))) {
+						$isNextMonthEnd = true;
+						$endMonth = $nextMonth;
+						$endYear = $nextYear;
+					}
+					
+					if($endDayIndex == 0) {
+						$endDayIndex = 1;
+					}
+					
+					$startDate = $startYear . '-' . $startMonth . '-' . str_pad($dayIndex, 2, "0", STR_PAD_LEFT);
+					$endDate = $endYear . '-' . $endMonth . '-' . str_pad($endDayIndex, 2, "0", STR_PAD_LEFT);
+				
+					// Counting the last day as well
+					$daysPassed = $endDayIndex - $dayIndex + 1;
+					
+					// Spreading over more than a month.
+					if($startMonth != $endMonth) {
+						$daysPassed = $totalDays - $dayIndex + 1;
+						$daysPassed += $endDayIndex;
+					}
+					$expectation = $daysPassed / $totalDays;
+					
+					$fraction = Billrun_Plan::calcFractionOfMonth($key, $startDate, $endDate);
+					$message = "CalcFraction: Start: " . $startDate . " End: " . $endDate . " Expected: " . $expectation . " Received: " . $fraction . " TestCase: " . print_r($testCase, 1);
+					$this->assertEqual($expectation, $fraction, $message);
+					
+					if(($endMonth == $nextMonth) && ($cycleStart == 1) && ($endDayIndex == $cycleStart)) {
+						break;
+					}
+				} 
+					
+				// Advance the day index
+				$dayIndex = ($dayIndex + 1) % $days;
+				
+				if($dayIndex == 0) {
+					$dayIndex = 1;
+				}
+			} while ($dayIndex != $cycleStart);
+		}
+	}
+	
     function testGetPriceByTariff() {
 		$testCase = 0;
 		foreach ($this->getPriceTests as $test) {
