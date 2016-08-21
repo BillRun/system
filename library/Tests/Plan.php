@@ -161,7 +161,7 @@ class Tests_Plan extends UnitTestCase {
 					$expectation = $daysPassed / $totalDays;
 					
 					$fraction = Billrun_Plan::calcFractionOfMonth($key, $startDate, $endDate);
-					$message = "CalcFraction: Start: " . $startDate . " End: " . $endDate . " Expected: " . $expectation . " Received: " . $fraction . " TestCase: " . print_r($testCase, 1);
+					$message = "Start: " . $startDate . " End: " . $endDate . " Expected: " . $expectation . " Received: " . $fraction . " TestCase: " . print_r($testCase, 1);
 					$this->assertEqual($expectation, $fraction, $message);
 					
 					if(($endMonth == $nextMonth) && ($cycleStart == 1) && ($endDayIndex == $cycleStart)) {
