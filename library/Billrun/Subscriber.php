@@ -307,12 +307,11 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return integer charge or null on failure.
 	 */
 	protected function getChargeFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate, $planActivation, $planDeactivation) {
+		$monthsEnd = $planDeactivation;
 		if (empty($planDeactivation)) {
-			$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, date(Billrun_Base::base_dateformat, $billingEnd - 1));
-		} else {
-			$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
-		}
-		
+			$monthsEnd = date(Billrun_Base::base_dateformat, $billingEnd - 1);
+		} 
+		$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $monthsEnd);
 		$monthlyFraction = $this->getMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $plan->getPeriodicity(), $billingStart, $fromDate, $planActivation, $planDeactivation, $monthsDiff);
 		if ($monthlyFraction == null) {
 			return null;
