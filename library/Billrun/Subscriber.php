@@ -231,24 +231,46 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		$startTime = Billrun_Billrun::getStartTime($billrunKey);
 		$endTime = Billrun_Billrun::getEndTime($billrunKey);
 		$flatEntries = array();
-		foreach ($this->getCurrentPlans() as $planArr) {
-			/* @var $plan Billrun_Plan */
-			$plan = $planArr['plan'];
-			$fromDate = $planArr['from'];
-			$toDate = $planArr['to'];
-			$planActivation = $planArr['plan_activation'];
-			$planDeactivation = isset($planArr['plan_deactivation']) ? $planArr['plan_deactivation'] : NULL;
-			$flatEntries = array_merge($flatEntries, $this->getChargeFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
-			$flatEntries = array_merge($flatEntries, $this->getRefundFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
+		foreach ($this->getCurrentPlans() as $planArray) {
+			$this->mergeFlatEntries($flatEntries, $startTime, $endTime, $billrunKey, $planArray);
 		}
+		
 		$nextPlan = $this->getNextPlan();
 		if ($nextPlan && $nextPlan->isUpfrontPayment() && date(Billrun_Base::base_dateformat, $endTime) == $this->getNextPlanActivationDate()) {
 			$charge = $nextPlan->getPrice($this->getNextPlanActivationDate(), date(Billrun_Base::base_dateformat, $this->time), date(Billrun_Base::base_dateformat, $endTime));
-			$flatEntries[] = $this->getFlatEntry($billrunKey, $nextPlan, $planArr['from'], $charge);
+			$flatEntries[] = $this->getFlatEntry($billrunKey, $nextPlan, $planArray['from'], $charge);
 		}
 		return $flatEntries;
 	}
 
+	/**
+	 * Merge the current step of flat entries
+	 * @param type $flatEntries
+	 * @param type $startTime
+	 * @param type $endTime
+	 * @param type $billrunKey
+	 * @param type $planArray
+	 */
+	protected function mergeFlatEntries(&$flatEntries, $startTime, $endTime, $billrunKey, $planArray) {
+		/* @var $plan Billrun_Plan */
+		$plan = $planArray['plan'];
+		$fromDate = $planArray['from'];
+		$toDate = $planArray['to'];
+		$planActivation = $planArray['plan_activation'];
+		$planDeactivation = isset($planArray['plan_deactivation']) ? $planArray['plan_deactivation'] : NULL;
+		$withChargeEntries = array_merge($flatEntries, $this->getChargeFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
+		$withRefundEntries = array_merge($withChargeEntries, $this->getRefundFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
+		$flatEntries = $withRefundEntries;
+	}
+	
+	protected function handlePlanFlatEntries(&$flatEntries, $billrunKey, $endTime, $from) {
+		$nextPlan = $this->getNextPlan();
+		if ($nextPlan && $nextPlan->isUpfrontPayment() && date(Billrun_Base::base_dateformat, $endTime) == $this->getNextPlanActivationDate()) {
+			$charge = $nextPlan->getPrice($this->getNextPlanActivationDate(), date(Billrun_Base::base_dateformat, $this->time), date(Billrun_Base::base_dateformat, $endTime));
+			$flatEntries[] = $this->getFlatEntry($billrunKey, $nextPlan, $planArray['from'], $charge);
+		}
+	}
+	
 	protected function getChargeFlatEntries($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate, $planActivation, $planDeactivation = NULL) {
 		if ($plan->isUpfrontPayment()) {
 			if (empty($planDeactivation)) {

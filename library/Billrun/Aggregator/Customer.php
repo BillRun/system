@@ -93,7 +93,20 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		parent::__construct($options);
 
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
+		
+		$this->constructByOptions($options);
+		$this->plans = Billrun_Factory::db()->plansCollection();
+		$this->lines = Billrun_Factory::db()->linesCollection();
+		$this->billrun = Billrun_Factory::db()->billrunCollection();
 
+		$this->loadRates();
+	}
+
+	/**  
+	 * Construct the instance by input options.
+	 * @param array $options
+	 */
+	protected function constructByOptions($options) {
 		if (isset($options['aggregator']['page']) && is_numeric($options['aggregator']['page'])) {
 			$this->page = $options['aggregator']['page'];
 		}
@@ -131,14 +144,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['override_accounts'])) {
 			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
 		}
-
-		$this->plans = Billrun_Factory::db()->plansCollection();
-		$this->lines = Billrun_Factory::db()->linesCollection();
-		$this->billrun = Billrun_Factory::db()->billrunCollection();
-
-		$this->loadRates();
 	}
-
+	
 	/**
 	 * load the data to aggregate
 	 */
@@ -167,126 +174,271 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	public function aggregate() {
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($this->data, &$this));
-		$account_billrun = false;
 		$billrun_key = $this->getStamp();
+		
+		// TODO: Create a struct with count and skipped count, it can be used throughout the code.
 		$billruns_count = 0;
 		$skipped_billruns_count = 0;
-		if ($this->bulkAccountPreload) {
-			Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_Log::INFO);
-			$dataKeys = array_keys($this->data);
-			//$existingAccounts = array();			
-			foreach ($dataKeys as $key => $aid) {
-				if (!$this->overrideAccountIds && Billrun_Billrun::exists($aid, $billrun_key)) {
-					unset($dataKeys[$key]);
-					//$existingAccounts[$aid]  = $this->data[$aid];
-				}
-			}
-		}
+		$dataKeys = $this->getDataKeysForAggregateBulk($billrun_key);
+
+		// Go through all the data to be aggregated.
 		foreach ($this->data as $accid => $account) {
 			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
 				// TODO: Memory limit should not be here as magic number.
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_Log::ALERT);
+				$memoryLimitError = 'Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . '). ';
+				Billrun_Factory::log($memoryLimitError, Zend_Log::ALERT);
 				break;
 			}
-			//pre-load  account lines 
-			if ($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
-				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
-				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
+			$skipped_billruns_count += $this->aggregateStep($accid, $account, $billruns_count, $dataKeys, $billrun_key);
+		}
+		$this->handleAggregateEnd($billruns_count, $skipped_billruns_count);
+		return $this->successfulAccounts;
+	}
+	
+	/**
+	 * Get the data keys for aggregating a bulk.
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	protected function getDataKeysForAggregateBulk($billrunKey) {
+		if (!$this->bulkAccountPreload) {
+			return array();
+		}
+		Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_Log::INFO);
+		$dataKeys = array_keys($this->data);
+		//$existingAccounts = array();			
+		foreach ($dataKeys as $key => $aid) {
+			if (!$this->overrideAccountIds && Billrun_Billrun::exists($aid, $billrunKey)) {
+				unset($dataKeys[$key]);
 			}
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
-			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_Log::INFO);
+		}
+		return $dataKeys;
+	}
+	
+	/**
+	 * Start logic of the aggregate step
+	 * @param type $accid
+	 * @param type $account
+	 * @param type $count
+	 * @param type $dataKeys
+	 * @param type $billrunKey
+	 */
+	protected function aggregateStepStart($accid, $account, &$count, $dataKeys, $billrunKey) {
+		$this->aggregatePreloadAccountLines($count, $dataKeys, $billrunKey);
+		Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
+		Billrun_Factory::log('Current account index: ' . ++$count, Zend_Log::INFO);
 //			if (!Billrun_Factory::config()->isProd()) {
 //				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
 //					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
-//					continue;
+//					return 0;
 //				}
 //			}
+	}
+	
+	/**
+	 * A single step in the aggregator logic functionality
+	 * Getting the account, saving the account and closing the account
+	 * @param type $accid
+	 * @param type $account
+	 * @param type $count
+	 * @param type $dataKeys
+	 * @param type $billrunKey
+	 * @return int - number of skipped lines.
+	 */
+	protected function aggregateStep($accid, $account, &$count, $dataKeys, $billrunKey) {
+		$this->aggregateStepStart($accid, $account, $count, $dataKeys, $billrunKey);
 
-			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
-				Billrun_Factory::log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
-				$skipped_billruns_count++;
-				continue;
-			}
-			$params = array(
-				'aid' => $accid,
-				'billrun_key' => $billrun_key,
-				'autoload' => !empty($this->overrideAccountIds),
-			);
-			$account_billrun = Billrun_Factory::billrun($params);
-			if ($this->overrideAccountIds) {
-				$account_billrun->resetBillrun();
-			}
-			
-			$account_billrun->setBillrunAccountFields($account);
-			
-			$manual_lines = array();
-			$deactivated_subscribers = array();
-			foreach ($account['subscribers'] as $subscriber) {
-				/* @var $subscriber Billrun_Subscriber */
-				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
-				$sid = $subscriber->getId();
-				if ($account_billrun->subscriberExists($sid)) {
-					Billrun_Factory::log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
-					continue;
-				}
-				$next_plan_name = $subscriber->getNextPlanName();
-				if (is_null($next_plan_name)) {
-					$subscriber_status = "closed";
-					$currentPlans = $subscriber->getCurrentPlans();
-					if (empty($currentPlans)) {
-						Billrun_Factory::log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
-						$deactivated_subscribers[] = array("sid" => $sid);
-					}
-				} else {
-					$subscriber_status = "open";
-				}
-				foreach ($deactivated_subscribers as $value) {
-					
-				}
-				$manual_lines = array_merge($manual_lines, $this->saveFlatLines($subscriber, $billrun_key));
-				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
-				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
-				$account_billrun->addSubscriber($subscriber, $subscriber_status);
-				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
-			}
-			$lines = $account_billrun->addLines($manual_lines, $deactivated_subscribers);
-
-			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
-
-			//save the billrun
-			if ($account_billrun->is_deactivated() === true) {
-				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
-				continue;
-			}
-			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
-			if ($account_billrun->save() === false) {
-				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
-				continue;
-			}
-			$this->successfulAccounts[] = $accid;
-			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
-
-			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
-			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
-			$account_billrun->close($this->min_invoice_id);
-			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
-			if ($this->bulkAccountPreload) {
-				Billrun_Billrun::clearPreLoadedLines(array($accid));
-			}
+		if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrunKey)) {
+			Billrun_Factory::log("Billrun " . $billrunKey . " already exists for account " . $accid, Zend_Log::ALERT);
+			return 1;
 		}
-		if ($billruns_count == count($this->data)) {
+		$billrunAccount = $this->getBillrunAccount($accid, $billrunKey, $account);
+		$lines = $this->aggregateAccount($billrunAccount, $account['subscribers'], $billrunKey);
+
+		if(false === $this->aggregateSaveAccount($billrunAccount, $accid)) {
+			return 0;
+		}
+
+		Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $billrunAccount, $lines, &$this));
+		$this->aggregateCloseAccount($billrunAccount, $accid);
+		Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $billrunAccount, $lines, &$this));
+		if ($this->bulkAccountPreload) {
+			Billrun_Billrun::clearPreLoadedLines(array($accid));
+		}
+		
+		return 0;
+	}
+	
+	/**
+	 * Preload account lines if preload is needed.
+	 * @param type $count
+	 * @param type $dataKeys
+	 * @param type $billrunKey
+	 */
+	protected function aggregatePreloadAccountLines($count, $dataKeys, $billrunKey) {
+		if ($this->bulkAccountPreload && !($count % $this->bulkAccountPreload) && count($dataKeys) > $count) {
+			$aidsToLoad = array_slice($dataKeys, $count, $this->bulkAccountPreload);
+			Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrunKey);
+		}
+	}
+	
+	/**
+	 * Get the current billrun account instance
+	 * @param integer $aid - AID
+	 * @param type $billrunKey - Current billrun stamp
+	 * @param Billrun_Billrun $account
+	 */
+	protected function getBillrunAccount($aid, $billrunKey, $account) {
+		$params = array(
+			'aid' => $aid,
+			'billrun_key' => $billrunKey,
+			'autoload' => !empty($this->overrideAccountIds),
+		);
+		$billrunAccount = Billrun_Factory::billrun($params);
+		if ($this->overrideAccountIds) {
+			$billrunAccount->resetBillrun();
+		}
+
+		$billrunAccount->setBillrunAccountFields($account);
+	}
+	
+	/**
+	 * Aggregate a single account
+	 * @param Billrun_Billrun $billrunAccount
+	 * @param type $subscribers
+	 * @param type $billrunKey
+	 * @return array lines that have been aggregated.
+	 */
+	protected function aggregateAccount(&$billrunAccount, $subscribers, $billrunKey) {
+		$manualLines = array();
+		$deactivated_subscribers = array();
+		foreach ($subscribers as $subscriber) {
+			/* @var $subscriber Billrun_Subscriber */
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $billrunAccount, &$this));
+			if(false === $this->aggregateAccountStep($manualLines, $subscriber, $billrunAccount, $billrunKey)) {
+				continue;
+			}
+			Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $billrunAccount, &$this));
+		}
+		
+		$lines = $billrunAccount->addLines($manualLines, $deactivated_subscribers);
+		$billrunAccount->filter_disconected_subscribers($deactivated_subscribers);
+		return $lines;
+	}
+	
+	/**
+	 * A single step in the aggregate acount functionality
+	 * Handle current subscriber, merge aggregated lines, add subscriber
+	 * @param array $manualLines - Current array of aggregated lines
+	 * @param Billrun_Subscriber $subscriber
+	 * @param Billrun_Billrun $billrunAccount
+	 * @param type $billrunKey
+	 * @return boolean
+	 */
+	protected function aggregateAccountStep(&$manualLines, $subscriber, $billrunAccount, $billrunKey) {
+		/* @var $subscriber Billrun_Subscriber */
+		$sid = $subscriber->getId();
+		if ($billrunAccount->subscriberExists($sid)) {
+			Billrun_Factory::log("Billrun " . $billrunKey . " already exists for subscriber " . $sid, Zend_Log::ALERT);
+			return false;
+		}
+		$subscriber_status = $this->handleSubscriberForAggregateAccountStep($subscriber, $sid);
+		$manualLines = $this->aggregateAccountMergeManualLines($manualLines, $subscriber, $billrunKey);
+		$billrunAccount->addSubscriber($subscriber, $subscriber_status);
+		return true;
+	}
+	
+	/**
+	 * Handle the subscriber from the subscribers of the aggregated account
+	 * @param Billrun_Subscriber $subscriber
+	 * @param type $sid
+	 * @return string - subscriberStatus, open or closed.
+	 */
+	protected function handleSubscriberForAggregateAccountStep($subscriber, $sid) {
+		$next_plan_name = $subscriber->getNextPlanName();
+		
+		$subscriberStatus = "open";
+		if (is_null($next_plan_name)) {
+			$subscriberStatus = "closed";
+			$currentPlans = $subscriber->getCurrentPlans();
+			if (empty($currentPlans)) {
+				Billrun_Factory::log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
+				$deactivated_subscribers[] = array("sid" => $sid);
+			}
+		} 
+		
+		// TODO: Should we delete this code and all references to it?
+		foreach ($deactivated_subscribers as $value) {
+
+		}
+		
+		return $subscriberStatus;
+	}
+	
+	/**
+	 * Merge all the subscriber manual lines for aggregating an account
+	 * @param array $manualLines - Manual lines so far
+	 * @param Billrun_Subscriber $subscriber
+	 * @param string $billrunKey - Current billrun key
+	 * @return array merged lines result for aggregating account.
+	 */
+	protected function aggregateAccountMergeManualLines($manualLines, $subscriber, $billrunKey) {
+		$withFlatLines = array_merge($manualLines, $this->saveFlatLines($subscriber, $billrunKey));
+		$withCreditLines = array_merge($withFlatLines, $this->saveCreditLines($subscriber, $billrunKey));
+		$withServiceLines = array_merge($withCreditLines, $this->saveServiceLines($subscriber, $billrunKey));
+		return $withServiceLines;
+	}
+	
+	/**
+	 * Save the account as part of the aggregate functionality
+	 * @param Billrun_Billrun $billrunAccount
+	 * @param type $accid
+	 * @return boolean
+	 */
+	protected function aggregateSaveAccount($billrunAccount, $accid) {
+		if ($billrunAccount->is_deactivated() === true) {
+			Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
+			return false;
+		}
+		Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
+		if ($billrunAccount->save() === false) {
+			Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
+			return false;
+		}
+		$this->successfulAccounts[] = $accid;
+		Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
+		return true;
+	}
+	
+	/**
+	 * Close the account as part of the aggregate functionality
+	 * @param Billrun_Billrun $billrunAccount
+	 * @param type $accid
+	 * @param string $billrunKey - Current billrun key
+	 */
+	protected function aggregateCloseAccount($billrunAccount, $accid, $billrunKey) {
+		Billrun_Factory::log("Closing billrun $billrunKey for account $accid", Zend_Log::DEBUG);
+		$billrunAccount->close($this->min_invoice_id);
+		Billrun_Factory::log("Finished closing billrun $billrunKey for account $accid", Zend_Log::DEBUG);
+	}
+	
+	/**
+	 * Handle the end of the aggregate logic
+	 * @param type $count
+	 * @param type $skippedCount
+	 */
+	protected function handleAggregateEnd($count, $skippedCount) {
+		if ($count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
-			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
+			$end_msg .="Processed " . ($count - $skippedCount) . " accounts, Skipped over {$skippedCount} accounts, out of a total of {$count} accounts";
 			Billrun_Factory::log($end_msg, Zend_Log::INFO);
 			$this->sendEndMail($end_msg);
 		}
 
 		// @TODO trigger after aggregate
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
-		return $this->successfulAccounts;
 	}
-
+	
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
 		if ($recipients) {
@@ -302,16 +454,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected function saveFlatLines($subscriber, $billrun_key) {
 		$flatEntries = $subscriber->getFlatEntries($billrun_key, true);
+		// There are no flat entries.
+		if(!$flatEntries) {
+			return array();
+		}
+		$ret = array();
 		try {
-			if ($flatEntries) {
-				$flatEntriesRaw = array_map(function($obj) {
-					return $obj->getRawData();
-				}, $flatEntries);
-				$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
-				if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
-					Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
-				}
-			}
+			$flatEntriesRaw = array_map(function($obj) {
+				return $obj->getRawData();
+			}, $flatEntries);
+			$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
@@ -320,6 +472,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Util::logFailedCreditRow($flatEntries);
 			}
 		}
+		if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
+			Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
+		}
+				
 		return $flatEntries;
 	}
 
@@ -328,6 +484,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param type $subscriber
 	 * @param type $billrun_key
 	 * @return array of inserted lines
+	 * @todo create "saver" handlers, save services lines, save credit lines etc.
 	 */
 	protected function saveServiceLines($subscriber, $billrun_key) {
 		$services = $subscriber->getServices($billrun_key, true);
@@ -349,7 +506,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		return $ret;
 	}
-
+	
 	/**
 	 * create and save credit lines
 	 * @param type $subscriber
@@ -376,7 +533,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		return $ret;
 	}
-
+	
 	protected function saveCredit($credit, $billrun_key) {
 		return $insertRow;
 	}
@@ -429,9 +586,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$id_str = strval($raw_rate['$id']);
 		if (isset($this->rates[$id_str])) {
 			return $this->rates[$id_str];
-		} else {
-			return $row->get('arate', false);
-		}
+		} 
+		return $row->get('arate', false);
 	}
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {
