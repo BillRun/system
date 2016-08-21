@@ -113,13 +113,44 @@ class PlansModel extends TabledateModel {
 	}
 	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
+		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity', 'validateInclude');
 		foreach ($validationMethods as $validationMethod) {
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
 			}
 		}
 		return $this->validationResponse(true);
+	}
+	
+	// TODO: Find a way to return error message, create a structure for the 'res'
+	// variable
+	protected function validateInclude($data) {		
+		if(!isset($data['include'])) {
+			return true;
+		}
+		
+		if(!isset($data['include']['groups'])) {
+			return false;
+		}
+		
+		$groups = $data['include']['groups'];
+		$usagetList = Billrun_Factory::config()->getConfigValue('billrun.usage_types');
+		foreach ($groups as $groupName => $value) {
+			list($usaget, $usageValue) = each($value);
+			// Validate usage type.
+			if(!in_array($usaget, $usagetList)) {
+				return false;
+			}
+			
+			// Validate usageValue
+			if($usageValue === "UNLIMITED") {
+				continue;
+			}
+			
+			if(!Billrun_Util::IsIntegerValue($usageValue)) {
+				return false;
+			}
+		}
 	}
 	
 	protected function validatePrice($data) {		
