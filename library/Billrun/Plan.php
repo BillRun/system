@@ -392,7 +392,7 @@ class Billrun_Plan {
 		}
 		
 		foreach ($this->data['price'] as $tariff) {
-			$charge += $this->getPriceByTariff($tariff, $startOffset, $endOffset);
+			$charge += self::getPriceByTariff($tariff, $startOffset, $endOffset);
 		}
 		return $charge;
 	}
@@ -404,7 +404,7 @@ class Billrun_Plan {
 	 * @param type $endOffset
 	 * @return boolean
 	 */
-	protected function validatePriceByTariff($tariff, $startOffset, $endOffset) {
+	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
 		if($tariff['from'] > $tariff['to']) {
 			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
 			return false;
@@ -434,8 +434,8 @@ class Billrun_Plan {
 	 * @param type $endOffset
 	 * @return int
 	 */
-	protected function getPriceByTariff($tariff, $startOffset, $endOffset) {
-		if(!$this->validatePriceByTariff($tariff, $startOffset, $endOffset)) {
+	public static function getPriceByTariff($tariff, $startOffset, $endOffset) {
+		if(!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
 		
