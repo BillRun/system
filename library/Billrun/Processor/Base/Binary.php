@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -33,7 +33,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
 
-		$header['process_time'] = date(self::base_dateformat);
+		$header['process_time'] = date(self::base_datetimeformat);
 
 		return $header;
 	}
@@ -54,7 +54,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$row['source'] = self::$type;
 			$row['file'] = basename($this->filePath);
 			$row['log_stamp'] = $this->getFileStamp();
-			$row['process_time'] = date(self::base_dateformat);
+			$row['process_time'] = date(self::base_datetimeformat);
 		}
 		return $row;
 	}
@@ -71,7 +71,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_dateformat);
+		$trailer['process_time'] = date(self::base_datetimeformat);
 
 		return $trailer;
 	}
@@ -91,7 +91,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			foreach ($requiredFields as $field) {
 				if (isset($rawRow[$field])) {
 					$row[$field] = $rawRow[$field];
-				}
+}
 			}
 		} else {
 			return $rawRow;

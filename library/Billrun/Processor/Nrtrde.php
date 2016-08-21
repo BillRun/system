@@ -4,7 +4,7 @@
  * @category   Billrun
  * @package    Processor
  * @subpackage Nrtrde
- * @copyright  Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright  Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license    GNU General Public License version 2 or later
  */
 
@@ -119,7 +119,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = date(self::base_datetimeformat);
 		$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
 		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');

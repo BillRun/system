@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -14,7 +14,8 @@
  * @since       1.0
  */
 class ProcessAction extends Action_Base {
-
+	use Billrun_Traits_TypeAll;
+	
 	/**
 	 * method to execute the process process
 	 * it's called automatically by the cli main controller
@@ -28,7 +29,6 @@ class ProcessAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'parser' => false,
 			'path' => true,
 			'backup' => true, // backup path
 		);
@@ -37,12 +37,18 @@ class ProcessAction extends Action_Base {
 			return;
 		}
 
-		$this->_controller->addOutput("Parser selected: " . $options['parser']);
+		// If not type all process normaly.
+		if(!$this->handleTypeAll($options)) {
+			$this->loadProcessor($options);	
+		}
+	}
+	
+	protected function loadProcessor($options) {
+		$this->_controller->addOutput("Parser selected: " . $options['type']); 
 		//$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
 
 		$this->_controller->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
-		$this->_controller->addOutput("Processor loaded");
 
 		if (!$processor) {
 			$this->_controller->addOutput("Processor cannot be loaded");
@@ -61,5 +67,16 @@ class ProcessAction extends Action_Base {
 		$this->_controller->addOutput(ob_get_contents());
 		ob_end_clean();
 	}
+	
+	protected function getHandleFunction() {
+		return "loadProcessor";
+	}
 
+	protected function getNameType() {
+		return "processor";
+	}
+	
+	protected function getCMD() {
+		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . ' --process --type';
+	}
 }

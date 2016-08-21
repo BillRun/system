@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -13,7 +13,8 @@
  * @since    0.5
  */
 class AdminController extends Yaf_Controller_Abstract {
-
+	use Billrun_Traits_Api_PageRedirect;
+	
 	/**
 	 * use for page title
 	 *
@@ -780,6 +781,13 @@ class AdminController extends Yaf_Controller_Abstract {
 		die(json_encode(null));
 	}
 
+	protected function responseNoPermissionsError($message="No permissions!") {
+		$complete = array();
+		$complete['data'] = array("message" => $message);
+		$complete['status'] = 0;
+		return $this->responseError($complete);
+	}
+	
 	/**
 	 * save controller
 	 * @return boolean
@@ -795,7 +803,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		//print_R($v->getErrors());
 
 		if (!$this->allowed('write'))
-			return $this->responseError("Permission denied, make sure you have write permission");
+			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
 
 		$flatData = $this->getRequest()->get('data');
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
@@ -838,8 +846,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		  return $this->responseError($v->getErrors());
 		  }
 		 */
-		if (is_subclass_of($model, "TabledateModel") && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
-			return $this->responseError("There's an entity with overlapping dates");
+		if (is_subclass_of($model, "TabledateModel")) {
+			if ($type != 'update' && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+				return $this->responseError("There's an entity with overlapping dates");
+			}
+			$validate = $model->validate($data, $type);
+			if (!$validate['validate']) {
+				return $this->responseError(array("message" => $validate['errorMsg'], "status" => false));
+			}
 		}
 		if ($type == 'update') {
 			if (strtolower($coll) === 'cards') {
@@ -887,7 +901,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function csvExportAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError("No permissions");
 
 		$collectionName = $this->getRequest()->get("collection");
 		$session = $this->getSession($collectionName);
@@ -931,7 +945,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function chargingplansAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->_request->setParam('plan_type', 'charging');
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
@@ -939,7 +953,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function customerplansAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->_request->setParam('plan_type', 'customer');
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
@@ -947,7 +961,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function recurringplansAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->_request->setParam('plan_type', 'recurring');
 		$this->forward('tabledate', array('table' => 'plans'));
 		return false;
@@ -955,28 +969,28 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	public function plansAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->forward("tabledate", array('table' => 'plans'));
 		return false;
 	}
 
 	public function subscribersAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->forward("tabledate", array('table' => 'subscribers'));
 		return false;
 	}
 
 	public function subscribersAutoRenewServicesAction() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$this->forward("tabledate", array('table' => 'subscribers_auto_renew_services'));
 		return false;
 	}
 
 	public function Action() {
 		if (!$this->allowed('read'))
-			return false;
+			return $this->responseNoPermissionsError();
 		$table = "cards";
 //		$sort = array('received_time' => -1);
 		$sort = $this->applySort($table);
@@ -1028,6 +1042,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->getView()->component = $this->buildTableComponent($table, $query, $options);
 	}
 
+	public function permissionAction() {
+		
+	}
 	public function loginAction() {
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
@@ -1147,7 +1164,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		$this->forward('login', array('ret_action' => $action));
+		$this->forward('permission', array('ret_action' => $action));
 		return false;
 	}
 
@@ -1353,14 +1370,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->forceRedirect('/admin/config');
 	}
 
-	protected function forceRedirect($uri) {
-		if (empty($uri)) {
-			$uri = '/';
-		}
-		header('Location: ' . $uri);
-		exit();
-	}
-
 	/**
 	 * method to render component page
 	 *
@@ -1442,6 +1451,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function render($tpl, array $parameters = array()) {
 		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
+		}
+		if($tpl == 'permission') {
+			return $this->renderView("permission", $parameters);			
 		}
 		$tpl = 'index';
 		//check with active menu we are on
@@ -1936,6 +1948,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		} else {
 			$resp->setBody(json_encode(array("message" => $message)));
 		}
+		
 		//$resp->response();
 		return false;
 	}

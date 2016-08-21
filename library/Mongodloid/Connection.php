@@ -2,7 +2,7 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Connection {
@@ -90,8 +90,18 @@ class Mongodloid_Connection {
 			$tags = array();
 		}
 
+		if (isset($options['context'])) {
+			$driver_options = array(
+				'context' => @stream_context_create($options['context'])
+			);
+			unset($options['context']);
+			$options['ssl'] = true;
+		} else {
+			$driver_options = array();
+		}
+
 		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
+		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
 		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
 			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);

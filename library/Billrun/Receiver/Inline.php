@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -37,7 +37,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 //			if (!file_exists($this->workspace)) {
 //				mkdir($this->workspace, 0755, true);
 //			}
@@ -66,7 +66,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (empty($this->file_content)) {
-			Billrun_Factory::log("NOTICE : SKIPPING $this->filename !!! It is empty!!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("Skipping $this->filename - it is empty!", Zend_Log::WARN);
 			return FALSE;
 		}
 		$ret = array();
@@ -74,7 +74,7 @@ class Billrun_Receiver_Inline extends Billrun_Receiver {
 		$this->lockFileForReceive($this->filename, $type);
 		$path = $this->handleFile();
 		if (!$path) {
-			Billrun_Factory::log("NOTICE : Couldn't write file $this->filename.", Zend_Log::NOTICE);
+			Billrun_Factory::log("Couldn't write file $this->filename.", Zend_Log::ERR);
 			return FALSE;
 		}
 

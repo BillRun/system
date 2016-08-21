@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -21,6 +21,7 @@ class Billrun_Billrun {
 	protected static $runtime_billrun_key;
 	protected static $vatAtDates = array();
 	protected static $vatsByBillrun = array();
+	protected static $fileTypes = null;
 
 	/**
 	 * lines collection
@@ -54,7 +55,7 @@ class Billrun_Billrun {
 	 */
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
-		$this->billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
@@ -129,7 +130,6 @@ class Billrun_Billrun {
 	public function addSubscriber($subscriber, $status) {
 		$current_plan_name = $subscriber->plan;
 		if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-			Billrun_Factory::log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
 			$current_plan_ref = null;
 		} else {
 			$current_plan_ref = $subscriber->getPlan()->createRef();
@@ -145,6 +145,8 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
+		$subscriber_entry['firstname'] = $subscriber->firstname;
+		$subscriber_entry['lastname'] = $subscriber->lastname;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;
@@ -189,7 +191,7 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
-		$billrun_coll = Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection();
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
@@ -222,7 +224,7 @@ class Billrun_Billrun {
 	 */
 	public static function getVATByBillrunKey($billrun_key) {
 		if (!isset(self::$vatsByBillrun[$billrun_key])) {
-			$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+			$billrun_end_time = self::getEndTime($billrun_key);
 			self::$vatsByBillrun[$billrun_key] = self::getVATAtDate($billrun_end_time);
 			if (is_null(self::$vatsByBillrun[$billrun_key])) {
 				self::$vatsByBillrun[$billrun_key] = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
@@ -263,7 +265,8 @@ class Billrun_Billrun {
 	 */
 	public function close($min_id) {
 		$billrun_entity = $this->getRawData();
-		$ret = $this->billrun_coll->createAutoIncForEntity("invoice_id", $min_id);
+		$ret = $this->billrun_coll->createAutoIncForEntity($billrun_entity, "invoice_id", $min_id);
+		$this->billrun_coll->save($billrun_entity);
 		if (is_null($ret)) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
@@ -311,62 +314,22 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Returns the breakdown keys for the row
+	 * Returns the breakdown key for the row
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
-	 * @param array $pricingData the output array from updateSubscriberBalance function
-	 * @param boolean $vatable is the line vatable or not
-	 * @return array an array containing the plan, category & zone keys respectively
+	
+	 * @return breakdown key
 	 */
-	protected static function getBreakdownKeys($row, $pricingData, $vatable) {
-		if ($row['type'] != 'flat') {
-			//$rate = $row['arate'];
-			$rate = self::getRowRate($row);
+	protected static function getBreakdownKey($row) {
+		if (in_array($row['type'], array('flat', 'service'))) {
+			return $row['type'];
 		}
-		if ($row['type'] == 'credit') {
-			$plan_key = 'credit';
-			$zone_key = $row['service_name'];
-		} else if ($row['type'] == 'service') {
-			$plan_key = 'service';
-			$zone_key = $row['key'];
-		} else if (!isset($pricingData['over_plan']) && !isset($pricingData['out_plan'])) { // in plan
-			$plan_key = 'in_plan';
-			if ($row['type'] == 'flat') {
-				$zone_key = 'service';
-			}
-		} else if (isset($pricingData['over_plan']) && $pricingData['over_plan']) { // over plan
-			$plan_key = 'over_plan';
-		} else { // out plan
-			$plan_key = "out_plan";
-		}
-
-		if ($row['type'] == 'credit') {
-			$category_key = $row['credit_type'] . "_" . ($vatable ? "vatable" : "vat_free");
-		} else if (isset($rate['rates'][$row['usaget']]['category'])) {
-			$category = $rate['rates'][$row['usaget']]['category'];
-			switch ($category) {
-				case "roaming":
-					$category_key = "roaming";
-					$zone_key = $row['serving_network'];
-					break;
-				case "special":
-					$category_key = "special";
-					break;
-				case "intl":
-					$category_key = "intl";
-					break;
-				default:
-					$category_key = "base";
-					break;
-			}
-		} else {
-			$category_key = "base";
-		}
-
-		if (!isset($zone_key)) {
-			//$zone_key = $row['arate']['key'];
-			$zone_key = self::getRowRate($row)['key'];
-		}
-		return array($plan_key, $category_key, $zone_key);
+		
+		if (in_array($row['type'], self::getFileTypes())) {
+			return 'usage';
+		} 
+		
+		Billrun_Factory::log("Cannot get type for line. Details: " . print_R($row, 1), Zend_Log::ALERT);
+		return FALSE;
 	}
 
 	/**
@@ -513,6 +476,21 @@ class Billrun_Billrun {
 		}
 		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 	}
+	
+	protected function updateBreakdown(&$sraw, $breakdownKey, $rate, $cost, $count) {
+		if (!isset($sraw['breakdown'][$breakdownKey])) {
+			$sraw['breakdown'][$breakdownKey] = array();
+		}
+		$rate_key = $rate['key'];
+		foreach ($sraw['breakdown'][$breakdownKey] as &$breakdowns) {
+			if ($breakdowns['name'] === $rate_key) {
+				$breakdowns['cost'] += $cost;
+				$breakdowns['count'] += $count;
+				return;
+			}
+		}
+		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count' => $count, 'cost' => $cost);
+	}
 
 	/**
 	 * Add pricing and usage counters to the subscriber billrun breakdown.
@@ -525,15 +503,21 @@ class Billrun_Billrun {
 	 * @todo remove billrun_key parameter
 	 */
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
-		$usage_type = self::getGeneralUsageType($row['usaget']);
-		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
-
-		if ($plan_key == 'credit') {
-			$zone += $pricingData['aprice'];
-		} else {
-			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key);
+//		$usage_type = self::getGeneralUsageType($row['usaget']);
+		if (!$breakdownKey = self::getBreakdownKey($row)) {
+			return;
 		}
+		$rate = self::getRowRate($row);
+		$this->updateBreakdown($sraw, $breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
+
+//		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+//		if ($plan_key == 'credit') {
+//			$zone += $pricingData['aprice'];
+//		} else {
+//			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
+//		}
+		
+		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
 			if (isset($row['in_plan'])) {
 				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
@@ -543,31 +527,39 @@ class Billrun_Billrun {
 				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
 			}
 		}
-		if ($usage_type == 'data' && $row['type'] != 'tap3') {
-			$date_key = date("Ymd", $row['urt']->sec);
-			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
-			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
-			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
-			if ($row['type'] == 'ggsn') {
-				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
-					$data_generation = 'usage_4g';
-				} else {
-					$data_generation = 'usage_3g';
-				}
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
-				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
-			}
+		
+//		if ($usage_type == 'data' && $row['type'] != 'tap3') {
+//			$date_key = date("Ymd", $row['urt']->sec);
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['aprice'], 0) + $row['aprice'];
+//			$sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['plan_flag'], 'in'));
+//			if ($row['type'] == 'ggsn') {
+//				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
+//					$data_generation = 'usage_4g';
+//				} else {
+//					$data_generation = 'usage_3g';
+//				}
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['usagev'], 0) + $row['usagev'];
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['aprice'], 0) + $row['aprice'];
+//				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
+//			}
+//		}
+		
+		if (!isset($sraw['totals'][$breakdownKey])) {
+			$sraw['totals'][$breakdownKey] = array();
 		}
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
+			$sraw['totals'][$breakdownKey]['vatable'] = $sraw['totals']['vatable'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
 		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
+		$sraw['totals'][$breakdownKey]['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
+		$sraw['totals'][$breakdownKey]['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
 	}
 
 	/**
@@ -618,12 +610,25 @@ class Billrun_Billrun {
 		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		  $rawData['totals']['vatable'] = $pricingData['aprice'];
 		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0);
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0, 
+			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
+		);
 		foreach ($this->data['subs'] as $sub) {
 			//Billrun_Factory::log(print_r($sub));
 			$newTotals['before_vat'] += $this->getFieldVal($sub['totals']['before_vat'], 0);
 			$newTotals['after_vat'] += $this->getFieldVal($sub['totals']['after_vat'], 0);
 			$newTotals['vatable'] += $this->getFieldVal($sub['totals']['vatable'], 0);
+			$newTotals['flat']['before_vat'] += $this->getFieldVal($sub['totals']['flat']['before_vat'], 0);
+			$newTotals['flat']['after_vat'] += $this->getFieldVal($sub['totals']['flat']['after_vat'], 0);
+			$newTotals['flat']['vatable'] += $this->getFieldVal($sub['totals']['flat']['vatable'], 0);
+			$newTotals['service']['before_vat'] += $this->getFieldVal($sub['totals']['service']['before_vat'], 0);
+			$newTotals['service']['after_vat'] += $this->getFieldVal($sub['totals']['service']['after_vat'], 0);
+			$newTotals['service']['vatable'] += $this->getFieldVal($sub['totals']['service']['vatable'], 0);
+			$newTotals['usage']['before_vat'] += $this->getFieldVal($sub['totals']['usage']['before_vat'], 0);
+			$newTotals['usage']['after_vat'] += $this->getFieldVal($sub['totals']['usage']['after_vat'], 0);
+			$newTotals['usage']['vatable'] += $this->getFieldVal($sub['totals']['usage']['vatable'], 0);
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
@@ -725,15 +730,15 @@ class Billrun_Billrun {
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
-		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::INFO);
+		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
 		$account_lines = $this->getAccountLines($this->aid);
 
 		$lines = array_merge($account_lines, $manual_lines);
 		$this->filterSubscribers($lines, $deactivated_subscribers);
-		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::INFO);
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
-		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::INFO);
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::DEBUG);
 		$this->updateTotals();
 		return $updatedLines;
 	}
@@ -849,7 +854,7 @@ class Billrun_Billrun {
 			'urt' => 1,
 		);
 
-		Billrun_Factory::log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);
 		$addCount = $bufferCount = 0;
 		do {
 			$bufferCount += $addCount;
@@ -861,7 +866,7 @@ class Billrun_Billrun {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::INFO);
+		Billrun_Factory::log('Finished querying for accounts ' . implode(',', $aids) . ' lines', Zend_Log::DEBUG);
 		foreach ($aids as $aid) {
 			if (!isset($ret[$aid])) {
 				$ret[$aid] = array();
@@ -907,13 +912,13 @@ class Billrun_Billrun {
 		$fields = array(
 			'billrun_key' => 1,
 		);
-		$runtime_billrun_key = Billrun_Util::getBillrunKey($now);
+		$runtime_billrun_key = self::getBillrunKeyByTimestamp($now);
 		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
-			$active_billrun = Billrun_Util::getFollowingBillrunKey($last['billrun_key']);
-			$billrun_start_time = Billrun_Util::getStartTime($active_billrun);
+			$active_billrun = Billrun_Billrun::getFollowingBillrunKey($last['billrun_key']);
+			$billrun_start_time = self::getStartTime($active_billrun);
 			// TODO: There should be a static time class to provide all these numbers in different resolutions, months, weeks, hours, etc.
 			if ($now - $billrun_start_time > 5184000) { // more than two months diff (60*60*24*30*2)
 				$active_billrun = $runtime_billrun_key;
@@ -949,13 +954,33 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * method to receive billrun key by date
+	 * 
+	 * @param int $timestamp a unix timestamp
+	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
+	 * @return string date string of format YYYYmm
+	 */
+	public static function getBillrunKeyByTimestamp($timestamp, $dayofmonth = null) {
+		if (!$dayofmonth) {
+			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+		}
+		$format = "Ym";
+		if (date("d", $timestamp) < $dayofmonth) {
+			$key = date($format, $timestamp);
+		} else {
+			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
+		}
+		return $key;
+	}
+
+	/**
 	 * returns the end timestamp of the input billing period
 	 * @param date $date
 	 */
 	public static function getBillrunEndTimeByDate($date) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
-		return strtotime('-1 second', strtotime($datetime));
+		$dateTimestamp = strtotime($date);
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
+		return self::getEndTime($billrunKey);
 	}
 
 	/**
@@ -963,9 +988,59 @@ class Billrun_Billrun {
 	 * @param date $date
 	 */
 	public static function getBillrunStartTimeByDate($date) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25); //TODO: get by subscriber
-		$datetime = date('Ym', strtotime($date)) . $dayofmonth . "000000";
+		$dateTimestamp = strtotime($date);
+		$billrunKey = self::getBillrunKeyByTimestamp($dateTimestamp);
+		return self::getStartTime($billrunKey);
+	}
+
+	/**
+	 * returns the end timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getEndTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return strtotime($datetime);
+	}
+
+	/**
+	 * returns the start timestamp of the input billing period
+	 * @param type $billrun_key
+	 * @return type int
+	 * @todo move to BillRun object
+	 */
+	public static function getStartTime($billrun_key) {
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
+		$datetime = $billrun_key . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 		return strtotime('-1 month', strtotime($datetime));
+	}
+
+	public static function getFollowingBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_later = strtotime('+1 month', strtotime($datetime));
+		$ret = date("Ym", $month_later);
+		return $ret;
+	}
+
+	public static function getPreviousBillrunKey($billrun_key) {
+		$datetime = $billrun_key . "01000000";
+		$month_before = strtotime('-1 month', strtotime($datetime));
+		$ret = date("Ym", $month_before);
+		return $ret;
+	}
+	
+	public function setBillrunAccountFields($data) {
+		$this->data['creation_time'] = new MongoDate();
+		$this->data['attributes'] = $data['attributes'];
+	}
+	
+	protected static function getFileTypes() {
+		if (empty(self::$fileTypes)) {
+			self::$fileTypes = Billrun_Factory::config()->getFileTypes();
+		}
+		return self::$fileTypes;
 	}
 
 }

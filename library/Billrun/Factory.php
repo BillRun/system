@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -160,16 +160,10 @@ class Billrun_Factory {
 	static public function db(array $options = array()) {
 		$stamp = md5(serialize($options)); // unique stamp per db connection
 		if (!isset(self::$db[$stamp])) {
-			$mainDb = 0;
 			if (empty($options)) { // get the db settings from config
 				$options = Billrun_Factory::config()->getConfigValue('db');
-				$mainDb = 1;
 			}
-
 			self::$db[$stamp] = Billrun_Db::getInstance($options);
-			if ($mainDb) { // on load main db - load db config
-				Billrun_Factory::config()->loadDbConfig();
-			}
 		}
 
 		return self::$db[$stamp];
@@ -353,6 +347,9 @@ class Billrun_Factory {
 		$stamp = Billrun_Util::generateArrayStamp($username);
 		if (!isset(self::$users[$stamp])) {
 			$read = Billrun_Factory::auth()->getStorage()->read();
+			if(!isset($read['current_user'])) {
+				return FALSE;
+			}
 			$entity = new Mongodloid_Entity($read['current_user']);
 			self::$users[$stamp] = new Billrun_User($entity);
 		}

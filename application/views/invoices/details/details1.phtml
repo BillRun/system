@@ -1,0 +1,49 @@
+<div id="wrapper">
+	<main role="main" id="main">
+		<div class="wrap">
+			<div class="details-wrapper">
+				<?php foreach ($data->get('subs') as $sub) { ?>
+					<h2 class="details-subscriber-header">Subscriber <?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h2>
+					<br/>
+					<?php foreach ($details_keys as $title => $key) { ?>
+						<?php if (!empty($sub['breakdown'][$key])) { ?>
+							<h4 class="details-subscriber-header"><?php echo strtoupper($title) ?></h4>
+							<table class="subscriber-details subscriber-details-<?php echo $title ?>">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Volume</th>
+										<th>Cost</th>
+										<th></th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ($sub['breakdown'][$key] as $breakdown) { ?>
+										<tr>
+											<td><?php echo $breakdown['name']; ?></td>
+											<td><?php echo number_format($breakdown['count'], 2); ?></td>
+											<td><?php echo number_format($breakdown['cost'], 2); ?></td>
+											<td></td>
+											<td></td>
+										</tr>
+									<?php } ?>
+										<tr class="table-holder"></tr>
+										<tr class="subscriber-details-sum">
+											<td>Total</td>
+											<td></td>
+											<td></td>
+											<td><?php echo number_format($sub['totals'][$key]['before_vat'], 2) ?></td>
+											<td><?php echo number_format($sub['totals'][$key]['after_vat'], 2) ?></td>
+										</tr>
+								</tbody>
+							</table>
+							<br/>
+						<?php } ?>
+					<?php } ?>
+					<br/>
+				<?php } ?>
+			</div>
+		</div>
+	</main>
+</div>

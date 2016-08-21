@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -15,7 +15,11 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class ResetLinesAction extends ApiAction {
 
+	use Billrun_Traits_Api_UserPermissions;
+
+	
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute reset", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		if (empty($request['sid'])) {
@@ -27,7 +31,7 @@ class ResetLinesAction extends ApiAction {
 			$this->cleanAccountCache($request['aid']);
 		}
 
-		$billrun_key = Billrun_Util::getBillrunKey(time());
+		$billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp(time());
 
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
@@ -88,12 +92,16 @@ class ResetLinesAction extends ApiAction {
 			return false;
 		}
 		$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $aid), 'int'), array(0)));
-		$billrunKey = Billrun_Util::getBillrunKey(time());
+		$billrunKey = Billrun_Billrun::getBillrunKeyByTimestamp(time());
 		$cachePrefix = 'balance_'; // this is not the action name because it's clear the balance cache
 		foreach ($aids as $aid) {
 			$this->cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix);
 		}
 		return true;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

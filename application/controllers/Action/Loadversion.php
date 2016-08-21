@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -14,7 +14,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    4.2
  */
 class LoadversionAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $SAVE_PATH = "exports";
 
 	public static function getVersions($collection) {
@@ -25,6 +26,7 @@ class LoadversionAction extends ApiAction {
 	}
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute load version", Zend_Log::INFO);
 		if (!AdminController::authorized('admin')) {
 			return;
@@ -88,6 +90,10 @@ class LoadversionAction extends ApiAction {
 				$val = new MongoDate($sec);
 			}
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -39,7 +39,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	/**
 	 * parser to processor the file
-	 * @var processor class
+	 * @var Billrun_parser processor class
 	 */
 	protected $parser = null;
 
@@ -91,6 +91,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected $orderLinesBeforeInsert = false;
 
+	protected $config = null;
+	protected  $usage_type = null;
+
+
 	/**
 	 * Lines that were processed but are not to be saved
 	 * @var array
@@ -107,12 +111,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['path'])) {
-			$this->loadFile($options['path']);
+			$this->loadFile(Billrun_Util::getBillRunSharedFolderPath($options['path']));
 		}
-
+		
 		if (isset($options['parser']) && $options['parser'] != 'none') {
 			$this->setParser($options['parser']);
 		}
+
 		if (isset($options['processor']['line_numbers'])) {
 
 			$this->line_numbers = $options['processor']['line_numbers'];
@@ -136,9 +141,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$this->orderLinesBeforeInsert = $options['processor']['order_lines_before_insert'];
 		}
 		if (isset($options['backup_path'])) {
-			$this->backupPaths = $options['backup_path'];
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} else {
-			$this->backupPaths = Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType()));
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backup/' . $this->getType())));
 		}
 	}
 
@@ -219,7 +224,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		} else {
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
-			if ($this->parse() === FALSE) {
+			if ($this->processLines() === FALSE) {
 				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 				return FALSE;
 			}
@@ -234,7 +239,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			}
 
 			if ($this->logDB() === FALSE) {
-				Billrun_Factory::log("Billrun_Processor: cannot log parsing action" . $this->filePath, Zend_Log::WARN);
+				Billrun_Factory::log("Billrun_Processor: cannot log parsing action " . $this->filePath, Zend_Log::WARN);
 				return FALSE;
 			}
 			Billrun_Factory::dispatcher()->trigger('afterProcessorStore', array($this));
@@ -249,7 +254,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * Parse the current CDR line. 
 	 * @return array conatining the parsed data.  
 	 */
-	abstract protected function parse();
+	abstract protected function processLines();
 
 	/**
 	 * method to log the processing
@@ -293,7 +298,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', date(self::base_dateformat));
+			$resource->set('process_time', date(self::base_datetimeformat));
 			return $log->save($resource);
 		} else {
 			// backward compatibility
@@ -322,6 +327,13 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$lines = Billrun_Factory::db()->linesCollection();
 		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
 		$queue_data = $this->getQueueData();
+		$queue_stamps = array_keys($queue_data);
+		$line_stamps = array_keys($this->data['data']);
+		$lines_in_queue = array_intersect($line_stamps, $queue_stamps);
+		foreach ($lines_in_queue as $key => $value) {
+			$this->data['data'][$value]['in_queue'] = true;
+		}
+
 		if ($this->bulkInsert) {
 			settype($this->bulkInsert, 'int');
 			if (!$this->bulkAddToCollection($lines)) {
@@ -336,6 +348,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Storing " . count($queue_data) . " queue lines of file " . basename($this->filePath), Zend_Log::INFO);
 			$this->addToQueue($queue_data);
 		}
+
 		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
 		return true;
 	}
@@ -585,13 +598,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function prepareQueue() {
 		foreach ($this->data['data'] as $dataRow) {
-			$queueRow = array(
-				'stamp' => $dataRow['stamp'],
-				'type' => $dataRow['type'],
-				'urt' => $dataRow['urt'],
-				'calc_name' => false,
-				'calc_time' => false
-			);
+			$queueRow = $dataRow;
+			$queueRow['calc_name'] = false;
+			$queueRow['calc_time'] = false;
 			$this->setQueueRow($queueRow);
 		}
 	}
@@ -614,7 +623,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$queue_row[$property] = $row[$property];
 			}
 		}
-
+				
 		if (!isset($queue_row['stamp'])) {
 			$queue_row['stamp'] = $row['stamp'];
 		}
@@ -703,19 +712,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
-
-	/**
-	 * Get a CDR line volume (duration/count/bytes used)
-	 * @param $row the line to get  the volume for.
-	 * @param the line usage type
-	 */
-	abstract protected function getLineVolume($row);
-
-	/**
-	 * Get the line usage type (SMS/Call/Data/etc..)
-	 * @param $row the CDR line  to get the usage for.
-	 */
-	abstract protected function getLineUsageType($row);
 
 	/**
 	 * Mark a line as unneeded to be saved to the DB

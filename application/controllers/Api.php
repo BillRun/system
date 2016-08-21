@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -35,8 +35,17 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		
+		//TODO add security configuration
+		if( isset($_SERVER['HTTP_ORIGIN']) ) {
+			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
+			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
+			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+			header('Access-Control-Allow-Credentials: true');
+		}
+		
 	}
-
+	
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -88,7 +97,8 @@ class ApiController extends Yaf_Controller_Abstract {
 		} else {
 			$var = $args;
 		}
-		$ret = $this->setOutputVar($var);
+		$readable = Billrun_Util::convertMongoDatesToReadable($var);
+		$ret = $this->setOutputVar($readable);
 		$this->apiLogAction();
 		return $ret;
 	}

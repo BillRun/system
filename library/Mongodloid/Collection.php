@@ -2,7 +2,7 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Collection {
@@ -234,6 +234,8 @@ class Mongodloid_Collection {
 	 */
 	public function find($query, $fields = array()) {
 		return $this->_collection->find($query, $fields);
+//		$cursor = $this->_collection->find($query, $fields);
+//		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
 	}
 
 	/**
@@ -265,8 +267,9 @@ class Mongodloid_Collection {
 			$args = array($args);
 		}
 		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
-
 	}
+
+	
 
 	public function aggregateWithOptions() {
             $args = func_get_args();
@@ -470,6 +473,11 @@ class Mongodloid_Collection {
 			} else {
 				$lastSeq++;
 			}
+			if (is_string($oid)) {
+				$oidDelimiter = '#bk#';
+				$splitted = preg_split('/' . $oidDelimiter . '\d+$/', $oid);
+				$oid = $splitted[0] . $oidDelimiter . $lastSeq;
+			}
 			$insert = array(
 				'coll' => $collection_name,
 				'oid' => $oid,
@@ -495,7 +503,7 @@ class Mongodloid_Collection {
 		}
 		return $lastSeq;
 	}
-
+	
 	public function getAutoInc($oid) {
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();

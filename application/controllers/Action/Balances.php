@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class BalancesAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action
@@ -41,6 +42,8 @@ class BalancesAction extends ApiAction {
 	 * to a more generic class.
 	 */
 	public function execute() {
+		$this->allowed();
+		
 		// TODO: Not using Balances model here. Should it be used? and what for?
 		// There is an already existing Balances model, is this the right one?
 		// This is the method which is going to be executed.
@@ -64,6 +67,10 @@ class BalancesAction extends ApiAction {
 			$output['input'] = $this->getRequest()->getRequest();
 		}
 		$this->getController()->setOutput(array($output));
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

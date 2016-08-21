@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -79,8 +79,8 @@ class ResetLinesModel {
 						'$exists' => FALSE,
 					),
 					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
-						'$gte' => new MongoDate(Billrun_Util::getStartTime($this->billrun_key)),
-						'$lte' => new MongoDate(Billrun_Util::getEndTime($this->billrun_key)),
+						'$gte' => new MongoDate(Billrun_Billrun::getStartTime($this->billrun_key)),
+						'$lte' => new MongoDate(Billrun_Billrun::getEndTime($this->billrun_key)),
 					)
 				),
 			),
@@ -91,7 +91,7 @@ class ResetLinesModel {
 				'$ne' => 'credit',
 			),
 			'process_time' => array(
-				'$lt' => date(Billrun_Base::base_dateformat, strtotime($this->process_time_offset . ' ago')),
+				'$lt' => date(Billrun_Base::base_datetimeformat, strtotime($this->process_time_offset . ' ago')),
 			),
 		);
 	}

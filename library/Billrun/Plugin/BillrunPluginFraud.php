@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -60,7 +60,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 			$newEvent = $this->addAlertData($event);
 			$newEvent['source'] = $this->getName();
 			$newEvent['stamp'] = md5(serialize($newEvent));
-			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			$newEvent['creation_time'] = date(Billrun_Base::base_datetimeformat);
 			$item['event_stamp'] = $newEvent['stamp'];
 
 			$ret[] = $events->save($newEvent);

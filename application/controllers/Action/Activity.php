@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -15,8 +15,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class ActivityAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute activity call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$sid = (int) $request->get('sid', 0);
@@ -49,6 +51,10 @@ class ActivityAction extends ApiAction {
 				'details' => $results,
 				'input' => $request,
 		)));
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

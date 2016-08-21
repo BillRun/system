@@ -1,0 +1,92 @@
+<div id="wrapper">
+	<main role="main" id="main">
+		<div class="wrap">
+			<div class="info-holder">
+				<table class="contact-info">
+					<tr>
+						<td class="info-label">Account ID : </td>
+						<td class="info-data"><?php echo $data->get('aid') ?></td>
+					</tr>
+					<tr>
+						<td class="info-label">First Name : </td>
+						<td class="info-data"><?php echo $data->get('attributes')['firstname'] ?></td>
+					</tr>
+					<tr>
+						<td class="info-label">Last Name : </td>
+						<td class="info-data"><?php echo $data->get('attributes')['lastname'] ?></td>
+					</tr>
+					<tr>
+						<td class="info-label">Address : </td>
+						<td class="info-data"><?php echo $data->get('attributes')['address'] ?></td>
+					</tr>
+					<tr>
+						<td class="info-label">Invoice Date : </td>
+						<td class="info-data"><?php print(date("d/m/Y", $this->data['creation_time']->sec)); ?></td>
+					</tr>
+				</table>
+				<table class="invoice-info">
+					<tr>
+						<td class="info-label">Invoice ID : </td>
+						<td class="info-data"><?php echo $data->get('invoice_id') ?></td>
+					</tr>
+					<tr>
+						<td class="info-label">Invoice For : </td>
+						<td class="info-data"><?php print(substr($this->data['billrun_key'], 4, 2) . '/' . substr($this->data['billrun_key'], 0, 4)); ?></td>
+					</tr>
+				</table>
+				<table class="payment-info">
+					<tr>
+						<td class="info-label">Payment Details : </td>
+						<td class="info-data"><?php echo $data->get('attributes')['payment_details'] ?></td>
+					</tr>
+				</table>
+			</div>
+			<br/>
+			<div class="account-sum">
+				<h2><u>Account Summarize</u></h2>
+				<table class="sumup-invoice">
+					<thead>
+						<tr>
+							<th>Type</th>
+							<th>Price</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="sumup-title">Flat</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.flat.before_vat'), 2) ?></td>
+						</tr>
+						<tr>
+							<td class="sumup-title">Services</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.service.before_vat'), 2) ?></td>
+						</tr>
+						<tr>
+							<td class="sumup-title">Extras</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.usage.before_vat'), 2) ?></td>
+						</tr>
+						<tr class="table-holder"></tr>
+						<tr class="total-price">
+							<td class="sumup-title">Total</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.before_vat'), 2) ?></td>
+						</tr>
+						<tr class="total-price">
+							<td class="sumup-title">VAT Rate</td>
+							<td class="sumup-data"><?php echo number_format($data->get('vat') * 100, 2) ?>%</td>
+						</tr>
+						<tr class="total-price">
+							<td class="sumup-title">VAT</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.after_vat') - $data->get('totals.before_vat'), 2) ?></td>
+						</tr>
+						<tr class="total-price">
+							<td class="sumup-title">Total + VAT</td>
+							<td class="sumup-data"><?php echo number_format($data->get('totals.after_vat'), 2) ?></td>
+						</tr>
+					</tbody>
+				</table>
+				<br/><br/><br/>
+				<h3><span class="total-payment-title">Total payment: </span><span class="total-payment"><?php echo number_format($data->get('totals.after_vat'), 2) ?> <?php echo $this->currency ?></span></h3>
+			</div>
+
+		</div>
+	</main>
+</div>

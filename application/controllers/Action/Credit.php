@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -14,12 +14,15 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class CreditAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	/**
 	 * method to execute the refund
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
+		
 		Billrun_Factory::log("Execute credit", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 
@@ -33,7 +36,7 @@ class CreditAction extends ApiAction {
 				return $this->setError('Transaction already exists in the DB', $request);
 			}
 
-			$parsed_row['process_time'] = date(Billrun_Base::base_dateformat);
+			$parsed_row['process_time'] = date(Billrun_Base::base_datetimeformat);
 
 			$entity = new Mongodloid_Entity($parsed_row);
 
@@ -85,6 +88,10 @@ class CreditAction extends ApiAction {
 					'calc_time' => false,
 			));
 		}
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

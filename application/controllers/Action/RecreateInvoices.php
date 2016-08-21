@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -14,15 +14,17 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    0.5
  */
 class RecreateInvoicesAction extends ApiAction {
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute recreate invoices", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
 		if (empty($request['account_id'])) {
 			return $this->setError('Please supply at least one account id', $request);
 		}
 
-		$billrun_key = Billrun_Util::getPreviousBillrunKey(Billrun_Util::getBillrunKey(time()));
+		$billrun_key = Billrun_Billrun::getPreviousBillrunKey(Billrun_Billrun::getBillrunKeyByTimestamp(time()));
 
 		// Warning: will convert half numeric strings / floats to integers
 		$account_ids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $request['account_id']), 'int'), array(0)));
@@ -53,6 +55,10 @@ class RecreateInvoicesAction extends ApiAction {
 				'successfulAccounts' => $successfulAccounts,
 		)));
 		return TRUE;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -26,7 +26,7 @@ class Billrun_Aggregator_Leftovers extends Billrun_Aggregator_Customer {
 		$subscriber = Billrun_Factory::subscriber();
 		$filename = $billrun_key . '_leftover_aggregator_input';
 		Billrun_Factory::log("Loading file " . $filename, Zend_Log::INFO);
-		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
+		$billrun_end_time = Billrun_Billrun::getEndTime($billrun_key);
 		$this->data = $subscriber->getListFromFile('files/' . $filename, $billrun_end_time);
 		if (!count($this->data)) {
 			Billrun_Factory::log("No accounts were found for leftover aggregator", Zend_Log::ALERT);

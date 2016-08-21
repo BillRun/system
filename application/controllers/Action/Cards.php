@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -15,7 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class CardsAction extends ApiAction {
-
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $model;
 
 	/**
@@ -47,6 +48,7 @@ class CardsAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/cards/conf.ini');
 		$this->initializeModel();
 
@@ -93,6 +95,10 @@ class CardsAction extends ApiAction {
 			$ret[] = $row->getRawData();
 		}
 		return $ret;
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
 
 }

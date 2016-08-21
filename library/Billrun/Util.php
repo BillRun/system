@@ -1,7 +1,7 @@
 <?php
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -127,7 +127,7 @@ class Billrun_Util {
 	 * @return string the current date time formatted by the system default format
 	 */
 	public static function generateCurrentTime() {
-		return date(Billrun_Base::base_dateformat);
+		return date(Billrun_Base::base_datetimeformat);
 	}
 
 	/**
@@ -160,7 +160,7 @@ class Billrun_Util {
 		} else {
 			$tz_offset = $offset;
 		}
-		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_dateformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
+		$date_formatted = str_replace(' ', 'T', date(Billrun_Base::base_datetimeformat, strtotime($datetime))) . $tz_offset; // Unnecessary code?
 		$ret = strtotime($date_formatted);
 		return $ret;
 	}
@@ -230,30 +230,6 @@ class Billrun_Util {
 		);
 
 		return $value * ($conversion[$from] / $conversion[$to]);
-	}
-
-	/**
-	 * returns the end timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getEndTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 second', strtotime($datetime));
-	}
-
-	/**
-	 * returns the start timestamp of the input billing period
-	 * @param type $billrun_key
-	 * @return type int
-	 * @todo move to BillRun object
-	 */
-	public static function getStartTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		$datetime = $billrun_key . $dayofmonth . "000000";
-		return strtotime('-1 month', strtotime($datetime));
 	}
 
 	/**
@@ -344,8 +320,8 @@ class Billrun_Util {
 
 		return 0;
 	}
-        
-        /**
+
+	/**
          * convert KB/MB/GB/TB/PB/EB/ZB/YB to bytes
          * @param string $unitSizeToByte 
          * @param string $convertToOtherUnit use when we want to return different unit size
@@ -921,12 +897,87 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Util::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
 	}
 
+	/**
+	 * Get a value from an array by a mongo format key, seperated with dots.
+	 * @param array $array - Array to get value of.
+	 * @param string $key - Dot seperated key.
+	 */
+	public static function getValueByMongoIndex($array, $key) {
+		if(!is_string($key)) {
+			return null;
+		}
+		
+		$value = $array;
+		
+		// Explode the keys.
+		$keys = explode(".", $key);
+		foreach ($keys as $innerKey) {
+			if(!isset($value[$innerKey])) {
+				return null;
+			}
+			
+			$value = $value[$innerKey];
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Set a value to an array by a mongo format key, seperated with dots.
+	 * @param mixed $value - Value to set
+	 * @param array &$array - Array to set value to, passed by reference.
+	 * @param string $key - Dot seperated key.
+	 * @return boolean - True if successful.
+	 */
+	public static function setValueByMongoIndex($value, &$array, $key) {
+		if(!is_string($key)) {
+			return false;
+		}
+		
+		$result = &$array;
+		$keys = explode('.', $key);
+		foreach ($keys as $innerKey) {
+			$result = &$result[$innerKey];
+		}
+
+		$result = $value;
+		
+		return true;
+	}
+	
+	/**
+	 * Coverts a $seperator seperated array to an haierchy tree
+	 * @param string $array - Input string
+	 * @param string $seperator 
+	 * @param mixed $toSet - Value to be set to inner level of array
+	 * @return array
+	 */
+	public static function mongoArrayToPHPArray($array, $seperator, $toSet) {
+		if(!is_string($array)) {
+			return null;
+		}
+		
+		$parts = explode($seperator, $array);
+		$result = array();
+		$previous = null;
+		$iter = &$result;
+		foreach ($parts as $value) {
+			if($previous !== null) {
+				$iter[$previous] = array($value => $toSet);
+				$iter = &$iter[$previous];
+			}
+			$previous = $value;
+		}
+		
+		return $result;
+	}
+	
 	/**
 	 * convert assoc array to MongoDB query
 	 * 
@@ -1175,7 +1226,7 @@ class Billrun_Util {
 	 * 
 	 * @return array or FALSE on failure
 	 */
-	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null) {
+	public static function sendRequest($url, $data = array(), $method = Zend_Http_Client::POST, array $headers = array('Accept-encoding' => 'deflate'), $timeout = null, $ssl_verify = null) {
 		if (empty($url)) {
 			Billrun_Factory::log("Bad parameters: url - " . $url . " method: " . $method, Zend_Log::ERR);
 			return FALSE;
@@ -1190,6 +1241,9 @@ class Billrun_Util {
 		$curl = new Zend_Http_Client_Adapter_Curl();
 		if (!is_null($timeout)) {
 			$curl->setCurlOption(CURLOPT_TIMEOUT, $timeout);
+		}
+		if (!is_null($ssl_verify)) {
+			$curl->setCurlOption(CURLOPT_SSL_VERIFYPEER, $ssl_verify);
 		}
 		$client = new Zend_Http_Client($url);
 		$client->setHeaders($headers);
@@ -1345,7 +1399,7 @@ class Billrun_Util {
 	}
 
 	public static function isAssoc($arr) {
-		return array_keys($arr) !== range(0, count($arr) - 1);
+		return is_array($arr) && (array_keys($arr) !== range(0, count($arr) - 1));
 	}
 
 	public static function getUsagetUnit($usaget) {
@@ -1477,4 +1531,171 @@ class Billrun_Util {
 		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
 	}
 
+	
+	public static function getBillRunPath($path) {
+		if (empty($path) || !is_string($path)) {
+			return FALSE;
+		}
+		if ($path[0] == DIRECTORY_SEPARATOR) {
+			return $path;
+		}
+		return APPLICATION_PATH . DIRECTORY_SEPARATOR . $path;
+	}
+
+	/**
+	 * Get the shared folder path of the input path.
+	 * @param string $path - Path to convert to relative shared folder path.
+	 * @param boolean $strict - If true, and the path is a root folder, we return
+	 * the absoulute path, not the shared folder path! False by default.
+	 * @return string Relative file path in the shared folder.
+	 * @TODO: Add validation that if the input $path is already in the shared folder, return just the path.
+	 */
+	public static function getBillRunSharedFolderPath($path, $strict=false) {
+		if (empty($path) || !is_string($path)) {
+			return FALSE;
+		}
+		if ($strict && ($path[0] == DIRECTORY_SEPARATOR)) {
+			return $path;
+		}
+		return  APPLICATION_PATH . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getConfigValue('shared_folder', 'shared') . DIRECTORY_SEPARATOR . Billrun_Factory::config()->getTenant() . DIRECTORY_SEPARATOR . $path;
+	}
+	
+	
+		/**
+	 * Return rounded amount for charging
+	 * @param float $amount
+	 * @return float
+	 */
+	public static function getChargableAmount($amount) {
+		return number_format($amount, 2, '.', '');
+	}
+
+	public static function generateHash($aid, $key){
+		return md5($aid . $key);
+	}
+	
+	public static function isValidCustomLineKey($jsonKey) {
+		$protectedKeys = static::getBillRunProtectedLineKeys();
+		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+	}
+	
+	public static function getBillRunProtectedLineKeys() {
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+	}
+
+
+	public static function isValidRegex($regex) {
+		return !(@preg_match($regex, null) === false);
+	}
+	
+	public static function isDateValue($val) {
+		return (strtotime($val) === false ? false : true);
+	}
+	
+	public static function IsFloatValue($number) {
+		return is_numeric($number);
+	}
+	
+	public static function IsIntegerValue($number) {
+		return is_numeric($number) && ($number == intval($number));
+	}
+
+	public static function getCompanyName() {
+		return Billrun_Factory::config()->getConfigValue('company_name', '');
+	}
+	
+	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
+		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
+	}
+
+	public static function convertQueryMongoDates(&$arr) {
+		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
+		foreach ($arr as &$value) {
+			if (is_array($value)) {
+				self::convertQueryMongoDates($value);
+			} else if (preg_match($ISODatePattern, $value)) {
+				$value = new MongoDate(strtotime($value));
+			}
+		}
+	}
+	
+	/**
+	 * convert all MongoDate objects in the data received into ISO dates
+	 * 
+	 * @param mixed $data
+	 * @return mixed $data with ISO dates
+	 */
+	public static function convertMongoDatesToReadable($data) {
+		if ($data instanceof MongoDate) {
+			return date(DATE_ISO8601, $data->sec);
+		}
+		if (!is_array($data)) {
+			return $data;
+		}
+		foreach ($data as $key => $value) {
+			$data[$key] = self::convertMongoDatesToReadable($value);
+		}
+		return $data;
+	}
+
+	/**
+	 * Returns params for a command (cmd).
+	 * if running with multi tenant adds the tenant to the command.
+	 * 
+	 */
+	public static function getCmdEnvParams() {
+		$ret = '--env ' . Billrun_Factory::config()->getEnv();
+		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
+			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
+		}
+		return $ret;
+	}
+
+	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
+		if(empty($searchKeys)) {
+			return "Empty search keys";
+		}
+		if ($searchKeys['from'] instanceof MongoDate) {
+			$from_date = $searchKeys['from'];
+		} else {
+			$from_date = new MongoDate(strtotime($searchKeys['from']));
+		}
+		if (!$from_date) {
+			return "date error";
+		}
+		unset($searchKeys['from']);
+		if ($searchKeys['to'] instanceof MongoDate) {
+			$to_date = $searchKeys['to'];
+		} else {
+			$to_date = new MongoDate(strtotime($searchKeys['to']));
+		}
+		if (!$to_date) {
+			return "date error";
+		}
+		unset($searchKeys['to']);
+		
+		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId(isset($searchKeys['_id'])? $searchKeys['_id'] : NULL))) {
+			return "id error";
+		}
+		unset($searchKeys['_id']);
+		
+		$ret = array();
+		foreach ($searchKeys as $pair) {
+			$ret[] = $pair;
+		}
+		$ret['$or'] = array(
+				array('from' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				)),
+				array('to' => array(
+					'$gte' => $from_date,
+					'$lte' => $to_date,
+				))
+			);
+		if (!$new) {
+			$ret['_id'] = array('$ne' => $id);
+		}
+		return $ret;
+	}
 }

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -37,9 +37,14 @@ abstract class Billrun_Base {
 	static protected $instance = array();
 
 	/**
+	 * constant for base datetime format
+	 */
+	const base_datetimeformat = 'Y-m-d H:i:s';
+
+	/**
 	 * constant for base date format
 	 */
-	const base_dateformat = 'Y-m-d H:i:s';
+	const base_dateformat = 'Y-m-d';
 
 	/**
 	 * Limit iterator
@@ -49,6 +54,14 @@ abstract class Billrun_Base {
 	 * @var int
 	 */
 	protected $limit = 10000;
+
+	/**
+	 * Page
+	 * number of page to retrieve (starting from 0)
+	 *
+	 * @var int
+	 */
+	protected $page = 0;
 
 	/**
 	 * constructor
@@ -142,7 +155,14 @@ abstract class Billrun_Base {
 		unset($args[0]['type']);
 		$args = $args[0];
 
-		$config_type = Yaf_Application::app()->getConfig()->{$type};
+		if (!$config_type = Billrun_Factory::config()->{$type}) {
+			$config_type = array_filter(Billrun_Factory::config()->file_types->toArray(), function($fileSettings) use ($type) {
+				return $fileSettings['file_type'] === $type;
+			});
+			if ($config_type) {
+				$config_type = current($config_type);
+			}
+		}
 		$called_class = get_called_class();
 
 		if ($called_class && Billrun_Factory::config()->getConfigValue($called_class)) {
@@ -151,9 +171,12 @@ abstract class Billrun_Base {
 
 		$class_type = $type;
 		if ($config_type) {
-			$args = array_merge($config_type->toArray(), $args);
-			if (isset($config_type->{$called_class::$type}) &&
-				isset($config_type->{$called_class::$type}->type)) {
+			if (is_object($config_type)) {
+				$config_type = $config_type->toArray();
+			}
+			$args = array_merge($config_type, $args);
+			if (isset($config_type[$called_class::$type]) &&
+				isset($config_type[$called_class::$type]['type'])) {
 				$class_type = $config_type[$called_class::$type]['type'];
 				$args['type'] = $type;
 			}

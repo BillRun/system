@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /*
@@ -182,7 +182,7 @@ class SubscribersModel extends TabledateModel {
 		return array_merge($parentKeys, array());
 	}
 	
-	public function hasEntityWithOverlappingDates($entity) {
+	public function hasEntityWithOverlappingDates($entity, $new = true) {
 		return false;
 	}
 	

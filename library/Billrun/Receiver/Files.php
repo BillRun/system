@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -26,9 +26,9 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/');
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('ilds.workspace', './workspace/'));
 		}
 	}
 
@@ -41,7 +41,7 @@ class Billrun_Receiver_Files extends Billrun_Receiver {
 
 		foreach (Billrun_Factory::config()->getConfigValue('ilds.providers', array()) as $type) {
 			if (!file_exists($this->workspace . DIRECTORY_SEPARATOR . $type)) {
-				Billrun_Factory::log("NOTICE : SKIPPING $type !!! directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!!", Zend_Log::NOTICE);
+				Billrun_Factory::log("Skipping $type. Directory " . $this->workspace . DIRECTORY_SEPARATOR . $type . " not found!", Zend_Log::ERR);
 				continue;
 			}
 

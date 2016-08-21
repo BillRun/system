@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
@@ -24,6 +24,7 @@ class ReversechargeAction extends RealtimeeventAction {
 	 * method to execute reverse charge event
 	 */
 	public function execute() {
+		$this->allowed();
 		$this->event = $this->getRequestData('event');
 		$this->usaget = $this->getRequestData('usaget');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/reversecharge/conf.ini');

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -171,7 +171,7 @@ class LinesModel extends TableModel {
 		$billruns = array();
 		$timestamp = time();
 		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Util::getBillrunKey($timestamp);
+			$billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp($timestamp);
 			if ($billrun_key >= '201401') {
 				$billruns[$billrun_key] = $billrun_key;
 			} else {
@@ -396,7 +396,7 @@ class LinesModel extends TableModel {
 
 		foreach ($cursor as $row) {
 			$ret[] = array(
-				'date' => date(Billrun_Base::base_dateformat, $row['urt']->sec),
+				'date' => date(Billrun_Base::base_datetimeformat, $row['urt']->sec),
 				'called_number' => $row['called_number'],
 				'calling_number' => $row['calling_number'],
 				'usagev' => $row['usagev'],

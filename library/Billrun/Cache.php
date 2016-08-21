@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -29,6 +29,13 @@ class Billrun_Cache {
 	protected $cache;
 
 	/**
+	 * When this is true, the prefix is appended to the current tenant name.
+	 * True by default.
+	 * @var boolean
+	 */
+	protected $useTenantPrefix = true;
+	
+	/**
 	 * constant of the cache prefix key
 	 * 
 	 * @var string
@@ -39,10 +46,11 @@ class Billrun_Cache {
 	 * constructor of the class
 	 * protected for converting this class to singleton design pattern
 	 */
-	protected function __construct($cache) {
+	protected function __construct($cache, $useTenantPrefix = true) {
 		$this->cache = $cache;
+		$this->useTenantPrefix = $useTenantPrefix;
 	}
-
+	
 	/**
 	 * set cache prefix. used for grouping
 	 * 
@@ -51,6 +59,10 @@ class Billrun_Cache {
 	 * @return void
 	 */
 	protected function setPrefix($prefix) {
+		if($this->useTenantPrefix) {
+			// Append the tenant prefix
+			$prefix = Billrun_Factory::config()->getTenant() . "_" . $prefix;
+		}
 		$this->cache->setOption(self::cachePrefixKey, $prefix);
 	}
 
@@ -60,7 +72,15 @@ class Billrun_Cache {
 	 * @return string the cache prefix
 	 */
 	protected function getPrefix() {
-		return $this->cache->getOption(self::cachePrefixKey);
+		$prefix = $this->cache->getOption(self::cachePrefixKey);
+		
+		// If we are using the tenant prefix, remove it from the get return value.
+		if($this->useTenantPrefix) {
+			$tenantName = Billrun_Factory::config()->getTenant();
+			$prefix = preg_replace('/^' . $tenantName . "_/", "", $prefix);
+		}
+		
+		return $prefix;
 	}
 
 	/**
@@ -74,6 +94,7 @@ class Billrun_Cache {
 		$previousPrefix = $this->getPrefix();
 		$newPrefix = $previousPrefix . '_' . $addPrefix;
 		$this->setPrefix($newPrefix);
+
 		return $previousPrefix;
 	}
 
@@ -200,7 +221,18 @@ class Billrun_Cache {
 	public function clean() {
 		return $this->cache->clean();
 	}
-
+	
+	/**
+	 * Set the useTenantPrefix option.
+	 * @param boolean - $switch If true, indicate to use the tenant name for cache
+	 * namespace prefix.
+	 */
+	public function useTenantPrefix($switch) {
+		$prefix = $this->getPrefix();
+		$this->useTenantPrefix = $switch;
+		$this->setPrefix($prefix);
+	}
+		
 	/**
 	 * method to get the instance of the class (singleton)
 	 */

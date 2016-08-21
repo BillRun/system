@@ -1,0 +1,37 @@
+<div id="wrapper">
+	<main role="main" id="main">
+		<div class="wrap">
+			<div class="details-wrapper">
+				<?php foreach ($data->get('subs') as $sub) { ?>
+					<h2 class="lines-subscriber-header">Subscriber <?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h2>
+					<br/>
+					<table class="subscriber-lines">
+						<thead>
+							<tr>
+								<th>Time</th>
+								<th>Type</th>
+								<th>Volume</th>
+								<th>Rate</th>
+								<th>Cost</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php if (!empty($this->lines[$sub['sid']])) { ?>
+								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
+									<tr>
+										<td><?php echo date('d/m/Y H:i:s', $line['urt']->sec); ?></td>
+										<td><?php echo $line['type']; ?></td>
+										<td><?php echo number_format($line['usagev'], 2); ?></td>
+										<td><?php echo $line['arate_key']; ?></td>
+										<td><?php echo number_format($line['aprice'], 2); ?></td>
+									</tr>
+								<?php } ?>
+							<?php } ?>
+						</tbody>
+					</table>
+					<br/>
+				<?php } ?>
+			</div>
+		</div>
+	</main>
+</div>

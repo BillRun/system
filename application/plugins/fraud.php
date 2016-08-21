@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
@@ -45,7 +45,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $min_time;
 
 	public function __construct() {
-		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
+		$this->min_time = Billrun_Billrun::getStartTime(Billrun_Billrun::getBillrunKeyByTimestamp(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
 	}
 
 	/**
@@ -395,7 +395,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		$newEvent['stamp'] = md5(serialize($newEvent));
-		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+		$newEvent['creation_time'] = date(Billrun_Base::base_datetimeformat);
 
 		try {
 			Billrun_Factory::log()->log("Fraud plugin - Event stamp: " . $newEvent['stamp'] . " inserted to the fraud events", Zend_Log::INFO);

@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -44,13 +44,13 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		}
 
 		if (isset($options['path'])) {
-			$this->srcPath = $options['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['path']);
 		} else if (isset($options['receiver']['path'])) {
-			$this->srcPath = $options['receiver']['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['receiver']['path']);
 		}
 
 		if (isset($options['receiver']['sort'])) {
@@ -73,7 +73,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
-			Billrun_Factory::log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("Skipping $type. Directory " . $this->srcPath . " not found!", Zend_Log::ERR);
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
@@ -95,7 +95,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 			$fileData['path'] = $this->handleFile($path, $file);
 
 			if (!$fileData['path']) {
-				Billrun_Factory::log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
+				Billrun_Factory::log("Couldn't relocate file from $path.", Zend_Log::NOTICE);
 				continue;
 			}
 			if (!empty($this->backupPaths)) {

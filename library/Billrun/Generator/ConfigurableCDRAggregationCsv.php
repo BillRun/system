@@ -2,7 +2,7 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
@@ -312,7 +312,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			'source' => $fileData['source'],
 			'type' => $fileData['source'],
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => date(self::base_dateformat),
+			'received_time' => date(self::base_datetimeformat),
 			'generated_time' => new MongoDate($this->startTime),
 			'direction' => 'out'
 		);
