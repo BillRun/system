@@ -96,7 +96,7 @@ class Billrun_DataTypes_Conf_List extends Billrun_DataTypes_Conf_Base {
 
 	protected function validateMendatoryFields() {
 		foreach ($this->template as $field => $mendatory) {
-			if ($mendatory && !isset($this->val[$field])) {
+			if ($mendatory && (!isset($this->val[$field]) || empty(trim($this->val[$field])))) {
 				return false;
 			}
 		}

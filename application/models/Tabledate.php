@@ -244,7 +244,7 @@ class TabledateModel extends TableModel {
 		$missingFields = array();
 		
 		foreach ($fields as $field) {
-			if ($field['mandatory'] && (!isset($data[$field['field_name']]) || empty($data[$field['field_name']]))) {
+			if ($field['mandatory'] && (!isset($data[$field['field_name']]) || empty(trim($data[$field['field_name']])))) {
 				$missingFields[] = $field['field_name'];
 			}
 		}
