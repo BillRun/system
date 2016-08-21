@@ -42,42 +42,60 @@ class Billrun_Plan {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$id = $params['id'];
-			if ($id instanceof Mongodloid_Id) {
-				$filter_id = strval($id->getMongoId());
-			} else if ($id instanceof MongoId) {
-				$filter_id = strval($id);
-			} else {
-				// probably a string
-				$filter_id = $id;
-			}
-			if ($plan = $this->getPlanById($filter_id)) {
-				$this->data = $plan;
-			} else {
-				$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']);
-				$this->data->collection(Billrun_Factory::db()->plansCollection());
-			}
+			$this->constructWithID($params['id']);
 		} else {
-			$date = new MongoDate($params['time']);
-			if ($plan = self::getPlanByNameAndTime($params['name'], $date)) {
-				$this->data = $plan;
-			} else {
-				$this->data = Billrun_Factory::db()->plansCollection()
-					->query(array(
-						'name' => $params['name'],
-						'$or' => array(
-							array('to' => array('$gt' => $date)),
-							array('to' => null)
-						)
-					))
-					->lessEq('from', $date)
-					->cursor()
-					->current();
-				$this->data->collection(Billrun_Factory::db()->plansCollection());
-			}
+			$this->constructWithActivePlan($params);
 		}
 	}
 
+	/**
+	 * Query the DB with the input ID and set it as the plan data.
+	 * @param type $id
+	 */
+	protected function constructWithID($id) {
+		if ($id instanceof Mongodloid_Id) {
+			$filter_id = strval($id->getMongoId());
+		} else if ($id instanceof MongoId) {
+			$filter_id = strval($id);
+		} else {
+			// probably a string
+			$filter_id = $id;
+		}
+		$plan = $this->getPlanById($filter_id);
+		if ($plan) {
+			$this->data = $plan;
+		} else {
+			$this->data = Billrun_Factory::db()->plansCollection()->findOne($id);
+			$this->data->collection(Billrun_Factory::db()->plansCollection());
+		}
+	}
+	
+	/**
+	 * Construct the plan with the active plan in the data base
+	 * @param type $params
+	 * @return type
+	 */
+	protected function constructWithActivePlan($params) {
+		$date = new MongoDate($params['time']);
+		$plan = self::getPlanByNameAndTime($params['name'], $date);
+		if ($plan) {
+			$this->data = $plan;
+			return;
+		} 
+		
+		$planQuery = array(
+				'name' => $params['name'],
+				'$or' => array(
+					array('to' => array('$gt' => $date)),
+					array('to' => null)
+				)
+			);
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planRecord = $plansColl->query($planQuery)->lessEq('from', $date)->cursor()->current();
+		$planRecord->collection($plansColl);
+		$this->data = $planRecord;
+	}
+	
 	public function getData($raw = false) {
 		if ($raw) {
 			return $this->data->getRawData();
@@ -360,38 +378,98 @@ class Billrun_Plan {
 	 * Get the price of the current plan.
 	 * @return float the price of the plan without VAT.
 	 */
-	public function getPrice($firstActivation, $from, $to) {
+	public function getPrice($firstActivation, $from, $to) {		
 		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
 		$endOffset = static::getMonthsDiff($firstActivation, $to);
 		$charge = 0;
-		if (!$this->isUpfrontPayment()) {
-			if ($this->getPeriodicity() == 'month') {
-				foreach ($this->data['price'] as $tariff) {
-					if ($tariff['from'] <= $startOffset && $tariff['to'] >= $endOffset) {
-						$charge += ($endOffset - $startOffset) * $tariff['price'];
-					} else if ($startOffset >= $tariff['from'] && $startOffset <= $tariff['to'] && $endOffset >= $tariff['to']) {
-						$charge += ($tariff['to'] - $startOffset) * $tariff['price'];
-					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['to']) {
-						$charge += ($tariff['to'] - $tariff['from']) * $tariff['price'];
-					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['from'] && $endOffset < $tariff['to']) {
-						$charge += ($endOffset - $tariff['from']) * $tariff['price'];
-					}
-				}
-			}
-		} else {
-			if ($this->getPeriodicity() == 'year') {
-				$startOffset = $startOffset / 12;
-			}
-			foreach ($this->data['price'] as $tariff) {
-				if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
-					$charge = $tariff['price'];
-					break;
-				}
-			}
+		if ($this->isUpfrontPayment()) {
+			return $this->getPriceForUpfrontPayment($startOffset);
+		}
+		
+		if ($this->getPeriodicity() != 'month') {
+			Billrun_Factory::log("Plan get price cannot handle non month periodicity value");
+			return 0;
+		}
+		
+		foreach ($this->data['price'] as $tariff) {
+			$charge += $this->getPriceByTariff($tariff, $startOffset, $endOffset);
 		}
 		return $charge;
 	}
 
+	/**
+	 * Validate the input to the getPriceByTariff function
+	 * @param type $tariff
+	 * @param type $startOffset
+	 * @param type $endOffset
+	 * @return boolean
+	 */
+	protected function validatePriceByTariff($tariff, $startOffset, $endOffset) {
+		if($tariff['from'] > $tariff['to']) {
+			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
+			return false;
+		}
+		
+		if($startOffset > $endOffset) {
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.");
+			return false;
+		}
+		
+		if($startOffset > $tariff['to']) {
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.");
+			return false;
+		}
+		
+		if($endOffset < $tariff['from']) {
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.");
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Get the price to charge by a tariff
+	 * @param type $tariff
+	 * @param type $startOffset
+	 * @param type $endOffset
+	 * @return int
+	 */
+	protected function getPriceByTariff($tariff, $startOffset, $endOffset) {
+		if(!$this->validatePriceByTariff($tariff, $startOffset, $endOffset)) {
+			return 0;
+		}
+		
+		$endPricing = $endOffset;
+		$startPricing = $startOffset;
+		
+		if($tariff['from'] > $startOffset) {
+			$startPricing = $tariff['from'];
+		}
+		if($tariff['to'] < $endOffset) {
+			$endPricing = $tariff['to'];
+		}
+		
+		return ($endPricing - $startPricing) * $tariff['price'];
+	}
+	
+	/**
+	 * Get the price of the current plan when the plan is to be paid upfront
+	 * @param type $startOffset
+	 * @return price
+	 */
+	protected function getPriceForUpfrontPayment($startOffset) {
+		if ($this->getPeriodicity() == 'year') {
+			$startOffset = $startOffset / 12;
+		}
+		foreach ($this->data['price'] as $tariff) {
+			if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
+				return $tariff['price'];
+			}
+		}
+		
+		return 0;
+	}
+	
 	public function getSpan() {
 		return $this->data['recurrence']['unit'];
 	}
