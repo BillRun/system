@@ -113,7 +113,7 @@ class PlansModel extends TabledateModel {
 	}
 	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
+		$validationMethods = array('validateName', 'validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
 		foreach ($validationMethods as $validationMethod) {
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
@@ -121,6 +121,14 @@ class PlansModel extends TabledateModel {
 		}
 		return $this->validationResponse(true);
 	}
+	
+	protected function validateName($data) {	
+		if(!isset($data['name'])) {
+			return false;
+		}
+		$name = strtolower($data['name']);
+		return !in_array($name, array('base', 'groups'));
+	}	
 	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {
