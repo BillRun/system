@@ -295,6 +295,26 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	}
 	
 	/**
+	 * Handle the monthly fraction of a charge flat when plan is to be paid upfront.
+	 * @param type $billrunKey
+	 * @param type $planPeriodicity
+	 * @param type $billingStart
+	 * @param type $billingEnd
+	 * @param type $fromDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @return type
+	 */
+	protected function handleMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $planPeriodicity, $billingStart, $billingEnd, $fromDate, $planActivation, $planDeactivation) {
+		$monthsEnd = $planDeactivation;
+		if (empty($planDeactivation)) {
+			$monthsEnd = date(Billrun_Base::base_dateformat, $billingEnd - 1);
+		} 
+		$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $monthsEnd);
+		return $this->getMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $planPeriodicity, $billingStart, $fromDate, $planActivation, $planDeactivation, $monthsDiff);
+	}
+	
+	/**
 	 * Get the charge flat entries when payment is upfront
 	 * @param type $billrunKey
 	 * @param Billrun_Plan $plan
@@ -307,12 +327,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return integer charge or null on failure.
 	 */
 	protected function getChargeFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate, $planActivation, $planDeactivation) {
-		$monthsEnd = $planDeactivation;
-		if (empty($planDeactivation)) {
-			$monthsEnd = date(Billrun_Base::base_dateformat, $billingEnd - 1);
-		} 
-		$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $monthsEnd);
-		$monthlyFraction = $this->getMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $plan->getPeriodicity(), $billingStart, $fromDate, $planActivation, $planDeactivation, $monthsDiff);
+		$monthlyFraction = $this->handleMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $plan->getName(), $billingStart, $billingEnd, $fromDate, $planActivation, $planDeactivation);
 		if ($monthlyFraction == null) {
 			return null;
 		}
