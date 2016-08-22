@@ -60,18 +60,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row = $this->filterFields($rawLine);
-		if (!is_null($this->dateFormat)){
+		if (!is_null($this->dateFormat)) {
 			$datetime = DateTime::createFromFormat($this->dateFormat, $row[$this->dateField]);
-		}
-		else{
+		} else {
 			$date = strtotime($row[$this->dateField]);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
 		}
-			
+
 		$row['urt'] = new MongoDate($datetime->format('U'));
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineUsageVolume($row);
+		$row['charging_type'] = isset($row['charging_type']) ? $row['charging_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
 		$row['source'] = self::$type;

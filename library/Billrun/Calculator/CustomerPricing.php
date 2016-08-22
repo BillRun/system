@@ -306,7 +306,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$row['apr'] = 0;
 			return false;
 		} else {
-			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
 		$this->balance = $balance;
 		return true;
@@ -460,9 +460,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$interconnectCharge = 0;
 		}
-		if ($usageType == 'mms') {
-			$usageType = 'sms';
-		} //TODO: should be changed as soon as we will add mms to rates
+
 		$tariff = static::getTariff($rate, $usageType, $plan);
 		if ($offset) {
 			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
@@ -760,7 +758,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 				}
 				if (isset($this->balance->get('balance')['groups'][$group][$usage_type]['usagev'])) {
-					$pricingData['usagesb'] = floatval($this->balance->get('balance')['balance']['groups'][$group][$usage_type]['usagev']);
+					$pricingData['usagesb'] = floatval($this->balance->get('balance')['groups'][$group][$usage_type]['usagev']);
 				} else {
 					$pricingData['usagesb'] = 0;
 				}

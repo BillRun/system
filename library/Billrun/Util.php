@@ -1479,7 +1479,7 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
 
