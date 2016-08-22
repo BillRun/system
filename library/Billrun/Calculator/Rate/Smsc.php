@@ -58,14 +58,18 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 			Billrun_Factory::log()->log($row['record_type'] .' and' . $row['org_protocol'] .' is Illegal combination of values for record_type and org_protocol fields, line: ' . $row['stamp'] , Zend_Log::ALERT);
 			return false;
 		}	
-		if (!in_array($row['org_protocol'], ['0','1','3'])){
-			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol, row: ' . $row['stamp'] , Zend_Log::ALERT);
+		if (!in_array($row['org_protocol'], ['0', '1', '3'])) {
+			Billrun_Factory::log()->log($row['org_protocol'] . ' is Illegal value for org_protocol, row: ' . $row['stamp'], Zend_Log::ALERT);
+			return false;
+		}
+		if (!in_array($row['dest_protocol'], ['1', '3'])) {
+			Billrun_Factory::log()->log($row['dest_protocol'] . ' is Illegal value for dest_protocol, row: ' . $row['stamp'], Zend_Log::ALERT);
 			return false;
 		}
 		if ($row['org_protocol'] == '0'){
 			return false;
 		}
-		if ($row['org_protocol'] == '1') {  //smsc
+		if (($row['org_protocol'] == '1') && ($row['dest_protocol'] != '3')) {  //smsc
 			foreach ($this->legitimateValues['smsc'] as $key => $value) {
 				if (is_array($value)) {
 					foreach ($value as $regex) {
@@ -77,7 +81,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 					return false;
 				}
 			}
-		} else if ($row['org_protocol'] == '3') {  //smpp
+		} else if (($row['dest_protocol'] == '3') || ($row['org_protocol'] == '3')) {  //smpp
 			foreach ($this->legitimateValues['smpp'] as $key => $value) {
 				if (!(is_array($value) && in_array($row[$key], $value) || $row[$key] == $value )) {
 					return false;

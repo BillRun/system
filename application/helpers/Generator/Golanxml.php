@@ -818,7 +818,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort);
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($lines as $line) {
