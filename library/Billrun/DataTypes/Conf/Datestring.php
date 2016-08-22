@@ -15,6 +15,10 @@ class Billrun_DataTypes_Conf_Datestring extends Billrun_DataTypes_Conf_String {
 	
 	public function __construct($obj) {
 		parent::__construct($obj);
+		
+		// Override the string range
+		$this->stringRange = array();
+		
 		$this->getRange($obj);
 	}
 	

@@ -21,14 +21,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	static protected $type = 'balance';
 
-	/**
-	 * Data container for subscriber details
-	 * 
-	 * @var array
-	 * 
-	 * @deprecated since version 4.0 use $_values of Mongodloid_Entity
-	 */
-	protected $data = array();
 	protected $collection = null;
 	protected $granted = array();
 
@@ -94,37 +86,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
-	/**
-	 * method to set values in the loaded balance.
-	 */
-	public function __set($name, $value) {
-		//if (array_key_exists($name, $this->data)) {
-		$this->data[$name] = $value;
-		//}
-		return $this->data[$name];
-	}
-
-	/**
-	 * method to get public field from the data container
-	 * 
-	 * @param string $name name of the field
-	 * @return mixed if data field  accessible return data field, else null
-	 */
-	public function __get($name) {
-		//if (array_key_exists($name, $this->data)) {
-		return $this->data->get($name);
-		//}
-	}
-
-	/**
-	 * Pass function calls to the mongo entity that is used to hold  our data.
-	 * @param type $name the name of the called funtion
-	 * @param type $arguments the function arguments
-	 * @return mixed what ever the  mongo entity returns
-	 */
-	public function __call($name, $arguments) {
-		return call_user_func_array(array($this->data, $name), $arguments);
-	}
 
 	/**
 	 * Loads the balance for subscriber
@@ -235,7 +196,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
 			return false;
 		}
-		Billrun_Factory::log('Added balance , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
+		Billrun_Factory::log('Added balance from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
 		return $output;
 	}
 
@@ -335,23 +296,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		return $selectedBalance;
-	}
-
-	//=============== ArrayAccess Implementation =============
-	public function offsetExists($offset) {
-		return isset($this->data[$offset]);
-	}
-
-	public function offsetGet($offset) {
-		return $this->__get($offset);
-	}
-
-	public function offsetSet($offset, $value) {
-		return $this->__set($offset, $value, true);
-	}
-
-	public function offsetUnset($offset) {
-		unset($this->data[$offset]);
 	}
 
 }
