@@ -27,7 +27,9 @@ class Billrun_Plan {
 	protected $plan_ref = array();
 	protected $groupSelected = null;
 	protected $groups = null;
-
+	protected $planActivation;
+	protected $planDeactivation = null;
+		
 	/**
 	 * constructor
 	 * set the data instance
@@ -83,6 +85,13 @@ class Billrun_Plan {
 			return;
 		} 
 		
+		if(isset($params['activation'])) {
+			$this->planActivation = $params['activation'];
+		}
+		if(isset($params['deactivation'])) {
+			$this->planDeactivation = $params['deactivation'];
+		}
+		
 		$planQuery = array(
 				'name' => $params['name'],
 				'$or' => array(
@@ -103,6 +112,14 @@ class Billrun_Plan {
 		return $this->data;
 	}
 
+	public function getActivation() {
+		return $this->planActivation;
+	}
+	
+	public function getDectivation() {
+		return $this->planDeactivation;
+	}
+	
 	protected static function initPlans() {
 		$plans_coll = Billrun_Factory::db()->plansCollection();
 		$plans = $plans_coll->query()->cursor();
@@ -378,7 +395,11 @@ class Billrun_Plan {
 	 * Get the price of the current plan.
 	 * @return float the price of the plan without VAT.
 	 */
-	public function getPrice($firstActivation, $from, $to) {		
+	public function getPrice($from, $to, $firstActivation = null) {		
+		if($firstActivation === null) {
+			$firstActivation = $this->getActivation();
+		}
+		
 		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
 		$endOffset = static::getMonthsDiff($firstActivation, $to);
 		$charge = 0;
