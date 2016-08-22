@@ -78,15 +78,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			$this->data = $options['data'];
 		}
 		$dataOptions = Billrun_Util::getFieldVal($options['data'], array());
-		$plans = array();
-		if (!empty($dataOptions['plans'])) {
-			foreach ($dataOptions['plans'] as &$planArr) {
-				foreach ($planArr['active_dates'] as $activeRange) {
-					$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan(array('name' => $planArr['name'], 'time' => strtotime($activeRange['from'])))));
-				}
-			}
-			$this->plans = $plans;
-		}
+		$this->constructPlans($dataOptions);
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
 		}
@@ -100,6 +92,21 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 	}
 
+	protected function constructPlans($dataOptions) {
+		if (!isset($dataOptions['plans']) || empty($dataOptions['plans'])) {
+			$this->plans = array();
+			return;
+		}
+		
+		$plans = array();
+		foreach ($dataOptions['plans'] as &$planArr) {
+			foreach ($planArr['active_dates'] as $activeRange) {
+				$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan(array('name' => $planArr['name'], 'time' => strtotime($activeRange['from'])))));
+			}
+		}
+		$this->plans = $plans;
+	}
+	
 	/**
 	 * method to load subsbscriber details
 	 */
