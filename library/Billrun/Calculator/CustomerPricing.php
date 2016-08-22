@@ -153,8 +153,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->loadRates();
 			$this->loadPlans();
 			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
-			$this->active_billrun_end_time = Billrun_Billrun::getEndTime($this->active_billrun);
-			$this->next_active_billrun = Billrun_Billrun::getFollowingBillrunKey($this->active_billrun);
+			$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
+			$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 		}
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);

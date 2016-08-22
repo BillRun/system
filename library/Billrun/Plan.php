@@ -480,8 +480,8 @@ class Billrun_Plan {
 	}
 
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {
-		$billing_start_date = Billrun_Billrun::getStartTime($billrunKey);
-		$billing_end_date = Billrun_Billrun::getEndTime($billrunKey);
+		$billing_start_date = Billrun_Billingcycle::getStartTime($billrunKey);
+		$billing_end_date = Billrun_Billingcycle::getEndTime($billrunKey);
 		$days_in_month = (int) date('t', $billing_start_date);
 		$temp_start = strtotime($start_date);
 		$temp_end = is_null($end_date) ? PHP_INT_MAX : strtotime($end_date);

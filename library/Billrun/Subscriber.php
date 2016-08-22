@@ -93,7 +93,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		if (isset($dataOptions['next_plan'])) {
 			$params = array(
 				'name' => $dataOptions['next_plan'],
-				'time' => Billrun_Billrun::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+				//TODO: Before changing to billingcycle the default start cycle was 25 instead of 1.
+				'time' => Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getBillrunKeyByTimestamp($this->time))),
 			);
 			$this->nextPlan = new Billrun_Plan($params);
 			$this->nextPlanActivation = $dataOptions['next_plan_activation'];
@@ -228,8 +229,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return array
 	 */
 	public function getFlatEntries($billrunKey) {
-		$startTime = Billrun_Billrun::getStartTime($billrunKey);
-		$endTime = Billrun_Billrun::getEndTime($billrunKey);
+		$startTime = Billrun_Billingcycle::getStartTime($billrunKey);
+		$endTime = Billrun_Billingcycle::getEndTime($billrunKey);
 		$flatEntries = array();
 		foreach ($this->getCurrentPlans() as $planArr) {
 			/* @var $plan Billrun_Plan */

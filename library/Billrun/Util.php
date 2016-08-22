@@ -199,20 +199,6 @@ class Billrun_Util {
 		return $key;
 	}
 
-	public static function getFollowingBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('+1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
-		return $ret;
-	}
-
-	public static function getPreviousBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_before = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_before);
-		return $ret;
-	}
-
 	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)
@@ -897,7 +883,7 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
