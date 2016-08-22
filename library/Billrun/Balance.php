@@ -21,14 +21,6 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	static protected $type = 'balance';
 
-	/**
-	 * Data container for subscriber details
-	 * 
-	 * @var array
-	 * 
-	 * @deprecated since version 4.0 use $_values of Mongodloid_Entity
-	 */
-	protected $data = array();
 	protected $collection = null;
 	protected $granted = array();
 
