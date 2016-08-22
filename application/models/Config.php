@@ -337,7 +337,7 @@ class ConfigModel {
 				return;
 			}
 		}
-		$config['file_types'] = array($fileSettings);
+		$config['file_types'] = array_merge($config['file_types'], array($fileSettings));
 	}
 
 	protected function unsetFileTypeSettings(&$config, $fileType) {

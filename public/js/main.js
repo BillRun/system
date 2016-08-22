@@ -670,8 +670,10 @@ function detailFormatter(index, row) {
 				_.forEach(lines, function (line, i) {
 					var usagev = (line.usagev || line.usagev == 0) ? line.usagev : "";
 					var charge = (line.aprice || line.aprice == 0) ? line.aprice.toFixed(6) : "";
-					if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis")
+					if (line.usage_unit && line.usage_unit.toLowerCase() !== "nis") {
 						charge = usagev;
+						usagev = (line.real_usagev ? line.real_usagev : usagev);
+					}
 					var $tr = $("<tr></tr>");
 					var idx = i + 1;
 					var remote = '/admin/edit?coll=archive&id=' + line['_id']['$id'] + '&type=update';
