@@ -227,7 +227,9 @@ class Tests_Plan extends UnitTestCase {
 			$end = $test['end'];
 			$expected = $test['expected'];
 			$result = Billrun_Plan::getMonthsDiff($start, $end);
-			$this->assertEqual($result, $expected, $test['msg'] . " expected: " . $expected . " result: " . $result);
+			$roundedResult = round($result, 8, PHP_ROUND_HALF_UP);
+			$roundedExpected = round($expected, 8, PHP_ROUND_HALF_UP);
+			$this->assertEqual($roundedResult, $roundedExpected, $test['msg'] . " expected: " . print_r($expected,1) . " result: " . print_r($result,1));
 		}
 	}
 	
