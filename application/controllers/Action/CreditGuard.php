@@ -140,7 +140,7 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = $this->getOkPage();
 		$this->cgConf['return_url'] = $return_url;
-
+		$this->cgConf['language'] = "ENG";
 		
 		$post_array = array(
 			'user' => $this->cgConf['user'],
@@ -149,7 +149,7 @@ class CreditGuardAction extends ApiAction {
 			'int_in' => '<ashrait>                                      
 							<request>
 								 <version>1000</version>
-								 <language>HEB</language>
+								 <language>' . $this->cgConf['language'] . '</language>
 								 <dateTime></dateTime>
 								 <command>doDeal</command>
 								 <doDeal>
