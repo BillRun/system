@@ -115,6 +115,9 @@ class PlansModel extends TabledateModel {
 	public function validate($data, $type) {
 		$validationMethods = array('validateName', 'validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
 		foreach ($validationMethods as $validationMethod) {
+			if(!method_exists($this, $validationMethod)) {
+				continue;
+			}
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
 			}
