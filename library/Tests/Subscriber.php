@@ -75,19 +75,21 @@ class Tests_Subscriber extends UnitTestCase {
 
 	public function __construct($label = false) {
 		parent::__construct($label);
+		$this->subscriber = new Billrun_Subscriber_Db();
 	}
 		
 	function testGetFlatEntires() {
-		$subscriber = Billrun_Factory::subscriber();
+		$protectedMethod = new ReflectionMethod("Billrun_Subscriber_Db", 'getMonthlyFractionOnChargeFlatEntriesForUpfrontPay');
+		$protectedMethod->setAccessible(true);
 		foreach ($this->getFlatEntriesTests as $test) {
-			
-			$start = $test['start'];
-			$end = $test['end'];
-			$expected = $test['expected'];
-			$result = Billrun_Plan::getMonthsDiff($start, $end);
-			$roundedResult = round($result, 8, PHP_ROUND_HALF_UP);
-			$roundedExpected = round($expected, 8, PHP_ROUND_HALF_UP);
-			$this->assertEqual($roundedResult, $roundedExpected, $test['msg'] . " expected: " . print_r($expected,1) . " result: " . print_r($result,1));
+			$protectedMethod->invokeArgs($this->subscriber, array());
+//			$start = $test['start'];
+//			$end = $test['end'];
+//			$expected = $test['expected'];
+//			$result = Billrun_Plan::getMonthsDiff($start, $end);
+//			$roundedResult = round($result, 8, PHP_ROUND_HALF_UP);
+//			$roundedExpected = round($expected, 8, PHP_ROUND_HALF_UP);
+//			$this->assertEqual($roundedResult, $roundedExpected, $test['msg'] . " expected: " . print_r($expected,1) . " result: " . print_r($result,1));
 		}
 	}
 	

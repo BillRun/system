@@ -363,12 +363,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			if ($planPeriodicity == 'month' || ($planPeriodicity == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1))) {
 				return 1;
 			}
-			// subscriber deactivates and should be charged for a partial month
-		} if (strtotime($planActivation) > $billingStart) { 
+		}
+		
+		// subscriber deactivates and should be charged for a partial month
+		if (strtotime($planActivation) > $billingStart) { 
 			return Billrun_Plan::calcFractionOfMonth($billrunKey, $planActivation, $planDeactivation) / ($planPeriodicity == 'year' ? 12 : 1);
 		}
 		
-		$planDatesDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
+		$planDatesDiff = $monthsDiff;
 		if (floor(Billrun_Plan::getMonthsDiff($planActivation, $fromDate)) != floor($planDatesDiff)) {
 			// TODO: What does this function checks?
 			if ($planPeriodicity == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1)) {
