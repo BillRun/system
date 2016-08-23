@@ -306,7 +306,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$row['apr'] = 0;
 			return false;
 		} else {
-			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
 		$this->balance = $balance;
 		return true;
@@ -460,9 +460,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			$interconnectCharge = 0;
 		}
-		if ($usageType == 'mms') {
-			$usageType = 'sms';
-		} //TODO: should be changed as soon as we will add mms to rates
+
 		$tariff = static::getTariff($rate, $usageType, $plan);
 		if ($offset) {
 			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
@@ -491,6 +489,29 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
+	}
+	
+	public static function getIntervalCeiling($tariff, $volume) {
+		$ret = 0;
+		foreach ($tariff['rate'] as $currRate) {
+			if (!isset($currRate['from'])) {
+				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
+			}
+			if (isset($currRate['rate'])) {
+				$currRate = $currRate['rate'];
+			}
+			if (0 == $volume) { // volume could be negative if it's a refund amount
+				break;
+			}//break if no volume left to price.
+			$maxVolumeInRate = $currRate['to'] - $currRate['from'];
+			$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
+			$volume -= $volumeToPriceCurrentRating;
+			$ret += (ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['interval']);
+			$lastRate = $currRate;
+		}
+		
+		return $ret;
+		
 	}
 
 	public static function getChargeByVolume($tariff, $volume) {
@@ -591,7 +612,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return 0;
 	}
 
-	protected static function getTariff($rate, $usage_type, $planName = null) {
+	public static function getTariff($rate, $usage_type, $planName = null) {
 		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
 			return $rate['rates'][$usage_type][$planName];
 		}
@@ -760,7 +781,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 				}
 				if (isset($this->balance->get('balance')['groups'][$group][$usage_type]['usagev'])) {
-					$pricingData['usagesb'] = floatval($this->balance->get('balance')['balance']['groups'][$group][$usage_type]['usagev']);
+					$pricingData['usagesb'] = floatval($this->balance->get('balance')['groups'][$group][$usage_type]['usagev']);
 				} else {
 					$pricingData['usagesb'] = 0;
 				}

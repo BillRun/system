@@ -79,7 +79,7 @@ class TabledateModel extends TableModel {
 		if (!$to_date) {
 			return $this->setError("date error");
 		}
-		$id = new MongoId($entity['_id']);
+		$id = new MongoId(isset($entity['_id'])? $entity['_id'] : NULL);
 		if (!$id) {
 			return $this->setError("id error");
 		}
@@ -244,7 +244,10 @@ class TabledateModel extends TableModel {
 		$missingFields = array();
 		
 		foreach ($fields as $field) {
-			if ($field['mandatory'] && !array_key_exists($field['field_name'], $data)) {
+			if ($field['mandatory'] && 
+				(!array_key_exists($field['field_name'], $data) ||
+				(is_array($data[$field['field_name']]) && empty($data[$field['field_name']])) ||
+				((is_string($data[$field['field_name']])) && empty(trim($data[$field['field_name']]))))) {
 				$missingFields[] = $field['field_name'];
 			}
 		}

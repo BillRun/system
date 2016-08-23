@@ -50,7 +50,10 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 	}
 	
 	protected function getExistsQuery() {
-		return array('$exists' => 1);
+		return array(
+			'$exists' => true,
+			'$ne' => array(),
+		);
 	}
 	
 	protected function getAggregateId() {

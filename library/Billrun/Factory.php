@@ -110,7 +110,7 @@ class Billrun_Factory {
 	 * 
 	 * @var Zend_Auth
 	 */
-	protected static $auth;
+	protected static $auth = null;
 
 	/**
 	 * method to retrieve the log instance
@@ -356,8 +356,16 @@ class Billrun_Factory {
 		return self::$users[$stamp];
 	}
 
+	protected static function setSessionTimeout($defaultTimeout) {
+		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', $defaultTimeout);
+		ini_set('session.gc_maxlifetime', $session_timeout);
+		session_set_cookie_params($session_timeout);
+	}
+	
 	public static function auth() {
 		if (!isset(self::$auth)) {
+			// One hour
+			self::setSessionTimeout(3600);
 			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 		}
 		return self::$auth;
