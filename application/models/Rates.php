@@ -179,7 +179,8 @@ class RatesModel extends TabledateModel {
 			),
 			'plan' => array(
 				'key' => 'plan',
-				'db_key' => array('rates.call', 'rates.sms', 'rates.data'),
+				'db_key' => array('rates.call', 'rates.sms', 'rates.data', 'rates.video_call' ,'rates.roaming_incoming_call',
+					'rates.roaming_call', 'rates.roaming_callback', 'rates.roaming_callback_short'),
 				'input_type' => 'multiselect',
 				'comparison' => '$exists',
 				'display' => 'Plan',

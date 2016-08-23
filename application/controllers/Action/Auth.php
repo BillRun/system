@@ -45,6 +45,7 @@ class AuthAction extends ApiAction  {
 	 *  Login a user to the system.
 	 * @param type $params the  login credentials
 	 * @return boolean array  with  the user data or FALSE  if  the login wasn't  successful.
+	 * @todo Refactor this function, no reason for all this very simple logic to be in one long function, seperate to functions.
 	 */
 	protected function login($params) {
 		
@@ -112,21 +113,24 @@ class AuthAction extends ApiAction  {
 	 * Logout  the current user.
 	 * @param type $params unused
 	 * @return boolean TRUE  if the logout  was successful  FALSE if the user is not loggged in
+	 * @todo This function is duplicated in the admin controller, 
+	 * if billrun cloud will have both we should merge the classes to avoid confusion.
 	 */
 	protected function logout($params) {
-		if (Billrun_Factory::user() !== FALSE) {
-			$username = Billrun_Factory::user()->getUsername();
-			$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
-			
-			Billrun_Factory::auth()->clearIdentity();
-			$session = Yaf_Session::getInstance();
-			foreach ($session as $k => $v) {
-				unset($session[$k]);
-			}			
-			
-			Billrun_Factory::log()->log('User ' . $username . ' logged out from IP: ' . $ip, Zend_log::INFO);
-			return TRUE;
+		if (Billrun_Factory::user() === FALSE) {
+			return false;
 		}
-		return FALSE;
+		
+		$username = Billrun_Factory::user()->getUsername();
+		$ip = $this->getRequest()->getServer('REMOTE_ADDR', 'Unknown IP');
+
+		Billrun_Factory::auth()->clearIdentity();
+		$session = Yaf_Session::getInstance();
+		foreach ($session as $k => $v) {
+			unset($session[$k]);
+		}			
+		session_destroy();
+		Billrun_Factory::log('User ' . $username . ' logged out from IP: ' . $ip, Zend_log::INFO);
+		return TRUE;
 	}
 }

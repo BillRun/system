@@ -10,7 +10,7 @@
  * Billing Longest Prefix rate filter
  *
  * @package  calculator
- * @since braas
+ * @since 5.0
  */
 class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_Rate_Filters_Base {
 
