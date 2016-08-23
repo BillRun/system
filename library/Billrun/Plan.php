@@ -48,6 +48,8 @@ class Billrun_Plan {
 		} else {
 			$this->constructWithActivePlan($params);
 		}
+		
+		$this->constructExtraOptions($params);
 	}
 
 	/**
@@ -85,13 +87,6 @@ class Billrun_Plan {
 			return;
 		} 
 		
-		if(isset($params['activation'])) {
-			$this->planActivation = $params['activation'];
-		}
-		if(isset($params['deactivation'])) {
-			$this->planDeactivation = $params['deactivation'];
-		}
-		
 		$planQuery = array(
 				'name' => $params['name'],
 				'$or' => array(
@@ -103,6 +98,19 @@ class Billrun_Plan {
 		$planRecord = $plansColl->query($planQuery)->lessEq('from', $date)->cursor()->current();
 		$planRecord->collection($plansColl);
 		$this->data = $planRecord;
+	}
+	
+	/**
+	 * Handle constructing the instance with extra input options, if available
+	 * @param arrray $options
+	 */
+	protected function constructExtraOptions($options) {
+		if(isset($options['activation'])) {
+			$this->planActivation = $options['activation'];
+		}
+		if(isset($options['deactivation'])) {
+			$this->planDeactivation = $options['deactivation'];
+		}
 	}
 	
 	public function getData($raw = false) {
