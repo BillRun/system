@@ -57,11 +57,15 @@ class Billrun_Billingcycle {
 	/**
 	 * method to receive billrun key by date
 	 * 
-	 * @param int $timestamp a unix timestamp
+	 * @param int $timestamp a unix timestamp, if set to null, use current time
 	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
 	 * @return string date string of format YYYYmm
 	 */
-	public static function getBillrunKeyByTimestamp($timestamp, $dayofmonth = null) {
+	public static function getBillrunKeyByTimestamp($timestamp=null, $dayofmonth = null) {
+		if($timestamp === null) {
+			$timestamp = time();
+		}
+		
 		if (!$dayofmonth) {
 			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		}
