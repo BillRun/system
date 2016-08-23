@@ -100,7 +100,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var int flag to represent if recreate_invoices 
 	 */
 	
-	protected $recreate_invoices = null;
+	protected $recreateInvoices = null;
 	
 
 	public function __construct($options = array()) {
@@ -109,7 +109,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
 
 		if (isset($options['aggregator']['recreate_invoices']) && $options['aggregator']['recreate_invoices']) {
-			$this->recreate_invoices = $options['aggregator']['recreate_invoices'];
+			$this->recreateInvoices = $options['aggregator']['recreate_invoices'];
 		}
 		
 		if (isset($options['aggregator']['page']) && is_numeric($options['aggregator']['page'])) {
@@ -150,11 +150,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
 		}
 
+		$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun = Billrun_Factory::db()->billrunCollection();
 
 		$this->loadRates();
+		if (!$this->recreateInvoices){
+			if (($this->page = $this->getPage()) === FALSE) {
+				 throw new Exception('Failed getting next page');
+			}
+		}
 	}
 
 	/**
@@ -174,7 +180,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			$this->data = $subscriber->getList($startTime, $endTime, $this->page, $this->size);
 		}
-		if (!$this->recreate_invoices){
+		if (!$this->recreateInvoices){
 			$this->billingCycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('count' => count($this->data))));
 		}
 		Billrun_Factory::log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
@@ -303,7 +309,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 
 		// @TODO trigger after aggregate
-		if (!$this->recreate_invoices){
+		if (!$this->recreateInvoices){
 			$this->billingCycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('end_time' => new MongoDate())));
 		}
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
@@ -464,7 +470,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$zeroPages = 1;
 		}
 		if ($cycle->query(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0))->count() >= $zeroPages) {
-			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
+			Billrun_Factory::log("Finished going over all the pages", Zend_Log::DEBUG);
 			return true;
 		}		
 		return false;
@@ -548,7 +554,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$modify = array('$setOnInsert' => array_merge($query, array('host' => $host, 'start_time' => new MongoDate())));
 		$checkExists = $this->billingCycle->findAndModify($query,$modify,null, array("upsert" => true));
 		
-		return $checkExists->isEmpty();
+		return !$checkExists->isEmpty();
 	}
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {

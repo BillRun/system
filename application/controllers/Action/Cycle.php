@@ -8,14 +8,15 @@
 
 class CycleAction extends Action_Base {
 
-	protected $billing_cycle = null;
+	protected $billingCycle = null;
 
 	/**
-	 * method to execute the aggregate process
-	 * it's called automatically by the cli main controller
+	 * Build the options for the aggregator
+	 * @return boolean
+	 * @todo This is a generic function, might be better to create a basic action class
+	 * that uses an aggregator and have all these functions in it.
 	 */
-	public function execute() {
-
+	protected function buildOptions() {
 		$possibleOptions = array(
 			'type' => false,
 			'stamp' => true,
@@ -24,64 +25,120 @@ class CycleAction extends Action_Base {
 			'fetchonly' => true,
 		);
 
-		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
-			return;
+		$options = $this->_controller->getInstanceOptions($possibleOptions);
+		if ($options === false) {
+			return false;
 		}
 
 		if (is_null($options['stamp'])) {
-			$next_billrun_key = Billrun_Util::getBillrunKey(time());
-			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
-			$options['stamp'] = $current_billrun_key;
+			$nextBillrunKey = Billrun_Util::getBillrunKey(time());
+			$currentBillrunKey = Billrun_Util::getPreviousBillrunKey($nextBillrunKey);
+			$options['stamp'] = $currentBillrunKey;
 		}
 
-		if (!$options['size']) {
+		if (!isset($options['size']) || !$options['size']) {
 			// default value for size
 			$options['size'] = Billrun_Factory::config()->getConfigValue('customer.aggregator.size');
 		}
-
-		$this->billing_cycle = Billrun_Factory::db()->billing_cycleCollection();
-		$process_interval = (int) Billrun_Factory::config()->getConfigValue('cycle.processes.interval');
+		
+		return $options;
+	}
+	
+	/**
+	 * Get the process interval
+	 * @return int
+	 */
+	protected function getProcessInterval() {
+		$processInterval = (int) Billrun_Factory::config()->getConfigValue('cycle.processes.interval');
 		if (Billrun_Factory::config()->isProd()) {
-			if ($process_interval < 60) {   // 1 minute is minimum sleep time 
-				$process_interval = 60;
+			if ($processInterval < 60) {   // 1 minute is minimum sleep time 
+				$processInterval = 60;
 			}
 		}
+		return $processInterval;
+	}
+	
+	/**
+	 * method to execute the aggregate process
+	 * it's called automatically by the cli main controller
+	 */
+	public function execute() {
+		$options = $this->buildOptions();
+		$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
+		$processInterval = $this->getProcessInterval();
 
 		do {
 			$pid = pcntl_fork();
 			if ($pid == -1) {
 				die('could not fork');
-			} else if ($pid) {
-				$this->_controller->addOutput("Running on PID " . $pid);
-				$this->_controller->addOutput("Going to sleep for " . $process_interval);
-				sleep($process_interval);
-				pcntl_signal(SIGCHLD, SIG_IGN);
-			} else {
-				$this->_controller->addOutput("Running on PID " . $pid);
-				$this->_controller->addOutput("Loading aggregator");
-				try {
-					$aggregator = Billrun_Aggregator::getInstance($options);
-				} catch (Exception $e) {
-					Billrun_Factory::log()->log($e->getMessage(), Zend_Log::NOTICE);
-					$aggregator = FALSE;
-				}
-				$this->_controller->addOutput("Aggregator loaded");
-				if ($aggregator) {
-					$this->_controller->addOutput("Loading data to Aggregate...");
-					$aggregator->load();
-					if (!isset($options['fetchonly'])) {
-						$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
-						$aggregator->aggregate();
-						$this->_controller->addOutput("Finish to Aggregate.");
-					} else {
-						$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
-					}
-				} else {
-					$this->_controller->addOutput("Aggregator cannot be loaded");
-				}
-				break;
 			}
-		} while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billing_cycle, $options['stamp'], (int) $options['size']) === FALSE);
+			
+			$this->_controller->addOutput("Running on PID " . $pid);
+		
+			// Parent process.
+			if ($pid) {
+				$this->executeParentProcess($processInterval);
+				continue;
+			}
+			
+			// Child process
+			$this->executeChildProcess($options);
+			break;
+			
+		} while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycle, $options['stamp'], (int) $options['size']) === FALSE);
 	}
 
+	protected function executeParentProcess($processInterval) {
+		$this->_controller->addOutput("Going to sleep for " . $processInterval);
+		sleep($processInterval);
+		pcntl_signal(SIGCHLD, SIG_IGN);
+	}
+	
+	/**
+	 * Execute the child process logic
+	 * @param type $options
+	 * @return type
+	 */
+	protected function executeChildProcess($options) {
+		$aggregator = $this->getAggregator($options);
+		if($aggregator == false) {
+			return;
+		}
+		
+		$this->_controller->addOutput("Loading data to Aggregate...");
+		$aggregator->load();
+		if (isset($options['fetchonly'])) {
+			$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
+			return;
+		}
+		
+		$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
+		$aggregator->aggregate();
+		$this->_controller->addOutput("Finish to Aggregate.");
+	}
+	
+	/**
+	 * Get an aggregator with input options
+	 * @param array $options - Array of options to initialize the aggregator with.
+	 * @return Aggregator
+	 * @todo getAggregator might be common in actions, maybe create a basic aggregate action class?
+	 */
+	protected function getAggregator($options) {
+		$error = false;
+		$this->_controller->addOutput("Loading aggregator");
+		try {
+			$aggregator = Billrun_Aggregator::getInstance($options);
+		} catch (Exception $e) {
+			Billrun_Factory::log($e->getMessage(), Zend_Log::NOTICE);
+			$error = true;
+		}
+		
+		if($error || !$aggregator) {
+			$this->_controller->addOutput("Aggregator cannot be loaded");
+			return false;
+		}
+		
+		$this->_controller->addOutput("Aggregator loaded");
+		return $aggregator;
+	}
 }
