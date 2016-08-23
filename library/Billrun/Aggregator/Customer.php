@@ -49,7 +49,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 *
 	 * @var Mongodloid_Collection
 	 */
-	protected $billing_cycle = null;
+	protected $billingCycle = null;
 
 	/**
 	 *
@@ -94,12 +94,24 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @var array
 	 */
 	protected $successfulAccounts = array();
+	
+	/**
+	 *
+	 * @var int flag to represent if recreate_invoices 
+	 */
+	
+	protected $recreate_invoices = null;
+	
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
 		ini_set('mongo.native_long', 1); //Set mongo  to use  long int  for  all aggregated integer data.
 
+		if (isset($options['aggregator']['recreate_invoices']) && $options['aggregator']['recreate_invoices']) {
+			$this->recreate_invoices = $options['aggregator']['recreate_invoices'];
+		}
+		
 		if (isset($options['aggregator']['page']) && is_numeric($options['aggregator']['page'])) {
 			$this->page = $options['aggregator']['page'];
 		}
@@ -162,7 +174,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			$this->data = $subscriber->getList($startTime, $endTime, $this->page, $this->size);
 		}
-
+		if (!$this->recreate_invoices){
+			$this->billingCycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('count' => count($this->data))));
+		}
 		Billrun_Factory::log("aggregator entities loaded: " . count($this->data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
@@ -289,6 +303,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 
 		// @TODO trigger after aggregate
+		if (!$this->recreate_invoices){
+			$this->billingCycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('end_time' => new MongoDate())));
+		}
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 		return $this->successfulAccounts;
 	}
@@ -438,6 +455,100 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else {
 			return $row->get('arate', false);
 		}
+	}
+	
+	// TODO: Move to Billrun_Billingcycle
+	public static function isBillingCycleOver($cycle, $stamp, $size){
+		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit', 1);
+		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
+			$zeroPages = 1;
+		}
+		if ($cycle->query(array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0))->count() >= $zeroPages) {
+			Billrun_Factory::log()->log("Finished going over all the pages", Zend_Log::DEBUG);
+			return true;
+		}		
+		return false;
+	}
+	
+	/**
+	 * Finding which page is next in the biiling cycle
+	 * @param the number of max tries to get the next page in the billing cycle
+	 * @return number of the next page that should be taken
+	 */
+	protected function getPage($retries = 100) {
+		if ($retries <= 0) { // 100 is arbitrary number and should be enough
+			Billrun_Factory::log()->log("Failed getting next page", Zend_Log::ALERT);
+			return false;
+		}
+		if ($this->isBillingCycleOver($this->billingCycle, $this->stamp, $this->size) === TRUE){
+			 return true;
+		}
+		
+		$host = gethostname();
+		if(!$this->validateMaxProcesses($host)) {
+			return false;
+		}
+		
+		$nextPage = $this->getNextPage();
+		if($nextPage === false) {
+			return false;
+		}
+		
+		if($this->checkExists($nextPage, $host)) {
+			$error = "Page number ". $nextPage ." already exists.";
+			Billrun_Factory::log($error . " Trying Again...", Zend_Log::NOTICE);
+			return $this->getPage($retries - 1);
+		}
+		
+		return $nextPage;
+	}
+	
+	/**
+	 * Validate the max processes config valus
+	 * @param string $host - Host name value
+	 * @return boolean true if valid
+	 */
+	protected function validateMaxProcesses($host) {
+		$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
+		if ($this->billingCycle->query(array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false)))->count() >= $maxProcesses) {
+			Billrun_Factory::log("Host ". $host. "is already running max number of ". $maxProcesses . "processes", Zend_Log::DEBUG);
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Get the next page index
+	 * @return boolean|int
+	 */
+	protected function getNextPage() {
+		$cycleQuery = array('billrun_key' => $this->stamp, 'page_size' => $this->size);
+		$currentDocument = $this->billingCycle->query($cycleQuery)->cursor()->sort(array('page_number' => -1))->limit(1)->current();
+		if (is_null($currentDocument)) {
+			return false;
+		}
+		$currentPage = $currentDocument['page_number'];
+		
+		// First page
+		if (!isset($currentPage)) {
+			return 0;
+		} 
+		
+		return $currentPage + 1;
+	}
+	
+	/**
+	 * Check if 
+	 * @param type $nextPage
+	 * @param type $host
+	 * @return type
+	 */
+	protected function checkExists($nextPage, $host) {
+		$query = array('billrun_key' => $this->stamp, 'page_number' => $nextPage, 'page_size' => $this->size);
+		$modify = array('$setOnInsert' => array_merge($query, array('host' => $host, 'start_time' => new MongoDate())));
+		$checkExists = $this->billingCycle->findAndModify($query,$modify,null, array("upsert" => true));
+		
+		return $checkExists->isEmpty();
 	}
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {
