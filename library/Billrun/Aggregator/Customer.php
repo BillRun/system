@@ -49,6 +49,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 *
 	 * @var Mongodloid_Collection
 	 */
+	protected $billing_cycle = null;
+
+	/**
+	 *
+	 * @var Mongodloid_Collection
+	 */
 	protected $billrun = null;
 
 	/**
