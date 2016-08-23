@@ -33,7 +33,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * @return array Query to run in the mongo.
 	 */
 	protected function getSubscriberQuery() {
-		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('type' => $this->type));
+		$subscriberQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('type' => $this->type));
 		foreach ($this->fields as $field) {
 			$fieldName = $field['field_name'];
 			if (isset($field['unique']) && $field['unique']) {
@@ -188,7 +188,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 	protected function isAccountExists($aid) {
 		$query = array_merge(
-			Billrun_Util::getDateBoundQuery(), 
+			Billrun_Utils_Mongo::getDateBoundQuery(), 
 			array("type" => "account", "aid" => $aid)
 		);
 		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {

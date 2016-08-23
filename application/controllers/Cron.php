@@ -238,7 +238,7 @@ class CronController extends Yaf_Controller_Abstract {
 
 	protected function getSubscribersInPlan($planName) {
 		$subscribersCollection = Billrun_Factory::db()->subscribersCollection();
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['plan'] = $planName;
 		$subscribers = $subscribersCollection->query($query)->cursor();
 		if ($subscribers->count() == 0) {
@@ -248,7 +248,7 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 
 	protected function getAllPlansWithExpirationDateNotification() {
-		$match = Billrun_Util::getDateBoundQuery();
+		$match = Billrun_Utils_Mongo::getDateBoundQuery();
 		$match["notifications_threshold.expiration_date"] = array('$exists' => 1);
 		$unwind = '$notifications_threshold.expiration_date';
 		$plansCollection = Billrun_Factory::db()->plansCollection();
@@ -261,7 +261,7 @@ class CronController extends Yaf_Controller_Abstract {
 	
 	public function handleSendRequestErrorAction() {
 		// Get all subscribers on data slowness
-		$query = array_merge(Billrun_Util::getDateBoundQuery(), array('in_data_slowness' => true));
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('in_data_slowness' => true));
 		$project = array('_id' => false, 'sid' => true);
 		$subscribersInDataSlowness = Billrun_Factory::db()->subscribersCollection()->find($query, $project);
 		if ($subscribersInDataSlowness->count() === 0) {
@@ -272,7 +272,7 @@ class CronController extends Yaf_Controller_Abstract {
 		// Check if one of the subscriber in data slowness has valid data balance
 		$minUsagev = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.data', Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')));
 		$minCost = abs(Billrun_Factory::config()->getConfigValue('balance.minCost.data', Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')));
-		$query = array_merge(Billrun_Util::getDateBoundQuery(), 
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), 
 			array(
 				'sid' => array('$in' => array_values($inDataSlownessSids)),
 				'charging_by_usaget' => 'data',

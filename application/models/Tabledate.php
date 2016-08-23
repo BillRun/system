@@ -70,40 +70,8 @@ class TabledateModel extends TableModel {
 		return $to_date > time();
 	}
 	
-	public function getOverlappingDatesQuery($entity, $new = true) {
-		$from_date = new MongoDate(strtotime($entity['from']));
-		if (!$from_date) {
-			return $this->setError("date error");
-		}
-		$to_date = new MongoDate(strtotime($entity['to']));
-		if (!$to_date) {
-			return $this->setError("date error");
-		}
-		$id = new MongoId(isset($entity['_id'])? $entity['_id'] : NULL);
-		if (!$id) {
-			return $this->setError("id error");
-		}
-		$ret = array(
-			$this->search_key => $entity[$this->search_key],
-			'$or' => array(
-				array('from' => array(
-					'$gte' => $from_date,
-					'$lte' => $to_date,
-				)),
-				array('to' => array(
-					'$gte' => $from_date,
-					'$lte' => $to_date,
-				))
-			)
-		);
-		if (!$new) {
-			$ret['_id'] = array('$ne' => $id);
-		}
-		return $ret;
-	}
-	
 	public function hasEntityWithOverlappingDates($entity, $new = true) {
-		$query = $this->getOverlappingDatesQuery($entity, $new);
+		$query = Billrun_Utils_Mongo::getOverlappingDatesQuery($entity, $new);
 		$result = $this->collection
 			->query($query)
 			->cursor()->count();

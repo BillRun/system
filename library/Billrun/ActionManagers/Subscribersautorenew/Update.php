@@ -284,7 +284,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
+		$subQuery = Billrun_Utils_Mongo::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 
@@ -303,7 +303,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function fillWithChargingPlanValues() {
 		// Get the charging plan.
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
+		$chargingPlanQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];

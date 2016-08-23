@@ -170,7 +170,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
 
 		if ($this->setToForUpdate($update, $toTime, $chargingPlan) === FALSE) {

@@ -167,7 +167,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
-		$this->query = Billrun_Util::getDateBoundQuery();
+		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$this->query['type'] = $this->type;
 		if ($this->type === 'account') {
 			$queryMandatoryFields = array('aid');

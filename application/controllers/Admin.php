@@ -300,7 +300,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			if (isset($entity['source_ref'])) {
 				$source_ref = $entity->get('source_ref', false)->getRawData();
 				unset($source_ref['_id']);
-				$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
+				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
 			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
@@ -437,7 +437,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				array('id' => $data['id']),
 			)
 		);
-		$query = array_merge(Billrun_Util::getDateBoundQuery(), $query);
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), $query);
 		if (!empty($id = $data['_id'])) {
 			$query['_id'] =  array('$ne' => new MongoId($id));
 		}
@@ -688,7 +688,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($entity['source_ref'])) {
 			$source_ref = $entity->get('source_ref', false)->getRawData();
 			unset($source_ref['_id']);
-			$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
+			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
 		}
 
 		// passing values into the view

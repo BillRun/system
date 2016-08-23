@@ -33,7 +33,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
-		$dateQuery = Billrun_Util::getDateBoundQuery();
+		$dateQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$finalQuery = array_merge($dateQuery, $query);
 		$finalQuery['status'] = array('$eq' => 'Active');
 		$cardsColl = Billrun_Factory::db()->cardsCollection();

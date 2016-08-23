@@ -358,7 +358,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
 		$update = array();
 
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$balance = $balancesColl->query($balanceQuery)->cursor()->current();
 		$this->balanceBefore[$balanceQuery['pp_includes_external_id']] = $balance;
 
@@ -382,7 +382,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 */
 	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
 		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
 
 		$this->setToForUpdate($update, $toTime, $wallet);

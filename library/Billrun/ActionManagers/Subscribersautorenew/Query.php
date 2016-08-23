@@ -36,7 +36,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function getPlanRecord($record) {
 		$planCollection = Billrun_Factory::db()->plansCollection();
-		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$planQuery["name"] = $record['charging_plan_name'];
 		$planQuery["type"] = 'charging';
 		return $planCollection->query($planQuery)->cursor()->current();
@@ -145,7 +145,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 					// TODO: What error is reported?
 					return false;
 				}
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
+				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");

@@ -283,7 +283,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
+		$query = Billrun_Utils_Mongo::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
 		$query['sid'] = $subscriberId;
 
 		return $query;
@@ -487,7 +487,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// Check if passing the max.
 		if ($this->isIncrement) {
 			$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+			$balanceQuery = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
 			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
 			if (!$balanceBefore->isEmpty()) {
 				$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);

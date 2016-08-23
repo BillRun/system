@@ -94,7 +94,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function hasAvailableBalances($row) {
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['sid'] = $row['sid'];
 		if ($this->canUseDataFromCurrencyBalances($row)) {
 			$query['$or'] = array(
@@ -192,7 +192,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getSubscriber($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $subscriberId));
+		$subscriberQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $subscriberId));
 
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
@@ -203,7 +203,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function getSubscriberPlan($subscriber) {
-		$planQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $subscriber['plan']));
+		$planQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('name' => $subscriber['plan']));
 
 		$coll = Billrun_Factory::db()->plansCollection();
 		$results = $coll->query($planQuery)->cursor()->limit(1)->current();
@@ -570,7 +570,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$sid = $additionalParams['sid'];
 			// Update subscriber in DB
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
-			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
+			$findQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
 					'in_data_slowness' => true,
