@@ -133,8 +133,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
 			}
 			$subscriber_field = $subscriber->{$key};
-			if (is_array($row[$key]) && is_array($subscriber_field)) {
-				$row[$key] = array_merge($row[$key], $subscriber_field);
+			if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) {
+				$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
 			} else {
 				$row[$key] = $subscriber_field;
 			}
@@ -143,8 +143,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
 			if ($this->isExtraDataRelevant($row, $key)) {
 				$subscriber_field = $subscriber->{$key};
-				if (is_array($row[$key]) && is_array($subscriber_field)) { // if existing value is array and in input value is array let's do merge
-					$row[$key] = array_merge($row[$key], $subscriber_field);
+				if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) { // if existing value is array and in input value is array let's do merge
+					$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
 				} else {
 					$row[$key] = $subscriber_field;
 				}
