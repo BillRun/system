@@ -24,12 +24,6 @@ class Billrun_Billrun {
 	protected static $fileTypes = null;
 	
 	/**
-	 *
-	 * @var Billrun_DataTypes_Billingcycle
-	 */
-	protected static $billingCycle;
-	
-	/**
 	 * lines collection
 	 * @var Mongodloid_Collection 
 	 */
