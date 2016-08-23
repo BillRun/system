@@ -84,6 +84,8 @@ class Tests_Plan extends UnitTestCase {
 	
 	// Tests to check for positive logic
 	protected $monthsDiffTests = array(
+            array('msg' => "Months diff start after end", 'start' => '02-02-2015', 'end' => '01-02-2015', 'expected' => 0),
+		
             array('msg' => "1.Months diff same month", 'start' => '01-02-2015', 'end' => '10-02-2015', 'expected' => 10/28),
             array('msg' => "2.Months diff same month", 'start' => '01-02-2015', 'end' => '15-02-2015', 'expected' => 15/28),
             array('msg' => "3.Months diff same month", 'start' => '01-02-2016', 'end' => '10-02-2016', 'expected' => 10/29),
@@ -135,6 +137,15 @@ class Tests_Plan extends UnitTestCase {
             array('msg' => "6.Months diff three months", 'start' => '01-02-2016', 'end' => '15-04-2016', 'expected' => 2 + (15/30)),
 		    array('msg' => "7.Months diff three months", 'start' => '06-02-2016', 'end' => '10-04-2016', 'expected' => (24/29) + 1 + (10/30)),
             array('msg' => "8.Months diff three months", 'start' => '06-02-2016', 'end' => '15-04-2016', 'expected' => (24/29) + 1 + (15/30)),
+		
+		    array('msg' => "1.Months diff four months", 'start' => '01-02-2015', 'end' => '10-05-2015', 'expected' => 3 + (10/31)),
+            array('msg' => "2.Months diff four months", 'start' => '01-02-2015', 'end' => '15-05-2015', 'expected' => 3 + (15/31)),
+		    array('msg' => "3.Months diff four months", 'start' => '06-02-2015', 'end' => '10-05-2015', 'expected' => (23/28) + 2 + (10/31)),
+            array('msg' => "4.Months diff four months", 'start' => '06-02-2015', 'end' => '15-05-2015', 'expected' => (23/28) + 2 + (15/31)),
+		    array('msg' => "5.Months diff four months", 'start' => '01-02-2016', 'end' => '10-05-2016', 'expected' => 3 + (10/31)),
+            array('msg' => "6.Months diff four months", 'start' => '01-02-2016', 'end' => '15-05-2016', 'expected' => 3 + (15/31)),
+		    array('msg' => "7.Months diff four months", 'start' => '06-02-2016', 'end' => '10-05-2016', 'expected' => (24/29) + 2 + (10/31)),
+            array('msg' => "8.Months diff four months", 'start' => '06-02-2016', 'end' => '15-05-2016', 'expected' => (24/29) + 2 + (15/31)),
 
     );
 	
