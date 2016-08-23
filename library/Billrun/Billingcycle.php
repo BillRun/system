@@ -49,6 +49,10 @@ class Billrun_Billingcycle {
 		return self::$startTime;
 	}
 	
+	/**
+	 * Return the date constructed from the current billrun key
+	 * @return string
+	 */
 	protected static function getDatetime() {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		return self::$billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
@@ -98,15 +102,25 @@ class Billrun_Billingcycle {
 		return self::getStartTime($billrunKey);
 	}
 	
-	public static function getFollowingBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
+	/**
+	 * Get the next billrun key
+	 * @param string $key - Current key
+	 * @return string The following key
+	 */
+	public static function getFollowingBillrunKey($key) {
+		$datetime = $key . "01000000";
 		$month_later = strtotime('+1 month', strtotime($datetime));
 		$ret = date("Ym", $month_later);
 		return $ret;
 	}
 
-	public static function getPreviousBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
+	/**
+	 * Get the previous billrun key
+	 * @param string $key - Current key
+	 * @return string The previous key
+	 */
+	public static function getPreviousBillrunKey($key) {
+		$datetime = $key . "01000000";
 		$month_before = strtotime('-1 month', strtotime($datetime));
 		$ret = date("Ym", $month_before);
 		return $ret;
