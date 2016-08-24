@@ -10,7 +10,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 /**
  * Recreate invoices action class
  *
- * @package	Braas
+ * @package	BR cloud
  * @since	5.0
  */
 class CreatetenantAction extends ApiAction {
@@ -31,7 +31,7 @@ class CreatetenantAction extends ApiAction {
 
 	public function execute() {
 		$this->allowed();
-		Billrun_Factory::log("Execute save version", Zend_Log::INFO);
+		Billrun_Factory::log("Execute Create Tenant", Zend_Log::INFO);
 		if (!AdminController::authorized('write')) {
 			return;
 		}
