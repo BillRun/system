@@ -8,7 +8,7 @@
 
 class CycleAction extends Action_Base {
 
-	protected $billingCycle = null;
+	protected $billingCycleCol = null;
 
 	/**
 	 * Build the options for the aggregator
@@ -64,10 +64,17 @@ class CycleAction extends Action_Base {
 	 */
 	public function execute() {
 		$options = $this->buildOptions();
-		$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
+		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
 		$processInterval = $this->getProcessInterval();
 
-		do {
+		$stamp = $options['stamp'];
+		$size = (int)$options['size'];
+		
+		$isCycleOver = false;
+		
+		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+				
+		while($isCycleOver != true) {
 			$pid = pcntl_fork();
 			if ($pid == -1) {
 				die('could not fork');
@@ -78,14 +85,14 @@ class CycleAction extends Action_Base {
 			// Parent process.
 			if ($pid) {
 				$this->executeParentProcess($processInterval);
+				$isCycleOver = Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages);
 				continue;
 			}
 			
 			// Child process
 			$this->executeChildProcess($options);
 			break;
-			
-		} while (Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycle, $options['stamp'], (int) $options['size']) === FALSE);
+		}
 	}
 
 	protected function executeParentProcess($processInterval) {
@@ -111,7 +118,7 @@ class CycleAction extends Action_Base {
 			$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
 			return;
 		}
-		
+
 		$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
 		$aggregator->aggregate();
 		$this->_controller->addOutput("Finish to Aggregate.");
@@ -124,16 +131,10 @@ class CycleAction extends Action_Base {
 	 * @todo getAggregator might be common in actions, maybe create a basic aggregate action class?
 	 */
 	protected function getAggregator($options) {
-		$error = false;
 		$this->_controller->addOutput("Loading aggregator");
-		try {
-			$aggregator = Billrun_Aggregator::getInstance($options);
-		} catch (Exception $e) {
-			Billrun_Factory::log($e->getMessage(), Zend_Log::NOTICE);
-			$error = true;
-		}
+		$aggregator = Billrun_Aggregator::getInstance($options);
 		
-		if($error || !$aggregator) {
+		if(!$aggregator || !$aggregator->isValid()) {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 			return false;
 		}
