@@ -113,14 +113,25 @@ class PlansModel extends TabledateModel {
 	}
 	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity', 'validateInclude');
+		$validationMethods = array('validateName', 'validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity', 'validateInclude');
 		foreach ($validationMethods as $validationMethod) {
+			if(!method_exists($this, $validationMethod)) {
+				continue;
+			}
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
 			}
 		}
 		return $this->validationResponse(true);
 	}
+	
+	protected function validateName($data) {	
+		if(!isset($data['name'])) {
+			return false;
+		}
+		$name = strtolower($data['name']);
+		return !in_array($name, array('base', 'groups'));
+	}	
 	
 	// TODO: Find a way to return error message, create a structure for the 'res'
 	// variable
@@ -152,6 +163,8 @@ class PlansModel extends TabledateModel {
 			}
 		}
 	}
+	
+
 	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {
