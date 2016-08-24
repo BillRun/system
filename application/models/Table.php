@@ -581,7 +581,7 @@ class TableModel {
 		return false;
 	}
 
-	public function getError($str) {
+	public function getError() {
 		return $this->error;
 	}
 

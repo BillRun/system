@@ -45,8 +45,7 @@ class PlansModel extends TabledateModel {
 
 	public function update($params) {
 		$entity = parent::update($params);
-		$duplicate = $params['duplicate_rates'];
-		if ($duplicate) {
+		if (!empty($params['duplicate_rates'])) {
 			$source_id = $params['source_id'];
 			unset($params['source_id']); // we don't save because admin ref issues
 			unset($params['duplicate_rates']);
@@ -113,22 +112,26 @@ class PlansModel extends TabledateModel {
 		return parent::applyFilter($filter_field, $value);
 	}
 	
-	public function getOverlappingDatesQuery($entity, $new = true) {
-		$additionalQuery = array(
-			'service_provider' => $entity['service_provider'],
-		);
-		return array_merge(parent::getOverlappingDatesQuery($entity, $new), $additionalQuery);
-	}
-	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
+		$validationMethods = array('validateName', 'validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
 		foreach ($validationMethods as $validationMethod) {
+			if(!method_exists($this, $validationMethod)) {
+				continue;
+			}
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
 			}
 		}
 		return $this->validationResponse(true);
 	}
+	
+	protected function validateName($data) {	
+		if(!isset($data['name'])) {
+			return false;
+		}
+		$name = strtolower($data['name']);
+		return !in_array($name, array('base', 'groups'));
+	}	
 	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {

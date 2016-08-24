@@ -12,7 +12,7 @@ trait Billrun_DataTypes_Conf_Range {
 	protected $range = array();
 	
 	protected function getRange($obj) {
-		if(!isset($obj['range'])) {
+		if(!isset($obj['range'], $obj['range']['max'],$obj['range']['min'])) {
 			return;
 		}
 		
