@@ -12,6 +12,11 @@ else
 	exit 1
 fi
 
+if [ -z "$APPLICATION_MULTITENANT" ] || [ "$APPLICATION_MULTITENANT" != 1 ]; then
+    echo "Not running in multi-tenant mode. Exiting."
+    exit 1
+fi  
+
 if [ $2 ]; then
 	ENV=$2
 else
@@ -38,5 +43,7 @@ do
 
 		php $INDEX --env $ENV --tenant $TENANT --process --type all&
 		echo "Invoked processing for $TENANT file"
+	else
+		echo "No tenants found"
 	fi	
 done
