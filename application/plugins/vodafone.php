@@ -85,11 +85,12 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
-		$line_year = date('Y', strtotime($this->line_time));
-		$line_month = substr($this->line_time, 4, 2);
-		$line_day = substr($this->line_time, 6, 2);
-		$from = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['from']) . ' 00:00:00'));
-		$to = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['to']) . ' 23:59:59'));
+		$year = date('Y', strtotime($this->line_time));
+		$line_month = intval(substr($this->line_time, 4, 2));
+		$line_day = intval(substr($this->line_time, 6, 2));
+		$from = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00')));
+		$to = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59')));
+		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
 		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
@@ -128,9 +129,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 							'$add' => array('$urt', $winter_offset  * 1000) 
 						),
 				 
-					),
-						
-					
+					),		
 				),
 			),
 		);
@@ -140,7 +139,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				'sid' => $sid,
 				'type' => 'tap3',
 				'plan' => $plan->getData()->get('name'),
-				'isr_time' => array(
+				'urt' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_of_year,
 				),
@@ -158,13 +157,13 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$group' => array(
 				'_id' => array(
 					'day_key' => array( 
-						'$dayOfMonth' => array('$isr_time'), 
+						'$dayOfMonth' => '$isr_time', 
 					),
 					'month_key' => array(
-						'$month' => array('$isr_time'), 
+						'$month' => '$isr_time', 
 					),
 					'year_key' => array(
-						'$year' => array('$isr_time'), 
+						'$year' => '$isr_time', 
 					),
 				),
 			),
@@ -186,16 +185,26 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($project, $match, $group, $match2);
 		return array_map(function($res) {
-					return  $res['_id']['year_key'] . $res['_id']['month_key'] . $res['_id']['day_key'];
+					$month_day = "";
+					if (strlen($res['_id']['month_key']) < 2) {
+						$month_day .= "0";
+					}
+					$month_day .= $res['_id']['month_key'];
+					if (strlen($res['_id']['day_key']) < 2) {
+						$month_day .= "0";
+					}
+					$month_day .= $res['_id']['day_key'];
+					return  $res['_id']['year_key'] . $month_day;
 				}, $results);
 	}
 	
-	protected function loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected) {
-		$line_year = date('Y', strtotime($this->line_time));
-		$line_month = substr($this->line_time, 4, 2);
-		$line_day = substr($this->line_time, 6, 2);
-		$from = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['from']) . ' 00:00:00'));
-		$to = date('YmdHis', strtotime(str_replace('%Y', $line_year, $limits['period']['to']) . ' 23:59:59'));
+	protected function loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected) {	
+		$year = date('Y', strtotime($this->line_time));
+		$line_month = intval(substr($this->line_time, 4, 2));
+		$line_day = intval(substr($this->line_time, 6, 2));
+		$from = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00')));
+		$to = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59')));
+		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
 		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
@@ -266,13 +275,13 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$group' => array(
 				'_id' => array(
 					'day_key' => array( 
-						'$dayOfMonth' => array('$isr_time'), 
+						'$dayOfMonth' => '$isr_time', 
 					),
 					'month_key' => array(
-						'$month' => array('$isr_time'), 
+						'$month' => '$isr_time', 
 					),
 					'year_key' => array(
-						'$year' => array('$isr_time'),
+						'$year' => '$isr_time',
 					),
 				),
 			),
@@ -294,7 +303,16 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($project, $match, $group, $match2);
 		return array_map(function($res) {
-					return  $res['_id']['year_key'] . $res['_id']['month_key'] . $res['_id']['day_key'];
+					$month_day = "";
+					if (strlen($res['_id']['month_key']) < 2) {
+						$month_day .= "0";
+					}
+					$month_day .= $res['_id']['month_key'];
+					if (strlen($res['_id']['day_key']) < 2) {
+						$month_day .= "0";
+					}
+					$month_day .= $res['_id']['day_key'];
+					return  $res['_id']['year_key'] . $month_day;
 				}, $results);
 	}
 
