@@ -76,7 +76,7 @@ class Vfdays2Action extends Action_Base {
 //					'$gte' => new MongoDate($start),
 //					'$lte' => new MongoDate($end),
 //				),
-				'callEventStartTimeStamp' => array(
+				'record_opening_time' => array(
 					'$gte' => date('YmdHis', $start),
 					'$lte' => date('YmdHis', $end),
 				),
@@ -93,7 +93,7 @@ class Vfdays2Action extends Action_Base {
 					'$max' => '$vf_count_days',
 				),
 				'last_usage_time' => array(
-					'$max' => '$callEventStartTimeStamp',
+					'$max' => '$record_opening_time',
 				),
 			)
 		);
@@ -132,9 +132,46 @@ class Vfdays2Action extends Action_Base {
 
 		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
 		$end = strtotime('midnight', $unix_datetime);
-		$startStr = date('YmdHis', $start);
-		$endStr = date('YmdHis', $end);
 
+		$start_time = new MongoDate($start);
+		$end_time = new MongoDate($end);
+		
+		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
+		$summer_transition = $isr_transitions['1']['time'];
+		$winter_transition = $isr_transitions['2']['time'];	
+		$summer_offset = $isr_transitions['1']['offset'];
+		$winter_offset = $isr_transitions['2']['offset'];
+		$summer_date = new DateTime($summer_transition);
+		$winter_date = new DateTime($winter_transition);
+		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
+		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		
+		$project1 = array(
+			'$project' => array(
+				'sid' => 1,
+				'urt' => 1,
+				'type' => 1,    
+				'vf_count_days' => 1,			
+				'isr_time' => array(
+					'$cond' => array(
+						'if' => array(
+							'$and' => array(
+								array('$gte' => array('$urt', $transition_date_summer)),
+								array('$lt' => array('$urt', $transition_date_winter)),
+							),
+						),
+						'then' => array(
+							'$add' => array('$urt', $summer_offset * 1000)
+						),
+						'else' => array(
+							'$add' => array('$urt', $winter_offset * 1000)
+						),
+					),
+				),
+			),
+		);
+		
+		
 		$match = array(
 			'$match' => array(
 				'type' => 'tap3',
@@ -153,9 +190,9 @@ class Vfdays2Action extends Action_Base {
 				'vf_count_days' => array(
 					'$gte' => $min_days,
 				),
-				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
-					'$gte' => $startStr,
-					'$lte' => $endStr,
+				'isr_time' => array(
+					'$gte' => $start_time,
+					'$lte' => $end_time,
 				),
 			),
 		);
@@ -166,20 +203,25 @@ class Vfdays2Action extends Action_Base {
 					'$max' => '$vf_count_days',
 				),
 				'last_usage_time' => array(
-					'$max' => '$basicCallInformation.CallEventStartTimeStamp.localTimeStamp',
+					'$max' => '$isr_time',
 				),
 			)
 		);
 
-		$project = array(
+		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
 				'sid' => '$_id',
 				'count_days' => '$count_days',
-				'last_date' => array(
-					'$substr' => array(
-						'$last_usage_time', 4, 4,
-					)
+				'last_day' => array(
+					'$dayOfMonth' => array(
+						'$last_usage_time'
+					),
+				),
+				'last_month' => array(
+					'$month' => array(
+						'$last_usage_time'
+					),
 				),
 				'min_days' => array(
 					'$literal' => $min_days,
@@ -189,8 +231,22 @@ class Vfdays2Action extends Action_Base {
 				),
 			)
 		);
+		
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($match, $match2, $group, $project);
+		$results = $billing_connection->aggregate($project1, $match, $match2, $group, $project2);
+		foreach ($results as $key => $result) {
+			$results[$key]['last_date'] = "";
+			if (strlen($result['last_month']) < 2) {
+				$results[$key]['last_date'] .= "0";
+			}
+			$results[$key]['last_date'] .= $result['last_month'];
+			if (strlen($result['last_day']) < 2) {
+				$results[$key]['last_date'] .= "0";
+			}
+			$results[$key]['last_date'] .= $result['last_day'];
+			unset($results[$key]['last_day']);
+			unset($results[$key]['last_month']);
+		}
 		return $results;
 	}
 

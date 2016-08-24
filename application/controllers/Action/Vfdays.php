@@ -75,7 +75,7 @@ class VfdaysAction extends Action_Base {
 						array('arategroup' => 'VF'),
 						array('vf_count_days' => array('$exists' => 1)),
 				),
-				'callEventStartTimeStamp' => new MongoRegex("/^$year/")
+				'record_opening_time' => new MongoRegex("/^$year/")
 //				'$or' => array(
 //					array_merge(
 //						array(
@@ -103,7 +103,7 @@ class VfdaysAction extends Action_Base {
 		);
 
 		if (!empty($max_datetime)) {
-			$match2['$match']['callEventStartTimeStamp'] = array(
+			$match2['$match']['record_opening_time'] = array(
 				'$lte' => date('YmdHis', strtotime($max_datetime)),
 				'$gte' => $year,
 			);
@@ -113,7 +113,7 @@ class VfdaysAction extends Action_Base {
 			'$group' => array(
 				'_id' => array('$substr' =>
 					array(
-						'$callEventStartTimeStamp',
+						'$record_opening_time',
 						4,
 						4
 					)
@@ -134,21 +134,64 @@ class VfdaysAction extends Action_Base {
 	}
 
 	public function count_days_tap3($sid, $year = null, $max_datetime = null) {
-		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
+		$from = strtotime($year . '-01-01' . ' 00:00:00');
 		if (is_null($max_datetime)) {
-			$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
+			$to = strtotime($year . '-12-31' . ' 23:59:59');
 		} else {
-			$to = date('YmdHis', (!is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime));
+			$to = !is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime;
 		}
+		
+		$start_of_year = new MongoDate($from);
+		$end_date = new MongoDate($to);
+		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
+		$summer_transition = $isr_transitions['1']['time'];
+		$winter_transition = $isr_transitions['2']['time'];	
+		$summer_offset = $isr_transitions['1']['offset'];
+		$winter_offset = $isr_transitions['2']['offset'];
+		$summer_date = new DateTime($summer_transition);
+		$winter_date = new DateTime($winter_transition);
+		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
+		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+			
+		$project = array(
+			'$project' => array(
+				'sid' => 1,
+				'urt' => 1,
+				'type' => 1,    
+				'plan' => 1,
+				'arategroup' => 1,
+				'billrun' => 1,		
+				'isr_time' => array(
+					'$cond' => array(
+						'if' => array(
+								'$and' => array(
+									array('$gte' => array('$urt', $transition_date_summer)),
+									array('$lt' => array('$urt', $transition_date_winter)),
+								),
+								
+						),
+						'then' => array(
+							'$add' => array('$urt', $summer_offset * 1000)
+						),
+						'else' => array(
+							'$add' => array('$urt', $winter_offset  * 1000) 
+						),
+				 
+					),
+						
+					
+				),
+			),
+		);
 		
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
 				'type' => 'tap3',
 				'plan' => array('$in' => $this->plans),
-				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
-					'$gte' => $from,
-					'$lte' => $to,
+				'isr_time' => array(
+					'$gte' => $start_of_year,
+					'$lte' => $end_date,
 				),
 				'arategroup' => "VF",
 				'billrun' => array(
@@ -160,7 +203,10 @@ class VfdaysAction extends Action_Base {
 			'$group' => array(
 				'_id' => array(
 					'day_key' => array(
-						'$substr' => array('$basicCallInformation.CallEventStartTimeStamp.localTimeStamp', 0, 8),
+						'$dayOfMonth' => array('$isr_time'), 
+					),
+					'month_key' => array(
+						'$month' => array('$isr_time'), 
 					),
 				),
 			),
@@ -174,8 +220,10 @@ class VfdaysAction extends Action_Base {
 			),
 		);
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($match, $group, $group2);
+		$results = $billing_connection->aggregate($project, $match, $group, $group2);
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
+	
+
 
 }
