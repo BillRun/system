@@ -347,8 +347,8 @@ class Billrun_Config {
 		} else {
 			$multitenant_basedir = APPLICATION_PATH . '/conf/tenants/';
 		}
+		self::$multitenantDir = $multitenant_basedir;
 		if (file_exists($tenant_conf = $multitenant_basedir . $this->tenant . '.ini')) {
-			self::$multitenantDir = $multitenant_basedir;
 			$this->addConfig($tenant_conf);
 		}
 	}

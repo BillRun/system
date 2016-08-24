@@ -14,8 +14,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since	5.0
  */
 class CreatetenantAction extends ApiAction {
-	use Billrun_Traits_Api_UserPermissions;
-	
 	protected $request;
 	protected $status = true;
 	protected $desc = '';
@@ -30,11 +28,6 @@ class CreatetenantAction extends ApiAction {
 
 
 	public function execute() {
-		$this->allowed();
-		Billrun_Factory::log("Execute Create Tenant", Zend_Log::INFO);
-		if (!AdminController::authorized('write')) {
-			return;
-		}
 		if (!$this->isWhiteListed()) {
 			return false;
 		}
@@ -62,10 +55,10 @@ class CreatetenantAction extends ApiAction {
 
 	protected function init() {
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
-		$this->tenant = Billrun_Factory::config()->getTenant();
+		$this->tenant = $this->request['tenant'];
 		$this->db_name = 'billing_' . $this->tenant;
 		$this->userName = $this->request['email'];
-		$this->password = $this->request['pass'];
+		$this->password = $this->request['password'];
 	}
 	
 	protected function buildResponse() {
@@ -221,10 +214,6 @@ class CreatetenantAction extends ApiAction {
 		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());
 		$this->db_pass = Billrun_Util::generateArrayStamp($arr);
 		return true;
-	}
-
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }
