@@ -98,6 +98,22 @@ protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
 		$winter_date = new DateTime($winter_transition);
 		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
 		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		
+		
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'type' => 'tap3',
+				'plan' => $plan->getData()->get('name'),
+				'arategroup' => $groupSelected,
+				'in_group' => array(
+					'$gt' => 0,
+				),
+				'billrun' => array(
+					'$exists' => true,
+				),
+			),
+		);
 			
 		$project = array(
 			'$project' => array(
@@ -130,21 +146,11 @@ protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
 			),
 		);
 		
-		$match = array(
+		$match2 = array(
 			'$match' => array(
-				'sid' => $sid,
-				'type' => 'tap3',
-				'plan' => $plan->getData()->get('name'),
-				'urt' => array(
+				'isr_time' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_of_year,
-				),
-				'arategroup' => $groupSelected,
-				'in_group' => array(
-					'$gt' => 0,
-				),
-				'billrun' => array(
-					'$exists' => true,
 				),
 			),
 		);
@@ -165,7 +171,7 @@ protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
 			),
 		);
 		
-		$match2 = array(
+		$match3 = array(
 			'$match' => array(
 				'_id.day_key' => array(
 					'$lte' => $line_day, 
@@ -179,7 +185,7 @@ protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
 			),
 		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($project, $match, $group, $match2);
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
 		return array_map(function($res) {
 					$month_day = "";
 					if (strlen($res['_id']['month_key']) < 2) {
