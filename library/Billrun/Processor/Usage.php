@@ -130,12 +130,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getLineUsageType($row) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
-				if (preg_match($usagetMapping['pattern'], $row[$usagetMapping['src_field']])) {
-					if (isset($usagetMapping['usaget'])) {
-						return $usagetMapping['usaget'];
-					} else {
-						return $row['src_field'];
-					}
+				if (!isset($usagetMapping['pattern'],$usagetMapping['src_field'])) {
+					return $usagetMapping['usaget'];
+				}
+				if (isset($row[$usagetMapping['src_field']]) && preg_match($usagetMapping['pattern'], $row[$usagetMapping['src_field']])) {
+					return $usagetMapping['usaget'];
 				}
 			}
 		}
