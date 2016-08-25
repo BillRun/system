@@ -32,15 +32,15 @@ if (!defined('APPLICATION_ENV')) {
 define('BILLRUN_CONFIG_PATH', APPLICATION_PATH . "/conf/" . APPLICATION_ENV . ".ini");
 
 if (!file_exists(BILLRUN_CONFIG_PATH)) {
-	die('Configuration file did not found');
+	die('Configuration file was not found');
 }
 
-if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT') && !defined('APPLICATION_TENANT')) {
+if (RUNNING_FROM_CLI && getenv('APPLICATION_MULTITENANT') && !defined('APPLICATION_TENANT')) {
 	if (empty($cliArgs['tenant'])) {
 		die('Tenant was not setup!' . PHP_EOL);
 	}
 
-	define('APPLICATION_TEANANT', $cliArgs['tenant']);
+	define('APPLICATION_TENANT', $cliArgs['tenant']);
 }
 
 if (!RUNNING_FROM_CLI && !defined('APPLICATION_MULTITENANT') && $multitenant = getenv('APPLICATION_MULTITENANT')) {

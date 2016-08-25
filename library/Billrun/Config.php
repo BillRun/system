@@ -193,12 +193,12 @@ class Billrun_Config {
 	}
 	
 	protected function setTenantTimezone($dbConfig) {
-		if(!isset($dbConfig['timezone'])){
+		if(!isset($dbConfig['billrun']['timezone'])){
 			return;
 		}
 		
 		// Get the timezone.
-		$timezone = $this->getComplexValue($dbConfig['timezone']);
+		$timezone = $this->getComplexValue($dbConfig['billrun']['timezone']);
 		if(empty($timezone)) {
 			return;
 		}
