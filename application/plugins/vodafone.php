@@ -102,6 +102,22 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$winter_date = new DateTime($winter_transition);
 		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
 		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		
+		
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'type' => 'tap3',
+				'plan' => $plan->getData()->get('name'),
+				'arategroup' => $groupSelected,
+				'in_group' => array(
+					'$gt' => 0,
+				),
+				'billrun' => array(
+					'$exists' => true,
+				),
+			),
+		);
 			
 		$project = array(
 			'$project' => array(
@@ -134,21 +150,11 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		$match = array(
+		$match2 = array(
 			'$match' => array(
-				'sid' => $sid,
-				'type' => 'tap3',
-				'plan' => $plan->getData()->get('name'),
-				'urt' => array(
+				'isr_time' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_of_year,
-				),
-				'arategroup' => $groupSelected,
-				'in_group' => array(
-					'$gt' => 0,
-				),
-				'billrun' => array(
-					'$exists' => true,
 				),
 			),
 		);
@@ -169,7 +175,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		$match2 = array(
+		$match3 = array(
 			'$match' => array(
 				'_id.day_key' => array(
 					'$lte' => $line_day, 
@@ -183,7 +189,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($project, $match, $group, $match2);
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
 		return array_map(function($res) {
 					$month_day = "";
 					if (strlen($res['_id']['month_key']) < 2) {
@@ -216,6 +222,24 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$winter_date = new DateTime($winter_transition);
 		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
 		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		
+		
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'type' => array(
+					'$in' => array('nrtrde', 'ggsn')
+				),
+				'plan' => $plan->getData()->get('name'),
+				'arategroup' => $groupSelected,
+				'in_group' => array(
+					'$gt' => 0,
+				),
+				'aprice' => array(
+					'$exists' => true,
+				),
+			),
+		);
 		
 
 		$project = array(
@@ -250,23 +274,11 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		$match = array(
+		$match2 = array(
 			'$match' => array(
-				'sid' => $sid,
-				'type' => array(
-					'$in' => array('nrtrde', 'ggsn')
-				),
-				'plan' => $plan->getData()->get('name'),
 				'isr_time' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_of_year,
-				),
-				'arategroup' => $groupSelected,
-				'in_group' => array(
-					'$gt' => 0,
-				),
-				'aprice' => array(
-					'$exists' => true,
 				),
 			),
 		);
@@ -287,7 +299,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		$match2 = array(
+		$match3 = array(
 			'$match' => array(
 				'_id.day_key' => array(
 					'$lte' => $line_day, 
@@ -301,7 +313,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($project, $match, $group, $match2);
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
 		return array_map(function($res) {
 					$month_day = "";
 					if (strlen($res['_id']['month_key']) < 2) {

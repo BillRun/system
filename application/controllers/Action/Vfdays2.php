@@ -146,6 +146,28 @@ class Vfdays2Action extends Action_Base {
 		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
 		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
 		
+		$match = array(
+			'$match' => array(
+				'type' => 'tap3',
+//				'$or' => array(
+//					array('sid' => 960903),
+//				),
+			),
+		);
+		
+		
+		$match2 = array(
+			'$match' => array(
+				'urt' => array(
+					'$gte' => new MongoDate($start - 3600 * 24),
+					'$lte' => new MongoDate($end + 3600 * 24),
+				),
+				'vf_count_days' => array(
+					'$gte' => $min_days,
+				),
+			),
+		);
+		
 		$project1 = array(
 			'$project' => array(
 				'sid' => 1,
@@ -172,24 +194,9 @@ class Vfdays2Action extends Action_Base {
 		);
 		
 		
-		$match = array(
-			'$match' => array(
-				'type' => 'tap3',
-//				'$or' => array(
-//					array('sid' => 960903),
-//				),
-			),
-		);
 
-		$match2 = array(
+		$match3 = array(
 			'$match' => array(
-				'urt' => array(
-					'$gte' => new MongoDate($start - 3600 * 24),
-					'$lte' => new MongoDate($end + 3600 * 24),
-				),
-				'vf_count_days' => array(
-					'$gte' => $min_days,
-				),
 				'isr_time' => array(
 					'$gte' => $start_time,
 					'$lte' => $end_time,
@@ -233,7 +240,7 @@ class Vfdays2Action extends Action_Base {
 		);
 		
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($project1, $match, $match2, $group, $project2);
+		$results = $billing_connection->aggregate($match, $match2 ,$project1, $match3, $group, $project2);
 		foreach ($results as $key => $result) {
 			$results[$key]['last_date'] = "";
 			if (strlen($result['last_month']) < 2) {

@@ -152,6 +152,19 @@ class VfdaysAction extends Action_Base {
 		$winter_date = new DateTime($winter_transition);
 		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
 		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		
+			
+		$match = array(
+			'$match' => array(
+				'sid' => $sid,
+				'type' => 'tap3',
+				'plan' => array('$in' => $this->plans),
+				'arategroup' => "VF",
+				'billrun' => array(
+					'$exists' => true,
+				),
+			),
+		);
 			
 		$project = array(
 			'$project' => array(
@@ -184,18 +197,11 @@ class VfdaysAction extends Action_Base {
 			),
 		);
 		
-		$match = array(
+		$match2 = array(
 			'$match' => array(
-				'sid' => $sid,
-				'type' => 'tap3',
-				'plan' => array('$in' => $this->plans),
 				'isr_time' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_date,
-				),
-				'arategroup' => "VF",
-				'billrun' => array(
-					'$exists' => true,
 				),
 			),
 		);
@@ -220,7 +226,7 @@ class VfdaysAction extends Action_Base {
 			),
 		);
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($project, $match, $group, $group2);
+		$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2);
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 	
