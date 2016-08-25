@@ -30,6 +30,8 @@ class EventsModel extends TableModel {
 			'creation_time' => 'Creation time',
 			'event_type' => 'Event type',
 			'imsi' => 'IMSI',
+			'aid' => 'aid',
+			'sid' => 'sid',
 			'msisdn' => 'MSISDN',
 			'source' => 'Source',
 			'threshold' => 'Threshold',
