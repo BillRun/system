@@ -19,6 +19,6 @@ class Billrun_DataTypes_Conf_Timezone extends Billrun_DataTypes_Conf_String {
 		}
 		
 		// Check if valid timezone
-		return in_array($this->val, DateTimeZone::listIdentifiers());
+		return in_array($this->val, DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));
 	}
 }
