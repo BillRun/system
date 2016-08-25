@@ -332,8 +332,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		}
 		
 		if ((!empty($this->garbageQueueLines)) || (!empty($stamps))){	
-			$garbage_lines = $this->garbageQueueLines;
-			$stamps_remove_from_queue = array_merge($garbage_lines, $stamps);
+			$stamps_remove_from_queue = array_merge($this->garbageQueueLines, $stamps);
 			$lines->update(array('stamp' => array('$in' => $stamps_remove_from_queue)), array('$unset' => array('in_queue' => 1)), array("multiple" => true)); 
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
 			$queue->remove(array('stamp' => array('$in' => $stamps_remove_from_queue))); 
