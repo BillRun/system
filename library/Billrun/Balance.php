@@ -345,7 +345,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * For example: we can use "call" balance in "video_call" records
 	 * 
 	 * @param type $usaget
-	 * @return type
+	 * @return usage type in balance
 	 */
 	public function getBalanceChargingTotalsKey($usaget) {
 		if (is_null($this->chargingTotalsKey)) {
