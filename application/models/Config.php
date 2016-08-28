@@ -344,7 +344,7 @@ class ConfigModel {
 		});
 	}
 
-	protected function validateFileSettings($config, $fileType) {
+	protected function validateFileSettings(&$config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
