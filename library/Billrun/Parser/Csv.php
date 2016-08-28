@@ -37,8 +37,8 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	
 	public function __construct($options) {
 		parent::__construct($options);
-		if (isset($options['data_structure'])) {
-			$this->dataStructure = $options['data_structure'];
+		if (isset($options['data_structure']) || isset($options['structure'])) {
+			$this->dataStructure = isset($options['data_structure']) ? $options['data_structure'] : $options['structure'];
 		}
 		if (isset($options['header_structure'])){
 			$this->headerStructure = $options['header_structure'];
