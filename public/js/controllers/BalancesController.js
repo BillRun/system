@@ -19,6 +19,8 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 						total.usagev = parseFloat(total.usagev);
 				});
 			}
+			// TODO: Force operation to set when editing a balance from the UI
+			vm.entity.operation="set";
 			if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost))
 				vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
 			// save via Admin.php if only date was changed UNLESS it's CORE BALANCE (id: 1)
