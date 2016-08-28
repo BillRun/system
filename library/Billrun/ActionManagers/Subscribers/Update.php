@@ -165,8 +165,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$prevRecord = clone $record;
 		foreach ($this->recordToSet as $key => $value) {
 			if (!$record->set($key, $value)) {
+				// [Subscriber error 1030]
 				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 30;
-				$error = "Failed to set values to entity";
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 				return false;
 			}
@@ -218,15 +218,17 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$this->handleBalances($updateArray);
 			}
 		} catch (\Exception $e) {
+			// [Subscriber error 1031]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 31;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError($errorCode, Zend_Log::ERR, array($e->getMessage()));
 			$success = false;
 		}
 
 		if (!$updatedDocument) {
+			// [Subscriber error 1037]
 			$success = false;
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
-			$this->reportError($errorCode);
+			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->query['sid']));
 		}
 		$outputResult = array('status' => ($success) ? (1) : (0),
 			'desc' => $this->error,
@@ -252,6 +254,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+			// [Subscriber error 1032]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 32;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -359,6 +362,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function setQueryFields($queryData) {
 
 		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
+			// [Subscriber error 1038]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 38;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -398,6 +402,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
+			// [Subscriber error 1033]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 33;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -405,6 +410,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		// If there were errors.
 		if ($this->setQueryFields($jsonQueryData) === FALSE) {
+			// [Subscriber error 1034]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 34;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -430,12 +436,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		$validateOutput = $this->validateCustomerPlan($this->recordToSet['plan']);
 		if ($validateOutput !== true) {
+			// [Subscriber error 1036]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 36;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['plan']));
 			return false;
 		}
 
 		if (!$this->validateServiceProvider($this->recordToSet['service_provider'])) {
+			// [Subscriber error 1035]
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 35;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($this->recordToSet['service_provider']));
 			return false;
