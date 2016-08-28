@@ -162,6 +162,8 @@ class PlansModel extends TabledateModel {
 				return false;
 			}
 		}
+		
+		return true;
 	}
 	
 
