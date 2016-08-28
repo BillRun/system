@@ -705,6 +705,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$balanceRaw = $this->balance->getRawData();
 		$this->countConcurrentRetries++;
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
 		$tx = $this->balance->get('tx');
 		if (is_array($tx) && empty($tx)) {
 			$this->balance->set('tx', new stdClass());

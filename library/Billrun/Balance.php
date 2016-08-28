@@ -339,6 +339,14 @@ class Billrun_Balance extends Mongodloid_Entity {
 		return $selectedBalance;
 	}
 	
+	/**
+	 * get the totals key in the balance object 
+	 * (in order to support additional types)
+	 * For example: we can use "call" balance in "video_call" records
+	 * 
+	 * @param type $usaget
+	 * @return type
+	 */
 	public function getBalanceChargingTotalsKey($usaget) {
 		if (is_null($this->chargingTotalsKey)) {
 			$query = array_merge(Billrun_Util::getDateBoundQuery(), array("external_id" => $this->get("pp_includes_external_id")));

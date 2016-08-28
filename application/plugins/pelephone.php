@@ -657,7 +657,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
 			
-			$additionalUsageTypes = $this->getAdditionalUsageTypes($usageType);
+			$additionalUsageTypes = $this->getUsageTypesByAdditionalUsageType($usageType);
 			foreach ($additionalUsageTypes as $additionalUsageType) {
 				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
 				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
@@ -665,7 +665,14 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-	protected function getAdditionalUsageTypes($usaget) {
+	/**
+	 * this will return also available usage types (in balances) 
+	 * according to the additional types set in the prepaid includes document.
+	 * 
+	 * @param type $usaget
+	 * @return main usaget types
+	 */
+	protected function getUsageTypesByAdditionalUsageType($usaget) {
 		$pp_includes_query = array_merge(Billrun_Util::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
 		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
 		$usageTypes = array();
