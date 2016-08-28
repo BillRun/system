@@ -367,6 +367,14 @@ class RatesModel extends TabledateModel {
 		return $ret;
 	}
 	
+	/**
+	 * Checks if a rate object is empty, 
+	 * in order to display it when filtering by plan
+	 * (to handle the case of UI saving empty rates)
+	 * 
+	 * @param type $rates
+	 * @return boolean
+	 */
 	protected function isEmptyRatesObject($rates) {
 		if (!$rates) {
 			return true;
