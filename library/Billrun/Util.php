@@ -531,7 +531,8 @@ class Billrun_Util {
 			'activation' => array(),
 			'deactivation' => array(),
 			'fraction' => array(),
-			'source_amount_without_vat' => array()
+			'source_amount_without_vat' => array(),
+			'additional' => array(),
 		);
 		$filtered_request = array();
 
