@@ -469,15 +469,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->additional = array();
 		}
 
-		$this->updaterOptions['increment'] = 1;
-		// PAY ATTENTION: If a value is passed in operation, but it is invalid, 
-		// we use INC by default. 
-		// If no value was passed in operation, the value will be set to '1'
-		if(isset($this->recordToSet['operation'])) {
-			$this->updaterOptions['increment'] = ($this->recordToSet['operation'] != "set");
-		}
-		
-		
+		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
+
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
 

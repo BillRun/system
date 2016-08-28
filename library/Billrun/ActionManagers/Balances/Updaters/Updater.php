@@ -19,7 +19,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	/**
 	 * If true then the values in mongo are updated by incrementation,
 	 * if false then the values in the mongo are forceablly set.
-	 * @var boolean|int. 
+	 * @var boolean. 
 	 */
 	protected $isIncrement = true;
 
