@@ -143,17 +143,17 @@ class VfdaysAction extends Action_Base {
 		
 		$start_of_year = new MongoDate($from);
 		$end_date = new MongoDate($to);
-		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
-		$summer_transition = $isr_transitions['1']['time'];
-		$winter_transition = $isr_transitions['2']['time'];	
-		$summer_offset = $isr_transitions['1']['offset'];
-		$winter_offset = $isr_transitions['2']['offset'];
-		$summer_date = new DateTime($summer_transition);
-		$winter_date = new DateTime($winter_transition);
-		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
-		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		$isr_transitions = Billrun_Util::getIsraelTransitions();
+		if (Billrun_Util::isWrongIsrTransitions($isr_transitions)){
+			Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+		}
+		$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+		$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
 		
-			
+		
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,

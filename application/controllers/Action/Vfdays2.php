@@ -132,19 +132,17 @@ class Vfdays2Action extends Action_Base {
 
 		$start = strtotime('-' . (int) $offset_days . ' days midnight', $unix_datetime);
 		$end = strtotime('midnight', $unix_datetime);
-
 		$start_time = new MongoDate($start);
-		$end_time = new MongoDate($end);
-		
-		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
-		$summer_transition = $isr_transitions['1']['time'];
-		$winter_transition = $isr_transitions['2']['time'];	
-		$summer_offset = $isr_transitions['1']['offset'];
-		$winter_offset = $isr_transitions['2']['offset'];
-		$summer_date = new DateTime($summer_transition);
-		$winter_date = new DateTime($winter_transition);
-		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
-		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		$end_time = new MongoDate($end);		
+		$isr_transitions = Billrun_Util::getIsraelTransitions();
+		if (Billrun_Util::isWrongIsrTransitions($isr_transitions)){
+			Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+		}
+		$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+		$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
 		
 		$match = array(
 			'$match' => array(
@@ -241,6 +239,22 @@ class Vfdays2Action extends Action_Base {
 		
 		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
 		$results = $billing_connection->aggregate($match, $match2 ,$project1, $match3, $group, $project2);
+		return $this->fixResultString($results);
+	}
+
+	protected function getMaxList($list, $tap3_list) {
+		$list = array_combine(array_map(function($ele) {
+				return $ele['sid'];
+			}, $list), $list);
+		foreach ($tap3_list as $subscriber) {
+			if (!isset($list[$subscriber['sid']]) || $list[$subscriber['sid']]['count_days'] < $subscriber['count_days']) {
+				$list[$subscriber['sid']] = $subscriber;
+			}
+		}
+		return array_values($list);
+	}
+	
+	protected function fixResultString($results){
 		foreach ($results as $key => $result) {
 			$results[$key]['last_date'] = "";
 			if (strlen($result['last_month']) < 2) {
@@ -255,18 +269,6 @@ class Vfdays2Action extends Action_Base {
 			unset($results[$key]['last_month']);
 		}
 		return $results;
-	}
-
-	protected function getMaxList($list, $tap3_list) {
-		$list = array_combine(array_map(function($ele) {
-				return $ele['sid'];
-			}, $list), $list);
-		foreach ($tap3_list as $subscriber) {
-			if (!isset($list[$subscriber['sid']]) || $list[$subscriber['sid']]['count_days'] < $subscriber['count_days']) {
-				$list[$subscriber['sid']] = $subscriber;
-			}
-		}
-		return array_values($list);
 	}
 
 }

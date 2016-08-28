@@ -93,15 +93,15 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
-		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
-		$summer_transition = $isr_transitions['1']['time'];
-		$winter_transition = $isr_transitions['2']['time'];	
-		$summer_offset = $isr_transitions['1']['offset'];
-		$winter_offset = $isr_transitions['2']['offset'];
-		$summer_date = new DateTime($summer_transition);
-		$winter_date = new DateTime($winter_transition);
-		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
-		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		$isr_transitions = Billrun_Util::getIsraelTransitions();
+		if (Billrun_Util::isWrongIsrTransitions($isr_transitions)){
+			Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+		}
+		$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+		$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
 		
 		
 		$match = array(
@@ -190,18 +190,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
-		return array_map(function($res) {
-					$month_day = "";
-					if (strlen($res['_id']['month_key']) < 2) {
-						$month_day .= "0";
-					}
-					$month_day .= $res['_id']['month_key'];
-					if (strlen($res['_id']['day_key']) < 2) {
-						$month_day .= "0";
-					}
-					$month_day .= $res['_id']['day_key'];
-					return  $res['_id']['year_key'] . $month_day;
-				}, $results);
+		return $this->handleResultPadding($results);
 	}
 	
 	protected function loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected) {	
@@ -213,15 +202,15 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
-		$isr_transitions = timezone_transitions_get(new DateTimeZone('Asia/Jerusalem'), strtotime('January 1st'), strtotime('December 31'));
-		$summer_transition = $isr_transitions['1']['time'];
-		$winter_transition = $isr_transitions['2']['time'];	
-		$summer_offset = $isr_transitions['1']['offset'];
-		$winter_offset = $isr_transitions['2']['offset'];
-		$summer_date = new DateTime($summer_transition);
-		$winter_date = new DateTime($winter_transition);
-		$transition_date_summer = new MongoDate($summer_date->getTimestamp());
-		$transition_date_winter = new MongoDate($winter_date->getTimestamp());
+		$isr_transitions = Billrun_Util::getIsraelTransitions();
+		if (Billrun_Util::isWrongIsrTransitions($isr_transitions)){
+			Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
+		}
+		$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
+		$transition_date_summer = new MongoDate($transition_dates['summer']->getTimestamp());
+		$transition_date_winter = new MongoDate($transition_dates['winter']->getTimestamp());
+		$summer_offset = Billrun_Util::getTransitionOffset($isr_transitions, 1);
+		$winter_offset = Billrun_Util::getTransitionOffset($isr_transitions, 2);
 		
 		
 		$match = array(
@@ -314,6 +303,11 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
+		return $this->handleResultPadding($results);
+	}
+	
+	
+	protected function handleResultPadding($results){
 		return array_map(function($res) {
 					$month_day = "";
 					if (strlen($res['_id']['month_key']) < 2) {
@@ -325,7 +319,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					}
 					$month_day .= $res['_id']['day_key'];
 					return  $res['_id']['year_key'] . $month_day;
-				}, $results);
+				}, $results);		
 	}
 
 }
