@@ -39,6 +39,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @var string
 	 */
 	protected $selectedBalance = '';
+	
+	protected $chargingTotalsKey = null;
 
 	public function __construct($options = array()) {
 		// TODO: refactoring the read preference to the factory to take it from config
@@ -182,7 +184,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, $this));
-
+		
 		return $query;
 	}
 
@@ -335,6 +337,19 @@ class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		return $selectedBalance;
+	}
+	
+	public function getBalanceChargingTotalsKey($usaget) {
+		if (is_null($this->chargingTotalsKey)) {
+			$query = array_merge(Billrun_Util::getDateBoundQuery(), array("external_id" => $this->get("pp_includes_external_id")));
+			$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($query)->cursor()->current();
+			if (in_array($usaget, $ppincludes['additional_charging_usaget'])) {
+				$this->chargingTotalsKey = $ppincludes['charging_by_usaget'];
+			} else {
+				$this->chargingTotalsKey = $usaget;
+			}
+		}
+		return $this->chargingTotalsKey;
 	}
 
 	//=============== ArrayAccess Implementation =============

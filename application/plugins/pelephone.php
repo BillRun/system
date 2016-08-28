@@ -657,18 +657,22 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
 			
- 			// roaming calls should also work with call balances
- 			if (stripos($usageType, 'roaming') !== FALSE) {
- 				$query['$or'][] = array("balance.totals.call.usagev" => array('$lte' => $minUsage));
- 				$query['$or'][] = array("balance.totals.call.cost" => array('$lte' => $minCost));
- 			}
- 		}
- 	}
- 	
- 	public function beforeUpdateSubscriberBalance($balance, &$row, $rate, &$balance_totals_key, $calculator) {
- 		if (stripos($row['usaget'], 'roaming') !== FALSE) {
- 			$balance_totals_key = 'call';
- 		}
+			$additionalUsageTypes = $this->getAdditionalUsageTypes($usageType);
+			foreach ($additionalUsageTypes as $additionalUsageType) {
+				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
+				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
+			}
+		}
+	}
+	
+	protected function getAdditionalUsageTypes($usaget) {
+		$pp_includes_query = array_merge(Billrun_Util::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
+		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
+		$usageTypes = array();
+		foreach ($ppincludes as $ppinclude) {
+			$usageTypes[] = $ppinclude['charging_by_usaget'];
+		}
+		return array_unique($usageTypes);
 	}
 
 	protected function getPPIncludesToExclude($plan_name, $rate_key) {

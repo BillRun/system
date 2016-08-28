@@ -342,7 +342,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$balance['tx'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
-			$balanceTotalKeys = stripos($usaget, 'roaming') !== FALSE ? 'call' : $usaget; // roaming calls should also work with call balances
+			$balanceObj = new Billrun_Balance();
+			$balanceObj->setRawData($balance->getRawData());
+			$balanceTotalKeys = $balanceObj->getBalanceChargingTotalsKey($usaget);
 			$originalRow['call_offset'] += $rebalanceUsagev;
 			if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.usagev'))) {
 				if ($this->handleRebalanceOfUsagev($lineToRebalance, $originalRow, $realUsagev, $rebalanceUsagev)) {
