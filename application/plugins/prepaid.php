@@ -170,12 +170,16 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $row['usagev'];
 	}
 
-	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery) {
+	public function beforeSubscriberRebalance($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$lineUpdateQuery, $realUsagevAfterCeiling = null) {
 		try {
 			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
+				if (!empty($realUsagevAfterCeiling)) {
+					$lineUpdateQuery['$inc']['real_usagev'] = $realUsagevAfterCeiling;
+					$lineUpdateQuery['$inc']['usagev'] = $rebalanceUsagev;
+				}
 			}
 		} catch (Exception $ex) {
 			Billrun_Factory::log('prepaid plugin beforeSubscriberRebalance error', Zend_Log::ERR);
@@ -206,7 +210,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($chargedUsagev !== null) {
 			$rebalanceUsagev = $realUsagev - $chargedUsagev;
 			if (($rebalanceUsagev) < 0) {
-				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance);
+				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $row);
 			}
 		}
 	}
@@ -318,9 +322,13 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * adds a refund row to the balance.
 	 * 
 	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 * @param type $realUsagev
+	 * @param type $lineToRebalance
+	 * @param type $originalRow
 	 */
-	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance) {
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		$usaget = $lineToRebalance['usaget'];
+		$realUsagevAfterCeiling = null;
 		$rebalanceCharges = $this->getRebalanceCharges($lineToRebalance, $realUsagev, $rebalanceUsagev);
 		$rebalanceCost = $rebalanceCharges['cost'];
 		$rebalanceInterconnect = $rebalanceCharges['interconnect'];
@@ -335,7 +343,14 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$balance->collection($balances_coll);
 			$balanceTotalKeys = stripos($usaget, 'roaming') !== FALSE ? 'call' : $usaget; // roaming calls should also work with call balances
- 			if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.usagev'))) {
+			$originalRow['call_offset'] += $rebalanceUsagev;
+			if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.usagev'))) {
+				if ($this->handleRebalanceOfUsagev($lineToRebalance, $originalRow, $realUsagev, $rebalanceUsagev)) {
+					$realUsagevAfterCeiling = $realUsagev;
+					if ($originalRow['type'] == 'callrt') {
+						$realUsagevAfterCeiling -= $lineToRebalance['call_offset'];
+					}
+				}
 				$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
 			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
 				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
@@ -343,7 +358,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
 
-			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery);
+			$this->beforeSubscriberRebalance($lineToRebalance, $balance, $rebalanceUsagev, $rebalanceCost, $updateQuery, $realUsagevAfterCeiling);
 		} else {
 			$balance = null;
 		}
@@ -372,6 +387,45 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 //		Billrun_Factory::dispatcher()->trigger('afterSubscriberRebalance', array($lineToRebalance, $balance, &$rebalanceUsagev, &$rebalanceCost, &$updateQuery));
+	}
+	
+	/**
+	 * return whether we need to consider intervals when rebalancing usagev balance
+	 * 
+	 * @param type $row
+	 * @return type
+	 * @todo remove roaming restriction after it will be tested with roaming
+	 */
+	protected function needToRebalanceUsagev($row) {
+		// TODO: currently we are only using it for data and roaming calls
+		return	($row['type'] === 'gy' && $row['record_type'] === 'final_request' && substr($row['service']['sgsnmccmnc'], 0, 3) !== '425') ||
+				($row['type'] === 'callrt' && $row['api_name'] === 'release_call' && stripos($row['usaget'], 'roaming') !== FALSE);
+	}
+
+
+	/**
+	 * fix the usagev to rebalance according to the correct intervals, so the 
+	 * balance will be updated with the correct value (ceiling of current interval)
+	 * 
+	 * @param type $lineToRebalance
+	 * @param type $realUsagev
+	 * @param type $rebalanceUsagev
+	 * @return false if no rebalance was needed, true if was needed
+	 */
+	protected function handleRebalanceOfUsagev($lineToRebalance, $originalRow, $realUsagev, &$rebalanceUsagev) {
+		if (!$this->needToRebalanceUsagev($originalRow)) {
+			return false;
+		}
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		$tariff = Billrun_Calculator_CustomerPricing::getTariff($rate, $lineToRebalance['usaget'], $lineToRebalance['plan']);
+		if ($originalRow['type'] == 'gy') {
+			$realUsagevCeil = Billrun_Calculator_CustomerPricing::getIntervalCeiling($tariff, $realUsagev + $lineToRebalance['call_offset']);
+			$rebalanceUsagev += ($realUsagevCeil - $realUsagev - $lineToRebalance['call_offset']);
+		} else {
+			$realUsagevCeil = Billrun_Calculator_CustomerPricing::getIntervalCeiling($tariff, $realUsagev);
+			$rebalanceUsagev += ($realUsagevCeil - $realUsagev);
+		}
+		return true;
 	}
 
 	/**

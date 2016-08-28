@@ -384,7 +384,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getPositiveValuePrettifyDuration($obj, $data) {
 		$timePositiveValue = $this->getPositiveValue($obj, $data);
-		return ceil($timePositiveValue / 60);
+		return Billrun_Util::secondFormat($timePositiveValue, 'minute', 0, false, 'ceil', '', '');
 	}
 	
 	/**
@@ -610,7 +610,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if not under PL network else false
 	 */
 	protected function isInterconnect($row) {
-		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2;
+		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2 && (!isset($row['call_type']) || !in_array($row['call_type'], array("11", "12")));
 	}
 
 	/**
@@ -828,6 +828,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
 					$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				} else if ($event['call_type'] >= "11") {
+					$event[$numberField] = Billrun_Util::cleanLeadingZeros($event[$numberField]); // this will cleaning leading zeros and pluses
 				}
 			}
 			// backward compatibility to local calls without vlr

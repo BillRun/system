@@ -120,6 +120,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
+		// If no operation was specified, take it from the charging plan record.
+		if (($this->isIncrement===1) && (isset($chargingPlanRecord['operation']))) {
+			$this->isIncrement = ($chargingPlanRecord['operation'] != 'set');
+		}
+		
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];

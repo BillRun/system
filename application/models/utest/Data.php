@@ -93,7 +93,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 				"GPRSNegQoSProfile" => "0",
 				"ChargingCharacteristics" => "0800",
 				"PDPType" => "0",
-				"SGSNMCCMNC" => "42503",
+				"SGSNMCCMNC" => $mcc,
 				"GGSNMCCMNC" => "0",
 				"CGAddress" => "0.0.0.0",
 				"NSAPI" => "5",
