@@ -132,10 +132,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
 		if ($coreBalance !== null) {
-			if ($this->blockMax($subscriber['plan'], $coreBalance, $updateQuery)) {
-				// [Balances Error 1226]
-				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 26;
-				$this->reportError($errorCode);
+			if (!$this->handleCoreBalance($subscriber['plan'], $coreBalance, $updateQuery)) {
 				return false;
 			}
 		}
@@ -202,10 +199,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @return boolean true if get to max value, else false
 	 */
-	protected function blockMax($planName, $wallet, $query) {
+	protected function handleCoreBalance($planName, $wallet, $query) {
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $wallet->getPPID();
-		return parent::blockMax($planName, $wallet, $query);
+		return parent::handleCoreBalance($planName, $wallet, $query);
 	}
 
 	/**

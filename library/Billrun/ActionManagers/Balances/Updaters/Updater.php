@@ -340,23 +340,26 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param type $query
 	 * 
-	 * @return boolean true if get to max value, else false
+	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
+	 * indicating if should be blocked.
 	 */
-	protected function blockMax($planName, $wallet, $query) {
+	protected function handleCoreBalance($planName, $wallet, $query) {
 		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
-		$newValue = $wallet->getValue();
-
-		// Check if passing the max.
-		if ($this->updateOperation->isIncrement()) {
-			$this->getExpectedValueForIncrement($query, $newValue);
+		
+		$handleResult = $this->updateOperation->handleCoreBalance($max, $wallet, $query);
+		if(isset($handleResult['onError'])) {
+			$this->reportError($handleResult['onError']);
+			return false;
 		}
-
-		// we're using absolute for both cases - positive and negative values
-		if (abs($newValue) > abs($max)) { 
-			return true;
+		
+		if(isset($handleResult['block']) && $handleResult['block']) {
+			// [Balances Error 1225]
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 25;
+			$this->reportError($errorCode);
+			return false;
 		}
-
-		return false;
+		
+		return true;
 	}
 	
 	/**
