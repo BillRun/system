@@ -234,7 +234,7 @@ class Billrun_DataTypes_Wallet {
 	 * true by deafult.
 	 * @return array - Partial balance.
 	 */
-	public function getPartialBalance($convertToPHP=true) {
+	public function getPartialBalance($convertToPHP = true) {
 		$partialBalance['charging_by'] = $this->getChargingBy();
 		$partialBalance['charging_by_usaget'] = $this->getChargingByUsaget();
 		$partialBalance['charging_by_usaget_unit'] = $this->getChargingByUsagetUnit();
