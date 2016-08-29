@@ -213,7 +213,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		// Check if the from is in the past.
 		if ($from >= strtotime("tomorrow midnight")) {
-			$set['next_renew_date'] = Billrun_Utils_Autorenew::getNextRenewDate($from);
+			$set['next_renew_date'] = new MongoDate(strtotime("00:00:00", $from));
+			$jsonUpdateData['migrated'] = false;
 		} else {
 			// TODO: Move the migrated logic to some "migrated handler"
 			$set['last_renew_date'] = -1;
@@ -222,7 +223,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		$set['remain'] = Billrun_Util::countMonths($from, $toExtended);
 
-		if (isset($jsonUpdateData['migrated'])) {
+		if (isset($jsonUpdateData['migrated']) && $jsonUpdateData['migrated']) {
 			$this->handleMigrated($jsonUpdateData, $set, $from, $toExtended);
 		}
 
