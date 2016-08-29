@@ -23,6 +23,8 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 */
 	public function update($coll, $query, $update, $options) {
 		$contents = $update['$set'];
+		$contents['sid'] = $query['sid'];
+		$contents['aid'] = $query['aid'];
 		$entity = new Mongodloid_Entity($contents);
 		// TODO: Should we validate the insert operation? What do we do if it failed?
 		$coll->insert($entity);
@@ -35,11 +37,14 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 */
 	protected function getSetQuery($wallet) {
 		$query = parent::getSetQuery($wallet);
-		$valueToUseInQuery = $wallet->getValue();
 		$valueFieldName = $wallet->getFieldName();
 		$contents = $query['$set'];
-		Billrun_Util::setDotArrayToArray($contents, $valueFieldName, $valueToUseInQuery);
-		return array('$set' => $contents);
+		unset($contents[$valueFieldName]);
+		if(!isset($contents['from'])) {
+			$contents['from'] = new MongoDate();
+		}
+		$merged = array_merge($contents, $wallet->getPartialBalance());
+		return array('$set' => $merged);
 	}
 	
 	/**
@@ -64,5 +69,20 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 */
 	public function setToForUpdate(&$update, $to, $balanceRecord) {
 		$update['$set']['to'] = $to;
+	}
+	
+	/**
+	 * Handle the core balance
+	 * 
+	 * @param int $max - Max value
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param type $query
+	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
+	 * indicating if should be blocked.
+	 */
+	public function handleCoreBalance($max, $wallet, $query) {
+		// [Balances Error 1240]
+		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 40;
+		return array("onError" => $errorCode);
 	}
 }

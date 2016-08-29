@@ -200,4 +200,15 @@ abstract class Billrun_Balances_Update_Operation {
 		
 		return $this;
 	}
+	
+	/**
+	 * Handle the core balance
+	 * 
+	 * @param int $max - Max value
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param type $query
+	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
+	 * indicating if should be blocked.
+	 */
+	public abstract function handleCoreBalance($max, $wallet, $query);
 }

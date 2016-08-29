@@ -30,4 +30,20 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	public function isIncrement() {
 		return false;
 	}
+	
+	/**
+	 * Handle the core balance
+	 * 
+	 * @param int $max - Max value
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param type $query
+	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
+	 * indicating if should be blocked.
+	 */
+	public function handleCoreBalance($max, $wallet, $query) {
+		$newValue = $wallet->getValue();
+
+		// we're using absolute for both cases - positive and negative values
+		return array("block"=>(abs($newValue) > abs($max)));
+	}
 }
