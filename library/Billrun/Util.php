@@ -756,6 +756,7 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'additional' => array(),
 		);
 		$filtered_request = array();
 
