@@ -324,25 +324,31 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return true if successful false otherwise.
 	 */
 	protected function setUpdateRecord($input) {
-		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 
 		$upsertNeeded = true;
 
-		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+		if (empty($update)){
 			if (!$this->handleNoUpsert()) {
 				return false;
 			}
-
 			$upsertNeeded = false;
 		}
 
-		$operation = "inc";
+		$jsonUpdateData = json_decode($update, true);
+		// If the JSON is invalid
+		if($upsertNeeded && ($jsonUpdateData==null)) {
+			// [Balances error] 1227
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 27;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($update,1)));
+			return false;
+		}
+		
 		if (isset($jsonUpdateData['operation'])) {
 			// TODO: What if this is not INC and not SET? Should we check and raise error?
 			$operation = $jsonUpdateData['operation'];
+			$this->recordToSet['operation'] = $operation;
 		}
-		$this->recordToSet['operation'] = $operation;
 
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
@@ -469,7 +475,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->additional = array();
 		}
 
-		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
+		$this->updaterOptions['increment'] = Billrun_Balances_Util::getOperationValue($this->recordToSet);
 
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$this->updaterOptions['zero'] = true;
