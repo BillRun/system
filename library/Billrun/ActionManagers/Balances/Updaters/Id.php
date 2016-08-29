@@ -187,7 +187,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		// Set the old record
 		$this->balanceBefore[$usedWallet->getPPID()] = $this->balancesRecord;
 
-		$queryType = $this->isIncrement ? '$inc' : '$set';
+		$queryType = $this->updateOperation ? '$set' : '$inc';
 		$valueFieldName = $usedWallet->getFieldName();
 		$valueUpdateQuery = array();
 		$valueUpdateQuery[$queryType]

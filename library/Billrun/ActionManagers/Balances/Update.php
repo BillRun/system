@@ -475,20 +475,32 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->additional = array();
 		}
 
-		$this->updaterOptions['increment'] = Billrun_Balances_Util::getOperationValue($this->recordToSet);
-
-		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
-		$this->updaterOptions['zero'] = true;
-
 		// Check for recurring.
 		$recurring = $input->get('recurring');
-		if ($recurring) {
-			$this->updaterOptions['recurring'] = 1;
+		$this->constructOperation($recurring);
+		if(!$this->updaterOptions['operation']) {
+			// [Balances Error 1228]
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 28;
+			$this->reportError($errorCode, Zend_Log::WARN);
+			return false;
 		}
 
 		return true;
 	}
 
+	protected function constructOperation($recurring) {
+		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
+		$options = array();
+		$options['zero'] = true;
+
+		// Check for recurring.
+		if ($recurring) {
+			$options['recurring'] = true;
+		}
+		
+		$this->updaterOptions['operation'] = Billrun_Balances_Util::getOperation($this->recordToSet, $options);
+	}
+	
 	/**
 	 * Get the query to use to update mongo.
 	 * 

@@ -134,60 +134,20 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	}
 
 	/**
-	 * Get the update balance query. 
-	 * @param Mongoldoid_Collection $balancesColl
-	 * @param array $query - Query for getting tha balance.
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
-	 * @param array $defaultBalance - Default balance to set.
-	 * @return array Query for set updating the balance.
-	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $chargingPlan, $defaultBalance) {
-		$update = array();
-		$balance = $balancesColl->query($query)->cursor()->current();
-		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
-
-		// If the balance doesn't exist take the setOnInsert query, 
-		// if it exists take the set query.
-		if (!isset($balance) || $balance->isEmpty()) {
-			$update = $this->getSetOnInsert($chargingPlan, $defaultBalance);
-		} else {
-			$this->handleZeroing($query, $balancesColl, $chargingPlan->getFieldName());
-
-			$update = $this->getSetQuery($chargingPlan);
-		}
-
-		return $update;
-	}
-
-	/**
 	 * Update a single balance.
-	 * @param Billrun_DataTypes_Wallet $chargingPlan
+	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param array $query
 	 * @param array $defaultBalance
 	 * @param MongoDate $toTime
 	 * @return Array with the wallet as the key and the Updated record as the value.
 	 */
-	protected function updateBalance($chargingPlan, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
-		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $chargingPlan, $defaultBalance);
-
-		if ($this->setToForUpdate($update, $toTime, $chargingPlan) === FALSE) {
-			return FALSE;
-		}
+	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
+		$balance = parent::updateBalance($wallet, $query, $defaultBalance, $toTime);
 		
-		$options = array(
-			'upsert' => true,
-			'new' => true,
-		);
-
-		$balance = $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
-
 		// Return the new document.
 		return array(
 			array(
-				'wallet' => $chargingPlan,
+				'wallet' => $wallet,
 				'balance' => $balance
 			)
 		);
