@@ -488,6 +488,10 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		return true;
 	}
 
+	/**
+	 * Construct the operation object to be passed on to the balance updater.
+	 * @param mixed $recurring - The recurring input received from the user.
+	 */
 	protected function constructOperation($recurring) {
 		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
 		$options = array();
@@ -498,7 +502,11 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$options['recurring'] = true;
 		}
 		
-		$this->updaterOptions['operation'] = Billrun_Balances_Util::getOperation($this->recordToSet, $options);
+		/**
+		 * @var Billrun_Balances_Update_Operation
+		 */
+		$operation = Billrun_Balances_Util::getOperation($this->recordToSet, $options);
+		$this->updaterOptions['operation'] = $operation;
 	}
 	
 	/**
