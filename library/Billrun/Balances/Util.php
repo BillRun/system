@@ -14,18 +14,46 @@
  */
 class Billrun_Balances_Util {
 
-	// TODO: Move the default balance operation value to here.
+	/**
+	 * The default update operation value
+	 * @var mixed
+	 */
+	public static $DEFAULT_UPDATE_OPERATION = 0;
 	
 	/**
 	 * Get the operation value from an array of options
 	 * @param array $options - Array of options that should have the operation field,
 	 * if it doesn't have an operation field, return default operation value.
+	 * @param string $operationOptions - Options to initialize the update operation instance.
 	 * @param string $operationKey - The field name for the operation in the options 
-	 * array, "operation" by default.
+	 * array, "operation" by default
+	 * @return Billrun_Balances_Update_Operation - Matching operation.
 	 */
-	public static function getOperationValue($options, $operationKey="operation") {
+	public static function getOperation($options, $operationOptions=array(), $operationKey="operation") {
+		$operationValue = self::getOperationName($options, $operationKey);
+		
+		// Check if class exists.
+		if(!class_exists($operationValue)) {
+			return null;
+		}
+		
+		// Allocate the class.
+		return new $operationValue($operationOptions);
+	}
+	
+	/**
+	 * Get the balance update operation name.
+	 * @param type $options
+	 * @param type $operationKey
+	 * @return string
+	 */
+	protected function getOperationName($options, $operationKey) {
+		if(self::$DEFAULT_UPDATE_OPERATION === 0) {
+			self::$DEFAULT_UPDATE_OPERATION = Billrun_Factory::config()->getConfigValue('balances.operation.default');
+		}
+		
 		if(!isset($options[$operationKey])) {
-			return 1;
+			return self::$DEFAULT_UPDATE_OPERATION;
 		}
 		
 		// Get the operation value.
@@ -36,11 +64,10 @@ class Billrun_Balances_Util {
 		
 		if(!isset($operationList[$operation])) {
 			// Return default.
-			return 1;
+			return self::$DEFAULT_UPDATE_OPERATION;
 		}
 		
-		$operationValue = $operationList[$operation];
-		return boolval($operationValue);
+		return $operationList[$operation];
 	}
 	
 	/**
