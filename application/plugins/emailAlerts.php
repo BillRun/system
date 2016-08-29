@@ -138,10 +138,10 @@ class emailAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return Array an array containg the events pulled from the data base.
 	 */
 	protected function gatherEvents($types) {
-                $allowedAlertsDelay = Billrun_Factory::config()->getConfigValue('fraud.alerts.allowed_delay', '-1 months');
+        $allowedAlertsDelay = Billrun_Factory::config()->getConfigValue('fraud.alerts.allowed_delay', '-1 months');
 		$events = Billrun_Factory::db()->eventsCollection()->query(array(
 			'source' => array('$in' => $types),
-			'notify_time' => array('$gt' => new MongoDate(strtotime($allowedAlertsDelay))),
+			'creation_time' => array('$gt' => date('Y-m-d H:i:s',strtotime($allowedAlertsDelay))),
 			'email_sent' => array('$exists' => false),
 			'$where' => "this.deposit_stamp == this.stamp",
 		));
