@@ -415,8 +415,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function insertToFraudLines($lines) {
 		try {
 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
-			foreach ($lines as $line) {
+			foreach ($lines as &$line) {
 
 				$line['unified_record_time'] = $line['urt'];
 				if (isset($line['aid'])) {
@@ -425,9 +424,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($line['sid'])) {
 					$line['subscriber_id'] = $line['sid'];
 				}
-
-				$fraud_connection->insert(new Mongodloid_Entity($line), array('w' => 0));
+				
+				$line['insert_process_time'] = new MongoDate();
 			}
+			$fraud_lines_collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
+			$fraud_lines_collection->batchInsert($lines, array('w' => 0));
+			
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
@@ -440,7 +442,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function insertToFraudQueue($lines) {
 		try {
 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
-			$fraud_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->queueCollection();
+			$queueLines = array();
 			foreach ($lines as $line) {
 				$queueLine = array( 'stamp'=> $line['stamp'],
 									'urt'=>$line['urt'],
@@ -453,9 +455,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$queueLine['sid'] =  $line['sid'];
 					$queueLine['calc_name'] = 'customer';
 				}
-
-				$fraud_connection->insert(new Mongodloid_Entity($queueLine), array('w' => 0));
+				$queueLine['insert_process_time'] = new MongoDate();
+				$queueLines[] = $queueLine;
 			}
+
+			$fraud_queue_collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->queueCollection();
+			$fraud_queue_collection->batchInsert($queueLines, array('w' => 0));
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud queue collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
