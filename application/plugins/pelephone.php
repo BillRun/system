@@ -637,7 +637,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo change the values to be with flag taken from pp_includes into balance object
 	 * 
 	 */
-	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
+	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
@@ -656,7 +656,30 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
+			
+			$additionalUsageTypes = $this->getUsageTypesByAdditionalUsageType($usageType);
+			foreach ($additionalUsageTypes as $additionalUsageType) {
+				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
+				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
+			}
 		}
+	}
+	
+	/**
+	 * this will return also available usage types (in balances) 
+	 * according to the additional types set in the prepaid includes document.
+	 * 
+	 * @param type $usaget
+	 * @return main usaget types
+	 */
+	protected function getUsageTypesByAdditionalUsageType($usaget) {
+		$pp_includes_query = array_merge(Billrun_Util::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
+		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
+		$usageTypes = array();
+		foreach ($ppincludes as $ppinclude) {
+			$usageTypes[] = $ppinclude['charging_by_usaget'];
+		}
+		return array_unique($usageTypes);
 	}
 
 	protected function getPPIncludesToExclude($plan_name, $rate_key) {

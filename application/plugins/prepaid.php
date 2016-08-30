@@ -342,17 +342,20 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$balance['tx'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
+			$balanceObj = new Billrun_Balance();
+			$balanceObj->setRawData($balance->getRawData());
+			$balanceTotalKeys = $balanceObj->getBalanceChargingTotalsKey($usaget);
 			$originalRow['call_offset'] += $rebalanceUsagev;
-			if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
+			if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.usagev'))) {
 				if ($this->handleRebalanceOfUsagev($lineToRebalance, $originalRow, $realUsagev, $rebalanceUsagev)) {
 					$realUsagevAfterCeiling = $realUsagev;
 					if ($originalRow['type'] == 'callrt') {
 						$realUsagevAfterCeiling -= $lineToRebalance['call_offset'];
 					}
 				}
-				$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
-			} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
-				$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
+				$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
+			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
+				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
