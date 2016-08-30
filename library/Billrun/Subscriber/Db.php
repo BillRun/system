@@ -397,7 +397,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			// Check if active.
 			$to = strtotime($service['to']);
 			$from = strtotime($service['from']);
-			if($to === -1 || $from === -1) {
+			if(!$to || !$from) {
 				continue;
 			}
 			
