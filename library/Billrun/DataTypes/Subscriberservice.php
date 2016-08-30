@@ -39,7 +39,7 @@ class Billrun_DataTypes_Subscriberservice {
 		
 		// Validate
 		if(!$from || !$to) {
-			return;
+			return false;
 		}
 		
 		// Validate the dates.
