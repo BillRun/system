@@ -38,7 +38,7 @@ class Billrun_DataTypes_Subscriberservice {
 		$to = strtotime($this->to);
 		
 		// Validate
-		if($from === -1 || $to === -1) {
+		if(!$from || !$to) {
 			return;
 		}
 		
