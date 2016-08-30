@@ -1,20 +1,27 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+/**
+ * Cycle action class
+ *
+ * @package  Action
+ * @since    5.0
+ * 
+ */
 class CycleAction extends Action_Base {
 
 	protected $billingCycleCol = null;
 
 	/**
-	 * Build the options for the aggregator
+	 * Build the options for the cycle
 	 * @return boolean
 	 * @todo This is a generic function, might be better to create a basic action class
-	 * that uses an aggregator and have all these functions in it.
+	 * that uses an cycle and have all these functions in it.
 	 */
 	protected function buildOptions() {
 		$possibleOptions = array(
