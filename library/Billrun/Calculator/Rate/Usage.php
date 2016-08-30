@@ -7,10 +7,10 @@
  */
 
 /**
- * Billing rate calculator for Braas
+ * Billing rate calculator for the cloud
  *
  * @package  calculator
- * @since braas
+ * @since 5.0
  */
 class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 

@@ -13,7 +13,7 @@
  * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
-
+	
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
@@ -27,6 +27,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		
 		$this->start_time = microtime(1);
 		// all output will be store at class output class
 		$this->output = new stdClass();

@@ -10,7 +10,7 @@
  * Billing invoice view - helper for html template for invoice
  *
  * @package  Billing
- * @since    braas
+ * @since    5.0
  */
 class Billrun_View_Invoice extends Yaf_View_Simple {
 	

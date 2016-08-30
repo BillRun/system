@@ -16,7 +16,7 @@ class Billrun_DataTypes_Conf_String extends Billrun_DataTypes_Conf_Base {
 		if(isset($obj['re'])) {
 			$this->reg = $obj['re'];
 		}
-		$this->getRange($obj);
+		$this->getStringRange($obj);
 	}
 	
 	public function validate() {
@@ -36,7 +36,7 @@ class Billrun_DataTypes_Conf_String extends Billrun_DataTypes_Conf_Base {
 			return (preg_match($this->reg, $this->val) === 1);
 		}
 		
-		if(!$this->validateRange()) {
+		if(!$this->validateStringRange()) {
 			return false;
 		}
 		

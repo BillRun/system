@@ -9,27 +9,27 @@
  * Trait to handle Range validations on complex conf values.
  */
 trait Billrun_DataTypes_Conf_Stringrange {
-	protected $range = array();
-	protected function getRange($obj) {
+	protected $stringRange = array();
+	protected function getStringRange($obj) {
 		if(!isset($obj['range'])) {
 			return;
 		}
 		
 		// TODO: Should we validate max and min existing? Set defaults?
 		// I prefer strictly forcing using both max and min.
-		$this->range = $obj['range'];
+		$this->stringRange = $obj['range'];
 	}
 	
-	protected function validateRange() {
+	protected function validateStringRange() {
 		// Check if has range
-		if(empty($this->range)) {
+		if(empty($this->stringRange)) {
 			return true;
 		}
 		
-		if(!is_array($this->range)) {
+		if(!is_array($this->stringRange)) {
 			return false;
 		}
 		
-		return in_array($this->val, $this->range);
+		return in_array($this->val, $this->stringRange);
 	}
 }
