@@ -230,9 +230,11 @@ class Billrun_DataTypes_Wallet {
 
 	/**
 	 * Get the partial balance record from the wallet values.
+	 * @param boolean $convertToPHP - If true, convert dot array to php style array.
+	 * true by deafult.
 	 * @return array - Partial balance.
 	 */
-	public function getPartialBalance() {
+	public function getPartialBalance($convertToPHP = true) {
 		$partialBalance['charging_by'] = $this->getChargingBy();
 		$partialBalance['charging_by_usaget'] = $this->getChargingByUsaget();
 		$partialBalance['charging_by_usaget_unit'] = $this->getChargingByUsagetUnit();
@@ -241,6 +243,18 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['priority'] = $this->getPriority();
 		$partialBalance[$this->getFieldName()] = $this->getValue();
 
+		if($convertToPHP) {
+			$this->translatePartialBalance($partialBalance);
+		}
+		
+		return $partialBalance;
+	}
+	
+	/**
+	 * Translate a partial balance object.
+	 * @param type $partialBalance
+	 */
+	protected function translatePartialBalance(&$partialBalance) {
 		foreach ($partialBalance as $key => $value) {
 			if (!is_string($key)) {
 				continue;
@@ -248,8 +262,5 @@ class Billrun_DataTypes_Wallet {
 
 			Billrun_Util::setDotArrayToArray($partialBalance, $key, $value);
 		}
-
-		return $partialBalance;
 	}
-
 }
