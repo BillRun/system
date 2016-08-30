@@ -24,10 +24,12 @@ class utest_BalanceChargeModel extends utest_AbstractUtestModel {
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$name = Billrun_Util::filter_var($this->controller->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);
+		$operation = Billrun_Util::filter_var($this->controller->getRequest()->get('operation'), FILTER_SANITIZE_STRING);
 
 		$params = array(
 			'sid' => $sid,
-			'name' => $name
+			'name' => $name,
+			'operation' => $operation
 		);
 
 		$data = $this->getRequestData($params);
@@ -41,11 +43,16 @@ class utest_BalanceChargeModel extends utest_AbstractUtestModel {
 	 * @return XML string
 	 */
 	protected function getRequestData($params) {
+		$upsert = array("a" => 1);
+		if(isset($params['operation']) && $params['operation']) {
+			$upsert['operation'] = $params['operation'];
+		}
+		
 		$request = array(
 			'method' => 'update',
 			'sid' => $params['sid'],
 			'query' => json_encode(["charging_plan_name" => $params['name']]),
-			'upsert' => json_encode(["a" => 1]),
+			'upsert' => json_encode($upsert),
 			'additional' => json_encode(array(
 				'balance_info' => Billrun_Factory::user()->getUsername(),
 				'balance_type' => 'RECHARGE',
