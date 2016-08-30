@@ -617,6 +617,17 @@ class RatesModel extends TabledateModel {
 				return 'Usage type "' . $usaget . '" is not valid';
 			}
 			foreach ($plans as $plan => $rate) {
+				if ($plan === 'groups') {
+					foreach ($rate as $groupPlanName => $group) {
+						if (!PlansModel::isPlanExists($groupPlanName)) {
+							return 'Plan "' . $groupPlanName . '" does not exists (under "groups")';
+						}
+						if (!$this->isGroupsValid($group)) {
+							return 'Invalid "groups" field: ' . print_R($group, 1);
+						}
+					}
+					continue;
+				}
 				if (!PlansModel::isPlanExists($plan)) {
 					return 'Plan "' . $plan . '" does not exists';
 				}
@@ -652,6 +663,10 @@ class RatesModel extends TabledateModel {
 	
 	protected function isUsagetValid($usaget) {
 		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
+	}
+	
+	protected function isGroupsValid($groups) {
+		return is_array($groups) && (empty($groups) || !Billrun_Util::isAssoc($groups));
 	}
 
 }
