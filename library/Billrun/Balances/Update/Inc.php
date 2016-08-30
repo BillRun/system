@@ -48,11 +48,27 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 		$newValue = $wallet->getValue();
 
 		// Check if passing the max.
-		if ($this->updateOperation->isIncrement()) {
-			$this->getExpectedValueForIncrement($query, $newValue);
-		}
+		$this->getExpectedValueForIncrement($query, $newValue);
 
 		// we're using absolute for both cases - positive and negative values
 		return array("block" => (abs($newValue) > abs($max)));
+	}
+	
+	/**
+	 * Get the expected balance value for an increment operation.
+	 * This function is used to check if the update logic should be blocked conditioned
+	 * on the defined max value.
+	 * @param array $query - Query to use to get a balance record
+	 * @param int $newValue - Reference parameter, updated inside with the value before.
+	 */
+	protected function getExpectedValueForIncrement($query, &$newValue) {
+		$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
+		if (!$balanceBefore->isEmpty()) {
+			$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
+		}
+
+		$newValue += $valueBefore;
 	}
 }

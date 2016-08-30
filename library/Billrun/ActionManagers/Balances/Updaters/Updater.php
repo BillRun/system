@@ -363,24 +363,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	}
 	
 	/**
-	 * Get the expected balance value for an increment operation.
-	 * This function is used to check if the update logic should be blocked conditioned
-	 * on the defined max value.
-	 * @param array $query - Query to use to get a balance record
-	 * @param int $newValue - Reference parameter, updated inside with the value before.
-	 */
-	protected function getExpectedValueForIncrement($query, &$newValue) {
-		$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
-		$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
-		if (!$balanceBefore->isEmpty()) {
-			$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-		}
-
-		$newValue += $valueBefore;
-	}
-	
-	/**
 	 * Store the balance value before updating.
 	 * @param array $query - Query to get the balance before update.
 	 * @param Mongodloig_Collection $balancesColl - The balances collection.
