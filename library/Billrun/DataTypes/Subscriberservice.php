@@ -47,6 +47,15 @@ class Billrun_DataTypes_Subscriberservice {
 			return false;
 		}
 		
+		return $this->checkDB($from);
+	}
+	
+	/**
+	 * Check if the service exists in the data base.
+	 * @param integer $from - From timestamp
+	 * @return boolean True if the service exists in the mongo
+	 */
+	protected function checkDB($from) {
 		// Check in the mongo.
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
 		$serviceQuery = Billrun_Util::getDateBoundQuery($from, true);
