@@ -1033,7 +1033,7 @@ class Billrun_Billrun {
 	
 	public function setBillrunAccountFields($data) {
 		$this->data['creation_time'] = new MongoDate();
-		if(isset($this->data['attributes'])) {
+		if(isset($data['attributes'])) {
 			$this->data['attributes'] = $data['attributes'];
 		}
 	}
