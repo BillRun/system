@@ -618,15 +618,11 @@ class RatesModel extends TabledateModel {
 			}
 			foreach ($plans as $plan => $rate) {
 				if ($plan === 'groups') {
-					foreach ($rate as $groupPlanName => $group) {
-						if (!PlansModel::isPlanExists($groupPlanName)) {
-							return 'Plan "' . $groupPlanName . '" does not exists (under "groups")';
-						}
-						if (!$this->isGroupsValid($group)) {
-							return 'Invalid "groups" field: ' . print_R($group, 1);
-						}
+					if ($this->isGroupsValid($rate)) {
+						continue;
+					} else {
+						return 'Invalid "groups" field: ' . print_R($rate, 1);
 					}
-					continue;
 				}
 				if (!PlansModel::isPlanExists($plan)) {
 					return 'Plan "' . $plan . '" does not exists';
