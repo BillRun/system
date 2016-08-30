@@ -120,6 +120,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
+		// Handle the operation.
+		if($this->isIncrement === 1) {
+			$this->isIncrement = Billrun_Balances_Util::getOperationValue($chargingPlanRecord);
+		}
+		
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];

@@ -19,9 +19,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	/**
 	 * If true then the values in mongo are updated by incrementation,
 	 * if false then the values in the mongo are forceablly set.
-	 * @var boolean. 
+	 * 1 By default.
+	 * @var mixed. 
 	 */
-	protected $isIncrement = true;
+	protected $isIncrement = 1;
 
 	/**
 	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
