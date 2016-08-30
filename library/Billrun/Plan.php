@@ -221,9 +221,13 @@ class Billrun_Plan {
 	public function getRateGroups($rate, $usageType) {
 		if (isset($rate['rates'][$usageType]['groups'])) {
 			$groups = $rate['rates'][$usageType]['groups'];
-			if (!empty($groups) && isset($this->data['include']['groups'])) {
-				return array_intersect($groups, array_keys($this->data['include']['groups']));
-			}
+		} else if (($name = $this->getName()) && isset($rate['rates'][$usageType]['groups'][$name])) {
+			$groups = $rate['rates'][$usageType]['groups'][$name];
+		} else {
+			return array();
+		}
+		if (!empty($groups) && isset($this->data['include']['groups'])) {
+			return array_intersect($groups, array_keys($this->data['include']['groups']));
 		}
 		return array();
 	}
