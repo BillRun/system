@@ -14,7 +14,8 @@
  * 
  */
 class CycleAction extends Action_Base {
-
+	use Billrun_Traits_OnChargeDay;
+	
 	protected $billingCycleCol = null;
 
 	/**
@@ -37,7 +38,7 @@ class CycleAction extends Action_Base {
 			return false;
 		}
 
-		if (is_null($options['stamp'])) {
+		if (empty($options['stamp'])) {
 			$nextBillrunKey = Billrun_Util::getBillrunKey(time());
 			$currentBillrunKey = Billrun_Util::getPreviousBillrunKey($nextBillrunKey);
 			$options['stamp'] = $currentBillrunKey;
@@ -70,6 +71,13 @@ class CycleAction extends Action_Base {
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
+		// Check if we should cycle.
+		// Checking with a 3 hour lag.
+		if(!$this->isChargeDay(3)) {
+			$this->_controller->addOutput("Skipping cycle.");
+			return;
+		}
+		
 		$options = $this->buildOptions();
 		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
 		$processInterval = $this->getProcessInterval();
@@ -101,7 +109,7 @@ class CycleAction extends Action_Base {
 			break;
 		}
 	}
-
+	
 	protected function executeParentProcess($processInterval) {
 		$this->_controller->addOutput("Going to sleep for " . $processInterval);
 		sleep($processInterval);
