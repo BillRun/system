@@ -141,8 +141,8 @@ class PlansModel extends TabledateModel {
 			
 			$typeFields = array(
 				'price' => 'float',
-				'from' => 'date',
-				'to' => 'date',
+				'from' => 'integer',
+				'to' => 'integer',
 			);
 			$validateTypes = $this->validateTypes($price, $typeFields);
 			if ($validateTypes !== true) {
