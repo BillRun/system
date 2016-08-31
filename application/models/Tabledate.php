@@ -136,7 +136,7 @@ class TabledateModel extends TableModel {
 		}
 
 		// close the old line
-		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
+		$mongoCloseTime = new MongoDate($new_from->getTimestamp());
 		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
