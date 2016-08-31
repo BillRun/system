@@ -179,12 +179,14 @@ use Billrun_Traits_FileSequenceChecking;
 			$record_type = $cdrLine['record_type'];
 			if ($record_type == '9') {
 				if ($tele_service_code == '11') {
-					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					if ($called_number) {
-						$cdrLine['called_number'] = $called_number; 
-					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
-						if(isset($dialed_digits)) {
+					$camel_destination_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['camel_destination_number']);
+					if ($camel_destination_number) {
+						$cdrLine['called_number'] = $camel_destination_number;
+					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
+					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])){
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+						if (isset($dialed_digits)) {
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
@@ -204,7 +206,10 @@ use Billrun_Traits_FileSequenceChecking;
 				}
 			} else if ($record_type == 'a') {
 				if ($tele_service_code == '11') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+					$camel_destination_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['camel_destination_number']);
+					if ($camel_destination_number) {
+						$cdrLine['called_number'] = $camel_destination_number;
+					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					}
 				}
@@ -215,18 +220,23 @@ use Billrun_Traits_FileSequenceChecking;
 			$cdrLine['bearer_srv_code'] = $bearer_service_code;
 			if (in_array($bearer_service_code, array('30', '37'))) {
 				if ($record_type == '9') {
-					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					if ($called_number) {
-						$cdrLine['called_number'] = $called_number; 
+					$camel_destination_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['camel_destination_number']);
+					if ($camel_destination_number) {
+						$cdrLine['called_number'] = $camel_destination_number;
+					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+						$cdrLine['called_number'] = $called_number;
 					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']); 
-						if(isset($dialed_digits)) {
+						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
+						if (isset($dialed_digits)) {
 							$cdrLine['called_number'] = $dialed_digits;
 						}
 					}
 				}
 				if ($record_type == 'a') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
+					$camel_destination_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['camel_destination_number']);
+					if ($camel_destination_number) {
+						$cdrLine['called_number'] = $camel_destination_number;
+					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
 						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
 					}
 				}
@@ -235,7 +245,7 @@ use Billrun_Traits_FileSequenceChecking;
 		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
 			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
 		}
-		
+				
 //		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
 //			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
 //				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
@@ -274,9 +284,12 @@ use Billrun_Traits_FileSequenceChecking;
 				return $this->utf8encodeArr($data);
 			},
 			'bcd_number' => function($fieldData) {
-				$ret = $this->parsingMethods['bcd_encode']($fieldData);
-
-				return preg_replace('/15$/', '', $ret);
+				$halfBytes = unpack('C*', $fieldData);
+				$ret = '';
+				foreach ($halfBytes as $byte) {
+					$ret .= ((($byte >> 4) < 10) ? ($byte >> 4) : '' ) . ( (($byte & 0xF) < 10) ? ($byte & 0xF) : '');	
+				}
+				return $ret;
 			},
 			'time_offset_list' => function($data) {
 				return $this->parseTimeOffsetList($data);
