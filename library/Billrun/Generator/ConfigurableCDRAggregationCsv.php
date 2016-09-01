@@ -27,6 +27,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $tmpFileIndicator = ".tmp";
 	protected $legitimateFileExtension = "";
 	protected $startTime = 0;
+	protected $reportLinesStamps = array();
 
 	public function __construct($options) {
 
@@ -267,10 +268,15 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$fieldStr = sprintf($fieldFormat, (isset($row[$field]) ? $row[$field] : ''));
 			$str .= $fieldStr . $this->separator;
 		}
-		if (!$empty) {
-			$this->writeToFile($str . PHP_EOL);
+		if (!$empty ) {
+			if(!isset($this->reportLinesStamps[md5($str)])) {
+				$this->writeToFile($str . PHP_EOL);
+				$this->reportLinesStamps[md5($str)]=true;
+			} else {
+				Billrun_Factory::log('BIReport got a duplicate  line : ' . $str, Zend_Log::WARN);
+			}
 		} else {
-			Billrun_Factory::log("BIReport got an empty line : " . print_r($row, 1), Zend_Log::WARN);
+			Billrun_Factory::log('BIReport got an empty line : ' . print_r($row, 1), Zend_Log::WARN);
 		}
 	}
 
