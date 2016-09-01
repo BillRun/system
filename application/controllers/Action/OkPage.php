@@ -26,7 +26,6 @@ class OkPageAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
-//		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$transaction_id = $request->get("txId");
 		if (is_null($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);
@@ -40,7 +39,9 @@ class OkPageAction extends ApiAction {
 		if(!$this->validateCreditGuardProcess($transaction_id)) {
 			return $this->setError("Operation Failed. Try Again...", $request);			
 		}
-		
+		$today = new MongoDate();
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
 		$this->forceRedirect($this->return_url);
 	}
 
