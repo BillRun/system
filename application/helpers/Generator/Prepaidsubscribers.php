@@ -76,8 +76,9 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 			$hasData = false;
 			foreach ($this->data as $line) {
 				$hasData = true;
-				if ($this->isLineEligible($line)) {
-					$this->writeRowToFile($this->translateCdrFields($line, $this->translations), $this->fieldDefinitions);
+				$translatedLine = $this->translateCdrFields($line, $this->translations);
+				if ($this->isLineEligible($translatedLine)) {
+					$this->writeRowToFile($translatedLine, $this->fieldDefinitions);
 				}
 			}
 			$page++;
@@ -94,10 +95,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	}
 
 	protected function isLineEligible($line) {
-		$transaltedLine = $this->translateCdrFields($line, $this->translations);
-		return  (!empty($transaltedLine['last_recharge_date']) /* && date_create_from_format($this->translations['last_recharge_date']['translation']['values']['date_format'],$transaltedLine['last_recharge_date'])->getTimestamp() >= $this->releventTransactionTimeStamp */ 
-				|| 
-				!empty($transaltedLine['last_trans_date']) /* && date_create_from_format($this->translations['last_trans_date']['translation']['values']['date_format'],$transaltedLine['last_trans_date'])->getTimestamp() >= $this->releventTransactionTimeStamp */ );
+		return ( !empty($line['last_recharge_date']) || !empty($line['last_trans_date']) );
 	}
 
 	// ------------------------------------ Helpers -----------------------------------------
