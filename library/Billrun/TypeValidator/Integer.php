@@ -9,9 +9,17 @@
 /**
  * Integer type validator.
  *
+ * @since 5.1
  */
 class Billrun_TypeValidator_Integer extends Billrun_TypeValidator_Base {
 
+	/**
+	 * Check if $value is Integer
+	 * 
+	 * @param type $value
+	 * @param type $params - optional extra params
+	 * @return boolean
+	 */
 	public function validate($value, $params) {
 		return is_numeric($value) && ($value == intval($value));
 	}

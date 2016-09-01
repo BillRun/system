@@ -9,21 +9,27 @@
 /**
  * This is a validator for Rate.
  *
+ * @since 5.1
  */
 class Billrun_ModelValidator_Rates extends Billrun_ModelValidator_Base {
 
+	/**
+	 * Validates a Rate object
+	 * 
+	 * @param type $data - rate object to validate
+	 * @return true on success, error message on failure
+	 */
 	protected function validateRates($data) {
-		if (empty($data['rates'])) {
+		if (empty($data['rates'])) { // No "rates" object means the rate is not valid
 			return '"rates" field must be set in rate';
 		}
 		foreach ($data['rates'] as $usaget => $plans) {
-			if (!$this->isUsagetValid($usaget)) {
+			if (!$this->isUsagetValid($usaget)) { // If the "usaget" of the rate is not in the system, the rate is not valid
 				return 'Usage type "' . $usaget . '" is not valid';
 			}
 			foreach ($plans as $plan => $rate) {
-				$rateByParentValidator = Billrun_ModelValidator_RatesByParentManager::getRatesByParentValidator($plan);
-				$res = $rateByParentValidator->validate($plan, $rate);
-				if ($res !== true) {
+				$res = Billrun_ModelValidator_RatesByParentManager::validate($plan, $rate);
+				if ($res !== true) { // In case one of the internal rates' objects has an invalid "parent" (PLAN_NAME/groups/...), the rate is invalid
 					return $res;
 				}
 			}
@@ -32,12 +38,14 @@ class Billrun_ModelValidator_Rates extends Billrun_ModelValidator_Base {
 		return true;
 	}
 
+	/**
+	 * Check if the usaget received is an allowed usage type in the system
+	 * 
+	 * @param type $usaget to validate
+	 * @return boolean
+	 */
 	protected function isUsagetValid($usaget) {
 		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
-	}
-
-	protected function isGroupsValid($groups) {
-		return is_array($groups) && (empty($groups) || !Billrun_Util::isAssoc($groups));
 	}
 
 }

@@ -9,9 +9,17 @@
 /**
  * Float type validator.
  *
+ * @since 5.1
  */
 class Billrun_TypeValidator_Float extends Billrun_TypeValidator_Base {
 
+	/**
+	 * Check if $value is Float
+	 * 
+	 * @param type $value
+	 * @param type $params - optional extra params
+	 * @return boolean
+	 */
 	public function validate($value, $params) {
 		return is_numeric($value);
 	}

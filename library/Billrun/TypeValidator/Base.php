@@ -9,9 +9,17 @@
 /**
  * Basic type validator.
  *
+ * @since 5.1
  */
 abstract class Billrun_TypeValidator_Base {
 
+	/**
+	 * Validate abstract function - validate $value using optional $params
+	 * 
+	 * @param type $value
+	 * @param type $params - optional extra params
+	 * @return boolean
+	 */
 	abstract function validate($value, $params);
 	
 }

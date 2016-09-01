@@ -851,8 +851,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$validatorOptions = array(
 				'modelName' => $coll,
 			);
-			$validator = Billrun_ModelValidator_Manager::getValidator($validatorOptions);
-			$validate = $validator->validate($data, $type);
+			$validate = Billrun_ModelValidator_Manager::validate($data, $type, $validatorOptions);
 			if (!$validate['validate']) { // TODO: change to throwing an exception - need to verify acceptance of client side
 				return $this->responseError(array("message" => $validate['errorMsg'], "status" => false));
 			}

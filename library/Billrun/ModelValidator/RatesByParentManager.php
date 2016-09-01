@@ -9,10 +9,29 @@
 /**
  * This is a validator for Rate with a parent.
  *
+ * @since 5.1
  */
-class Billrun_ModelValidator_RatesByParentManager extends Billrun_ModelValidator_Base {
+class Billrun_ModelValidator_RatesByParentManager {
 
-	public static function getRatesByParentValidator($parent) {
+	/**
+	 * Validate a rates object according to it's parent in a rate object
+	 * 
+	 * @param type $plan
+	 * @param type $rate
+	 * @return true on success, error message on failure
+	 */
+	public static function validate($plan, $rate) {
+		$rateByParentValidator = self::getRatesByParentValidator($plan);
+		return $rateByParentValidator->validate($plan, $rate);
+	}
+	
+	/**
+	 * Gets the correct validator of an inner rates object (inside Rate object)
+	 * 
+	 * @param type $parent - parent type in the Rate's object
+	 * @return validaotr instance
+	 */
+	protected static function getRatesByParentValidator($parent) {
 		$validatorClassName = 'Billrun_ModelValidator_RatesBy';
 		$specialRatesByParentValidators = array('groups');
 		if (in_array($parent, $specialRatesByParentValidators)) {

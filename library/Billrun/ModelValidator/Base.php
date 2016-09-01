@@ -7,8 +7,9 @@
  */
 
 /**
- * This is a prototype for a Realtime response action.
+ * Basic validator for models
  *
+ * @since 5.1
  */
 class Billrun_ModelValidator_Base {
 
@@ -21,11 +22,26 @@ class Billrun_ModelValidator_Base {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/validation/conf.ini');
 	}
 
+	/**
+	 * Get validation methods from config by model name.
+	 * 
+	 * @return array of method names
+	 */
 	protected function getValidationMethods() {
 		return Billrun_Factory::config()->getConfigValue('validation_methods.' . $this->modelName, array());
 	}
 
-	public function validate($data) {
+	/**
+	 * Runs validation methods on a model based on it's name.
+	 * A valid model is a model that all of it's verification methods passed.
+	 * 
+	 * @param type $data - the data to validate
+	 * @param type $type - the type of action made (new/update/...)
+	 * @return array of: 
+	 *					"validate" - true/false
+	 *					"errorMsg" - error message
+	 */
+	public function validate($data, $type) {
 		$validationMethods = $this->getValidationMethods();
 		foreach ($validationMethods as $validationMethod) {
 			if (!method_exists($this, $validationMethod)) {
@@ -40,6 +56,15 @@ class Billrun_ModelValidator_Base {
 		return $this->validationResponse(true);
 	}
 
+	/**
+	 * Creates a generic response so all validators return the same structure.
+	 * 
+	 * @param boolean $result
+	 * @param string $errorMsg
+	 * @return array of: 
+	 *					"validate" - true/false
+	 *					"errorMsg" - error message
+	 */
 	protected function validationResponse($result, $errorMsg = '') {
 		if (!$result) {
 			Billrun_Factory::log('Validation errors: ' . $errorMsg, Zend_Log::INFO);
@@ -50,10 +75,22 @@ class Billrun_ModelValidator_Base {
 		);
 	}
 
+	/**
+	 * Gets the mandatory fields for the model from config according to the model's name
+	 * 
+	 * @return array of mandatory fields
+	 */
 	protected function getMandatoryFields() {
 		return Billrun_Factory::config()->getConfigValue($this->modelName . '.fields', array());
 	}
 
+	/**
+	 * Validate mandatory fields for the model. 
+	 * If a fields is defined as mandatory makes sure it appears in the $data
+	 * 
+	 * @param type $data - the data to validate
+	 * @return true on success, error message on failure
+	 */
 	protected function validateMandatoryFields($data) {
 		$fields = $this->getMandatoryFields();
 		$missingFields = array();
@@ -73,6 +110,12 @@ class Billrun_ModelValidator_Base {
 		return true;
 	}
 
+	/**
+	 * Validate field types.
+	 * 
+	 * @param type $data - the data to validate
+	 * @return true on success, error message on failure 
+	 */
 	protected function validateTypeOfFields($data) {
 		$fields = Billrun_Factory::config()->getConfigValue($this->collection_name . '.fields', array());
 		$typeFields = array();
@@ -84,6 +127,13 @@ class Billrun_ModelValidator_Base {
 		return $this->validateTypes($data, $typeFields);
 	}
 
+	/**
+	 * Validate fields' types
+	 * 
+	 * @param type $data - the data to validate
+	 * @param type $typeFields - the field objects to validate by
+	 * @return true on success, error message omn failure
+	 */
 	protected function validateTypes($data, $typeFields) {
 		$wrongTypes = array();
 
@@ -105,6 +155,14 @@ class Billrun_ModelValidator_Base {
 		return true;
 	}
 
+	/**
+	 * Build a pretty error message for a field that does not mathces it's defined type
+	 * 
+	 * @param type $fieldName
+	 * @param type $fieldValue
+	 * @param type $fieldType
+	 * @return string error message
+	 */
 	protected function getErrorMessage($fieldName, $fieldValue, $fieldType) {
 		if (is_array($fieldType)) {
 			return '"' . $fieldValue . '" is not a valid value for "' . $fieldType['type'] . '". Available values are: ' . implode(', ', $fieldType['params']);
@@ -112,6 +170,14 @@ class Billrun_ModelValidator_Base {
 		return 'field "' . $fieldName . '" must be of type ' . $fieldType;
 	}
 
+	/**
+	 * Validates a type using TypeValidators
+	 * 
+	 * @param type $value
+	 * @param type $type
+	 * @param type $params - extra additional params
+	 * @return boolean
+	 */
 	protected function validateType($value, $type, $params) {
 		$validator = Billrun_TypeValidator_Manager::getValidator($type);
 		if (!$validator) {

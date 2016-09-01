@@ -9,6 +9,7 @@
 /**
  * Helper class to manage the model validators.
  *
+ * @since 5.1
  */
 class Billrun_TypeValidator_Manager {
 

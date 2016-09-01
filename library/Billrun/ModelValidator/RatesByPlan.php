@@ -9,9 +9,17 @@
 /**
  * This is a validator for Rate with a Plan name as a parent.
  *
+ * @since 5.1
  */
 class Billrun_ModelValidator_RatesByPlan extends Billrun_ModelValidator_Base {
 
+	/**
+	 * Check whether a rate object with PLAN_NAME as parent is valid
+	 * 
+	 * @param type $plan
+	 * @param type $rate
+	 * @return true on success, error message on failure
+	 */
 	public function validate($plan, $rate) {
 		if (!Billrun_Plans_Util::isPlanExists($plan)) {
 			return 'Plan "' . $plan . '" does not exists';

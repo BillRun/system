@@ -9,6 +9,7 @@
 /**
  * In array type validator.
  *
+ * @since 5.1
  */
 class Billrun_TypeValidator_Inarray extends Billrun_TypeValidator_Base {
 

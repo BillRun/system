@@ -9,9 +9,17 @@
 /**
  * Boolean type validator.
  *
+ * @since 5.1
  */
 class Billrun_TypeValidator_Boolean extends Billrun_TypeValidator_Base {
 
+	/**
+	 * Check if $value is Boolean
+	 * 
+	 * @param type $value
+	 * @param type $params - optional extra params
+	 * @return boolean
+	 */
 	public function validate($value, $params) {
 		return is_bool($value);
 	}
