@@ -34,7 +34,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
-		$this->initSession();
+		session_set_cookie_params(1);
+//		$this->initSession();
 		$this->initCommit();
 		$this->initConfig();
 		$this->initBaseUrl();
@@ -131,11 +132,6 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
-	}
-	
-	protected function initSession() {
-		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
-		ini_set('session.gc_maxlifetime', $session_timeout);
 	}
 	
 	protected function addCss($path) {
@@ -823,7 +819,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$data = @json_decode($flatData, true);
-
+		unset($data['id']);
+		
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 
 			return $this->responseError($v->setReport(array("Data is empty !!!")));
@@ -847,7 +844,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		  }
 		 */
 		if (is_subclass_of($model, "TabledateModel")) {
-			if ($type != 'update' && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+			if ($type != 'update' && $model->hasEntityWithOverlappingDates($params, in_array($type, array('new', 'duplicate')))) {
 				return $this->responseError("There's an entity with overlapping dates");
 			}
 			$validate = $model->validate($data, $type);
@@ -1829,7 +1826,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		foreach ($session as $k => $v) {
 			unset($session[$k]);
 		}
-
+		session_unset();
+		session_destroy();
 		$this->forceRedirect('/admin/login');
 	}
 
