@@ -25,7 +25,6 @@ class OkPageAction extends ApiAction {
 	protected $return_url;
 
 	public function execute() {
-		$this->allowed();
 		$request = $this->getRequest();
 //		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$transaction_id = $request->get("txId");
