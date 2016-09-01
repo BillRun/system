@@ -43,7 +43,7 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('to' => array('$lt' => $this->startMongoTime));
+		return array('to' => array('$lt' => $this->startMongoTime),'$gte' => $this->getLastRunDate(static::$type));
 	}
 
 	protected function isLineEligible($line) {
