@@ -43,23 +43,26 @@ class RatesModel extends TabledateModel {
 	 * 
 	 * @param Mongodloid collection $collection
 	 * @param array $entity
+	 * @deprecated since version 5.0
 	 * 
 	 * @return type
 	 */
-	public function getItem($id) {
-
-		$entity = parent::getItem($id);
-
-		if (isset($entity['rates'])) {
-			$this->processEntityRatesOnGet($entity);
-		}
-
-		return $entity;
-	}
+//	public function getItem($id) {
+//
+//		$entity = parent::getItem($id);
+//
+//		if (isset($entity['rates'])) {
+//			$this->processEntityRatesOnGet($entity);
+//		}
+//
+//		return $entity;
+//	}
 
 	/**
 	 * Process the internal rates values of an entity.
 	 * @param Mongodloid_Entity $entity
+	 * @deprecated since 5.0 The rates field in the rate record holds the plan
+	 * data instead of a reference.
 	 */
 	protected function processEntityRatesOnGet(&$entity) {
 		$raw_data = $entity->getRawData();
