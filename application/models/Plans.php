@@ -133,8 +133,19 @@ class PlansModel extends TabledateModel {
 		return !in_array($name, array('base', 'groups'));
 	}	
 	
-	protected function validatePrice($data) {		
+	protected function validatePrice($data) {
 		foreach ($data['price'] as $price) {
+			if (isset($lastTo) && $lastTo != $price['from']) {
+				return 'Price intervals must be continuous';
+			}
+			else if (!isset($lastTo) && $price['from']) {
+				return 'Price intervals must start at zero';
+			}
+			if (is_null($price['to'])) {
+				$price['to'] = 99999999;
+			}
+			$lastTo = $price['to'];
+			
 			if (!isset($price['price']) || !isset($price['from'])|| !isset($price['to'])) {
 				return "Illegal price structure";
 			}
