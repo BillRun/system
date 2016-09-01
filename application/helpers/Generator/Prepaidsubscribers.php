@@ -24,6 +24,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->startMongoTime = new MongoDate($this->startTime);
+		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'));
 		$this->loadPlans();
 	}
 	
@@ -70,7 +71,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 			}
 			
 			$this->loadBalancesForBulk($sids);
-                        $this->loadTransactions($sids);
+		    $this->loadTransactions($sids);
 
 			$hasData = false;
 			foreach ($this->data as $line) {
@@ -93,7 +94,12 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	}
 
 	protected function isLineEligible($line) {
-		return true;
+		$transaltedLine = $this->translateCdrFields($line, $this->translations);
+		if(empty($transaltedLine) || empty($this->translations)) {
+			Billrun_Factory::log("1");
+		}
+		return  (!empty($transaltedLine['last_recharge_date']) && date_create_from_format($this->translations['last_recharge_date']['translation']['values']['date_format'],$transaltedLine['last_recharge_date'])->getTimestamp() >= $this->releventTransactionTimeStamp || 
+				!empty($transaltedLine['last_trans_date']) && date_create_from_format($this->translations['last_trans_date']['translation']['values']['date_format'],$transaltedLine['last_trans_date'])->getTimestamp() >= $this->releventTransactionTimeStamp);
 	}
 
 	// ------------------------------------ Helpers -----------------------------------------
@@ -113,7 +119,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new Mongodate(0)) )),
+                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new Mongodate($this->releventTransactionTimeStamp)) )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
                             array('$project' => array('sid'=>1,'urt'=>1,
                                                         'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
@@ -123,7 +129,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']][$transaction['type']] = $transaction['urt'];
 		}
-        }
+    }
         
 	protected function countBalances($sid, $parameters, &$line) {
 
