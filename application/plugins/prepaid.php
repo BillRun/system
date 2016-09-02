@@ -396,12 +396,11 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $row
 	 * @return type
-	 * @todo remove roaming restriction after it will be tested with roaming
+	 * @todo remove hard-coded values to be configurable
 	 */
 	protected function needToRebalanceUsagev($row) {
-		// TODO: currently we are only using it for data and roaming calls
-		return	($row['type'] === 'gy' && $row['record_type'] === 'final_request' && substr($row['service']['sgsnmccmnc'], 0, 3) !== '425') ||
-				($row['type'] === 'callrt' && $row['api_name'] === 'release_call' && stripos($row['usaget'], 'roaming') !== FALSE);
+		return	($row['type'] === 'gy' && $row['record_type'] === 'final_request') ||
+				($row['type'] === 'callrt' && $row['api_name'] === 'release_call');
 	}
 
 
