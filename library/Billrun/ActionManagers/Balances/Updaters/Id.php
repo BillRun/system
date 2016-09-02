@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 */
 	protected function getIDQuery($query) {
 		// Convert the string ID to mongo ID.
-		$id = $query['_id']['$id'];
+		$id = $query['_id'];
 		$mongoId = new MongoId($id);
 		return array("_id" => $mongoId);
 	}
@@ -190,11 +190,12 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		$queryType = $this->updateOperation ? '$set' : '$inc';
 		$valueFieldName = $usedWallet->getFieldName();
 		$valueUpdateQuery = array();
-		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $usedWallet->getValue();
+		$valueUpdateQuery[$queryType][$valueFieldName] = $usedWallet->getValue();
 		$to = $recordToSet['to'];
-		if (isset($to['sec'])) {
+		if (is_array($to) && isset($to['sec'])) {
 			$to = new MongoDate($to['sec']);
+		} else if (is_object($to) && isset($to->sec)) {
+			$to = new MongoDate($to->sec);
 		}
 		$valueUpdateQuery['$set']['to'] = $to;
 

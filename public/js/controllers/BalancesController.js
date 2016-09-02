@@ -50,7 +50,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 			method: 'update',
 			sid: parseInt(vm.entity.sid, 10),
 			query: JSON.stringify({
-				"pp_includes_name": vm.entity.pp_includes_name
+				'_id' : vm.entity._id
 			}),
 			additional: JSON.stringify({
 				balance_source: "AdminPanel",
