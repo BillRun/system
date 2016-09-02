@@ -347,7 +347,14 @@ class AdminController extends Yaf_Controller_Abstract {
 					sort($ppincludes);
 				}
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes, 'default_max_currency' => $default_max_currency)));
+			$ret = array(
+				'authorized_write' => AdminController::authorized('write'), 
+				'entity' => isset($entity) ? $entity : array(), 
+				'plan_rates' => isset($plan_rates) ? $plan_rates : array(), 
+				'ppincludes' => isset($ppincludes) ? $ppincludes : array(), 
+				'default_max_currency' => isset($default_max_currency) ? $default_max_currency : array(),
+			);
+			$response->setBody(json_encode($ret));
 			$response->response();
 			return false;
 		}
@@ -623,6 +630,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));
 		$data['priority'] = (int) $data['priority'];
+		if (!isset($data['additional_charging_usaget'])) {
+			$data['additional_charging_usaget'] = array();
+		}
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {

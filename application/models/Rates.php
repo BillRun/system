@@ -326,7 +326,7 @@ class RatesModel extends TabledateModel {
 					}
 				}
 				$ret[] = $row;
-			} else if ($item->get('rates') && !$this->showprefix) {
+			} else if (!$this->isEmptyRatesObject($item->get('rates')) && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					foreach ($this->filter_by_plan as $filteredPlan) {
 						if (is_array($rate) && isset($rate[$filteredPlan])) {
@@ -365,6 +365,27 @@ class RatesModel extends TabledateModel {
 			}
 		}
 		return $ret;
+	}
+	
+	/**
+	 * Checks if a rate object is empty, 
+	 * in order to display it when filtering by plan
+	 * (to handle the case of UI saving empty rates)
+	 * 
+	 * @param type $rates
+	 * @return boolean
+	 */
+	protected function isEmptyRatesObject($rates) {
+		if (!$rates) {
+			return true;
+		}
+		
+		foreach ($rates as $key => $rate) {
+			if (!empty($rate)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public function getRates($filter_query) {
