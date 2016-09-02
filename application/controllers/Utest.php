@@ -419,7 +419,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			$total_usagev += $rowData['usagev'];
 			$line = array(
 				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
-				'record_type' => $rowData['record_type'],
+				'record_type' => isset($rowData['record_type']) ? $rowData['record_type'] : null,
 				'aprice' => $rowData['aprice'],
 				'usaget' => $rowData['usaget'],
 				'usagev' => $rowData['usagev'],
