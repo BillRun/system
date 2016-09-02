@@ -19,6 +19,9 @@ class LoadversionAction extends ApiAction {
 
 	public static function getVersions($collection) {
 		$path = VersionsModel::getVersionsPath($collection);
+		if (!file_exists($path) || !is_dir($path)) {
+			return array();
+		}
 		$files = scandir($path);
 		$versions = array_diff($files, array('.', '..'));
 		return $versions;
