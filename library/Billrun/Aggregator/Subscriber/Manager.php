@@ -58,6 +58,8 @@ class Billrun_Aggregator_Subscriber_Manager {
 			/* @var $aggregator Billrun_Aggregator_Subscriber_Base */
 			$aggregated = array_merge($aggregated, $aggregator->save($subscriber, $billrunKey));
 		}
+		
+		return $aggregated;
 	}
 	
 	/**
