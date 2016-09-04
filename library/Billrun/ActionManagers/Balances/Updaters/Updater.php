@@ -17,25 +17,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	const UNLIMITED_DATE = "30 December 2099";
 
 	/**
-	 * If true then the values in mongo are updated by incrementation,
-	 * if false then the values in the mongo are forceablly set.
-	 * @var boolean. 
+	 * Object responsible for handling the update operation
+	 * @var Billrun_Balances_Update_Operation
 	 */
-	protected $isIncrement = true;
-
-	/**
-	 * Any request for balance incrementation when "$ignoreOveruse" value is true and the current account balance queried
-	 * exceeds the maximum allowance (balance is above zero), will reset the balance (to zero) and only then increment it.
-	 * This means that if the user had a positive balance e.g 5 and then was loaded with 100 units, the blance will be -100 and not -95.
-	 * @var boolean 
-	 */
-	protected $ignoreOveruse = true;
-
-	/**
-	 * Indicator for updating a balance by periodic charge.
-	 * @var boolean indication
-	 */
-	protected $recurring = false;
+	protected $updateOperation;
 
 	/**
 	 * The document before the balance update.
@@ -53,23 +38,11 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 */
 	public function __construct($options) {
 		// If it is not set, the default is used.
-		if (isset($options['increment'])) {
-			$this->isIncrement = $options['increment'];
-		}
-
-		// If it is not set, the default is used.
-		if (isset($options['zero'])) {
-			$this->ignoreOveruse = $options['zero'];
-		}
+		$this->updateOperation = $options['operation'];
 
 		// Get the balances errors.
 		if (isset($options['errors'])) {
 			$this->errors = $options['errors'];
-		}
-
-		// Check for recurring.
-		if (isset($options['recurring'])) {
-			$this->recurring = true;
 		}
 	}
 
@@ -92,26 +65,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 
 		return $translatedQuery;
-	}
-
-	/**
-	 * Handle zeroing the record if the charging value is positive.
-	 * @param type $query
-	 * @param type $balancesColl
-	 * @todo - This is suplicated in chargingPlan updater, should make more generic.
-	 */
-	protected function handleZeroing($query, $balancesColl, $valueFieldName) {
-		// User requested incrementing, check if to reset the record.
-		if (!$this->ignoreOveruse || !$this->isIncrement) {
-			return;
-		}
-
-		$zeroingQuery = $query;
-		$zeriongUpdate = array();
-		$zeroingQuery[$valueFieldName] = array('$gt' => 0);
-		$zeriongUpdate['$set'][$valueFieldName] = 0;
-		$originalBeforeZeroing = $balancesColl->findAndModify($zeroingQuery, $zeriongUpdate);
-//		Billrun_Factory::log("Before zeroing: " . print_r($originalBeforeZeroing, 1), Zend_Log::INFO);
 	}
 
 	/**
@@ -310,37 +263,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 			return;
 		}
 		$period = $chargingPlan['period'];
-		return $this->getDateFromPeriod($period);
-	}
-
-	/**
-	 * Get a mongo date object based on a period object.
-	 * @param period $period
-	 * @return \MongoDate
-	 * @todo Create a period object.
-	 */
-	protected function getDateFromPeriod($period) {
-		if ($period instanceof MongoDate) {
-			return $period;
-		}
-		if (isset($period['sec'])) {
-			return new MongoDate($period['sec']);
-		}
-
-		$duration = $period['duration'];
-		// If this plan is unlimited.
-		// TODO: Move this logic to a more generic location
-		if ($duration == "UNLIMITED") {
-			return new MongoDate(strtotime(self::UNLIMITED_DATE));
-		}
-		if (isset($period['units'])) {
-			$unit = $period['units'];
-		} else if (isset($period['unit'])) {
-			$unit = $period['unit'];
-		} else {
-			$unit = 'months';
-		}
-		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
+		return Billrun_Utils_Mongo::getDateFromPeriod($period);
 	}
 
 	/**
@@ -370,34 +293,6 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		}
 
 		return true;
-	}
-
-	/**
-	 * Return the part of the query for setOnInsert
-	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @param array $defaultBalance
-	 * @return type
-	 */
-	protected function getSetOnInsert($wallet, $defaultBalance) {
-		if (!isset($defaultBalance['to'])) {
-			$defaultBalance['to'] = $this->getDateFromPeriod($wallet->getPeriod());
-		}
-		$defaultBalance['charging_by'] = $wallet->getChargingBy();
-		$defaultBalance['charging_by_usaget'] = $wallet->getChargingByUsaget();
-		$defaultBalance['charging_by_usaget_unit'] = $wallet->getChargingByUsagetUnit();
-		$defaultBalance['pp_includes_name'] = $wallet->getPPName();
-		$defaultBalance['pp_includes_external_id'] = $wallet->getPPID();
-		$defaultBalance['priority'] = $wallet->getPriority();
-		$defaultBalance[$wallet->getFieldName()] = $wallet->getValue();
-
-		// Check if recurring.
-		if ($this->recurring) {
-			$defaultBalance['recurring'] = 1;
-		}
-
-		return array(
-			'$setOnInsert' => $defaultBalance,
-		);
 	}
 
 	/**
@@ -435,39 +330,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		
 		// Check if the value before is 0 and if so take the input values to update.
 		$balanceRecord = $this->getRecordInProccess($wallet);
-		$valueBefore = abs(Billrun_Balances_Util::getBalanceValue($balanceRecord));
-		if($valueBefore > 0) {
-			// TODO: Move the $max functionality to a trait
-			$update['$max']['to'] = $to;
-		} else {
-			// TODO: Move the $max functionality to a trait
-			$update['$set']['to'] = $to;
-		}
-	}
-
-
-	/**
-	 * Get the set part of the query.
-	 * @param string $chargingPlan - The wallet in use.
-	 */
-	protected function getSetQuery($chargingPlan) {
-		$valueUpdateQuery = array();
-		$valueToUseInQuery = $chargingPlan->getValue();
-		$queryType = (!is_string($valueToUseInQuery) && $this->isIncrement) ? '$inc' : '$set';
-		$valueUpdateQuery[$queryType]
-			[$chargingPlan->getFieldName()] = $valueToUseInQuery;
-
-		// The TO time is always set.
-		$valueUpdateQuery['$set']['pp_includes_name'] = $chargingPlan->getPPName();
-		$valueUpdateQuery['$set']['pp_includes_external_id'] = $chargingPlan->getPPID();
-		$valueUpdateQuery['$set']['priority'] = $chargingPlan->getPriority();
-
-		// Check if recurring.
-		if ($this->recurring) {
-			$valueUpdateQuery['$set']['recurring'] = 1;
-		}
-
-		return $valueUpdateQuery;
+		$this->updateOperation->setToForUpdate($update, $to, $balanceRecord);
 	}
 
 	/**
@@ -477,30 +340,64 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @param Billrun_DataTypes_Wallet $wallet
 	 * @param type $query
 	 * 
-	 * @return boolean true if get to max value, else false
+	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
+	 * indicating if should be blocked.
 	 */
-	protected function blockMax($planName, $wallet, $query) {
+	protected function handleCoreBalance($planName, $wallet, $query) {
 		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
-		$newValue = $wallet->getValue();
-		$valueBefore = 0;
-
-		// Check if passing the max.
-		if ($this->isIncrement) {
-			$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-			$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
-			$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
-			if (!$balanceBefore->isEmpty()) {
-				$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
-			}
-
-			$newValue += $valueBefore;
+		
+		$handleResult = $this->updateOperation->handleCoreBalance($max, $wallet, $query);
+		if(isset($handleResult['onError'])) {
+			$this->reportError($handleResult['onError']);
+			return false;
 		}
-
-		if (abs($newValue) > abs($max)) { // we're using absolute for both cases - positive and negative values
-			return true;
+		
+		if(isset($handleResult['block']) && $handleResult['block']) {
+			// [Balances Error 1225]
+			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 25;
+			$this->reportError($errorCode);
+			return false;
 		}
-
-		return false;
+		
+		return true;
 	}
+	
+	/**
+	 * Store the balance value before updating.
+	 * @param array $query - Query to get the balance before update.
+	 * @param Mongodloig_Collection $balancesColl - The balances collection.
+	 * @return Mongodloid_Entity - Balance stored before the update.
+	 */
+	protected function storeBalanceBeforeUpdate($query, $balancesColl) {
+		$balance = $balancesColl->query($query)->cursor()->current();
+		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
+		return $balance;
+	}
+	
+	/**
+	 * Update a single balance.
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param array $query
+	 * @param array $defaultBalance
+	 * @param MongoDate $toTime
+	 * @return Array with the wallet as the key and the Updated record as the value.
+	 */
+	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
+		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 
+		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
+		$balance = $this->storeBalanceBeforeUpdate($balanceQuery, $balancesColl);
+
+		$isExisting = $balance && (!$balance->isEmpty());
+		$update = $this->updateOperation->getUpdateBalanceQuery($balanceQuery, $wallet, $defaultBalance, $isExisting);
+
+		$this->setToForUpdate($update, $toTime, $wallet);
+		
+		$options = array(
+			'upsert' => true,
+			'new' => true,
+		);
+
+		return $this->updateOperation->update($balancesColl, $balanceQuery, $update, $options);
+	}
 }

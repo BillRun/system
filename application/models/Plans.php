@@ -170,14 +170,25 @@ class PlansModel extends TabledateModel {
 	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {
+			if (isset($lastTo) && $lastTo != $price['from']) {
+				return 'Price intervals must be continuous';
+			}
+			else if (!isset($lastTo) && $price['from']) {
+				return 'Price intervals must start at zero';
+			}
+			if (is_null($price['to'])) {
+				$price['to'] = 99999999;
+			}
+			$lastTo = $price['to'];
+			
 			if (!isset($price['price']) || !isset($price['from'])|| !isset($price['to'])) {
 				return "Illegal price structure";
 			}
 			
 			$typeFields = array(
 				'price' => 'float',
-				'from' => 'date',
-				'to' => 'date',
+				'from' => 'integer',
+				'to' => 'integer',
 			);
 			$validateTypes = $this->validateTypes($price, $typeFields);
 			if ($validateTypes !== true) {
