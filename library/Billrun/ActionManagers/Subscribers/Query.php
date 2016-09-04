@@ -134,7 +134,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 
 		// If there were errors.
 		if (empty($this->subscriberQuery)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
+			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 22;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
