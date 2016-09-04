@@ -861,7 +861,7 @@ class Billrun_Billrun {
 			$cursor = Billrun_Factory::db()->linesCollection()
 //			$cursor = Billrun_Factory::db(array('host'=>'172.28.202.111','port'=>27017,'user'=>'reading','password'=>'guprgri','name'=>'billing','options'=>array('connect'=>1,'readPreference'=>MongoClient::RP_SECONDARY_PREFERRED)))->linesCollection()
 					->query($query)->cursor()->fields(array_merge($filter_fields, $requiredFields))
-					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000))->timeout(-1);
+					->sort($sort)->skip($bufferCount)->limit(Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000));
 			foreach ($cursor as $line) {
 				$ret[$line['aid']][$line['stamp']] = $line;
 			}
