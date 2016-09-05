@@ -65,12 +65,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					),
 					'date_seperation' => 'Ymd',
 					'stamp' => array(
-						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'arate', 'usaget', 'calling_subs_last_ex_id', 'called_subs_last_ex_id'),
+						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'arate', 'usaget', 'calling_subs_last_ex_id', 'called_subs_last_ex_id','wholesale_rate_key'),
 						'field' => array()
 					),
 					'fields' => array(
 						'$set' => array('process_time'),
-						'$setOnInsert' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
+						'$setOnInsert' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget','wholesale_rate_key'),
 						'$inc' => array('usagev', 'duration'),
 					),
 				),
