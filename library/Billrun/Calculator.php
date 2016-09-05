@@ -75,6 +75,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 	protected $rates_query = array();
+	protected $garbageQueueLines = array();
 
 	/**
 	 * constructor of the class
@@ -191,7 +192,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$line->save(Billrun_Factory::db()->linesCollection(), 1);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
-			$this->removeLineFromQueue($line);
+			$this->garbageQueueLines[] = $line['stamp'];
 			unset($this->data[$dataKey]);
 		}
 	}
@@ -316,6 +317,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * Remove lines from the queue if the current calculator is the last one or if final_calc is set for a queue line and equals the current calculator
 	 */
 	public function removeFromQueue() {
+		$lines = Billrun_Factory::db()->linesCollection();
 		$queue = Billrun_Factory::db()->queueCollection();
 		$queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
 		$calculator_type = $this->getCalculatorQueueType();
@@ -328,24 +330,13 @@ abstract class Billrun_Calculator extends Billrun_Base {
 				$stamps[] = $queueLine['stamp'];
 			}
 		}
-
-		// remove end of queue stack calculator
-		if (!empty($stamps)) { // last calculator
+		
+		if ((!empty($this->garbageQueueLines)) || (!empty($stamps))){	
+			$stamps_remove_from_queue = array_merge($this->garbageQueueLines, $stamps);
+			$lines->update(array('stamp' => array('$in' => $stamps_remove_from_queue)), array('$unset' => array('in_queue' => 1)), array("multiple" => true)); 
 			Billrun_Factory::log()->log("Removing lines from queue", Zend_Log::INFO);
-			$query = array('stamp' => array('$in' => $stamps));
-			$queue->remove($query);
+			$queue->remove(array('stamp' => array('$in' => $stamps_remove_from_queue))); 
 		}
-	}
-
-	/**
-	 * Remove a particular line from the queue
-	 * @param type $line the line to be removed
-	 */
-	protected function removeLineFromQueue($line) {
-		$query = array(
-			'stamp' => $line['stamp'],
-		);
-		Billrun_Factory::db()->queueCollection()->remove($query);
 	}
 
 	/**

@@ -192,7 +192,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
-			$this->removeLineFromQueue($line);
+			$this->garbageQueueLines[] = $line['stamp'];
 			unset($this->data[$dataKey]);
 		}
 
