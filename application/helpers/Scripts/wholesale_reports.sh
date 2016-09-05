@@ -90,16 +90,24 @@ case $report_name in
 	js_code=$js_code'var dir="'$in_str'";var network = "all";db.lines.aggregate(
 		{$match : {
 			type : "nsn" ,
-			$or:[{record_type:"12",in_circuit_group_name:/^(?!FCEL|BICC)/,out_circuit_group_name:/^(?=RCEL)/},
-				 {record_type:"11",in_circuit_group_name:/^(?!FCEL|RCEL|BICC|TONES|PCLB|PCTI|$)/,out_circuit_group_name:/^(?!FCEL|RCEL)/}] , 
+			$or:[{record_type:"12",in_circuit_group_name:/^SPAL/,out_circuit_group_name:/^(?=RCEL)/},
+				 {record_type:"11",in_circuit_group_name:/^SPAL/,out_circuit_group_name:/^(?!FCEL|RCEL)/}] , 
 			in_circuit_group_name : /^SPAL/,
 			urt : {$gte : from_date, $lte : to_date } }},
 		{$project : { usagev : 1 , icg: {$substr:["$in_circuit_group_name",0,4]},
 			carrier : {$cond : [ 
-								{$or : [{$eq : [{$substr : ["$calling_number" , 0,4]},"9725"]},
-										{$eq : [{$substr : ["$calling_number" , 0,2]},"05"]},
-										{$eq : [{$substr : ["$calling_number" , 0,1]},"5"]}]},
-								"IL_MOBILE_JAWAL", "IL_FIX_PALTEL"] } } },
+								{$or : [
+									{$eq : [{$substr : ["$calling_number" , 0,5]},"97222"]},
+									{$eq : [{$substr : ["$calling_number" , 0,5]},"97242"]},
+									{$eq : [{$substr : ["$calling_number" , 0,5]},"97282"]},
+									{$eq : [{$substr : ["$calling_number" , 0,5]},"97292"]},									
+									{$eq : [{$substr : ["$calling_number" , 0,5]},"97279"]},
+								]},	"IL_FIX_PALTEL" ,
+								{$cond : [ {$or : [
+									{$eq : [{$substr : ["$calling_number" , 0,4]},"9725"]},
+										]} ,  "IL_MOBILE_JAWAL"  , "IL_MOBILE_OTHER" ] } 
+								] } 
+					} },
 		{$group : {_id : {c: "$icg" ,r: "$carrier"} , usagev : {$sum : "$usagev"} , count : {$sum : 1} }}).forEach(function(obj) {
 		print("call\t" + dir + "\t" + network + "\t'$day'\t" + ( obj._id.c ) + "\t" +( obj._id.r )  + "\t" + obj.count + "\t" + obj.usagev);})';;
 	*)
