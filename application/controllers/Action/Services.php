@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @subpackage  Action
  * @since       4.0
  */
-class ServucesAction extends ApiAction {
+class ServicesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	protected $model;
