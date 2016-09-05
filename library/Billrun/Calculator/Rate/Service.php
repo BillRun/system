@@ -37,7 +37,7 @@ class Billrun_Calculator_Rate_Service extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
 	protected function getLineUsageType($row) {
-		return 'service';
+		return $row['usaget'];
 	}
 
 	/**

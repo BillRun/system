@@ -136,6 +136,13 @@ class Billrun_Billrun {
 		$subscribers = $this->data['subs'];
 		$subscriber_entry = $this->getEmptySubscriberBillrunEntry($subscriber->sid);
 		$subscriber_entry['subscriber_status'] = $status;
+		$subscriber_entry['activation_start'] = $subscriber->getActivationStartDay();
+		$subscriber_entry['activation_end'] = $subscriber->getActivationEndDay();
+		$subscriber_entry['fraction'] = $subscriber->calcFractionOfMonth($subscriber_entry['activation_start'], $subscriber_entry['activation_end']);
+		if ($subscriber->isFreezeExists()) {
+			$subscriber_entry['freeze_start_date'] = $subscriber->getFreezeStartDay();
+			$subscriber_entry['freeze_end_date'] = $subscriber->getFreezeEndDay();
+		}
 		$subscriber_entry['current_plan'] = $current_plan_ref;
 		$subscriber_entry['next_plan'] = $next_plan_ref;
 		$subscriber_entry['offer_id_next'] = $subscriber->offer_id_next;

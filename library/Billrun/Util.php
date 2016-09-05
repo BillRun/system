@@ -189,7 +189,7 @@ class Billrun_Util {
 	 * @return type int
 	 */
 	public static function getEndTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 15);
 		$datetime = $billrun_key . $dayofmonth . "000000";
 		return strtotime('-1 second', strtotime($datetime));
 	}
@@ -200,7 +200,7 @@ class Billrun_Util {
 	 * @return type int
 	 */
 	public static function getStartTime($billrun_key) {
-		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
+		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 15);
 		$datetime = $billrun_key . $dayofmonth . "000000";
 		return strtotime('-1 month', strtotime($datetime));
 	}
@@ -528,6 +528,11 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'activation' => array(),
+			'deactivation' => array(),
+			'fraction' => array(),
+			'source_amount_without_vat' => array(),
+			'additional' => array(),
 		);
 		$filtered_request = array();
 
@@ -576,9 +581,14 @@ class Billrun_Util {
 				'desc' => 'credit_type could be either "charge" or "refund"',
 			);
 		}
-
-		$amount_without_vat = Billrun_Util::filter_var($filtered_request['amount_without_vat'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-		if (!is_numeric($filtered_request['amount_without_vat']) || $amount_without_vat === false) {
+		if (isset($filtered_request['source_amount_without_vat']) && $filtered_request['fraction'] == 0) {
+			$amount = $filtered_request['source_amount_without_vat'];
+		}
+		else{
+			$amount = $filtered_request['amount_without_vat'];
+		}
+		$amount_without_vat = Billrun_Util::filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+		if (!is_numeric($amount) || $amount_without_vat === false) {
 			return array(
 				'status' => 0,
 				'desc' => 'amount_without_vat is not a number',
@@ -590,13 +600,13 @@ class Billrun_Util {
 			);
 		} else {
 			// TODO: Temporary conversion. Remove it once they send negative values!
+			$amount_without_vat = Billrun_Util::filter_var($filtered_request['amount_without_vat'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 			if ($filtered_request['credit_type'] == 'refund' && floatval($amount_without_vat) > 0) {
 				$filtered_request['amount_without_vat'] = -floatval($amount_without_vat);
 			} else {
 				$filtered_request['amount_without_vat'] = floatval($amount_without_vat);
 			}
 		}
-
 		if (is_string($filtered_request['reason'])) {
 			$filtered_request['reason'] = preg_replace('/[^a-zA-Z0-9-_]+/', '_', $filtered_request['reason']); // removes unwanted characters from the string (especially dollar sign and dots)
 		} else {
@@ -652,7 +662,6 @@ class Billrun_Util {
 				'desc' => 'vatable could be either "0" or "1"',
 			);
 		}
-
 		$filtered_request['source'] = 'api';
 		$filtered_request['usaget'] = $filtered_request['type'] = 'credit';
 		ksort($filtered_request);
@@ -922,5 +931,9 @@ class Billrun_Util {
 		$hours = substr($timezone, 1, 2);
 		$minutes = substr($timezone, -2, 2);
 		return $sign * ($hours * 3600 + $minutes * 60);
+	}
+	
+	public static function convertToBillrunDate($date){
+		return date(Billrun_Base::base_dateformat, strtotime($date));
 	}
 }

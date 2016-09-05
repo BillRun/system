@@ -67,6 +67,21 @@ class Generator_Golanxml extends Billrun_Generator {
 	 * @var boolean
 	 */
 	protected $buffer = false;
+	
+	
+	/**
+	 * the billing method
+	 * @var string prepaid or postpaid
+	 */
+	protected $billing_method = null;
+	
+	/**
+	 * the plan the customer had for billing
+	 * @var string name of the plan
+	 */
+	protected $plan_to_charge = null;
+
+
 
 	public function __construct($options) {
 		libxml_use_internal_errors(TRUE);
@@ -90,7 +105,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
 		$this->loadRates();
 		$this->loadPlans();
-
+		
+		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$this->filter_fields = array_map("intval", Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array()));
 		$this->writer = new XMLWriter(); //create a new xmlwriter object
 		$this->reader = new XMLReader(); //create a new xmlwriter object
@@ -196,6 +212,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
 		$invoice_total_did_premium = 0;
+		$invoice_total_freeze_flat_rate = 0;
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -209,7 +226,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		}
 		foreach ($billrun['subs'] as $subscriber) {
 			$sid = $subscriber['sid'];
-			$subscriber_flat_costs = $this->getFlatCosts($subscriber);
+			$subscriber_flat_costs = $this->getFlatCosts($subscriber);		
+			$this->plan_to_charge = ($this->billing_method == 'postpaid') ? $this->getPlanName($subscriber) : $this->getNextPlanName($subscriber);
 			if (is_null($subscriber['current_plan']) && is_null($subscriber['next_plan']) && !isset($subscriber['breakdown'])) {
 				continue;
 			}
@@ -414,13 +432,28 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
-			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['costs']['service']['vat_free']) ? $subscriber['costs']['service']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['service']['vatable']) ? $subscriber['costs']['service']['vatable'] : 0));
+			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
+			$subscriber_sumup_TOTAL_FREEZE_FLAT_RATE = floatval((isset($subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost']) ? $subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost'] : 0));
+			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE);
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $subscriber_before_vat);
 			$this->writer->writeElement('TOTAL_CHARGE', $subscriber_after_vat);
+
+			
+			$subscriber_sumup_ACTIVATION_DATE = isset($subscriber['activation_start']) ? $subscriber['activation_start'] : 0;
+			if ($subscriber_sumup_ACTIVATION_DATE){
+				$this->writer->writeElement('ACTIVATION_DATE', $subscriber_sumup_ACTIVATION_DATE);
+			}	
+			$subscriber_sumup_DEACTIVATION_DATE = isset($subscriber['activation_end']) ? $subscriber['activation_end'] : 0;
+			if ($subscriber_sumup_DEACTIVATION_DATE) {
+				$this->writer->writeElement('DEACTIVATION_DATE', $subscriber_sumup_DEACTIVATION_DATE);
+			}
+			$subscriber_sumup_FRACTION_OF_MONTH = floatval((isset($subscriber['fraction']) ? $subscriber['fraction'] : 0));
+			$this->writer->writeElement('FRACTION_OF_MONTH', $subscriber_sumup_FRACTION_OF_MONTH);
+
 
 			$invoice_total_gift+= $subscriber_gift_usage_TOTAL_FREE_COUNTER_COST;
 			$invoice_total_above_gift+= $subscriber_sumup_TOTAL_ABOVE_GIFT;
@@ -433,13 +466,14 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
 			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
+			$invoice_total_freeze_flat_rate += $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
-
+						
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
 			$this->writer->startElement('BREAKDOWN_TOPIC');
 			$this->writer->writeAttribute('name', 'GIFT_XXX_OUT_OF_USAGE');
 			$this->writer->startElement('BREAKDOWN_ENTRY');
-			$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber));
+			$this->writer->writeElement('TITLE', 'SERVICE-GIFT-GC_GOLAN-' . $this->plan_to_charge);
 			$this->writer->writeElement('UNITS', 1);
 			$out_of_usage_entry_COST_WITHOUTVAT = isset($subscriber['breakdown']['in_plan']['base']['service']['cost']) ? $subscriber['breakdown']['in_plan']['base']['service']['cost'] : 0;
 			$this->writer->writeElement('COST_WITHOUTVAT', $out_of_usage_entry_COST_WITHOUTVAT);
@@ -702,6 +736,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
 		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
+		$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $invoice_total_freeze_flat_rate);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
@@ -783,7 +818,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			'urt' => 1,
 		);
 
-		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort)->hint($sort);
+		$lines = $this->lines_coll->query($query)->cursor()->fields($this->filter_fields)->sort($sort);
 		Billrun_Factory::log()->log('Pulling lines of ' . $field . ' ' . $entity[$field], Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($lines as $line) {
@@ -977,7 +1012,7 @@ class Generator_Golanxml extends Billrun_Generator {
 	protected function getTariffItem($line, $subscriber) {
 		$tariffItem = '';
 		if ($line['type'] == 'flat') {
-			$tariffItem = 'GIFT-GC_GOLAN-' . $this->getNextPlanName($subscriber);
+			$tariffItem = 'GIFT-GC_GOLAN-' . $this->plan_to_charge;
 		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
 			$tariffItem = $line['service_name'];
 		} else {
@@ -1302,7 +1337,7 @@ EOI;
 	 * @return int
 	 */
 	protected function getSubscriberTotalBeforeVat($subscriber) {
-		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0;
+		return isset($subscriber['totals']['before_vat']) ? $subscriber['totals']['before_vat'] : 0; 
 	}
 
 	/**
@@ -1311,7 +1346,7 @@ EOI;
 	 * @return int
 	 */
 	protected function getSubscriberTotalAfterVat($subscriber) {
-		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0; 
 	}
 
 	protected function getAccTotalBeforeVat($row) {

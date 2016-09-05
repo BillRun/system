@@ -81,14 +81,23 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 				if (preg_match("/^\+*(\d+)\//", $row['recipent_addr'], $matches)) {
 					$row['called_number'] = $matches[1];
 				}
+				$row['usaget'] = 'mms';
 			} else {
 				if (isset($row[$this->structConfig['config']['date_field']])) {
 					$offset = (isset($this->structConfig['config']['date_offset']) && isset($row[$this->structConfig['config']['date_offset']]) ?
 									($row[$this->structConfig['config']['date_offset']] > 0 ? "+" : "" ) . $row[$this->structConfig['config']['date_offset']] : "00" ) . ':00';
 					$datetime = DateTime::createFromFormat($this->structConfig['config']['date_format'], $row[$this->structConfig['config']['date_field']] . $offset);
 				}
+				switch ($row['record_type']) {
+					case '1' : $row['usaget'] = 'incoming_sms';
+								break;
+					case '2' : $row['usaget'] = 'sms';
+								break;
+					default: 
+								$row['usaget'] = 'sms';
+		}	
 			}
-			if (isset($row[$this->structConfig['config']['calling_number_field']])) {
+			if (isset($row[$this->structConfig['config']['calling_number_field']]) && !preg_match('/^00*$/', $row[$this->structConfig['config']['calling_number_field']]) && preg_match('/^[0-9]*$/', $row[$this->structConfig['config']['calling_number_field']])) { 
 				$row[$this->structConfig['config']['calling_number_field']] = Billrun_Util::msisdn($row[$this->structConfig['config']['calling_number_field']]);
 			}
 			if (isset($row[$this->structConfig['config']['called_number_field']])) {

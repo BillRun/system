@@ -115,7 +115,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
-			if ($this->isOutgoingCall($row)) {
+			if ($this->isOutgoingCallOrSms($row)) {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::NOTICE);
 				return false;
 			} else {
@@ -264,7 +264,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 
 	protected function getIdentityParams($row) {
 		$params = array();
-		$customer = $this->isOutgoingCall($row) ? "caller" : "callee";
+		$customer = $this->isOutgoingCallOrSms($row) ? "caller" : "callee";
 		$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
 		foreach ($customer_identification_translation as $key => $toKey) {
 			if (isset($row[$key])) {
@@ -324,7 +324,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		if (isset($line['usagev']) && $line['usagev'] !== 0 && $this->isCustomerable($line)) {
-			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
+			$customer = $this->isOutgoingCallOrSms($line) ? "caller" : "callee";
 			if (isset($this->translateCustomerIdentToAPI[$customer])) {
 				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
 				foreach ($customer_identification_translation as $key => $toKey) {
@@ -352,6 +352,16 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			} else if (!in_array($record_type, array('01', '02'))) {
 				return false;
 			}
+		} else if ($line['type'] == 'smsc') {
+			$record_type = $line['record_type'];
+			if ($record_type == '4') {
+				if ($line['org_protocol'] != '0') {
+					return false;
+				}
+			}
+			if (!in_array($record_type, ['1','2','4'])){
+				return false;
+			}	
 		} else {
 			if (is_array($line)) {
 				$arate = $line['arate'];
@@ -368,13 +378,20 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param type $line
 	 * @return boolean
 	 */
-	protected function isOutgoingCall($line) {
+	protected function isOutgoingCallOrSms($line) {
 		$outgoing = true;
 		if ($line['type'] == 'nsn') {
 			$outgoing = in_array($line['record_type'], array('01', '11'));
 		}
+		if ($line['type'] == 'smsc') {
+			$outgoing = in_array($line['record_type'], array('2'));
+			if (($line['dest_protocol'] == 3) && $line['arate'] === false){
+				$outgoing = false;
+			}
+		}
 		return $outgoing;
 	}
+	
 
 	protected function loadIntlGgsnRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
