@@ -1182,7 +1182,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
 		$show_zero_usage = $this->getSetVar($session, 'show_zero_usage', 'show_zero_usage');
-		if ($show_zero_usage == 'on') {
+		if ($show_zero_usage != 'on') {
 			$query['$and'][] = array(
 				'$or' => array(
 					array(
