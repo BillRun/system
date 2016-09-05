@@ -582,10 +582,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$availableInterconnect = array();
+		$current_time = time();
 		foreach ($interconnect_rates as $interconnect) {
-			$future = $interconnect->from->sec > new DateTime();
-			$ic = $interconnect->getRawData();
-			$availableInterconnect[] = array('key' => $ic['key'], 'future' => $future);
+			$future = ($interconnect->get('from')->sec > $current_time);
+			$availableInterconnect[] = array('key' => $interconnect->get('key'), 'future' => $future);
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availableInterconnect));
@@ -829,7 +829,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$data = @json_decode($flatData, true);
-
+		unset($data['id']);
+		
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 
 			return $this->responseError($v->setReport(array("Data is empty !!!")));
@@ -853,7 +854,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		  }
 		 */
 		if (is_subclass_of($model, "TabledateModel")) {
-			if ($type != 'update' && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+			if ($type != 'update' && $model->hasEntityWithOverlappingDates($params, in_array($type, array('new', 'duplicate')))) {
 				return $this->responseError("There's an entity with overlapping dates");
 			}
 			$validate = $model->validate($data, $type);
@@ -1509,8 +1510,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		if ($this->getRequest()->isPost()) {
 			$redirectUrl = $this->baseUrl . '/admin/';
-			if ($options['plan_type'])
+			if (isset($options['plan_type']) && $options['plan_type']) {
 				$redirectUrl .= $options['plan_type'];
+			}
 			$redirectUrl .= str_replace('_', '', $table);
 			$this->redirect($redirectUrl);
 			return;
