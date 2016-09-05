@@ -551,15 +551,15 @@ class Billrun_Billrun {
 
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
-			$sraw['totals'][$breakdownKey]['vatable'] = $sraw['totals']['vatable'];
+			$sraw['totals'][$breakdownKey]['vatable'] = $this->getFieldVal($sraw['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
 		$sraw['totals']['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
 		$sraw['totals']['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
-		$sraw['totals'][$breakdownKey]['before_vat'] = $this->getFieldVal($sraw['totals']['before_vat'], 0) + $pricingData['aprice'];
-		$sraw['totals'][$breakdownKey]['after_vat'] = $this->getFieldVal($sraw['totals']['after_vat'], 0) + $price_after_vat;
+		$sraw['totals'][$breakdownKey]['before_vat'] = $this->getFieldVal($sraw['totals'][$breakdownKey]['before_vat'], 0) + $pricingData['aprice'];
+		$sraw['totals'][$breakdownKey]['after_vat'] = $this->getFieldVal($sraw['totals'][$breakdownKey]['after_vat'], 0) + $price_after_vat;
 	}
 
 	/**
@@ -768,7 +768,7 @@ class Billrun_Billrun {
 				$plan_ref = $line->get('plan_ref', true);
 				if (!empty($plan_ref)) {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
-					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $plan->get('vatable'));
+					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, is_null($plan->get('vatable')) ? TRUE : FALSE);
 				} else {
 					Billrun_Factory::log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 					continue;
