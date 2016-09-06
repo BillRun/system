@@ -673,7 +673,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return main usaget types
 	 */
 	protected function getUsageTypesByAdditionalUsageType($usaget) {
-		$pp_includes_query = array_merge(Billrun_Util::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
+		$pp_includes_query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
 		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
 		$usageTypes = array();
 		foreach ($ppincludes as $ppinclude) {

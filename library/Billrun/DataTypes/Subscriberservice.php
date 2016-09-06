@@ -58,7 +58,7 @@ class Billrun_DataTypes_Subscriberservice {
 	protected function checkDB($from) {
 		// Check in the mongo.
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery($from, true);
+		$serviceQuery = Billrun_Utils_Mongo::getDateBoundQuery($from, true);
 		$serviceQuery['name'] = $this->name;
 		$serviceQuery['type'] = 'service';
 		$service = $ratesColl->query($serviceQuery)->cursor()->current();
