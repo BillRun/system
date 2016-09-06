@@ -9,11 +9,47 @@
 /**
  * Static functions to aid in constructing and parsing of Mongo input data.
  * @package  Util
+ * @since 5.1
  * @todo Most of this logic should be INSIDE of a mongo entity class that wraps
  * a data array, instead of a static class with service functions (make it OOP)
  */
 class Billrun_Utils_Mongo {
 		
+	/**
+	 * Get a mongo date object based on a period object.
+	 * @param period $period
+	 * @return \MongoDate or false on failure
+	 * @todo Create a period object.
+	 */
+	public static function getDateFromPeriod($period) {
+		if(!$period) {
+			Billrun_Factory::log("Invalid data!", Zend_Log::ERR);
+			return null;
+		}
+		
+		if ($period instanceof MongoDate) {
+			return $period;
+		}
+		if (isset($period['sec'])) {
+			return new MongoDate($period['sec']);
+		}
+
+		$duration = $period['duration'];
+		// If this plan is unlimited.
+		// TODO: Move this logic to a more generic location
+		if ($duration == "UNLIMITED") {
+			return new MongoDate(strtotime(self::UNLIMITED_DATE));
+		}
+		if (isset($period['units'])) {
+			$unit = $period['units'];
+		} else if (isset($period['unit'])) {
+			$unit = $period['unit'];
+		} else {
+			$unit = 'months';
+		}
+		return new MongoDate(strtotime("tomorrow", strtotime("+ " . $duration . " " . $unit)) - 1);
+	}
+	
 	/**
 	 * Get a query to filter all out dated and still not active records.
 	 * @param int|null $sec The epoch time (of now), to use for bounding the query.

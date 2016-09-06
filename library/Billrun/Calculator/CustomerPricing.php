@@ -695,20 +695,22 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return false;
 			}
 		}
+		
+ 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $this->balance->getBalanceChargingTotalsKey($usage_type));
+ 		
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
 			}
 			$row['balance_ref'] = $this->balance->createRef();
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $plan);
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $balance_totals_key);
 		} else {
 			$volume = $row['usagev'];
 		}
 		$balanceRaw = $this->balance->getRawData();
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
-		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $usage_type);
 		$tx = $this->balance->get('tx');
 		if (is_array($tx) && empty($tx)) {
 			$this->balance->set('tx', new stdClass());
@@ -991,7 +993,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $balance
 	 * @param type $usageType
 	 */
-	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType) {
+	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType, $balanceTotalKeys = null) {
+ 		if (empty($balanceTotalKeys)) {
+ 			$balanceTotalKeys = $usageType;
+ 		}
 		if (isset($row['api_name']) && $row['api_name'] == 'release_call') {
 			return 0;
 		}
@@ -1005,11 +1010,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan']);
 		$rowInOrOutOfBalanceKey = 'in';
-		if (isset($balance->get("balance")["totals"][$usageType]["usagev"])) {
-			$currentBalanceVolume = $balance->get("balance")["totals"][$usageType]["usagev"];
+		if (isset($balance->get("balance")["totals"][$balanceTotalKeys]["usagev"])) {
+			$currentBalanceVolume = $balance->get("balance")["totals"][$balanceTotalKeys]["usagev"];
 		} else {
-			if (isset($balance->get("balance")["totals"][$usageType]["cost"])) {
-				$price = $balance->get("balance")["totals"][$usageType]["cost"];
+			if (isset($balance->get("balance")["totals"][$balanceTotalKeys]["cost"])) {
+				$price = $balance->get("balance")["totals"][$balanceTotalKeys]["cost"];
 			} else {
 				$price = $balance->get("balance")["cost"];
 				$rowInOrOutOfBalanceKey = 'out';

@@ -344,7 +344,7 @@ class ConfigModel {
 		});
 	}
 
-	protected function validateFileSettings($config, $fileType) {
+	protected function validateFileSettings(&$config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
@@ -379,7 +379,12 @@ class ConfigModel {
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];
-			}, $fileSettings['processor']['usaget_mapping']);
+			}, array_filter($fileSettings['processor']['usaget_mapping'], function($mapping) {
+					return isset($mapping['src_field']);
+				}));
+			if (array_diff($usagetMappingSource, $customFields)) {
+				throw new Exception('Unknown fields used for usage type mapping: ' . implode(', ', $usagetMappingSource));
+			}
 			$usagetTypes = array_map(function($mapping) {
 				return $mapping['usaget'];
 			}, $fileSettings['processor']['usaget_mapping']);
@@ -485,16 +490,18 @@ class ConfigModel {
 		if (!isset($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
 		}
-		if (!isset($processorSettings['usaget_mapping'])) {
-			throw new Exception('Missing processor usage type mappings');
+		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
+			throw new Exception('Missing processor usage type mapping rules');
 		}
-		if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
-			throw new Exception('Missing mandatory processor configuration');
-		}
-		$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
-		foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-			if (!isset($mapping['src_field'], $mapping['pattern']) || !Billrun_Util::isValidRegex($mapping['pattern']) || empty($mapping['usaget'])) {
-				throw new Exception('Illegal usaget mapping at index ' . $index);
+		if (isset($processorSettings['usaget_mapping'])) {
+			if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
+				throw new Exception('Missing mandatory processor configuration');
+			}
+			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
+			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
+				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usaget mapping at index ' . $index);
+				}
 			}
 		}
 		if (!isset($processorSettings['orphan_files_time'])) {

@@ -61,7 +61,7 @@ class ReceiveAction extends Action_Base {
 	}
 	
 	protected function getCMD() {
-		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . ' --receive --type';
+		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . '  --tenant ' . Billrun_Factory::config()->getTenant() . ' --receive --type';
 	}
 
 	protected function getNameType() {
