@@ -177,8 +177,10 @@ class Billrun_Config {
 				$this->setTenantTimezone($dbConfig);
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
-			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
+			// TODO: Exception should be thrown and handled by the error controller.
+			error_log('cannot load database config');
+//			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
+//			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			return false;
 		}
 		
@@ -190,6 +192,7 @@ class Billrun_Config {
 	 */
 	public function refresh() {
 		$this->setTenantTimezone($this->toArray());
+		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
 	}
 	
 	protected function setTenantTimezone($dbConfig) {
@@ -205,7 +208,6 @@ class Billrun_Config {
 		
 		// Setting the default timezone.
 		$setTimezone = @date_default_timezone_set($timezone);
-		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
 	}
 	
 	/**
