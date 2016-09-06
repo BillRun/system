@@ -92,4 +92,28 @@ class Billrun_Balances_Util {
 		return $rounded;
 	}
 
+	/**
+	 * removes the transactions from the balance to save space.
+	 * @param array $row - Balance row.
+	 * @return the update result.
+	 */
+	public static function removeTx($row) {
+		$query = array(
+			'sid' => $row['sid'],
+			'from' => array(
+				'$lte' => $row['urt'],
+			),
+			'to' => array(
+				'$gt' => $row['urt'],
+			),
+		);
+		$values = array(
+			'$unset' => array(
+				'tx.' . $row['stamp'] => 1
+			)
+		);
+		
+		$balances = Billrun_Factory::db()->balancesCollection();
+		return $balances->update($query, $values);
+	}
 }
