@@ -23,7 +23,7 @@ class AggregateAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'stamp' => false,
+			'stamp' => true,
 			'page' => true,
 			'size' => true,
 			'fetchonly' => true,
@@ -37,7 +37,7 @@ class AggregateAction extends Action_Base {
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		$this->_controller->addOutput("Aggregator loaded");
 
-		if (!$aggregator) {
+		if (!$aggregator || !$aggregator->isValid()) {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
 			return;
 		}

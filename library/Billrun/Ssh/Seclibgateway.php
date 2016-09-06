@@ -1,11 +1,18 @@
 <?php
 
-//use Net_SFTP, Crypt_RSA, System_SSH_Agent;
-//require_once 'Net/SFTP.php';
-////require_once 'Net/SSH2.php';
-//require_once 'Crypt/RSA.php';
-//require_once 'System/SSH/Agent.php';
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
 
+/**
+ * Billrun ssh security lib
+ *
+ * @package  Billrun SSH
+ * @since    5.0
+ * @uses Net_SFTP, Crypt_RSA, System_SSH_Agent
+ */
 class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 
 	/**

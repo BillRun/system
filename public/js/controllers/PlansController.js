@@ -439,6 +439,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				inc: {
 					value: 'inc',
 					label: 'increment'
+				},
+				new: {
+					value: 'new',
+					label: 'new balance'
 				}
 			};
 			$scope.availableChargingTypes = ['card', 'digital'];

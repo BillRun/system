@@ -126,7 +126,8 @@ class CreditGuardAction extends ApiAction {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
 		$request = $this->getRequest();
 		$pageRoot = $request->getServer()['HTTP_HOST'];
-		$okPageUrl = sprintf($okTemplate, $pageRoot);
+		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
+		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
 		return $okPageUrl;
 	}
 	
