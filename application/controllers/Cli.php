@@ -51,6 +51,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'l|L|alert' => 'Process and detect alerts',
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
+				'cycle' => 'aggregate lines in billing_cycle',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',

@@ -12,6 +12,7 @@
  *
  */
 class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_Subscribers_Action {
+	use Billrun_ActionManagers_Subscribers_Servicehandler;
 	use Billrun_ActionManagers_Subscribers_Validator {
 		validateOverlap as baseValidateOverlap;
 	}
@@ -201,9 +202,23 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			if (isset($field['editable']) && !$field['editable']) {
 				continue;
 			}
-			if (isset($updateData[$fieldName])) {
-				$this->update[$fieldName] = $updateData[$fieldName];
+			if (!isset($updateData[$fieldName])) {
+				continue;
 			}
+			
+			// TODO: Create some sort of polymorphic behaviour to correctly handle
+			// the updating fields.
+			if($fieldName === 'services') {
+				$toSet = $this->getSubscriberServices($updateData['services']);
+			} else {
+				$toSet = $updateData[$fieldName];
+			}
+			
+			if(empty($toSet)) {
+				continue;
+			}
+			
+			$this->update[$fieldName] = $toSet;
 		}
 		
 		return true;

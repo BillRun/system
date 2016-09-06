@@ -39,7 +39,10 @@ class RecreateInvoicesAction extends ApiAction {
 		$customer_aggregator_options = array(
 			'override_accounts' => $account_ids,
 			'bulk_account_preload' => 0,
+			'page' => 0,
+			'recreate_invoices' => true,
 		);
+		
 		$customerOptions = array(
 			'type' => 'customer',
 			'aggregator' => $customer_aggregator_options,
