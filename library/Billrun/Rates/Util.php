@@ -121,6 +121,7 @@ class Billrun_Rates_Util {
 	 * @return int the calculated price
 	 */
 	public static function getPrice($rate, $usageType, $volume) {
+		// TODO: Use the tariff util module, it has the same function.
 		$rates_arr = $rate['rates'][$usageType]['rate'];
 		$price = 0;
 		foreach ($rates_arr as $currRate) {

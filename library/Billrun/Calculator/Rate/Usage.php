@@ -74,7 +74,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 //		if ($rate) {
 //			// TODO: push plan to the function to enable market price by plan
-//			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
+//			$added_values[$this->aprField] = Billrun_Rates_Utils::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan']);
 //		}
 		
 		return $added_values;
