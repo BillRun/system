@@ -47,6 +47,7 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 				});
 			});
 		});
+		vm.initAdditionalChargingUsaget();
 	};
 
 	vm.edit = function (external_id) {
@@ -87,8 +88,38 @@ function PrepaidIncludesController(Database, Utils, $http, $timeout, $rootScope)
 		});
 	};
 	
+	vm.setAdditionalChargingUsaget = function() {
+		vm.current_entity.additional_charging_usaget = [];
+		_.forEach(vm.additional_charging_usaget, function(additional) {
+			if (additional.ticked) {
+				vm.current_entity.additional_charging_usaget.push(additional.name);
+			}
+		});
+	};
+	
+	vm.initAdditionalChargingUsaget = function() {
+		vm.additional_charging_usaget = [];
+		vm.available_additional_charging_usaget = [];
+		var available_additional = [
+			"call",
+			"data",
+			"sms",
+			"incoming_call",
+			"video_call",
+			"roaming_incoming_call",
+			"roaming_call",
+			"roaming_callback",
+			"roaming_callback_short",
+			"forward_call"
+		];
+		_.forEach(available_additional, function(additional) {
+			vm.available_additional_charging_usaget.push({name: additional, ticked: !_.isEmpty(vm.current_entity.additional_charging_usaget) && vm.current_entity.additional_charging_usaget.indexOf(additional) > -1});
+		});
+	};
+	
 	vm.save = function () {
 		vm.setAllowedIn();
+		vm.setAdditionalChargingUsaget();
 		$http.post(baseUrl + '/admin/savePPIncludes', {data: vm.current_entity, new_entity: vm.newent}).then(function (res) {
 			if (vm.newent)
 				vm.init();
