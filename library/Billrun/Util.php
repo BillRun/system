@@ -937,15 +937,8 @@ class Billrun_Util {
 	}
 	
 	
-	public static function getIsraelTransitions(){
+	public static function getTimeTransitionsByTimezone(){
  		return timezone_transitions_get(new DateTimeZone(date_default_timezone_get()), strtotime('January 1st'), strtotime('December 31'));
- 	}
- 	
- 	public static function isWrongIsrTransitions($transitions){
- 		if (count($transitions) != 3){
- 			return true;
- 		}
- 		return false;
  	}
  	
  	public static function getTransitionTime($transitions, $index){

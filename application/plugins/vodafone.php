@@ -79,18 +79,18 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$rateUsageIncluded = 0; // user passed its limit; no more usage available
 		$groupSelected = FALSE; // we will cancel the usage as group plan when set to false groupSelected
 	}
-
+	
 	protected function loadSidLines($sid, $limits, $plan, $groupSelected) {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
-		$from = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00')));
-		$to = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59')));
+		$from = strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00');
+		$to = strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59');
 		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
- 		$isr_transitions = Billrun_Util::getIsraelTransitions();
- 		if (Billrun_Util::isWrongIsrTransitions($isr_transitions)){
+ 		$isr_transitions = Billrun_Util::getTimeTransitionsByTimezone();
+ 		if (count($isr_transitions) != 3){
  			Billrun_Log::getInstance()->log("The number of transitions returned is unexpected", Zend_Log::ALERT);
  		}
  		$transition_dates = Billrun_Util::buildTransitionsDates($isr_transitions);
@@ -171,21 +171,39 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			),
 		);
 		
-		$match3 = array(
-			'$match' => array(
-				'_id.day_key' => array(
-					'$lte' => $line_day, 
-				),
-				'_id.month_key' => array(
-					'$lte' => $line_month, 
-				),
-				'_id.year_key' => array(
-					'$lte' => $line_year, 
+		$project2 = array(
+			'$project' => array(
+				'_id.day_key' => 1,
+				'_id.month_key' => 1,
+				'_id.year_key' => 1,
+				'matched' => array(
+					'$cond' => array(
+						'if' => array(
+							'$or' => array(
+								array('$lt' => array('$_id.month_key', $line_month)),
+								array('$and' => array(
+									array('$eq' => array('$_id.month_key', $line_month)),
+									array('$lte' => array('$_id.day_key', $line_day)),
+									),
+								),	
+							),
+						),
+						'then' => true,
+						'else' => false,
+					),		
 				),
 			),
 		);
+		
+		
+				
+		$match3 = array(
+			'$match' => array(
+				'matched' => true,
+			),
+		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $project2 ,$match3);
 		return $this->handleResultPadding($results);
 	}
 	
