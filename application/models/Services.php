@@ -7,11 +7,11 @@
  */
 
 /**
- * Plans model class to pull data from database for plan collection
+ * Services model class to pull data from database for services collection
  *
  * @package  Models
  * @subpackage Table
- * @since    0.5
+ * @since    5.1
  */
 class ServicesModel extends PlansModel {
 

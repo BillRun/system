@@ -8,11 +8,11 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * This class holds the api logic for the cards.
+ * This class holds the api logic for the services.
  *
  * @package     Controllers
  * @subpackage  Action
- * @since       4.0
+ * @since       5.1
  */
 class ServicesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
