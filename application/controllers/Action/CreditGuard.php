@@ -126,7 +126,8 @@ class CreditGuardAction extends ApiAction {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
 		$request = $this->getRequest();
 		$pageRoot = $request->getServer()['HTTP_HOST'];
-		$okPageUrl = sprintf($okTemplate, $pageRoot);
+		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
+		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
 		return $okPageUrl;
 	}
 	
@@ -140,7 +141,7 @@ class CreditGuardAction extends ApiAction {
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = $this->getOkPage();
 		$this->cgConf['return_url'] = $return_url;
-
+		$this->cgConf['language'] = "ENG";
 		
 		$post_array = array(
 			'user' => $this->cgConf['user'],
@@ -149,7 +150,7 @@ class CreditGuardAction extends ApiAction {
 			'int_in' => '<ashrait>                                      
 							<request>
 								 <version>1000</version>
-								 <language>HEB</language>
+								 <language>' . $this->cgConf['language'] . '</language>
 								 <dateTime></dateTime>
 								 <command>doDeal</command>
 								 <doDeal>

@@ -13,7 +13,7 @@
 			<div className="contents">
 				<div class="container">
 					<h3>Company Name</h3>
-					<form class="form-horizontal" action="/internalpaypage/create">
+					<form id="planform" class="form-horizontal" action="/internalpaypage/create">
 						<div class="panel panel-primary">
 							<div class="panel-heading">
 								<h4>Account Information</h4>
@@ -44,11 +44,13 @@
 								<div class="row">
 									<div class="col-md-3">
 										<label for="plan">Plan</label>
-										<select name="plan" id="plan" class="form-control">
 										<?php
-										foreach ($plans as $plan) {
-											echo "<option value='" . $plan . "'>";
-													echo $plan;
+										echo"<select name='plan' id='plan' class='form-control'" . ($plan ? "readonly value='$plan'" : "") . ">";
+										?>
+										<?php
+										foreach ($plans as $p) {
+											echo "<option value='" . $p . "' " . ($plan == $p ? "selected" : "") . ">";
+													echo $p;
 											echo "</option>";
 										}
 										?>
@@ -58,11 +60,19 @@
 							</div>
 						</div>
 						<div class="pull-left">
-							<button class="btn btn-primary">Submit</button>
+							<button id="submitbtn" class="btn btn-primary" onclick="onSubmit()">Submit</button>
+							<button id="cancelbtn" class="btn btn-default" onclick="window.history.back();">Cancel</button>
 						</div>
 					</form>
 				</div>
 			</div>
 		</div>
+		<script>
+			function onSubmit() {
+				document.getElementById('submitbtn').disabled = true;
+				document.getElementById('cancelbtn').disabled = true;
+				document.getElementById('planform').submit();
+			}
+		</script>
 	</body>
 </html>

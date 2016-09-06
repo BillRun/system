@@ -27,6 +27,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $tmpFileIndicator = ".tmp";
 	protected $legitimateFileExtension = "";
 	protected $startTime = 0;
+	protected $reportLinesStamps = array();
 
 	public function __construct($options) {
 
@@ -80,6 +81,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$options['disable_stamp_export_directory'] = true;
 		}
 
+                $this->loadServiceProviders();
+                
 		parent::__construct($options);
 	}
 
@@ -265,10 +268,15 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			$fieldStr = sprintf($fieldFormat, (isset($row[$field]) ? $row[$field] : ''));
 			$str .= $fieldStr . $this->separator;
 		}
-		if (!$empty) {
-			$this->writeToFile($str . PHP_EOL);
+		if (!$empty ) {
+			if(!isset($this->reportLinesStamps[md5($str)])) {
+				$this->writeToFile($str . PHP_EOL);
+				$this->reportLinesStamps[md5($str)]=true;
+			} else {
+				Billrun_Factory::log('BIReport got a duplicate  line : ' . $str, Zend_Log::WARN);
+			}
 		} else {
-			Billrun_Factory::log("BIReport got an empty line : " . print_r($row, 1), Zend_Log::WARN);
+			Billrun_Factory::log('BIReport got an empty line : ' . print_r($row, 1), Zend_Log::WARN);
 		}
 	}
 
@@ -335,6 +343,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 		return $result['ok'] == 1;
 	}
+        
+        protected function loadServiceProviders() {
+            $serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
+            foreach ($serviceProviders as $provider) {
+                $this->serviceProviders[$provider['name']] = $provider->getRawData();
+            }
+        }
 
 	//---------------------- Manage files/cdrs function ------------------------
 
@@ -360,7 +375,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		foreach ($queries as $query) {
 			$match = true;
 			foreach ($query as $fieldKey => $regex) {
-				$match &= preg_match($regex, $line[$fieldKey]);
+				$match &= is_string($line[$fieldKey]) && preg_match($regex, $line[$fieldKey]);
 			}
 			if ($match) {
 				return TRUE;
@@ -418,8 +433,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 	}
         
-        protected function getServiceProvider($value, $parameters, $line) {
-            return $this->serviceProviders[$line[$parameters['key']]][$line[$parameters['field']]];		
+        
+        protected function getServiceProviderValues($value, $parameters, $line) {
+            if(!isset($this->serviceProviders[$line[$parameters['key']]][$parameters['field']]) ) {
+                Billrun_Factory::log("Couldn't Identify service provider {$line[$parameters['key']]}." , Zend_Log::WARN);
+                return $line[$parameters['key']];
+            }
+            return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];		
 	}
 
 }

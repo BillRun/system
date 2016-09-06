@@ -62,6 +62,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
+				'tenant-s' => 'Load configuration for a specific tenant',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 				'clearcall' => 'Finds and inform about open calls without balance',
 			);

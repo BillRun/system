@@ -12,3 +12,5 @@ cache
 crontab
 conf/dori.ini
 /nbproject/
+/conf/tenants/*
+/scripts/locks/*

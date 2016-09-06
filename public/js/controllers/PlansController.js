@@ -246,7 +246,7 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 		};
 
 		$scope.addThresholdNotification = function () {
-			if (!$scope.entity.notifications_threshold) $scope.entity.notifications_threshold = {};
+			if (!$scope.entity.notifications_threshold || angular.isArray($scope.entity.notifications_threshold)) $scope.entity.notifications_threshold = {};
 			if ($scope.entity.notifications_threshold[$scope.newThresholdNotification.id] &&
 					$scope.entity.notifications_threshold[$scope.newThresholdNotification.id].length)
 				return;
@@ -439,6 +439,10 @@ app.controller('PlansController', ['$scope', '$window', '$routeParams', 'Databas
 				inc: {
 					value: 'inc',
 					label: 'increment'
+				},
+				new: {
+					value: 'new',
+					label: 'new balance'
 				}
 			};
 			$scope.availableChargingTypes = ['card', 'digital'];

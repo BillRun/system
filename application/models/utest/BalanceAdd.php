@@ -24,12 +24,14 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 	function doTest() {
 		$sid = (int) Billrun_Util::filter_var($this->controller->getRequest()->get('sid'), FILTER_VALIDATE_INT);
 		$name = Billrun_Util::filter_var($this->controller->getRequest()->get('balanceType'), FILTER_SANITIZE_STRING);
+		$operation = Billrun_Util::filter_var($this->controller->getRequest()->get('operation'), FILTER_SANITIZE_STRING);
 		$amount = Billrun_Util::filter_var($this->controller->getRequest()->get('amount'), FILTER_SANITIZE_STRING);
 		$expiration = Billrun_Util::filter_var($this->controller->getRequest()->get('expiration'), FILTER_SANITIZE_STRING);
 
 		$params = array(
 			'sid' => $sid,
 			'name' => $name,
+			'operation' => $operation,
 			'amount' => $amount,
 			'expiration' => $expiration
 		);
@@ -51,6 +53,11 @@ class utest_BalanceAddModel extends utest_AbstractUtestModel {
 			"value" => $amount,
 			"expiration_date" => date_format(date_create_from_format('d/m/Y H:i', $params['expiration']), 'c')
 		);
+		
+		if(isset($params['operation']) && $params['operation']) {
+			$upsert['operation'] = $params['operation'];
+		}
+		
 		$request = array(
 			'method' => 'update',
 			'sid' => $params['sid'],

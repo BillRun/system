@@ -384,7 +384,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getPositiveValuePrettifyDuration($obj, $data) {
 		$timePositiveValue = $this->getPositiveValue($obj, $data);
-		return Billrun_Util::durationFormat($timePositiveValue, true);
+		return Billrun_Util::secondFormat($timePositiveValue, 'minute', 0, false, 'ceil', '', '');
 	}
 	
 	/**
@@ -610,7 +610,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return boolean true if not under PL network else false
 	 */
 	protected function isInterconnect($row) {
-		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2;
+		return isset($row['np_code']) && is_string($row['np_code']) && strlen($row['np_code']) > 2 && (!isset($row['call_type']) || !in_array($row['call_type'], array("11", "12")));
 	}
 
 	/**
@@ -637,7 +637,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo change the values to be with flag taken from pp_includes into balance object
 	 * 
 	 */
-	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
+	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
@@ -656,7 +656,30 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
+			
+			$additionalUsageTypes = $this->getUsageTypesByAdditionalUsageType($usageType);
+			foreach ($additionalUsageTypes as $additionalUsageType) {
+				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
+				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
+			}
 		}
+	}
+	
+	/**
+	 * this will return also available usage types (in balances) 
+	 * according to the additional types set in the prepaid includes document.
+	 * 
+	 * @param type $usaget
+	 * @return main usaget types
+	 */
+	protected function getUsageTypesByAdditionalUsageType($usaget) {
+		$pp_includes_query = array_merge(Billrun_Util::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
+		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
+		$usageTypes = array();
+		foreach ($ppincludes as $ppinclude) {
+			$usageTypes[] = $ppinclude['charging_by_usaget'];
+		}
+		return array_unique($usageTypes);
 	}
 
 	protected function getPPIncludesToExclude($plan_name, $rate_key) {
@@ -810,11 +833,15 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$prefix = '0';
 				}
 				$event[$numberField] = $prefix . substr($number, (-1) * strlen($number) + 3);
-			} else if (stripos($usaget, 'roaming') === TRUE) {
-				if ($usaget == 'roaming_callback') {
+			} else if (stripos($usaget, 'roaming') !== FALSE) {
+				if ($usaget == 'roaming_callback' && !empty($event['destination_number'])) {
 					$event['called_number'] = $event['destination_number'];
 				}
-				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
+					$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				} else if ($event['call_type'] >= "11") {
+					$event[$numberField] = Billrun_Util::cleanLeadingZeros($event[$numberField]); // this will cleaning leading zeros and pluses
+				}
 			}
 			// backward compatibility to local calls without vlr
 			if (empty($event['vlr']) && stripos($usaget, 'roaming') === FALSE) {

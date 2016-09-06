@@ -24,6 +24,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			'type' => 'account',
 			'aid' => intval($request['aid'])
 		);
+		$selectedPlan = $request['plan'];
 		$account = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->getRawData();
 		$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->current()->getRawData();
 		$plans = Billrun_Factory::db()->plansCollection()->query()->cursor();
@@ -35,6 +36,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		$this->getView()->assign('account', $account);
 		$this->getView()->assign('config', $config['subscribers']['account']['fields']);
 		$this->getView()->assign('plans', $planNames);
+		$this->getView()->assign('plan', $selectedPlan);
 		return $view->render();
 	}
 

@@ -45,8 +45,7 @@ class PlansModel extends TabledateModel {
 
 	public function update($params) {
 		$entity = parent::update($params);
-		$duplicate = $params['duplicate_rates'];
-		if ($duplicate) {
+		if (!empty($params['duplicate_rates'])) {
 			$source_id = $params['source_id'];
 			unset($params['source_id']); // we don't save because admin ref issues
 			unset($params['duplicate_rates']);
@@ -113,16 +112,12 @@ class PlansModel extends TabledateModel {
 		return parent::applyFilter($filter_field, $value);
 	}
 	
-	public function getOverlappingDatesQuery($entity, $new = true) {
-		$additionalQuery = array(
-			'service_provider' => $entity['service_provider'],
-		);
-		return array_merge(parent::getOverlappingDatesQuery($entity, $new), $additionalQuery);
-	}
-	
 	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity');
+		$validationMethods = array('validateName', 'validateMandatoryFields', 'validateTypeOfFields', 'validatePrice', 'validateRecurrence', 'validateYearlyPeriodicity', 'validateInclude');
 		foreach ($validationMethods as $validationMethod) {
+			if(!method_exists($this, $validationMethod)) {
+				continue;
+			}
 			if (($res = $this->{$validationMethod}($data, $type)) !== true) {
 				return $this->validationResponse(false, $res);
 			}
@@ -130,16 +125,70 @@ class PlansModel extends TabledateModel {
 		return $this->validationResponse(true);
 	}
 	
+	protected function validateName($data) {	
+		if(!isset($data['name'])) {
+			return false;
+		}
+		$name = strtolower($data['name']);
+		return !in_array($name, array('base', 'groups'));
+	}	
+	
+	// TODO: Find a way to return error message, create a structure for the 'res'
+	// variable
+	protected function validateInclude($data) {		
+		if(!isset($data['include'])) {
+			return true;
+		}
+		
+		if(!isset($data['include']['groups'])) {
+			return false;
+		}
+		
+		$groups = $data['include']['groups'];
+		$usagetList = Billrun_Factory::config()->getConfigValue('billrun.usage_types');
+		foreach ($groups as $groupName => $value) {
+			list($usaget, $usageValue) = each($value);
+			// Validate usage type.
+			if(!in_array($usaget, $usagetList)) {
+				return false;
+			}
+			
+			// Validate usageValue
+			if($usageValue === "UNLIMITED") {
+				continue;
+			}
+			
+			if(!Billrun_Util::IsIntegerValue($usageValue)) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+
+	
 	protected function validatePrice($data) {		
 		foreach ($data['price'] as $price) {
+			if (isset($lastTo) && $lastTo != $price['from']) {
+				return 'Price intervals must be continuous';
+			}
+			else if (!isset($lastTo) && $price['from']) {
+				return 'Price intervals must start at zero';
+			}
+			if (is_null($price['to'])) {
+				$price['to'] = 99999999;
+			}
+			$lastTo = $price['to'];
+			
 			if (!isset($price['price']) || !isset($price['from'])|| !isset($price['to'])) {
 				return "Illegal price structure";
 			}
 			
 			$typeFields = array(
 				'price' => 'float',
-				'from' => 'date',
-				'to' => 'date',
+				'from' => 'integer',
+				'to' => 'integer',
 			);
 			$validateTypes = $this->validateTypes($price, $typeFields);
 			if ($validateTypes !== true) {

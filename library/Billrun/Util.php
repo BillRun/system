@@ -12,8 +12,28 @@
  * @since    0.5
  */
 class Billrun_Util {
-        public static $computerUnit = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4,
-			'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
+	public static $dataUnits = array(
+		'B' => 0, 
+		'KB' => 1, 
+		'MB' => 2, 
+		'GB' => 3, 
+		'TB' => 4,
+		'PB' => 5, 
+		'EB' => 6, 
+		'ZB' => 7, 
+		'YB' => 8
+	);
+	
+	public static $timeUnits = array(
+		"second" => 1,
+		"minute" => 60,
+		"hour" => 3600, // 60 * 60
+		"day" => 86400, // 24 * 60 * 60
+		"week" => 604800, // 7 * 24 * 60 * 60
+		"year" => 220752000, // 365 * 7 * 24 * 60 * 60
+	);
+
+	
 	/**
 	 * method to filter user input
 	 * 
@@ -272,13 +292,13 @@ class Billrun_Util {
 		if ($bytes != 0) {
 			// Generate automatic prefix by bytes 
 			// If wrong prefix given, search for the closest unit
-			if (!array_key_exists($unit, self::$computerUnit)) {
+			if (!array_key_exists($unit, self::$dataUnits)) {
 				$pow = floor(log(abs($bytes)) / log(1024));
-				$unit = array_search($pow, self::$computerUnit);
+				$unit = array_search($pow, self::$dataUnits);
 			}
 
 			// Calculate byte value by prefix
-			$value = ($bytes / pow(1024, floor(self::$computerUnit[$unit])));
+			$value = ($bytes / pow(1024, floor(self::$dataUnits[$unit])));
 		}
 
 		if ($unit == 'B') {
@@ -316,9 +336,9 @@ class Billrun_Util {
             $unitSize = $unitSizeAndType[1];
             $unitType = $unitSizeAndType[2];
             $bytes = 0;
-            $powerCalc = self::$computerUnit[$unitType] - self::$computerUnit[$convertToOtherUnit];
+            $powerCalc = self::$dataUnits[$unitType] - self::$dataUnits[$convertToOtherUnit];
             
-            if(isset(self::$computerUnit[$unitType]) && !empty($unitSize)){
+            if(isset(self::$dataUnits[$unitType]) && !empty($unitSize)){
                 if($powerCalc >= 0){
                     $bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep );
                 }else{
@@ -349,6 +369,80 @@ class Billrun_Util {
 			return gmdate('i:s', $seconds);
 		}
 		return $seconds;
+	}
+	
+	/**
+	 * method to convert seconds to closest unit or by specific unit
+	 * 
+	 * @param int $seconds seconds value to convert
+	 * @param string $unit the unit to convert (empty to automatically convert to closest unit)
+	 * @param int $decimals decimal point
+	 * @param bool $includeUnit output unit on return
+	 * @param string $round_method method to round with the return value
+	 * @param string $decimal_sep the decimal point separator
+	 * @param string $thousands_sep the thousands separator
+	 * 
+	 * @return string the seconds formatted with the specific unit
+	 */
+	public static function secondFormat($seconds, $unit = "", $decimals = 2, $includeUnit = false, $round_method = 'none', $decimal_sep = ".", $thousands_sep = ",") {
+		if (empty($unit) || !array_key_exists($unit, self::$timeUnits)) {
+			$units = array_reverse(self::$timeUnits);
+			foreach ($units as $k => $v) {
+				if ($seconds >= $v) {
+					$unit = $k;
+					break;
+				}
+			}
+		}
+		
+		$value = $seconds / self::$timeUnits[$unit];
+		
+		if ($round_method != 'none' && function_exists($round_method)) {
+			$value = call_user_func_array($round_method, array($value));
+		}
+		
+		$number = number_format($value, $decimals, $decimal_sep, $thousands_sep);
+		
+		if ($includeUnit) {
+			return $number . ' ' . $unit . ($value > 1 || $value == 0 ? 's' : '');
+		}
+		return $number;
+		
+	}
+	
+	/**
+	 * convert seconds to readable format [English]
+	 * 
+	 * @param int $seconds seconds to convert
+	 * 
+	 * @return string readable format
+	 */
+	public static function durationReadableFormat($seconds) {
+		$units = array(
+			"year" => 220752000, // 365 * 7 * 24 * 60 * 60
+			"week" => 604800, // 7 * 24 * 60 * 60
+			"day" => 86400, // 24 * 60 * 60
+			"hour" => 3600, // 60 * 60
+			"minute" => 60,
+			"second" => 1,
+		);
+
+		if ($seconds == 0) {
+			return "0 seconds";
+		}
+		$s = array();
+		foreach ($units as $name => $div) {
+			$quot = intval($seconds / $div);
+			if ($quot) {
+				$unit = $name;
+				if (abs($quot) > 1) {
+					$unit .= "s";
+				}
+				$s[] = $quot . " " . $unit;
+				$seconds -= $quot * $div;
+			}
+		}
+		return implode($s, ', ');
 	}
 
 	/**
@@ -569,12 +663,19 @@ class Billrun_Util {
 			$phoneNumber = self::cleanLeadingZeros($phoneNumber);
 		}
 
-		if (self::isIntlNumber($phoneNumber) || strlen($phoneNumber) > 12) { // len>15 means not msisdn
+		if (is_null($defaultPrefix)) {
+			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		}
+
+		$phoneLength = strlen($phoneNumber);
+		$prefixLength = strlen($defaultPrefix);
+
+		if ($phoneLength >= $prefixLength && substr($phoneNumber, 0, $prefixLength) == $defaultPrefix) {
 			return $phoneNumber;
 		}
 
-		if (is_null($defaultPrefix)) {
-			$defaultPrefix = Billrun_Factory::config()->getConfigValue('billrun.defaultCountryPrefix', 972);
+		if (self::isIntlNumber($phoneNumber) || $phoneLength > 12) { // len>15 means not msisdn
+			return $phoneNumber;
 		}
 
 		return $defaultPrefix . $phoneNumber;
@@ -617,7 +718,7 @@ class Billrun_Util {
 	 * @return string the number without leading zeros
 	 */
 	public static function cleanLeadingZeros($number) {
-		return ltrim($number, "0");
+		return ltrim($number, "+0");
 	}
 
 	/**
@@ -655,6 +756,7 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'additional' => array(),
 		);
 		$filtered_request = array();
 
@@ -1479,7 +1581,7 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
 
