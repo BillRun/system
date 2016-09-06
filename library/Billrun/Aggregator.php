@@ -22,6 +22,8 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 */
 	protected $data = null;
 
+	protected $isValid = true;
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -34,6 +36,10 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		}
 	}
 
+	public function isValid() {
+		return $this->isValid;
+	}
+	
 	/**
 	 * execute aggregate
 	 */
