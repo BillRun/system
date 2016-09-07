@@ -59,14 +59,22 @@ class CronController extends Yaf_Controller_Abstract {
 		$empty_types = array();
 		$filter_field = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.field');
 		$types = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.types', array());
-		$servers = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.retrieved_from', array());
 		foreach ($types as $type => $timediff) {
-			foreach ($servers as $server) {
-				$query = array(
-					'source' => $type,
-					'retrieved_from' => $server,
-					$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
-				);
+			$hosts = array_keys(Billrun_Factory::config()->getConfigValue($type . '.ftp', array()));
+			foreach ($hosts as $server) {
+				if (count($hosts) < 2){// if the file type is being processed from one server
+					$server = $type;
+					$query = array(
+						'source' => $type,
+						$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
+					);
+				} else {
+					$query = array(
+						'source' => $type,
+						'retrieved_from' => $server,
+						$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
+					);
+				}
 				$results = $logsModel->getData($query)->current();
 				if ($results->isEmpty()) {
 					$empty_types[] = array($type => $server);
@@ -80,7 +88,7 @@ class CronController extends Yaf_Controller_Abstract {
 		if (empty($empty_types)) {
 			return;
 		}
-		foreach ($empty_types as &$values) {
+		foreach ($empty_types as $values) {
 			foreach ($values as $type => $server) {
 				$events_string[$type]= $type;
 			}
