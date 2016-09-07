@@ -189,6 +189,10 @@ abstract class Billrun_Base {
 				$namespace = substr($external_class, 0, $pos);
 				Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace($namespace);
 			}
+			// TODO: We need a special indication for this case.
+			// There are places in the code that try to create clases in a loop,
+			// if the class doesn't exist it is a critical error that should stop the operation
+			// of most executed logic.
 			if (!@class_exists($external_class, true)) {
 				Billrun_Factory::log("Can't find class: " . $class, Zend_Log::EMERG);
 				return false;

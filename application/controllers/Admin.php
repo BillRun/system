@@ -857,8 +857,12 @@ class AdminController extends Yaf_Controller_Abstract {
 			if ($type != 'update' && $model->hasEntityWithOverlappingDates($params, in_array($type, array('new', 'duplicate')))) {
 				return $this->responseError("There's an entity with overlapping dates");
 			}
-			$validate = $model->validate($data, $type);
-			if (!$validate['validate']) {
+
+			$validatorOptions = array(
+				'modelName' => $coll,
+			);
+			$validate = Billrun_ModelValidator_Manager::validate($data, $type, $validatorOptions);
+			if (!$validate['validate']) { // TODO: change to throwing an exception - need to verify acceptance of client side
 				return $this->responseError(array("message" => $validate['errorMsg'], "status" => false));
 			}
 		}
