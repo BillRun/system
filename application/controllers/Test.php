@@ -66,8 +66,6 @@ class TestController extends Yaf_Controller_Abstract {
 	 * @return string Action name.
 	 */
 	protected function buildAction($params) {
-		$action = "";
-		
 		// Ucase all the input URIs
 		$translated = array_map(function($s){return ucfirst(strtolower($s));}, $params);
 		
