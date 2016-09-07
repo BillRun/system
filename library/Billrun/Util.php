@@ -756,6 +756,7 @@ class Billrun_Util {
 			'vatable' => array('default' => '1'),
 			'promotion' => array(),
 			'fixed' => array(),
+			'additional' => array(),
 		);
 		$filtered_request = array();
 
@@ -1586,18 +1587,6 @@ class Billrun_Util {
 
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
-	}
-	
-	public static function isDateValue($val) {
-		return (strtotime($val) === false ? false : true);
-	}
-	
-	public static function IsFloatValue($number) {
-		return is_numeric($number);
-	}
-	
-	public static function IsIntegerValue($number) {
-		return is_numeric($number) && ($number == intval($number));
 	}
 
 	public static function getCompanyName() {

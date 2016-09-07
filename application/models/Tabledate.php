@@ -136,7 +136,7 @@ class TabledateModel extends TableModel {
 		}
 
 		// close the old line
-		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
+		$mongoCloseTime = new MongoDate($new_from->getTimestamp());
 		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
@@ -225,93 +225,4 @@ class TabledateModel extends TableModel {
 		return $sort_fields;
 	}
 	
-	public function validate($data, $type) {
-		return $this->validationResponse(true);
-	}
-	
-	protected function validationResponse($result, $errorMsg = '') {
-		if (!$result) {
-			Billrun_Factory::log('Validation errors: ' . $errorMsg, Zend_Log::INFO);
-		}
-		return array(
-			'validate' => $result,
-			'errorMsg' => $errorMsg,
-		);
-	}
-	
-	protected function validateMandatoryFields($data) {
-		$fields = Billrun_Factory::config()->getConfigValue($this->collection_name . '.fields', array());
-		$missingFields = array();
-		
-		foreach ($fields as $field) {
-			if ($field['mandatory'] && 
-				(!array_key_exists($field['field_name'], $data) ||
-				(is_array($data[$field['field_name']]) && empty($data[$field['field_name']])) ||
-				((is_string($data[$field['field_name']])) && empty(trim($data[$field['field_name']]))))) {
-				$missingFields[] = $field['field_name'];
-			}
-		}
-		
-		if (!empty($missingFields)) {
-			return "The following fields are missing: " . implode(', ', $missingFields);
-		}
-		return true;
-	}
-	
-	protected function validateTypeOfFields($data) {
-		$fields = Billrun_Factory::config()->getConfigValue($this->collection_name . '.fields', array());
-		$typeFields = array();
-		foreach ($fields as $field) {
-			if (isset($field['type'])) {
-				$typeFields[$field['field_name']] = $field['type'];
-			}
-		}
-		return $this->validateTypes($data, $typeFields);
-	}
-	
-	protected function validateTypes($data, $typeFields) {
-		$wrongTypes = array();
-		
-		foreach ($typeFields as $fieldName => $fieldType) {
-			$type = (!is_array($fieldType) ? $fieldType : $fieldType['type']);
-			$params = (!is_array($fieldType) ? array() : $fieldType['params']);
-			if (isset($data[$fieldName]) && !$this->validateType($data[$fieldName], $type, $params)) {
-				$wrongTypes[$fieldName] = $fieldType;
-			}
-		}
-		
-		if (!empty($wrongTypes)) {
-			$ret = array();
-			foreach ($wrongTypes as $fieldName => $fieldType) {
-				$ret[] = $this->getErrorMessage($fieldName, $data[$fieldName], $fieldType);
-			}
-			return implode(', ', $ret);
-		}
-		return true;
-	}
-
-	protected function getErrorMessage($fieldName, $fieldValue, $fieldType) {
-		if (is_array($fieldType)) {
-			return '"' . $fieldValue . '" is not a valid value for "' . $fieldType['type'] .'". Available values are: ' . implode(', ', $fieldType['params']);
-		}
-		return 'field "' . $fieldName . '" must be of type ' . $fieldType;
-	}
-
-	protected function validateType($value, $type, $params) {
-		switch ($type) {
-			case ('integer'):
-				return Billrun_Util::IsIntegerValue($value);
-			case ('float'):
-				return Billrun_Util::IsFloatValue($value);
-			case ('date'):
-				return Billrun_Util::isDateValue($value);
-			case ('boolean'):
-				return is_bool($value);
-			case ('in_array'):
-				return in_array($value, $params);
-		}
-		
-		return false;
-	}
-
 }

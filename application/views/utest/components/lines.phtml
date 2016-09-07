@@ -21,7 +21,7 @@
 					<?php foreach ($lines['rows'] as $key => $line) : ?>
 						<tr>
 							<td><?php echo ($key + 1) ?> </td>
-							<td><?php echo $line['time_date'] ?></td>
+							<td><?php echo isset($line['time_date']) ? $line['time_date'] : '' ?></td>
 							<td><?php echo $line['usaget'] ?></td>
 							<td><?php echo $line['record_type'] ?> </td>
 							<td><?php echo $line['aprice'] ?></td>

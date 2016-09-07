@@ -77,6 +77,6 @@ class ProcessAction extends Action_Base {
 	}
 	
 	protected function getCMD() {
-		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . ' --process --type';
+		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . '  --tenant ' . Billrun_Factory::config()->getTenant() . ' --process --type';
 	}
 }

@@ -51,6 +51,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'l|L|alert' => 'Process and detect alerts',
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
+				'cycle' => 'aggregate lines in billing_cycle',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
@@ -62,6 +63,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
+				'tenant-s' => 'Load configuration for a specific tenant',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 				'clearcall' => 'Finds and inform about open calls without balance',
 			);
