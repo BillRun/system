@@ -363,7 +363,7 @@ class RatesModel extends TabledateModel {
 					}
 				}
 				$ret[] = $row;
-			} else if ($item->get('rates') && !$this->showprefix) {
+			} else if (!$this->isEmptyRatesObject($item->get('rates')) && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					foreach ($this->filter_by_plan as $filteredPlan) {
 						if (is_array($rate) && isset($rate[$filteredPlan])) {
@@ -372,7 +372,7 @@ class RatesModel extends TabledateModel {
 								'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
 								'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 								'tunit' => $rate[$filteredPlan]['unit'],
-								'tinterconnect' => $rate[$filteredPlan]['interconnect']
+								'tinterconnect' => isset($rate[$filteredPlan]['interconnect']) ? $rate[$filteredPlan]['interconnect'] : null,
 							);
 							if (strpos($key, 'call') !== FALSE) {
 								$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
@@ -402,6 +402,27 @@ class RatesModel extends TabledateModel {
 			}
 		}
 		return $ret;
+	}
+	
+	/**
+	 * Checks if a rate object is empty, 
+	 * in order to display it when filtering by plan
+	 * (to handle the case of UI saving empty rates)
+	 * 
+	 * @param type $rates
+	 * @return boolean
+	 */
+	protected function isEmptyRatesObject($rates) {
+		if (!$rates) {
+			return true;
+		}
+		
+		foreach ($rates as $key => $rate) {
+			if (!empty($rate)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public function getRates($filter_query) {
@@ -635,60 +656,4 @@ class RatesModel extends TabledateModel {
 		return $plansColl->createRefByEntity($planEntity);
 	}
 	
-	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validateRates');
-		foreach ($validationMethods as $validationMethod) {
-			if (($res = $this->{$validationMethod}($data)) !== true) {
-				return $this->validationResponse(false, $res);
-			}
-		}
-		return $this->validationResponse(true);
-	}
-	
-	protected function validateRates($data) {
-		if (empty($data['rates'])) {
-			return '"rates" field must be set in rate';
-		}
-		foreach ($data['rates'] as $usaget => $plans) {
-			if (!$this->isUsagetValid($usaget)) {
-				return 'Usage type "' . $usaget . '" is not valid';
-			}
-			foreach ($plans as $plan => $rate) {
-				if (!PlansModel::isPlanExists($plan)) {
-					return 'Plan "' . $plan . '" does not exists';
-				}
-				if (empty($rate['rate'])) {
-					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
-				}
-				$lastInterval = 0;
-				foreach ($rate['rate'] as $interval) {
-					if (!isset($interval['from']) || !isset($interval['to']) || !isset($interval['price']) || !isset($interval['interval'])) {
-						return 'Illegal rate structure';
-					}
-					
-					$typeFields = array(
-						'interval' => 'integer',
-						'from' => 'integer',
-						'to' => 'integer',
-						'price' => 'float',
-					);
-					$validateTypes = $this->validateTypes($interval, $typeFields);
-					if ($validateTypes !== true) {
-						return $validateTypes;
-					}
-					if ($interval['from'] != $lastInterval) {
-						return 'Rate intervals must be continuous';
-					}
-					$lastInterval = $interval['to'];
-				}
-			}
-		}
-		
-		return true;
-	}
-	
-	protected function isUsagetValid($usaget) {
-		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
-	}
-
 }
