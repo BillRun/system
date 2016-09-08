@@ -105,7 +105,7 @@
 		<div class="modal-footer">
 			<a ng-click='setAdvancedMode(false)' class="clickable" ng-if='advancedMode'>Basic Mode</a>
 			<a ng-click='setAdvancedMode(true)' class="clickable" ng-if='!advancedMode'>Advanced Mode</a>
-			<button class="btn" ng-click='cancel()'>Cancel</button>
+			<button type='button' class="btn" ng-click='cancel()'>Cancel</button>
 			<button type='submit' class="btn btn-primary" ng-if='authorized_write'>Save changes</button>
 		</div>		
 	</form>
