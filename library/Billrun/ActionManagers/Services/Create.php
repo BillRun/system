@@ -68,7 +68,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
 

@@ -10,7 +10,7 @@
  * This is a prototype for a services action.
  *
  */
-abstract class Billrun_ActionManagers_Services_Action extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Services_Action extends Billrun_ActionManagers_APIAction implements Billrun_ActionManagers_IAPIAction {
 
 	protected $collection = null;
 
@@ -30,19 +30,4 @@ abstract class Billrun_ActionManagers_Services_Action extends Billrun_ActionMana
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue('services.query_fields');
 	}	
-	
-	/**
-	 * Parse a request to build the action logic.
-	 * 
-	 * @param request $request The received request in the API.
-	 * @return true if valid.
-	 */
-	public abstract function parse($request);
-
-	/**
-	 * Execute the action logic.
-	 * 
-	 * @return true if sucessfull.
-	 */
-	public abstract function execute();
 }
