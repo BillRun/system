@@ -170,40 +170,22 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				),
 			),
 		);
-		
-		$project2 = array(
-			'$project' => array(
-				'_id.day_key' => 1,
-				'_id.month_key' => 1,
-				'_id.year_key' => 1,
-				'matched' => array(
-					'$cond' => array(
-						'if' => array(
-							'$or' => array(
-								array('$lt' => array('$_id.month_key', $line_month)),
-								array('$and' => array(
-									array('$eq' => array('$_id.month_key', $line_month)),
-									array('$lte' => array('$_id.day_key', $line_day)),
-									),
-								),	
-							),
+					
+		$match3 = array(
+			'$match' => array(
+				'$or' => array(
+					array('_id.month_key' => array('$lt'=> $line_month)),
+					array(
+						'$and' => array(
+							array('_id.month_key' => array('$eq' => $line_month)),
+							array('_id.day_key' => array('$lte' => $line_day)),
 						),
-						'then' => true,
-						'else' => false,
-					),		
+					),	
 				),
 			),
 		);
-		
-		
-				
-		$match3 = array(
-			'$match' => array(
-				'matched' => true,
-			),
-		);
 
-		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $project2 ,$match3);
+		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
 		return $this->handleResultPadding($results);
 	}
 	
