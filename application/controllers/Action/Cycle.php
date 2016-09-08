@@ -39,8 +39,8 @@ class CycleAction extends Action_Base {
 		}
 
 		if (empty($options['stamp'])) {
-			$nextBillrunKey = Billrun_Util::getBillrunKey(time());
-			$currentBillrunKey = Billrun_Util::getPreviousBillrunKey($nextBillrunKey);
+			$nextBillrunKey = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+			$currentBillrunKey = Billrun_Billrun::getPreviousBillrunKey($nextBillrunKey);
 			$options['stamp'] = $currentBillrunKey;
 		}
 
