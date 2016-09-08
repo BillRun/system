@@ -39,7 +39,7 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 	 * @return array
 	 */
 	protected function getQueryParams($case) {
-		return $this->getQuery($case);
+		return $case;
 	}
 	
 	protected function postRun($case) {
@@ -47,8 +47,9 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		$queryAction = $this->getQueryAction($case);
 		
 		$queryParams = $this->getQueryParams($case);
+		$queryInput = $this->buildInput($queryParams);
 		
-		if(!$queryAction->parse($queryParams)) {
+		if(!$queryAction->parse($queryInput)) {
 			$this->assertTrue(false, "Query action failed parsing " . $case['msg']);
 			return false;
 		}

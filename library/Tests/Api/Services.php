@@ -45,8 +45,16 @@ class Tests_Api_Services extends UnitTestCase {
 
     );
 		
+	protected $deleteTests = array(
+		array('valid' => true, 'msg' => 'Only mendatory active', 'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory future', 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory past', 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+	);
     function testCreate() {
-		$tester = new Tests_Api_Services_Create($this->createTests, $this);
-		$tester->run();
+		$create = new Tests_Api_Services_Create($this->createTests, $this);
+		$create->run();
+		
+		$delete = new Tests_Api_Services_Delete($this->deleteTests, $this);
+		$delete->run();
     }
 }

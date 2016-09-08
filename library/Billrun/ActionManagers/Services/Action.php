@@ -28,6 +28,6 @@ abstract class Billrun_ActionManagers_Services_Action extends Billrun_ActionMana
 	* @return array - Array of fields to set.
 	*/
 	protected function getQueryFields() {
-		return Billrun_Factory::config()->getConfigValue('services.query_fields');
+		return Billrun_Factory::config()->getConfigValue('services.fields');
 	}	
 }

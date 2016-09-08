@@ -13,7 +13,7 @@
  * @subpackage      API
  * @since           5.1
  */
-class Tests_TestWrapper extends UnitTestCase {
+abstract class Tests_TestWrapper extends UnitTestCase {
 	/**
 	 * The unit test instance to report with
 	 * @var UnitTestCase
@@ -26,7 +26,28 @@ class Tests_TestWrapper extends UnitTestCase {
 		$this->unitTestInstance = $intenalTestInstance;
 	}
 	
+	/**
+	 * Abstract function to run on each assert.
+	 * @param boolean $result - The assert result.
+	 */
+	protected abstract function onAssert($result);
+	
 	public function assert($expectation, $compare, $message = '%s') {
-		$this->unitTestInstance->assert($expectation, $compare, $message);
+		$assertResult = $this->unitTestInstance->assert($expectation, $compare, $message);
+		$this->onAssert($assertResult);
+		return $assertResult;
+	}
+	
+	/**
+     *    Sends a formatted dump of a variable to the
+     *    test suite for those emergency debugging
+     *    situations.
+     *    @param mixed $variable    Variable to display.
+     *    @param string $message    Message to display.
+     *    @return mixed             The original variable.
+     *    @access public
+     */
+    public function dump($variable, $message = false) {
+		$this->unitTestInstance->dump($variable, $message);
 	}
 }

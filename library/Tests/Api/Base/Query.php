@@ -17,20 +17,6 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 abstract class Tests_Api_Base_Query extends Tests_Api_Base_Action {
 	
-	/**
-	 * Current test case
-	 * @var array
-	 */
-	protected $current;
-	
-	protected function preRun($case) {
-		if(!parent::preRun($case)) {
-			return false;
-		}
-		$this->current = $case;
-		return true;
-	}
-	
 	protected function checkExpected($result) {
 		$expected = $this->current['expected'];
 		$message = $this->current['msg'];

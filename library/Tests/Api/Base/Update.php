@@ -16,13 +16,7 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
-	
-	/**
-	 * Current test case
-	 * @var array
-	 */
-	protected $current;
-	
+
 	/**
 	 * Get the update query for the record after being updated.
 	 * @param array $case - Current test case.
@@ -59,13 +53,5 @@ abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
 		$resultData = $this->getResultData($results);
 		$expectation = $this->getExpectation();
 		return $this->assert($expectation, $resultData);
-	}
-	
-	protected function preRun($case) {
-		if(!parent::preRun($case)) {
-			return false;
-		}
-		$this->current = $case;
-		return true;
 	}
 }

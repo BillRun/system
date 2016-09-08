@@ -18,6 +18,12 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 
 	/**
+	 * Boolean indication for is the case cleared
+	 * @var boolean
+	 */
+	protected $caseCleared = false;
+	
+	/**
 	 * Array of tests.
 	 * @var array
 	 */
@@ -36,6 +42,12 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	protected $coll;
 	
 	/**
+	 * Current test case
+	 * @var array
+	 */
+	protected $current;
+	
+	/**
 	 * Create a new instance of the API Action test object.
 	 * @param Mongodloid_Collection $collection
 	 * @param type $testCases
@@ -50,7 +62,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		parent::__construct($internalTestInstance, $label);
 		
 		$this->parameters = $inputParameters;
-		$this->cases = $testCases;
+		$this->cases = $this->translateCases($testCases);
 		$this->coll = $collection;
 	}
 	
@@ -73,6 +85,51 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	 */
 	protected abstract function getDataForDB($case);
 
+	/**
+	 * Translate the date fields
+	 * Override this function for special case translation.
+	 * @param type $cases
+	 * @return type
+	 */
+	protected function translateCases($cases) {
+		$translated = array();
+		foreach ($cases as $caseIndex => $case) {
+			if(Billrun_Util::isMultidimentionalArray($case)) {
+				$translated[$caseIndex] = $this->translateCases($case);
+			} else if(is_array($case)) {
+				$translated[$caseIndex] = $this->translateCaseArray($case);
+			} else {
+				$translated[$caseIndex] = $case;
+			}
+		}
+		return $translated;
+	}
+	
+	protected function translateCaseArray($caseArray) {
+		$translated = array();
+		foreach ($caseArray as $key => $value) {
+			$translated[$key] = $this->translateSingleCase($key, $value);
+		}
+		return $translated;
+	}
+	
+	protected function translateSingleCase($key, $value) {
+		if(in_array($key, array("from", "to"))) {
+			return strtotime($value);
+		}
+		return $value;
+	}
+	
+	/**
+	 * 
+	 * @param type $result
+	 */
+	protected function onAssert($result) {
+		if(!$result) {
+			$this->clearCase($this->current);
+		}
+	}
+	
 	/**
 	 * Abstract function to execute when the record to be deleted already exists.
 	 * @return boolean, if true continue with the test, if false terminate the 
@@ -129,10 +186,16 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	}
 	
 	protected function clearCase($case) {
+		if($this->caseCleared) {
+			return true;
+		}
+		
 		// Check if it exists.
 		$query = $this->getQuery($case);
 		
 		$removed = $this->coll->remove($query);
+		
+		$this->caseCleared = true;
 		
 		if($removed < 1) {
 			$this->assertFalse($case['valid'], "Failed to create in DB " . $case['msg']);
@@ -169,7 +232,13 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	
 	protected function createRecord($case) {
 		$dataForDB = $this->getDataForDB($case);
-		$this->coll->insert($dataForDB);
+		
+		$cloned = array_merge($dataForDB);
+		
+		$this->coll->insert($cloned);
+		
+		// Remove the ID
+//		unset($case['_id']);
 	}
 	
 	/**
@@ -187,6 +256,11 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	 * @param Billrun_AnObj $test
 	 */
 	protected function internalRun(Billrun_ActionManagers_IAPIAction $action, Billrun_AnObj $test) {
+		if(!$test) {
+			$this->assertTrue(false, "Received null input data!");
+			return false;
+		}
+		
 		// Test parsing.
 		if(!$action->parse($test)) {
 			return false;
@@ -219,6 +293,9 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	}
 	
 	protected function preRun($case) {
+		$this->caseCleared = false;
+		$this->current = $case;
+		
 		// Get the record to remove from the db
 		$query = $this->getQuery($case);
 		

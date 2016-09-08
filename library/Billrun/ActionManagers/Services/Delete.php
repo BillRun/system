@@ -34,22 +34,22 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 15;
-				$this->reportError($errorCode, Zend_Log::NOTICE);
+				$this->errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 15;
+				$this->reportError($this->errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
 			}
 
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 11;
+			$this->errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 11;
 			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError($this->errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $errorCode == 0 ? 1 : 0,
+			'status' => $this->errorCode == 0 ? 1 : 0,
 			'desc' => $this->error,
-			'error_code' => $errorCode,
+			'error_code' => $this->errorCode,
 		);
 
 		return $outputResult;
@@ -115,9 +115,10 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!
 		foreach ($queryFields as $field) {
+			$fieldName = $field['field_name'];
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
-			if (isset($queryData[$field]) && !empty($queryData[$field])) {
-				$this->query[$field] = $queryData[$field];
+			if (isset($queryData[$fieldName]) && !empty($queryData[$fieldName])) {
+				$this->query[$fieldName] = $queryData[$fieldName];
 			}
 		}
 
