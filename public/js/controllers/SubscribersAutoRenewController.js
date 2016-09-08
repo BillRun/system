@@ -1,5 +1,5 @@
-app.controller('SubscribersAutoRenewController', ['$scope', '$controller', 'Database',
-	function ($scope, $controller, Database) {
+app.controller('SubscribersAutoRenewController', ['$scope', '$controller', 'Database', '$window',
+	function ($scope, $controller, Database, $window) {
 		'use strict';
 
 		$controller('EditController', {$scope: $scope});
