@@ -54,6 +54,9 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		}
 		
 		$result = $queryAction->execute();
-		return $this->onQueryAction($result);
+		$queryActionResult = $this->onQueryAction($result);
+		
+		// Clear the new test case
+		return $this->clearCase($case) && $queryActionResult;
 	}
 }

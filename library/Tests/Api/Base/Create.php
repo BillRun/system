@@ -17,14 +17,6 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 abstract class Tests_Api_Base_Create extends Tests_Api_Base_Action {
 	
-	/**
-	 * 
-	 */
-	protected function onRecordExists($case) {
-		$this->assertTrue(false, 'Record to be created, already exists! ' . $case['msg']);
-		return false;
-	}
-	
 	protected function createRecord($case) {
 		return;
 	}

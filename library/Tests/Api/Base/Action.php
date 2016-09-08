@@ -78,7 +78,10 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	 * @return boolean, if true continue with the test, if false terminate the 
 	 * test case
 	 */
-	protected abstract function onRecordExists($case);
+	protected function onRecordExists($case) {
+		$this->assertTrue(false, 'Record to be created, already exists! ' . $case['msg']);
+		return false;
+	}
 	
 	/**
 	 * Run the internal logic
@@ -117,10 +120,15 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	}
 	
 	/**
-	 * Post run logic
-	 * @return boolean true if successful.
+	 * Get the query to be used for clearing the case after the test is done
+	 * @param arary $case - Test case to be cleared.
+	 * @return array - Query for the data to be cleared from the database.
 	 */
-	protected function postRun($case) {
+	protected function getClearCaseQuery($case) {
+		return $this->getQuery($case);
+	}
+	
+	protected function clearCase($case) {
 		// Check if it exists.
 		$query = $this->getQuery($case);
 		
@@ -132,6 +140,14 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Post run logic
+	 * @return boolean true if successful.
+	 */
+	protected function postRun($case) {
+		return $this->clearCase($case);
 	}
 	
 	/**
@@ -210,7 +226,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		$this->toRemove = $this->coll->find($query)->current();
 		
 		// If the record exists execute custom logic
-		if(!$this->toRemove->isEmpty()) {
+		if($this->toRemove && !$this->toRemove->isEmpty()) {
 			return $this->onRecordExists($case);
 		}
 		

@@ -24,7 +24,11 @@ abstract class Tests_Api_Base_Query extends Tests_Api_Base_Action {
 	protected $current;
 	
 	protected function preRun($case) {
+		if(!parent::preRun($case)) {
+			return false;
+		}
 		$this->current = $case;
+		return true;
 	}
 	
 	protected function checkExpected($result) {
