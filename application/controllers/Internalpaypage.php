@@ -56,7 +56,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			"signature" => $hashResult
 		);
 
-		header("Location: /api/creditguard?signature=".$hashResult."&data=".json_encode($data));
+		header("Location: /creditguard/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
 	}
 	
