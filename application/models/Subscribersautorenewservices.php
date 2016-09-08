@@ -141,13 +141,45 @@ class SubscribersautorenewservicesModel extends TabledateModel {
 		return array_merge($parentKeys, array());
 	}
 
+	/**
+	 * Calculate the remaining months based on user input params.
+	 * Calculating using from/to values,return 0 if to is less than from or next renew date is less than to
+	 * 
+	 * @param type $params
+	 * @return number of months
+	 * @throws Exception
+	 */
+	protected function getReaminingMonths($params) {
+		$now = time();
+		$from = strtotime($params['from']);
+		$to = strtotime($params['to']);
+		/**
+		 * @var MongoDate next date for charge renewal
+		 */
+		$nextRenewMongoDate = $params['next_renew_date'];
+		if(!($nextRenewMongoDate instanceof MongoDate)) {
+			throw new Exception("Internal server error, subscribers autorenewservices getRemainingMonths");
+		}
+		$nextRenewDate = $nextRenewMongoDate->sec;
+		
+		if ($from < $now) {
+			$from = $now;
+		}
+		$remain = 0;
+		if (($from < $to) && ($to >= $nextRenewDate)) {
+			$remain = Billrun_Utils_Autorenew::countMonths($from, $to);
+		}
+		
+		return $remain;
+	}
+
 	public function update($params) {
-		$params['remain'] = Billrun_Utils_Autorenew::countMonths(strtotime($params['from']), strtotime($params['to']));
 		if (is_string($params['next_renew_date'])) {
 			$params['next_renew_date'] = new MongoDate(strtotime($params['next_renew_date']));
 		} else if (is_array($params['next_renew_date'])) {
 			$params['next_renew_date'] = new MongoDate($params['next_renew_date']['sec']);
 		}
+		$params['remain'] = $this->getReaminingMonths($params);
 		if (is_string($params['last_renew_date'])) {
 			$params['last_renew_date'] = new MongoDate(strtotime($params['last_renew_date']));
 		} else if (is_array($params['last_renew_date'])) {
