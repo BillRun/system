@@ -18,44 +18,6 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 	
 	/**
-	 *
-	 * @var Mongodloid_Collection
-	 */
-	protected $coll;
-	
-	/**
-	 * The record to remove
-	 * @var Mongodloid_Entity
-	 */
-	protected $toRemove;
-	
-	public function __construct($collection, $testCases, $inputParameters, $internalTestInstance = null, $label = false) {
-		parent::__construct($testCases, $inputParameters, $internalTestInstance, $label);
-		$this->coll = $collection;
-	}
-	
-	/**
-	 * Get the query 
-	 * @return array query for the action.
-	 */
-	protected abstract function getQuery($case);
-	
-	/**
-	 * Return the array of data that should be added to the DB for the current
-	 * case.
-	 * When the test tries to delete a record that does not exist, this function
-	 * introduces the record to the DB to be removed after.
-	 */
-	protected abstract function getDataForDB($case);
-
-	/**
-	 * Abstract function to execute when the record to be deleted already exists.
-	 * @return boolean, if true continue with the test, if false terminate the 
-	 * test case
-	 */
-	protected abstract function onRecordExists($case);
-	
-	/**
 	 * Get the query action to validate the delete process.
 	 * @return Billrun_ActionManagers_IAPIAction
 	 */
@@ -78,27 +40,6 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 	 */
 	protected function getQueryParams($case) {
 		return $this->getQuery($case);
-	}
-	
-	protected function createRecord($case) {
-		$dataForDB = $this->getDataForDB($case);
-		$this->coll->insert($dataForDB);
-	}
-	
-	protected function preRun($case) {
-		// Get the record to remove from the db
-		$query = $this->getQuery($case);
-		
-		// Check if it exists.
-		$this->toRemove = $this->coll->find($query)->current();
-		
-		// If the record exists execute custom logic
-		if(!$this->toRemove->isEmpty()) {
-			return $this->onRecordExists($case);
-		}
-		
-		$this->createRecord($case);
-		return true;
 	}
 	
 	protected function postRun($case) {

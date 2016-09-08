@@ -39,4 +39,14 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 		return $query;
 	}
 
+	protected function getDataForDB($case) {
+		$data = $case['service'];
+		
+		// Translate the dates.
+		$data['to'] = new MongoDate(strtotime($data['to']));
+		$data['from'] = new MongoDate(strtotime($data['from']));
+		
+		return $data;
+	}
+
 }

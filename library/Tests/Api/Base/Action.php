@@ -30,13 +30,20 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	protected $parameters;
 	
 	/**
+	 *
+	 * @var Mongodloid_Collection
+	 */
+	protected $coll;
+	
+	/**
 	 * Create a new instance of the API Action test object.
+	 * @param Mongodloid_Collection $collection
 	 * @param type $testCases
 	 * @param type $inputParameters
 	 * @param type $internalTestInstance
 	 * @param type $label
 	 */
-	public function __construct($testCases, $inputParameters, $internalTestInstance = null, $label = false) {
+	public function __construct($collection, $testCases, $inputParameters, $internalTestInstance = null, $label = false) {
 		if($internalTestInstance == null) {
 			$internalTestInstance = $this;
 		}
@@ -44,12 +51,34 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		
 		$this->parameters = $inputParameters;
 		$this->cases = $testCases;
+		$this->coll = $collection;
 	}
 	
 	/**
 	 * Get an instance of the action.
 	 */
 	protected abstract function getAction($param);
+	
+	/**
+	 * Get the query 
+	 * @return array query for the action.
+	 */
+	protected abstract function getQuery($case);
+	
+	/**
+	 * Return the array of data that should be added to the DB for the current
+	 * case.
+	 * When the test tries to delete a record that does not exist, this function
+	 * introduces the record to the DB to be removed after.
+	 */
+	protected abstract function getDataForDB($case);
+
+	/**
+	 * Abstract function to execute when the record to be deleted already exists.
+	 * @return boolean, if true continue with the test, if false terminate the 
+	 * test case
+	 */
+	protected abstract function onRecordExists($case);
 	
 	/**
 	 * Run the internal logic
@@ -87,8 +116,23 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		$this->assertTrue($case['valid'], $case['msg']);
 	}
 	
-	protected abstract function postRun($case);
-	protected abstract function preRun($case);
+	/**
+	 * Post run logic
+	 * @return boolean true if successful.
+	 */
+	protected function postRun($case) {
+		// Check if it exists.
+		$query = $this->getQuery($case);
+		
+		$removed = $this->coll->remove($query);
+		
+		if($removed < 1) {
+			$this->assertFalse($case['valid'], "Failed to create in DB " . $case['msg']);
+			return false;
+		}
+		
+		return true;
+	}
 	
 	/**
 	 * Builds the input for the action.
@@ -105,6 +149,11 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		}
 		
 		return new Billrun_AnObj($escaped);
+	}
+	
+	protected function createRecord($case) {
+		$dataForDB = $this->getDataForDB($case);
+		$this->coll->insert($dataForDB);
 	}
 	
 	/**
@@ -150,6 +199,22 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 			return false;
 		}
 		
+		return true;
+	}
+	
+	protected function preRun($case) {
+		// Get the record to remove from the db
+		$query = $this->getQuery($case);
+		
+		// Check if it exists.
+		$this->toRemove = $this->coll->find($query)->current();
+		
+		// If the record exists execute custom logic
+		if(!$this->toRemove->isEmpty()) {
+			return $this->onRecordExists($case);
+		}
+		
+		$this->createRecord($case);
 		return true;
 	}
 }
