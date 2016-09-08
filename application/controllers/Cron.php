@@ -108,9 +108,10 @@ class CronController extends Yaf_Controller_Abstract {
 			$this->mailer->setSubject($actions['email']['subject']);
 			foreach ($empty_types as $values) {
 				foreach ($values as $type => $server) {
-					$message .= sprintf($actions['email']['message'], $process, $type, $server) . PHP_EOL;
+					$messages[] = sprintf($actions['email']['message'], $process, $type, $server);
 				}
 			}
+			$message = implode("\n", $messages);
 			$this->mailer->setBodyText($message);
 			$this->mailer->send();
 		}
@@ -118,9 +119,10 @@ class CronController extends Yaf_Controller_Abstract {
 			//'GT BillRun - file types did not %s: %s'
 			foreach ($empty_types as $values) {
 				foreach ($values as $type => $server) {
-					$message .= sprintf($actions['email']['message'], $process, $type, $server) . PHP_EOL;
+					$messages[] = sprintf($actions['sms']['message'], $process, $type, $server);
 				}
 			}
+			$message = implode("\n", $messages);
 			if (isset($actions['sms']['recipients'])) {
 				$recipients = $actions['sms']['recipients'];
 			} else {
