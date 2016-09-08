@@ -7,11 +7,11 @@
  */
 
 /**
- * Test case class for rate usage
+ * Base test case class for testing an action to the API
  *
  * @package         Tests
- * @subpackage      Auto-renew
- * @since           4.4
+ * @subpackage      API
+ * @since           5.1
  */
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
