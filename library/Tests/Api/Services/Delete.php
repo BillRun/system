@@ -50,10 +50,6 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function onQueryAction($results) {
-//		if($results['status'] == 1) {
-//			return true;
-//		}
-		
 		$error_code = $results['error_code'];
 		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
 		if(!$assertResult) {
