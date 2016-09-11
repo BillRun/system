@@ -121,8 +121,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		} else if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
 			$this->stamp = $options['aggregator']['stamp'];
 		} else {
-			$next_billrun_key = Billrun_Util::getBillrunKey(time());
-			$current_billrun_key = Billrun_Util::getPreviousBillrunKey($next_billrun_key);
+			$next_billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+			$current_billrun_key = Billrun_Billrun::getPreviousBillrunKey($next_billrun_key);
   			$this->stamp = $current_billrun_key;
 		}
 		
@@ -262,7 +262,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$account_billrun->resetBillrun();
 			}
 			
-			$account_billrun->setBillrunAccountFields($account);
+			$this->addAccountFieldsToBillrun($account_billrun, $account);
 			
 			$manual_lines = array();
 			$deactivated_subscribers = array();
@@ -586,7 +586,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {
 		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
-		$billrun->populateBillrunWithAccountData($account,$options);
+		$billrun->populateBillrunWithAccountData($account, $options);
 	}
 
 }
