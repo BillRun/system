@@ -271,7 +271,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					$subscriber_status = "open";
 					$subscriber->setBillrunKey($billrun_key);
 					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
-					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay());
+					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay(), $sid);
 					$flat_price = $subscriber->getFlatPrice($fraction_of_month);
 					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
 					if (is_null($flat_price)) {

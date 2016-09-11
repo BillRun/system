@@ -138,7 +138,7 @@ class Billrun_Billrun {
 		$subscriber_entry['subscriber_status'] = $status;
 		$subscriber_entry['activation_start'] = $subscriber->getActivationStartDay();
 		$subscriber_entry['activation_end'] = $subscriber->getActivationEndDay();
-		$subscriber_entry['fraction'] = $subscriber->calcFractionOfMonth($subscriber_entry['activation_start'], $subscriber_entry['activation_end']);
+		$subscriber_entry['fraction'] = $subscriber->calcFractionOfMonth($subscriber_entry['activation_start'], $subscriber_entry['activation_end'], $subscriber->sid);
 		if ($subscriber->isFreezeExists()) {
 			$subscriber_entry['freeze_start_date'] = $subscriber->getFreezeStartDay();
 			$subscriber_entry['freeze_end_date'] = $subscriber->getFreezeEndDay();
