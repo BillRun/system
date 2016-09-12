@@ -68,8 +68,9 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	
 	/**
 	 * Get an instance of the action.
+	 * @return Billrun_ActionManagers_APIAction
 	 */
-	protected abstract function getAction($param);
+	protected abstract function getAction($param = array());
 	
 	/**
 	 * Get the query 
@@ -82,6 +83,8 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	 * case.
 	 * When the test tries to delete a record that does not exist, this function
 	 * introduces the record to the DB to be removed after.
+	 * @param array $case - Current case being proccessed
+	 * @return array Array to store in the data base.
 	 */
 	protected abstract function getDataForDB($case);
 
