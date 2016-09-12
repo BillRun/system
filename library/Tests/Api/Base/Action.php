@@ -21,7 +21,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	 * Boolean indication for is the case cleared
 	 * @var boolean
 	 */
-	protected $caseCleared = false;
+	private $caseCleared = false;
 	
 	/**
 	 * Array of tests.
@@ -156,23 +156,34 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
     }
 	
 	/**
+	 * Function to execute on case run failure.
+	 * @param array $case - Failed case.
+	 */
+	protected function caseFail($case) {
+		$this->dump($case, "Case failed:");
+	}
+	
+	/**
 	 * Run a case on an action.
 	 * @param type $action
 	 * @param type $case
 	 * @return type
 	 */
 	protected function runCase($action, $case) {
+		$this->caseCleared = false;
 		if(!$this->preRun($case)) {
+			$this->caseFail($case);
 			return;
 		}
-		$actionTest = $this->buildInput($case);
-		if(!$this->internalRun($action, $actionTest)) {
-			$this->assertFalse($case['valid'], "Faild parsing " . $case['msg']);
-			// Break the logic
+		
+		// Run the parse and execute functions.
+		if(!$this->internalRun($action, $case)) {
+			$this->caseFail($case);
 			return;
 		}
 
 		if(!$this->postRun($case)) {
+			$this->caseFail($case);
 			return;
 		}
 		
@@ -194,7 +205,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		}
 		
 		// Check if it exists.
-		$query = $this->getQuery($case);
+		$query = $this->getClearCaseQuery($case);
 		
 		$removed = $this->coll->remove($query);
 		
@@ -239,9 +250,6 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		$cloned = array_merge($dataForDB);
 		
 		$this->coll->insert($cloned);
-		
-		// Remove the ID
-//		unset($case['_id']);
 	}
 	
 	/**
@@ -256,9 +264,10 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	/**
 	 * Run a single test logic
 	 * @param Billrun_ActionManagers_Services_Action $action
-	 * @param Billrun_AnObj $test
+	 * @param array $case - Current case.
 	 */
-	protected function internalRun(Billrun_ActionManagers_IAPIAction $action, Billrun_AnObj $test) {
+	protected function internalRun(Billrun_ActionManagers_IAPIAction $action, array $case) {
+		$test = $this->buildInput($case);
 		if(!$test) {
 			$this->assertTrue(false, "Received null input data!");
 			return false;
@@ -266,11 +275,17 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		
 		// Test parsing.
 		if(!$action->parse($test)) {
+			$this->assertFalse($case['valid'], "Faild parsing " . $case['msg']);
 			return false;
 		}
 		
 		$result = $action->execute();
-		return $this->handleResult($result);
+		if(!$this->handleResult($result)) {
+			$this->assertFalse($case['valid'], "Faild executing " . $case['msg']);
+			return false;
+		}
+		
+		return true;
 	}
 	
 	/**
@@ -295,8 +310,26 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		return true;
 	}
 	
+	/**
+	 * Extract the queried data from the results of the API action execute function.
+	 * Override this function if you need special handling of the results array.
+	 * @param arary $results - Results array from the execute function of the 
+	 * API action.
+	 * @return array - Data to compare to the expected field.
+	 */
+	protected function extractFromResults($results) {
+		if(!isset($results['details'])) {
+			return array();
+		}
+		
+		$details = $results['details'];
+		// Remove mongo identifications.
+		unset($details['_id']);
+		
+		return $details;
+	}
+	
 	protected function preRun($case) {
-		$this->caseCleared = false;
 		$this->current = $case;
 		
 		// Get the record to remove from the db

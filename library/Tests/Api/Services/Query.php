@@ -16,20 +16,42 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
-class Tests_Api_Services_Create extends Tests_Api_Base_Create {
+class Tests_Api_Services_Query extends Tests_Api_Base_Query {
 
 	public function __construct($testCases, $intenalTestInstance = null, $label = false) {		
 		$collection = Billrun_Factory::db()->servicesCollection();
-		$inputParameters = array('service');
+		$inputParameters = array('query');
 		parent::__construct($collection, $testCases, $inputParameters, $intenalTestInstance, $label);
 	}
-	
+
+	/**
+	 * Get an instance of the action.
+	 * @return Billrun_ActionManagers_APIAction
+	 */
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Create();
+		return new Billrun_ActionManagers_Services_Query();
 	}
 
+	/**
+	 * Return the array of data that should be added to the DB for the current
+	 * case.
+	 * When the test tries to delete a record that does not exist, this function
+	 * introduces the record to the DB to be removed after.
+	 * @param array $case - Current case being proccessed
+	 * @return array Array to store in the data base.
+	 */
+	protected function getDataForDB($case) {
+		$data = $case['query'];
+		
+		return $data;
+	}
+
+	/**
+	 * Get the query 
+	 * @return array query for the action.
+	 */
 	protected function getQuery($case) {
-		$query = $case['service'];
+		$query = $case['query'];
 		
 		// Remove unnecessary fields
 		unset($query['to']);
@@ -37,16 +59,6 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 		unset($query['description']);
 		
 		return $query;
-	}
-
-	protected function getDataForDB($case) {
-		$data = $case['service'];
-		
-		// Translate the dates.
-		$data['to'] = new MongoDate(strtotime($data['to']));
-		$data['from'] = new MongoDate(strtotime($data['from']));
-		
-		return $data;
 	}
 
 }

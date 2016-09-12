@@ -25,6 +25,15 @@ abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
 	protected abstract function getUpdateQuery($case);
 	
 	/**
+	 * Return the paramters to initialize the query action with
+	 * @param array $case
+	 * @return array
+	 */
+	protected function getQueryParams($case) {
+		return array('query' => $this->getDataForDB($case));
+	}
+	
+	/**
 	 * Get the data from the query action results.
 	 * @param array $results - Return array from the API action execute function.
 	 * @return boolean - True if continue with executing the test case, false 
@@ -52,6 +61,6 @@ abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
 	protected function onQueryAction($results) {
 		$resultData = $this->getResultData($results);
 		$expectation = $this->getExpectation();
-		return $this->assert($expectation, $resultData);
+		return $this->assertEqual($expectation, $resultData);
 	}
 }

@@ -50,11 +50,36 @@ class Tests_Api_Services extends UnitTestCase {
 		array('valid' => true, 'msg' => 'Only mendatory future', 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 		array('valid' => true, 'msg' => 'Only mendatory past', 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 	);
+	
+	protected $queryTests = array(
+		array('valid' => true, 'msg' => 'Only mendatory active', 'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory future', 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory past', 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+	);
+	
+	protected $updateTests = array(
+		array('valid' => true, 'msg' => 'Only mendatory active updating from',  'update' => array("from" => "-2 months"), 'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory future updating from', 'update' => array("from" => "+2 months"), 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory past updating from', 'update' => array("from" => "-2 years"), 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+	);
+	
     function testCreate() {
 		$create = new Tests_Api_Services_Create($this->createTests, $this);
 		$create->run();
-		
+    }
+	
+	function testDelete() {
 		$delete = new Tests_Api_Services_Delete($this->deleteTests, $this);
 		$delete->run();
-    }
+	}
+	
+	function testQuery() {
+		$query = new Tests_Api_Services_Query($this->queryTests, $this);
+		$query->run();
+	}
+	
+	function testUpdate() {
+		$update = new Tests_Api_Services_Update($this->updateTests, $this);
+		$update->run();
+	}
 }
