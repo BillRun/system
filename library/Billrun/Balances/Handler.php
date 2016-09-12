@@ -38,7 +38,8 @@ class Billrun_Balances_Handler {
 				}
 
 				$data = $this->getUpdateData($balance);
-				$data['value'] = $value * -1;
+				$data['value'] = 0;
+				$data['operation'] = 'set';
 				$this->updateBalance($data);
 			} catch (Exception $ex) {
 				Billrun_Factory::log("Cron exception! " . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
