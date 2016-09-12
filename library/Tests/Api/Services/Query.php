@@ -54,8 +54,8 @@ class Tests_Api_Services_Query extends Tests_Api_Base_Query {
 		$query = $case['query'];
 		
 		// Remove unnecessary fields
-		unset($query['to']);
-		unset($query['from']);
+//		unset($query['to']);
+//		unset($query['from']);
 		unset($query['description']);
 		
 		return $query;

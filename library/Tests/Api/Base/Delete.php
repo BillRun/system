@@ -42,11 +42,33 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		return $case;
 	}
 	
+		
+	/**
+	 * Handle the output message result.
+	 * @param type $result
+	 * @return boolean
+	 */
+	protected function handleResult($result) {
+		if(!parent::handleResult($result)) {
+			return false;
+		}
+		
+		if(!isset($result['details']) || !isset($result['details']['to'])) {
+			$this->assertTrue(false, "Invalid API action results " . $this->current['msg']);
+			$this->dump($result);
+			return false;
+		}
+		
+		// Deleting the record updates the to field, take the new 'to' field.
+		$this->current['query']['to'] = $result['details']['to'];
+		return true;
+	}
+	
 	protected function postRun($case) {
 		// Check that the record does not exist.
-		$queryAction = $this->getQueryAction($case);
+		$queryAction = $this->getQueryAction($this->current);
 		
-		$queryParams = $this->getQueryParams($case);
+		$queryParams = $this->getQueryParams($this->current);
 		$queryInput = $this->buildInput($queryParams);
 		
 		if(!$queryAction->parse($queryInput)) {
@@ -58,6 +80,6 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		$queryActionResult = $this->onQueryAction($result);
 		
 		// Clear the new test case
-		return $this->clearCase($case) && $queryActionResult;
+		return $this->clearCase($this->current) && $queryActionResult;
 	}
 }

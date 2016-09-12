@@ -7,7 +7,7 @@
  */
 
 /**
- * Test class for the services API
+ * Test class for the subscribers API
  *
  * @package         Tests
  * @subpackage      API
@@ -16,16 +16,16 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
-class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
+class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 
 	public function __construct($testCases, $intenalTestInstance = null, $label = false) {		
-		$collection = Billrun_Factory::db()->servicesCollection();
+		$collection = Billrun_Factory::db()->subscribersCollection();
 		$inputParameters = array('query');
 		parent::__construct($collection, $testCases, $inputParameters, $intenalTestInstance, $label);
 	}
 	
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Delete();
+		return new Billrun_ActionManagers_Subscribers_Delete();
 	}
 
 	protected function getQuery($case) {
@@ -46,7 +46,7 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function getQueryAction($case) {
-		return new Billrun_ActionManagers_Services_Query();
+		return new Billrun_ActionManagers_Subscribers_Query();
 	}
 
 	protected function onQueryAction($results) {

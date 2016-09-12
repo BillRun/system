@@ -53,6 +53,10 @@ abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
 		return $this->getUpdateQuery($this->current);
 	}
 	
+	protected function handleResult($result) {
+		return Tests_Api_Base_Action::handleResult($result);
+	}
+	
 	/**
 	 * Function to run on the results of the query action execute function.
 	 * @param type $results

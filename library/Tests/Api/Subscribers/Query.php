@@ -7,7 +7,7 @@
  */
 
 /**
- * Test class for the services API
+ * Test class for the subscribers API
  *
  * @package         Tests
  * @subpackage      API
@@ -16,18 +16,40 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
-class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
+class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 
 	public function __construct($testCases, $intenalTestInstance = null, $label = false) {		
-		$collection = Billrun_Factory::db()->servicesCollection();
+		$collection = Billrun_Factory::db()->subscribersCollection();
 		$inputParameters = array('query');
 		parent::__construct($collection, $testCases, $inputParameters, $intenalTestInstance, $label);
 	}
-	
+
+	/**
+	 * Get an instance of the action.
+	 * @return Billrun_ActionManagers_APIAction
+	 */
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Delete();
+		return new Billrun_ActionManagers_Subscribers_Query();
 	}
 
+	/**
+	 * Return the array of data that should be added to the DB for the current
+	 * case.
+	 * When the test tries to delete a record that does not exist, this function
+	 * introduces the record to the DB to be removed after.
+	 * @param array $case - Current case being proccessed
+	 * @return array Array to store in the data base.
+	 */
+	protected function getDataForDB($case) {
+		$data = $case['query'];
+		
+		return $data;
+	}
+
+	/**
+	 * Get the query 
+	 * @return array query for the action.
+	 */
 	protected function getQuery($case) {
 		$query = $case['query'];
 		
@@ -37,25 +59,6 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 		unset($query['description']);
 		
 		return $query;
-	}
-
-	protected function getDataForDB($case) {
-		$data = $case['query'];
-		
-		return $data;
-	}
-
-	protected function getQueryAction($case) {
-		return new Billrun_ActionManagers_Services_Query();
-	}
-
-	protected function onQueryAction($results) {
-		$error_code = $results['error_code'];
-		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
-		if(!$assertResult) {
-			return $this->onExecuteFailed($results);
-		}
-		return true;
 	}
 
 }

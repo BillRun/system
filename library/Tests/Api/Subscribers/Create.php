@@ -7,7 +7,7 @@
  */
 
 /**
- * Test class for the services API
+ * Test class for the subscribers API
  *
  * @package         Tests
  * @subpackage      API
@@ -16,20 +16,20 @@
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 //require_once(APPLICATION_PATH . '/library/Billrun/ActionManagers/Services/Create.php');
 
-class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
+class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
 
 	public function __construct($testCases, $intenalTestInstance = null, $label = false) {		
-		$collection = Billrun_Factory::db()->servicesCollection();
-		$inputParameters = array('query');
+		$collection = Billrun_Factory::db()->subscribersCollection();
+		$inputParameters = array('subscriber');
 		parent::__construct($collection, $testCases, $inputParameters, $intenalTestInstance, $label);
 	}
 	
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Delete();
+		return new Billrun_ActionManagers_Subscribers_Create();
 	}
 
 	protected function getQuery($case) {
-		$query = $case['query'];
+		$query = $case['subscriber'];
 		
 		// Remove unnecessary fields
 //		unset($query['to']);
@@ -40,22 +40,11 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function getDataForDB($case) {
-		$data = $case['query'];
+		$data = $case['service'];
+		
+		// Translate the dates.
 		
 		return $data;
-	}
-
-	protected function getQueryAction($case) {
-		return new Billrun_ActionManagers_Services_Query();
-	}
-
-	protected function onQueryAction($results) {
-		$error_code = $results['error_code'];
-		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
-		if(!$assertResult) {
-			return $this->onExecuteFailed($results);
-		}
-		return true;
 	}
 
 }
