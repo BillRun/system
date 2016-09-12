@@ -56,7 +56,7 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	 * @return true if valid.
 	 */
 	public function parse($input) {
-		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
+		if (!$this->setQueryRecord($input)) {
 			return false;
 		}
 		
@@ -110,7 +110,13 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		$invalidFields = array();
 
 		// Get only the values to be set in the update record.
-		foreach ($fields as $fieldName) {
+		foreach ($fields as $field) {
+			if(!isset($field['mandatory']) || !$field['mandatory']) {
+				continue;
+			}
+			
+			$fieldName = $field['field_name'];
+			
 			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
 				$invalidFields[] = $fieldName;
 			} else if (isset($queryData[$fieldName])) {

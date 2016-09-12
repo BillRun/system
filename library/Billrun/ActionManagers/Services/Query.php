@@ -102,6 +102,10 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		// Get only the values to be set in the update record.
 		foreach ($queryFields as $field) {
+			if(!isset($field['mandatory']) || !$field['mandatory']) {
+				continue;
+			}
+			
 			$fieldName = $field['field_name'];
 			if (isset($queryData[$fieldName]) && !empty($queryData[$fieldName])) {
 				$this->serviceQuery[$fieldName] = $queryData[$fieldName];
