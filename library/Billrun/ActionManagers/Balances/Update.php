@@ -105,7 +105,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$ppID = $insertLine["pp_includes_external_id"] = $wallet->getPPID();
 
 		$beforeUpdateBalance = $beforeUpdate[$ppID];
-		if ($beforeUpdateBalance->isEmpty()) {
+		if ($beforeUpdateBalance->isEmpty() || ($this->updaterOptions['operation'] instanceof Billrun_Balances_Update_New)) {
 			$insertLine['balance_before'] = 0;
 		} else {
 			$insertLine['balance_before'] = $this->getBalanceValue($beforeUpdateBalance);
