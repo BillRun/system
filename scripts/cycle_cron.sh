@@ -1,9 +1,5 @@
 #!/bin/bash
 
-###  script arguments as follow:
-###  1) Path to the billrun installation directory
-###  2) Environment (dev / prod etc.)
-
 usage() {
         usage="$(basename "$0") -d PATH -e ENVIRONMENT -t AGGREGATOR TYPE -- this scripts runs the cycle action for all tenants
 
@@ -61,8 +57,8 @@ parseInput() {
 
 parseInput "${@}"
 
-CLIENTS=$1/conf/tenants/*.ini
-LOCKS=$1/scripts/locks/
+CLIENTS=./conf/tenants/*.ini
+LOCKS=./scripts/locks/
 
 # Go through the files
 for f in $CLIENTS
