@@ -189,6 +189,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (count($save['$set'])) {
 			$where = array('stamp' => $line['stamp']);
 			Billrun_Factory::db()->linesCollection()->update($where, $save);
+			Billrun_Factory::db()->queueCollection()->update($where, $save);
 		}
 
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {

@@ -582,13 +582,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function prepareQueue() {
 		foreach ($this->data['data'] as $dataRow) {
-			$queueRow = array(
-				'stamp' => $dataRow['stamp'],
-				'type' => $dataRow['type'],
-				'urt' => $dataRow['urt'],
-				'calc_name' => false,
-				'calc_time' => false
-			);
+			$queueRow = $dataRow;
+ 			$queueRow['calc_name'] = false;
+ 			$queueRow['calc_time'] = false;
 			$this->setQueueRow($queueRow);
 		}
 	}
