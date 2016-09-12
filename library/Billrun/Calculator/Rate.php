@@ -274,8 +274,15 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return false;
 		}
 
-		$key = $matchedRate->get('key');
-		return $rates_coll->query(array("key" => $key))->cursor()->current();
+		$rawData = $matchedRate->getRawData();
+		if (!isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+			return false;	
+		}
+		$idQuery = array(
+			"_id" => $rawData['_id']['_id'],
+		);
+		
+		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
 	/**
