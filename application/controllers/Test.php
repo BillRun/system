@@ -24,6 +24,15 @@ class TestController extends Yaf_Controller_Abstract {
 		$this->getRequest()->action = 'index';
 	}
  
+	/**
+	 * Empty index action to avoid exceptions
+	 * @return none
+	 */
+	public function indexAction() {
+		return;
+	}
+
+
 	protected function getTestAction($request) {
 		// Get the URI of the request.
 		$uri = $request->getRequestUri();
