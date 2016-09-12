@@ -29,15 +29,17 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 	 * @return data for output.
 	 */
 	public function execute() {
+		$details = array();
 		try {
 			$rowToDelete = $this->collection->query($this->query)->cursor()->current();
-
+			
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
 				$this->errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 15;
 				$this->reportError($this->errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
+				$details = $rowToDelete->getRawData();
 			}
 
 		} catch (\Exception $e) {
@@ -50,6 +52,7 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 			'status' => $this->errorCode == 0 ? 1 : 0,
 			'desc' => $this->error,
 			'error_code' => $this->errorCode,
+			'details' => $details
 		);
 
 		return $outputResult;
