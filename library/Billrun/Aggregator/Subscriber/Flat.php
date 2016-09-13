@@ -62,7 +62,7 @@ class Billrun_Aggregator_Subscriber_Flat extends Billrun_Aggregator_Subscriber_B
 	 * @param array $plans
 	 * @return array
 	 */
-	protected function getData($billrunKey, $subscriber) {
+	protected function getData($billrunKey, Billrun_Subscriber $subscriber) {
 		$startTime = Billrun_Billrun::getStartTime($billrunKey);
 		$endTime = Billrun_Billrun::getEndTime($billrunKey);
 		$flatEntries = array();
@@ -73,6 +73,7 @@ class Billrun_Aggregator_Subscriber_Flat extends Billrun_Aggregator_Subscriber_B
 			$fromDate = $planArr['from'];
 			$toDate = $planArr['to'];
 			$planActivation = $planArr['plan_activation'];
+			// TODO: Take the activation and deactivation values from the plan itslef.
 			$planDeactivation = isset($planArr['plan_deactivation']) ? $planArr['plan_deactivation'] : NULL;
 			$flatChargeEntries = array_merge($flatEntries, $this->getChargeFlatEntries($subscriber, $billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
 			$flatEntries = array_merge($flatChargeEntries, $this->getRefundFlatEntries($subscriber, $billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));

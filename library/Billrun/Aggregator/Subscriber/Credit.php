@@ -38,7 +38,7 @@ class Billrun_Aggregator_Subscriber_Credit extends Billrun_Aggregator_Subscriber
 	 * @param type $subscriber
 	 * @return type
 	 */
-	protected function getData($billrunKey, $subscriber) {
+	protected function getData($billrunKey, Billrun_Subscriber $subscriber) {
 		return array();
 	}
 }
