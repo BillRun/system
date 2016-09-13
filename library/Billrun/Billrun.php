@@ -612,7 +612,7 @@ class Billrun_Billrun {
 		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		  $rawData['totals']['vatable'] = $pricingData['aprice'];
 		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0, 
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
 			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
 			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
@@ -621,6 +621,7 @@ class Billrun_Billrun {
 			//Billrun_Factory::log(print_r($sub));
 			$newTotals['before_vat'] += $this->getFieldVal($sub['totals']['before_vat'], 0);
 			$newTotals['after_vat'] += $this->getFieldVal($sub['totals']['after_vat'], 0);
+			$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
 			$newTotals['vatable'] += $this->getFieldVal($sub['totals']['vatable'], 0);
 			$newTotals['flat']['before_vat'] += $this->getFieldVal($sub['totals']['flat']['before_vat'], 0);
 			$newTotals['flat']['after_vat'] += $this->getFieldVal($sub['totals']['flat']['after_vat'], 0);
@@ -899,6 +900,7 @@ class Billrun_Billrun {
 		$invoice_id_field = (isset($this->data['invoice_id']) ? array('invoice_id' => $this->data['invoice_id']) : array());
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
 		$this->data = new Mongodloid_Entity(array_merge($empty_billrun_entry, $invoice_id_field, $id_field), $this->billrun_coll);
+		$this->initBillrunDates();
 	}
 
 	/**
@@ -955,18 +957,40 @@ class Billrun_Billrun {
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
 	
-	public function setBillrunAccountFields($data) {
-		$this->data['creation_time'] = new MongoDate();
-		if(isset($data['attributes'])) {
-			$this->data['attributes'] = $data['attributes'];
-		}
-	}
-	
 	protected static function getFileTypes() {
 		if (empty(self::$fileTypes)) {
 			self::$fileTypes = Billrun_Factory::config()->getFileTypes();
 		}
 		return self::$fileTypes;
+	}
+	
+	/**
+	 * Get an empty billrun account entry structure.
+	 * @param int $aid the account id of the billrun document
+	 * @param string $billrun_key the billrun key of the billrun document
+	 * @return array an empty billrun document
+	 */
+	public function populateBillrunWithAccountData($account, $optionLines = array()) {
+		$attr = array();
+		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
+			if (isset($account['attributes'][$remoteKey])) {
+				$attr[$key] = $account['attributes'][$remoteKey];
+			}
+		}
+		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
+			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
+		}
+
+		$this->data['attributes'] = $attr;
+	}
+	
+	protected function initBillrunDates() {
+		$billrunDate = self::getEndTime($this->getBillrunKey());
+		$this->data['creation_date'] = new MongoDate(time());
+		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$this->data['end_date'] = new MongoDate($billrunDate);
+		$this->data['start_date'] = new MongoDate(self::getStartTime($this->getBillrunKey()));
+		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 	}
 
 }
