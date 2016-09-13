@@ -30,7 +30,7 @@ class BalancesModel extends TableModel {
 	public function getBalancesVolume($plan, $data_usage, $from_account_id, $to_account_id, $billrun) {
 		$params = array(
 			'name' => $plan,
-			'time' => Billrun_Billrun::getStartTime($billrun),
+			'time' => Billrun_Billingcycle::getStartTime($billrun),
 		);
 		$plan_id = Billrun_Factory::plan($params);
 		$id = $plan_id->get('_id')->getMongoID();
@@ -57,7 +57,7 @@ class BalancesModel extends TableModel {
 		$billruns = array();
 		$timestamp = time();
 		for ($i = 0; $i < $months; $i++) {
-			$billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp($timestamp);
+			$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($timestamp);
 			if ($billrun_key >= '201401') {
 				$billruns[$billrun_key] = $billrun_key;
 			} else {

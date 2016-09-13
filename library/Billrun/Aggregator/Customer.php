@@ -182,8 +182,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	public function load() {
 		$billrun_key = $this->getStamp();
-		$startTime = Billrun_Billrun::getStartTime($billrun_key);
-		$endTime = Billrun_Billrun::getEndTime($billrun_key);
+		$startTime = Billrun_Billingcycle::getStartTime($billrun_key);
+		$endTime = Billrun_Billingcycle::getEndTime($billrun_key);
 		$subscriber = Billrun_Factory::subscriber();
 		Billrun_Factory::log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
 		if ($this->overrideAccountIds) {

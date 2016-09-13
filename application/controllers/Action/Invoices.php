@@ -45,9 +45,9 @@ class AccountInvoicesAction extends ApiAction {
 		$aid = $request->get('aid');
 		$months_back = intval($request->get('months_back'));
 		$billrun_keys = array();
-		$billrun_keys[0] = Billrun_Billrun::getBillrunKeyByTimestamp();
+		$billrun_keys[0] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		for ($i = 1; $i <= $months_back; $i++) {
-			$billrun_keys[$i] = Billrun_Billrun::getPreviousBillrunKey($billrun_keys[$i - 1]);
+			$billrun_keys[$i] = Billrun_Billingcycle::getPreviousBillrunKey($billrun_keys[$i - 1]);
 		}
 
 		$params = array(
