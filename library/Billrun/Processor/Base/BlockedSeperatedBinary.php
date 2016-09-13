@@ -39,6 +39,7 @@ abstract class Billrun_Processor_Base_BlockedSeperatedBinary extends Billrun_Pro
 
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 			$this->prepareQueue();
+			Billrun_Factory::dispatcher()->trigger('afterPrepareQueue', array($this));
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 			if ($this->store() === FALSE) {
