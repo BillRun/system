@@ -390,7 +390,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges));
 
 		$ret[$this->pricingField] = $charges['total'];
@@ -910,7 +910,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	public function getRowRate($row) {
-		return $this->getRateByRef($row->get('arate', true));
+		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
 	}
 
 	/**
