@@ -78,15 +78,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 			$this->data = $options['data'];
 		}
 		$dataOptions = Billrun_Util::getFieldVal($options['data'], array());
-		$plans = array();
-		if (!empty($dataOptions['plans'])) {
-			foreach ($dataOptions['plans'] as &$planArr) {
-				foreach ($planArr['active_dates'] as $activeRange) {
-					$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan(array('name' => $planArr['name'], 'time' => strtotime($activeRange['from'])))));
-				}
-			}
-			$this->plans = $plans;
-		}
+		$this->constructPlans($dataOptions);
 		if (isset($options['time'])) {
 			$this->time = $options['time'];
 		}
@@ -100,6 +92,28 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 	}
 
+	protected function constructPlans($dataOptions) {
+		if (!isset($dataOptions['plans']) || empty($dataOptions['plans'])) {
+			$this->plans = array();
+			return;
+		}
+		
+		$plans = array();
+		$planOptions = array('deactivation' => array());
+		foreach ($dataOptions['plans'] as &$planArr) {
+			foreach ($planArr['active_dates'] as $activeRange) {
+				$planOptions['name'] = $planArr['name'];
+				$planOptions['time'] =  strtotime($activeRange['from']);
+				$planOptions['activation'] =  $activeRange['plan_activation'];
+				if(isset($activeRange['plan_deactivation'])) {
+					$planOptions['deactivation'] =  $activeRange['plan_deactivation'];
+				}
+				$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan($planOptions)));
+			}
+		}
+		$this->plans = $plans;
+	}
+	
 	/**
 	 * method to load subsbscriber details
 	 */
@@ -231,81 +245,198 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		$startTime = Billrun_Billrun::getStartTime($billrunKey);
 		$endTime = Billrun_Billrun::getEndTime($billrunKey);
 		$flatEntries = array();
-		foreach ($this->getCurrentPlans() as $planArr) {
-			/* @var $plan Billrun_Plan */
-			$plan = $planArr['plan'];
-			$fromDate = $planArr['from'];
-			$toDate = $planArr['to'];
-			$planActivation = $planArr['plan_activation'];
-			$planDeactivation = isset($planArr['plan_deactivation']) ? $planArr['plan_deactivation'] : NULL;
-			$flatEntries = array_merge($flatEntries, $this->getChargeFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
-			$flatEntries = array_merge($flatEntries, $this->getRefundFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate, $planActivation, $planDeactivation));
+		foreach ($this->getCurrentPlans() as $planArray) {
+			$this->mergeFlatEntries($flatEntries, $startTime, $endTime, $billrunKey, $planArray);
 		}
+		
+		$this->handlePlanFlatEntries($flatEntries, $billrunKey, $endTime);
+		return $flatEntries;
+	}
+
+	/**
+	 * Merge the current step of flat entries
+	 * @param type $flatEntries
+	 * @param type $startTime
+	 * @param type $endTime
+	 * @param type $billrunKey
+	 * @param type $planArray
+	 */
+	protected function mergeFlatEntries(&$flatEntries, $startTime, $endTime, $billrunKey, $planArray) {
+		/* @var $plan Billrun_Plan */
+		$plan = $planArray['plan'];
+		$fromDate = $planArray['from'];
+		$toDate = $planArray['to'];
+		$withChargeEntries = array_merge($flatEntries, $this->getChargeFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate));
+		$withRefundEntries = array_merge($withChargeEntries, $this->getRefundFlatEntries($billrunKey, $plan, $startTime, $endTime, $fromDate, $toDate));
+		$flatEntries = $withRefundEntries;
+	}
+	
+	protected function handlePlanFlatEntries(&$flatEntries, $billrunKey, $endTime) {
 		$nextPlan = $this->getNextPlan();
-		if ($nextPlan && $nextPlan->isUpfrontPayment() && date(Billrun_Base::base_dateformat, $endTime) == $this->getNextPlanActivationDate()) {
-			$charge = $nextPlan->getPrice($this->getNextPlanActivationDate(), date(Billrun_Base::base_dateformat, $this->time), date(Billrun_Base::base_dateformat, $endTime));
-			$flatEntries[] = $this->getFlatEntry($billrunKey, $nextPlan, $planArr['from'], $charge);
+		$nextPlanActivation = $this->getNextPlanActivationDate();
+		if ($nextPlan && $nextPlan->isUpfrontPayment() && (date(Billrun_Base::base_dateformat, $endTime) == $nextPlanActivation)) {
+			$charge = $nextPlan->getPrice(date(Billrun_Base::base_dateformat, $this->time), $nextPlanActivation, $nextPlanActivation);
+			$flatEntries[] = $this->getFlatEntry($billrunKey, $nextPlan, $nextPlan['from'], $charge);
 		}
-		return $flatEntries;
+	}
+	
+	/**
+	 * Get flat entries for a charge.
+	 * @param type $billrunKey
+	 * @param type $plan
+	 * @param type $billingStart
+	 * @param type $billingEnd
+	 * @param type $fromDate
+	 * @param type $toDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @return type
+	 */
+	protected function getChargeFlatEntries($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate) {
+		$charge = null;
+		if ($plan->isUpfrontPayment()) {
+			$charge = $this->getChargeFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate);
+		} else if ($plan->getPeriodicity() == 'month') {
+			$charge = $plan->getPrice($fromDate, $toDate);
+		} 
+		
+		if($charge == null) {
+			return array();
+		}	
+		return array($this->getFlatEntry($billrunKey, $plan, $fromDate, $charge));
+	}
+	
+	/**
+	 * Handle the monthly fraction of a charge flat when plan is to be paid upfront.
+	 * @param type $billrunKey
+	 * @param type $planPeriodicity
+	 * @param type $billingStart
+	 * @param type $billingEnd
+	 * @param type $fromDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @return type
+	 */
+	protected function handleMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $planPeriodicity, $billingStart, $billingEnd, $fromDate, $planActivation, $planDeactivation) {
+		$monthsEnd = $planDeactivation;
+		if (empty($planDeactivation)) {
+			$monthsEnd = date(Billrun_Base::base_dateformat, $billingEnd - 1);
+		} 
+		$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $monthsEnd);
+		return $this->getMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $planPeriodicity, $billingStart, $fromDate, $planActivation, $planDeactivation, $monthsDiff);
+	}
+	
+	/**
+	 * Get the charge flat entries when payment is upfront
+	 * @param type $billrunKey
+	 * @param Billrun_Plan $plan
+	 * @param type $billingStart
+	 * @param type $billingEnd
+	 * @param type $fromDate
+	 * @param type $toDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @return integer charge or null on failure.
+	 */
+	protected function getChargeFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate) {
+		$monthlyFraction = $this->handleMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $plan->getName(), $billingStart, $billingEnd, $fromDate, $plan->getActivation(), $plan->getDectivation());
+		if ($monthlyFraction == null) {
+			return null;
+		}
+		return $monthlyFraction * $plan->getPrice($fromDate, $toDate);
+	}
+	
+	/**
+	 * Get the monthly fraction for caculating the charge for a flat entry
+	 * @param type $billrunKey
+	 * @param type $planPeriodicity
+	 * @param type $billingStart
+	 * @param type $fromDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @param type $monthsDiff
+	 * @return int
+	 */
+	protected function getMonthlyFractionOnChargeFlatEntriesForUpfrontPay($billrunKey, $planPeriodicity, $billingStart, $fromDate, $planActivation, $planDeactivation, $monthsDiff) {
+		if (empty($planDeactivation)) {
+			// TODO: What does this condition checks?
+			if ($planPeriodicity == 'month' || ($planPeriodicity == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1))) {
+				return 1;
+			}
+		}
+		
+		// subscriber deactivates and should be charged for a partial month
+		if (strtotime($planActivation) > $billingStart) { 
+			return Billrun_Plan::calcFractionOfMonth($billrunKey, $planActivation, $planDeactivation) / ($planPeriodicity == 'year' ? 12 : 1);
+		}
+		
+		$planDatesDiff = $monthsDiff;
+		if (floor(Billrun_Plan::getMonthsDiff($planActivation, $fromDate)) != floor($planDatesDiff)) {
+			// TODO: What does this function checks?
+			if ($planPeriodicity == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1)) {
+				return ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) / 12;
+			} 
+			if ($planPeriodicity == 'month') {
+				return $planDatesDiff - floor($planDatesDiff);
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Get the flat entries to be refunded
+	 * @param type $billrunKey
+	 * @param type $plan
+	 * @param type $billingStart
+	 * @param type $billingEnd
+	 * @param type $fromDate
+	 * @param type $toDate
+	 * @param type $planActivation
+	 * @param type $planDeactivation
+	 * @return type
+	 */
+	protected function getRefundFlatEntries($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate) {
+		$charge = null;
+		if ($plan->isUpfrontPayment()) {
+			$charge = $this->getChargeRefundFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $fromDate, $toDate);
+		}
+		if ($charge == null) {
+			return array();
+		}
+		return array($this->getFlatEntry($billrunKey, $plan, $fromDate, $charge));
 	}
 
-	protected function getChargeFlatEntries($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate, $planActivation, $planDeactivation = NULL) {
-		if ($plan->isUpfrontPayment()) {
-			if (empty($planDeactivation)) {
-				$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, date(Billrun_Base::base_dateformat, $billingEnd - 1));
-			} else {
-				$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
-			}
-			if (empty($planDeactivation)) {
-				if ($plan->getPeriodicity() == 'month' || ($plan->getPeriodicity() == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1))) {
-					$monthlyFraction = 1;
-				}
-			} else if (strtotime($planActivation) > $billingStart) { // subscriber deactivates and should be charged for a partial month
-				$monthlyFraction = Billrun_Plan::calcFractionOfMonth($billrunKey, $planActivation, $planDeactivation) / ($plan->getPeriodicity() == 'year' ? 12 : 1);
-			} else if (floor(Billrun_Plan::getMonthsDiff($planActivation, $fromDate)) != floor(Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation))) {
-				if ($plan->getPeriodicity() == 'year' && (((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) <= 1)) {
-					$monthlyFraction = ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff)) / 12;
-				} else if ($plan->getPeriodicity() == 'month') {
-					$monthlyFraction = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation) - floor(Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation));
-				}
-			}
-			if (isset($monthlyFraction)) {
-				$charge = $monthlyFraction * $plan->getPrice($planActivation, $fromDate, $toDate);
-			}
+	/**
+	 * 
+	 * @param type $billrunKey
+	 * @param Billrun_Plan $plan
+	 * @param type $billingStart
+	 * @param type $fromDate
+	 * @param type $toDate
+	 * @return type
+	 */
+	protected function getChargeRefundFlatEntriesForUpfrontPayment($billrunKey, $plan, $billingStart, $fromDate, $toDate) {
+		$planDeactivation = $plan->getDeactivation();
+		if (empty($planDeactivation)) {
+			return null;
+		}
+		
+		$planActivation = $plan->getActivation();
+		// get a refund for a cancelled plan paid upfront
+		if (strtotime($planActivation) > $billingStart) { 
+			return null;
+		}
+		$lastUpfrontCharge = $plan->getPrice($fromDate, $toDate);
+		if ($plan->getPeriodicity() == 'year') {
+			$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
+			$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
+		} else if ($plan->getPeriodicity() == 'month') {
+			$refundFraction = 1 - Billrun_Plan::calcFractionOfMonth($billrunKey, $fromDate, $planDeactivation);
 		} else {
-			if ($plan->getPeriodicity() == 'month') {
-				$charge = $plan->getPrice($planActivation, $fromDate, $toDate);
-			}
+			Billrun_Factory::log("Cannot handle refund flat entries for periodicity that is not month or year");
+			return null;
 		}
-		if (isset($charge)) {
-			$flatEntries = array($this->getFlatEntry($billrunKey, $plan, $fromDate, $charge));
-		} else {
-			$flatEntries = array();
-		}
-		return $flatEntries;
-	}
-
-	protected function getRefundFlatEntries($billrunKey, $plan, $billingStart, $billingEnd, $fromDate, $toDate, $planActivation, $planDeactivation = NULL) {
-		if ($plan->isUpfrontPayment()) {
-			if (!empty($planDeactivation)) {
-				if (strtotime($planActivation) <= $billingStart) { // get a refund for a cancelled plan paid upfront
-					$lastUpfrontCharge = $plan->getPrice($planActivation, $fromDate, $toDate);
-					if ($plan->getPeriodicity() == 'year') {
-						$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
-						$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
-					} else if ($plan->getPeriodicity() == 'month') {
-						$refundFraction = 1 - Billrun_Plan::calcFractionOfMonth($billrunKey, $fromDate, $planDeactivation);
-					}
-					$charge = -$lastUpfrontCharge * $refundFraction;
-				}
-			}
-		}
-		if (isset($charge)) {
-			$flatEntries = array($this->getFlatEntry($billrunKey, $plan, $fromDate, $charge));
-		} else {
-			$flatEntries = array();
-		}
-		return $flatEntries;
+		return -$lastUpfrontCharge * $refundFraction;
 	}
 
 	protected function getFlatEntry($billrunKey, $plan, $start, $charge) {
