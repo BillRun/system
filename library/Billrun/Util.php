@@ -180,40 +180,6 @@ class Billrun_Util {
 	}
 
 	/**
-	 * method to receive billrun key by date
-	 * 
-	 * @param int $timestamp a unix timestamp
-	 * @param int $dayofmonth the day of the month require to get; if omitted return config value
-	 * @return string date string of format YYYYmm
-	 */
-	public static function getBillrunKey($timestamp, $dayofmonth = null) {
-		if (!$dayofmonth) {
-			$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 25);
-		}
-		$format = "Ym";
-		if (date("d", $timestamp) < $dayofmonth) {
-			$key = date($format, $timestamp);
-		} else {
-			$key = date($format, strtotime('+1 day', strtotime('last day of this month', $timestamp)));
-		}
-		return $key;
-	}
-
-	public static function getFollowingBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_later = strtotime('+1 month', strtotime($datetime));
-		$ret = date("Ym", $month_later);
-		return $ret;
-	}
-
-	public static function getPreviousBillrunKey($billrun_key) {
-		$datetime = $billrun_key . "01000000";
-		$month_before = strtotime('-1 month', strtotime($datetime));
-		$ret = date("Ym", $month_before);
-		return $ret;
-	}
-
-	/**
 	 * convert corrency.  
 	 * (this  should  be change to somthing more dynamic)
 	 * @param type $value the value to convert.
@@ -1588,18 +1554,6 @@ class Billrun_Util {
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
 	}
-	
-	public static function isDateValue($val) {
-		return (strtotime($val) === false ? false : true);
-	}
-	
-	public static function IsFloatValue($number) {
-		return is_numeric($number);
-	}
-	
-	public static function IsIntegerValue($number) {
-		return is_numeric($number) && ($number == intval($number));
-	}
 
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('company_name', '');
@@ -1698,5 +1652,9 @@ class Billrun_Util {
 			$ret['_id'] = array('$ne' => $id);
 		}
 		return $ret;
+	}
+	
+	public static function IsIntegerValue($value) {
+		return is_numeric($value) && ($value == intval($value));
 	}
 }

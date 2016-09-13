@@ -198,6 +198,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'firstname' => '$firstname',
 						'lastname' => '$lastname',
 						'address' => '$address',
+						'services' => '$services'
 					),
 				),
 				'card_token' => array(
@@ -220,10 +221,11 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
-					'firstname' => '$sub_plans.firstname',
-					'lastname' => '$sub_plans.lastname',
+					'first_name' => '$sub_plans.firstname',
+					'last_name' => '$sub_plans.lastname',
 					'type' => '$sub_plans.type',
 					'address' => '$sub_plans.address',
+					'services' => '$sub_plans.services'
 				),
 				'plan_dates' => array(
 					'$push' => array(
@@ -267,12 +269,12 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				$accountData = array();
 				foreach ($outputArr as $subscriberPlan) {
 					$type = $subscriberPlan['id']['type'];
-					$firstname = $subscriberPlan['id']['firstname'];
-					$lastname = $subscriberPlan['id']['lastname'];
+					$firstname = $subscriberPlan['id']['first_name'];
+					$lastname = $subscriberPlan['id']['last_name'];
 					if ($type === 'account') {
 						$accountData['attributes'] = array(
-							'firstname' => $firstname,
-							'lastname' => $lastname,
+							'first_name' => $firstname,
+							'last_name' => $lastname,
 							'address' => $subscriberPlan['id']['address'],
 							'payment_details' => $this->getPaymentDetails($subscriberPlan),
 						);
@@ -283,15 +285,21 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					$plan = $subscriberPlan['id']['plan'];
 					if ($lastSid && ($lastSid != $sid)) {
 						$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
+						$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
 						$subscriberEntry = array();
 					}
 					$subscriberEntry['aid'] = $aid;
 					$subscriberEntry['sid'] = $sid;
-					$subscriberEntry['firstname'] = $firstname;
-					$subscriberEntry['lastname'] = $lastname;
+					$subscriberEntry['first_name'] = $firstname;
+					$subscriberEntry['last_name'] = $lastname;
 					$subscriberEntry['next_plan'] = NULL;
 					$subscriberEntry['next_plan_activation'] = NULL;
 					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
+					
+					// TODO: Is validation needed? Not sure if important
+					if(isset($subscriberPlan['id']['services']) && is_array($subscriberPlan['id']['services'])) {
+						$subscriberEntry['services'] = $subscriberPlan['id']['services'];
+					}
 					$activeDates = array();
 					foreach ($subscriberPlan['plan_dates'] as $dates) {
 						if ($dates['to']->sec > $endTime) { // we found the next_plan
@@ -375,7 +383,39 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	}
 
 	public function getServices($billrun_key, $retEntity = false) {
-		return array();
+		if(!isset($this->data['services'])) {
+			return array();
+		}
+		$servicesEnitityList = array();
+		$services = $this->data['services'];
+		$ratesColl = Billrun_Factory::db()->ratesCollection();
+		$serviceQuery = Billrun_Util::getDateBoundQuery();
+		foreach ($services as $service) {
+			if(!isset($service['to'], $service['from'], $service['key'])) {
+				continue;
+			}
+			
+			// Check if active.
+			$to = strtotime($service['to']);
+			$from = strtotime($service['from']);
+			if(!$to || !$from) {
+				continue;
+			}
+			
+			$now = time();
+			if($from > $now || $now > $to) {
+				continue;
+			}
+			
+			$serviceQuery['key'] = $service['key'];
+			$serviceEntity = $ratesColl->query($serviceQuery)->cursor()->current();
+			if($serviceEntity->isEmpty()) {
+				continue;
+			}
+			
+			$servicesEnitityList[] = $serviceEntity;
+		}
+		return $servicesEnitityList;
 	}
 	
 	protected function getPaymentDetails($details) {
