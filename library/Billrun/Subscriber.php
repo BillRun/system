@@ -85,7 +85,7 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		if (isset($dataOptions['next_plan'])) {
 			$params = array(
 				'name' => $dataOptions['next_plan'],
-				'time' => Billrun_Billrun::getStartTime(Billrun_Util::getFollowingBillrunKey(Billrun_Util::getBillrunKey($this->time))),
+				'time' => Billrun_Billrun::getStartTime(Billrun_Billrun::getFollowingBillrunKey(Billrun_Billrun::getBillrunKeyByTimestamp($this->time))),
 			);
 			$this->nextPlan = new Billrun_Plan($params);
 			$this->nextPlanActivation = $dataOptions['next_plan_activation'];
