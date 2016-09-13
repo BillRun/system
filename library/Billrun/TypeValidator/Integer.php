@@ -21,7 +21,7 @@ class Billrun_TypeValidator_Integer extends Billrun_TypeValidator_Base {
 	 * @return boolean
 	 */
 	public function validate($value, $params) {
-		return is_numeric($value) && ($value == intval($value));
+		return Billrun_Util::IsIntegerValue($value);
 	}
 
 }

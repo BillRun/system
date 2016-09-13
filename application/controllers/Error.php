@@ -23,18 +23,25 @@ class ErrorController extends Yaf_Controller_Abstract {
             case YAF_ERR_NOTFOUND_CONTROLLER:
             case YAF_ERR_NOTFOUND_ACTION:
             case YAF_ERR_NOTFOUND_VIEW:
-                $output['data']['message'] = $exception->getMessage();
+                $output['data']['message'] = $exception->getMessage() . "\n";
                 $output['code'] = 404;
                 break;
 			case Billrun_Traits_Api_IUserPermissions::NO_PERMISSION_ERROR_CODE:
-				$output['data']['message'] = "No permissions";
+				$output['data']['message'] = "No permissions\n";
 				break;
             default :
-                $output['data']['message'] = "Error";
+                $output['data']['message'] = $exception->getMessage() . "\n";
                 break;
         }
 		
-		echo json_encode($output);
+		// TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
+		if(php_sapi_name() != "cli") {
+			echo json_encode($output);
+		} else {
+			echo "Exception: " . $output['data']['message'];
+		}
+		// TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
+		
 		Billrun_Factory::log()->logCrash($exception);
      } 
 }

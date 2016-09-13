@@ -221,8 +221,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
-					'firstname' => '$sub_plans.firstname',
-					'lastname' => '$sub_plans.lastname',
+					'first_name' => '$sub_plans.firstname',
+					'last_name' => '$sub_plans.lastname',
 					'type' => '$sub_plans.type',
 					'address' => '$sub_plans.address',
 					'services' => '$sub_plans.services'
@@ -269,12 +269,12 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				$accountData = array();
 				foreach ($outputArr as $subscriberPlan) {
 					$type = $subscriberPlan['id']['type'];
-					$firstname = $subscriberPlan['id']['firstname'];
-					$lastname = $subscriberPlan['id']['lastname'];
+					$firstname = $subscriberPlan['id']['first_name'];
+					$lastname = $subscriberPlan['id']['last_name'];
 					if ($type === 'account') {
 						$accountData['attributes'] = array(
-							'firstname' => $firstname,
-							'lastname' => $lastname,
+							'first_name' => $firstname,
+							'last_name' => $lastname,
 							'address' => $subscriberPlan['id']['address'],
 							'payment_details' => $this->getPaymentDetails($subscriberPlan),
 						);
@@ -285,12 +285,13 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					$plan = $subscriberPlan['id']['plan'];
 					if ($lastSid && ($lastSid != $sid)) {
 						$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
+						$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
 						$subscriberEntry = array();
 					}
 					$subscriberEntry['aid'] = $aid;
 					$subscriberEntry['sid'] = $sid;
-					$subscriberEntry['firstname'] = $firstname;
-					$subscriberEntry['lastname'] = $lastname;
+					$subscriberEntry['first_name'] = $firstname;
+					$subscriberEntry['last_name'] = $lastname;
 					$subscriberEntry['next_plan'] = NULL;
 					$subscriberEntry['next_plan_activation'] = NULL;
 					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
