@@ -108,9 +108,19 @@ class ConfigModel {
 		return $this->_getFromConfig($currentConfig, $category, $data);
 	}
 
+	/**
+	 * Internal getFromConfig function, recursively extracting values and handling
+	 * any complex values.
+	 * @param type $currentConfig
+	 * @param type $category
+	 * @param array $data
+	 * @return mixed value
+	 * @throws Exception
+	 */
 	protected function _getFromConfig($currentConfig, $category, $data) {
 		if (is_array($data) && !empty($data)) {
-			foreach ($data as $key => $_) {
+			$dataKeys = array_keys($data);
+			foreach ($dataKeys as $key) {
 				$result[] = $this->_getFromConfig($currentConfig, $category . "." . $key, null);
 			}
 			return $result;
@@ -121,21 +131,9 @@ class ConfigModel {
 		if ($valueInCategory === null) {
 			throw new Exception('Unknown category ' . $category);
 		}
-
-		return $this->extractComplexValue($valueInCategory);
-	}
-
-	protected function extractComplexValue($toExtract) {
-		if (Billrun_Config::isComplex($toExtract)) {
-			// Get the complex object.
-			return Billrun_Config::getComplexValue($toExtract);
-		}
-
-		if (is_array($toExtract)) {
-			return $this->extractComplexFromArray($toExtract);
-		}
-
-		return $toExtract;
+		
+		Billrun_Config::translateComplex($valueInCategory);
+		return $valueInCategory;
 	}
 
 	protected function extractComplexFromArray($array) {
