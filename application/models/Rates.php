@@ -43,31 +43,47 @@ class RatesModel extends TabledateModel {
 	 * 
 	 * @param Mongodloid collection $collection
 	 * @param array $entity
+	 * @deprecated since version 5.0
 	 * 
 	 * @return type
 	 */
-	public function getItem($id) {
+//	public function getItem($id) {
+//
+//		$entity = parent::getItem($id);
+//
+//		if (isset($entity['rates'])) {
+//			$this->processEntityRatesOnGet($entity);
+//		}
+//
+//		return $entity;
+//	}
 
-		$entity = parent::getItem($id);
-
-		if (isset($entity['rates'])) {
-			$raw_data = $entity->getRawData();
-			foreach ($raw_data['rates'] as &$rate) {
-				if (isset($rate['plans'])) {
-					foreach ($rate['plans'] as &$plan) {
-						$data = $this->collection->getRef($plan);
-						if ($data instanceof Mongodloid_Entity) {
-							$plan = $data->get('name');
-						}
-					}
+	/**
+	 * Process the internal rates values of an entity.
+	 * @param Mongodloid_Entity $entity
+	 * @deprecated since 5.0 The rates field in the rate record holds the plan
+	 * data instead of a reference.
+	 */
+	protected function processEntityRatesOnGet(&$entity) {
+		$raw_data = $entity->getRawData();
+		foreach ($raw_data['rates'] as &$rate) {
+			if (!isset($rate['plans'])) {
+				continue;
+			}
+			
+			// TODO: The internal logic of this loop is very ambigious, it will
+			// be great help if someone from the core team can replace this TODO
+			// with a proper comment describing this logic.
+			foreach ($rate['plans'] as &$plan) {
+				$data = $this->collection->getRef($plan);
+				if ($data instanceof Mongodloid_Entity) {
+					$plan = $data->get('name');
 				}
 			}
-			$entity->setRawData($raw_data);
 		}
-
-		return $entity;
+		$entity->setRawData($raw_data);
 	}
-
+	
 	/**
 	 * method to convert plans names into their refs
 	 * triggered before save the rate entity for edit
@@ -79,35 +95,56 @@ class RatesModel extends TabledateModel {
 	 */
 	public function update($data) {
 		if (isset($data['rates'])) {
-			$plansColl = Billrun_Factory::db()->plansCollection();
-			$currentDate = new MongoDate();
-			$rates = $data['rates'];
-			//convert plans
-			foreach ($rates as &$rate) {
-				if (isset($rate['plans'])) {
-					$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
-					$newRefPlans = array(); // this will be the new array of DBRefs
-					unset($rate['plans']);
-					foreach ($sourcePlans as &$plan) {
-						if (MongoDBRef::isRef($plan)) {
-							$newRefPlans[] = $plan;
-						} else {
-							$planEntity = $plansColl->query('name', $plan)
-									->lessEq('from', $currentDate)
-									->greaterEq('to', $currentDate)
-									->cursor()->current();
-							$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
-						}
-					}
-					$rate['plans'] = $newRefPlans;
-				}
-			}
-			$data['rates'] = $rates;
+			$this->processRatesOnUpdate($data);
 		}
 
 		return parent::update($data);
 	}
 
+	/**
+	 * Process the internal rates values of input data to update.
+	 * @param array $data - Data to update
+	 */
+	protected function processRatesOnUpdate(&$data) {
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planQuery = Billrun_Util::getDateBoundQuery();
+		$rates = $data['rates'];
+		//convert plans
+		foreach ($rates as &$rate) {
+			if (!isset($rate['plans'])) {
+				continue;
+			}
+			$this->processSingleRateOnUpdate($rate, $plansColl, $planQuery);
+		}
+		$data['rates'] = $rates;
+	}
+	
+	/**
+	 * Processing a single rate from the input rates in the data received to update
+	 * @param array $rate - reference to the single rate object
+	 * @param Mongodloid_Collection $plansColl - The plans collection
+	 * @param array $planQuery - The query to use in the plan collection.
+	 */
+	protected function processSingleRateOnUpdate(&$rate, $plansColl, $planQuery) {
+		$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
+		$newRefPlans = array(); // this will be the new array of DBRefs
+		unset($rate['plans']);
+
+		// TODO: The internal logic of this loop is very ambigious, it will
+		// be great help if someone from the core team can replace this TODO
+		// with a proper comment describing this logic.
+		foreach ($sourcePlans as &$plan) {
+			if (MongoDBRef::isRef($plan)) {
+				$newRefPlans[] = $plan;
+			} else {
+				$planQuery['name'] = $plan;
+				$planEntity = $plansColl->query($planQuery)->cursor()->current();
+				$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
+			}
+		}
+		$rate['plans'] = $newRefPlans;
+	}
+	
 	public function getTableColumns() {
 		if ($this->showprefix) {
 			$columns = array(
