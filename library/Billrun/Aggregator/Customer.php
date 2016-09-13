@@ -102,6 +102,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected $recreateInvoices = null;
 	
+	/**
+	 * Manager for the aggregate subscriber logic.
+	 * @var Billrun_Aggregator_Subscriber_Manager
+	 */
+	protected $subscriberAggregator;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -173,6 +179,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			$this->page = $pageResult;
 		}
+		
+		// TODO: Get the types of subscriber aggregator
+		$types = array('flat', 'credit', 'services');
+		$this->subscriberAggregator = new Billrun_Aggregator_Subscriber_Manager($types);
 		
 		$this->isValid = true;
 	}
@@ -288,9 +298,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				foreach ($deactivated_subscribers as $value) {
 					
 				}
-				$manual_lines = array_merge($manual_lines, $this->saveFlatLines($subscriber, $billrun_key));
-				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
-				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
+				$manual_lines = array_merge($manual_lines, $this->subscriberAggregator->aggregate($subscriber, $billrun_key));
 				$account_billrun->addSubscriber($subscriber, $subscriber_status);
 				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
 			}
@@ -349,6 +357,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
 	 * @param string $billrun_key the billrun for which to add the flat line
 	 * @return array the inserted line or the old one if it already exists
+	 * @deprecated since version 5.1
 	 */
 	protected function saveFlatLines($subscriber, $billrun_key) {
 		$flatEntries = $subscriber->getFlatEntries($billrun_key, true);
@@ -378,6 +387,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param type $subscriber
 	 * @param type $billrun_key
 	 * @return array of inserted lines
+	 * @deprecated since version 5.1
+
 	 */
 	protected function saveServiceLines($subscriber, $billrun_key) {
 		$services = $subscriber->getServices($billrun_key, true);
@@ -405,6 +416,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param type $subscriber
 	 * @param type $billrun_key
 	 * @return array of inserted lines
+	 * @deprecated since version 5.1
 	 */
 	protected function saveCreditLines($subscriber, $billrun_key) {
 		$credits = $subscriber->getCredits($billrun_key, true);
