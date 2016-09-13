@@ -453,7 +453,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				array(
 				'key' => $interconnect,
 				'params.interconnect' => TRUE,
-				), Billrun_Util::getDateBoundQuery($time)
+				), Billrun_Utils_Mongo::getDateBoundQuery($time)
 			);
 			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
 			$interconnectCharge = static::getTotalChargeByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);

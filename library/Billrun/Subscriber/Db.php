@@ -389,7 +389,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery();
+		$serviceQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		foreach ($services as $service) {
 			if(!isset($service['to'], $service['from'], $service['key'])) {
 				continue;

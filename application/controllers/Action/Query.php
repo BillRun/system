@@ -169,7 +169,7 @@ class QueryAction extends ApiAction {
 					unset($row['tx'], $row['_id'], $row['notifications_sent']);
 					$line['source_ref_value'] = $row;
 				}
-				$line = Billrun_Util::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));
+				$line = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($line->getRawData(), array('urt'));
 			}
 		}
 

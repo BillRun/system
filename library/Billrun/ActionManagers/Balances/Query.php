@@ -52,7 +52,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 
 			ksort($returnData);
 			foreach ($returnData as &$row) {
-				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
+				$row = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($row);
 			}
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
@@ -205,7 +205,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @return type Query to run.
 	 */
 	protected function getSubscriberQuery($subscriberId) {
-		$query = Billrun_Util::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
+		$query = Billrun_Utils_Mongo::getDateBoundQuery(time(), true); // enable upsert of future subscribers balances
 		$query['sid'] = $subscriberId;
 
 		return $query;

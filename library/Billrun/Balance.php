@@ -310,7 +310,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	public function getBalanceChargingTotalsKey($usaget) {
 		if (is_null($this->chargingTotalsKey)) {
-			$query = array_merge(Billrun_Util::getDateBoundQuery(), array("external_id" => $this->get("pp_includes_external_id")));
+			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array("external_id" => $this->get("pp_includes_external_id")));
 			$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($query)->cursor()->current();
 			if (isset($ppincludes['additional_charging_usaget']) && is_array($ppincludes['additional_charging_usaget']) && in_array($usaget, $ppincludes['additional_charging_usaget'])) {
 				$this->chargingTotalsKey = $ppincludes['charging_by_usaget'];
