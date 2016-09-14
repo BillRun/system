@@ -24,7 +24,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	public function __construct($options) {
 		parent::__construct($options);
 		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'));
+		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'), $this->startTime);
 		$this->loadPlans();
 	}
 	
