@@ -10,13 +10,22 @@
  * This class represents the billing cycle.
  *
  * @package  DataTypes
- * @since    4
+ * @since    5.2
  * @todo Create unit tests for this module
  */
 class Billrun_Billingcycle {
-	protected $billruKey = null;
-	protected $startTime = null;	
-	protected $endTime = null;	
+	
+	/**
+	 * Table holding the values of the charging end dates.
+	 * @var Billrun_DataTypes_ChargingTimeTable
+	 */
+	protected $cycleEndTable = null;
+	
+	/**
+	 * Table holding the values of the charging start dates.
+	 * @var Billrun_DataTypes_ChargingTimeTable
+	 */
+	protected $cycleStartTable = null;
 	
 	/**
 	 * returns the end timestamp of the input billing period
@@ -24,14 +33,12 @@ class Billrun_Billingcycle {
 	 * @return type int
 	 */
 	public static function getEndTime($key) {
-		if($key == self::$billruKey) {
-			return self::$endTime;
+		// Create the table if not already initialized
+		if(!self::$cycleEndTable) {
+			self::$cycleEndTable = new Billrun_DataTypes_ChargingTimeTable();
 		}
 		
-		self::$billruKey = $key;
-		$datetime = self::getDatetime();
-		self::$endTime = strtotime($datetime);
-		return self::$endTime;
+		return self::$cycleEndTable->get($key);
 	}
 
 	/**
@@ -40,14 +47,12 @@ class Billrun_Billingcycle {
 	 * @return type int
 	 */
 	public static function getStartTime($key) {
-		if($key == self::$billruKey) {
-			return self::$startTime;
+		// Create the table if not already initialized
+		if(!self::$cycleStartTable) {
+			self::$cycleStartTable = new Billrun_DataTypes_ChargingTimeTable('-1 month');
 		}
-		
-		self::$billruKey = $key;
-		$datetime = self::getDatetime();
-		self::$startTime = strtotime('-1 month', strtotime($datetime));
-		return self::$startTime;
+
+		return self::$cycleStartTable->get($key);
 	}
 	
 	/**
