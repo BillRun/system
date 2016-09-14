@@ -43,7 +43,11 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 				}
 			}
 		} else {
-			vm.entity.operation = "new";
+			if (vm.entity.pp_includes_name === "CORE BALANCE") { // @todo: change to some generaic id
+				vm.entity.operation = "set";
+			} else {
+				vm.entity.operation = "new";
+			}
 		}
 		
 		if (vm.entity.to && _.isObject(vm.entity.to)) {
@@ -67,7 +71,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 			postData.upsert = JSON.stringify({
 				value: vm.newBalanceAmount,
 				expiration_date: vm.entity.to,
-				operation: "new"
+				operation: vm.entity.operation
 			});
 		} else {
 			postData.query = JSON.stringify({
