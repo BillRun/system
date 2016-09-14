@@ -140,8 +140,17 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			return false;
 		}
 
-		$key = $matchedRate->get('key');
-		return $rates_coll->query(array("key" => $key))->cursor()->current();
+ 		$rawData = $matchedRate->getRawData();
+		
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 			return false;	
+ 		}
+ 		$idQuery = array(
+ 			"key" => $rawData['key'], // this is for sharding purpose
+ 			"_id" => $rawData['_id']['_id'],
+ 		);
+ 		
+ 		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
 	/**
