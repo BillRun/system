@@ -54,7 +54,7 @@ class smsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-	public function afterPrepareQueue($processor){
+	public function beforeProcessorStore($processor){
 		$data = &$processor->getData();
 		foreach ($data['data'] as &$line) {
 			if (isset($line['type']) && $line['type'] == 'mmsc' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $line['mm_source_addr']) && !preg_match('/^\+\d+/', $line['recipent_addr'])){

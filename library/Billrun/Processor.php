@@ -220,7 +220,6 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
 			$this->prepareQueue();
-			Billrun_Factory::dispatcher()->trigger('afterPrepareQueue', array($this));
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
 			if ($this->store() === FALSE) {
