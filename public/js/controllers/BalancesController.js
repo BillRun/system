@@ -19,8 +19,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 						total.usagev = parseFloat(total.usagev);
 				});
 			}
-			// TODO: Force operation to set when editing a balance from the UI
-			vm.entity.operation="set";
+			vm.entity.operation = "set";
 			if (vm.entity.balance.cost && _.isString(vm.entity.balance.cost))
 				vm.entity.balance.cost = parseFloat(vm.entity.balance.cost);
 			// save via Admin.php if only date was changed UNLESS it's CORE BALANCE (id: 1)
@@ -43,28 +42,37 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 					return;
 				}
 			}
+		} else {
+			vm.entity.operation = "new";
 		}
-		if (vm.entity.to && _.isObject(vm.entity.to))
+		
+		if (vm.entity.to && _.isObject(vm.entity.to)) {
 			vm.entity.to = vm.entity.to.toISOString();
+		}
+		
 		var postData = {
 			method: 'update',
 			sid: parseInt(vm.entity.sid, 10),
-			query: JSON.stringify({
-				'_id' : vm.entity._id
-			}),
 			additional: JSON.stringify({
 				balance_source: "AdminPanel",
 				balance_type: "MTRCREDIT",
 				balance_info: username
 			})
 		};
+
 		if (vm.action === "new") {
+			postData.query = JSON.stringify({
+				'pp_includes_name' : vm.entity.pp_includes_name
+			});
 			postData.upsert = JSON.stringify({
 				value: vm.newBalanceAmount,
 				expiration_date: vm.entity.to,
-				operation: "set"
+				operation: "new"
 			});
 		} else {
+			postData.query = JSON.stringify({
+				'_id' : vm.entity._id
+			});			
 			var value = 0;
 			if (vm.entity.balance.cost)
 				value = vm.entity.balance.cost;
@@ -83,7 +91,7 @@ function BalancesController($controller, Utils, $http, $window, Database, $route
 			postData.upsert = JSON.stringify({
 				value: value,
 				expiration_date: vm.entity.to,
-				operation: (vm.entity.operation ? vm.entity.operation : "")
+				operation: (vm.entity.operation ? vm.entity.operation : "set")
 			});
 		}
 		$http.post(baseUrl + '/api/balances', postData).then(function (res) {
