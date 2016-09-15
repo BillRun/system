@@ -94,7 +94,7 @@ abstract class Generator_Billrunstats extends Billrun_Generator {
 											unset($flat_breakdown_record['_id']);
 										}
 									} else {
-										$flat_breakdown_record['vat'] = $default_vat;
+										$flat_breakdown_record['vat'] = in_array($flat_breakdown_record['category'], array('refund_vat_free', 'charge_vat_free')) ? 0 : $default_vat; // remove this hack
 										$flat_breakdown_record['cost'] = $zone_totals;
 										$flat_breakdown_record['usaget'] = strpos($flat_breakdown_record['category'], 'charge') === 0 ? 'charge' : 'refund';
 										$flat_breakdown_record['usagev'] = 1;
