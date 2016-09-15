@@ -750,20 +750,6 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->flush();
 	}
 
-	/**
-	 * 
-	 * @param type $fileName
-	 * @param type $xmlContent
-	 * @return type
-	 * @todo do not override files?
-	 */
-	protected function createXmlFile($fileName, $xmlContent) {
-		Billrun_Factory::log()->log("create xml file " . $fileName, Zend_Log::INFO);
-		$path = $this->export_directory . '/' . $fileName;
-		$ret = file_put_contents($path, $xmlContent);
-		return $ret;
-	}
-
 //	/**
 //	 * 
 //	 * @param array $subscriber subscriber billrun entry
@@ -1202,7 +1188,7 @@ EOI;
 
 		$newData = array_merge($current, $added_values);
 		$line->setRawData($newData);
-		$line->save(Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection());
+		$line->save(Billrun_Factory::db(array('name' => 'billrun'))->billrunCollection(), 1);
 		return true;
 	}
 
