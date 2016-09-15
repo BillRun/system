@@ -272,7 +272,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$processor->unsetQueueRow($stamp);
 			}
 			if ($count_duplicate_lines > 0){
-				Billrun_Factory::log('Plugin calc cpu skips ' . $count_duplicate_lines . ' duplicate lines in file ' . $line['file'] . ', example lines: ' . '(' . $print_stamps[0] . ', ' . $print_stamps[1] . ', ' .  $print_stamps[2]  . ')', Zend_Log::ALERT);
+				$print_stamps = implode(", ", $print_stamps);
+				Billrun_Factory::log('Plugin calc cpu skips ' . $count_duplicate_lines . ' duplicate lines in file ' . $line['file'] . ', example lines: ' . '(' . $print_stamps . ')', Zend_Log::ALERT);
 			}	
 		}		
 	}
