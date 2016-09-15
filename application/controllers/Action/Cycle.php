@@ -72,8 +72,8 @@ class CycleAction extends Action_Base {
 	 */
 	public function execute() {
 		// Check if we should cycle.
-		// Checking with a 3 hour lag.
-		if(!$this->isChargeDay(3)) {
+		$startHoursLag = Billrun_Factory::config()->getConfigValue('billrun.start_hours_lag');
+		if(!$this->isChargeDay($startHoursLag)) {
 			$this->_controller->addOutput("Skipping cycle.");
 			return;
 		}
