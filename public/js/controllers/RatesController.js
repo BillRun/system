@@ -15,6 +15,9 @@ app.controller('RatesController', ['$scope', 'Database', '$controller', '$locati
 			if (params.entity.from) {
 				params.entity.from = moment(params.entity.from).startOf('day').format();
 			}
+			if (params.entity.to) {
+				params.entity.to = moment(params.entity.to).endOf('day').format();
+			}
 			Database.saveEntity(params).then(function (res) {
 				$window.location = baseUrl + '/admin/rates';
 			}, function (err) {
