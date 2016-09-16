@@ -21,7 +21,7 @@ class ServiceprovidersModel extends TabledateModel {
 		$this->service_providers_coll = Billrun_Factory::db()->serviceprovidersCollection();
 	}
 	
-	public function hasEntityWithOverlappingDates($entity) {
+	public function hasEntityWithOverlappingDates($entity, $new = true) {
 		return false;
 	}
 
