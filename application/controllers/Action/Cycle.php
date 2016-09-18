@@ -72,8 +72,8 @@ class CycleAction extends Action_Base {
 	 */
 	public function execute() {
 		// Check if we should cycle.
-		// Checking with a 3 hour lag.
-		if(!$this->isChargeDay(3)) {
+		$startHoursLag = Billrun_Factory::config()->getConfigValue('billrun.start_hours_lag');
+		if(!$this->isChargeDay($startHoursLag)) {
 			$this->_controller->addOutput("Skipping cycle.");
 			return;
 		}
@@ -85,11 +85,9 @@ class CycleAction extends Action_Base {
 		$stamp = $options['stamp'];
 		$size = (int)$options['size'];
 		
-		$isCycleOver = false;
-		
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 				
-		while($isCycleOver != true) {
+		while(!Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
 			$pid = pcntl_fork();
 			if ($pid == -1) {
 				die('could not fork');
@@ -100,7 +98,6 @@ class CycleAction extends Action_Base {
 			// Parent process.
 			if ($pid) {
 				$this->executeParentProcess($processInterval);
-				$isCycleOver = Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages);
 				continue;
 			}
 			

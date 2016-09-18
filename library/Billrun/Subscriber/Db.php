@@ -261,87 +261,91 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	protected function parseActiveSubscribersOutput($outputArr, $startTime, $endTime) {
 		if (isset($outputArr['success']) && $outputArr['success'] === FALSE) {
 			return array();
-		} else {
-			$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
-			if (is_array($outputArr) && !empty($outputArr)) {
-				$retData = array();
-				$lastSid = null;
-				$accountData = array();
-				foreach ($outputArr as $subscriberPlan) {
-					$type = $subscriberPlan['id']['type'];
-					$firstname = $subscriberPlan['id']['first_name'];
-					$lastname = $subscriberPlan['id']['last_name'];
-					if ($type === 'account') {
-						$accountData['attributes'] = array(
-							'first_name' => $firstname,
-							'last_name' => $lastname,
-							'address' => $subscriberPlan['id']['address'],
-							'payment_details' => $this->getPaymentDetails($subscriberPlan),
-						);
-						continue;
-					}
-					$aid = $subscriberPlan['id']['aid'];
-					$sid = $subscriberPlan['id']['sid'];
-					$plan = $subscriberPlan['id']['plan'];
-					if ($lastSid && ($lastSid != $sid)) {
-						$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
-						$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
-						$subscriberEntry = array();
-					}
-					$subscriberEntry['aid'] = $aid;
-					$subscriberEntry['sid'] = $sid;
-					$subscriberEntry['first_name'] = $firstname;
-					$subscriberEntry['last_name'] = $lastname;
-					$subscriberEntry['next_plan'] = NULL;
-					$subscriberEntry['next_plan_activation'] = NULL;
-					$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
-					
-					// TODO: Is validation needed? Not sure if important
-					if(isset($subscriberPlan['id']['services']) && is_array($subscriberPlan['id']['services'])) {
-						$subscriberEntry['services'] = $subscriberPlan['id']['services'];
-					}
-					$activeDates = array();
-					foreach ($subscriberPlan['plan_dates'] as $dates) {
-						if ($dates['to']->sec > $endTime) { // we found the next_plan
-							$subscriberEntry['next_plan'] = $plan;
-							$subscriberEntry['next_plan_activation'] = date(Billrun_Base::base_dateformat, max($startTime, $dates['plan_activation']->sec));
-							if ($dates['from']->sec == $endTime) { // the current date range is completely in the next cycle
-								continue;
-							}
-						}
-						$from = date(Billrun_Base::base_dateformat, max($startTime, $dates['from']->sec));
-						$to = date(Billrun_Base::base_dateformat, min($endTime - 1, $dates['to']->sec)); // make the 'to' inclusive
-						$planActivation = date(Billrun_Base::base_dateformat, $dates['plan_activation']->sec);
-						if (!empty($dates['plan_deactivation'])) {
-							$planDeactivation = date(Billrun_Base::base_dateformat, $dates['plan_deactivation']->sec);
-						} else {
-							$planDeactivation = NULL;
-						}
-						if ($activeDates) {
-							$lastTo = &$activeDates[count($activeDates) - 1]['to'];
-							if ((($lastTo != $from) && (date(Billrun_Base::base_dateformat, strtotime('+1 day', strtotime($lastTo))) == $from)) || $lastTo == $from) {
-								$lastTo = $to;
-							} else {
-								$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
-								if (!empty($planDeactivation)) {
-									$activeDateArr['plan_deactivation'] = $planDeactivation;
-								}
-								$activeDates[] = $activeDateArr;
-							}
-						} else {
-							$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
-							if (!empty($planDeactivation)) {
-								$activeDateArr['plan_deactivation'] = $planDeactivation;
-							}
-							$activeDates[] = $activeDateArr;
-						}
-					}
-					$subscriberEntry['plans'][] = array('name' => $plan, 'active_dates' => $activeDates);
-					$lastAid = $aid;
-					$lastSid = $sid;
-				}
+		} 
+		$subscriber_general_settings = Billrun_Config::getInstance()->getConfigValue('subscriber', array());
+		if (!is_array($outputArr) || empty($outputArr)) {
+			return array();
+		}
+		
+		$retData = array();
+		$lastSid = null;
+		$accountData = array();
+		foreach ($outputArr as $subscriberPlan) {
+			$type = $subscriberPlan['id']['type'];
+			$firstname = $subscriberPlan['id']['first_name'];
+			$lastname = $subscriberPlan['id']['last_name'];
+			if ($type === 'account') {
+				$accountData['attributes'] = array(
+					'first_name' => $firstname,
+					'last_name' => $lastname,
+					'address' => $subscriberPlan['id']['address'],
+					'payment_details' => $this->getPaymentDetails($subscriberPlan),
+				);
+				continue;
+			}
+			$aid = $subscriberPlan['id']['aid'];
+			$sid = $subscriberPlan['id']['sid'];
+			$plan = $subscriberPlan['id']['plan'];
+			if ($lastSid && ($lastSid != $sid)) {
 				$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
 				$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
+				$subscriberEntry = array();
+			}
+			$subscriberEntry['aid'] = $aid;
+			$subscriberEntry['sid'] = $sid;
+			$subscriberEntry['first_name'] = $firstname;
+			$subscriberEntry['last_name'] = $lastname;
+			$subscriberEntry['next_plan'] = NULL;
+			$subscriberEntry['next_plan_activation'] = NULL;
+			$subscriberEntry['time'] = $subscriber_general_settings['time'] = $endTime - 1;
+			
+			// TODO: Is validation needed? Not sure if important
+			if(isset($subscriberPlan['id']['services']) && is_array($subscriberPlan['id']['services'])) {
+				$subscriberEntry['services'] = $subscriberPlan['id']['services'];
+			}
+
+			$activeDates = array();
+			foreach ($subscriberPlan['plan_dates'] as $dates) {
+				if ($dates['to']->sec > $endTime) { // we found the next_plan
+					$subscriberEntry['next_plan'] = $plan;
+					$subscriberEntry['next_plan_activation'] = date(Billrun_Base::base_dateformat, max($startTime, $dates['plan_activation']->sec));
+					if ($dates['from']->sec == $endTime) { // the current date range is completely in the next cycle
+						continue;
+					}
+				}
+				$from = date(Billrun_Base::base_dateformat, max($startTime, $dates['from']->sec));
+				$to = date(Billrun_Base::base_dateformat, min($endTime - 1, $dates['to']->sec)); // make the 'to' inclusive
+				$planActivation = date(Billrun_Base::base_dateformat, $dates['plan_activation']->sec);
+				if (!empty($dates['plan_deactivation'])) {
+					$planDeactivation = date(Billrun_Base::base_dateformat, $dates['plan_deactivation']->sec);
+				} else {
+					$planDeactivation = NULL;
+				}
+				if ($activeDates) {
+					$lastTo = &$activeDates[count($activeDates) - 1]['to'];
+					if ((($lastTo != $from) && (date(Billrun_Base::base_dateformat, strtotime('+1 day', strtotime($lastTo))) == $from)) || $lastTo == $from) {
+						$lastTo = $to;
+					} else {
+						$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+						if (!empty($planDeactivation)) {
+							$activeDateArr['plan_deactivation'] = $planDeactivation;
+						}
+						$activeDates[] = $activeDateArr;
+					}
+				} else {
+					$activeDateArr = array('from' => $from, 'to' => $to, 'plan_activation' => $planActivation);
+					if (!empty($planDeactivation)) {
+						$activeDateArr['plan_deactivation'] = $planDeactivation;
+					}
+					$activeDates[] = $activeDateArr;
+				}
+			}
+			$subscriberEntry['plans'][] = array('name' => $plan, 'active_dates' => $activeDates);
+			$lastAid = $aid;
+			$lastSid = $sid;
+		}
+		$retData[$lastAid]['subscribers'][] = Billrun_Subscriber::getInstance(array_merge(array('data' => $subscriberEntry), $subscriber_general_settings));
+		$retData[$lastAid] = array_merge($retData[$lastAid], $accountData);
 //				foreach ($outputArr as $account) {
 //					if (isset($account['subscribers'])) {
 //						foreach ($account['subscribers'] as $subscriber) {
@@ -366,12 +370,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 //						}
 //					}
 //				}
-				ksort($retData); // maybe this will help the aid index to stay in memory
-				return $retData;
-			} else {
-				return array();
-			}
-		}
+		ksort($retData); // maybe this will help the aid index to stay in memory
+		return $retData;
 	}
 
 	public function getListFromFile($file_path, $time) {
@@ -389,7 +389,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
 		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery();
+		$serviceQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		foreach ($services as $service) {
 			if(!isset($service['to'], $service['from'], $service['key'])) {
 				continue;

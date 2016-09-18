@@ -62,8 +62,7 @@ class Billrun_Log extends Zend_Log {
 		$stamp = md5(serialize($options));
 		if (!isset(self::$instances[$stamp])) {
 			if (empty($options)) {
-				$config = Yaf_Application::app()->getConfig();
-				$options = $config->log->toArray();
+				$options = Billrun_Factory::config()->getConfigValue('log');
 			}
 			self::$instances[$stamp] = Billrun_Log::factory($options);
 		}

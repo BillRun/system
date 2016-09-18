@@ -37,7 +37,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
 		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
-		$balancesQuery = Billrun_Util::getDateBoundQuery();
+		$balancesQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$balancesQuery['sid'] = $sid;
 		$balancesQuery['aid'] = $aid;
 		$options = array(
@@ -141,7 +141,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$queryFields = $this->getQueryFields();
 
 		// Initialize the query with date bound values.
-		$this->query = Billrun_Util::getDateBoundQuery();
+		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!

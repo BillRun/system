@@ -1,4 +1,4 @@
-/* Syslem Alerts */
+/* System Alerts */
 .alerts-enter {
   opacity: 0.01;
 }
@@ -13,9 +13,9 @@
   opacity: 0.01;
   transition: opacity 300ms ease-in;
 }
-/* ~ Syslem Alerts */
+/* ~ System Alerts */
 
-/* Syslem Progress Ingecator */
+/* System Progress Ingecator */
 .progressindicator-leave.progressindicator-leave-active {
   opacity: 1;
 }
@@ -61,4 +61,13 @@
     animation-name: progressindicator-in-progress;
     animation-duration: 1500ms;
 }
-/* ~Syslem Progress Ingecator */
+/* ~System Progress Ingecator */
+
+
+/* Mapping block */
+.separator {
+    margin-top: 0px;
+    margin-bottom: 20px;
+    border: 0;
+    border-top: 1px solid #c3c3c3;
+}

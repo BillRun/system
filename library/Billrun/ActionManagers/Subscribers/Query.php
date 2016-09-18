@@ -46,7 +46,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem);
+				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;

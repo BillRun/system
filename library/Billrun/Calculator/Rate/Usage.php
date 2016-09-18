@@ -74,7 +74,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 //		if ($rate) {
 //			// TODO: push plan to the function to enable market price by plan
-//			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
+//			$added_values[$this->aprField] = Billrun_Rates_Utils::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan']);
 //		}
 		
 		return $added_values;
@@ -140,8 +140,17 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			return false;
 		}
 
-		$key = $matchedRate->get('key');
-		return $rates_coll->query(array("key" => $key))->cursor()->current();
+ 		$rawData = $matchedRate->getRawData();
+		
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 			return false;	
+ 		}
+ 		$idQuery = array(
+ 			"key" => $rawData['key'], // this is for sharding purpose
+ 			"_id" => $rawData['_id']['_id'],
+ 		);
+ 		
+ 		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
 	/**
@@ -179,7 +188,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	protected function getBasicMatchRateQuery($row, $usaget) {
 		$sec = $row['urt']->sec;
 		return array_merge(
-			Billrun_Util::getDateBoundQuery($sec),
+			Billrun_Utils_Mongo::getDateBoundQuery($sec),
 			array('rates.' . $usaget => array('$exists' => true))
 		);
 	}
