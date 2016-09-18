@@ -11,18 +11,19 @@
  */
 class Billrun_DataTypes_Subscriberservice {
 	protected $name = null;
-//	protected $from = null;
-//	protected $to = null;
+	protected $price = null;
 	
 	public function __construct(array $options) {
-//		if(!isset($options['from'], $options['to'], $options['name'])) {
-		if(!isset($options['name'])) {
+		if(!isset($options['name'], $options['price'])) {
 			return;
 		}
 		
-//		$this->to = $options['to'];
-//		$this->from = $options['from'];
 		$this->name = $options['name'];
+		$this->price = $options['price'];
+	}
+	
+	public function getName() {
+		return $this->name;
 	}
 	
 	/**
@@ -30,39 +31,11 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return true if valid.
 	 */
 	public function isValid() {
-//		if(empty($this->name) || !is_string($this->name) || empty($this->from) || empty($this->to)) {
-		if(empty($this->name) || !is_string($this->name)) {
+		if(empty($this->name) || !is_string($this->name) || !Billrun_Util::IsIntegerValue($this->price)) {
 			return false;
 		}
-		
-		// Validate
-//		if($this->validateDates()) {
-//			return false;
-//		}
 		
 		return $this->checkDB();
-	}
-	
-	protected function validateDates() {
-		// Get the date strings.
-		$from = strtotime($this->from);
-		$to = strtotime($this->to);
-		
-		// Validate
-		if(!$from || !$to) {
-			return false;
-		}
-		
-		// Validate the dates.
-		if($from > $to) {
-			return false;
-		}
-		
-		// Translate the internal values
-		$this->from = $from;
-		$this->to = $to;
-		
-		return true;
 	}
 	
 	/**
@@ -77,7 +50,6 @@ class Billrun_DataTypes_Subscriberservice {
 		
 		// Check in the mongo.
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery($from, true);
 		$serviceQuery['name'] = $this->name;
 		$service = $servicesColl->query($serviceQuery)->cursor()->current();
 		
@@ -89,7 +61,40 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		return array('name' => $this->name);
-//		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
+		return array('name' => $this->name, "price" => $this->price);
+	}
+	
+	/**
+	 * 
+	 * @param type $billrunKey
+	 * @return int
+	 * @todo This should be moved to a more fitting location
+	 */
+	protected function calcFractionOfMonth($billrunKey) {
+		$start = Billrun_Billrun::getStartTime($billrunKey);
+		$end = Billrun_Billrun::getEndTime($billrunKey);
+		$days_in_month = (int) date('t', $start);
+		if ($end < $start) {
+			return 0;
+		}
+		$start_day = date('j', $start);
+		$end_day = date('j', $end);
+		$start_month = date('F', $start);
+		$end_month = date('F', $end);
+
+		if ($start_month == $end_month) {
+			$days_in_plan = (int) $end_day - (int) $start_day + 1;
+		} else {
+			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
+			$days_in_current_month = (int) $end_day;
+			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+		}
+
+		$fraction = $days_in_plan / $days_in_month;
+		return $fraction;
+	}
+	
+	public function getPrice($billrunKey) {
+		return $this->price * $this->calcFractionOfMonth($billrunKey);
 	}
 }

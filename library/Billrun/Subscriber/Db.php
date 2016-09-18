@@ -382,38 +382,49 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		return array();
 	}
 
+	/**
+	 * 
+	 * @param type $billrun_key
+	 * @param type $retEntity
+	 * @return \Billrun_DataTypes_Subscriberservice
+	 */
 	public function getServices($billrun_key, $retEntity = false) {
 		if(!isset($this->data['services'])) {
 			return array();
 		}
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
-		$ratesColl = Billrun_Factory::db()->ratesCollection();
-		$serviceQuery = Billrun_Util::getDateBoundQuery();
+		$servicesColl = Billrun_Factory::db()->servicesCollection();
+//		$serviceQuery = Billrun_Util::getDateBoundQuery();
 		foreach ($services as $service) {
-			if(!isset($service['to'], $service['from'], $service['key'])) {
+//			if(!isset($service['to'], $service['from'], $service['key'])) {
+			if(!isset($service['name'])) {
 				continue;
 			}
 			
 			// Check if active.
-			$to = strtotime($service['to']);
-			$from = strtotime($service['from']);
-			if(!$to || !$from) {
-				continue;
-			}
+//			$to = strtotime($service['to']);
+//			$from = strtotime($service['from']);
+//			if(!$to || !$from) {
+//				continue;
+//			}
+//			
+//			$now = time();
+//			if($from > $now || $now > $to) {
+//				continue;
+//			}
 			
-			$now = time();
-			if($from > $now || $now > $to) {
-				continue;
-			}
-			
-			$serviceQuery['key'] = $service['key'];
-			$serviceEntity = $ratesColl->query($serviceQuery)->cursor()->current();
+			$serviceQuery = array('name' => $service['name']);
+			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
 			if($serviceEntity->isEmpty()) {
 				continue;
 			}
 			
-			$servicesEnitityList[] = $serviceEntity;
+			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceEntity->getRawData());
+			if(!$serviceValue->isValid()) {
+				continue;
+			}
+			$servicesEnitityList[] = $serviceValue;
 		}
 		return $servicesEnitityList;
 	}
