@@ -60,13 +60,25 @@ class CronController extends Yaf_Controller_Abstract {
 		$filter_field = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.field');
 		$types = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.types', array());
 		foreach ($types as $type => $timediff) {
-			$query = array(
-				'source' => $type,
-				$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
-			);
-			$results = $logsModel->getData($query)->current();
-			if ($results->isEmpty()) {
-				$empty_types[] = $type;
+			$hosts = array_keys(Billrun_Factory::config()->getConfigValue($type . '.ftp', array()));
+			foreach ($hosts as $server) {
+				if (count($hosts) < 2){// if the file type is being processed from one server
+					$server = $type;
+					$query = array(
+						'source' => $type,
+						$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
+					);
+				} else {
+					$query = array(
+						'source' => $type,
+						'retrieved_from' => $server,
+						$filter_field => array('$gt' => date('Y-m-d H:i:s', (time() - $timediff)))
+					);
+				}
+				$results = $logsModel->getData($query)->current();
+				if ($results->isEmpty()) {
+					$empty_types[] = array($type => $server);
+				}
 			}
 		}
 		return $empty_types;
@@ -76,7 +88,12 @@ class CronController extends Yaf_Controller_Abstract {
 		if (empty($empty_types)) {
 			return;
 		}
-		$events_string = implode(', ', $empty_types);
+		foreach ($empty_types as $values) {
+			foreach ($values as $type => $server) {
+				$events_string[$type]= $type;
+			}
+		}
+		$events_string = implode(', ', $events_string);
 		Billrun_Factory::log("Send alerts for " . $process, Zend_Log::INFO);
 		Billrun_Factory::log("Events types: " . $events_string, Zend_Log::INFO);
 		$actions = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.actions', array());
@@ -89,13 +106,23 @@ class CronController extends Yaf_Controller_Abstract {
 			}
 			$this->mailer->addTo($recipients);
 			$this->mailer->setSubject($actions['email']['subject']);
-			$message = sprintf($actions['email']['message'], $process, $events_string);
+			foreach ($empty_types as $values) {
+				foreach ($values as $type => $server) {
+					$messages[] = sprintf($actions['email']['message'], $process, $type, $server);
+				}
+			}
+			$message = implode("\n", $messages);
 			$this->mailer->setBodyText($message);
 			$this->mailer->send();
 		}
 		if (isset($actions['sms'])) {
 			//'GT BillRun - file types did not %s: %s'
-			$message = sprintf($actions['sms']['message'], $process, $events_string);
+			foreach ($empty_types as $values) {
+				foreach ($values as $type => $server) {
+					$messages[] = sprintf($actions['sms']['message'], $process, $type, $server);
+				}
+			}
+			$message = implode("\n", $messages);
 			if (isset($actions['sms']['recipients'])) {
 				$recipients = $actions['sms']['recipients'];
 			} else {
