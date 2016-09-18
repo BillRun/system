@@ -132,6 +132,7 @@ class TabledateModel extends TableModel {
 		$new_from = new Zend_Date($params['from'], null, 'he-IL');
 		if ($new_from->getTimestamp() < time()) {
 			$new_from = new Zend_Date(null, null, 'he-IL');
+			$new_from->set('23:59:59',Zend_Date::TIMES)->add(1, Zend_Date::SECOND); // this will make zend_date with the next midnight
 		}
 
 		// close the old line
