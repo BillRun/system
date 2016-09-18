@@ -13,7 +13,7 @@
  * @package  DataTypes
  * @since    5.2
  */
-class Billrun_DataTypes_ChargingTimeTable  extends Billrun_DataTypes_DataTable {
+class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_CachedDataTable {
 	
 	/**
 	 * String representation of the time base.

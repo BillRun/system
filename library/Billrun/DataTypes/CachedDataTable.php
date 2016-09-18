@@ -13,7 +13,7 @@
  * @package  DataTypes
  * @since    5.2
  */
-abstract class Billrun_DataTypes_DataTable {
+abstract class Billrun_DataTypes_CachedDataTable {
 	
 	/**
 	 * Dictionary holdind data paired with keys.
