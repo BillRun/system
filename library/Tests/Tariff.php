@@ -136,7 +136,7 @@ class Tests_Tariff extends UnitTestCase {
 		foreach ($this->getChargesByVolumeTests as $test) {
 			$tariffs = $test['tariffs'];
 			$volume = -1 * $test['volume'];
-			$result = Billrun_Calculator_CustomerPricing::getChargeByVolume($tariffs, $volume);
+			$result = Billrun_Tariff_Util::getChargeByVolume($tariffs, $volume);
 			$expected = -1 * $test['expected'];
 			if($this->assertEqual($result, $expected, $test['msg'] . " Expected: " . $expected . " Result: " . $result)) {
 				$passed++;
