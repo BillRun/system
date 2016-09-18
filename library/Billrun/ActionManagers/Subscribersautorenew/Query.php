@@ -187,20 +187,19 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function parseDateParameters() {
 		if (isset($this->query['from']) && $this->query['from'] != '*') {
-			$this->query['from'] = array('$lte' => new MongoDate(strtotime($this->query['from'])));
+			$this->query['from'] = array('$gte' => new MongoDate(strtotime($this->query['from'])));
 		} else if (!isset($this->query['from'])) {
-			$this->query['from']['$lte'] = new MongoDate();
+			$this->query['from']['$gte'] = new MongoDate();
 		} else {
 			unset($this->query['from']);
 		}
 		if (isset($this->query['to']) && $this->query['to'] != '*') {
-			$this->query['to'] = array('$gte' => new MongoDate(strtotime($this->query['to'])));
+			$this->query['to'] = array('$lte' => new MongoDate(strtotime($this->query['to'])));
 		} else if (!isset($this->query['to'])) {
-			$this->query['to']['$gte'] = new MongoDate();
+			$this->query['to']['$lte'] = new MongoDate();
 		} else {
 			unset($this->query['to']);
 		}
-//		print_R($this->query);die;
 	}
 
 	/**
