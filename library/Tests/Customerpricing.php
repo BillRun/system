@@ -47,11 +47,6 @@ class Tests_Customerpricing extends UnitTestCase {
 //			array("msg" => "Billable true", 'line' => array('sid' => 1, 'billable' => true), 'expected' => false)
 		);
 	
-	protected $getChargeByRate = array(
-			// Simple negative tests
-//			array("msg" => "Non existing SID", 'usage_type' => 'prepaid','volume' => 1, 'time'=> NULL,'offset'=> 0, 'rate' => array('sid' => 100), 'expectedTotals' => false, 'expectedInter' => false),		
-		);
-	
 	public function __construct($label = false) {
 		parent::__construct($label);
 		$this->calculator = new Billrun_Calculator_CustomerPricing();
@@ -73,30 +68,6 @@ class Tests_Customerpricing extends UnitTestCase {
 		}
 		print_r("Finished " . __FUNCTION__ . " passed " . $passed . " out of " . count($this->lineLegitimateTests) . " cases.<br>");
     }
-	
-	public function testGetChargesByRate() {
-		$passed = 0;
-		$passedInterconnect = 0;
-		foreach ($this->getChargeByRate as $test) {
-			$rate = new Billrun_AnObj($test['rate']);
-			$usageType = $test['usage_type'];
-			$volume = $test['volume'];
-			$time = $test['time'];
-			$offset = $test['offset'];
-			$plan = null;
-			if(isset($test['plan'])) {
-				$plan = new Billrun_AnObj($test['plan']);
-			}
-			$result = Billrun_Calculator_CustomerPricing::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time);
-			if($this->assertEqual($result['total'], $test['expectedTotals'], 'Assert Totals: ' . $test['msg'])) {
-				$passed++;
-			}
-			if($this->assertEqual($result['interconnect'], $test['expectedInter'], 'Assert Interconnect: ' . $test['msg'])) {
-				$passedInterconnect++;
-			}
-		}
-		print_r("Finished " . __FUNCTION__ . " passed [Totals: " . $passed . "],[Interconnect: " . $passedInterconnect . "] out of " . count($this->getChargeByRate) . " cases.<br>");
-	}
 	
 	public function testUpdateRow() {
 		$passed = 0;
