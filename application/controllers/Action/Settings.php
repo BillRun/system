@@ -50,12 +50,6 @@ class SettingsAction extends ApiAction {
 		$output = array();
 		if ($action === 'set') {
 			$success = $this->model->updateConfig($category, $data);
-
-			// Get all the errors.
-			$errors = $this->model->getInvalidFields();
-			if(!empty($errors)) {
-				$output = $errors;
-			}
 		} else if ($action === 'unset') {
 			$success = $this->model->unsetFromConfig($category, $data);
 		} else {
