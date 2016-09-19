@@ -90,7 +90,8 @@ class Billrun_Exceptions_Api extends Billrun_Exceptions_Base {
 	protected function generateDisplay() {
 		$errorMessage = "General error.";
 		if(isset($this->errors[$this->apiCode])) {
-			$errorMessage = vsprintf($this->errors[$this->apiCode], $this->args);
+			$errorString = $this->errors[$this->apiCode];
+			$errorMessage = vsprintf($errorString, $this->args);
 		}
 		return array("code" => $this->apiCode, "desc" => $errorMessage);
 	}
