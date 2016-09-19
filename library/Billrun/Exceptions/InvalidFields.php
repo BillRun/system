@@ -7,17 +7,49 @@
  */
 
 /**
- * This class represents a no permissions exception in the billrun system
+ * This class represents an invalid fields exception in the billrun system
  *
  * @package  Exceptions
  * @since    5.2
  */
-class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
+class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 	
-	const ERROR_CODE = 17575;
+	const ERROR_CODE = 17576;
 	
-	public function __construct() {
-		parent::__construct("No permissions.", self::ERROR_CODE);
+	/**
+	 * List of invalid fields.
+	 * @var array
+	 */
+	protected $invalidFields = array();
+	
+	/**
+	 * Create a new instance of the invalid fields exception
+	 * @param array $invalidFields - Array of invalid fields.
+	 */
+	public function __construct($invalidFields) {
+		parent::__construct("Invalid fields.", self::ERROR_CODE);
+		$this->setInvalidFields($invalidFields);
+	}
+	
+	/**
+	 * 
+	 * @param Billrun_DataTypes_InvalidField $invalidFields array of invalid fields
+	 */
+	protected function setInvalidFields($invalidFields) {
+		$this->invalidFields = $this->translateInvalidFieldArray($invalidFields);
+	}
+	
+	protected function translateInvalidFieldArray($invalidFields) {
+		$result = array();
+		foreach ($invalidFields as $key => $field) {
+			if($field instanceof Billrun_DataTypes_InvalidField) {
+				$translated = $field->output();
+			} else {
+				$translated = $this->translateInvalidFieldArray($field);
+			}
+			$result[$key] = $translated;
+		}
+		return $result;
 	}
 	
 	/**
@@ -25,7 +57,7 @@ class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
 	 * @return array.
 	 */
 	protected function generateDisplay() {
-		return $this->message;
+		return json_encode($this->invalidFields);
 	}
 
 }
