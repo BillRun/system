@@ -49,7 +49,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;
+			$errorCode =  20;
 			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
@@ -68,7 +68,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			$returnData = array();
-			$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 23);
+			$this->reportError( 23);
 		}
 
 		$outputResult = array(
@@ -125,7 +125,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
+			$errorCode = 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -134,7 +134,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 
 		// If there were errors.
 		if (empty($this->subscriberQuery)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
+			$errorCode = 22;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}

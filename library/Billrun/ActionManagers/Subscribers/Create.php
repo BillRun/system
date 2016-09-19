@@ -59,7 +59,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		// TODO: Use the subscriber class.
 		if ($subscribers->count() > 0) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+			$errorCode = 0;
 			$parameters = http_build_query($this->query, '', ', ');
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 			return true;
@@ -79,7 +79,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 				$this->collection->save($entity, 1);
 			}
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
+			$errorCode =  1;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 		}
@@ -118,7 +118,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('subscriber');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -127,9 +127,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		// If there were errors.
 		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		$this->setAdditionalFields();
@@ -170,7 +169,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			$fieldName = $field['field_name'];
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
 				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
-				$invalidFields[] = $fieldName;
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			} else if (!isset($queryData[$fieldName])) {
 				continue;
 			}
@@ -207,7 +206,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			array("type" => "account", "aid" => $aid)
 		);
 		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 8;
+			$errorCode =  8;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($aid));
 			return false;
 		}

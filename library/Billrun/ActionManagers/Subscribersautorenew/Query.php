@@ -48,14 +48,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function populatePlanValues(&$record) {
 		if (!isset($record['charging_plan_name'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 4;
+			$errorCode = 4;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$planRecord = $this->getPlanRecord($record);
 		if ($planRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 5;
+			$errorCode = 5;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -167,7 +167,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		if (!$returnData) {
 			// If no internal error occured, report on empty data.
 			if ($this->error == self::DEFAULT_ERROR) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 1;
+				$errorCode = 1;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			}
 			$returnData = array();
@@ -225,13 +225,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 2;
+			$errorCode = 2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		if (!isset($jsonData['sid'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 3;
+			$errorCode = 3;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

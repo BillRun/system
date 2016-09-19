@@ -101,7 +101,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		// TODO: Use the plans DB/API proxy.
 		$record = $collection->query($queryToUse)->cursor()->current();
 		if (!$record || $record->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 11;
+			$errorCode =  11;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -151,7 +151,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$maxRecord = $plansColl->query($maxQuery)->cursor()->current();
 
 		if ($maxRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 23;
+			$errorCode =  23;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($plan));
 			return false;
 		}
@@ -223,7 +223,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		;
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 12;
+			$errorCode =  12;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriberId));
 			return false;
 		}
@@ -277,7 +277,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 
 		// Check that the service provider is trusted.
 		if (!$this->validateServiceProvider($planServiceProvider)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 20;
+			$errorCode =  20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -287,7 +287,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 
 		// Check if mismatching serivce providers.
 		if ($planServiceProvider != $subscriberServiceProvider) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -354,7 +354,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		
 		if(isset($handleResult['block']) && $handleResult['block']) {
 			// [Balances Error 1225]
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 25;
+			$errorCode =  25;
 			$this->reportError($errorCode);
 			return false;
 		}

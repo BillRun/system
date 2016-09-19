@@ -96,7 +96,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (!isset($query['service_provider'])) {
 			$query['service_provider'] = $subscriber['service_provider'];
 		} else if ($query['service_provider'] != $subscriber['service_provider']) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -119,7 +119,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$this->updateOperation = $this->updateOperation->reconfigure($chargingPlanRecord);
 		if(!$this->updateOperation) {
 			// [Balances Error 1229]
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 29;
+			$errorCode =  29;
 			$this->reportError($errorCode);
 			return false;
 		}

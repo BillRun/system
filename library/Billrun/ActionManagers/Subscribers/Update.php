@@ -51,7 +51,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			
 			$this->closeEntity($this->oldEntity);
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
+			$errorCode =  1;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 		}
@@ -109,7 +109,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$this->oldEntity = $this->getOldEntity();
 		if($this->oldEntity === false) {
 			// [SUBSCRIBERS error 1037]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
+			$errorCode =  37;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -138,7 +138,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -146,14 +146,14 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$invalidFields = $this->setQueryFields($jsonData);
 		// If there were errors.
 		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
+			$errorCode =  3;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}
 
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonData = json_decode($update, true))) || !$this->setUpdateFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

@@ -55,7 +55,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				$row = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($row);
 			}
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
+			$errorCode =  30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -116,7 +116,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			$returnData = array();
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 34;
+			$errorCode =  34;
 			$this->reportError($errorCode);
 		}
 
@@ -176,7 +176,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	public function parse($input) {
 		$sid = (int) $input->get('sid');
 		if (empty($sid)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 31;
+			$errorCode =  31;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -222,7 +222,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 35;
+			$errorCode =  35;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriberId));
 			return false;
 		}
@@ -239,7 +239,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$planColl = Billrun_Factory::db()->plansCollection();
 		$plan = $planColl->query($planQuery)->cursor()->current();
 		if ($plan->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 36;
+			$errorCode =  36;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subscriber['plan']));
 			return false;
 		}
@@ -286,7 +286,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 
 		// Check if received both external_id and name.
 		if (count($prepaidQuery) > 1) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 32;
+			$errorCode =  32;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -334,7 +334,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		// TODO: Use the prepaid DB/API proxy.
 		$prepaidRecord = $prepaidCollection->query($prepaidQuery)->cursor()->current();
 		if (!$prepaidRecord || $prepaidRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 33;
+			$errorCode =  33;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

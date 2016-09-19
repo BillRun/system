@@ -97,7 +97,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				$updateStatus = $this->update['status'];
 				// Check requested status in the permissible statuses available array
 				if (!in_array($updateStatus, $availableStatuses)) {
-					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 37;
+					$errorCode =  37;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
 					return false;
 				}
@@ -107,7 +107,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 					$queryStatus = $this->query['status'];
 					$this->validateQuery['status'] = ['$ne' => $queryStatus];
 					if (!in_array($queryStatus, $allowFromStatus[$updateStatus])) {
-						$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 38;
+						$errorCode =  38;
 						$this->reportError($errorCode, Zend_Log::NOTICE, array($queryStatus, $updateStatus));
 						return false;
 					}
@@ -115,7 +115,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				} else if ($allowFromStatus[$updateStatus]) {
 					$this->validateQuery['status']['$nin'] = $allowFromStatus[$updateStatus];
 				} else {
-					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 39;
+					$errorCode =  39;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($updateStatus));
 					return false;
 				}
@@ -123,7 +123,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				if (isset($this->query['serial_number'])) {
 					if (is_array($this->query['serial_number'])) {
 						if (isset($this->query['serial_number']['$gte']) xor isset($this->query['serial_number']['$lte'])) {
-							$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 40;
+							$errorCode =  40;
 							$this->reportError($errorCode, Zend_Log::NOTICE);
 							return false;
 						}
@@ -132,7 +132,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 				// Check if there are impermissible statuses for the requested new status in query from the DB 
 				$count = $this->collection->query($this->validateQuery)->cursor()->count();
 				if ($count) {
-					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 41;
+					$errorCode =  41;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($count, implode(', ', array_diff($availableStatuses, $allowFromStatus[$updateStatus])), $updateStatus));
 					return false;
 				}
@@ -154,7 +154,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 30;
+			$errorCode =  30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -162,7 +162,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!isset($jsonQueryData['batch_number']) || !isset($jsonQueryData['serial_number'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 31;
+			$errorCode =  31;
 			$missingQueryFields = implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
@@ -195,7 +195,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$jsonUpdateData = null;
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 32;
+			$errorCode =  32;
 			$error = "There is no update tag or update tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -209,7 +209,7 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 
 		// service provider validity check
 		if (!$this->validateServiceProvider($this->update['service_provider'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 36;
+			$errorCode =  36;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->update['service_provider']));
 			return false;
 		}
@@ -233,16 +233,16 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$found = $updateResult['n'];
 		} catch (\Exception $e) {
 			$exception = $e;
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 33;
+			$errorCode =  33;
 			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$count) {
 			if ($found) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 35;
+				$errorCode =  35;
 			} else {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 34;
+				$errorCode =  34;
 			}
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}

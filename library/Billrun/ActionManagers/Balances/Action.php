@@ -20,8 +20,7 @@ abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionMana
 	 */
 	public function __construct($params) {
 		$this->collection = Billrun_Factory::db()->balancesCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/balances/errors.ini");
-		parent::__construct($params);
+		$this->baseCode = 1200;
 	}
 
 	/**

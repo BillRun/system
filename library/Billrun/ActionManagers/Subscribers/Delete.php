@@ -59,7 +59,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
+				$errorCode =  15;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
@@ -70,7 +70,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 				$this->closeBalances($rowToDelete['sid'], $rowToDelete['aid']);
 			}
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 11;
+			$errorCode =  11;
 			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
@@ -108,7 +108,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 12;
+			$errorCode =  12;
 			$error = "Failed decoding JSON data";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -116,7 +116,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 
 		// If there were errors.
 		if (!$this->setQueryFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 13;
+			$errorCode =  13;
 			$error = "Subscribers delete received invalid query values";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -133,7 +133,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	protected function setQueryFields($queryData) {
 
 		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 14;
+			$errorCode =  14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

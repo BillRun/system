@@ -71,7 +71,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if (!$manager) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
+			$errorCode =  14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -250,7 +250,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if ($outputDocuments === false) {
 			$success = false;
 		} elseif (!$outputDocuments) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+			$errorCode =  21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		} else {
 			$documents = $outputDocuments;
@@ -313,7 +313,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if (!$upsertNeeded) {
 			return true;
 		}
-		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
+		$errorCode =  15;
 		$this->reportError($errorCode, Zend_Log::NOTICE);
 		return false;
 	}
@@ -339,7 +339,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		// If the JSON is invalid
 		if($upsertNeeded && ($jsonUpdateData==null)) {
 			// [Balances error] 1227
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 27;
+			$errorCode =  27;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($update,1)));
 			return false;
 		}
@@ -409,7 +409,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
+			$errorCode =  16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -417,13 +417,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if ($this->query === null) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
+			$errorCode =  17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		// No filter found.
 		else if (empty($this->query)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
+			$errorCode =  18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -441,7 +441,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		// Check that sid exists.
 		if (!$sid) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 19;
+			$errorCode =  19;
 			$error = "Update action did not receive a subscriber ID!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -480,7 +480,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->constructOperation($recurring);
 		if(!$this->updaterOptions['operation']) {
 			// [Balances Error 1228]
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 28;
+			$errorCode =  28;
 			$this->reportError($errorCode, Zend_Log::WARN);
 			return false;
 		}

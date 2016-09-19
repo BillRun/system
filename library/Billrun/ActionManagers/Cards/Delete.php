@@ -54,7 +54,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 10;
+			$errorCode =  10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -62,7 +62,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (empty($jsonQueryData['batch_number'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 11;
+			$errorCode =  11;
 			$missingQueryFields = implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
@@ -101,13 +101,13 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 			$deleteResult = $this->removeCreated($bulkOptions);
 			$count = $deleteResult['n'];
 		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 12;
+			$errorCode =  12;
 			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$count) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 

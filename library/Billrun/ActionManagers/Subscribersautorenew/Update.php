@@ -44,7 +44,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return true;
 		}
 
-		$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
+		$errorCode = 14;
 		$this->reportError($errorCode);
 		return false;
 	}
@@ -76,12 +76,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$success = $this->handleResult($count, $found);
 		} catch (\Exception $e) {
 			$success = false;
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
+			$errorCode = 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$updateResult) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
+			$errorCode = 11;
 			$this->reportError($errorCode);
 		}
 
@@ -103,13 +103,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 12;
+			$errorCode = 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		if (!isset($jsonUpdateData['to'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 13;
+			$errorCode = 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -160,7 +160,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function populateUpdateQuery($jsonUpdateData) {
 		$interval = $this->getInterval($jsonUpdateData);
 		if ($interval === false) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			$errorCode = 41;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
 			return false;
 		}
@@ -289,7 +289,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 
 		if ($subRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
+			$errorCode = 14;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subQuery['sid']));
 			return false;
 		}
@@ -311,7 +311,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if ($planRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
+			$errorCode = 15;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -360,7 +360,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if (!isset($queryData[$field]) || empty($queryData[$field])) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 16;
+				$errorCode = 16;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 				return false;
 			}
@@ -380,14 +380,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 17;
+			$errorCode = 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// If there were errors.
 		if ($this->setQueryFields($jsonQueryData) === FALSE) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 18;
+			$errorCode = 18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -422,7 +422,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function handleDuplicates() {
 		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
 		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
+			$errorCode = 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 
 			// TODO: Pelephone does not want this to return a failure indication.
