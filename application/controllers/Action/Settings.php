@@ -32,47 +32,42 @@ class SettingsAction extends ApiAction {
 	public function execute() {
 		$this->allowed();
 		$request = $this->getRequest();
-		try {
-			$this->initializeModel();
-			$category = $request->get('category');
-			$rawData = $request->get('data');
-			$data = json_decode($rawData, TRUE);
-			if (json_last_error()) {
-				$this->setError('Illegal data', $request->getPost());
-				return TRUE;
-			}
-			if (!($category)) {
-				$this->setError('Missing category parameter', $request->getPost());
-				return TRUE;
-			}
-			// TODO: Create action managers for the settings module.
-			$action = $request->get('action');
-			$success = true;
-			$output = array();
-			if ($action === 'set') {
-				$success = $this->model->updateConfig($category, $data);
-				
-				// Get all the errors.
-				$errors = $this->model->getInvalidFields();
-				if(!empty($errors)) {
-					$output = $errors;
-				}
-			} else if ($action === 'unset') {
-				$success = $this->model->unsetFromConfig($category, $data);
-			} else {
-				$output = $this->model->getFromConfig($category, $data);
-			}
-			
-			$this->getController()->setOutput(array(array(
-					'status' => $success ? 1 : 0,
-					'desc' => $success ? 'success' : 'error',
-					'input' => $request->getPost(),
-					'details' => is_bool($output)? array() : $output,
-			)));
-		} catch (Exception $ex) {
-			$this->setError($ex->getMessage(), $request->getPost());
+		$this->initializeModel();
+		$category = $request->get('category');
+		$rawData = $request->get('data');
+		$data = json_decode($rawData, TRUE);
+		if (json_last_error()) {
+			$this->setError('Illegal data', $request->getPost());
 			return TRUE;
 		}
+		if (!($category)) {
+			$this->setError('Missing category parameter', $request->getPost());
+			return TRUE;
+		}
+		// TODO: Create action managers for the settings module.
+		$action = $request->get('action');
+		$success = true;
+		$output = array();
+		if ($action === 'set') {
+			$success = $this->model->updateConfig($category, $data);
+
+			// Get all the errors.
+			$errors = $this->model->getInvalidFields();
+			if(!empty($errors)) {
+				$output = $errors;
+			}
+		} else if ($action === 'unset') {
+			$success = $this->model->unsetFromConfig($category, $data);
+		} else {
+			$output = $this->model->getFromConfig($category, $data);
+		}
+
+		$this->getController()->setOutput(array(array(
+				'status' => $success ? 1 : 0,
+				'desc' => $success ? 'success' : 'error',
+				'input' => $request->getPost(),
+				'details' => is_bool($output)? array() : $output,
+		)));
 		return TRUE;
 	}
 
