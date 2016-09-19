@@ -31,12 +31,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected $availableBalances = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying balances"));
-	}
-
-	/**
 	 * Query the balances collection to receive data in a range.
 	 */
 	protected function queryRangeBalances() {
@@ -125,9 +119,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => 'Success querying balances',
 			'details' => $returnData
 		);
 		return $outputResult;

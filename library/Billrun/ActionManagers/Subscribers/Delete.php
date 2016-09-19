@@ -26,12 +26,6 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	protected $keepBalances = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success deleting subscriber"));
-	}
-
-	/**
 	 * Close all the open balances for a subscriber.
 	 */
 	protected function closeBalances($sid, $aid) {
@@ -69,16 +63,15 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 				// Close balances.
 				$this->closeBalances($rowToDelete['sid'], $rowToDelete['aid']);
 			}
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$errorCode =  11;
 			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $errorCode,
+			'status' => 1,
+			'desc' => "Success deleting subscriber",
 		);
 
 		return $outputResult;

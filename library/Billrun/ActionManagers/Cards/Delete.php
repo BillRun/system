@@ -20,12 +20,6 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 	protected $delete = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success deleting cards"));
-	}
-
-	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
@@ -100,9 +94,8 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		try {
 			$deleteResult = $this->removeCreated($bulkOptions);
 			$count = $deleteResult['n'];
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$errorCode =  12;
-			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
@@ -112,12 +105,9 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				('Deleted ' . $count . ' card(s)') :
-				($error)
+			'status' => 1,
+			'desc' => "Success deleting cards",
+			'details' => 'Deleted ' . $count . ' card(s)'
 		);
 
 		return $outputResult;

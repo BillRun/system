@@ -27,12 +27,6 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	protected $queryInRange = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying subscriber"));
-	}
-
-	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
 	protected function queryRangeSubscribers() {
@@ -48,9 +42,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$rawItem = $line->getRawData();
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$errorCode =  20;
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -68,13 +61,12 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			$returnData = array();
-			$this->reportError( 23);
+			$this->reportError(23);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying subscriber",
 			'details' => $returnData
 		);
 		return $outputResult;

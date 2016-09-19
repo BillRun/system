@@ -24,12 +24,6 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 	protected $serialRange;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success updating cards"));
-	}
-
-	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
@@ -196,7 +190,6 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
 			$errorCode =  32;
-			$error = "There is no update tag or update tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -231,10 +224,9 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 			$updateResult = $this->collection->update($this->query, array('$set' => $this->update), array('multiple' => 1));
 			$count = $updateResult['nModified'];
 			$found = $updateResult['n'];
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$exception = $e;
 			$errorCode =  33;
-			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
@@ -248,12 +240,9 @@ class Billrun_ActionManagers_Cards_Update extends Billrun_ActionManagers_Cards_A
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				('Updated ' . $count . ' card(s)') :
-				($error)
+			'status' => 1,
+			'desc' => "Success updating cards",
+			'details' => 'Updated ' . $count . ' card(s)'
 		);
 
 		return $outputResult;

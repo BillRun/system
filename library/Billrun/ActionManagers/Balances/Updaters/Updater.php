@@ -10,9 +10,10 @@
  * Description of Updater
  *
  */
-abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 
 	use Billrun_FieldValidator_ServiceProvider;
+	use Billrun_ActionManagers_ErrorReporter;
 
 	const UNLIMITED_DATE = "30 December 2099";
 
@@ -39,11 +40,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	public function __construct($options) {
 		// If it is not set, the default is used.
 		$this->updateOperation = $options['operation'];
-
-		// Get the balances errors.
-		if (isset($options['errors'])) {
-			$this->errors = $options['errors'];
-		}
+		
+		// TODO: This will change, it's only here while this logic is executed
+		// in the backend instead of the front end.
+		$this->baseCode = 1200;
 	}
 
 	public function getType() {
@@ -220,7 +220,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 		$subscriberQuery = $this->getSubscriberQuery($subscriberId);
 
 		$coll = Billrun_Factory::db()->subscribersCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-		;
+		
 		$results = $coll->query($subscriberQuery)->cursor()->sort(array('from' => 1))->limit(1)->current();
 		if ($results->isEmpty()) {
 			$errorCode =  12;

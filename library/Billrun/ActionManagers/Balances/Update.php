@@ -52,7 +52,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success updating balances"));
+		parent::__construct(array());
 		$this->collection->setReadPreference(MongoClient::RP_PRIMARY, array());
 	}
 
@@ -240,45 +240,32 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = true;
-
 		// Get the updater for the filter.
 		$this->updater = $this->getAction();
 
 		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
-		if ($outputDocuments === false) {
-			$success = false;
-		} elseif (!$outputDocuments) {
+		if(!$outputDocuments) {
 			$errorCode =  21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-		} else {
-			$documents = $outputDocuments;
-			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
-			foreach ($documents as $document) {
-				$subscriber = $document['subscriber'];
-				$balance = $document['balance'];
-				$source = $document['source'];
-				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
-			}
+		}
+		
+		$documents = $outputDocuments;
+		// Write the action to the lines collection.
+		$reportedDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
+		foreach ($documents as $document) {
+			$subscriber = $document['subscriber'];
+			$balance = $document['balance'];
+			$source = $document['source'];
+			Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 		}
 
-		if ($success) {
-			$this->stripTx($outputDocuments);
-		} else {
-			$updaterError = $this->updater->getError();
-			if ($updaterError) {
-				$this->error = $updaterError;
-				$this->errorCode = $this->updater->getErrorCode();
-			}
-		}
+		$this->stripTx($reportedDocuments);
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+			'status' => 1,
+			'desc' => "Success updating balances",
+			'details' => ($reportedDocuments) ? $reportedDocuments : 'Empty balance',
 		);
 		return $outputResult;
 	}

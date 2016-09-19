@@ -25,12 +25,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected $inner_hash;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating cards"));
-	}
-
-	/**
 	 * Get the array of fields to be inserted in the create record from the user input.
 	 * @return array - Array of fields to be inserted.
 	 */
@@ -70,7 +64,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
 			$errorCode = 0;
-			$error = "There is no create tag or create tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -150,7 +143,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
 		);
-		$exception = null;
 		try {
 			if (!$this->secretExists()) {
 				$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
@@ -158,31 +150,23 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 				$errorCode =  5;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			}
-		} catch (\Exception $e) {
-			$exception = $e;
-			$errorCode =  2;
-			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		} catch (\MongoException $e) {
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::NOTICE);
 			$res = $this->removeCreated($bulkOptions);
+			$errorCode = 2;
+			$this->reportError($errorCode);
 		}
 
-		// Error code 0 is success
-		if (!$this->errorCode) {
-			$res = $this->cleanInnerHash($bulkOptions);
-		}
+		$res = $this->cleanInnerHash($bulkOptions);
 
 		array_walk($this->cards, function (&$card, $idx) {
 			unset($card['secret']);
 		});
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				(json_encode($this->cards)) :
-				('Batch Cancelled')
+			'status' => 1,
+			'desc' => "Success creating cards",
+			'details' => json_encode($this->cards)
 		);
 		return $outputResult;
 	}

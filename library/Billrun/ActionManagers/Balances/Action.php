@@ -11,8 +11,9 @@
  *
  */
 // TODO: Make an interface for these classes.
-abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction {
-
+abstract class Billrun_ActionManagers_Balances_Action  {
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 
 	/**

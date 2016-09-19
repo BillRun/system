@@ -21,12 +21,6 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	protected $page = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying cards"));
-	}
-
-	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
@@ -93,11 +87,9 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				unset($rawItem['secret']);
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, array('from', 'to', 'creation_time', 'activation_datetime'));
 			}
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$errorCode =  22;
-			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			$returnData = array();
 		}
 
 		if (!$returnData) {
@@ -106,9 +98,8 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying cards",
 			'details' => $returnData
 		);
 		return $outputResult;

@@ -67,7 +67,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

@@ -24,12 +24,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected $query = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating subscriber"));
-	}
-
-	/**
 	 * Get the query to run to get a subscriber from the db.
 	 * @return array Query to run in the mongo.
 	 */
@@ -78,16 +72,15 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 				$entity = new Mongodloid_Entity($this->query);
 				$this->collection->save($entity, 1);
 			}
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$errorCode =  1;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success creating subscriber",
 		);
 
 		if (isset($entity)) {

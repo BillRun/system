@@ -10,8 +10,10 @@
  * This is a prototype for a subscriber action.
  *
  */
-abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Subscribers_Action {
 
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 	
 	/**
