@@ -7,17 +7,80 @@
  */
 
 /**
- * This class represents a no permissions exception in the billrun system
+ * This class represents an API exception in the billrun system
  *
  * @package  Exceptions
  * @since    5.2
  */
-class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
+class Billrun_Exceptions_Api extends Billrun_Exceptions_Base {
 	
-	const ERROR_CODE = 17575;
+	const ERROR_CODE = 17577;
 	
-	public function __construct() {
-		parent::__construct("No permissions.", self::ERROR_CODE);
+	/**
+	 * List of invalid fields.
+	 * @var array
+	 */
+	protected $apiCode = 0;
+	
+	/**
+	 * Array of all api error codes.
+	 * @var array
+	 */
+	protected $errors = array();
+	
+	protected $args = array();
+	
+	/**
+	 * Create a new instance of the API exception class
+	 * @param integer $apiCode - Api code to report.
+	 * @param array $arguments - Arguments to be printed to the messsage.
+	 */
+	public function __construct($apiCode, $arguments = array()) {
+		parent::__construct("API error.", self::ERROR_CODE);
+		$this->initErrors();
+		$this->apiCode = $apiCode;
+		$this->args = $arguments;
+	}
+	
+	/**
+	 * Initialize the errors array
+	 */
+	protected function initErrors() {
+		$iniDirectory = new RecursiveDirectoryIterator(APPLICATION_PATH . "/conf");
+		$iniIterator = new RecursiveIteratorIterator($iniDirectory);
+		$iniRegex = new RegexIterator($iniIterator, '/errors.ini$/i', RecursiveRegexIterator::GET_MATCH);
+		
+		$iniArray = array_keys(iterator_to_array($iniRegex));
+		foreach ($iniArray as $iniFile) {
+			$this->loadIniFile($iniFile);
+		}
+		Billrun_Factory::log("Done initializing error codes");
+	}
+	
+	/**
+	 * Load the contents of an error ini file
+	 * @param string $iniFile
+	 */
+	protected function loadIniFile($iniFile) {
+		// Check if exists.
+		if(!file_exists($iniFile)) {
+			Billrun_Factory::log("File does not exist: " . print_r($iniFile,1));
+			return;
+		}
+		
+		// Read the contents
+		$iniContent = parse_ini_file($iniFile);
+		
+		// Check that it has errors.
+		if(!isset($iniContent['errors'])) {
+			Billrun_Factory::log("Invalid ini error file: " . print_r($iniFile,1));
+			return;
+		}
+		
+		$iniErrors = $iniContent['errors'];
+		
+		// Merge the results.
+		$this->errors += $iniErrors;
 	}
 	
 	/**
@@ -25,7 +88,11 @@ class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
 	 * @return array.
 	 */
 	protected function generateDisplay() {
-		return $this->message;
+		$errorMessage = "General error.";
+		if(isset($this->errors[$this->apiCode])) {
+			$errorMessage = vsprintf($this->errors[$this->apiCode], $this->args);
+		}
+		return array("code" => $this->apiCode, "desc" => $errorMessage);
 	}
 
 }
