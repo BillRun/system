@@ -24,7 +24,7 @@ abstract class Billrun_Exceptions_Base extends Exception{
 		$output['message'] = $this->message;
 		$output['display'] = $this->generateDisplay();
 		
-		return $output;
+		return json_encode($output);
 	}
 	
 	/**
