@@ -122,7 +122,7 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			return false;
 		}
 
-		$duplicateError = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
+		$duplicateError = 40;
 
 		$parseErrorCode = $updater->getErrorCode();
 		// Prevent duplicate records
