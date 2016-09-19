@@ -24,12 +24,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	 */
 	protected $sid;
 
-	const DEFAULT_ERROR = "Success updating auto renew by delta";
-
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -59,18 +56,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 		$defaultRecord = $this->getDefaultRecord();
 
-		$success = $deltaUpdater->execute($query, $this->expected, $defaultRecord);
-
-		if ($deltaUpdater->getErrorCode() != 0) {
-			$this->error = $deltaUpdater->getError();
-			$this->errorCode = $deltaUpdater->getErrorCode();
-			$success = false;
-		}
+		$deltaUpdater->execute($query, $this->expected, $defaultRecord);
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'error_code' => $this->errorCode,
-			'desc' => $this->error,
+			'status' => 1,
+			'desc' => "Success updating auto renew by delta",
 			'details' => $this->expected
 		);
 		return $outputResult;

@@ -20,12 +20,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected $query = array();
 
-	const DEFAULT_ERROR = "Success querying auto renew";
-
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -147,8 +144,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 				}
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");
+		} catch (\MongoException $e) {
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -166,17 +163,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			// If no internal error occured, report on empty data.
-			if ($this->error == self::DEFAULT_ERROR) {
-				$errorCode = 1;
-				$this->reportError($errorCode, Zend_Log::NOTICE);
-			}
-			$returnData = array();
+			$errorCode = 1;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying auto renew",
 			'details' => $returnData
 		);
 		return $outputResult;

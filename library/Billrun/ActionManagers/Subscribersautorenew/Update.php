@@ -29,7 +29,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success upserting auto renew"));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -74,7 +73,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$count = $updateResult['nModified'] + (isset($updateResult['nUpserted']) ? $updateResult['nUpserted'] : 0);
 			$found = $updateResult['n'];
 			$success = $this->handleResult($count, $found);
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$success = false;
 			$errorCode = 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -86,9 +85,8 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success upserting auto renew",
 			'details' => ($updateResult) ? $updateResult : 'No results',
 		);
 		return $outputResult;
