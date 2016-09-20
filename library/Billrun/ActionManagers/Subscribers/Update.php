@@ -84,16 +84,42 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		foreach ($this->update as $field => $value) {
 			$new[$field] = $value;
 		}
-		$newEntity = new Billrun_Subscriber_Entity($new, $oldEntity['plan']);
+		
+		$oldPlan = null;
+		$oldServices = array();
+		if(isset($oldEntity['plan'])) {
+			$oldPlan = $oldEntity['plan'];
+		}
+		if(isset($oldEntity['services'])) {
+			$oldServicesRaw = $oldEntity['services'];
+			$oldServices = $this->filterOldServices($oldServicesRaw);
+		}
+		
+		$newEntity = new Billrun_Subscriber_Entity($new, $oldPlan, $oldServices);
 		$this->collection->save($newEntity, 1);
 		return $newEntity;
 	}
 	
+	protected function filterOldServices($oldServices) {
+		$filtered = array();
+		// Remove old service entities.
+		foreach ($oldServices as $service) {
+			// Check if it is deactivated.
+			if(isset($service['deactivation'])) {
+				continue;
+			}
+			
+			$filtered[] = $service;
+		}
+		return $filtered;
+	}
+	
 	protected function closeEntity($entity) {
 		$entity['to'] = $this->time;
+		
 		$this->collection->save($entity, 1);
 	}
-
+	
 	/**
 	 * Parse the received request.
 	 * @param type $input - Input received.

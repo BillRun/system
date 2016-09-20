@@ -50,7 +50,7 @@ class Billrun_DataTypes_Subscriberservice {
 		if(isset($options['activation'])) {
 			$this->activation = $options['activation'];
 		} else {
-			$this->activation = new MongoDate();
+			$this->activation = time();
 		}
 		
 		if(isset($options['deactivation'])) {
@@ -69,6 +69,13 @@ class Billrun_DataTypes_Subscriberservice {
 	public function isValid() {
 		if(empty($this->name) || !is_string($this->name) || 
 		  (!is_float($this->price)) && !Billrun_Util::IsIntegerValue($this->price)) {
+			Billrun_Factory::log("Invalid parameters in subscriber service. name: " . print_r($this->name,1) . " price: " . print_r($this->price,1));
+			return false;
+		}
+		
+		// Validate dates.
+		if($this->deactivation && ($this->deactivation < $this->activation)) {
+			Billrun_Factory::log("Invalid dates in subscriber service");
 			return false;
 		}
 		
@@ -110,22 +117,38 @@ class Billrun_DataTypes_Subscriberservice {
 	protected function calcFractionOfMonth($billrunKey) {
 		$start = Billrun_Billrun::getStartTime($billrunKey);
 		
+		// If the billing start date is after the deactivation return zero
+		if($this->deactivation && ($start > $this->deactivation)) {
+			return 0;
+		}
+		
 		// If the billing start date is after the activation date, return a whole
 		// fraction representing a full month.
-		if($start > $this->activation) {
+		if(!$this->deactivation && ($start > $this->activation)) {
 			return 1;
 		}
 		
 		$end = Billrun_Billrun::getEndTime($billrunKey);
-		
-		
+			
 		// Validate the dates.
 		if(!$this->validateCalcFractionOfMonth($billrunKey, $start, $end)) {
 			return 0;
 		}
 		
+		// Take the termination date.
+		$termination = $end;
+		if($this->deactivation && ($end > $this->deactivation)) {
+			$termination = $this->deactivation;
+		}
+		
+		// Take the starting
+		$starting = $start;
+		if($this->activation > $start) {
+			$starting = $this->activation;
+		}
+		
 		// Set the start date to the activation date.
-		return $this->calcFraction($this->activation, $end);
+		return $this->calcFraction($starting, $termination);
 	}
 	
 	/**

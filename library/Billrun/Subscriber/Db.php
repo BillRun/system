@@ -393,17 +393,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 			return array();
 		}
 		
-		if(!isset($this->data['from'])) {
-			Billrun_Factory::log("Invalid subscriber! No from value. data: " . print_r($this->data,1), Zend_Log::ALERT);
-			return array();
-		}
-		
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		
-		// Get the start date.
-		$subscriberActivation = strtotime($this->data['from']);
 		
 		foreach ($services as $service) {
 			if(!isset($service['name'])) {
@@ -416,10 +408,8 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				continue;
 			}
 			
-			$serviceData = $serviceEntity->getRawData();
+			$serviceData = array_merge($service, $serviceEntity->getRawData());
 			
-			// Set the start date.
-			$serviceData['activation'] = $subscriberActivation;
 			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
 			if(!$serviceValue->isValid()) {
 				continue;
