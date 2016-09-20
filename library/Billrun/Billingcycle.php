@@ -10,13 +10,22 @@
  * This class represents the billing cycle.
  *
  * @package  DataTypes
- * @since    4
+ * @since    5.2
  * @todo Create unit tests for this module
  */
 class Billrun_Billingcycle {
-	protected static $billruKey = null;
-	protected static $startTime = null;	
-	protected static $endTime = null;	
+	
+	/**
+	 * Table holding the values of the charging end dates.
+	 * @var Billrun_DataTypes_CachedChargingTimeTable
+	 */
+	protected $cycleEndTable = null;
+	
+	/**
+	 * Table holding the values of the charging start dates.
+	 * @var Billrun_DataTypes_CachedChargingTimeTable
+	 */
+	protected $cycleStartTable = null;
 	
 	/**
 	 * returns the end timestamp of the input billing period
@@ -24,18 +33,12 @@ class Billrun_Billingcycle {
 	 * @return type int
 	 */
 	public static function getEndTime($key) {
-		if(!$key) {
-			return null;
-		}
-		if(self::$endTime && $key == self::$billruKey) {
-			return self::$endTime;
+		// Create the table if not already initialized
+		if(!self::$cycleEndTable) {
+			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
 		
-		self::$billruKey = $key;
-		$datetime = self::getDatetime();
-		self::$endTime = strtotime($datetime);
-		self::$startTime = strtotime('-1 month', strtotime($datetime));
-		return self::$endTime;
+		return self::$cycleEndTable->get($key);
 	}
 
 	/**
@@ -44,19 +47,12 @@ class Billrun_Billingcycle {
 	 * @return type int
 	 */
 	public static function getStartTime($key) {
-		if(!$key) {
-			return null;
+		// Create the table if not already initialized
+		if(!self::$cycleStartTable) {
+			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
-		
-		if(self::$startTime && $key == self::$billruKey) {
-			return self::$startTime;
-		}
-		
-		self::$billruKey = $key;
-		$datetime = self::getDatetime();
-		self::$endTime = strtotime($datetime);
-		self::$startTime = strtotime('-1 month', strtotime($datetime));
-		return self::$startTime;
+
+		return self::$cycleStartTable->get($key);
 	}
 	
 	/**
@@ -65,7 +61,7 @@ class Billrun_Billingcycle {
 	 */
 	protected static function getDatetime() {
 		$dayofmonth = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
-		return self::$billruKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return self::$billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
 	/**

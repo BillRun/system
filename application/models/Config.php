@@ -132,8 +132,8 @@ class ConfigModel {
 			throw new Exception('Unknown category ' . $category);
 		}
 		
-		Billrun_Config::translateComplex($valueInCategory);
-		return $valueInCategory;
+		$translated = Billrun_Config::translateComplex($valueInCategory);
+		return $translated;
 	}
 
 	protected function extractComplexFromArray($array) {
