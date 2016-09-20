@@ -30,17 +30,32 @@ class Billrun_DataTypes_Subscriberservice {
 	protected $activation = null;
 	
 	/**
+	 * Epoch value representing the deactivation of the service.
+	 * @var int
+	 */
+	protected $deactivation = null;
+	
+	/**
 	 * Create a new instance of the Subscriberservice class
 	 * @param array $options - Array of options containing, price, name and activation.
 	 */
 	public function __construct(array $options) {
-		if(!isset($options['name'], $options['price'], $options['activation'])) {
+		if(!isset($options['name'], $options['price'])) {
 			return;
 		}
 		
 		$this->name = $options['name'];
 		$this->price = $options['price'];
-		$this->activation = $options['activation'];
+		
+		if(isset($options['activation'])) {
+			$this->activation = $options['activation'];
+		} else {
+			$this->activation = new MongoDate();
+		}
+		
+		if(isset($options['deactivation'])) {
+			$this->deactivation = $options['deactivation'];
+		}
 	}
 	
 	public function getName() {
@@ -83,7 +98,7 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		return array('name' => $this->name, "price" => $this->price);
+		return array('name' => $this->name, "price" => $this->price, "activation" => $this->activation, "deactivation" => $this->deactivation);
 	}
 	
 	/**
