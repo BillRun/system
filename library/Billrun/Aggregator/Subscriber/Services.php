@@ -35,6 +35,7 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 	protected function getSubscribersInCycle($sid, $billrunKey) {
 		$query = array();
 		$query['sid'] = $sid;
+		$query['type'] = "subscriber";
 		$start = Billrun_Billrun::getStartTime($billrunKey);
 		$query['to'] = array('$gte' => $start);
 		$end = Billrun_Billrun::getEndTime($billrunKey);
