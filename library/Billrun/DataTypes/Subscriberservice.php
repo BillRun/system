@@ -11,16 +11,17 @@
  */
 class Billrun_DataTypes_Subscriberservice {
 	protected $name = null;
-	protected $from = null;
-	protected $to = null;
+//	protected $from = null;
+//	protected $to = null;
 	
 	public function __construct(array $options) {
-		if(!isset($options['from'], $options['to'], $options['name'])) {
+//		if(!isset($options['from'], $options['to'], $options['name'])) {
+		if(!isset($options['name'])) {
 			return;
 		}
 		
-		$this->to = $options['to'];
-		$this->from = $options['from'];
+//		$this->to = $options['to'];
+//		$this->from = $options['from'];
 		$this->name = $options['name'];
 	}
 	
@@ -29,10 +30,20 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return true if valid.
 	 */
 	public function isValid() {
-		if(empty($this->name) || !is_string($this->name) || empty($this->from) || empty($this->to)) {
+//		if(empty($this->name) || !is_string($this->name) || empty($this->from) || empty($this->to)) {
+		if(empty($this->name) || !is_string($this->name)) {
 			return false;
 		}
 		
+		// Validate
+//		if($this->validateDates()) {
+//			return false;
+//		}
+		
+		return $this->checkDB();
+	}
+	
+	protected function validateDates() {
 		// Get the date strings.
 		$from = strtotime($this->from);
 		$to = strtotime($this->to);
@@ -47,7 +58,11 @@ class Billrun_DataTypes_Subscriberservice {
 			return false;
 		}
 		
-		return $this->checkDB($from);
+		// Translate the internal values
+		$this->from = $from;
+		$this->to = $to;
+		
+		return true;
 	}
 	
 	/**
@@ -55,13 +70,16 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @param integer $from - From timestamp
 	 * @return boolean True if the service exists in the mongo
 	 */
-	protected function checkDB($from) {
+	protected function checkDB($from=null) {
+		if(!$from) {
+			$from = time();
+		}
+		
 		// Check in the mongo.
-		$ratesColl = Billrun_Factory::db()->ratesCollection();
+		$servicesColl = Billrun_Factory::db()->servicesCollection();
 		$serviceQuery = Billrun_Utils_Mongo::getDateBoundQuery($from, true);
 		$serviceQuery['name'] = $this->name;
-		$serviceQuery['type'] = 'service';
-		$service = $ratesColl->query($serviceQuery)->cursor()->current();
+		$service = $servicesColl->query($serviceQuery)->cursor()->current();
 		
 		return !$service->isEmpty();
 	}
@@ -71,6 +89,7 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
+		return array('name' => $this->name);
+//		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
 	}
 }
