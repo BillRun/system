@@ -74,7 +74,7 @@ class Billrun_Tariff_Util {
 			// Check that it is an array.
 			// TODO: Use a rate class.
 			if(!is_array($currRate)) {
-				Billrun_Factory::log("Invalid rate in tariff utils.", Zend_Log::WARN);
+				Billrun_Factory::log("Invalid rate in tariff utils." . print_r($currRate,1), Zend_Log::WARN);
 				continue;
 			}
 			
