@@ -693,7 +693,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		
 		if ($row['charging_type'] === 'postpaid') {
 			$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
-		} else if (!$this->balance) {
+		} else if (!empty($this->balance)) {
 			$balance_totals_key = $this->balance->getBalanceChargingTotalsKey($usage_type);
 		} else {
 			$balance_totals_key = $row['usaget'];
