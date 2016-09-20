@@ -18,16 +18,25 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 	 */
 	protected function getSubscriberServices($services) {
 		if(empty($services) || !is_array($services)) {
-			return;
+			return array();
 		}
 		
 		$proccessedServices = array();
 		foreach ($services as $current) {
-			$serviceObj = new Billrun_DataTypes_Subscriberservice($current);
+			// Check that it has the name
+			if(!isset($current['name'])) {
+				Billrun_Factory::log("Invalid service: " . print_r($current,1));
+				continue;
+			}
+			
+			$serviceObj = new Billrun_DataTypes_Subscriberservice($current['name']);
 			if(!$serviceObj->isValid()) {
 				continue;
 			}
-			$proccessedServices[] = $serviceObj->getService();
+			// Initialize the activation date to now.
+			$serviceData = $serviceObj->getService();
+			$serviceData['activation'] = strtotime("midnight");
+			$proccessedServices[] = $serviceData;
 		}
 		
 		return $proccessedServices;

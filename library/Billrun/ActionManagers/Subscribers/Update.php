@@ -47,6 +47,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				$oldEntity['plan_deactivation'] = new MongoDate();
 			}
 			
+			// Close all the services
+			$closedServices = $this->closeServices($newEntity, $oldEntity);
+			if($closedServices) {
+				$oldEntity['services'] = $closedServices;
+			}
+			
 			$this->closeEntity($oldEntity);
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
@@ -116,8 +122,51 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	
 	protected function closeEntity($entity) {
 		$entity['to'] = $this->time;
-		
 		$this->collection->save($entity, 1);
+	}
+	
+	protected function extractServices($record) {
+		if(!isset($record['services'])) {
+			return array();
+		}
+		
+		return $record['services'];
+	}
+	
+	/**
+	 * Get the array of closed services according to the new record
+	 * @param type $new
+	 * @param type $old
+	 * @return type
+	 */
+	protected function closeServices($new, $old) {
+		$oldServices = $this->extractServices($old);
+		if(!$oldServices) {
+			return array();
+		}
+		
+		$newServices = $this->extractServices($new);
+		
+		// Get deactivated
+		$deactivated = array();
+		foreach ($newServices as $newService) {
+			if(isset($newService['deactivation'])) {
+				$deactivated[$newService['name']] = $newService['deactivation'];
+			}
+		}
+		
+		// Go through the old services
+		foreach ($oldServices as &$oldService) {
+			if(isset($oldService['deactivation'])) {
+				continue;
+			}
+			$name = $oldService['name'];
+			if(isset($deactivated[$name])) {
+				$oldService['deactivation'] = $deactivated[$name];
+			}
+		}
+		
+		return $oldServices;
 	}
 	
 	/**
@@ -209,13 +258,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 				continue;
 			}
 			
-			// TODO: Create some sort of polymorphic behaviour to correctly handle
-			// the updating fields.
-			if($fieldName === 'services') {
-				$toSet = $this->getSubscriberServices($updateData['services']);
-			} else {
-				$toSet = $updateData[$fieldName];
-			}
+			$toSet = $updateData[$fieldName];
 			
 			if(empty($toSet)) {
 				continue;

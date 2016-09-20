@@ -32,6 +32,24 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 		Billrun_Util::logFailedServiceRow($rawData);
 	}
 	
+	protected function getSubscribersInCycle($sid, $billrunKey) {
+		$query = array();
+		$query['sid'] = $sid;
+		$start = Billrun_Billrun::getStartTime($billrunKey);
+		$query['to'] = array('$gte' => $start);
+		$end = Billrun_Billrun::getEndTime($billrunKey);
+		$query['from'] = array('$lt' => $end);
+		
+		$subColl = Billrun_Factory::db()->subscribersColection();
+		$cursor = $subColl->query($subColl)->cursor();
+		
+		$subscribers = array();
+		foreach ($cursor as $subscriberRecord) {
+			$subscribers[] = $subscriberRecord->getRawData();
+		}
+		return $subscribers;
+	}
+	
 	/**
 	 * Get the services
 	 * @param type $billrunKey
@@ -39,27 +57,24 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 	 * @return type
 	 */
 	protected function getData($billrunKey, Billrun_Subscriber $subscriber) {
+		// Get all the active subscriber records for the current cycle with the input sid.
+		$subscribers = $this->getSubscribersInCycle($subscriber->getId(), $billrunKey);
+		$servicesAggregator = new Billrun_Subscriber_Aggregate_Services();
+		$aggregated = $servicesAggregator->aggregate($subscribers, $billrunKey);
+		
 		$serviceEntries = array();
-		$services = $subscriber->getServices($billrunKey);
-		foreach ($services as $service) {
-			$servicesChargeEntries = array_merge($serviceEntries, $this->getChargeServicesEntries($subscriber, $billrunKey, $service));
-			$serviceEntries = $servicesChargeEntries;
+		foreach ($aggregated as $name => $charge) {
+			if(!$charge) {
+				continue;
+			}
+			$serviceEntry = $this->getServiceEntry($subscriber, $billrunKey, $name, $charge);
+			$serviceEntries[] = $serviceEntry;
 		}
 
 		return $serviceEntries;
 	}
 	
-	protected function getChargeServicesEntries($subscriber, $billrunKey, $service) {
-		$charge = $service->getPrice($billrunKey);
-		if (isset($charge)) {
-			$serviceEntries = array($this->getServiceEntry($subscriber, $billrunKey, $service, $charge));
-		} else {
-			$serviceEntries = array();
-		}
-		return $serviceEntries;
-	}
-	
-	protected function getServiceEntry(Billrun_Subscriber $subscriber, $billrunKey, $service, $charge) {
+	protected function getServiceEntry(Billrun_Subscriber $subscriber, $billrunKey, $serviceName , $charge) {
 		$start = Billrun_Billrun::getStartTime($billrunKey);
 		$startTimestamp = strtotime($start);
 		$entry = new Mongodloid_Entity(array(
@@ -71,11 +86,11 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 			'usaget' => 'service',
 			'urt' => new MongoDate($startTimestamp),
 			'aprice' => $charge,
-			'service' => $service->getName(),
+			'service' => $serviceName,
 //			'plan_ref' => $plan->createRef(),
 			'process_time' => new MongoDate(),
 		));
-		$stamp = md5($subscriber->aid . '_' . $subscriber->sid . $service->getName() . '_' . $start . $billrunKey);
+		$stamp = md5($subscriber->aid . '_' . $subscriber->sid . $serviceName . '_' . $start . $billrunKey);
 		$entry['stamp'] = $stamp;
 		return $entry;
 	}

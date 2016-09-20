@@ -12,24 +12,52 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 			$values['plan_activation'] = new MongoDate();
 		}
 		
-		// Services time
-		$serviceTime = strtotime("midnight");
-		
-		if(is_array($values['services'])) {
-			// Get the diff
-			$addedServices = array_diff($services, $values['services']);
-			$removedServices = array_diff($values['services'], $services);
-			
-			foreach ($removedServices as $removed) {
-				$values['services'][$removed['name']]['deactivation'] = $serviceTime;
-			}
-			
-			// Go through the diffs.
-			foreach ($addedServices as $added) {
-				$values['services'][$added['name']]['activation'] = $serviceTime;
-			}
+		$subscriberServices = $this->getSubscriberServices($values['services'], $services);
+		if(!$subscriberServices) {
+			$values['services'] = $subscriberServices;
 		}
 		
 		parent::__construct($values, $collection);
+	}
+	
+	protected function getSubscriberServices($services, $oldServices) {
+		if(!is_array($services)) {
+			return array();
+		}
+		
+		$serviceTime = strtotime("midnight");
+		$subscriberServices = array();
+
+		// Get the diff
+		$oldServicesNames = $this->getNames($oldServices);
+		$removedServices = array_diff($services, $oldServicesNames);			
+
+		foreach ($oldServices as $service) {
+			// Check if removed
+			if(in_array($service['name'], $removedServices)) {
+				$service['deactivation'] = $serviceTime;
+			}
+			$subscriberServices[] = $service;
+		}
+
+		$addedServices = array_diff($oldServicesNames, $services);
+		foreach ($addedServices as $service) {
+			$service['activation'] = $serviceTime;
+			$subscriberServices[] = $service;
+		}
+		
+		return $subscriberServices;
+	}
+	
+	protected function getNames($array) {
+		$names = array();
+		
+		foreach ($array as $k => $v) {
+			if($k != "name") {
+				continue;
+			}
+			
+			$names[] = $v;
+		}
 	}
 }
