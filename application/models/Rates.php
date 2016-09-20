@@ -530,7 +530,7 @@ class RatesModel extends TabledateModel {
 		$rule['from_date'] = date('Y-m-d H:i:s', $rate['from']->sec);
 		foreach ($rate['rates'] as $usage_type => $usage_type_rate) {
 			$rule['usage_type'] = $usage_type;
-			$rule['category'] = $usage_type_rate['category'];
+			$rule['category'] = isset($usage_type_rate['category']) ? $usage_type_rate['category'] : null;
 			$rule_counter = 1;
 			foreach ($usage_type_rate as $plan => $rate_plan) {
 				$rule['plan'] = $plan;

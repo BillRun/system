@@ -18,17 +18,25 @@
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($lines['rows'] as $key => $line) : ?>
+					<?php 
+					$fields = array(
+						'time_date',
+						'usaget',
+						'record_type',
+						'aprice',
+						'usagev',
+						'pp_includes_name',
+						'balance_before',
+						'balance_after',
+					);
+					foreach ($lines['rows'] as $key => $line) : ?>
 						<tr>
 							<td><?php echo ($key + 1) ?> </td>
-							<td><?php echo isset($line['time_date']) ? $line['time_date'] : '' ?></td>
-							<td><?php echo $line['usaget'] ?></td>
-							<td><?php echo $line['record_type'] ?> </td>
-							<td><?php echo $line['aprice'] ?></td>
-							<td><?php echo $line['usagev'] ?></td>
-							<td><?php echo $line['pp_includes_name'] ?></td>
-							<td><?php echo $line['balance_before'] ?></td>
-							<td><?php echo $line['balance_after'] ?></td>
+							<?php 
+							foreach ($fields as $f) {
+								print '<td>' . (isset($line[$f]) ? $line[$f] : '&nbsp;') . '</td>';
+							}
+							?>
 							<td>
 								<?php if (!empty($line['arate'])) : ?>
 									<a href="<?php echo $this->baseUrl; ?>/admin#/rates/update/<?php echo $line['arate']['id'] ?>" target="_blank"><?php echo $line['arate']['key'] ?></a>

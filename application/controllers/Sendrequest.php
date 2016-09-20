@@ -19,7 +19,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 
 	public function init() {
 		Billrun_Factory::log("Start Sendrequest call", Zend_Log::INFO);
-		if ($this->getRequest()->getServer('REMOTE_ADDR') != $this->getRequest()->getServer('SERVER_ADDR')) {
+		if (Billrun_Factory::config()->isProd() && $this->getRequest()->getServer('REMOTE_ADDR') != $this->getRequest()->getServer('SERVER_ADDR')) {
 			Billrun_Factory::log('Remote access to sendrequest controller which is internal call. IP: ' . $this->getRequest()->getServer('REMOTE_ADDR'), Zend_Log::WARN);
 			$this->forward('index', 'index');
 		}

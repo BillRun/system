@@ -688,11 +688,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
 			if ($row['usagev'] === 0) {
 				return false;
+			} else if ($row['usagev'] === FALSE) { // volume is 0 but require to ignore on the last dispatcher
+				$row['usagev'] = 0;
 			}
 		}
 		
- 		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $this->balance->getBalanceChargingTotalsKey($usage_type));
- 		
+		if ($row['charging_type'] === 'postpaid') {
+			$balance_totals_key = $plan->getBalanceTotalsKey($usage_type, $rate);
+		} else if (!empty($this->balance)) {
+			$balance_totals_key = $this->balance->getBalanceChargingTotalsKey($usage_type);
+		} else {
+			$balance_totals_key = $row['usaget'];
+		}
+
 		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {

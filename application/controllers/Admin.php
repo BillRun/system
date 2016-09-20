@@ -227,7 +227,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$detailed = array();
 		foreach ($lines as $line) {
 			$l = $line->getRawData();
-			$l['total'] = ($l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
+			$l['total'] = (isset($l['usage_unit']) && $l['usage_unit'] == "NIS" ? $l['aprice'] : $l['usagev'] );
 			$detailed[] = $l;
 		}
 		$aggregated = array();
