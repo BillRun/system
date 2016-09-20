@@ -1411,4 +1411,9 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
+	
+	public static function IsIntegerValue($value) {
+		return is_numeric($value) && ($value == intval($value));
+	}
+
 }
