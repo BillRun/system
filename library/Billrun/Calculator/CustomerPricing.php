@@ -688,6 +688,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
 			if ($row['usagev'] === 0) {
 				return false;
+			} else if ($row['usagev'] === FALSE) { // volume is 0 but require to ignore on the last dispatcher
+				$row['usagev'] = 0;
 			}
 		}
 		

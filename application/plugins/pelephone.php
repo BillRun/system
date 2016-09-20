@@ -430,7 +430,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			if ($in_slowness) {
 				if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'))) {
-					$row['usagev'] = 1;
+					$row['usagev'] = FALSE; // we need to ignore volume
 				} else {
 					$row['usagev'] = Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 10 * 1024 * 1024);
 				}
