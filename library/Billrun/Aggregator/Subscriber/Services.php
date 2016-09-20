@@ -52,11 +52,11 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 	protected function getChargeServicesEntries($subscriber, $billrunKey, $service) {
 		$charge = $service->getPrice($billrunKey);
 		if (isset($charge)) {
-			$flatEntries = array($this->getServiceEntry($subscriber, $billrunKey, $service, $charge));
+			$serviceEntries = array($this->getServiceEntry($subscriber, $billrunKey, $service, $charge));
 		} else {
-			$flatEntries = array();
+			$serviceEntries = array();
 		}
-		return $flatEntries;
+		return $serviceEntries;
 	}
 	
 	protected function getServiceEntry(Billrun_Subscriber $subscriber, $billrunKey, $service, $charge) {
