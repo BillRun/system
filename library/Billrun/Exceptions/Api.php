@@ -34,9 +34,15 @@ class Billrun_Exceptions_Api extends Billrun_Exceptions_Base {
 	 * Create a new instance of the API exception class
 	 * @param integer $apiCode - Api code to report.
 	 * @param array $arguments - Arguments to be printed to the messsage.
+	 * @param array $message - Message to print, using default if empty string. 
+	 * Empty by default.
 	 */
-	public function __construct($apiCode, $arguments = array()) {
-		parent::__construct("API error.", self::ERROR_CODE);
+	public function __construct($apiCode, $arguments = array(), $message = "") {
+		$exMessage = "API error.";
+		if($message) {
+			$exMessage = $message;
+		}
+		parent::__construct($exMessage, self::ERROR_CODE);
 		$this->initErrors();
 		$this->apiCode = $apiCode;
 		$this->args = $arguments;

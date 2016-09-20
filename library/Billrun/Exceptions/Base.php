@@ -13,6 +13,11 @@
  * @since    5.2
  */
 abstract class Billrun_Exceptions_Base extends Exception{
+	use Billrun_Exceptions_InputContainer;
+	
+	public function __construct($message = "", $code = 0, \Exception $previous = null) {
+		parent::__construct($message, $code, $previous);
+	}
 	
 	/**
 	 * Generate the output of the exception.
@@ -23,6 +28,9 @@ abstract class Billrun_Exceptions_Base extends Exception{
 		$output['code'] = $this->code;
 		$output['message'] = $this->message;
 		$output['display'] = $this->generateDisplay();
+		if($this->input) {
+			$output['input'] = $this->input;
+		}
 		
 		return json_encode($output);
 	}
