@@ -23,13 +23,24 @@ class Billrun_DataTypes_Subscriberservice {
 	 */
 	protected $price = null;
 	
+	/**
+	 * Epoch value representing the activation of the service.
+	 * @var int
+	 */
+	protected $activation = null;
+	
+	/**
+	 * Create a new instance of the Subscriberservice class
+	 * @param array $options - Array of options containing, price, name and activation.
+	 */
 	public function __construct(array $options) {
-		if(!isset($options['name'], $options['price'])) {
+		if(!isset($options['name'], $options['price'], $options['activation'])) {
 			return;
 		}
 		
 		$this->name = $options['name'];
 		$this->price = $options['price'];
+		$this->activation = $options['activation'];
 	}
 	
 	public function getName() {
@@ -83,11 +94,59 @@ class Billrun_DataTypes_Subscriberservice {
 	 */
 	protected function calcFractionOfMonth($billrunKey) {
 		$start = Billrun_Billrun::getStartTime($billrunKey);
+		
+		// If the billing start date is after the activation date, return a whole
+		// fraction representing a full month.
+		if($start > $this->activation) {
+			return 1;
+		}
+		
 		$end = Billrun_Billrun::getEndTime($billrunKey);
-		$days_in_month = (int) date('t', $start);
-		if ($end < $start) {
+		
+		
+		// Validate the dates.
+		if(!$this->validateCalcFractionOfMonth($billrunKey, $start, $end)) {
 			return 0;
 		}
+		
+		// Set the start date to the activation date.
+		return $this->calcFraction($this->activation, $end);
+	}
+	
+	/**
+	 * Validate the calc operation.
+	 * @param type $billrunKey
+	 * @param type $start
+	 * @param type $end
+	 * @return boolean
+	 */
+	protected function validateCalcFractionOfMonth($billrunKey, $start, $end) {
+		// Validate the dates.
+		if ($end < $start) {
+			return false;
+		}
+		
+		// Normalize the activation.
+		$activationDay = (int)date('d', $this->activation);
+		$normalizedStamp = $billrunKey . (int)str_pad($activationDay, 2, '0', STR_PAD_LEFT) . "000000";
+		$normalizedActivation = strtotime($normalizedStamp);
+		
+		if($end < $normalizedActivation) {
+			Billrun_Factory::log("Service activation date is after billing end.");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Calc the fraction between two dates out of a month.
+	 * @param int $start - Start epoch
+	 * @param int $end - End epoch
+	 * @return float value.
+	 */
+	protected function calcFraction($start, $end) {
+		$days_in_month = (int) date('t', $start);
 		$start_day = date('j', $start);
 		$end_day = date('j', $end);
 		$start_month = date('F', $start);

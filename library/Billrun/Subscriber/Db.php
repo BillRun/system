@@ -392,27 +392,23 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		if(!isset($this->data['services'])) {
 			return array();
 		}
+		
+		if(!isset($this->data['from'])) {
+			Billrun_Factory::log("Invalid subscriber! No from value. data: " . print_r($this->data,1), Zend_Log::ALERT);
+			return array();
+		}
+		
 		$servicesEnitityList = array();
 		$services = $this->data['services'];
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
-//		$serviceQuery = Billrun_Util::getDateBoundQuery();
+		
+		// Get the start date.
+		$subscriberActivation = strtotime($this->data['from']);
+		
 		foreach ($services as $service) {
-//			if(!isset($service['to'], $service['from'], $service['key'])) {
 			if(!isset($service['name'])) {
 				continue;
 			}
-			
-			// Check if active.
-//			$to = strtotime($service['to']);
-//			$from = strtotime($service['from']);
-//			if(!$to || !$from) {
-//				continue;
-//			}
-//			
-//			$now = time();
-//			if($from > $now || $now > $to) {
-//				continue;
-//			}
 			
 			$serviceQuery = array('name' => $service['name']);
 			$serviceEntity = $servicesColl->query($serviceQuery)->cursor()->current();
@@ -420,7 +416,11 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				continue;
 			}
 			
-			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceEntity->getRawData());
+			$serviceData = $serviceEntity->getRawData();
+			
+			// Set the start date.
+			$serviceData['activation'] = $subscriberActivation;
+			$serviceValue = new Billrun_DataTypes_Subscriberservice($serviceData);
 			if(!$serviceValue->isValid()) {
 				continue;
 			}
