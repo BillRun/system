@@ -62,7 +62,7 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 	protected function getServiceEntry(Billrun_Subscriber $subscriber, $billrunKey, $service, $charge) {
 		$start = Billrun_Billrun::getStartTime($billrunKey);
 		$startTimestamp = strtotime($start);
-		$flatEntry = new Mongodloid_Entity(array(
+		$entry = new Mongodloid_Entity(array(
 			'aid' => $subscriber->aid,
 			'sid' => $subscriber->sid,
 			'source' => 'billrun',
@@ -76,7 +76,7 @@ class Billrun_Aggregator_Subscriber_Services extends Billrun_Aggregator_Subscrib
 			'process_time' => new MongoDate(),
 		));
 		$stamp = md5($subscriber->aid . '_' . $subscriber->sid . $service->getName() . '_' . $start . $billrunKey);
-		$flatEntry['stamp'] = $stamp;
-		return $flatEntry;
+		$entry['stamp'] = $stamp;
+		return $entry;
 	}
 }
