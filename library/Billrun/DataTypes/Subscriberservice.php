@@ -10,7 +10,17 @@
  * This class represents a service to be used by a subscriber.
  */
 class Billrun_DataTypes_Subscriberservice {
+	
+	/**
+	 * The name of the service
+	 * @var string 
+	 */
 	protected $name = null;
+	
+	/**
+	 * The price of the service
+	 * @var float
+	 */
 	protected $price = null;
 	
 	public function __construct(array $options) {
@@ -31,7 +41,8 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return true if valid.
 	 */
 	public function isValid() {
-		if(empty($this->name) || !is_string($this->name) || !Billrun_Util::IsIntegerValue($this->price)) {
+		if(empty($this->name) || !is_string($this->name) || 
+		  (!is_float($this->price)) && !Billrun_Util::IsIntegerValue($this->price)) {
 			return false;
 		}
 		
@@ -94,6 +105,11 @@ class Billrun_DataTypes_Subscriberservice {
 		return $fraction;
 	}
 	
+	/**
+	 * Get the price of the service relative to the current billing cycle
+	 * @param string $billrunKey - Current billrun key
+	 * @return float - Price of the service relative to the current billing cycle.
+	 */
 	public function getPrice($billrunKey) {
 		return $this->price * $this->calcFractionOfMonth($billrunKey);
 	}
