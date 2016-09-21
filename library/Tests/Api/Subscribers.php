@@ -17,6 +17,7 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 class Tests_Api_Subscribers extends UnitTestCase {
 	
+	// TODO: These test cases are faulty
     protected $createTests = array(
 		array('valid' => true, 'msg' => 'Only mendatory active', 'subscriber' => array("from" => "-1 month","to" => "+1 month", "sid" => 99887711)),
 		array('valid' => true, 'msg' => 'Only mendatory future', 'subscriber' => array("from" => "+1 month","to" => "+1 year", "sid" => 99887711)),
@@ -43,7 +44,7 @@ class Tests_Api_Subscribers extends UnitTestCase {
 	
     function testCreate() {
 		$create = new Tests_Api_Subscribers_Create($this->createTests, $this);
-//		$create->run();
+		$create->run();
     }
 	
 	function testDelete() {
@@ -53,11 +54,11 @@ class Tests_Api_Subscribers extends UnitTestCase {
 	
 	function testQuery() {
 		$query = new Tests_Api_Subscribers_Query($this->queryTests, $this);
-//		$query->run();
+		$query->run();
 	}
 	
 	function testUpdate() {
 		$update = new Tests_Api_Subscribers_Update($this->updateTests, $this);
-//		$update->run();
+		$update->run();
 	}
 }
