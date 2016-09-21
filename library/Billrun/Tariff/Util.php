@@ -43,16 +43,24 @@ class Billrun_Tariff_Util {
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
 		$charge = 0;
 		$lastRate = array();
+		$volumeCount = $volume;
 		foreach ($tariffs as $currRate) {
+			// Check that it is an array.
+			// TODO: Use a rate class.
+			if(!is_array($currRate)) {
+				Billrun_Factory::log("Invalid rate in tariff utils. " . print_r($currRate,1), Zend_Log::WARN);
+				continue;
+			}
+			
 			$rate = self::buildRate($currRate, $lastRate);
 			
 			// volume could be negative if it's a refund amount
-			if (0 == $volume) { 
+			if (0 == $volumeCount) { 
 				//break if no volume left to price.
 				break;
 			}
 			
-			self::handleChargeAndVolume($charge, $charge, $rate);
+			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate);
 			$lastRate = $rate;
 		}
 		return $charge;
@@ -61,18 +69,26 @@ class Billrun_Tariff_Util {
 	public static function getIntervalCeiling($tariff, $volume) {
 		$charge = 0;
 		$lastRate = array();
+		$volumeCount = $volume;
 		foreach ($tariff['rate'] as $currRate) {
+			// Check that it is an array.
+			// TODO: Use a rate class.
+			if(!is_array($currRate)) {
+				Billrun_Factory::log("Invalid rate in tariff utils." . print_r($currRate,1), Zend_Log::WARN);
+				continue;
+			}
+			
 			$rate = self::buildRate($currRate, $lastRate);
 
 			// volume could be negative if it's a refund amount
-			if (0 == $volume) { 
+			if (0 == $volumeCount) { 
 				//break if no volume left to price.
 				break;
 			}
 
 			// Force the ceiling
 			$rate['ceil'] = true;
-			self::handleChargeAndVolume($volume, $charge, $rate);
+			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate);
 			$lastRate = $rate;
 		}
 		
@@ -100,11 +116,12 @@ class Billrun_Tariff_Util {
 	
 	/**
 	 * Handle the charge and volume values for the current step.
-	 * @param int $volume - Reference to the current volume 
+	 * @param int $volume - The current volume 
 	 * @param int $charge - Reference to the current charge
 	 * @param array $rate - The current rate.
+	 * @return int Volume value after handling.
 	 */
-	protected static function handleChargeAndVolume(&$volume, &$charge, $rate) {
+	protected static function handleChargeAndVolume($volume, &$charge, $rate) {
 		$maxVolumeInRate = $rate['to'] - $rate['from'];
 			
 		// get the volume that needed to be priced for the current rating
@@ -124,6 +141,6 @@ class Billrun_Tariff_Util {
 		}
 		
 		//decrease the volume that was priced
-		$volume -= $volumeToPriceCurrentRating; 
+		return $volume - $volumeToPriceCurrentRating; 
 	}
 }
