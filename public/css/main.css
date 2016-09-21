@@ -543,3 +543,7 @@ input[type=number]::-webkit-outer-spin-button {
 .inline-toolbar > #serial_number {
 	width:10%;
 }
+
+.bootstrap-table .table:not(.table-condensed) > tbody > tr > td {
+	padding:4px;
+}
