@@ -10,7 +10,7 @@
  * Helper class to manage the API actions.
  *
  */
-abstract class Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_APIAction implements Billrun_ActionManagers_IAPIAction {
 	// TODO: Remove all this logic and replace with the ErrorReporter trait.
 
 	/**
