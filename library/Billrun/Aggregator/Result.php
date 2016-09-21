@@ -7,14 +7,14 @@
  */
 
 /**
- * Interface for an aggregateable record
+ * Interface for an aggregate result
  *
  * @package  Aggregator
  * @since    5.2
  */
-interface Billrun_Aggregator_Aggregateable {
+interface Billrun_Aggregator_Result {
 	/**
-	 * @return Billrun_Aggregator_Result
+	 * Save the results
 	 */
-	public function aggregate();
+	public function save();
 }
