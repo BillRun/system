@@ -111,9 +111,8 @@ class ResetLinesModel {
 					);
 					
 					// todo: refactoring
-					if (!is_array($line)){
-						$line = $line->getRawData();
-					}
+				
+					$line = $line->getRawData();
 					$updated_queue_line = array_merge($queue_line, $line);
 					$queue_lines[] = $updated_queue_line;
 				}
