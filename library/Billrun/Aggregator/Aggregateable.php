@@ -12,6 +12,6 @@
  * @package  Aggregator
  * @since    5.2
  */
-interface Aggregateable {
+interface Billrun_Aggregate_Aggregateable {
 	public function aggregate();
 }
