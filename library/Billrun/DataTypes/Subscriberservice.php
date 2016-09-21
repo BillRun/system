@@ -24,18 +24,6 @@ class Billrun_DataTypes_Subscriberservice {
 	protected $price = null;
 	
 	/**
-	 * Epoch value representing the activation of the service.
-	 * @var int
-	 */
-	protected $activation = null;
-	
-	/**
-	 * Epoch value representing the deactivation of the service.
-	 * @var int
-	 */
-	protected $deactivation = null;
-	
-	/**
 	 * Create a new instance of the Subscriberservice class
 	 * @param string $name - The name of the service.
 	 */
@@ -49,7 +37,7 @@ class Billrun_DataTypes_Subscriberservice {
 		// Get the price from the DB
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
 		$serviceQuery['name'] = $this->name;
-		$service = $servicesColl->query($serviceQuery)->cursor()->current();
+		$service = $servicesColl->query($serviceQuery, array("price" => 1))->cursor()->current();
 		if($service->isEmpty() || !isset($service['price'])) {
 			// Signal invalid
 			$this->name = null;
@@ -101,10 +89,7 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		$serviceData = array('name' => $this->name, "price" => $this->price, "activation" => $this->activation);
-		if($this->deactivation) {
-			$serviceData['deactivation'] = $this->deactivation;
-		}
+		$serviceData = array('name' => $this->name, "price" => $this->price);
 		return $serviceData;
 	}
 	

@@ -21,6 +21,9 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 			return array();
 		}
 		
+		// Initialize activation date to now.
+		$serviceAggregateOptions = array("activation" => strtotime("midnight"));
+		
 		$proccessedServices = array();
 		foreach ($services as $current) {
 			// Check that it has the name
@@ -29,14 +32,12 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 				continue;
 			}
 			
-			$serviceObj = new Billrun_DataTypes_Subscriberservice($current['name']);
+			$serviceAggregateOptions['name'] = $current['name'];
+			$serviceObj = new Billrun_DataTypes_AggregateSubscriberservice($proccessedServices);
 			if(!$serviceObj->isValid()) {
 				continue;
 			}
-			// Initialize the activation date to now.
-			$serviceData = $serviceObj->getService();
-			$serviceData['activation'] = strtotime("midnight");
-			$proccessedServices[] = $serviceData;
+			$proccessedServices[] = $serviceObj->getService();
 		}
 		
 		return $proccessedServices;

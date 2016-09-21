@@ -38,33 +38,18 @@ class Billrun_DataTypes_AggregateSubscriberservice {
 			return;
 		}
 		
-		$this->name = $options['name'];
+		$this->service = new Billrun_DataTypes_Subscriberservice($options['name']);
 		
 		if(isset($options['activation'])) {
 			$this->activation = $options['activation'];
-		} else {
-			$this->activation = time();
-		}
-		
+		} 
 		if(isset($options['deactivation'])) {
 			$this->deactivation = $options['deactivation'];
 		}
-		
-		// Get the price from the DB
-		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		$serviceQuery['name'] = $this->name;
-		$service = $servicesColl->query($serviceQuery)->cursor()->current();
-		if($service->isEmpty() || !isset($service['price'])) {
-			// Signal invalid
-			$this->name = null;
-			return;
-		}
-		
-		$this->price = $service['price'];
 	}
 	
 	public function getName() {
-		return $this->name;
+		return $this->service->getName();
 	}
 	
 	/**
@@ -72,110 +57,17 @@ class Billrun_DataTypes_AggregateSubscriberservice {
 	 * @return true if valid.
 	 */
 	public function isValid() {
-		if(empty($this->name) || !is_string($this->name) || 
-		  (!is_float($this->price)) && !Billrun_Util::IsIntegerValue($this->price)) {
-			Billrun_Factory::log("Invalid parameters in subscriber service. name: " . print_r($this->name,1) . " price: " . print_r($this->price,1));
+		if(!$this->service || !$this->service->isValid()) {
 			return false;
 		}
 		
-		return $this->checkDB();
-	}
-	
-	/**
-	 * Check if the service exists in the data base.
-	 * @param integer $from - From timestamp
-	 * @return boolean True if the service exists in the mongo
-	 */
-	protected function checkDB($from=null) {
-		if(!$from) {
-			$from = time();
-		}
-		
-		// Check in the mongo.
-		$servicesColl = Billrun_Factory::db()->servicesCollection();
-		$serviceQuery['name'] = $this->name;
-		$service = $servicesColl->query($serviceQuery)->cursor()->current();
-		
-		return !$service->isEmpty();
-	}
-	
-	/**
-	 * Get the subscriber service in array format
-	 * @return array
-	 */
-	public function getService() {
-		return array('name' => $this->name, "price" => $this->price);
-	}
-	
-	/**
-	 * 
-	 * @param type $billrunKey
-	 * @return int
-	 * @todo This should be moved to a more fitting location
-	 */
-	protected function calcFractionOfMonth($billrunKey, $activation, $deactivation) {
-		$start = Billrun_Billrun::getStartTime($billrunKey);
-		
-		// If the billing start date is after the deactivation return zero
-		if($deactivation && ($start > $deactivation)) {
-			return 0;
-		}
-		
-		// If the billing start date is after the activation date, return a whole
-		// fraction representing a full month.
-		if(!$deactivation && ($start > $activation)) {
-			return 1;
-		}
-		
-		$end = Billrun_Billrun::getEndTime($billrunKey);
-			
-		// Validate the dates.
-		if(!$this->validateCalcFractionOfMonth($billrunKey, $start, $end)) {
-			return 0;
-		}
-		
-		// Take the termination date.
-		$termination = $end;
-		if($deactivation && ($end > $deactivation)) {
-			$termination = $deactivation;
-		}
-		
-		// Take the starting
-		$starting = $start;
-		if($activation > $start) {
-			$starting = $activation;
-		}
-		
-		// Set the start date to the activation date.
-		return $this->calcFraction($starting, $termination);
-	}
-	
-	/**
-	 * Validate the calc operation.
-	 * @param type $billrunKey
-	 * @param type $start
-	 * @param type $end
-	 * @return boolean
-	 */
-	protected function validateCalcFractionOfMonth($billrunKey, $start, $end, $activation, $deactivation) {
-		// Validate dates.
-		if($deactivation && ($deactivation < $activation)) {
-			Billrun_Factory::log("Invalid dates in subscriber service");
+		if(!empty($this->activation)) {
+			Billrun_Factory::log("Invalid service activation value");
 			return false;
 		}
 		
-		// Validate the dates.
-		if ($end < $start) {
-			return false;
-		}
-		
-		// Normalize the activation.
-		$activationDay = (int)date('d', $activation);
-		$normalizedStamp = $billrunKey . (int)str_pad($activationDay, 2, '0', STR_PAD_LEFT) . "000000";
-		$normalizedActivation = strtotime($normalizedStamp);
-		
-		if($end < $normalizedActivation) {
-			Billrun_Factory::log("Service activation date is after billing end.");
+		if($this->deactivation && ($this->deactivation < $this->activation)) {
+			Billrun_Factory::log("Invalid service date values, activation: " . print_r($this->activation) . " deactivation: " . $this->deactivation);			
 			return false;
 		}
 		
@@ -183,36 +75,15 @@ class Billrun_DataTypes_AggregateSubscriberservice {
 	}
 	
 	/**
-	 * Calc the fraction between two dates out of a month.
-	 * @param int $start - Start epoch
-	 * @param int $end - End epoch
-	 * @return float value.
+	 * Get the subscriber service in array format
+	 * @return array
 	 */
-	protected function calcFraction($start, $end) {
-		$days_in_month = (int) date('t', $start);
-		$start_day = date('j', $start);
-		$end_day = date('j', $end);
-		$start_month = date('F', $start);
-		$end_month = date('F', $end);
-
-		if ($start_month == $end_month) {
-			$days_in_plan = (int) $end_day - (int) $start_day + 1;
-		} else {
-			$days_in_previous_month = $days_in_month - (int) $start_day + 1;
-			$days_in_current_month = (int) $end_day;
-			$days_in_plan = $days_in_previous_month + $days_in_current_month;
+	public function getService() {
+		$serviceRaw = $this->service->getService();
+		$serviceRaw['activation'] = $this->activation;
+		if($this->deactivation) {
+			$serviceRaw['deactivation'] = $this->deactivation;
 		}
-
-		$fraction = $days_in_plan / $days_in_month;
-		return $fraction;
-	}
-	
-	/**
-	 * Get the price of the service relative to the current billing cycle
-	 * @param string $billrunKey - Current billrun key
-	 * @return float - Price of the service relative to the current billing cycle.
-	 */
-	public function getPrice($billrunKey) {
-		return $this->price * $this->calcFractionOfMonth($billrunKey);
+		return $serviceRaw;
 	}
 }
