@@ -582,13 +582,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	protected function prepareQueue() {
 		foreach ($this->data['data'] as $dataRow) {
-			$queueRow = array(
-				'stamp' => $dataRow['stamp'],
-				'type' => $dataRow['type'],
-				'urt' => $dataRow['urt'],
-				'calc_name' => false,
-				'calc_time' => false
-			);
+			$queueRow = $dataRow;
+ 			$queueRow['calc_name'] = false;
+ 			$queueRow['calc_time'] = false;
 			$this->setQueueRow($queueRow);
 		}
 	}
@@ -600,22 +596,19 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @return true if succeed to add advanced properties, else false
 	 */
-	public function addAdvancedPropertiesToQueueRow($row) {
+	public function addAdvancedPropertiesToQueueRow($row) { // TODO: call this function once from CalcCpu
 		$queue_row = $this->getQueueRow($row);
 		if ($queue_row === FALSE) {
 			return false;
 		}
-		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
-		foreach ($advancedProperties as $property) {
-			if (isset($row[$property])) {
-				$queue_row[$property] = $row[$property];
-			}
+		if (!is_array($row)){
+			$row = $row->getRawData();
 		}
-				
-		if (!isset($queue_row['stamp'])) {
-			$queue_row['stamp'] = $row['stamp'];
+		$updated_queue_row = array_merge($queue_row, $row);
+		if (!isset($updated_queue_row['stamp'])) {
+			$updated_queue_row['stamp'] = $row['stamp'];
 		}
-		$this->setQueueRow($queue_row);
+		$this->setQueueRow($updated_queue_row);
 		return true;
 	}
 

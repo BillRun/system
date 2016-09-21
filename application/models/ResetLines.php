@@ -103,25 +103,18 @@ class ResetLinesModel {
 				$stamps = array();
 				$queue_lines = array();
 				foreach ($lines as $line) {
-					$stamps[] = $line['stamp'];
+					$stamps[] = $line['stamp'];  
 					$queue_line = array(
 						'calc_name' => false,
 						'calc_time' => false,
-						'stamp' => $line['stamp'],
-						'type' => $line['type'],
-						'urt' => $line['urt'],
 						'skip_fraud' => true,
 					);
 					
 					// todo: refactoring
-					$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", array('imsi', 'msisdn', 'called_number', 'calling_number'));
-					foreach ($advancedProperties as $property) {
-						if (isset($line[$property]) && !isset($queue_line[$property])) {
-							$queue_line[$property] = $line[$property];
-						}
-					}
-					
-					$queue_lines[] = $queue_line;
+				
+					$line = $line->getRawData();
+					$updated_queue_line = array_merge($queue_line, $line);
+					$queue_lines[] = $updated_queue_line;
 				}
 				$stamps_query = array(
 					'stamp' => array(
@@ -150,6 +143,7 @@ class ResetLinesModel {
 					),
 					'$set' => array(
 						'rebalance' => new MongoDate(),
+						'in_queue' => true,
 					),
 				);
 
