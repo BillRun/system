@@ -152,7 +152,7 @@ class Billrun_Util {
 	 * @param string $datetime the datetime. can be all input types of strtotime function
 	 * @param type $offset the timezone offset +/-xxxx or +/-xx:xx
 	 * 
-	 * @return MongoDate MongoObject
+	 * @return int a timestamp on success, false on failure
 	 */
 	public static function dateTimeConvertShortToIso($datetime, $offset = '+00:00') {
 		if (strpos($offset, ':') === FALSE) {
@@ -478,30 +478,6 @@ class Billrun_Util {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * Get a query to filter all out dated and still not active records.
-	 * @return type
-	 * @todo This is generic enough to be moved to anoter location.
-	 */
-	public static function getDateBoundQuery($sec = NULL, $onlyFuture = false) {
-		$sec = is_null($sec) ? time() : $sec;
-		if ($onlyFuture) {
-			return array(
-				'to' => array(
-					'$gt' => new MongoDate($sec),
-				),
-			);
-		}
-		return array(
-			'to' => array(
-				'$gt' => new MongoDate($sec),
-			),
-			'from' => array(
-				'$lte' => new MongoDate($sec),
-			)
-		);
 	}
 
 	/**
@@ -864,113 +840,12 @@ class Billrun_Util {
 	public static function parseServiceRow($service_row, $billrun_key) {
 		$service_row['source'] = 'api';
 		$service_row['usaget'] = $service_row['type'] = 'service';
-		$service_row['urt'] = new MongoDate(Billrun_Billrun::getEndTime($billrun_key));
+		$service_row['urt'] = new MongoDate(Billrun_Billingcycle::getEndTime($billrun_key));
 		ksort($service_row);
 		$service_row['stamp'] = Billrun_Util::generateArrayStamp($service_row);
 		return $service_row;
 	}
 
-	/**
-	 * Get a value from an array by a mongo format key, seperated with dots.
-	 * @param array $array - Array to get value of.
-	 * @param string $key - Dot seperated key.
-	 */
-	public static function getValueByMongoIndex($array, $key) {
-		if(!is_string($key)) {
-			return null;
-		}
-		
-		$value = $array;
-		
-		// Explode the keys.
-		$keys = explode(".", $key);
-		foreach ($keys as $innerKey) {
-			if(!isset($value[$innerKey])) {
-				return null;
-			}
-			
-			$value = $value[$innerKey];
-		}
-		
-		return $value;
-	}
-	
-	/**
-	 * Set a value to an array by a mongo format key, seperated with dots.
-	 * @param mixed $value - Value to set
-	 * @param array &$array - Array to set value to, passed by reference.
-	 * @param string $key - Dot seperated key.
-	 * @return boolean - True if successful.
-	 */
-	public static function setValueByMongoIndex($value, &$array, $key) {
-		if(!is_string($key)) {
-			return false;
-		}
-		
-		$result = &$array;
-		$keys = explode('.', $key);
-		foreach ($keys as $innerKey) {
-			$result = &$result[$innerKey];
-		}
-
-		$result = $value;
-		
-		return true;
-	}
-	
-	/**
-	 * Coverts a $seperator seperated array to an haierchy tree
-	 * @param string $array - Input string
-	 * @param string $seperator 
-	 * @param mixed $toSet - Value to be set to inner level of array
-	 * @return array
-	 */
-	public static function mongoArrayToPHPArray($array, $seperator, $toSet) {
-		if(!is_string($array)) {
-			return null;
-		}
-		
-		$parts = explode($seperator, $array);
-		$result = array();
-		$previous = null;
-		$iter = &$result;
-		foreach ($parts as $value) {
-			if($previous !== null) {
-				$iter[$previous] = array($value => $toSet);
-				$iter = &$iter[$previous];
-			}
-			$previous = $value;
-		}
-		
-		return $result;
-	}
-	
-	/**
-	 * convert assoc array to MongoDB query
-	 * 
-	 * @param array $array the array to convert
-	 * @return array the MongoDB array conversion
-	 * 
-	 * @todo move to Mongodloid
-	 */
-	public static function arrayToMongoQuery($array) {
-		$query = array();
-		foreach ($array as $key => $val) {
-			if (is_array($val) && strpos($key, '$') !== 0) {
-				foreach (self::arrayToMongoQuery($val) as $subKey => $subValue) {
-					if (strpos($subKey, '$') === 0) {
-						$query[$key][$subKey] = $subValue;
-					} else {
-						$query[$key . "." . $subKey] = $subValue;
-					}
-				}
-			} else {
-				$query[$key] = $val;
-			}
-		}
-		return $query;
-	}
-	
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -1319,44 +1194,6 @@ class Billrun_Util {
 	}
 
 	/**
-	 * Change the times of a mongo record
-	 * 
-	 * @param array $row - Record to change the times of.
-	 * @param array $fields - date time fields array list
-	 * @param string $format - format datetime (based on php date function)
-	 * 
-	 * @return The record with translated time.
-	 */
-	public static function convertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
-		foreach ($fields as $timeField) {
-			if (isset($record[$timeField]->sec)) {
-				$record[$timeField] = date($format, $record[$timeField]->sec);
-			}
-		}
-
-		return $record;
-	}
-
-	/**
-	 * Change the times of a mongo record
-	 * 
-	 * @param array $row - Record to change the times of.
-	 * @param array $fields - date time fields array list
-	 * @param string $format - format datetime (based on php date function)
-	 * 
-	 * @return The record with translated time.
-	 */
-	public static function recursiveConvertRecordMongoDatetimeFields($record, array $fields = array('from', 'to'), $format = DATE_ISO8601) {
-		foreach ($record as $key => $subRecord) {
-			if (is_array($subRecord)) {
-				$record[$key] = self::recursiveConvertRecordMongoDatetimeFields($subRecord, $fields, $format);
-			}
-		}
-
-		return self::convertRecordMongoDatetimeFields($record, $fields, $format);
-	}
-
-	/**
 	 * Check if an array is multidimentional.
 	 * @param $arr - Array to check.
 	 * @return boolean true if multidimentional array.
@@ -1547,9 +1384,8 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+		return array('_id', 'aid', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'sid', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
-
 
 	public static function isValidRegex($regex) {
 		return !(@preg_match($regex, null) === false);
@@ -1561,36 +1397,6 @@ class Billrun_Util {
 	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
 		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
-	}
-
-	public static function convertQueryMongoDates(&$arr) {
-		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
-		foreach ($arr as &$value) {
-			if (is_array($value)) {
-				self::convertQueryMongoDates($value);
-			} else if (preg_match($ISODatePattern, $value)) {
-				$value = new MongoDate(strtotime($value));
-			}
-		}
-	}
-	
-	/**
-	 * convert all MongoDate objects in the data received into ISO dates
-	 * 
-	 * @param mixed $data
-	 * @return mixed $data with ISO dates
-	 */
-	public static function convertMongoDatesToReadable($data) {
-		if ($data instanceof MongoDate) {
-			return date(DATE_ISO8601, $data->sec);
-		}
-		if (!is_array($data)) {
-			return $data;
-		}
-		foreach ($data as $key => $value) {
-			$data[$key] = self::convertMongoDatesToReadable($value);
-		}
-		return $data;
 	}
 
 	/**
@@ -1605,56 +1411,9 @@ class Billrun_Util {
 		}
 		return $ret;
 	}
-
-	public static function getOverlappingDatesQuery($searchKeys, $new = true) {
-		if(empty($searchKeys)) {
-			return "Empty search keys";
-		}
-		if ($searchKeys['from'] instanceof MongoDate) {
-			$from_date = $searchKeys['from'];
-		} else {
-			$from_date = new MongoDate(strtotime($searchKeys['from']));
-		}
-		if (!$from_date) {
-			return "date error";
-		}
-		unset($searchKeys['from']);
-		if ($searchKeys['to'] instanceof MongoDate) {
-			$to_date = $searchKeys['to'];
-		} else {
-			$to_date = new MongoDate(strtotime($searchKeys['to']));
-		}
-		if (!$to_date) {
-			return "date error";
-		}
-		unset($searchKeys['to']);
-		
-		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId(isset($searchKeys['_id'])? $searchKeys['_id'] : NULL))) {
-			return "id error";
-		}
-		unset($searchKeys['_id']);
-		
-		$ret = array();
-		foreach ($searchKeys as $pair) {
-			$ret[] = $pair;
-		}
-		$ret['$or'] = array(
-				array('from' => array(
-					'$gte' => $from_date,
-					'$lte' => $to_date,
-				)),
-				array('to' => array(
-					'$gte' => $from_date,
-					'$lte' => $to_date,
-				))
-			);
-		if (!$new) {
-			$ret['_id'] = array('$ne' => $id);
-		}
-		return $ret;
-	}
 	
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
+
 }

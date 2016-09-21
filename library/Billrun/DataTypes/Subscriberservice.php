@@ -89,6 +89,7 @@ class Billrun_DataTypes_Subscriberservice {
 		
 		// Check in the mongo.
 		$servicesColl = Billrun_Factory::db()->servicesCollection();
+		$serviceQuery = Billrun_Utils_Mongo::getDateBoundQuery($from, true);
 		$serviceQuery['name'] = $this->name;
 		$service = $servicesColl->query($serviceQuery)->cursor()->current();
 		

@@ -153,8 +153,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->loadRates();
 			$this->loadPlans();
 			$this->active_billrun = Billrun_Billrun::getActiveBillrun();
-			$this->active_billrun_end_time = Billrun_Billrun::getEndTime($this->active_billrun);
-			$this->next_active_billrun = Billrun_Billrun::getFollowingBillrunKey($this->active_billrun);
+			$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
+			$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 		}
 		// max recursive retrues for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -390,7 +390,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
-		$charges = self::getChargesByRate($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
+		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges));
 
 		$ret[$this->pricingField] = $charges['total'];
@@ -453,7 +453,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				array(
 				'key' => $interconnect,
 				'params.interconnect' => TRUE,
-				), Billrun_Util::getDateBoundQuery($time)
+				), Billrun_Utils_Mongo::getDateBoundQuery($time)
 			);
 			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
 			$interconnectCharge = static::getTotalChargeByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
@@ -910,7 +910,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $db_ref
 	 */
 	public function getRowRate($row) {
-		return $this->getRateByRef($row->get('arate', true));
+		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
 	}
 
 	/**

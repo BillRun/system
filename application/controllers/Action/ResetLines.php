@@ -31,7 +31,7 @@ class ResetLinesAction extends ApiAction {
 			$this->cleanAccountCache($request['aid']);
 		}
 
-		$billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+		$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
@@ -92,7 +92,7 @@ class ResetLinesAction extends ApiAction {
 			return false;
 		}
 		$aids = array_unique(array_diff(Billrun_Util::verify_array(explode(',', $aid), 'int'), array(0)));
-		$billrunKey = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$cachePrefix = 'balance_'; // this is not the action name because it's clear the balance cache
 		foreach ($aids as $aid) {
 			$this->cleanSingleAccountCache($aid, $cache, $billrunKey, $cachePrefix);

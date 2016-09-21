@@ -21,7 +21,7 @@ class Billrun_Plans_Util {
 	 * @return boolean
 	 */
 	public static function isPlanExists($planName) {
-		$query = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $planName));
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('name' => $planName));
 		return $planName === 'BASE' || (Billrun_Factory::db()->plansCollection()->query($query)->cursor()->count() > 0);
 	}
 

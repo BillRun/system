@@ -24,7 +24,7 @@ trait Billrun_FieldValidator_CustomerPlan {
 			return true;
 		}
 		$planName = $plan;
-		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$planQuery['type'] = 'customer';
 		$planQuery['name'] = $planName;
 		$planCollection = Billrun_Factory::db()->plansCollection();

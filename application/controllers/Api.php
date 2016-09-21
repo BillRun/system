@@ -99,7 +99,7 @@ class ApiController extends Yaf_Controller_Abstract {
 		} else {
 			$var = $args;
 		}
-		$readable = Billrun_Util::convertMongoDatesToReadable($var);
+		$readable = Billrun_Utils_Mongo::convertMongoDatesToReadable($var);
 		$ret = $this->setOutputVar($readable);
 		$this->apiLogAction();
 		return $ret;
