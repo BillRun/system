@@ -21,8 +21,19 @@ class Billrun_Plans_Util {
 	 * @return boolean
 	 */
 	public static function isPlanExists($planName) {
-		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('name' => $planName));
-		return $planName === 'BASE' || (Billrun_Factory::db()->plansCollection()->query($query)->cursor()->count() > 0);
+		return $planName === 'BASE' || self::isPlanExistsInDB($planName);
 	}
 
+	/**
+	 * Check if the plan exists in the DB
+	 * @param string $planName - Plan name to find
+	 * @return boolean True if found
+	 */
+	protected static function isPlanExistsInDB($planName) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['name'] = $planName;
+		$plansCol = Billrun_Factory::db()->plansCollection();
+		$count = $plansCol->query($query)->cursor()->count();
+		return $count > 0;
+	}
 }

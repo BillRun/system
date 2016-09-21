@@ -163,6 +163,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
 				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
 				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
+				continue;
 			} else if (!isset($queryData[$fieldName])) {
 				continue;
 			}
