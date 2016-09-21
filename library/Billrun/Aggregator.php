@@ -45,10 +45,15 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 */
 	public function aggregate() {
 		$data = $this->load();
+		if(!is_array($data)) {
+			throw new Exception("Aggregator fa");
+		}
 	}
 
 	/**
 	 * load the data to aggregate
+	 * Loads an array of aggregateable records.
+	 * @return 
 	 */
 	abstract public function load();
 
