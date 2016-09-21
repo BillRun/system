@@ -10,4 +10,5 @@ return array(
     'Symfony\\Component\\HttpFoundation\\' => array($vendorDir . '/symfony/http-foundation'),
     'Symfony\\Component\\EventDispatcher\\' => array($vendorDir . '/symfony/event-dispatcher'),
     'Omnipay\\Stripe\\' => array($vendorDir . '/omnipay/stripe/src'),
+    'Omnipay\\PayPal\\' => array($vendorDir . '/omnipay/paypal/src'),
 );
