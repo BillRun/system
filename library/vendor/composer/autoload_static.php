@@ -20,6 +20,7 @@ class ComposerStaticInitdf3343050f8afdb50f4a74481bea78ba
         'O' => 
         array (
             'Omnipay\\Stripe\\' => 15,
+            'Omnipay\\PayPal\\' => 15,
         ),
     );
 
@@ -39,6 +40,10 @@ class ComposerStaticInitdf3343050f8afdb50f4a74481bea78ba
         'Omnipay\\Stripe\\' => 
         array (
             0 => __DIR__ . '/..' . '/omnipay/stripe/src',
+        ),
+        'Omnipay\\PayPal\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/omnipay/paypal/src',
         ),
     );
 

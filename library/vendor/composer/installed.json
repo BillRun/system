@@ -376,18 +376,18 @@
         ]
     },
     {
-        "name": "omnipay/stripe",
-        "version": "v2.4.0",
-        "version_normalized": "2.4.0.0",
+        "name": "omnipay/paypal",
+        "version": "v2.6.0",
+        "version_normalized": "2.6.0.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/thephpleague/omnipay-stripe.git",
-            "reference": "3d21b68403fb4214cbee07d0c4be55a1bb0b1805"
+            "url": "https://github.com/thephpleague/omnipay-paypal.git",
+            "reference": "592f1cca058200adc76ed9599b13f21e81e01dda"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/thephpleague/omnipay-stripe/zipball/3d21b68403fb4214cbee07d0c4be55a1bb0b1805",
-            "reference": "3d21b68403fb4214cbee07d0c4be55a1bb0b1805",
+            "url": "https://api.github.com/repos/thephpleague/omnipay-paypal/zipball/592f1cca058200adc76ed9599b13f21e81e01dda",
+            "reference": "592f1cca058200adc76ed9599b13f21e81e01dda",
             "shasum": ""
         },
         "require": {
@@ -396,7 +396,67 @@
         "require-dev": {
             "omnipay/tests": "~2.0"
         },
-        "time": "2016-08-06 04:11:43",
+        "time": "2016-09-06 04:15:04",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Omnipay\\PayPal\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Adrian Macneil",
+                "email": "adrian@adrianmacneil.com"
+            },
+            {
+                "name": "Omnipay Contributors",
+                "homepage": "https://github.com/thephpleague/omnipay-paypal/contributors"
+            }
+        ],
+        "description": "PayPal gateway for Omnipay payment processing library",
+        "homepage": "https://github.com/thephpleague/omnipay-paypal",
+        "keywords": [
+            "gateway",
+            "merchant",
+            "omnipay",
+            "pay",
+            "payment",
+            "paypal",
+            "purchase"
+        ]
+    },
+    {
+        "name": "omnipay/stripe",
+        "version": "v2.4.1",
+        "version_normalized": "2.4.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/thephpleague/omnipay-stripe.git",
+            "reference": "6eab75f838e11e2c951af52cf3939aeb37d11059"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/thephpleague/omnipay-stripe/zipball/6eab75f838e11e2c951af52cf3939aeb37d11059",
+            "reference": "6eab75f838e11e2c951af52cf3939aeb37d11059",
+            "shasum": ""
+        },
+        "require": {
+            "omnipay/common": "~2.0"
+        },
+        "require-dev": {
+            "omnipay/tests": "~2.0"
+        },
+        "time": "2016-09-14 09:11:40",
         "type": "library",
         "extra": {
             "branch-alias": {
