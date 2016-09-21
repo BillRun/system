@@ -693,5 +693,5 @@ abstract class Billrun_Processor extends Billrun_Base {
 	protected function getFileStamp() {
 		return $this->file_stamp;
 	}
-
+	
 }
