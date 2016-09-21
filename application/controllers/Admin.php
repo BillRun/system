@@ -74,12 +74,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addCss($this->baseUrl . '/css/bootstrap-switch.css');
 		$this->addCss($this->baseUrl . '/css/bootstrap-multiselect.css');
 		$this->addCss($this->baseUrl . '/css/jsoneditor.css');
-		$this->addCss($this->baseUrl . '/css/main.css');
 		$this->addCss($this->baseUrl . '/js/vendor/JSONedit/styles.css');
 		$this->addCss($this->baseUrl . '/css/vendor/xeditable.css');
 		$this->addCss($this->baseUrl . '/css/vendor/animate.css');
 		$this->addCss($this->baseUrl . '/css/vendor/bootstrap-table.css');
 		$this->addCss($this->baseUrl . '/css/vendor/isteven-multi-select.css');
+		$this->addCss($this->baseUrl . '/css/main.css');
 
 		$this->addJs($this->baseUrl . '/js/vendor/jquery-1.11.0.min.js');
 		$this->addJs($this->baseUrl . '/js/vendor/bootstrap.min.js');
