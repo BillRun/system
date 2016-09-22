@@ -12,7 +12,17 @@
  */
 trait Billrun_Traits_Api_UserPermissions {
 
+	protected $permissionLevel = null;
+	
 	protected abstract function getPermissionLevel();
+	
+	private function permissionValue() {
+		if($this->permissionLevel === null) {
+			return $this->getPermissionLevel();
+		}
+		
+		return $this->permissionLevel;
+	}
 	
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
@@ -23,7 +33,7 @@ trait Billrun_Traits_Api_UserPermissions {
 	 *
 	 */
 	protected function allowed() {
-		if($this->authorizeUser($this->getPermissionLevel())) {
+		if($this->authorizeUser($this->permissionValue())) {
 			return;
 		}
 		
