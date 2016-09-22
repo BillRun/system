@@ -240,7 +240,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if ($this->bulkAccountPreload) {
 			$this->clearForAcountPreload($data);
 		}
-
 		
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
 	}
@@ -250,7 +249,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$dataKeys = array_keys($data);
 		//$existingAccounts = array();			
 		foreach ($dataKeys as $key => $aid) {
-			if (!$this->overrideAccountIds && Billrun_Billrun::exists($aid, $billrun_key)) {
+			if (!$this->overrideAccountIds && $this->billrun->exists($aid)) {
 				unset($dataKeys[$key]);
 				//$existingAccounts[$aid]  = $this->data[$aid];
 			}
