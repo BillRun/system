@@ -23,6 +23,20 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @var type 
 	 */
 	protected $balancesProjection = array();
+	
+	/**
+	 * Sort field
+	 * 
+	 * @var string
+	 */
+	protected $sortField = 'pp_includes_external_id';
+
+	/**
+	 * Sort order
+	 * 
+	 * @var int (1 or -1 => asc or desc)
+	 */
+	protected $sortOrder = 1;
 
 	/**
 	 * Array of all available balances
@@ -41,16 +55,29 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected function queryRangeBalances() {
 		try {
-			$cursor = $this->collection->setReadPreference(MongoClient::RP_PRIMARY, array())->query($this->balancesQuery)->cursor();
+			$cursor = $this->collection
+				->setReadPreference(MongoClient::RP_PRIMARY, array())
+				->query($this->balancesQuery)
+				->cursor();
 			$returnData = $this->availableBalances;
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
-				$externalID = $rawItem['pp_includes_external_id'];
-				$returnData[$externalID] = $rawItem;
+				
+				if (empty($rawItem[$this->sortField])) {
+					$returnData[] = $rawItem;
+					continue;
+				}
+				
+				$returnData[$this->getBalanceIndex($rawItem, $this->sortField)] = $rawItem;
 			}
 
-			ksort($returnData);
+			if ($this->sortOrder >= 1) {
+				ksort($returnData);
+			} else {
+				krsort($returnData);
+			}
+			
 			foreach ($returnData as &$row) {
 				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
@@ -61,6 +88,13 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 
 		return array_values($returnData);
+	}
+	
+	protected function getBalanceIndex($item, $field) {
+		if ($item[$field] instanceof MongoDate) {
+			return $item[$field]->sec . $item[$field]->usec;
+		}
+		return $item[$field];
 	}
 
 	/**
@@ -149,6 +183,16 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$dateParameters = array('to' => array('$gte' => $timeNow), 'from' => array('$lte' => $timeNow));
 			// Get all active balances.
 			$this->setDateParameters($dateParameters, $this->balancesQuery);
+		}
+		
+		$sort = $input->get('sort');
+		if (!empty($sort) && in_array($sort, array('from', 'to', 'pp_includes_external_id', 'pp_includes_name', 'priority'))) {
+			$this->sortField = $sort;
+		}
+		
+		$sortOrder = $input->get('sortOrder');
+		if (!empty($sortOrder) && is_numeric($sortOrder)){
+			$this->sortOrder = $sortOrder;
 		}
 	}
 
@@ -258,7 +302,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				continue;
 			}
 
-			$availableBalances[$id] = $constructed;
+			$availableBalances[$this->getBalanceIndex($constructed, $this->sortField)] = $constructed;
 		}
 
 		return $availableBalances;
