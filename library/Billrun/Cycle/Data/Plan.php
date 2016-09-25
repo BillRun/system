@@ -28,7 +28,6 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 
 	// TODO: Implement
 	public function getLine() {
-		
 	}
 
 }
