@@ -107,7 +107,7 @@ class RatesModel extends TabledateModel {
 	 */
 	protected function processRatesOnUpdate(&$data) {
 		$plansColl = Billrun_Factory::db()->plansCollection();
-		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$rates = $data['rates'];
 		//convert plans
 		foreach ($rates as &$rate) {
