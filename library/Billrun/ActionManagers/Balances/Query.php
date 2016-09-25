@@ -127,7 +127,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$balance = $wallet->getPartialBalance();
 		$balance['aid'] = $subscriber['aid'];
 		$balance['sid'] = $subscriber['sid'];
-		$balance['from'] = new MongoDate();
+		$balance['from'] = new MongoDate(time() + $balance['pp_includes_external_id']); // the second argument in the brackets is for the case we are sorting by from or to
 		$balance['to'] = $balance['from'];
 		$balance['charging_type'] = $subscriber['charging_type'];
 
