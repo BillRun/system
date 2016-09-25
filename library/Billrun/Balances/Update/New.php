@@ -82,7 +82,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 */
 	public function handleCoreBalance($max, $wallet, $query) {
 		// [Balances Error 1240]
-		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 40;
+		$errorCode =  40;
 		return array("onError" => $errorCode);
 	}
 }
