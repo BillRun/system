@@ -349,7 +349,7 @@ class ConfigModel {
 				}
 			}
 		}
-		if ($category === 'payments_gateways') {
+		if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
  				if (count($data) == 1) {
  					$this->unsetPaymentGatewaySettings($updatedData, $data['name']);
