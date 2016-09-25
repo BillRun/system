@@ -47,15 +47,36 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$subscribers = $data['subscribers'];
 		$cycle = $data['cycle'];
 		
-		// Filter subscribers.
-		$filtered = $this->filterSubscribers($subscribers);
+		$sorted = $this->sortSubscribers($subscribers);
 		
-		foreach ($filtered as $filteredSub) {
-			$this->records[] = new Billrun_Cycle_Subscriber($filteredSub);
+		// Filter subscribers.
+		$filtered = $this->filterSubscribers($sorted, $cycle);
+		
+		foreach ($sorted as $sid => $subscriberList) {
+			Billrun_Factory::log("Constructing records for sid " . $sid);
+			
+			$filteredSid = array();
+			if(isset($filtered[$sid])) {
+				$filteredSid = $filtered[$sid];
+			}
+			
+			$this->records[] = $this->constructForSid($subscriberList, $filteredSid);
 		}
 	}
 
-	protected function sortSubscribers($subscribers) {
+	protected function constructForSid($sorted, $filtered) {
+		$aggregateable = array();
+		foreach ($sorted as $sub) {
+			$constructed = $sub;
+			$filterKey = $sub['to'];
+			if(isset($filtered[$filterKey])) {
+				$constructed = array_merge($constructed, $filtered[$filterKey]);
+			}
+			$aggregateable[] = new Billrun_Cycle_Subscriber($constructed);
+		}
+	}
+	
+	protected function sortSubscribers($subscribers, $endTime) {
 		$sorted = array();
 		
 		foreach ($subscribers as $subscriber) {
@@ -65,10 +86,25 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			}
 			
 			$sid = $subscriber['sid'];
-			$sorted[$sid][] = $subscriber;
+			$sorted[$sid][] = $this->handleSubscriberDates($subscriber, $endTime);
 		}
 		
 		return $sorted;
+	}
+	
+	protected function handleSubscriberDates($subscriber, $endTime) {
+		if(isset($subscriber['to']->sec)) {
+			$subscriber['to'] = $subscriber['to']->sec;
+		}
+		if(isset($subscriber['from']->sec)) {
+			$subscriber['from'] = $subscriber['from']->sec;
+		}
+
+		if($subscriber['to'] > $endTime) {
+			$subscriber['to'] = $endTime;
+		}
+		
+		return $subscriber;
 	}
 	
 	/**
@@ -77,21 +113,88 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @return array
 	 */
-	protected function filterSubscribers($subscribers) {
-		$sorted = $this->sortSubscribers($subscribers);
+	protected function filterSubscribers($subscribers, $cycle) {
 		$filtered = array();
 		
-		foreach ($sorted as $subscriber) {
-			if(!isset($subscriber['sid'])) {
-				Billrun_Factory::log("Invalid subscriber record in filter subscribers!", Zend_Log::NOTICE);
-				continue;
-			}
-			
-			$sid = $subscriber['sid'];
-			$filtered[$sid][] = $subscriber;
+		foreach ($subscribers as $sid => $current) {
+			$filtered[$sid] = $this->buildSubAggregator($current, $cycle->end());
 		}
 		
 		return $filtered;
+	}
+	
+	/**
+	 * Create a subscriber aggregator from an array of subscriber records.
+	 * @param array $current - Array of subscriber records.
+	 * @param int $endTime
+	 * @todo: Rewrite this function better
+	 */
+	protected function buildSubAggregator(array $current, $endTime) {		
+		$aggregatorData = array();
+		
+		$plan = null;
+		$services = array();
+		$servicesData = array();
+		foreach ($current as $subscriber) {
+			// Get the plan
+			$currPlan = $subscriber['plan'];
+			
+			// If it is the same plan
+			if(($currPlan && !$plan) || ($plan['name'] !== $currPlan)) {
+				// Update the last plan
+				if($plan) {
+					$planEnd = $subscriber['from'];
+					$aggregatorData[$planEnd]['plan'] = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $planEnd);
+				}
+
+				// Set the plan
+				$plan['name'] = $currPlan;
+				$plan['start'] = $subscriber['plan_activation'];
+			}
+			
+			// Get the services.
+			$currServices = array();
+			if(isset($subscriber['services'])) {
+				$currServices = $subscriber['services'];
+			}
+			
+			// Check the differences in the services.
+			$added = array_diff($services, $currServices);
+			$removed = array_diff($currServices, $services);
+			
+			$services = $currServices;
+			
+			// Add the services to the services data
+			foreach ($added as $addedService) {
+				$serviceRow = array("service" => $addedService, "start" => $subscriber['from']);
+				$servicesData[$addedService] = $serviceRow;
+			}
+			
+			// Handle the removed services. 
+			foreach ($removed as $removedService) {
+				$updateService = $servicesData[$removedService];
+				unset($servicesData[$removedService]);
+				$serviceEnd = $subscriber['from'];
+				$updateService['end'] = $serviceEnd;
+				
+				// Push back
+				$aggregatorData[$serviceEnd]['services'][] = $updateService;
+			}
+		}
+		
+		// Handle all the remaining values.
+		if($plan) {
+			$planData = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $endTime);
+			$aggregatorData[$endTime]['plan'] = $planData;
+			$aggregatorData['next_plan'] = $plan;
+		}
+		
+		foreach ($servicesData as $lastService) {
+			$lastService['end'] = $endTime;
+			$aggregatorData[$endTime]['services'][] = $lastService;
+		}
+		
+		return $aggregatorData;
 	}
 	
 	/**

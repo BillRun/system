@@ -16,24 +16,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 	protected $nextPlan;
 	
-	// TODO: Process the dates!
-	protected function constructPlans($plans) {
-		$results = array();
-		foreach ($plans as $plan) {
-			// TODO: Handle the dates
-		}
-		return $results;
-	}
-	
-	// TODO: Process the dates!
-	protected function constructServices($services) {
-		$results = array();
-		foreach ($services as $service) {
-			// TODO: Handle the dates
-		}
-		return $results;
-	}
-	
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['plans']) && is_array($input['plans']) &&
@@ -70,11 +52,38 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 	
 	protected function constructRecords($data) {
-		$plans = $data['plans'];
-		$this->records['plans'] = $this->constructPlans($plans);
+		if(isset($data['next_plan'])) {
+			$this->nextPlan = $data['next_plan'];
+		}
 		
-		$services = $data['services'];
-		$this->records['services'] = $this->constructServices($services);
+		$plans = array();
+		if(isset($data['plans'])) {
+			$plans = $data['plans'];
+		}
+		$this->records['plans'] = $plans;
+		
+		$services = array();
+		if(isset($data['services'])) {
+			$services = $data['services'];
+		}
+		$this->records['services'] = $services;
 	}
 
+	protected function constructServices($data) {
+		$this->constructField($data, "services");
+	}
+	
+	protected function constructPlans($data) {
+		$this->constructField($data, "plans");
+	}
+	
+	protected function constructField($data, $field) {
+		$toSet = array();
+		if(isset($data[$field])) {
+			$toSet = $data[$field];
+		}
+		$this->records[$field] = $toSet;
+
+	}
+	
 }
