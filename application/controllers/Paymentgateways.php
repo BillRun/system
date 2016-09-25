@@ -18,6 +18,7 @@
  
 	 
  	public function init() {
+		parent::init();
  		$path = APPLICATION_PATH . '/library/vendor/';
  		require_once $path . 'autoload.php';
  		
@@ -36,11 +37,15 @@
  			}
  			$settings[] = $setting;
  		}
- 		echo json_encode(array(
+ 		$this->setOutput(array(
  					'status' => !empty($settings) ? 1 : 0,
  					'desc' => !empty($settings) ? 'success' : 'error',
  					'details' => empty($settings) ? array() : $settings,
- 			), JSON_FORCE_OBJECT);
+ 			));
+	}
+	
+	protected function render($tpl, array $parameters = array()) {
+		return parent::render('index', $parameters);
 	}
  
  }
