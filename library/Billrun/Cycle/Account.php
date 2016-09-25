@@ -46,6 +46,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 //		$this->populateBillrunWithAccountData($data);
 		$subscribers = $data['subscribers'];
 		$cycle = $data['cycle'];
+		$plans = &$data['plans'];
 		
 		$sorted = $this->sortSubscribers($subscribers);
 		
@@ -60,11 +61,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$filteredSid = $filtered[$sid];
 			}
 			
-			$this->records[] = $this->constructForSid($subscriberList, $filteredSid);
+			$this->records[] = $this->constructForSid($subscriberList, $filteredSid, $plans);
 		}
 	}
 
-	protected function constructForSid($sorted, $filtered) {
+	protected function constructForSid($sorted, $filtered, &$plans) {
 		$aggregateable = array();
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
@@ -72,6 +73,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			if(isset($filtered[$filterKey])) {
 				$constructed = array_merge($constructed, $filtered[$filterKey]);
 			}
+			$constructed['mongo_plans'] = &$plans;
 			$aggregateable[] = new Billrun_Cycle_Subscriber($constructed);
 		}
 	}

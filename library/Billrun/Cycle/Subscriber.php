@@ -56,34 +56,34 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$this->nextPlan = $data['next_plan'];
 		}
 		
-		$plans = array();
-		if(isset($data['plans'])) {
-			$plans = $data['plans'];
-		}
-		$this->records['plans'] = $plans;
-		
-		$services = array();
-		if(isset($data['services'])) {
-			$services = $data['services'];
-		}
-		$this->records['services'] = $services;
+		$this->constructServices($data);
+		$this->constructPlans($data);
 	}
 
 	protected function constructServices($data) {
-		$this->constructField($data, "services");
 	}
 	
 	protected function constructPlans($data) {
-		$this->constructField($data, "plans");
+		$plans = $this->getByField($data, "plans");
+		$mongoPlans = $this->getByField($data, "mongo_plans");
+		foreach ($plans as &$value) {
+			// Plan name
+			$index = $value['plan'];
+			if(!in_array($index, $mongoPlans)) {
+				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
+				continue;
+			}
+			
+			$this->records['plans'][] = array_merge($value, $mongoPlans[$index]);
+		}
 	}
 	
-	protected function constructField($data, $field) {
+	protected function getByField($data, $field) {
 		$toSet = array();
 		if(isset($data[$field])) {
 			$toSet = $data[$field];
 		}
-		$this->records[$field] = $toSet;
-
+		return $toSet;
 	}
 	
 }

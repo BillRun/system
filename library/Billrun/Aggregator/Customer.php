@@ -208,27 +208,43 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	public function load() {
 		$cycle = new Billrun_DataTypes_CycleTime($this->getStamp());
-		$data = $this->loadRawData($cycle);
-		$accounts = $this->parseToAccounts($data, $cycle);
+		list($data,$plans) = each($this->loadRawData($cycle));
+		
+		$sortedPlans = $this->sortPlans($plans);
+		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans);
 //		$aggregatedData = $this->translateRawData($accounts);
 		return $accounts;
 	}
 
+	protected function sortPlans($plans) {
+		$sorted = array();
+		foreach ($plans as $value) {
+			$name = $value['name'];
+			$sorted[$name] = $value;
+		}
+		return $sorted;
+	}
+	
 	/**
 	 * Get the raw data
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @return array of raw data
 	 */
 	protected function loadRawData($cycle) {
+		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
+		
+		// Load the plans
+		$planResults = $this->aggregatePlans($mongoCycle);
+		
 		if (!$this->overrideAccountIds) {
-			return $this->aggregateMongo($cycle, $this->page, $this->size);
+			return $this->aggregateMongo($mongoCycle, $this->page, $this->size);
 		}
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
-			$data = $data + $this->aggregateMongo($cycle, 0, 1, $account_id);
+			$data = $data + $this->aggregateMongo($mongoCycle, 0, 1, $account_id);
 		}
-		return $data;
+		return array('data' => $data, 'plans' => $planResults);
 	}
 	
 	/**
@@ -282,7 +298,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @return \Billrun_Cycle_Account
 	 */
-	protected function parseToAccounts($outputArr, $cycle) {
+	protected function parseToAccounts($outputArr, $cycle, &$plans) {
 		$accounts = array();
 		$lastAid = null;
 		$accountData = array();
@@ -292,6 +308,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			// If the aid is different, store the account.
 			if($accountData && $lastAid && ($lastAid != $aid)) {
 				$accountData['cycle'] = $cycle;
+				$accountData['plans'] = &$plans;
 				$accounts[] = new Billrun_Cycle_Account($accountData);
 				$accountData = array();
 			}
@@ -477,17 +494,59 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
 		}
 	}
+
+	protected function aggregatePlans($cycle) {
+		$pipelines[] = $this->getPlansMatchPipeline($cycle);
+		$pipelines[] = $this->getPlansProjectPipeline();
+		
+		$coll = Billrun_Factory::db()->plansCollection();
+		$results = iterator_to_array($coll->aggregate($pipelines));
+		
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
+	}
+	
+	/**
+	 * 
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle
+	 * @return type
+	 */
+	protected function getPlansMatchPipeline($cycle) {
+		return array(
+			'$match' => array(
+				'from' => array(
+					'$gte' => $cycle->start(),
+					'$lt' => $cycle->end()),
+				
+				),
+				'to' => array(
+					'$gt' => $cycle->start()
+					),
+			);
+	}
+	
+	protected function getPlansProjectPipeline() {
+		return array(
+			'$project' => array(
+				'plan' => '$name',
+				'upfront' => 1,
+				'price' => 1,
+			)
+		);
+	}
 	
 	/**
 	 * Aggregate mongo with a query
-	 * @param Billrun_DataTypes_CycleTime $cycle - Current cycle time
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
 	 * @param int $aid - Account id, null by deafault
 	 * @return array 
 	 */
 	public function aggregateMongo($cycle, $page, $size, $aid = null) {
-		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
 		if ($aid) {
 			$page = 0;
 			$size = 1;
