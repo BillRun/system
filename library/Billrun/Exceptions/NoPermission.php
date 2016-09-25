@@ -16,8 +16,8 @@ class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
 	
 	const ERROR_CODE = 17575;
 	
-	public function __construct() {
-		parent::__construct("No permissions.", self::ERROR_CODE);
+	public function __construct($message = "No permissions.") {
+		parent::__construct($message, self::ERROR_CODE);
 	}
 	
 	/**

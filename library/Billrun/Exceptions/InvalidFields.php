@@ -26,8 +26,8 @@ class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 	 * Create a new instance of the invalid fields exception
 	 * @param array $invalidFields - Array of invalid fields.
 	 */
-	public function __construct($invalidFields) {
-		parent::__construct("Invalid fields.", self::ERROR_CODE);
+	public function __construct(array $invalidFields, $message = "Invalid fields.") {
+		parent::__construct($message, self::ERROR_CODE);
 		$this->setInvalidFields($invalidFields);
 	}
 	
@@ -35,7 +35,7 @@ class Billrun_Exceptions_InvalidFields extends Billrun_Exceptions_Base {
 	 * 
 	 * @param Billrun_DataTypes_InvalidField $invalidFields array of invalid fields
 	 */
-	protected function setInvalidFields($invalidFields) {
+	protected function setInvalidFields(array $invalidFields) {
 		$this->invalidFields = $this->translateInvalidFieldArray($invalidFields);
 	}
 	
