@@ -176,7 +176,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$to = $input->get('to');
 		$from = $input->get('from');
 		if ($to && $from) {
-			$dateParameters = array('to' => array('$lte' => $to), 'from' => array('$gte' => $from));
+			$dateParameters = array('to' => array('$lte' => new MongoDate(strtotime($to))), 'from' => array('$gte' => new MongoDate(strtotime($from))));
 			$this->setDateParameters($dateParameters, $this->balancesQuery);
 		} else {
 			$timeNow = new MongoDate();
