@@ -1217,26 +1217,26 @@ EOI;
 	}
 
 	protected function getDate($line) {
-		$timsetamp = $line['urt']->sec;
-		if (isset($line['tzoffset'])) {
-			// TODO change this to regex
-			$tzoffset = $line['tzoffset'];
-			$sign = substr($tzoffset, 0, 1);
-			$hours = substr($tzoffset, 1, 2);
-			$minutes = substr($tzoffset, 3, 2);
-			$time = $hours . ' hours ' . $minutes . ' minutes';
-			if ($sign == "-") {
-				$time .= ' ago';
+		$timestamp = $line['urt']->sec;
+		$zend_date = new Zend_Date($timestamp);
+		if (Billrun_Factory::config()->getConfigValue('tap3.local_time', false)) {
+			if (isset($line['tzoffset'])) {
+				// TODO change this to regex
+				$tzoffset = $line['tzoffset'];
+				$sign = substr($tzoffset, 0, 1);
+				$hours = substr($tzoffset, 1, 2);
+				$minutes = substr($tzoffset, 3, 2);
+				$time = $hours . ' hours ' . $minutes . ' minutes';
+				if ($sign == "-") {
+					$time .= ' ago';
+				}
+				$timestamp = strtotime($time, $timestamp);
+				$zend_date = new Zend_Date($timestamp);
+				$zend_date->setTimezone('UTC');
 			}
-			$timsetamp = strtotime($time, $timsetamp);
-			$zend_date = new Zend_Date($timsetamp);
-			$zend_date->setTimezone('UTC');
-		} else {
-			$zend_date = new Zend_Date($timsetamp);
 		}
 		return $this->getGolanDate($zend_date);
 	}
-
 	/**
 	 * 
 	 * @param Zend_Date $date
