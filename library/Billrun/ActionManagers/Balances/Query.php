@@ -92,7 +92,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	
 	protected function getBalanceIndex($item, $field) {
 		if ($item[$field] instanceof MongoDate) {
-			return $item[$field]->sec . $item[$field]->usec;
+			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT);
 		}
 		return $item[$field];
 	}
