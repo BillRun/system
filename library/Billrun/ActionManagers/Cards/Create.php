@@ -25,12 +25,6 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected $inner_hash;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating cards"));
-	}
-
-	/**
 	 * Get the array of fields to be inserted in the create record from the user input.
 	 * @return array - Array of fields to be inserted.
 	 */
@@ -69,8 +63,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 		$create = $input->get('cards');
 
 		if (empty($create) || (!($jsonCreateDataArray = json_decode($create, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base");
-			$error = "There is no create tag or create tag is empty!";
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -84,7 +77,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			$oneCard = array();
 			foreach ($createFields as $field) {
 				if (!isset($jsonCreateData[$field]) || empty($jsonCreateData[$field])) {
-					$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 1;
+					$errorCode =  1;
 					$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 					return false;
 				}
@@ -93,14 +86,14 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 
 			// Initial status validity check (Initial status should be "Idle")
 			if ($initialStatus && !in_array($oneCard['status'], $initialStatus)) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 3;
+				$errorCode =  3;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['status']));
 				return false;
 			}
 
 			// service provider validity check
 			if (!$this->validateServiceProvider($oneCard['service_provider'])) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 4;
+				$errorCode =  4;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($oneCard['service_provider']));
 				return false;
 			}
@@ -150,39 +143,30 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 			'socketTimeoutMS' => 300000,
 			'wTimeoutMS' => 300000,
 		);
-		$exception = null;
 		try {
 			if (!$this->secretExists()) {
 				$res = Billrun_Factory::db()->cardsCollection()->batchInsert($this->cards, $bulkOptions);
 			} else {
-				$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 5;
+				$errorCode =  5;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			}
-		} catch (\Exception $e) {
-			$exception = $e;
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 2;
-			$error = 'failed storing in the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		} catch (\MongoException $e) {
 			Billrun_Factory::log('failed saving request :' . print_r($this->cards, 1), Zend_Log::NOTICE);
 			$res = $this->removeCreated($bulkOptions);
+			$errorCode = 2;
+			$this->reportError($errorCode);
 		}
 
-		// Error code 0 is success
-		if (!$this->errorCode) {
-			$res = $this->cleanInnerHash($bulkOptions);
-		}
+		$res = $this->cleanInnerHash($bulkOptions);
 
 		array_walk($this->cards, function (&$card, $idx) {
 			unset($card['secret']);
 		});
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				(json_encode($this->cards)) :
-				('Batch Cancelled')
+			'status' => 1,
+			'desc' => "Success creating cards",
+			'details' => json_encode($this->cards)
 		);
 		return $outputResult;
 	}

@@ -10,7 +10,7 @@
  * This is a prototype for a services action.
  *
  */
-abstract class Billrun_ActionManagers_Services_Action extends Billrun_ActionManagers_APIAction implements Billrun_ActionManagers_IAPIAction {
+abstract class Billrun_ActionManagers_Services_Action implements Billrun_ActionManagers_IAPIAction {
 
 	protected $collection = null;
 

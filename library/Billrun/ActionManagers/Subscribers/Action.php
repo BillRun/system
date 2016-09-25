@@ -10,8 +10,10 @@
  * This is a prototype for a subscriber action.
  *
  */
-abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Subscribers_Action {
 
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 	
 	/**
@@ -27,8 +29,7 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 	 */
 	public function __construct($params) {
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/subscribers/errors.ini");
-		parent::__construct($params);
+		$this->baseCode = 1000;
 	}
 
 	/**
@@ -60,7 +61,7 @@ abstract class Billrun_ActionManagers_Subscribers_Action extends Billrun_ActionM
 		$subscriberTypes = Billrun_Factory::config()->getConfigValue('subscribers.types', array());
 		if (empty($this->type = $input->get('type')) ||
 			!in_array($this->type, $subscriberTypes)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 7;
+			$errorCode =  7;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}		

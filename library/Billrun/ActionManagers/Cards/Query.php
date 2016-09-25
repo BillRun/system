@@ -21,12 +21,6 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 	protected $page = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying cards"));
-	}
-
-	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
@@ -47,7 +41,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 20;
+			$errorCode =  20;
 			$error = "There is no query tag or query tag is empty!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -56,7 +50,7 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (!empty($errLog) && count($errLog) == count($queryFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 21;
+			$errorCode =  21;
 			$error = "Cannot query ! All the following fields are missing or empty:" . implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -93,22 +87,19 @@ class Billrun_ActionManagers_Cards_Query extends Billrun_ActionManagers_Cards_Ac
 				unset($rawItem['secret']);
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, array('from', 'to', 'creation_time', 'activation_datetime'));
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 22;
-			$error = 'failed querying DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+		} catch (\MongoException $e) {
+			$errorCode =  22;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-			$returnData = array();
 		}
 
 		if (!$returnData) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 23;
+			$errorCode =  23;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying cards",
 			'details' => $returnData
 		);
 		return $outputResult;
