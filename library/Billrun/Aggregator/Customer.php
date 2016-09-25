@@ -209,8 +209,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	public function load() {
 		$cycle = new Billrun_DataTypes_CycleTime($this->getStamp());
 		$data = $this->loadRawData($cycle);
-		$aggregatedData = $this->translateRawData($data);
-		return $data;
+		$accounts = $this->parseToAccounts($data, $cycle);
+//		$aggregatedData = $this->translateRawData($accounts);
+		return $accounts;
 	}
 
 	/**
@@ -270,11 +271,55 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			
 			$this->addAccountFieldsToBillrun($account_billrun, $account);
-			
-			$this->data[] = new Billrun_Cycle_Account($account);
 		}
 		
 		return $data;
+	}
+	
+	/**
+	 * 
+	 * @param type $outputArr
+	 * @param Billrun_DataTypes_CycleTime $cycle
+	 * @return \Billrun_Cycle_Account
+	 */
+	protected function parseToAccounts($outputArr, $cycle) {
+		$accounts = array();
+		$lastAid = null;
+		$accountData = array();
+		foreach ($outputArr as $subscriberPlan) {
+			$aid = $subscriberPlan['id']['aid'];
+			
+			// If the aid is different, store the account.
+			if($accountData && $lastAid && ($lastAid != $aid)) {
+				$accountData['cycle'] = $cycle;
+				$accounts[] = new Billrun_Cycle_Account($accountData);
+				$accountData = array();
+			}
+			
+			$type = $subscriberPlan['id']['type'];
+			if ($type === 'account') {
+				$firstname = $subscriberPlan['id']['first_name'];
+				$lastname = $subscriberPlan['id']['last_name'];
+				$accountData['attributes'] = array(
+					'first_name' => $firstname,
+					'last_name' => $lastname,
+					'address' => $subscriberPlan['id']['address'],
+					'payment_details' => $this->getPaymentDetails($subscriberPlan),
+				);
+				continue;
+			}
+			
+			if ($type === 'subscriber' && $accountData) {
+				$raw = $subscriberPlan['id'];
+				$accountData['subscribers'][] = array_merge($raw, $subscriberPlan['plan_dates']);
+			}
+		}
+		
+		if($accountData) {
+			$accounts[] = new Billrun_Cycle_Account($accountData);
+		}
+		
+		return $accounts;
 	}
 	
 	protected function handleInvoices($data) {
