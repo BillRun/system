@@ -87,7 +87,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	}
 
 	protected function getReportCandiateMatchQuery() {
-		return array();
+		return  array('from' => array('$lt' => new MongoDate($this->startTime)),'to' => array('$gt' => new MongoDate($this->startTime)));
 	}
 
 	protected function getReportFilterMatchQuery() {
