@@ -8,22 +8,23 @@
  require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  
  /**
-  * This class holds the api logic for the settings.
+  * This class returns the available payment gateways in Billrun.
   *
   * @package     Controllers
   * @subpackage  Action
   * @since       5.2
   */
- class PaymentGatewaysAction extends ApiAction {
+ class PaymentGatewaysController extends ApiController {
  
- 	/**
- 	 * The logic to be executed when this API plugin is called.
- 	 */
- 	public function execute() {
+	 
+ 	public function init() {
  		$path = APPLICATION_PATH . '/library/vendor/';
  		require_once $path . 'autoload.php';
  		
- 		$gateways = Billrun_Factory::config()->getConfigValue('Gateways');
+ 	}
+	
+	public function listAction(){
+	 $gateways = Billrun_Factory::config()->getConfigValue('Gateways');
  		$settings = array();
  		foreach ($gateways as $name => $properties) {
  			foreach($properties as $property => $value){
@@ -35,12 +36,11 @@
  			}
  			$settings[] = $setting;
  		}
- 		$output = json_encode($settings, JSON_FORCE_OBJECT);	
- 		$this->getController()->setOutput(array(array(
- 					'status' => !empty($output) ? 1 : 0,
- 					'desc' => !empty($output) ? 'success' : 'error',
- 					'details' => empty($output) ? array() : $output,
- 			)));
- 	}
+ 		echo json_encode(array(
+ 					'status' => !empty($settings) ? 1 : 0,
+ 					'desc' => !empty($settings) ? 'success' : 'error',
+ 					'details' => empty($settings) ? array() : $settings,
+ 			), JSON_FORCE_OBJECT);
+	}
  
  }
