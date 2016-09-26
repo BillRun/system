@@ -20,6 +20,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected $attributes = array();
 	
+	protected $subscribers = array();
+	
+	protected $totals = array();
+	
 	/**
 	 * 
 	 * @param type $data
@@ -84,8 +88,48 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$constructed['cycle'] = &$cycle;
 			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
 			
-			$aggregateable[] = new Billrun_Cycle_Subscriber($constructed);
+			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
+			$this->addSubscriber($cycleSub, $sub);
+			$aggregateable[] = $cycleSub;
 		}
+	}
+	
+	/**
+	 * Add a subscriber to the current billrun entry.
+	 * @param Billrun_Cycle_Subscriber $subscriber Subscriber to add.
+	 */
+	public function addSubscriber($subscriber, $subData) {
+		$subscriber_entry = $subData;
+		$subscriber_entry['subscriber_status'] = $subscriber->getStatus();
+		$this->subscribers[] = $subscriber_entry;
+	}
+	
+		/**
+	 * Add pricing data to the account totals.
+	 */
+	public function updateTotals() {
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
+			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
+		);
+		foreach ($this->subscribers as $sub) {
+			//Billrun_Factory::log(print_r($sub));
+			$newTotals['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['before_vat'], 0);
+			$newTotals['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['after_vat'], 0);
+			$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
+			$newTotals['vatable'] += Billrun_Util::getFieldVal($sub['totals']['vatable'], 0);
+			$newTotals['flat']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['before_vat'], 0);
+			$newTotals['flat']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['after_vat'], 0);
+			$newTotals['flat']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['flat']['vatable'], 0);
+			$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['before_vat'], 0);
+			$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['after_vat'], 0);
+			$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['service']['vatable'], 0);
+			$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['before_vat'], 0);
+			$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['after_vat'], 0);
+			$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['usage']['vatable'], 0);
+		}
+		$this->totals = $newTotals;
 	}
 	
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {

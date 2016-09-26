@@ -114,6 +114,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $billrun;
 	
+	protected $acounts;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -212,7 +214,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		$sortedPlans = $this->sortPlans($plans);
 		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans);
-//		$aggregatedData = $this->translateRawData($accounts);
+		
+		// Save the accounts
+		$this->acounts = $accounts;
+		
 		return $accounts;
 	}
 
@@ -472,6 +477,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Billrun::clearPreLoadedLines(array($accid));
 			}
 		}
+		
 		if ($billruns_count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
@@ -489,6 +495,21 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $this->successfulAccounts;
 	}
 
+	protected function afterAggregate($results) {
+		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
+		$end_msg .="Processed " . (count($results)) . " accounts";
+		Billrun_Factory::log($end_msg, Zend_Log::INFO);
+		$this->sendEndMail($end_msg);
+
+		// @TODO trigger after aggregate
+		if (!$this->recreateInvoices){
+			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
+			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
+			$this->billingCycle->update($cycleQuery, $cycleUpdate);
+		}
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($results, &$this));
+	}
+	
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
 		if ($recipients) {
@@ -701,93 +722,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'from' => 1,
 			),
 		);
-	}
-	
-	/**
-	 * Creates and saves a flat line to the db
-	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
-	 * @param string $billrun_key the billrun for which to add the flat line
-	 * @return array the inserted line or the old one if it already exists
-	 * @deprecated since version 5.1
-	 */
-	protected function saveFlatLines($subscriber, $billrun_key) {
-		$flatEntries = $subscriber->getFlatEntries($billrun_key, true);
-		try {
-			if ($flatEntries) {
-				$flatEntriesRaw = array_map(function($obj) {
-					return $obj->getRawData();
-				}, $flatEntries);
-				$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
-				if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
-					Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
-				}
-			}
-		} catch (Exception $e) {
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
-			} else {
-				Billrun_Factory::log("Problem inserting flat lines for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_Log::ALERT);
-				Billrun_Util::logFailedCreditRow($flatEntries);
-			}
-		}
-		return $flatEntries;
-	}
-
-	/**
-	 * create and save service lines
-	 * @param type $subscriber
-	 * @param type $billrun_key
-	 * @return array of inserted lines
-	 * @deprecated since version 5.1
-
-	 */
-	protected function saveServiceLines($subscriber, $billrun_key) {
-		$services = $subscriber->getServices($billrun_key, true);
-		$ret = array();
-		foreach ($services as $service) {
-			$rawData = $service->getRawData();
-			try {
-				$this->lines->insert($rawData, array("w" => 1));
-			} catch (Exception $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_Log::ALERT);
-				} else {
-					Billrun_Factory::log("Problem inserting service for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_Log::ALERT);
-					Billrun_Util::logFailedServiceRow($rawData);
-				}
-			}
-			$ret[$service['stamp']] = $service;
-		}
-		return $ret;
-	}
-
-	/**
-	 * create and save credit lines
-	 * @param type $subscriber
-	 * @param type $billrun_key
-	 * @return array of inserted lines
-	 * @deprecated since version 5.1
-	 */
-	protected function saveCreditLines($subscriber, $billrun_key) {
-		$credits = $subscriber->getCredits($billrun_key, true);
-		$ret = array();
-		foreach ($credits as $credit) {
-			$rawData = $credit->getRawData();
-			try {
-				$this->lines->insert($rawData, array("w" => 1));
-			} catch (Exception $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_Log::ALERT);
-				} else {
-					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_Log::ALERT);
-					Billrun_Util::logFailedCreditRow($rawData);
-				}
-			}
-			$ret[$credit['stamp']] = $credit;
-		}
-		return $ret;
 	}
 
 	protected function saveCredit($credit, $billrun_key) {

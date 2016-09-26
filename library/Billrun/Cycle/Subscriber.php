@@ -28,6 +28,13 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			   (!isset($input['services']) || is_array($input['services'])); 
 	}
 	
+	public function getStatus() {
+		if (!is_null($this->nextPlan)) {
+			return "open";
+		}
+		return "closed";
+	}
+	
 	/**
 	 * Main aggreagte function
 	 * @return Aggregated data.
@@ -119,6 +126,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	protected function constructPlans($data) {
 		$plans = $this->getByField($data, "plans");
+		$plans += $this->nextPlan;
 		$mongoPlans = $this->getByField($data, "mongo_plans");
 		
 		/**
