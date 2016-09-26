@@ -55,7 +55,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$sorted = $this->sortSubscribers($subscribers);
 		
 		// Filter subscribers.
-		$filtered = $this->filterSubscribers($sorted, $cycle);
+		$filtered = $this->constructSubscriberData($sorted, $cycle);
 		
 		foreach ($sorted as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
@@ -141,7 +141,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'type' => 'flat',
 			'usaget' => 'flat',
 			'cycle' => $cycle,
-			'urt' => new MongoDate($cycle->start()),
+			'urt' => new MongoDate($cycle->end()),
 		);
 		
 		return $flatEntry;
@@ -179,12 +179,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 	
 	/**
-	 * 
+	 * Construct subscriber data
+	 * Consructs the plans and services to be aggregated with the subscriber data
 	 * @param type $subscribers
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @return array
 	 */
-	protected function filterSubscribers($subscribers, $cycle) {
+	protected function constructSubscriberData($subscribers, $cycle) {
 		$filtered = array();
 		
 		foreach ($subscribers as $sid => $current) {

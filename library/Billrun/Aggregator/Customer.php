@@ -212,7 +212,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$cycle = new Billrun_DataTypes_CycleTime($this->getStamp());
 		list($data,$plans) = each($this->loadRawData($cycle));
 		
-		$sortedPlans = $this->sortPlans($plans);
+		$sortedPlans = $this->constructPlans($plans);
 		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans);
 		
 		// Save the accounts
@@ -221,7 +221,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $accounts;
 	}
 
-	protected function sortPlans($plans) {
+	/**
+	 * Construct the plans array from the mongo raw data.
+	 * @param type $plans
+	 * @return type
+	 */
+	protected function constructPlans($plans) {
 		$sorted = array();
 		foreach ($plans as $value) {
 			$name = $value['name'];
@@ -540,7 +545,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return array(
 			'$match' => array(
 				'from' => array(
-					'$gte' => $cycle->start(),
 					'$lt' => $cycle->end()),
 				
 				),
