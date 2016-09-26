@@ -194,24 +194,24 @@ class ConfigModel {
 			$this->setFileTypeSettings($updatedData, $fileSettings);
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
 		} else if ($category === 'payment_gateways') {
- 			if (!is_array($data)) {
- 				Billrun_Factory::log("Invalid data for payment gateways.");
- 				return 0;
- 			}
- 			if (empty($data['name'])) {
- 				throw new Exception('Couldn\'t find payment gateway name');
- 			}
- 			$supported = Billrun_Factory::config()->getConfigValue('Gateways.' . $data['name'] . '.supported');
- 			if (is_null($supported) || !$supported){
- 				throw new Exception('Payment gateway is not supported');
- 			}
- 			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
- 			if ($rawPgSettings) {
- 				$pgSettings = array_merge($rawPgSettings, $data);
- 			} else {
- 				$pgSettings = $data;
- 			}
- 			$this->setPaymentGatewaySettings($updatedData, $pgSettings);
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for payment gateways.");
+				return 0;
+			}
+			if (empty($data['name'])) {
+				throw new Exception('Couldn\'t find payment gateway name');
+			}
+			$supported = Billrun_Factory::config()->getConfigValue('Gateways.' . $data['name'] . '.supported');
+			if (is_null($supported) || !$supported) {
+				throw new Exception('Payment gateway is not supported');
+			}
+			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
+			if ($rawPgSettings) {
+				$pgSettings = array_merge($rawPgSettings, $data);
+			} else {
+				$pgSettings = $data;
+			}
+			$this->setPaymentGatewaySettings($updatedData, $pgSettings);
  			$pgSettings = $this->validatePaymentGatewaySettings($updatedData, $data);
  			if (!$pgSettings){
  				return 0;
@@ -458,16 +458,42 @@ class ConfigModel {
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = $pg['params'];
  		$name = $pg['name'];
- 		$gateway = Omnipay\Omnipay::create($name);	
- 		$defaultParameters = $gateway->getDefaultParameters();
- 		$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
- 		if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize){
- 			Billrun_Factory::log("Wrong parameters for connection to", $name);
- 			return false;
- 		}
- 		
- 		// TODO: check Auth to gateway through Omnipay
- 		
+		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('Gateways');
+		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
+ 			return $paymentGateway['supported'] == true;
+ 		});
+		if (!in_array($name, array_keys($supportedGateways))){
+			Billrun_Factory::log("Unsupported Payment Gateway: ", $name);
+			return false;
+		}
+		$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
+ 			return $paymentGateway['omnipay_supported'] == true;
+ 		});
+		if (in_array($name, array_keys($omnipay_supported))) {
+			$gateway = Omnipay\Omnipay::create($name);
+			$defaultParameters = $gateway->getDefaultParameters();
+			$defaultParametersKeys= array_keys($defaultParameters);
+			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
+			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
+			}
+			// TODO: check Auth to gateway through Omnipay
+		}
+		
+ 		else if ($name == "CreditGuard"){
+			$defaultParameters = array('tid' => "", 'user'=>"", 'password'=>"");
+			$defaultParametersKeys= array_keys($defaultParameters);
+			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
+			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
+			}
+		// meanewhile credentials of credit guard, TODO generic for all payemnt gateways not ompipay supported and functions for identical code.
+		}
+		
+		
+		
  		return true;
  	}
  
