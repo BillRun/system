@@ -15,10 +15,8 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		if(!isset($options['service'])) {
 			return;
 		}
-		
-		$this->stumpLine = $options['stump_line'];
 		$this->plan = $options['service'];
-		$this->charges = $options['charges'];
+		$this->constructOptions($options);
 	}
 	
 	/**
