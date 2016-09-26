@@ -60,26 +60,33 @@
 						<div class="panel panel-primary">
 							<div class="panel-heading">
 								<h4>Payment Gateway</h4>
+        						<div>
+	        					<div class="panel-body">
+		                				  <div class="row">
+				                        		    <div class="col-md-12">
+							                      <label for="payment_gateway">Payment Gateway</label>
+									    </div>
+								  </div>
+								  <div class="row">
+								    <?php
+								       foreach ($payment_gateways as $pg) {
+								       echo "<div class='col-md-3'>";
+								       echo "<div class='radio'>";
+								       echo "<label>";
+								       echo "<input type='radio' name='payment_gateway' value='" . $pg['name'] . "'>";
+								       if (!empty($pg['image_url'])) {
+  								       echo "<img src='" . $pg['image_url'] . "' />";
+								       } else {
+								       echo $pg['name'];
+								       }
+								       echo "</label>";
+								       echo "</div>";
+								       echo "</div>";
+								       }
+								       ?>
+								  </div>
 							</div>
-							<div class="panel-body">
-								<div class="row">
-									<div class="col-md-3">
-									        <label for="payment_gateway">Payment Gateway</label>
-										<?php
-										echo"<select name='payment_gateway' id='payment_gateway' class='form-control'" . ($payment_gateway ? "readonly value='$payment_gateway'" : "") . ">";
-										?>
-										<?php
-										foreach ($payment_gateways as $pg) {
-											echo "<option value='" . $pg['name'] . "' " . ($payment_gateway == $pg['name'] ? "selected" : "") . ">";
-													echo $pg['name'];
-											echo "</option>";
-										}
-										?>
-										</select>
-									</div>
-								</div>
-							</div>
-						</div>						
+						</div>
 						<div class="pull-left">
 							<button class="btn btn-primary">Submit</button>
 						</div>
