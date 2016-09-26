@@ -92,6 +92,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$this->addSubscriber($cycleSub, $sub);
 			$aggregateable[] = $cycleSub;
 		}
+		return $aggregateable;
 	}
 	
 	/**
