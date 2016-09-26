@@ -9,25 +9,28 @@
 /**
  * This class represents the service data to be aggregated.
  */
-class Billrun_Cycle_Data_Service implements Billrun_Cycle_Data_Line {
-	use Billrun_Traits_DateSpan;
-	
-	protected $service = null;
+class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	
 	public function __construct(array $options) {
 		if(!isset($options['service'])) {
 			return;
 		}
 		
-		$this->service = $options['service'];
-		
-		// TODO: Validate the service?
-		
-		$this->setSpan($options);
+		$this->stumpLine = $options['stump_line'];
+		$this->plan = $options['service'];
+		$this->charges = $options['charges'];
 	}
 	
-	public function getLine() {
-		// TODO: Implement
+	/**
+	 * Translate the plan values to service values.
+	 * @return type
+	 */
+	protected function getFlatLine() {
+		$flatLine = parent::getFlatLine();
+		$planValue = $flatLine['plan'];
+		unset($flatLine['plan']);
+		$flatLine['service'] = $planValue;
+		return $flatLine;
 	}
 
 }

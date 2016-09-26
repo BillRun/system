@@ -65,7 +65,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 	}
 
-	protected function constructForSid($sorted, $filtered, &$plans) {
+	/**
+	 * Construct the subscriber records for an sid
+	 * @param array $sorted - Sorted subscribers by sid
+	 * @param array $filtered - Filtered plans ans services
+	 * @param array $plans - Raw plan data from the mongo
+	 * @param Billrun_DataTypes_CycleTime $cycle - Current cycle time.
+	 */
+	protected function constructForSid($sorted, $filtered, &$plans, $cycle) {
 		$aggregateable = array();
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
@@ -74,8 +81,26 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$constructed = array_merge($constructed, $filtered[$filterKey]);
 			}
 			$constructed['mongo_plans'] = &$plans;
+			$constructed['cycle'] = &$cycle;
+			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
+			
 			$aggregateable[] = new Billrun_Cycle_Subscriber($constructed);
 		}
+	}
+	
+	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
+		$flatEntry = array(
+			'aid' => $subscriber['aid'],
+			'sid' => $subscriber['sid'],
+			'source' => 'billrun',
+			'billrun' => $cycle->key(),
+			'type' => 'flat',
+			'usaget' => 'flat',
+			'cycle' => $cycle,
+			'urt' => new MongoDate($cycle->start()),
+		);
+		
+		return $flatEntry;
 	}
 	
 	protected function sortSubscribers($subscribers, $endTime) {

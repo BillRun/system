@@ -745,6 +745,23 @@ class Billrun_Billrun {
 		$this->updateTotals();
 		return $updatedLines;
 	}
+	
+	/**
+	 * Add all lines of the account to the billrun object
+	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
+	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
+	 * @return array the stamps of the lines used to create the billrun
+	 */
+	public function saveLines($lines, &$deactivated_subscribers = array()) {
+		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
+		$this->filterSubscribers($lines, $deactivated_subscribers);
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
+
+		$updatedLines = $this->processLines(array_values($lines));
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::DEBUG);
+		$this->updateTotals();
+		return $updatedLines;
+	}
 
 	protected function processLines($account_lines) {
 		$updatedLines = array();

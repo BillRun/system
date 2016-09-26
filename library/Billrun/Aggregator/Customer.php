@@ -220,7 +220,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$sorted = array();
 		foreach ($plans as $value) {
 			$name = $value['name'];
-			$sorted[$name] = $value;
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$sorted[$name] = $translatedDates;
 		}
 		return $sorted;
 	}
@@ -534,6 +535,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'plan' => '$name',
 				'upfront' => 1,
 				'price' => 1,
+				'recurrence.periodicity' => 1,
+				'plan_activation' => 1,
+				'plan_deactivation' => 1
 			)
 		);
 	}
@@ -790,7 +794,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $insertRow;
 	}
 
-	protected function save($data) {
+	protected function save($results) {
+		$linesCol = Billrun_Factory::db()->linesCollection;
+		$linesCol->batchInsert($results);
+		
 		
 	}
 

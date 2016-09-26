@@ -16,12 +16,22 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
 	protected $nextPlan;
 	
+	/**
+	 * Validate the input
+	 * @param array $input
+	 * @return true if valid
+	 */
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['plans']) && is_array($input['plans']) &&
+			   isset($input['cycle']) && is_a($input['cycle'], 'Billrun_DataTypes_CycleTime') &&
 			   (!isset($input['services']) || is_array($input['services'])); 
 	}
 	
+	/**
+	 * Main aggreagte function
+	 * @return Aggregated data.
+	 */
 	public function aggregate() {
 		$aggregatedPlans = $this->aggregatePlans();
 		$aggregatedServices = $this->aggregateServices();
@@ -29,6 +39,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		return $aggregatedPlans + $aggregatedServices;
 	}
 
+	/**
+	 * Aggregate the plan data
+	 * @return type
+	 */
 	protected function aggregatePlans() {
 		$plans = $this->records['plans'];
 		$aggregator = new Billrun_Cycle_Plan();
@@ -36,6 +50,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		return $this->generalAggregate($plans, $aggregator);
 	}
 	
+	/**
+	 * Aggreagte the services
+	 * @return type
+	 */
 	protected function aggregateServices() {
 		$services = $this->records['services'];
 		$aggregator = new Billrun_Cycle_Service();
@@ -43,6 +61,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		return $this->generalAggregate($services, $aggregator);
 	}
 	
+	/**
+	 * This function wraps general internal aggregation logic
+	 * @param type $data
+	 * @param type $aggregator
+	 * @return type
+	 */
 	protected function generalAggregate($data, $aggregator) {
 		$results = array();
 		foreach ($data as $current) {
@@ -60,12 +84,48 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->constructPlans($data);
 	}
 
+	/**
+	 * Construct the services array
+	 * @param type $data
+	 */
 	protected function constructServices($data) {
+		$services = $this->getByField($data, "services");
+		$mongoPlans = $this->getByField($data, "mongo_plans");
+		/**
+		 * @var Billrun_DataTypes_CycleTime $cycle
+		 */
+		$cycle = $data['cycle'];
+		$stumpLine = $data['stump_line'];
+		foreach ($services as &$arrService) {
+			foreach ($arrService as &$value) {
+				// Plan name
+				$index = $arrService['service'];
+				if(!in_array($index, $mongoPlans)) {
+					Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
+					continue;
+				}
+
+				$serviceData = array_merge($value, $mongoPlans[$index]);
+				$serviceData['cycle'] = $cycle;
+				$serviceData['stump_line'] = $stumpLine;
+				$this->records['services'][] = $serviceData;
+			}
+		}
 	}
 	
+	/**
+	 * Construct the plan array
+	 * @param type $data
+	 */
 	protected function constructPlans($data) {
 		$plans = $this->getByField($data, "plans");
 		$mongoPlans = $this->getByField($data, "mongo_plans");
+		
+		/**
+		 * @var Billrun_DataTypes_CycleTime $cycle
+		 */
+		$cycle = $data['cycle'];
+		
 		foreach ($plans as &$value) {
 			// Plan name
 			$index = $value['plan'];
@@ -74,7 +134,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				continue;
 			}
 			
-			$this->records['plans'][] = array_merge($value, $mongoPlans[$index]);
+			$planData = array_merge($value, $mongoPlans[$index]);
+			$planData['cycle'] = $cycle;
+			$this->records['plans'][] = $planData;
 		}
 	}
 	
