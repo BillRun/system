@@ -936,4 +936,19 @@ class Billrun_Util {
 	public static function convertToBillrunDate($date){
 		return date(Billrun_Base::base_dateformat, strtotime($date));
 	}
+	
+	public static function createTimeWithOffset($line, $timestamp){
+		$tzoffset = $line['tzoffset'];
+		$sign = substr($tzoffset, 0, 1);
+		$hours = substr($tzoffset, 1, 2);
+		$minutes = substr($tzoffset, 3, 2);
+		$time = $hours . ' hours ' . $minutes . ' minutes';
+		if ($sign == "-") {
+			$time .= ' ago';
+		}
+		$timestamp = strtotime($time, $timestamp);
+		$zend_date = new Zend_Date($timestamp);
+		return $zend_date;
+	}
+	
 }

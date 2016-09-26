@@ -21,26 +21,12 @@ foreach ($this->data as $item) {
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 			$dateFormat = "Y-m-d H:i:s";
-			if (Billrun_Factory::config()->getConfigValue('tap3.local_time', false)) {
-				if (!empty($item["tzoffset"])) {
-					// TODO change this to regex and move to method in model
-					$tzoffset = $item['tzoffset'];
-					$sign = substr($tzoffset, 0, 1);
-					$hours = substr($tzoffset, 1, 2);
-					$minutes = substr($tzoffset, 3, 2);
-					$time = $hours . ' hours ' . $minutes . ' minutes';
-					if ($sign == "-") {
-						$time .= ' ago';
-					}
-					$zend_date = new Zend_Date(strtotime($time, $item['urt']->sec));
-					$zend_date->setTimezone('UTC');
-					echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
-				} else {
-					$zend_date = new Zend_Date($data->sec);
-					echo $zend_date->toString($dateFormat, 'php');
-				}
-			}
-			else{
+			if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types'))) && (!empty($item["tzoffset"]))) {
+				// TODO change this to regex and move to method in model
+				$zend_date = Billrun_Util::createTimeWithOffset($item, $item['urt']->sec);
+				$zend_date->setTimezone('UTC');
+				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
+			} else {
 				$zend_date = new Zend_Date($data->sec);
 				echo $zend_date->toString($dateFormat, 'php');
 			}
