@@ -59,6 +59,29 @@
 								</div>
 							</div>
 						</div>
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h4>Payment Gateway</h4>
+							</div>
+							<div class="panel-body">
+								<div class="row">
+									<div class="col-md-3">
+									        <label for="payment_gateway">Payment Gateway</label>
+										<?php
+										echo"<select name='payment_gateway' id='payment_gateway' class='form-control'" . ($payment_gateway ? "readonly value='$payment_gateway'" : "") . ">";
+										?>
+										<?php
+										foreach ($payment_gateways as $pg) {
+											echo "<option value='" . $pg['name'] . "' " . ($payment_gateway == $pg['name'] ? "selected" : "") . ">";
+													echo $pg['name'];
+											echo "</option>";
+										}
+										?>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
 						<div class="pull-left">
 							<button id="submitbtn" class="btn btn-primary" onclick="onSubmit()">Submit</button>
 							<button id="cancelbtn" class="btn btn-default" onclick="window.history.back();">Cancel</button>
