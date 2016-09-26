@@ -670,7 +670,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($row['charging_type'] === 'prepaid') {
 				// check first if this free call and allow it if so
 				if ($this->min_balance_cost == '0') {
-					if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
+					if ((isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) ||
+							(isset($row['record_type']) && $row['record_type'] === 'final_request')){
 						$granted_volume = 0;
 					} else {
 						$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
