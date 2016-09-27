@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/library/vendor/autoload.php';
+
 /**
  * Configmodel class
  *
@@ -40,8 +42,6 @@ class ConfigModel {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
-		$path = APPLICATION_PATH . '/library/vendor/';
- 		require_once $path . 'autoload.php';
 		$this->loadConfig();
 	}
 
@@ -458,7 +458,7 @@ class ConfigModel {
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = $pg['params'];
  		$name = $pg['name'];
-		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('Gateways');
+		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways');
 		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
  			return $paymentGateway['supported'] == true;
  		});

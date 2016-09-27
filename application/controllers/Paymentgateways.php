@@ -6,6 +6,7 @@
   * @license         GNU Affero General Public License Version 3; see LICENSE.txt
   */
  require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+ require_once APPLICATION_PATH . '/library/vendor/autoload.php';
  
  /**
   * This class returns the available payment gateways in Billrun.
@@ -19,21 +20,24 @@
 	 
  	public function init() {
 		parent::init();
- 		$path = APPLICATION_PATH . '/library/vendor/';
- 		require_once $path . 'autoload.php';
  		
  	}
 	
 	public function listAction(){
-	 $gateways = Billrun_Factory::config()->getConfigValue('Gateways');
+	 $gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways');
  		$settings = array();
  		foreach ($gateways as $name => $properties) {
+			$setting['name'] = $name;
  			foreach($properties as $property => $value){
- 				$setting['name'] = $name;
  				$setting[$property] = $value;
- 				$gateway = Omnipay\Omnipay::create($name);	 
- 				$fields = $gateway->getParameters();
- 				$setting['params'] = $fields;
+				if ($property == 'omnipay_supported' && $value == true){
+					$gateway = Omnipay\Omnipay::create($name);	 
+					$fields = $gateway->getParameters();
+					$setting['params'] = $fields;
+				}
+				else if ($name == 'CreditGuard'){  // TODO: make more generic when there's generic payment gateways class.
+					$setting['params'] = array("user" => "", "password" => "", 'terminal_id' => "");
+				}
  			}
  			$settings[] = $setting;
  		}
