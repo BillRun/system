@@ -92,3 +92,12 @@ textarea {
     border: 0;
     border-top: 1px solid #c3c3c3;
 }
+
+/* Plan Edit screen*/
+.product-removed {
+    color: #cccccc!important;
+}
+.product-removed small{
+  color: #cccccc!important;
+}
+/* ~Plan Edit screen*/
