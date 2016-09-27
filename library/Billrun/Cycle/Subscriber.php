@@ -96,8 +96,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @param type $data
 	 */
 	protected function constructServices($data) {
-		$services = $this->getByField($data, "services");
-		$mongoPlans = $this->getByField($data, "mongo_plans");
+		$services = Billrun_Util::getFieldVal($data["services"], array());
+		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		/**
 		 * @var Billrun_DataTypes_CycleTime $cycle
 		 */
@@ -125,9 +125,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @param type $data
 	 */
 	protected function constructPlans($data) {
-		$plans = $this->getByField($data, "plans");
-		$plans += $this->nextPlan;
-		$mongoPlans = $this->getByField($data, "mongo_plans");
+		
+		$plans = Billrun_Util::getFieldVal($data['plans'], array());
+		if($this->nextPlan) {
+			$plans += $this->nextPlan;
+		}
+		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		
 		/**
 		 * @var Billrun_DataTypes_CycleTime $cycle
@@ -147,13 +150,4 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$this->records['plans'][] = $planData;
 		}
 	}
-	
-	protected function getByField($data, $field) {
-		$toSet = array();
-		if(isset($data[$field])) {
-			$toSet = $data[$field];
-		}
-		return $toSet;
-	}
-	
 }
