@@ -20,9 +20,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected $attributes = array();
 	
-	protected $subscribers = array();
-	
-	protected $totals = array();
+	/**
+	 * 
+	 * @var Billrun_Cycle_Account_Billrun
+	 */
+	protected $billrun;
 	
 	/**
 	 * 
@@ -30,6 +32,26 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	public function __construct($data) {
 		parent::__construct($data);
+		
+		$this->billrun = $data['billrun'];
+	}
+	
+	/**
+	 * Aggregate the data, store the results in the billrun container.
+	 * @return array - Array of aggregated results
+	 */
+	public function aggregate() {
+		$results = parent::aggregate();
+		$this->billrun->addLines($results);
+		return $results;
+	}
+	
+	/**
+	 * Write the invoice to the Billrun collection
+	 * @param int $min_id minimum invoice id to start from
+	 */
+	public function writeInvoice($min_id) {
+		$this->billrun->close($min_id);
 	}
 	
 	/**
@@ -39,7 +61,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected function validate($input) {
 		// TODO: Complete
-		return isset($input['subscribers']) && is_array($input['subscribers']);
+		return isset($input['subscribers']) && is_array($input['subscribers']) &&
+			   isset($input['attributes']) && is_array($input['attributes']) &&
+			   isset($input['billrun']) && is_a($input['billrun'], 'Billrun_Cycle_Account_Billrun');
 	}
 
 	/**
@@ -89,48 +113,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
 			
 			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
-			$this->addSubscriber($cycleSub, $sub);
+			$this->billrun->addSubscriber($cycleSub, $sub);
 			$aggregateable[] = $cycleSub;
 		}
 		return $aggregateable;
-	}
-	
-	/**
-	 * Add a subscriber to the current billrun entry.
-	 * @param Billrun_Cycle_Subscriber $subscriber Subscriber to add.
-	 */
-	public function addSubscriber($subscriber, $subData) {
-		$subscriber_entry = $subData;
-		$subscriber_entry['subscriber_status'] = $subscriber->getStatus();
-		$this->subscribers[] = $subscriber_entry;
-	}
-	
-		/**
-	 * Add pricing data to the account totals.
-	 */
-	public function updateTotals() {
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
-			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
-			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
-			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
-		);
-		foreach ($this->subscribers as $sub) {
-			//Billrun_Factory::log(print_r($sub));
-			$newTotals['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['before_vat'], 0);
-			$newTotals['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['after_vat'], 0);
-			$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
-			$newTotals['vatable'] += Billrun_Util::getFieldVal($sub['totals']['vatable'], 0);
-			$newTotals['flat']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['before_vat'], 0);
-			$newTotals['flat']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['after_vat'], 0);
-			$newTotals['flat']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['flat']['vatable'], 0);
-			$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['before_vat'], 0);
-			$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['after_vat'], 0);
-			$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['service']['vatable'], 0);
-			$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['before_vat'], 0);
-			$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['after_vat'], 0);
-			$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['usage']['vatable'], 0);
-		}
-		$this->totals = $newTotals;
 	}
 	
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
@@ -269,24 +255,4 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		return $aggregatorData;
 	}
-	
-	/**
-	 * Get an empty billrun account entry structure.
-	 * @param int $aid the account id of the billrun document
-	 * @param string $billrun_key the billrun key of the billrun document
-	 * @return array an empty billrun document
-	 */
-//	protected function populateBillrunWithAccountData($account) {
-//		$attr = array();
-//		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-//			if (isset($account['attributes'][$remoteKey])) {
-//				$attr[$key] = $account['attributes'][$remoteKey];
-//			}
-//		}
-//		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
-//			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
-//		}
-//
-//		$this->attributes = $attr;
-//	}
 }

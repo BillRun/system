@@ -11,6 +11,7 @@
  */
 class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected $plan = null;
+	protected $vatable = null;
 	protected $charges = array();
 	protected $stumpLine = array();
 	
@@ -34,6 +35,10 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 		if(isset($options['charges'])) {
 			$this->charges = $options['charges'];
 		}
+		
+		if(isset($options['vatable'])) {
+			$this->vatable = $options['vatable'];
+		}
 	}
 	
 	// TODO: Implement
@@ -53,6 +58,11 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			'plan' => $this->plan,
 			'process_time' => new MongoDate(),
 		);
+		
+		if(isset($this->vatable)) {
+			$flatEntry['vatable'] = $this->vatable;
+		}
+		
 		$merged = array_merge($flatEntry, $this->stumpLine);
 		
 		/**

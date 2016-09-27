@@ -187,6 +187,27 @@ class Billrun_Billrun {
 	}
 
 	/**
+	 * Return an array of account ID's which exist in the 
+	 * billrun for a specific key.
+	 * @param string $key - The billrun key
+	 * @return array
+	 */
+	public static function existingAccountsQuery($key) {
+		$billColl = Billrun_Factory::db()->billrunCollection();
+		$query = array('billrun_key' => $key);
+		$project = array('_id' => 0, 'aid' => 1);
+		$cursor = $billColl->find($query, $project);
+		
+		$idList = array();
+		foreach ($cursor as $account) {
+			$idList[] = $account['aid'];
+		}
+		Billrun_Factory::log("Found " . count($idList) . " accounts already existing for key: " . $key);
+		
+		return array('$nin' => $idList);
+	}
+	
+	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
 	 * @param string $billrun_key the billrun key

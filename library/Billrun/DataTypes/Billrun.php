@@ -39,4 +39,8 @@ class Billrun_DataTypes_Billrun {
 	public function exists($aid) {
 		return Billrun_Billrun::exists($aid, $this->key);
 	}
+	
+	public function existingAccountsQuery() {
+		return Billrun_Billrun::existingAccountsQuery($this->key);
+	}
 }
