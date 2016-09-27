@@ -16,5 +16,5 @@ interface Billrun_Aggregator_Aggregateable {
 	/**
 	 * @return array
 	 */
-	public function aggregate();
+	public function aggregate($data = array());
 }

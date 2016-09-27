@@ -39,7 +39,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * Main aggreagte function
 	 * @return Aggregated data.
 	 */
-	public function aggregate() {
+	public function aggregate($data = array()) {
 		$aggregatedPlans = $this->aggregatePlans();
 		$aggregatedServices = $this->aggregateServices();
 		
@@ -75,6 +75,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @return type
 	 */
 	protected function generalAggregate($data, $aggregator) {
+		if(!$data) {
+			return array();
+		}
+		
 		$results = array();
 		foreach ($data as $current) {
 			$results[] = $aggregator->aggregate($current);
@@ -102,21 +106,19 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		 * @var Billrun_DataTypes_CycleTime $cycle
 		 */
 		$cycle = $data['cycle'];
-		$stumpLine = $data['stump_line'];
+		$stumpLine = $data['line_stump'];
 		foreach ($services as &$arrService) {
-			foreach ($arrService as &$value) {
-				// Plan name
-				$index = $arrService['service'];
-				if(!in_array($index, $mongoPlans)) {
-					Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
-					continue;
-				}
-
-				$serviceData = array_merge($value, $mongoPlans[$index]);
-				$serviceData['cycle'] = $cycle;
-				$serviceData['stump_line'] = $stumpLine;
-				$this->records['services'][] = $serviceData;
+			// Plan name
+			$index = $arrService['key'];
+			if(!in_array($index, $mongoPlans)) {
+				Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
+				continue;
 			}
+
+			$serviceData = array_merge($value, $mongoPlans[$index]);
+			$serviceData['cycle'] = $cycle;
+			$serviceData['line_stump'] = $stumpLine;
+			$this->records['services'][] = $serviceData;
 		}
 	}
 	
@@ -127,9 +129,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function constructPlans($data) {
 		
 		$plans = Billrun_Util::getFieldVal($data['plans'], array());
-		if($this->nextPlan) {
-			$plans += $this->nextPlan;
-		}
 		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		
 		/**
@@ -140,12 +139,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach ($plans as &$value) {
 			// Plan name
 			$index = $value['plan'];
-			if(!in_array($index, $mongoPlans)) {
+			if(!isset($mongoPlans[$index])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($value,1));
 				continue;
 			}
 			
-			$planData = array_merge($value, $mongoPlans[$index]);
+			$planData = array_merge($value, $mongoPlans[$index]->getRawData());
 			$planData['cycle'] = $cycle;
 			$this->records['plans'][] = $planData;
 		}

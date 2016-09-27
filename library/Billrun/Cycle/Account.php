@@ -27,20 +27,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected $billrun;
 	
 	/**
-	 * 
-	 * @param type $data
-	 */
-	public function __construct($data) {
-		parent::__construct($data);
-		
-		$this->billrun = $data['billrun'];
-	}
-	
-	/**
 	 * Aggregate the data, store the results in the billrun container.
 	 * @return array - Array of aggregated results
 	 */
-	public function aggregate() {
+	public function aggregate($data = array()) {
 		$results = parent::aggregate();
 		$this->billrun->addLines($results);
 		return $results;
@@ -71,12 +61,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param type $data
 	 */
 	protected function constructRecords($data) {
-//		$this->populateBillrunWithAccountData($data);
+		$this->billrun = $data['billrun'];
 		$subscribers = $data['subscribers'];
 		$cycle = $data['cycle'];
 		$plans = &$data['plans'];
 		
-		$sorted = $this->sortSubscribers($subscribers);
+		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
 		
 		// Filter subscribers.
 		$filtered = $this->constructSubscriberData($sorted, $cycle);
@@ -89,7 +79,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$filteredSid = $filtered[$sid];
 			}
 			
-			$this->records[] = $this->constructForSid($subscriberList, $filteredSid, $plans);
+			$this->records = $this->constructForSid($subscriberList, $filteredSid, $plans, $cycle);
 		}
 	}
 
@@ -104,14 +94,17 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$aggregateable = array();
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
+			unset($constructed['plans']);
 			$filterKey = $sub['to'];
 			if(isset($filtered[$filterKey])) {
-				$constructed = array_merge($constructed, $filtered[$filterKey]);
+				$constructed += $filtered[$filterKey]; 
+			} else {
+				$constructed['plans'] = array();
 			}
+			
 			$constructed['mongo_plans'] = &$plans;
 			$constructed['cycle'] = &$cycle;
 			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
-			
 			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
 			$this->billrun->addSubscriber($cycleSub, $sub);
 			$aggregateable[] = $cycleSub;
@@ -134,6 +127,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		return $flatEntry;
 	}
 	
+	/**
+	 * 
+	 * @param type $subscribers
+	 * @param type $endTime
+	 * @return type
+	 */
 	protected function sortSubscribers($subscribers, $endTime) {
 		$sorted = array();
 		
@@ -151,16 +150,22 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 	
 	protected function handleSubscriberDates($subscriber, $endTime) {
+		$to = $subscriber['to'];
 		if(isset($subscriber['to']->sec)) {
-			$subscriber['to'] = $subscriber['to']->sec;
+			$to = $subscriber['to']->sec;
 		}
+		
+		$from = $subscriber['from'];
 		if(isset($subscriber['from']->sec)) {
-			$subscriber['from'] = $subscriber['from']->sec;
+			$from= $subscriber['from']->sec;
 		}
 
-		if($subscriber['to'] > $endTime) {
-			$subscriber['to'] = $endTime;
+		if($to > $endTime) {
+			$to = $endTime;
 		}
+		
+		$subscriber['from'] = date(Billrun_Base::base_datetimeformat, $from);
+		$subscriber['to'] = date(Billrun_Base::base_datetimeformat, $to);
 		
 		return $subscriber;
 	}
@@ -197,18 +202,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach ($current as $subscriber) {
 			// Get the plan
 			$currPlan = $subscriber['plan'];
-			
+			$arrPlanDate = $subscriber['plans'][count($subscriber['plans']) - 1];
 			// If it is the same plan
 			if(($currPlan && !$plan) || ($plan['name'] !== $currPlan)) {
 				// Update the last plan
 				if($plan) {
-					$planEnd = $subscriber['from'];
-					$aggregatorData[$planEnd]['plan'] = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $planEnd);
+					$planEnd = $arrPlanDate['from'];
+					$aggregatorData[$planEnd]['plans'][] = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $planEnd);
 				}
 
 				// Set the plan
 				$plan['name'] = $currPlan;
-				$plan['start'] = $subscriber['plan_activation'];
+				$plan['start'] = $arrPlanDate['plan_activation'];
 			}
 			
 			// Get the services.
@@ -218,22 +223,24 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			}
 			
 			// Check the differences in the services.
-			$added = array_diff($services, $currServices);
-			$removed = array_diff($currServices, $services);
+			$removed  = array_diff($services, $currServices);
+			$added = array_diff($currServices, $services);
 			
 			$services = $currServices;
 			
 			// Add the services to the services data
 			foreach ($added as $addedService) {
+				$key = $addedService['key'];
 				$serviceRow = array("service" => $addedService, "start" => $subscriber['from']);
-				$servicesData[$addedService] = $serviceRow;
+				$servicesData[$key] = $serviceRow;
 			}
 			
 			// Handle the removed services. 
 			foreach ($removed as $removedService) {
-				$updateService = $servicesData[$removedService];
-				unset($servicesData[$removedService]);
-				$serviceEnd = $subscriber['from'];
+				$key = $removedService['key'];
+				$updateService = $servicesData[$key];
+				unset($servicesData[$key]);
+				$serviceEnd = $arrPlanDate['from'];
 				$updateService['end'] = $serviceEnd;
 				
 				// Push back
@@ -244,8 +251,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		// Handle all the remaining values.
 		if($plan) {
 			$planData = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $endTime);
-			$aggregatorData[$endTime]['plan'] = $planData;
-			$aggregatorData['next_plan'] = $plan;
+			$aggregatorData[$endTime]['plans'][] = $planData;
+			$aggregatorData[$endTime]['next_plan'] = $plan;
 		}
 		
 		foreach ($servicesData as $lastService) {

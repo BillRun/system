@@ -47,8 +47,6 @@ class Billrun_Cycle_Account_Billrun {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->constructByOptions($options);
-		
-		$this->billingCycle = new Billrun_DataTypes_Billingcycle();
 	}
 
 	/**
@@ -135,9 +133,9 @@ class Billrun_Cycle_Account_Billrun {
 	 * @param Billrun_Cycle_Subscriber $subscriber Subscriber to add.
 	 */
 	public function addSubscriber($subscriber, $subData) {
-		$subscriber_entry = $subData;
-		$subscriber_entry['subscriber_status'] = $subscriber->getStatus();
-		$this->data['subs'][] = $subscriber_entry;
+		$subscriberEntry = $subData;
+		$subscriberEntry['subscriber_status'] = $subscriber->getStatus();
+		$this->setSubRawData($subscriberEntry);
 	}
 	
 	protected function addClosedSubscriber($sid, $aid) {
@@ -502,7 +500,7 @@ class Billrun_Cycle_Account_Billrun {
 	 * @return Mongodloid_Entity the rate of the row
 	 */
 	protected function getRowRate($row) {
-		$raw_rate = $row->get('arate', true);
+		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
 		if(!isset($this->rates[$id_str])) {
 			return null;
@@ -537,7 +535,6 @@ class Billrun_Cycle_Account_Billrun {
 			if (isset($updatedLines[$line['stamp']])) {
 				continue;
 			}
-			$line->collection($this->lines);
 			$pricingData = array('aprice' => $line['aprice']);
 			if (isset($line['over_plan'])) {
 				$pricingData['over_plan'] = $line['over_plan'];
@@ -695,11 +692,12 @@ class Billrun_Cycle_Account_Billrun {
 	}
 	
 	protected function initBillrunDates() {
-		$billrunDate = self::getEndTime($this->getBillrunKey());
+		
+		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
 		$this->data['creation_date'] = new MongoDate(time());
 		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
 		$this->data['end_date'] = new MongoDate($billrunDate);
-		$this->data['start_date'] = new MongoDate(self::getStartTime($this->getBillrunKey()));
+		$this->data['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
 		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 	}
 }

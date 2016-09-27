@@ -19,7 +19,7 @@ class Billrun_Cycle_Plan implements Billrun_Aggregator_Aggregateable {
 		$this->charger = new Billrun_Plans_Charge();
 	}
 	
-	public function aggregate($planData) {
+	public function aggregate($planData = array()) {
 		// Get the charge.
 		$charges = $this->charger->charge($planData);
 		$planData['charges'] = $charges;

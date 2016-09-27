@@ -169,7 +169,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 
-		$this->loadRates();
 		if (!$this->recreateInvoices){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
 			$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
@@ -179,10 +178,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			$this->page = $pageResult;
 		}
-		
-		// TODO: Get the types of subscriber aggregator
-		$types = array('flat', 'credit', 'services');
-		$this->subscriberAggregator = new Billrun_Aggregator_Subscriber_Manager($types);
 		
 		$this->isValid = true;
 	}
@@ -282,51 +277,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	/**
-	 * Translate the raw data to aggregateable data
-	 * @param array $rawData
-	 * @return array Array of aggregateable data.
-	 */
-	protected function translateRawData($rawData) {
-		$data = array();
-		$billruns_count = 0;
-		$dataKeys = array_keys($rawData);
-		foreach ($rawData as $accid => $account) {
-			Billrun_Factory::log("Aggregate loop");
-			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
-				// TODO: Memory limit should not be here as magic number.
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_Log::ALERT);
-				break;
-			}
-			//pre-load  account lines 
-			if ($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
-				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
-				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
-			}
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
-			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_Log::INFO);
-
-			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
-				Billrun_Factory::log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
-				$skipped_billruns_count++;
-				continue;
-			}
-			$params = array(
-				'aid' => $accid,
-				'billrun_key' => $billrun_key,
-				'autoload' => !empty($this->overrideAccountIds),
-			);
-			$account_billrun = Billrun_Factory::billrun($params);
-			if ($this->overrideAccountIds) {
-				$account_billrun->resetBillrun();
-			}
-			
-			$this->addAccountFieldsToBillrun($account_billrun, $account);
-		}
-		
-		return $data;
-	}
-	
-	/**
 	 * 
 	 * @param type $outputArr
 	 * @param Billrun_DataTypes_CycleTime $cycle
@@ -355,6 +305,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				$accountData = array();
 			}
 			
+			$lastAid = $aid;
+			
 			$type = $subscriberPlan['id']['type'];
 			if ($type === 'account') {
 				$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
@@ -363,7 +315,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			
 			if ($type === 'subscriber' && $accountData) {
 				$raw = $subscriberPlan['id'];
-				$accountData['subscribers'][] = array_merge($raw, $subscriberPlan['plan_dates']);
+				$raw['plans'] = $subscriberPlan['plan_dates'];
+				$raw['from'] = $subscriberPlan['plan_dates'][0]['from'];
+				$raw['to'] = $subscriberPlan['plan_dates'][count($subscriberPlan['plan_dates']) - 1]['to'];
+				$accountData['subscribers'][] = $raw;
 			}
 		}
 		
@@ -399,7 +354,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			return false;
 		} 
 		
-		$accountData['billrun'] = $billrunData;
+		$accountData['billrun'] = $billrun;
 		return new Billrun_Cycle_Account($accountData);
 	}
 	
@@ -843,6 +798,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
+				'type' => -1,
 				'aid' => 1,
 				'sid' => 1,
 				'plan' => 1,
@@ -885,18 +841,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected function updateBillrun($billrun, $line) {
 		
-	}
-
-	/**
-	 * Load all rates from db into memory
-	 */
-	protected function loadRates() {
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
-		foreach ($rates as $rate) {
-			$rate->collection($rates_coll);
-			$this->rates[strval($rate->getId())] = $rate;
-		}
 	}
 
 	/**

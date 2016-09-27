@@ -94,7 +94,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		foreach ($data as $aggregateable) {
 			$result = $aggregateable->aggregate();
 			
-			$aggregated[] = $result;
+			$aggregated += $result;
 		}
 		
 		$this->save($aggregated);

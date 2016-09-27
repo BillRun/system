@@ -80,8 +80,6 @@ class Billrun_Billrun {
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
-		
-		$this->billingCycle = new Billrun_DataTypes_Billingcycle();
 	}
 
 	/**

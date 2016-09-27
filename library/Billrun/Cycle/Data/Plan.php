@@ -28,8 +28,8 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	 * Construct data members by the input options.
 	 */
 	protected function constructOptions(array $options) {
-		if(isset($options['stump_line'])) {
-			$this->stumpLine = $options['stump_line'];
+		if(isset($options['line_stump'])) {
+			$this->stumpLine = $options['line_stump'];
 		}
 			
 		if(isset($options['charges'])) {
