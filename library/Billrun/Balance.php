@@ -47,7 +47,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 		$this->collection = self::getCollection();
 
 		if (!isset($options['sid']) || !isset($options['aid'])) {
-			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
+			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::INFO);
 			return false;
 		}
 
