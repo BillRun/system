@@ -21,41 +21,9 @@ class PayController extends Yaf_Controller_Abstract {
 		}
 		$path = APPLICATION_PATH . '/library/vendor/';
 		require_once $path . 'autoload.php';
-		$gateway = Omnipay\Omnipay::create('Stripe');
-		$gateway->setApiKey('abc123');
-
-		// Example form data
-		$formData = [
-			'number' => '4242424242424242',
-			'expiryMonth' => '6',
-			'expiryYear' => '2016',
-			'cvv' => '123'
-		];
-
-		// Send purchase request
-		$response = $gateway->purchase(
-				[
-					'amount' => '10.00',
-					'currency' => 'USD',
-					'card' => $formData
-				]
-			)->send();
-
-		// Process response
-		if ($response->isSuccessful()) {
-
-			// Payment was successful
-			print_r($response);
-		} elseif ($response->isRedirect()) {
-
-			// Redirect to offsite payment gateway
-			$response->redirect();
-		} else {
-
-			// Payment failed
-			echo $response->getMessage();
-		}
-		die("AAA");
+		$gateway = Omnipay\Omnipay::create('PayPal_Express');
+		print "<pre>" . print_R($gateway, 1) . "</pre>";
+		die();
 	}
 
 }
