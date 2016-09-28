@@ -361,7 +361,7 @@ class Billrun_Factory {
 		ini_set('session.gc_maxlifetime', $session_timeout);
 		session_set_cookie_params($session_timeout);
 	}
-	
+
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			// One hour
@@ -390,6 +390,21 @@ class Billrun_Factory {
 		}
 
 		return self::$importer[$stamp];
+	}
+
+	/**
+	 * method to retrieve a payment gateway by name
+	 * 
+	 * @return Billrun_PaymentGateway
+	 */
+	public static function paymentGateway($name) {
+		try {
+			$gateway = Billrun_PaymentGateway::getInstance($name);
+		} catch (Exception $e) {
+			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+			return FALSE;
+		}
+		return $gateway;
 	}
 
 }
