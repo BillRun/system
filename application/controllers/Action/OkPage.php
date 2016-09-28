@@ -152,7 +152,6 @@ class OkPageAction extends ApiAction {
 				return false;
 			echo "<br /> THE TRANSACTION WAS A SUCCESS ";
 			
-			var_dump($xmlObj->response->inquireTransactions->row);
 			$this->card_token = $xmlObj->response->inquireTransactions->row->cardId;
 			$this->card_expiration = $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->aid = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
