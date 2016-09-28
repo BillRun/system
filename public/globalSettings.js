@@ -2,8 +2,8 @@ var globalSetting = {
   //serverUrl : "http://10.162.20.191:1337", // Roman
   //serverUrl : "http://10.162.20.86", // Eran
   // serverUrl : "http://10.162.20.247", // Shani
-  serverUrl: "http://billrun",
-  //serverUrl: "",
+  //serverUrl: "http://billrun",
+  serverUrl: "",
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',
   datetimeFormat: "DD/MM/YYYY HH:MM",
