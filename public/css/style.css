@@ -1,3 +1,24 @@
+/* Global */
+textarea {
+  resize: vertical;
+}
+/* ~Global */
+
+/* React-Select */
+.Select-menu-outer{
+  z-index: 5!important;
+}
+.Select-control{
+  height: 44px!important;
+}
+.Select-placeholder{
+  padding-top: 3px;
+}
+.Select-search-prompt {
+    padding: 5px!important;
+}
+/* ~React-Select */
+
 /* System Alerts */
 .alerts-enter {
   opacity: 0.01;
@@ -71,3 +92,12 @@
     border: 0;
     border-top: 1px solid #c3c3c3;
 }
+
+/* Plan Edit screen*/
+.product-removed {
+    color: #cccccc!important;
+}
+.product-removed small{
+  color: #cccccc!important;
+}
+/* ~Plan Edit screen*/

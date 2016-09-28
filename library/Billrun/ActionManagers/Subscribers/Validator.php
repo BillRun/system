@@ -13,21 +13,21 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 		$this->validatorData = $this->getSubscriberData();
 		if(!$this->validateOverlap()) {
 			// [Subscribers error 1000]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['sid']));
 			return false;
 		}
 		
 		if(!$this->validateServiceprovider()) {
 			// [Subscribers error 1040]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 40;
+			$errorCode =  40;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['service_provider']));
 			return false;
 		}
 		
 		if(!$this->validatePlan()) {
 			// [Subscribers error 1041]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 41;
+			$errorCode =  41;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->validatorData['plan']));
 			return false;
 		}

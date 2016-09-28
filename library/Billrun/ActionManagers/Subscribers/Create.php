@@ -24,12 +24,6 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	protected $query = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating subscriber"));
-	}
-
-	/**
 	 * Get the query to run to get a subscriber from the db.
 	 * @return array Query to run in the mongo.
 	 */
@@ -59,7 +53,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		// TODO: Use the subscriber class.
 		if ($subscribers->count() > 0) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base");
+			$errorCode = 0;
 			$parameters = http_build_query($this->query, '', ', ');
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($parameters));
 			return true;
@@ -78,16 +72,15 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 				$entity = new Mongodloid_Entity($this->query);
 				$this->collection->save($entity, 1);
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		} catch (\MongoException $e) {
+			$errorCode =  1;
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success creating subscriber",
 		);
 
 		if (isset($entity)) {
@@ -118,7 +111,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('subscriber');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -127,9 +120,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 		// If there were errors.
 		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		$this->setAdditionalFields();
@@ -170,7 +162,8 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			$fieldName = $field['field_name'];
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
 				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
-				$invalidFields[] = $fieldName;
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
+				continue;
 			} else if (!isset($queryData[$fieldName])) {
 				continue;
 			}
@@ -207,7 +200,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			array("type" => "account", "aid" => $aid)
 		);
 		if (Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->count() === 0) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 8;
+			$errorCode =  8;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($aid));
 			return false;
 		}

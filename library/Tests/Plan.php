@@ -157,11 +157,24 @@ class Tests_Plan extends UnitTestCase {
             array('key' => '201604', 'days' => 30), //30 day
     );
 	
+	protected $isPlanExistsTests = array(
+		array('msg' => "Base plan CAPITAL", 'exists' => true, 'name' => 'BASE'),
+		array('msg' => "Base plan mixed case", 'exists' => false, 'name' => 'Base'),
+		array('msg' => "Base plan lower case", 'exists' => false, 'name' => 'base'),
+		
+		// Creating test plans
+		array('msg' => "Test plan not created", 'create' => false, 'exists' => false, 'name' => 'UnitTestPlan'),
+		array('msg' => "Test plan created", 'create' => true, 'exists' => true, 'name' => 'UnitTestPlan', 'to' => '+1 month', 'from' => '-1 month'),
+		array('msg' => "Test plan created in the future", 'create' => true, 'exists' => false, 'name' => 'UnitTestPlan', 'to' => '+1 year', 'from' => '+1 month'),
+		array('msg' => "Test plan created in the past", 'create' => true, 'exists' => false, 'name' => 'UnitTestPlan', 'to' => '-1 month', 'from' => '-1 yaer'),
+		
+	);
+	
 	/**
 	 * Testing for positive logic
 	 */
 	function testCalcFractionOfMonthPositiveTest() {
-		$cycleStart = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 15);
+		$cycleStart = Billrun_Factory::config()->getConfigValue('billrun.charging_day', 1);
 		$cycleEnd = $cycleStart - 1;
 		
 		foreach ($this->fractionOfMonthTests as $testCase) {
@@ -270,5 +283,29 @@ class Tests_Plan extends UnitTestCase {
 			$testCase++;
 		}
     }
+	
+	function testIsPlanExists() {
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		foreach ($this->isPlanExistsTests as $test) {
+			$created = false;
+			$planName = $test['name'];
+			
+			// Create the plan
+			if(isset($test['create']) && $test['create']) {
+				$plan['name'] = $planName;
+				$plan['from'] = new MongoDate(strtotime($test['from']));
+				$plan['to'] = new MongoDate(strtotime($test['to']));
+				$plansColl->insert($plan);
+				$created = true;
+			}
+			
+			$result = Billrun_Plans_Util::isPlanExists($planName);
+			$this->assertEqual($result, $test['exists'], $test['msg']);
+			
+			if($created) {
+				$plansColl->remove($plan);
+			}
+		}
+	}
 	
 }

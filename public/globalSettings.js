@@ -13,5 +13,6 @@ var globalSetting = {
   list : {
     maxItems : 100
   },
-  statusMessageDisplayTimeout:5000
+  statusMessageDisplayTimeout:5000,
+  planCycleUnlimitedValue:999999999,
 };

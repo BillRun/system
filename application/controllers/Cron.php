@@ -19,7 +19,8 @@ class CronController extends Yaf_Controller_Abstract {
 	protected $smser;
 
 	public function init() {
-		Billrun_Factory::log("BillRun Cron is running", Zend_Log::INFO);
+		$this->getView()->message = "BillRun cron is running with " . $this->getRequest()->action . " action";
+		Billrun_Factory::log($this->getView()->message, Zend_Log::INFO);
 		set_time_limit(9999);
 		ini_set('max_execution_time', 9999);
 		$this->smser = Billrun_Factory::smser();
@@ -35,6 +36,48 @@ class CronController extends Yaf_Controller_Abstract {
 		// do nothing
 	}
 
+	/**
+	 * dispatcher to run cron each minute
+	 */
+	public function minutelyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronMinute');
+	}
+
+	/**
+	 * dispatcher to run cron each hour
+	 */
+	public function hourlyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronHour');
+	}
+
+	/**
+	 * dispatcher to run cron each day
+	 */
+	public function dailyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronDay');
+	}
+
+	/**
+	 * dispatcher to run cron each month
+	 */
+	public function monthlyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronMonth');
+	}
+
+	/**
+	 * dispatcher to run cron each year
+	 */
+	public function annuallyAction() {
+		Billrun_Factory::dispatcher()->trigger('cronYear');
+	}
+
+	protected function render($tpl, array $parameters = array()) {
+		return parent::render('index', $parameters);
+	}
+
+///////////////////////// The next methods are for backward compatibility 
+///////////////////////// Require to move them to plugins
+	
 	public function receiveAction() {
 		Billrun_Factory::log("Check receive", Zend_Log::INFO);
 		$alerts = $this->locate(('receive'));
@@ -115,11 +158,11 @@ class CronController extends Yaf_Controller_Abstract {
 		if (!empty($inputDate)) {
 			$inputDate = strtotime($inputDate);
 			if ($inputDate > time()) {
-				Billrun_Factory::log()->log("Future input date - Current date will be used instead",zend_log::NOTICE);
+				Billrun_Factory::log()->log("Future input date - Current date will be used instead", zend_log::NOTICE);
 			} else {
 				$params['active_date'] = $inputDate;
 			}
-		}		
+		}
 		$handler = new Billrun_Autorenew_Handler($params);
 		$handler->autoRenewServices();
 	}
@@ -198,12 +241,12 @@ class CronController extends Yaf_Controller_Abstract {
 				if (!$balances) {
 					continue;
 				}
-				
+
 				$this->notifyForBalances($subscriber, $balances);
 			}
 		}
 	}
-	
+
 	/**
 	 * Notify on all balances per a subscriber
 	 * @param array $subscriber - Current subscriber to notify
@@ -212,13 +255,13 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function notifyForBalances($subscriber, $balances) {
 		foreach ($balances as $balance) {
 			// Do not notify on an empty balance
-			if(Billrun_Balances_Util::getBalanceValue($balance) == 0) {
+			if (Billrun_Balances_Util::getBalanceValue($balance) == 0) {
 				continue;
 			}
 			Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
 		}
 	}
-	
+
 	protected function getBalancesToNotify($subscriberId, $notification) {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$query = array(
@@ -258,7 +301,7 @@ class CronController extends Yaf_Controller_Abstract {
 		}, iterator_to_array($plans));
 		return $plansNotifications;
 	}
-	
+
 	public function handleSendRequestErrorAction() {
 		// Get all subscribers on data slowness
 		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('in_data_slowness' => true));
@@ -272,14 +315,13 @@ class CronController extends Yaf_Controller_Abstract {
 		// Check if one of the subscriber in data slowness has valid data balance
 		$minUsagev = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.data', Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')));
 		$minCost = abs(Billrun_Factory::config()->getConfigValue('balance.minCost.data', Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')));
-		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), 
-			array(
-				'sid' => array('$in' => array_values($inDataSlownessSids)),
-				'charging_by_usaget' => 'data',
-				'$or' => array(
-					array('balance.totals.data.usagev' => array('$lte' => -$minUsagev)),
-					array('balance.totals.data.cost' => array('$lte' => -$minCost)),
-				),
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array(
+			'sid' => array('$in' => array_values($inDataSlownessSids)),
+			'charging_by_usaget' => 'data',
+			'$or' => array(
+				array('balance.totals.data.usagev' => array('$lte' => -$minUsagev)),
+				array('balance.totals.data.cost' => array('$lte' => -$minCost)),
+			),
 			)
 		);
 		$balances = Billrun_Factory::db()->balancesCollection()->find($query, $project);
@@ -287,11 +329,8 @@ class CronController extends Yaf_Controller_Abstract {
 			return;
 		}
 		$sids = array_column(iterator_to_array($balances), 'sid');
-		
+
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
 	}
-	
-	protected function render($tpl, array $parameters = array()) {
-		return parent::render('index', $parameters);
-	}
+
 }

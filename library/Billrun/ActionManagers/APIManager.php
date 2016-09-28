@@ -43,18 +43,6 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 	}
 
 	/**
-	 * Get the current error of the action.
-	 * @return string the description for the current error.
-	 */
-	public function getError() {
-		return $this->action->getError();
-	}
-
-	public function getErrorCode() {
-		return $this->action->getErrorCode();
-	}
-
-	/**
 	 * This function receives input and returns a subscriber action instance after
 	 * it already parsed the input into itself.
 	 * @return Billrun_ActionManagers_Action Subscriber action
@@ -62,7 +50,7 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 	public function getAction() {
 		$this->action = parent::getAction();
 		if (!$this->action) {
-			return null;
+			throw new Billrun_Exceptions_Api(1);
 		}
 
 		$input = $this->options['input'];
@@ -73,7 +61,7 @@ class Billrun_ActionManagers_APIManager extends Billrun_ActionManagers_Manager {
 		if (!$this->action->parse($input)) {
 			Billrun_Factory::log("APIAction getAction Action failed to parse input! " .
 				print_r($input, 1), Zend_Log::INFO);
-			return $this->getError();
+			throw new Billrun_Exceptions_Api(2);
 		}
 
 		return $this->action;

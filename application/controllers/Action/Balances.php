@@ -49,23 +49,10 @@ class BalancesAction extends ApiAction {
 		// This is the method which is going to be executed.
 		$action = $this->getAction();
 
-		// Check that received a valid action.
-		$output = "";
-		if (is_string($action)) {
-			// TODO: Report failed action. What do i write to the output if this happens?
-			Billrun_Factory::log("Failed to get balances action instance for received input", Zend_Log::ALERT);
+		$output = $action->execute();
 
-			$output = array(
-				'status' => 0,
-				'desc' => $action,
-				'details' => 'Error'
-			);
-		} else {
-			$output = $action->execute();
-
-			// Set the raw input.
-			$output['input'] = $this->getRequest()->getRequest();
-		}
+		// Set the raw input.
+		$output['input'] = $this->getRequest()->getRequest();
 		$this->getController()->setOutput(array($output));
 	}
 
