@@ -157,13 +157,17 @@ class SubscribersautorenewservicesModel extends TabledateModel {
 		 * @var MongoDate next date for charge renewal
 		 */
 		$nextRenewMongoDate = $params['next_renew_date'];
-		if(!($nextRenewMongoDate instanceof MongoDate)) {
-			throw new Exception("Internal server error, subscribers autorenewservices getRemainingMonths");
+		if($nextRenewMongoDate instanceof MongoDate) {
+			$nextRenewDate = $nextRenewMongoDate->sec;
+		} else {
+			$nextRenewDate = false;
 		}
-		$nextRenewDate = $nextRenewMongoDate->sec;
 		
 		if ($from < $now) {
 			$from = $now;
+		}
+		if ($nextRenewDate !== false) {
+			$from = $nextRenewDate;
 		}
 		$remain = 0;
 		if (($from < $to) && ($to >= $nextRenewDate)) {
