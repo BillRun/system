@@ -34,7 +34,6 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $options;
-	protected $invalidFields = array();
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
 
@@ -47,12 +46,6 @@ class ConfigModel {
 
 	public function getOptions() {
 		return $this->options;
-	}
-
-	public function getInvalidFields() {
-		$result = $this->invalidFields;
-		$this->invalidFields = array();
-		return $result;
 	}
 
 	protected function loadConfig() {
@@ -262,8 +255,8 @@ class ConfigModel {
 		// Validate the complex object.
 		if (!Billrun_Config::isComplexValid($valueInCategory)) {
 			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory, 1), Zend_Log::NOTICE);
-			$this->invalidFields[] = Billrun_Utils_Mongo::mongoArrayToPHPArray($category, ".", false);
-			return 0;
+			$invalidFields[] = Billrun_Utils_Mongo::mongoArrayToInvalidFieldsArray($category, ".");
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		// Update the config.
@@ -304,8 +297,8 @@ class ConfigModel {
 		// Validate the complex object.
 		if (!Billrun_Config::isComplexValid($valueInCategory)) {
 			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory, 1), Zend_Log::NOTICE);
-			$this->invalidFields[] = Billrun_Utils_Mongo::mongoArrayToPHPArray($category, ".", false);
-			return 0;
+			$invalidFields = Billrun_Utils_Mongo::mongoArrayToInvalidFieldsArray($category, ".", false);
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		// Update the config.

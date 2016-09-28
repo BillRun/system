@@ -154,6 +154,33 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
+	 * Coverts a $seperator seperated array to an haierchy tree
+	 * @param string $array - Input string
+	 * @param string $seperator 
+	 * @param mixed $toSet - Value to be set to inner level of array
+	 * @return array
+	 */
+	public static function mongoArrayToInvalidFieldsArray($array, $seperator) {
+		if(!is_string($array)) {
+			return null;
+		}
+		
+		$parts = explode($seperator, $array);
+		$result = array();
+		$previous = null;
+		$iter = &$result;
+		foreach ($parts as $value) {
+			if($previous !== null) {
+				$iter[$previous] = new Billrun_DataTypes_InvalidField($value);
+				$iter = &$iter[$previous];
+			}
+			$previous = $value;
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert

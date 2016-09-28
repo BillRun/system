@@ -25,12 +25,6 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected $update = array();
 	protected $oldEntity = array();
 	protected $time;
-	
-	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating subscriber"));
-	}
 
 	/**
 	 * Execute the action.
@@ -50,16 +44,15 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 			
 			$this->closeEntity($this->oldEntity);
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 1;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+		} catch (\MongoException $e) {
+			$errorCode =  1;
 			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success creating subscriber",
 		);
 
 		if (isset($oldEntity)) {
@@ -109,7 +102,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$this->oldEntity = $this->getOldEntity();
 		if($this->oldEntity === false) {
 			// [SUBSCRIBERS error 1037]
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 37;
+			$errorCode =  37;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -138,7 +131,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -146,14 +139,12 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		$invalidFields = $this->setQueryFields($jsonData);
 		// If there were errors.
 		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 3;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonData = json_decode($update, true))) || !$this->setUpdateFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -181,7 +172,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		// Get only the values to be set in the update record.
 		foreach ($queryMandatoryFields as $fieldName) {
 			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
-				$invalidFields[] = $fieldName;
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			} else if (isset($queryData[$fieldName])) {
 				$this->query[$fieldName] = $queryData[$fieldName];
 			}
