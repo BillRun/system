@@ -472,9 +472,8 @@ class ConfigModel {
 		if (in_array($name, array_keys($omnipay_supported))) {
 			$gateway = Omnipay\Omnipay::create($name);
 			$defaultParameters = $gateway->getDefaultParameters();
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
+			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
 				Billrun_Factory::log("Wrong parameters for connection to", $name);
 				return false;
 			}
@@ -482,10 +481,9 @@ class ConfigModel {
 		}
 		
  		else if ($name == "CreditGuard"){
-			$defaultParameters = array('tid' => "", 'user'=>"", 'password'=>"");
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
+			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
 				Billrun_Factory::log("Wrong parameters for connection to", $name);
 				return false;
 			}
