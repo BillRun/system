@@ -201,7 +201,7 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Couldn\'t find payment gateway name');
 			}
-			$supported = Billrun_Factory::config()->getConfigValue('Gateways.' . $data['name'] . '.supported');
+			$supported = Billrun_Factory::config()->getConfigValue('PaymentGateways.' . $data['name'] . '.supported');
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
