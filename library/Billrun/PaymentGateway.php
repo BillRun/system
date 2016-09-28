@@ -27,7 +27,10 @@ abstract class Billrun_PaymentGateway {
 	abstract function getSessionTransactionId();
 
 	public function __call($name, $arguments) {
-		return call_user_func_array(array($this->omnipayGateway, $name), $arguments);
+		if ($this->supportsOmnipay()) {
+			return call_user_func_array(array($this->omnipayGateway, $name), $arguments);
+		}
+		throw new Exception('Method ' . $name . ' is not supported');
 	}
 
 	/**
