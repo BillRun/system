@@ -13,6 +13,9 @@
  * @since    4.5
  */
 class Billrun_Utils_Mongo {
+	
+	const UNLIMITED_DATE = "30 December 2099";
+	
 	/**
 	 * Get a mongo date object based on a period object.
 	 * @param period $period
