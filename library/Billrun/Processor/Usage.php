@@ -39,9 +39,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_format'])){
 			$this->timeFormat = $options['processor']['time_format'];
 		}
+		if (!empty($options['processor']['time_field'])){
+			$this->timeField = $options['processor']['time_field'];
+		}
 		
 		$this->dateField = $options['processor']['date_field'];
-		$this->timeField = (!empty($options['processor']['time_field']) ? $options['processor']['time_field'] : null);
 	}
 
 	protected function processLines() {
