@@ -252,7 +252,7 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$events = $this->eventsCol->aggregate(
 				array(
 			'$match' => array(
-                                'creation_time' => array('$gt'=> new MongoDate(strtotime($allowedAlertsDelay))),
+                'creation_time' => array('$gt'=> date('Y-m-d H:i:s', strtotime($allowedAlertsDelay))),
 				'notify_time' => array('$exists' => false),
 				'source' => array('$in' => $types)
 			),
