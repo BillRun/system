@@ -507,7 +507,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 	public function beforeProcessorStore($processor){
 		$data = &$processor->getData();
 		foreach ($data['data'] as $line) {
-			if (isset($line['type']) && $line['type'] == 'nsn' && ((!isset($line['duration']) || ($line['duration'] <= 0)) && ($line['cause_for_termination'] != '00000000'))){
+			if (isset($line['type']) && $line['type'] == 'nsn' && ((!isset($line['duration']) || ($line['duration'] <= 0)) && (isset($line['cause_for_termination']) && $line['cause_for_termination'] != '00000000'))){
 				$processor->unsetQueueRow($line['stamp']);
 			}
 		}
