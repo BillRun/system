@@ -603,10 +603,13 @@ class ConfigModel {
 	protected function validateProcessorConfiguration($processorSettings) {
 		$processorSettings['type'] = 'Usage';
 		if (isset($processorSettings['date_format'])) {
+			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
+				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
+			}
 			// TODO validate date format
 		}
 		if (!isset($processorSettings['date_field'])) {
-			throw new Exception('Missing processor time field');
+			throw new Exception('Missing processor date field');
 		}
 		if (!isset($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
