@@ -68,7 +68,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row = $this->filterFields($rawLine);
-		$datetime = Billrun_Processor_Util::getRowDateTime($row, $this->dateField, $this->dateFormat, $this->timeField, $this->timeField);
+		$datetime = Billrun_Processor_Util::getRowDateTime($row, $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
 
 		$row['urt'] = new MongoDate($datetime->format('U'));
 		$row['usaget'] = $this->getLineUsageType($row);
