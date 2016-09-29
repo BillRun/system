@@ -14,9 +14,28 @@
 class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGateway {
 
 	protected $omnipayName = 'PayPal_Express';
-
+	protected $redirectUrl = 'paypal';
+	
 	public function getSessionTransactionId() {
 		
 	}
+	
+	
+	public function charge(){
+		
+	}
+	
+	
+	
+	public function getToken($aid, $returnUrl){
+		
+		
+		
+	}
+	
+	
+	
+	
+
 
 }

@@ -194,7 +194,7 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Couldn\'t find payment gateway name');
 			}
-			$supported = Billrun_Factory::config()->getConfigValue('Gateways.' . $data['name'] . '.supported');
+			$supported = Billrun_Factory::config()->getConfigValue('PaymentGateways.' . $data['name'] . '.supported');
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
@@ -456,8 +456,7 @@ class ConfigModel {
  			return $paymentGateway['supported'] == true;
  		});
 		if (!in_array($name, array_keys($supportedGateways))){
-			Billrun_Factory::log("Unsupported Payment Gateway: ", $name);
-			return false;
+			throw new Exception('Unsupported Payment Gateway');
 		}
 		$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
  			return $paymentGateway['omnipay_supported'] == true;
@@ -465,22 +464,19 @@ class ConfigModel {
 		if (in_array($name, array_keys($omnipay_supported))) {
 			$gateway = Omnipay\Omnipay::create($name);
 			$defaultParameters = $gateway->getDefaultParameters();
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
-				Billrun_Factory::log("Wrong parameters for connection to", $name);
-				return false;
+			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
+			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
+				throw new Exception('Missing parameter for connection');
 			}
 			// TODO: check Auth to gateway through Omnipay
 		}
 		
  		else if ($name == "CreditGuard"){
-			$defaultParameters = array('tid' => "", 'user'=>"", 'password'=>"");
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
-				Billrun_Factory::log("Wrong parameters for connection to", $name);
-				return false;
+			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
+			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
+				throw new Exception('Missing parameter for connection');
+
 			}
 		// meanewhile credentials of credit guard, TODO generic for all payemnt gateways not ompipay supported and functions for identical code.
 		}
