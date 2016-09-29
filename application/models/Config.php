@@ -198,6 +198,24 @@ class ConfigModel {
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
+			$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways'); // TODO: Remove when finished to do more generic
+			$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
+				return $paymentGateway['omnipay_supported'] == true;
+				});
+			if (in_array($data['name'], array_keys($omnipay_supported))) {
+					$gateway = Omnipay\Omnipay::create($data['name']);
+					$defaultParameters = $gateway->getDefaultParameters();
+			}
+			else{
+				$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			}
+			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
+			$neededParameters = array_keys($releventParameters);
+			foreach ($data['params'] as $key => $value) {
+				if (!in_array($key, $neededParameters)){
+					unset($data['params'][$key]);
+				}
+			}
 			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			if ($rawPgSettings) {
 				$pgSettings = array_merge($rawPgSettings, $data);
@@ -214,7 +232,7 @@ class ConfigModel {
 				return 0;
 			}
 		}
-
+		
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -449,7 +467,7 @@ class ConfigModel {
 	
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
- 		$connectionParameters = $pg['params'];
+ 		$connectionParameters = array_keys($pg['params']);
  		$name = $pg['name'];
 		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways');
 		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
@@ -465,9 +483,9 @@ class ConfigModel {
 		if (in_array($name, array_keys($omnipay_supported))) {
 			$gateway = Omnipay\Omnipay::create($name);
 			$defaultParameters = $gateway->getDefaultParameters();
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
 				Billrun_Factory::log("Wrong parameters for connection to", $name);
 				return false;
 			}
@@ -475,10 +493,10 @@ class ConfigModel {
 		}
 		
  		else if ($name == "CreditGuard"){
-			$defaultParameters = array('tid' => "", 'user'=>"", 'password'=>"");
-			$defaultParametersKeys= array_keys($defaultParameters);
-			$maxSize = count($defaultParametersKeys) > count($connectionParameters) ? count($defaultParametersKeys) : count($connectionParameters);
-			if (count(array_intersect($connectionParameters, $defaultParametersKeys)) != $maxSize) {
+			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
 				Billrun_Factory::log("Wrong parameters for connection to", $name);
 				return false;
 			}
