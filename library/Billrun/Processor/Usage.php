@@ -41,7 +41,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
-		$this->timeField = (!empty($options['processor']['date_field']) ? $options['processor']['date_field'] : null);
+		$this->timeField = (!empty($options['processor']['time_field']) ? $options['processor']['time_field'] : null);
 	}
 
 	protected function processLines() {
