@@ -965,8 +965,8 @@ class Billrun_Util {
 	/**
 	 * calculates zend_date with offset from the timestamp that is transffered.
 	 * 
-	 * @param $tzoffset - time zone offset from GMT
-	 * @param $timestamp - the line urt
+	 * @param string $tzoffset - time zone offset from GMT
+	 * @param integer $timestamp - the line urt
 	 * 
 	 * @return new zend_date after taking the offset in account
 	 */
