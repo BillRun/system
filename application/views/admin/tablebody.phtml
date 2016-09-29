@@ -23,7 +23,7 @@ foreach ($this->data as $item) {
 			$dateFormat = "Y-m-d H:i:s";
 			if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types', array()))) && (!empty($item["tzoffset"]))) {
 				// TODO change this to regex and move to method in model
-				$zend_date = Billrun_Util::createTimeWithOffset($item, $item['urt']->sec);
+				$zend_date = Billrun_Util::createTimeWithOffset($item['tzoffset'], $item['urt']->sec);
 				$zend_date->setTimezone('UTC');
 				echo $zend_date->toString($dateFormat, 'php') . $item['tzoffset'];
 			} else {
