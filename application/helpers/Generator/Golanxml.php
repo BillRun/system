@@ -1219,7 +1219,7 @@ EOI;
 	protected function getDate($line) {
 		$timestamp = $line['urt']->sec;
 		$zend_date = new Zend_Date($timestamp);
-		if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types'))) && (isset($line['tzoffset']))) {
+		if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types', array()))) && (isset($line['tzoffset']))) {
 			// TODO change this to regex
 			$zend_date = Billrun_Util::createTimeWithOffset($line, $timestamp);
 			$zend_date->setTimezone('UTC');

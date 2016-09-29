@@ -21,7 +21,7 @@ foreach ($this->data as $item) {
 			print '<a href="#popupModal " data-remote="' . $url . '" role="button" data-toggle="modal">' . $data . '</a>';
 		} else if (($h == 'from' || $h == 'to' || $h == 'urt' || $h == 'notify_time') && $data) {
 			$dateFormat = "Y-m-d H:i:s";
-			if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types'))) && (!empty($item["tzoffset"]))) {
+			if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types', array()))) && (!empty($item["tzoffset"]))) {
 				// TODO change this to regex and move to method in model
 				$zend_date = Billrun_Util::createTimeWithOffset($item, $item['urt']->sec);
 				$zend_date->setTimezone('UTC');
