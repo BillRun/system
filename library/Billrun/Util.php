@@ -936,4 +936,28 @@ class Billrun_Util {
 	public static function convertToBillrunDate($date){
 		return date(Billrun_Base::base_dateformat, strtotime($date));
 	}
+	
+	
+	public static function getTimeTransitionsByTimezone(){
+ 		return timezone_transitions_get(new DateTimeZone(date_default_timezone_get()), strtotime('January 1st'), strtotime('December 31'));
+ 	}
+ 	
+ 	public static function getTransitionTime($transitions, $index){
+ 		return $transitions[$index]['time'];
+ 	}
+ 	
+ 	public static function getTransitionOffset($transitions, $index){
+ 		return $transitions[$index]['offset'];
+ 	}
+ 	
+ 	public static function buildTransitionsDates($transitions){
+ 		$summer_transition = Billrun_Util::getTransitionTime($transitions, 1);
+ 		$winter_transition = Billrun_Util::getTransitionTime($transitions, 2);	
+ 		$summer_date = new DateTime($summer_transition);
+ 		$winter_date = new DateTime($winter_transition);
+ 		
+ 		$transitions_dates = array('summer' => $summer_date, 'winter' => $winter_date);
+ 		return $transitions_dates;
+ 	}
+	
 }
