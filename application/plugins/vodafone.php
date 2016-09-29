@@ -88,8 +88,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
-		$from = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00')));
-		$to = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59')));
+		$from = strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00');
+		$to = strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59');
 		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
@@ -177,18 +177,17 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$match3 = array(
 			'$match' => array(
-				'_id.day_key' => array(
-					'$lte' => $line_day, 
-				),
-				'_id.month_key' => array(
-					'$lte' => $line_month, 
-				),
-				'_id.year_key' => array(
-					'$lte' => $line_year, 
+				'$or' => array(
+					array('_id.month_key' => array('$lt'=> $line_month)),
+					array(
+						'$and' => array(
+							array('_id.month_key' => array('$eq' => $line_month)),
+							array('_id.day_key' => array('$lte' => $line_day)),
+						),
+					),	
 				),
 			),
 		);
-
 		$results = Billrun_Factory::db()->linesCollection()->aggregate($match, $project, $match2, $group, $match3);
 		return $this->handleResultPadding($results);
 	}
@@ -197,8 +196,8 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$year = date('Y', strtotime($this->line_time));
 		$line_month = intval(substr($this->line_time, 4, 2));
 		$line_day = intval(substr($this->line_time, 6, 2));
-		$from = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00')));
-		$to = strtotime(date('YmdHis', strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59')));
+		$from = strtotime(str_replace('%Y', $year, $limits['period']['from']) . ' 00:00:00');
+		$to = strtotime(str_replace('%Y', $year, $limits['period']['to']) . ' 23:59:59');
 		$line_year = intval($year);
 		$start_of_year = new MongoDate($from);
 		$end_of_year = new MongoDate($to);
@@ -290,14 +289,14 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$match3 = array(
 			'$match' => array(
-				'_id.day_key' => array(
-					'$lte' => $line_day, 
-				),
-				'_id.month_key' => array(
-					'$lte' => $line_month, 
-				),
-				'_id.year_key' => array(
-					'$lte' => $line_year, 
+				'$or' => array(
+					array('_id.month_key' => array('$lt'=> $line_month)),
+					array(
+						'$and' => array(
+							array('_id.month_key' => array('$eq' => $line_month)),
+							array('_id.day_key' => array('$lte' => $line_day)),
+						),
+					),	
 				),
 			),
 		);
