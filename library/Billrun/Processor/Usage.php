@@ -16,6 +16,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $usagevField = null;
 	protected $dateField = null;
 	protected $dateFormat = null;
+	protected $timeField = null;
+	protected $timeFormat = null;
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -33,6 +35,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['date_format'])){
 			$this->dateFormat = $options['processor']['date_format'];
+		}
+		if (!empty($options['processor']['time_format'])){
+			$this->timeFormat = $options['processor']['time_format'];
+		}
+		if (!empty($options['processor']['time_field'])){
+			$this->timeField = $options['processor']['time_field'];
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -60,13 +68,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row = $this->filterFields($rawLine);
-		if (!is_null($this->dateFormat)) {
-			$datetime = DateTime::createFromFormat($this->dateFormat, $row[$this->dateField]);
-		} else {
-			$date = strtotime($row[$this->dateField]);
-			$datetime = new DateTime();
-			$datetime->setTimestamp($date);
-		}
+		$datetime = Billrun_Processor_Util::getRowDateTime($row, $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
 
 		$row['urt'] = new MongoDate($datetime->format('U'));
 		$row['usaget'] = $this->getLineUsageType($row);
