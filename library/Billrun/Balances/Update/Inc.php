@@ -65,6 +65,7 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 		$coll = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
 		$balanceBefore = $coll->query($balanceQuery)->cursor()->current();
+		$valueBefore = 0;
 		if (!$balanceBefore->isEmpty()) {
 			$valueBefore = Billrun_Balances_Util::getBalanceValue($balanceBefore);
 		}
