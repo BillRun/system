@@ -16,13 +16,68 @@ require_once APPLICATION_PATH . '/library/password_compat/password.php';
  * @since    0.5
  */
 class UsersModel extends TableModel {
+	
+	const ROLES = ['admin', 'read', 'write'];
 
 	public function __construct(array $params = array()) {
 		$params['collection'] = Billrun_Factory::db()->users;
 		parent::__construct($params);
 		$this->search_key = "username";
 	}
-
+	
+	public function getUserById($userId){
+		$mongoId = new MongoId($userId);
+		Billrun_Factory::log("Finish get user by id", Zend_Log::INFO);
+		return current(iterator_to_array($this->collection->query(['_id' => $mongoId])->cursor()))->getRawData();
+	}
+	
+	public function deleteUserById($userId){
+		try{
+			$mongoId = new MongoId($userId);
+			$deleteQuery = $this->collection->remove(['_id' => $mongoId]);
+			Billrun_Factory::log("Finish remove user", Zend_Log::INFO);
+		}catch(\MongoException $e){
+			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+		}
+		return "{$deleteQuery['nModified']} rows been removed";
+	}
+	
+	public function insertUser($username, $roles, $password){
+		try{ 
+			$password = password_hash($password, PASSWORD_DEFAULT);
+			$insertQuery = $this->collection->insert(['username' => $username, 'password' => $password, 'roles' => $roles]);
+			Billrun_Factory::log("Finish insert new user", Zend_Log::INFO);
+		}catch(\MongoException $e){
+			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+		}
+			return "{$insertQuery['nModified']} rows been inserted";
+	}
+	
+	public function updateUser($userId, $username, $roles, $password){
+		$mongoId = new MongoId($userId);
+		$setArray = array('username' => (string) $username,'roles' => $roles );
+		
+		foreach($roles as $role){
+			if(!in_array($role, self::ROLES)){
+				Billrun_Factory::log()->log("Illegal roles entered", Zend_Log::CRIT);
+				return "Illegal roles";
+			}
+		}
+		
+		if($password){
+			$password = password_hash($password, PASSWORD_DEFAULT);
+			$setArray['password'] = $password;
+		}
+		
+		try{
+			Billrun_Factory::log("Start Update {$setArray}", Zend_Log::INFO);
+			$updateQuery = $this->collection->update(array('_id' => $mongoId), array('$set' => $setArray));
+		}catch(\MongoException $e){
+			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+		}
+			return "{$updateQuery['nModified']} rows been modified";
+	}
+	
 	public function getFilterFields() {
 		$filter_fields = array(
 			'username' => array(
