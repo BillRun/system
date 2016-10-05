@@ -37,7 +37,7 @@ class UsersModel extends TableModel {
 			$deleteQuery = $this->collection->remove(['_id' => $mongoId]);
 			Billrun_Factory::log("Finish remove user", Zend_Log::INFO);
 		}catch(\MongoException $e){
-			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+			return $this->reportError($e->getMessage(), Zend_Log::NOTICE);
 		}
 		return "{$deleteQuery['nModified']} rows been removed";
 	}
@@ -45,10 +45,17 @@ class UsersModel extends TableModel {
 	public function insertUser($username, $roles, $password){
 		try{ 
 			$password = password_hash($password, PASSWORD_DEFAULT);
+			$checkForExistUsername = current(iterator_to_array($this->collection->query(['username' => $username])->cursor()));
+			
+			if($checkForExistUsername){
+				Billrun_Factory::log("Username already exist {$username}", Zend_Log::INFO);
+				throw $ex = new Billrun_Exceptions_Api(0, array(), 'Username already exist');
+			}
+
 			$insertQuery = $this->collection->insert(['username' => $username, 'password' => $password, 'roles' => $roles]);
 			Billrun_Factory::log("Finish insert new user", Zend_Log::INFO);
 		}catch(\MongoException $e){
-			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::CRIT);
 		}
 			return "{$insertQuery['nModified']} rows been inserted";
 	}
@@ -73,7 +80,7 @@ class UsersModel extends TableModel {
 			Billrun_Factory::log("Start Update {$setArray}", Zend_Log::INFO);
 			$updateQuery = $this->collection->update(array('_id' => $mongoId), array('$set' => $setArray));
 		}catch(\MongoException $e){
-			$this->reportError($e->getMessage(), Zend_Log::NOTICE);
+			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::CRIT);
 		}
 			return "{$updateQuery['nModified']} rows been modified";
 	}
