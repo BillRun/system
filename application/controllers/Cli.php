@@ -66,6 +66,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'tenant-s' => 'Load configuration for a specific tenant',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 				'clearcall' => 'Finds and inform about open calls without balance',
+				'batch-s' => 'Tag the results of an action, to be concatinated to the resulting output',
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

@@ -33,10 +33,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
 		
+		$batchName = Billrun_Util::getFieldVal($options['batch'], $this->stamp);
+		
 		$this->paths = array(
-			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$this->stamp.'/',
-			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$this->stamp.'/',
-			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $this->stamp . '/',
+			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$batchName.'/',
+			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$batchName.'/',
+			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $batchName . '/',
 		);
 		
 		$this->tmp_paths = array(

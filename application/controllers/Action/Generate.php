@@ -26,6 +26,7 @@ class GenerateAction extends Action_Base {
 			'stamp' => false,
 			'page' => true,
 			'size' => true,
+			'batch' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
