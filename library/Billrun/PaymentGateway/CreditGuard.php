@@ -13,9 +13,10 @@
  */
 class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
-	protected $redirectUrl;
 	protected $successUrl;
 	protected $failUrl;
+	protected $cgConf;
+	protected $EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
 	
 	
 	
@@ -35,9 +36,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	
 	
-	
-	
-	protected function getToken($aid, $returnUrl) {
+	protected function buildPostArray($aid, $returnUrl){
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
@@ -49,7 +48,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['return_url'] = $returnUrl;
 		$this->cgConf['language'] = "ENG";
 		
-		$post_array = array(
+		return $post_array = array(
 			'user' => $this->cgConf['user'],
 			'password' => $this->cgConf['password'],
 			 /* Build Ashrait XML to post */
@@ -97,15 +96,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							</request>
 						   </ashrait>'
 		);
-		
-		$poststring = http_build_query($post_array);
-		
-		
-		//init curl connection
-		if (function_exists("curl_init")) {
-			$result= Billrun_Util::sendRequest($this->cgConf['cg_gateway_url'], $poststring, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		}
-
+	}
+	
+	protected function updateRedirectUrl($result) {
 		if (function_exists("simplexml_load_string")) {
 			if (strpos(strtoupper($result), 'HEB')) {
 				$result = iconv("utf-8", "iso-8859-8", $result);
@@ -127,15 +120,88 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	
-		
- 	public function getOkPage() {
-		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
-		$request = $this->getRequest();
-		$pageRoot = $request->getServer()['HTTP_HOST'];
-		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
-		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
-		return $okPageUrl;
+	protected function buildTransactionPost($txId) {
+		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
+		$cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$cgConf['txId'] = $txId;
+		$cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
+		$cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
+		$cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
+
+		return $post_array = array(
+			'user' => $cgConf['user'],
+			'password' => $cgConf['password'],
+			 /* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
+							<request>
+							 <language>HEB</language>
+							 <command>inquireTransactions</command>
+							 <inquireTransactions>
+							  <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
+							  <mainTerminalNumber/>
+							  <queryName>mpiTransaction</queryName>
+							  <mid>' . $cgConf['mid'] . '</mid>
+							  <mpiTransactionId>' . $cgConf['txId'] . '</mpiTransactionId>
+							  <mpiValidation>Token</mpiValidation>
+							  <userData1/>
+							  <userData2/>
+							  <userData3/>
+							  <userData4/>
+							  <userData5/>
+							 </inquireTransactions>
+							</request>
+					   </ashrait>'
+			);
+	}
+
+
+
+	public function getTransactionIdName(){
+		return "txId";
 	}
 	
+	protected function getResponseDetails($result){
+		if (function_exists("simplexml_load_string")) {
+			if (strpos(strtoupper($result), 'HEB')) {
+				$result = iconv("utf-8", "iso-8859-8", $result);
+			}
+			$xmlObj = simplexml_load_string($result);
+			// Example to print out status text
+			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
+				return false;
+			echo "<br /> THE TRANSACTION WAS A SUCCESS ";   // TODO: remove after tests
+			
+			$this->saveDetails['card_token'] = $xmlObj->response->inquireTransactions->row->cardId;
+			$this->saveDetails['card_expiration'] = $xmlObj->response->inquireTransactions->row->cardExpiration;
+			$this->saveDetails['aid']= $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
+			$this->saveDetails['return_url'] = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
+			$this->saveDetails['personal_id'] = $xmlObj->response->inquireTransactions->row->personalId;
+			
+			return true;
+		} else {
+			die("simplexml_load_string function is not support, upgrade PHP version!");
+		}
+	}
+	
+	
+	protected function buildSetQuery(){
+	return array(
+		'card_token' => (string) $this->saveDetails['card_token'], 
+		'card_expiration' => (string) $this->saveDetails['card_expiration'], 
+		'personal_id' => (string) $this->saveDetails['personal_id'], 
+		'transaction_exhausted' => true
+		);
+	}
+
+//
+//	public function getOkPage() {
+//		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
+//		$request = $this->getRequest();
+//		$pageRoot = $request->getServer()['HTTP_HOST'];
+//		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
+//		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
+//		return $okPageUrl;
+//	}
+//	
 
 }

@@ -85,7 +85,7 @@
 		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
 		// Validating that not too much time passed.
 		
-		$returnUrl = $request->get("return_url");
+		$returnUrl = $jsonData['return_url'];
 		if(empty($returnUrl)) {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('cg_return_url');
 		}
@@ -100,23 +100,44 @@
 //		$this->signalStartingProcess($aid, $timestamp);
 		
 		
-//		$paymentGateway->redirect();
-		//Billrun_Factory::getInstance($name);
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$paymentGateway->getToken($aid, $returnUrl);
-		$paymentGateway->redirect();
+	//	$paymentGateway->makePayment();
+		$paymentGateway->redirectForToken($aid, $returnUrl);
 		
 	}
-	
-	
-	public function requestTokenAction(){
-		
-		
-		
-	}
-	
+
 	
 	public function OkPageAction(){
+		
+		$request = $this->getRequest();
+		$name = $request->get("name");
+		if (is_null($name)) {
+			return $this->setError("Missing payment gateway name", $request);
+		}
+		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+		$transactionName = $paymentGateway->getTransactionIdName();
+		$transactionId = $request->get($transactionName);
+		if (is_null($transactionId)) {
+			return $this->setError("Operation Failed. Try Again...", $request);
+		}
+	
+		$paymentGateway->saveTransactionDetails($transactionId);
+		
+	
+		
+		
+		
+		
+		// Validate the process.
+//		if(!$this->validateCreditGuardProcess($transaction_id)) {
+//			return $this->setError("Operation Failed. Try Again...", $request);			
+//		}
+		
+		
+//		$today = new MongoDate();
+//		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+//		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
+//		$this->forceRedirect($this->return_url);
 		
 		
 	}
