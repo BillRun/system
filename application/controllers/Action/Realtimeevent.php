@@ -18,11 +18,13 @@ class RealtimeeventAction extends ApiAction {
 
 	protected $event = null;
 	protected $usaget = null;
-
+        protected $events = null;
 	/**
 	 * method to execute realtime event
 	 */
 	public function execute() {
+            
+                $this->events = array() ;
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->event = $this->getRequestData();
 		$this->setEventData();
@@ -32,6 +34,9 @@ class RealtimeeventAction extends ApiAction {
 		if (isset($this->event['api_name']) && $this->event['api_name'] === 'healthcheck_in') {
 			return $this->forward('healthcheck', array("event" => $this->event, "usaget" => $this->usaget));
 		}
+                // split event mscc array into seperated events 
+                $this->setEventDataEvents();
+                
 		$data = $this->process();
 		return $this->respond($data);
 	}
@@ -95,7 +100,7 @@ class RealtimeeventAction extends ApiAction {
 	 * Sets the data of $this->event
 	 */
 	protected function setEventData() {
-		$this->event['source'] = 'realtime';
+		$this->event['source'] = 'realtime';  
 		$this->event['type'] = $this->getEventType();
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
@@ -118,9 +123,55 @@ class RealtimeeventAction extends ApiAction {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
-
+                
 	}
-
+        
+        
+        protected function unifyLines($lines) {
+            
+           switch ($this->usaget) {
+                        case ('data'):
+                		return $this->unifyDataLines($lines);
+			case ('sms'):	
+			case ('mms'):	
+			                               return current($lines);	
+            }
+            
+        }
+        
+       protected function unifyDataLines($lines) {
+            
+           $current =  current($lines);	
+           $current["mscc_data"] = array();
+           foreach ($lines as $line)  {
+               $line["mscc_data"][0]['granted_return_code'] = ( isset($line['granted_return_code'])  ? $line['granted_return_code'] : null);
+               $line["mscc_data"][0]['usagev'] = ( isset($line['usagev'])  ? $line['usagev'] : 0);
+               $current["mscc_data"][] = $line["mscc_data"][0] ;
+               
+           }
+           return $current ;
+        }
+        
+        
+        
+        protected function setEventDataEvents() {
+            
+            if ($this->usaget === 'data') {
+                foreach ($this->event["mscc_data"] as $index => $mscc_service){
+                    $new_event =  $this->event;
+                    $new_event["mscc_data"] = array(0 => $mscc_service);
+                    $new_event['usaget'] = $this->usaget ;
+                    
+                    $this->events[] =  $new_event ;
+		}
+            }          
+            
+            if(!sizeof($this->events)) {
+                $this->events[] = $this->event;
+            }
+            
+        }
+        
 	protected function getSgsn($event) {
 		$sgsn = 0;
 		if (isset($event['service']['sgsn_address'])) {
@@ -198,9 +249,16 @@ class RealtimeeventAction extends ApiAction {
 			'parser' => 'none',
 		);
 		$processor = Billrun_Processor::getInstance($options);
-		$processor->addDataRow($this->event);
-		$processor->process();
-		return current($processor->getAllLines());
+                
+                foreach($this->events as $event) {
+                                       
+                    $processor->addDataRow($event);
+                    $processor->process();
+                    $allLines[] = current($processor->getAllLines() );
+                }     
+             
+                $unifiedAnswer =  $this->unifyLines( $allLines ) ;
+		return   $unifiedAnswer ; 
 	}
 
 	/**
