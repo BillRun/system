@@ -15,14 +15,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class UsersAction extends ApiAction {
-	
+	use Billrun_Traits_Api_UserPermissions;
 	protected $_model;
 	protected $_request;
 	/**
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
-		//$this->allowed();
+		$this->allowed();
 		Billrun_Factory::log("Execute users api call", Zend_Log::INFO);
 		$this->_request = $this->getRequest();
 		$this->_model = new UsersModel(array('sort' => array('provider' => 1, 'from' => 1)));
@@ -109,6 +109,10 @@ class UsersAction extends ApiAction {
 			return true;
 		}
 		return $this->_model->deleteUserById($userId);
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 	
 }
