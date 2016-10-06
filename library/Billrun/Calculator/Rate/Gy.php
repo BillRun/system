@@ -59,7 +59,8 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',
-			"mcc" => '$params.mcc'
+			"mcc" => '$params.mcc',
+                        "rating_group" => '$params.rating_group'
 		);
 	}
 

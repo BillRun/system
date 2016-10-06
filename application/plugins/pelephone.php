@@ -308,7 +308,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			case ('BALANCE_LOAD'):
 				if (!$this->notificationSent) {
 					$this->notificationSent = true;
-					return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+				return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
 				} else {
 					return false;
 				}
@@ -332,9 +332,9 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					continue;
 				}
 				if ($this->needToSendNotification($type, $notification, $balance, $balanceBefore)) {
-					$modifyParams = array('balance' => $balance);
-					$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
-					$this->sendNotification($notification['type'], $msg, $msisdn);
+						$modifyParams = array('balance' => $balance);
+						$msg = $this->modifyNotificationMessage($notification['msg'], $modifyParams);
+						$this->sendNotification($notification['type'], $msg, $msisdn);
 					if (is_null($notificationSent[$notificationKey])) {
 						$notificationSent[$notificationKey] = array($index);
 					} else {
@@ -360,7 +360,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getNotificationExpireDate($obj) {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
-	
+
 	/**
 	 * @param type $obj
 	 * @param type $data
@@ -375,7 +375,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return abs(round($val));
 	}
-	
+
 	/**
 	 * 
 	 * @param obj $obj
@@ -661,8 +661,8 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			foreach ($additionalUsageTypes as $additionalUsageType) {
 				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
 				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
-			}
 		}
+	}
 	}
 	
 	/**
@@ -838,7 +838,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 					$event['called_number'] = $event['destination_number'];
 				}
 				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
-					$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
+				$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
 				} else if ($event['call_type'] >= "11") {
 					$event[$numberField] = Billrun_Util::cleanLeadingZeros($event[$numberField]); // this will cleaning leading zeros and pluses
 				}

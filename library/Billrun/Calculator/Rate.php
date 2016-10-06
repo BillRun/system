@@ -257,6 +257,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			'line_time' => $row->get($timeField),
 			'called_number' => $row->get($calledNumberField),
 			'country_code' => $countryCode,
+			'rating_group' => $row->get('mscc_data')[0]['rating_group']
 		);
 	}
 
@@ -323,7 +324,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-		
+
 		return $query;
 	}
 
@@ -362,7 +363,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		return false;
 	}
-	
+
 	/**
 	 * method to clean specific prefixes from phone number
 	 * the prefixes taken from config in the next format:
@@ -384,9 +385,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $number;
 	}
-	
+
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
+	}
+
+	protected function getRatingGroupMatchQuery() {
+		return array('$in' => array($this->rowDataForQuery['rating_group']));
 	}
 
 }
