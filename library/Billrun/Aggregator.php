@@ -49,7 +49,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	// The results of this function are returned from the aggregate function
 	/**
 	 * 
-	 * @param Billrun_Aggregator_Result $results - Array of aggregate results
+	 * @param array $results - Array of aggregate results
 	 */
 	protected function afterAggregate($results) {
 		
@@ -94,7 +94,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		foreach ($data as $aggregateable) {
 			$result = $aggregateable->aggregate();
 			
-			$aggregated[] = $result;
+			$aggregated += $result;
 		}
 		
 		$this->save($aggregated);
@@ -144,11 +144,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 
 	/**
 	 * 
-	 * @param Billrun_Aggregator_Result $aggregated - Array of results
+	 * @param array $aggregated - Array of results
 	 */
-	protected function save($aggregated) {
-		foreach ($aggregated as $current) {
-			$current->save();
-		}
-	}
+	protected abstract function save($aggregated);
 }

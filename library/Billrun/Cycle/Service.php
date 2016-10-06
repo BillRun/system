@@ -12,10 +12,9 @@
  * @package  Cycle
  * @since    5.2
  */
-class Billrun_Cycle_Service implements Billrun_Aggregator_Aggregateable {
-	public function aggregate($serviceData) {
-		$service = new Billrun_Cycle_Data_Service($serviceData);
+class Billrun_Cycle_Service extends Billrun_Cycle_Plan {
+	protected function getLine($planData) {
+		$service = new Billrun_Cycle_Data_Service($planData);
 		return $service->getLine();
 	}
-
 }
