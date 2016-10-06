@@ -224,8 +224,8 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$findQuery = array(
 				"sid" => $row['sid'],
 				"session_id" => $row['session_id'],
-				"mscc_data.service_id" => $row['mscc_data'][0]['service_id'],
 				"request_num" => array('$lt' => $row['request_num']),
+				"mscc_data.service_id" => $row['mscc_data'][0]['service_id'],
 			);
 			$sort = array(
 				'sid' => 1,
