@@ -19,10 +19,14 @@ abstract class Billrun_PaymentGateway {
 	protected $omnipayGateway;
 	protected static $paymentGateways;
 	protected $redirectUrl;
-	//protected $successUrl;
 	//protected $failUrl;
 	protected $EndpointUrl;
 	protected $saveDetails;
+	protected $billrunName;
+	protected $transactionId;
+
+
+
 
 	private function __construct() {
 		
@@ -32,7 +36,7 @@ abstract class Billrun_PaymentGateway {
 		
 	}
 
-	abstract function getSessionTransactionId();
+	abstract function updateSessionTransactionId();
 
 	public function __call($name, $arguments) {
 		if ($this->supportsOmnipay()) {
@@ -67,8 +71,12 @@ abstract class Billrun_PaymentGateway {
 		return $this->omnipayName;
 	}
 	
-	public function redirectForToken($aid, $returnUrl){
+	public function redirectForToken($aid, $returnUrl, $timestamp){
 		$this->getToken($aid, $returnUrl);
+		$this->updateSessionTransactionId();
+		
+		// Signal starting process.
+		$this->signalStartingProcess($aid, $timestamp);
 		$this->forceRedirect($this->redirectUrl);
 	}
 	
@@ -81,7 +89,7 @@ abstract class Billrun_PaymentGateway {
 	
 	abstract protected function updateRedirectUrl($result);
 		
-	abstract protected function buildPostArray($aid, $returnUrl);
+	abstract protected function buildPostArray($aid, $returnUrl, $okPage);
 	
 	abstract protected function buildTransactionPost($txId);
 	
@@ -104,7 +112,9 @@ abstract class Billrun_PaymentGateway {
 	
 	
 	protected function getToken($aid, $returnUrl){
-		$postArray = $this->buildPostArray($aid, $returnUrl);
+		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
+		$okPage = sprintf($okTemplate, $this->billrunName);
+		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -123,28 +133,71 @@ abstract class Billrun_PaymentGateway {
 			return $this->setError("Operation Failed. Try Again...");
 		}
 		
+		if(!$this->validatePaymentProcess($txId)) {
+			return $this->setError("Operation Failed. Try Again...");			
+		}
+		
 		$today = new MongoDate();
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$setQuery = $this->buildSetQuery();
 		$this->subscribers->update(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $setQuery));
-//		$this->forceRedirect($this->return_url);
-		// Need to Check And validate response - Tom Validation
+		if (isset($this->saveDetails['return_url'])){
+			$returnUrl = (string)$this->saveDetails['return_url'];
+			$this->forceRedirect($returnUrl);
+		}
+	}
+	
+	protected function signalStartingProcess($aid, $timestamp) {
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		$query = array("name" => $this->billrunName, "tx" => $this->transactionId, "aid" => $aid);
+		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		if(!$paymentRow->isEmpty()) {
+			if(isset($paymentRow['done'])) { 
+			   return;
+			}
+			return;
+		}
+		
+		// Signal start process
+		$query['t'] = $timestamp;
+		$paymentColl->insert($query);
 	}
 	
 	
-	
-	
-	
-// 	public function getOkPage() {
-//		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
-//		$request = $this->getRequest();
-//		$pageRoot = $request->getServer()['HTTP_HOST'];
-//		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
-//		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
-//		return $okPageUrl;
-//	}
-//	
-	
+	/**
+	 * Check that the process that has now ended, actually started, and not too long ago.
+	 * @return boolean
+	 */
+	protected function validatePaymentProcess($txId) {
+		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
+		
+		// Get is started
+		$query = array("name" => $this->billrunName, "tx" => $txId, "aid" => (int)$this->saveDetails['aid']);
+		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		if($paymentRow->isEmpty()) {
+			// Received message for completed charge, 
+			// but no indication for charge start
+			return false;
+		}
+		
+		// Check how long has passed.
+		$timePassed = time() - $paymentRow['t'];
+		
+		// Three minutes
+		// TODO: What value should we put here?
+		// TODO: Change to 4 hours, move to conf
+		if($timePassed > 60*60*4) {
+			// Change indication in DB for failure.
+			$paymentRow['done'] = false;
+		} else {
+			// Signal done
+			$paymentRow['done'] = true;	
+		}
+		
+		$paymentColl->updateEntity($paymentRow);
+		
+		return $paymentRow['done'];
+	}
 	
 	
 	//abstract protected function makePayment();

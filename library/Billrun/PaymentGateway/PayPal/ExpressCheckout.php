@@ -16,8 +16,9 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected $omnipayName = 'PayPal_Express';
 	protected $conf;
 	protected $EndpointUrl = "https://api-3t.sandbox.paypal.com/nvp";
+	protected $billrunName = "PayPal_ExpressCheckout";
 	
-	public function getSessionTransactionId() {
+	public function updateSessionTransactionId() {
 		
 	}
 	
@@ -27,7 +28,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 	
 	
-	protected function buildPostArray($aid, $returnUrl){
+	protected function buildPostArray($aid, $returnUrl, $okPage){
 		$this->conf['user'] = "shani.dalal_api1.billrun.com";
 		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
 		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";

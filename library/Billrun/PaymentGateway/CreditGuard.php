@@ -17,17 +17,18 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $failUrl;
 	protected $cgConf;
 	protected $EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
+	protected $billrunName = "CreditGuard";
 	
 	
 	
-	public function getSessionTransactionId() {
-		
+	public function updateSessionTransactionId() {			
+		$url_array = parse_url($this->redirectUrl);
+		$str_response = array();
+		parse_str($url_array['query'], $str_response);
+		$this->transactionId = $str_response['txId'];	
 	}
 	
 	
-	public function ValidateData(){
-		
-	}
 	
 	
 	public function charge(){
@@ -36,7 +37,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	
 	
-	protected function buildPostArray($aid, $returnUrl){
+	protected function buildPostArray($aid, $returnUrl, $okPage){
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
 		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
@@ -44,7 +45,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
-		$this->cgConf['ok_page'] = $this->getOkPage();
+		$this->cgConf['ok_page'] = $okPage;
 		$this->cgConf['return_url'] = $returnUrl;
 		$this->cgConf['language'] = "ENG";
 		
@@ -186,22 +187,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function buildSetQuery(){
 	return array(
-		'card_token' => (string) $this->saveDetails['card_token'], 
-		'card_expiration' => (string) $this->saveDetails['card_expiration'], 
-		'personal_id' => (string) $this->saveDetails['personal_id'], 
-		'transaction_exhausted' => true
+		'payment_gateway' => array(
+			'name' => $this->billrunName,
+			'card_token' => (string) $this->saveDetails['card_token'], 
+			'card_expiration' => (string) $this->saveDetails['card_expiration'], 
+			'personal_id' => (string) $this->saveDetails['personal_id'], 
+			'transaction_exhausted' => true
+		)
 		);
 	}
 
-//
-//	public function getOkPage() {
-//		$okTemplate = Billrun_Factory::config()->getConfigValue('CG.conf.ok_page');
-//		$request = $this->getRequest();
-//		$pageRoot = $request->getServer()['HTTP_HOST'];
-//		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
-//		$okPageUrl = sprintf($okTemplate, $protocol, $pageRoot);
-//		return $okPageUrl;
-//	}
-//	
 
 }

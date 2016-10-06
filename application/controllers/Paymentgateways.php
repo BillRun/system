@@ -56,59 +56,36 @@
 	
 	public function getRequestAction(){
 		$request = $this->getRequest();
-		
 		// Validate the data.
-	//	$data = $this->validateData($request);
-//		if($data === null) {
-//			return $this->setError("Failed to authenticate", $request);
-//		}
-//		
-		
-		$data = $request->get("data");
+		$data = $this->validateData($request);
+		if($data === null) {
+			return $this->setError("Failed to authenticate", $request);
+		}
 		$jsonData = json_decode($data, true);
-		
 		if (!isset($jsonData['aid']) || is_null(($aid = $jsonData['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
 			return $this->setError("need to pass numeric aid", $request);
+		}
+		
+		if(!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
+			return $this->setError("Invalid arguments", $request);			
 		}
 		
 		if (!isset($jsonData['name'])) {
 			return $this->$setError("need to pass payment gateway name", $request);
 		}
-		
 		$name = $jsonData['name'];
 		$aid = $jsonData['aid'];
-		
-//		if(!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
-//			return $this->setError("Invalid arguments", $request);			
-//		}
-//		
-		// TODO: Validate timestamp 't' against the $_SERVER['REQUEST_TIME'], 
-		// Validating that not too much time passed.
-		
 		$returnUrl = $jsonData['return_url'];
 		if(empty($returnUrl)) {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('cg_return_url');
 		}
 		
-//		$this->getToken($aid, $return_url);
-//		$url_array = parse_url($this->url);
-//		$str_response = array();
-//		parse_str($url_array['query'], $str_response);
-//		$this->CG_transaction_id = $str_response['txId'];	
-//		
-//		// Signal starting process.
-//		$this->signalStartingProcess($aid, $timestamp);
-		
-		
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-	//	$paymentGateway->makePayment();
-		$paymentGateway->redirectForToken($aid, $returnUrl);
-		
+		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
 	}
 
 	
 	public function OkPageAction(){
-		
 		$request = $this->getRequest();
 		$name = $request->get("name");
 		if (is_null($name)) {
@@ -122,26 +99,48 @@
 		}
 	
 		$paymentGateway->saveTransactionDetails($transactionId);
-		
-	
-		
-		
-		
-		
-		// Validate the process.
-//		if(!$this->validateCreditGuardProcess($transaction_id)) {
-//			return $this->setError("Operation Failed. Try Again...", $request);			
-//		}
-		
-		
-//		$today = new MongoDate();
-//		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-//		$this->subscribers->update(array('aid' => (int) $this->aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => array('card_token' => (string) $this->card_token, 'card_expiration' => (string) $this->card_expiration, 'personal_id' => (string) $this->personal_id, 'transaction_exhausted' => true)));
-//		$this->forceRedirect($this->return_url);
-		
-		
+//		$this->forceRedirect($this->return_url);	
 	}
 	
+	
+	/**
+	 * Validates the input data.
+	 * @return data - Request data if validated, null if error.
+	 */
+	public function validateData($request) {
+		$data = $request->get("data");
+		$signature = $request->get("signature");
+		if(empty($signature)) {
+			return false;
+		}
+		
+		// Get the secret
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
+		if(!$this->validateSecret($secret)) {
+			return null;
+		}
+		
+		$hashResult = hash_hmac("sha512", $data, $secret);
+		
+		// state whether signature is okay or not
+		$validData = null;
+	
+		if(hash_equals($signature, $hashResult)) {
+			$validData = $data;
+		}
+		return $validData;
+	}
+	
+	protected function validateSecret($secret) {
+		if(empty($secret) || !is_string($secret)) {
+			return false;
+		}
+		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
+		$calculatedCrc = hash("crc32b", $secret);
+		
+		// Validate checksum
+		return hash_equals($crc, $calculatedCrc);
+	}
 	
  
  }
