@@ -15,12 +15,20 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected $charges = array();
 	protected $stumpLine = array();
 	
+	/**
+	 *
+	 * @var Billrun_DataTypes_CycleTime
+	 */
+	protected $cycle;
+	
 	public function __construct(array $options) {
-		if(!isset($options['plan'])) {
+		if(!isset($options['plan'], $options['cycle'])) {
+			Billrun_Factory::log("Invalid aggregate plan data!");
 			return;
 		}
 	
 		$this->plan = $options['plan'];
+		$this->cycle = $options['cycle'];
 		$this->constructOptions($options);
 	}
 
@@ -57,21 +65,15 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 		$flatEntry = array(
 			'plan' => $this->plan,
 			'process_time' => new MongoDate(),
+			'usagev' => 1
 		);
 		
 		if(isset($this->vatable)) {
 			$flatEntry['vatable'] = $this->vatable;
 		}
-		
 		$merged = array_merge($flatEntry, $this->stumpLine);
-		
-		/**
-		 * @var Billrun_DataTypes_CycleTime $cycle
-		 */
-		$cycle = $merged['cycle'];
-		unset($merged['cycle']);
-		$stamp = md5($merged['aid'] . '_' . $merged['sid'] . $this->plan . '_' . $cycle->start() . $cycle->key());
-		$flatEntry['stamp'] = $stamp;
-		return $flatEntry;
+		$stamp = md5($merged['aid'] . '_' . $merged['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
+		$merged['stamp'] = $stamp;
+		return $merged;
 	}
 }

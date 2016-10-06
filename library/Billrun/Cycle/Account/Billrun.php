@@ -16,6 +16,11 @@ class Billrun_Cycle_Account_Billrun {
 	
 	protected $aid;
 	protected $key;
+	
+	/**
+	 *
+	 * @var Mongodloid_Entity
+	 */
 	protected $data;
 	
 	/**
@@ -47,6 +52,7 @@ class Billrun_Cycle_Account_Billrun {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->constructByOptions($options);
+		$this->populateBillrunWithAccountData($options['attributes']);
 	}
 
 	/**
@@ -135,7 +141,12 @@ class Billrun_Cycle_Account_Billrun {
 	public function addSubscriber($subscriber, $subData) {
 		$subscriberEntry = $subData;
 		$subscriberEntry['subscriber_status'] = $subscriber->getStatus();
-		$this->setSubRawData($subscriberEntry);
+		$rawData = $this->data->getRawData();
+		if(!isset($rawData['subs'])) {
+			$rawData['subs'] = array();
+		}
+		$rawData['subs'][] = $subscriberEntry;
+		$this->data->setRawData($rawData);
 	}
 	
 	protected function addClosedSubscriber($sid, $aid) {
@@ -147,7 +158,9 @@ class Billrun_Cycle_Account_Billrun {
 			'next_plan' => null,
 			'subscriber_status' => 'closed'
 		);
-		$this->data['subs'][] = $subscriber;
+		$rawData = $this->data->getRawData();
+		$rawData['subs'][] = $subscriber;
+		$this->data->setRawData($rawData);
 	}
 
 	/**
@@ -258,6 +271,12 @@ class Billrun_Cycle_Account_Billrun {
 	 * @param boolean $vatable is the line vatable or not
 	 */
 	public function updateBillrun($counters, $pricingData, $row, $vatable) {
+		if(!isset($row['sid'])) {
+			Billrun_Factory::log("Invalid line:");
+			Billrun_Factory::log(print_r($row,1));
+			return;
+		}
+		
 		$sid = $row['sid'];
 
 		$sraw = $this->getSubRawData($sid);
@@ -408,8 +427,8 @@ class Billrun_Cycle_Account_Billrun {
 		}
 
 		if ($vatable) {
-			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
-			$sraw['totals'][$breakdownKey]['vatable'] = $this->getFieldVal($sraw['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
+			$sraw['totals']['vatable'] = Billrun_Util::getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
+			$sraw['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($sraw['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
 			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * $this->getVat());
 		} else {
 			$price_after_vat = $pricingData['aprice'];
@@ -500,6 +519,10 @@ class Billrun_Cycle_Account_Billrun {
 	 * @return Mongodloid_Entity the rate of the row
 	 */
 	protected function getRowRate($row) {
+		if(!isset($row['arate'])) {
+			return null;
+		}
+		
 		$raw_rate = $row['arate'];
 		$id_str = strval($raw_rate['$id']);
 		if(!isset($this->rates[$id_str])) {
@@ -518,7 +541,7 @@ class Billrun_Cycle_Account_Billrun {
 		$accountLines = $this->loadAccountLines();
 
 		$lines = array_merge($accountLines, $aggregated);
-		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
+		Billrun_Factory::log("Processing account Lines $this->aid" . " lines: " . count($lines), Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
 		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::DEBUG);
@@ -529,6 +552,7 @@ class Billrun_Cycle_Account_Billrun {
 	protected function processLines($account_lines) {
 		$updatedLines = array();
 		foreach ($account_lines as $line) {
+			
 			// the check fix 2 issues:
 			// 1. temporary fix for https://jira.mongodb.org/browse/SERVER-9858
 			// 2. avoid duplicate lines
@@ -628,7 +652,7 @@ class Billrun_Cycle_Account_Billrun {
 				$ret[$line['stamp']] = $line;
 			}
 		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for account ' . $this->aid . ' lines', Zend_Log::DEBUG);
+		Billrun_Factory::log('Finished querying for account ' . $this->aid . ' lines: ' . count($ret), Zend_Log::DEBUG);
 		
 		return $ret;
 	}
@@ -673,22 +697,12 @@ class Billrun_Cycle_Account_Billrun {
 	
 	/**
 	 * Get an empty billrun account entry structure.
-	 * @param int $aid the account id of the billrun document
-	 * @param string $billrun_key the billrun key of the billrun document
 	 * @return array an empty billrun document
 	 */
-	public function populateBillrunWithAccountData($account, $optionLines = array()) {
-		$attr = array();
-		foreach (Billrun_Factory::config()->getConfigValue('billrun.passthrough_data', array()) as $key => $remoteKey) {
-			if (isset($account['attributes'][$remoteKey])) {
-				$attr[$key] = $account['attributes'][$remoteKey];
-			}
-		}
-		if (isset($account['attributes']['first_name']) && isset($account['attributes']['last_name'])) {
-			$attr['full_name'] = $account['attributes']['first_name'] . ' ' . $account['attributes']['last_name'];
-		}
-
-		$this->data['attributes'] = $attr;
+	public function populateBillrunWithAccountData($attributes) {
+		$rawData = $this->data->getRawData();
+		$rawData['attributes'] = $attributes;
+		$this->data->setRawData($rawData);
 	}
 	
 	protected function initBillrunDates() {

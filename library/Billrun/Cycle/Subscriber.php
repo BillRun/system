@@ -43,7 +43,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$aggregatedPlans = $this->aggregatePlans();
 		$aggregatedServices = $this->aggregateServices();
 		
-		return $aggregatedPlans + $aggregatedServices;
+		$results = $aggregatedPlans + $aggregatedServices;
+		Billrun_Factory::log("Subscriber aggregated: " . count($results));
+		return $results;
 	}
 
 	/**
@@ -76,12 +78,15 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	protected function generalAggregate($data, $aggregator) {
 		if(!$data) {
+			Billrun_Factory::log("generalAggregate received empty data!");
 			return array();
 		}
 		
 		$results = array();
+			
 		foreach ($data as $current) {
-			$results[] = $aggregator->aggregate($current);
+			// Add the stump line.
+			$results += $aggregator->aggregate($current);
 		}
 		return $results;
 	}
@@ -100,6 +105,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @param type $data
 	 */
 	protected function constructServices($data) {
+		$this->records['services'] = array();
+		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
 		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		/**
@@ -107,6 +114,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		 */
 		$cycle = $data['cycle'];
 		$stumpLine = $data['line_stump'];
+		
 		foreach ($services as &$arrService) {
 			// Plan name
 			$index = $arrService['key'];
@@ -115,7 +123,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				continue;
 			}
 
-			$serviceData = array_merge($value, $mongoPlans[$index]);
+			$serviceData = array_merge($arrService, $mongoPlans[$index]);
 			$serviceData['cycle'] = $cycle;
 			$serviceData['line_stump'] = $stumpLine;
 			$this->records['services'][] = $serviceData;
@@ -127,14 +135,20 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @param type $data
 	 */
 	protected function constructPlans($data) {
-		
+		$this->records['plans'] = array();
 		$plans = Billrun_Util::getFieldVal($data['plans'], array());
+		if(empty($plans)) {
+			Billrun_Factory::log("Received no plans!");
+			return;
+		}
+		
 		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		
 		/**
 		 * @var Billrun_DataTypes_CycleTime $cycle
 		 */
 		$cycle = $data['cycle'];
+		$stumpLine = $data['line_stump'];
 		
 		foreach ($plans as &$value) {
 			// Plan name
@@ -146,6 +160,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			
 			$planData = array_merge($value, $mongoPlans[$index]->getRawData());
 			$planData['cycle'] = $cycle;
+			$planData['line_stump'] = $stumpLine;
 			$this->records['plans'][] = $planData;
 		}
 	}

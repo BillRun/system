@@ -13,13 +13,6 @@
  * @since    5.2
  */
 class Billrun_Cycle_Account extends Billrun_Cycle_Common {
-	
-	/**
-	 * Array of account attributes
-	 * @var array 
-	 */
-	protected $attributes = array();
-	
 	/**
 	 * 
 	 * @var Billrun_Cycle_Account_Billrun
@@ -32,6 +25,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	public function aggregate($data = array()) {
 		$results = parent::aggregate();
+		Billrun_Factory::log("Account aggregated: " . count($results));
 		$this->billrun->addLines($results);
 		return $results;
 	}
@@ -52,7 +46,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['subscribers']) && is_array($input['subscribers']) &&
-			   isset($input['attributes']) && is_array($input['attributes']) &&
 			   isset($input['billrun']) && is_a($input['billrun'], 'Billrun_Cycle_Account_Billrun');
 	}
 
@@ -70,13 +63,15 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		// Filter subscribers.
 		$filtered = $this->constructSubscriberData($sorted, $cycle);
-		
+
 		foreach ($sorted as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
 			
 			$filteredSid = array();
 			if(isset($filtered[$sid])) {
 				$filteredSid = $filtered[$sid];
+			} else {
+				Billrun_Factory::log("SID " . $sid . " not in filtered!");
 			}
 			
 			$this->records = $this->constructForSid($subscriberList, $filteredSid, $plans, $cycle);
@@ -95,10 +90,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
 			unset($constructed['plans']);
-			$filterKey = $sub['to'];
+			$filterKey = $sub['sto'];
 			if(isset($filtered[$filterKey])) {
 				$constructed += $filtered[$filterKey]; 
 			} else {
+				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
 				$constructed['plans'] = array();
 			}
 			
@@ -120,7 +116,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			'billrun' => $cycle->key(),
 			'type' => 'flat',
 			'usaget' => 'flat',
-			'cycle' => $cycle,
+//			'cycle' => $cycle,
 			'urt' => new MongoDate($cycle->end()),
 		);
 		
@@ -164,6 +160,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$to = $endTime;
 		}
 		
+		$subscriber['firstname'] = $subscriber['first_name'];
+		$subscriber['lastname'] = $subscriber['last_name'];
+		$subscriber['sfrom'] = $from;
+		$subscriber['sto'] = $to;
 		$subscriber['from'] = date(Billrun_Base::base_datetimeformat, $from);
 		$subscriber['to'] = date(Billrun_Base::base_datetimeformat, $to);
 		
@@ -208,7 +208,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				// Update the last plan
 				if($plan) {
 					$planEnd = $arrPlanDate['from'];
-					$aggregatorData[$planEnd]['plans'][] = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $planEnd);
+					Billrun_Factory::log("Plan end: " . $planEnd);
+					$planStart = $plan['start'];
+					if(!($planStart instanceof MongoDate)) {
+						throw new Exception("For not plan dates are mongo dates");
+					}
+					
+					$aggregatorData[$planEnd]['plans'][] = array("plan" => $plan['name'], "start" => $planStart->sec, "end" => $planEnd);
 				}
 
 				// Set the plan
@@ -231,7 +237,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			// Add the services to the services data
 			foreach ($added as $addedService) {
 				$key = $addedService['key'];
-				$serviceRow = array("service" => $addedService, "start" => $subscriber['from']);
+				$serviceStart = $subscriber['from'];
+				if(!($serviceStart instanceof MongoDate)) {
+					throw new Exception("For not plan dates are mongo dates");
+				}
+				$serviceRow = array("service" => $addedService, "start" => $serviceStart->sec);
 				$servicesData[$key] = $serviceRow;
 			}
 			
@@ -250,7 +260,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		// Handle all the remaining values.
 		if($plan) {
-			$planData = array("plan" => $plan['name'], "start" => $plan['start'], "end" => $endTime);
+			$planStart = $plan['start'];
+			if(!($planStart instanceof MongoDate)) {
+				throw new Exception("For not plan dates are mongo dates");
+			}
+			$planData = array("plan" => $plan['name'], "start" => $planStart->sec, "end" => $endTime);
 			$aggregatorData[$endTime]['plans'][] = $planData;
 			$aggregatorData[$endTime]['next_plan'] = $plan;
 		}

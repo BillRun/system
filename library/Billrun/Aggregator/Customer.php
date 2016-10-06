@@ -210,11 +210,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$plans = $rawResults['plans'];
 		$rates = $rawResults['rates'];
 		$data = $rawResults['data'];
+
 		
 		$sortedRates = $this->constructRates($rates);
 		$sortedPlans = $this->constructPlans($plans);
 		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans, $sortedRates);
-		
+
 		// Save the accounts
 		$this->acounts = $accounts;
 		
@@ -260,7 +261,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		// Load the plans
 		$planResults = $this->aggregatePlans($mongoCycle);
+		Billrun_Factory::log("PlanResults: " . count($planResults));
 		$ratesResults = $this->aggregateRates($mongoCycle);
+		Billrun_Factory::log("RateResults: " . count($ratesResults));
 		$result = array('plans' => $planResults, 'rates' => $ratesResults);
 		if (!$this->overrideAccountIds) {
 			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size);
@@ -292,7 +295,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'billrun_key' => $cycle->key(),
 			'autoload' => !empty($this->overrideAccountIds),
 			'rates' => &$rates);
-		
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = $subscriberPlan['id']['aid'];
 			
@@ -313,7 +315,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				continue;
 			}
 			
-			if ($type === 'subscriber' && $accountData) {
+			if (($type === 'subscriber') && $accountData) {
 				$raw = $subscriberPlan['id'];
 				$raw['plans'] = $subscriberPlan['plan_dates'];
 				$raw['from'] = $subscriberPlan['plan_dates'][0]['from'];
@@ -346,6 +348,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$accountData['plans'] = &$plans;
 
 		$billrunData['aid'] = $aid;
+		$billrunData['attributes'] = $accountData['attributes'];
 		$billrun = new Billrun_Cycle_Account_Billrun($billrunData);
 
 		// Check if already exists.
@@ -390,9 +393,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		return array(
-			'first_name' => $firstname,
-			'last_name' => $lastname,
-			'full_name' => $firstname . ' ' . $lastname,
+			'firstname' => $firstname,
+			'lastname' => $lastname,
+			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
 			'payment_details' => $paymentDetails
 		);
@@ -548,6 +551,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	protected function afterAggregate($results) {
+		// Write down the invoice data.
+		foreach ($this->acounts as $account) {
+			$account->writeInvoice($this->min_invoice_id);
+		}
+		
 		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 		$end_msg .="Processed " . (count($results)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
@@ -698,6 +706,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 				'plan_dates' => array(
 					'$push' => array(
+						'plan' => '$sub_plans.plan',
 						'from' => '$sub_plans.from',
 						'to' => '$sub_plans.to',
 						'plan_activation' => '$sub_plans.plan_activation',
@@ -718,8 +727,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			)
 		);
 		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = iterator_to_array($coll->aggregate($pipelines));
-		
+		// Sort again because this is all just bad code
+		$cursor = $coll->aggregate($pipelines)->sort(array('id.aid' => 1, 'id.type' => -1));
+		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
 			(isset($results['success']) && ($results['success'] === FALSE))) {
 			return array();
@@ -736,6 +746,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$match = array(
 			'$match' => array(
 				'$or' => array(
+					array( // Account records
+						'type' => 'account',
+						'from' => array(
+							'$lte' => $mongoCycle->end(),
+						),
+						'to' => array(
+							'$gte' => $mongoCycle->start(),
+						),
+					),
 					array( // Subscriber records
 						'type' => 'subscriber',
 						'plan' => array(
@@ -771,16 +790,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 								),
 							),
 						)
-					),
-					array( // Account records
-						'type' => 'account',
-						'from' => array(
-							'$lte' => $mongoCycle->end(),
-						),
-						'to' => array(
-							'$gte' => $mongoCycle->start(),
-						),
-					),
+					)
 				)
 			)
 		);
@@ -798,9 +808,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
-				'type' => -1,
 				'aid' => 1,
-				'sid' => 1,
+				'sid' => -1,
+				'type' => -1,
 				'plan' => 1,
 				'from' => 1,
 			),
@@ -812,14 +822,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	protected function save($results) {
-		if(!$results) {
+		if(empty($results)) {
 			Billrun_Factory::log("Empty aggregate customer results, skipping save");
 			return;
 		}
 		$linesCol = Billrun_Factory::db()->linesCollection();
 		$linesCol->batchInsert($results);
-		
-		
 	}
 
 	/**

@@ -18,8 +18,12 @@ class Billrun_Plans_Charge_Month extends Billrun_Plans_Charge_Base {
 	 * Get the price of the current plan.
 	 */
 	public function getPrice() {
-		$startOffset = Billrun_Plan::getMonthsDiff($this->activation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->start()))));
-		$endOffset = Billrun_Plan::getMonthsDiff($this->activation, $this->cycle->end());
+		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->start())));
+		$formatEnd = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->end())));
+		
+		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		$endOffset = Billrun_Plan::getMonthsDiff($formatEnd, $formatActivation);
 		$charge = 0;
 		foreach ($this->price as $tariff) {
 			$charge += Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset);

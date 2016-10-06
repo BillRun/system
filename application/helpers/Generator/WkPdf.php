@@ -33,7 +33,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
 		
-		$batchName = Billrun_Util::getFieldVal($options['batch'], $this->stamp);
+		$batchName = $this->stamp;//Billrun_Util::getFieldVal($options['batch'], $this->stamp);
 		
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$batchName.'/',
@@ -100,29 +100,30 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @param type $account the account to generate an invoice for.
 	 */
 	public  function generateAccountInvoices($account, $lines = FALSE) {		
+		Billrun_Factory::log("Generating invoice for account");
+		
+		$this->addFolder($this->paths['html']);
+		$this->addFolder($this->paths['pdf']);
+		$this->addFolder($this->paths['tmp']);
+		$this->view->assign('data',$account);
+		$this->view->assign('details_keys',$this->getDetailsKeys());
+		if(empty($lines)) {
+			$this->view->add_lines();
+		}
 
-			$this->addFolder($this->paths['html']);
-			$this->addFolder($this->paths['pdf']);
-			$this->addFolder($this->paths['tmp']);
-			$this->view->assign('data',$account);
-			$this->view->assign('details_keys',$this->getDetailsKeys());
-			if(empty($lines)) {
-				$this->view->add_lines();
-			}
-			
-			$file_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".html";
-			$pdf_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".pdf";
-			$html = $this->paths['html'].$file_name;
-			$pdf = $this->paths['pdf'].$pdf_name;
-					
-			file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
-			chmod( $html, $this->filePermissions );
-			
-			$this->updateHtmlDynamicData($account);
-			
-			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
-			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
-			chmod( $pdf,$this->filePermissions );
+		$file_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".html";
+		$pdf_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".pdf";
+		$html = $this->paths['html'].$file_name;
+		$pdf = $this->paths['pdf'].$pdf_name;
+
+		file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
+		chmod( $html, $this->filePermissions );
+
+		$this->updateHtmlDynamicData($account);
+
+		Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
+		exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+		chmod( $pdf,$this->filePermissions );
 	}
 	
 	protected function getDetailsKeys() {
