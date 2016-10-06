@@ -209,12 +209,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$rawResults = $this->loadRawData($cycle);
 		$plans = $rawResults['plans'];
 		$rates = $rawResults['rates'];
+		$services = $rawResults['services'];
 		$data = $rawResults['data'];
 
 		
 		$sortedRates = $this->constructRates($rates);
 		$sortedPlans = $this->constructPlans($plans);
-		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans, $sortedRates);
+		$sortedServices = $this->constructServices($services);
+		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans, $sortedRates, $sortedServices);
 
 		// Save the accounts
 		$this->acounts = $accounts;
@@ -251,6 +253,16 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $sorted;
 	}
 	
+	protected function constructServices($services) {
+		$sorted = array();
+		foreach ($services as $value) {
+			$name = $value['name'];
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$sorted[$name] = $translatedDates;
+		}
+		return $sorted;
+	}
+	
 	/**
 	 * Get the raw data
 	 * @param Billrun_DataTypes_CycleTime $cycle
@@ -264,7 +276,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		Billrun_Factory::log("PlanResults: " . count($planResults));
 		$ratesResults = $this->aggregateRates($mongoCycle);
 		Billrun_Factory::log("RateResults: " . count($ratesResults));
-		$result = array('plans' => $planResults, 'rates' => $ratesResults);
+		$servicesResults = $this->aggregateServices($mongoCycle);
+		Billrun_Factory::log("ServicesResults: " . count($servicesResults));
+		$result = array('plans' => $planResults, 'rates' => $ratesResults, 'services' => $servicesResults);
 		if (!$this->overrideAccountIds) {
 			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size);
 			$result['data'] = $data;
@@ -287,7 +301,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param array $rates
 	 * @return \Billrun_Cycle_Account
 	 */
-	protected function parseToAccounts($outputArr, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$rates) {
+	protected function parseToAccounts($outputArr, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$rates, array &$services) {
 		$accounts = array();
 		$lastAid = null;
 		$accountData = array();
@@ -300,7 +314,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			
 			// If the aid is different, store the account.
 			if($accountData && $lastAid && ($lastAid != $aid)) {	
-				$accountToAdd = $this->getAccount($billrunData, $accountData, $aid, $cycle, $plans);
+				$accountToAdd = $this->getAccount($billrunData, $accountData, $aid, $cycle, $plans, $services);
 				if($accountToAdd) {
 					$accounts[] = $accountToAdd;
 				}
@@ -325,7 +339,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		if($accountData) {
-			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans);
+			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services);
 			if($accountToAdd) {
 				$accounts[] = $accountToAdd;
 			}
@@ -341,11 +355,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param int $aid
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @param array $plans
+	 * @param array $services
 	 * @return Billrun_Cycle_Account | false 
 	 */
-	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans) {
+	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$services) {
 		$accountData['cycle'] = $cycle;
 		$accountData['plans'] = &$plans;
+		$accountData['services'] = &$services;
 
 		$billrunData['aid'] = $aid;
 		$billrunData['attributes'] = $accountData['attributes'];
@@ -582,6 +598,19 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$pipelines[] = $this->getPlansMatchPipeline($cycle);
 		$pipelines[] = $this->getPlansProjectPipeline();
 		$coll = Billrun_Factory::db()->plansCollection();
+		$results = iterator_to_array($coll->aggregate($pipelines));
+		
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
+	}
+	
+	// TODO: Move this function to a "collection aggregator class"
+	protected function aggregateServices($cycle) {
+		$pipelines[] = $this->getPlansMatchPipeline($cycle);
+		$coll = Billrun_Factory::db()->servicesCollection();
 		$results = iterator_to_array($coll->aggregate($pipelines));
 		
 		if (!is_array($results) || empty($results) ||

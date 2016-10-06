@@ -26,22 +26,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected abstract function getFractionOfMonth();
 	
-	public function getRefund() {
-		if (empty($this->deactivation)) {
-			return null;
-		}
-		
-		if (strtotime($this->activation) <= $billingStart) { // get a refund for a cancelled plan paid upfront
-			$lastUpfrontCharge = $plan->getPrice($planActivation, $fromDate, $toDate);
-			if ($plan->getPeriodicity() == 'year') {
-				$monthsDiff = Billrun_Plan::getMonthsDiff($planActivation, $planDeactivation);
-				$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
-			} else if ($plan->getPeriodicity() == 'month') {
-				$refundFraction = 1 - Billrun_Plan::calcFractionOfMonth($billrunKey, $fromDate, $planDeactivation);
-			}
-			$charge = -$lastUpfrontCharge * $refundFraction;
-		}
-	}
+	public abstract function getRefund(Billrun_DataTypes_CycleTime $cycle);
 	
 	/**
 	 * Get the price of the current plan.

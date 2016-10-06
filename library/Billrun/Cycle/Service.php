@@ -17,4 +17,15 @@ class Billrun_Cycle_Service extends Billrun_Cycle_Plan {
 		$service = new Billrun_Cycle_Data_Service($planData);
 		return $service->getLine();
 	}
+	
+	public function aggregate($planData = array()) {
+		$price = $planData['price'];
+		Billrun_Factory::log("Service price: " . $price);
+		$charges = array("service" => $price);
+		
+		// Get the charge.
+		$planData['charges'] = $charges;
+		$result = $this->getLine($planData);
+		return $result;
+	}
 }

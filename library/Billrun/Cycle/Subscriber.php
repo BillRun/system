@@ -44,7 +44,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$aggregatedServices = $this->aggregateServices();
 		
 		$results = $aggregatedPlans + $aggregatedServices;
-		Billrun_Factory::log("Subscriber aggregated: " . count($results));
+		Billrun_Factory::log("Subscribers aggregated: " . count($results));
 		return $results;
 	}
 
@@ -66,7 +66,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function aggregateServices() {
 		$services = $this->records['services'];
 		$aggregator = new Billrun_Cycle_Service();
-		
+		Billrun_Factory::log("Aggregating services!");
 		return $this->generalAggregate($services, $aggregator);
 	}
 	
@@ -108,7 +108,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['services'] = array();
 		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
-		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
+		$mongoServices = Billrun_Util::getFieldVal($data["mongo_services"], array());
 		/**
 		 * @var Billrun_DataTypes_CycleTime $cycle
 		 */
@@ -117,13 +117,16 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		foreach ($services as &$arrService) {
 			// Plan name
-			$index = $arrService['key'];
-			if(!in_array($index, $mongoPlans)) {
+			$index = $arrService['name'];
+			if(!isset($mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
+				Billrun_Factory::log(print_r($mongoServices,1));
 				continue;
 			}
-
-			$serviceData = array_merge($arrService, $mongoPlans[$index]);
+			
+			$mongoServiceData = $mongoServices[$index]->getRawData();
+			unset($mongoServiceData['_id']);
+			$serviceData = array_merge($mongoServiceData, $arrService);
 			$serviceData['cycle'] = $cycle;
 			$serviceData['line_stump'] = $stumpLine;
 			$this->records['services'][] = $serviceData;
@@ -158,7 +161,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 				continue;
 			}
 			
-			$planData = array_merge($value, $mongoPlans[$index]->getRawData());
+			$rawMongo = $mongoPlans[$index]->getRawData();
+			unset($rawMongo['_id']);
+			$planData = array_merge($value, $rawMongo);
 			$planData['cycle'] = $cycle;
 			$planData['line_stump'] = $stumpLine;
 			$this->records['plans'][] = $planData;

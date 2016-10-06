@@ -24,6 +24,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @return array - Array of aggregated results
 	 */
 	public function aggregate($data = array()) {
+		Billrun_Factory::log("Records to aggregate: " . count($this->records));
 		$results = parent::aggregate();
 		Billrun_Factory::log("Account aggregated: " . count($results));
 		$this->billrun->addLines($results);
@@ -55,15 +56,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected function constructRecords($data) {
 		$this->billrun = $data['billrun'];
+		$this->records = array();
 		$subscribers = $data['subscribers'];
 		$cycle = $data['cycle'];
 		$plans = &$data['plans'];
+		$services = &$data['services'];
 		
 		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
 		
 		// Filter subscribers.
 		$filtered = $this->constructSubscriberData($sorted, $cycle);
 
+		$aggregatableRecords = array();
 		foreach ($sorted as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
 			
@@ -73,9 +77,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			} else {
 				Billrun_Factory::log("SID " . $sid . " not in filtered!");
 			}
-			
-			$this->records = $this->constructForSid($subscriberList, $filteredSid, $plans, $cycle);
+			$constructed = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $cycle);
+			$aggregatableRecords = array_merge($aggregatableRecords, $constructed);
 		}
+		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
+		$this->records = $aggregatableRecords;
 	}
 
 	/**
@@ -85,7 +91,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $plans - Raw plan data from the mongo
 	 * @param Billrun_DataTypes_CycleTime $cycle - Current cycle time.
 	 */
-	protected function constructForSid($sorted, $filtered, &$plans, $cycle) {
+	protected function constructForSid($sorted, $filtered, &$plans, &$services, $cycle) {
 		$aggregateable = array();
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
@@ -99,6 +105,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			}
 			
 			$constructed['mongo_plans'] = &$plans;
+			$constructed['mongo_services'] = &$services;
 			$constructed['cycle'] = &$cycle;
 			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
 			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
@@ -236,9 +243,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Add the services to the services data
 			foreach ($added as $addedService) {
-				$key = $addedService['key'];
-				$serviceStart = $subscriber['from'];
+				$key = $addedService['name'];
+				$serviceStart = new MongoDate($subscriber['sfrom']);
 				if(!($serviceStart instanceof MongoDate)) {
+					Billrun_Factory::log("from " . $serviceStart);
 					throw new Exception("For not plan dates are mongo dates");
 				}
 				$serviceRow = array("service" => $addedService, "start" => $serviceStart->sec);
@@ -247,7 +255,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Handle the removed services. 
 			foreach ($removed as $removedService) {
-				$key = $removedService['key'];
+				$key = $removedService['name'];
 				$updateService = $servicesData[$key];
 				unset($servicesData[$key]);
 				$serviceEnd = $arrPlanDate['from'];

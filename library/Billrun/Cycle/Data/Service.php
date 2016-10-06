@@ -28,6 +28,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$planValue = $flatLine['plan'];
 		unset($flatLine['plan']);
 		$flatLine['service'] = $planValue;
+		Billrun_Factory::log("Service line: " . print_r($flatLine,1));
 		return $flatLine;
 	}
 

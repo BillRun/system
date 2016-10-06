@@ -36,15 +36,18 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 			return 1;
 		} 
 		
-		$activation = strtotime($this->activation);
+		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+		$formatStart = date(Billrun_Base::base_dateformat, $this->cycle->start());
+		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
+		
 		// subscriber deactivates and should be charged for a partial month
-		if ($activation > $this->cycle->start()) { 
-			$fraction = Billrun_Plan::calcFractionOfMonth($this->cycle->key(), $this->activation, $this->deactivation);
+		if ($this->activation > $this->cycle->start()) { 
+			$fraction = Billrun_Plan::calcFractionOfMonth($this->cycle->key(), $formatActivation, $formatDeactivation);
 			return $fraction / 12;
 		} 
 		
-		$activationDiffStart = floor(Billrun_Plan::getMonthsDiff($this->activation, $this->cycle->start()));
-		$activationDiffDeactivation = Billrun_Plan::getMonthsDiff($this->activation, $this->deactivation);
+		$activationDiffStart = floor(Billrun_Plan::getMonthsDiff($formatActivation, $formatStart));
+		$activationDiffDeactivation = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
 		$flooredActDeacDiff = floor($activationDiffDeactivation);
 		if ($activationDiffStart != $flooredActDeacDiff) {
 			return null;
@@ -58,11 +61,31 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 	}
 
 	protected function getMonthsDiff() {
-		$endMonths = $this->deactivation;
+		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
+		$endMonths = $formatDeactivation;
 		if (empty($endMonths)) {
 			$endMonths = date(Billrun_Base::base_dateformat, $this->cycle->end() - 1);
 		} 
 		
-		return Billrun_Plan::getMonthsDiff($this->activation, $endMonths);
+		return Billrun_Plan::getMonthsDiff($formatActivation, $endMonths);
+	}
+	
+	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
+		if (empty($this->deactivation)) {
+			return null;
+		}
+		
+		// get a refund for a cancelled plan paid upfront
+		if ($this->activation > $cycle->start()) { 
+			return null;
+		}
+		
+		$lastUpfrontCharge = $this->getPrice();
+		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
+		$monthsDiff = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
+		$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
+		return -$lastUpfrontCharge * $refundFraction;
 	}
 }

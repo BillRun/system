@@ -15,10 +15,16 @@
 class Billrun_Plans_Charge {
 	
 	/**
+	 *
+	 * @var Billrun_DataTypes_CycleTime
+	 */
+	protected $cycle;
+	
+	/**
 	 * Get the charges
 	 * @return array.
 	 */
-	public function charge($plan) {
+	public function charge($plan, Billrun_DataTypes_CycleTime $cycle) {
 		$results = array();
 		
 		$chargeObj = $this->getChargeObject($plan);
@@ -35,7 +41,7 @@ class Billrun_Plans_Charge {
 		
 		// Check if has refund
 		if($chargeObj instanceof Billrun_Plans_Charge_Upfront) {
-			$refund = $chargeObj->getRefund();
+			$refund = $chargeObj->getRefund($cycle);
 			if($refund !== null) {
 				$results['refund'] = $refund;
 			}
