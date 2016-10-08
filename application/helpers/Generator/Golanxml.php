@@ -1217,22 +1217,12 @@ EOI;
 	}
 
 	protected function getDate($line) {
-		$timsetamp = $line['urt']->sec;
-		if (isset($line['tzoffset'])) {
+		$timestamp = $line['urt']->sec;
+		$zend_date = new Zend_Date($timestamp);
+		if ((in_array("tap3", Billrun_Factory::config()->getConfigValue('local_time_types', array()))) && (isset($line['tzoffset']))) {
 			// TODO change this to regex
-			$tzoffset = $line['tzoffset'];
-			$sign = substr($tzoffset, 0, 1);
-			$hours = substr($tzoffset, 1, 2);
-			$minutes = substr($tzoffset, 3, 2);
-			$time = $hours . ' hours ' . $minutes . ' minutes';
-			if ($sign == "-") {
-				$time .= ' ago';
-			}
-			$timsetamp = strtotime($time, $timsetamp);
-			$zend_date = new Zend_Date($timsetamp);
+			$zend_date = Billrun_Util::createTimeWithOffset($line['tzoffset'], $timestamp);
 			$zend_date->setTimezone('UTC');
-		} else {
-			$zend_date = new Zend_Date($timsetamp);
 		}
 		return $this->getGolanDate($zend_date);
 	}
