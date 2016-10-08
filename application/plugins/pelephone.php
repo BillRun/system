@@ -360,7 +360,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function getNotificationExpireDate($obj) {
 		return date('Y-m-d H:i:s', $obj->get('to')->sec);
 	}
-	
+
 	/**
 	 * @param type $obj
 	 * @param type $data
@@ -375,7 +375,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return abs(round($val));
 	}
-	
+
 	/**
 	 * 
 	 * @param obj $obj

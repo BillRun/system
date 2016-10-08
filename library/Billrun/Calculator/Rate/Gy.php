@@ -25,6 +25,19 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 	static protected $type = 'gy';
 
 	/**
+	 * Set data used in inner function to find the rate of the line
+	 * 
+	 * @param type $row current line to find it's rate
+	 */
+	protected function setRowDataForQuery($row) {
+		parent::setRowDataForQuery($row);
+		$mscc_data = $row->get('mscc_data');
+		if (isset($mscc_data[0]['rating_group'])) {
+			$this->rowDataForQuery['rating_group'] = $mscc_data[0]['rating_group'];
+		}
+	}
+
+	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 * @deprecated since version 2.9
 	 */
@@ -48,19 +61,24 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 	protected function getDataRateKey() {
 		return 'INTERNET_BILL_BY_VOLUME';
 	}
-	
+
 	protected function getExistsQuery() {
 		return array(
 			'$exists' => true,
 			'$ne' => array(),
 		);
 	}
-	
+
 	protected function getAggregateId() {
 		return array(
 			"_id" => '$_id',
-			"mcc" => '$params.mcc'
+			"mcc" => '$params.mcc',
+			"rating_group" => '$params.rating_group'
 		);
+	}
+	
+	protected function getRatingGroupMatchQuery() {
+		return array('$in' => array($this->rowDataForQuery['rating_group']));
 	}
 
 }

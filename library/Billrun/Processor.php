@@ -158,7 +158,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 		$this->data['data'][$row['stamp']] = $row;
 		return true;
 	}
-
+        
 	public function getParser() {
 		return $this->parser;
 	}

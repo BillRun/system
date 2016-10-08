@@ -276,13 +276,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		$rawData = $matchedRate->getRawData();
 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
-			return false;	
+			return false;
 		}
 		$idQuery = array(
 			"key" => $rawData['key'], // this is for sharding purpose
 			"_id" => $rawData['_id']['_id'],
 		);
-		
+
 		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
@@ -323,7 +323,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				$query[] = array('$' . $pipelineOperator => $pipelineValue);
 			}
 		}
-		
+
 		return $query;
 	}
 
@@ -362,7 +362,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		return false;
 	}
-	
+
 	/**
 	 * method to clean specific prefixes from phone number
 	 * the prefixes taken from config in the next format:
@@ -384,7 +384,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		}
 		return $number;
 	}
-	
+
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}

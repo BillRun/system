@@ -24,10 +24,13 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		if (isset($this->row['granted_return_code'])) {
 			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
 			switch ($this->row['granted_return_code']) {
+
 				case ($returnCodes['no_available_balances']):
-					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
+					// in  ALLOT && Sasn we return 2001 in CCR level / 4012 move to MSCC level 
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 				case ($returnCodes['no_rate']):
-					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_END_USER_SERVICE_DENIED", -1));
+					// in  ALLOT && Sasn we return 2001 in CCR level / 4012 move to MSCC level 
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 				case ($returnCodes['no_subscriber']):
 					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_USER_UNKNOWN", -1));
 			}
@@ -40,9 +43,32 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 		return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
 	}
 
+	protected function getMsccReturnCode($granted_return_code, $usagev) {
+		if (isset($this->row['in_data_slowness']) && $this->row['in_data_slowness']) {
+			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
+		}
+
+		if (isset($granted_return_code)) {
+			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
+			switch ($granted_return_code) {
+				case ($returnCodes['no_available_balances']):
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
+				case ($returnCodes['no_rate']):
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_END_USER_SERVICE_DENIED", -1));
+				case ($returnCodes['no_subscriber']):
+					return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_USER_UNKNOWN", -1));
+			}
+		}
+
+		if ($usagev === 0) {
+			return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1));
+		}
+
+		return intval(Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1));
+	}
+
 	protected function getMsccData() {
 		$retMsccData = array();
-		$usagev = round($this->row['usagev'] / count($this->row['mscc_data']));
 		$balanceRef = isset($this->row['balance_ref']) ? $this->row['balance_ref'] : false;
 		$defaultValidityTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.validityTime", 0);
 		$balances_coll = Billrun_Factory::db()->balancesCollection();
@@ -53,21 +79,30 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			$validityTime = max(min($defaultValidityTime, $secondsUntilEndOfBalance), 60); // protection - in case there is a problem with the balance or default value
 		}
 		$defaultQuotaHoldingTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.quotaHoldingTime", 0);
-		$returnCode = $this->getReturnCode();
+		$redirectionConfig = Billrun_Factory::config()->getConfigValue("realtimeevent.data.redirect", array("active" => 0));
 
 		foreach ($this->row['mscc_data'] as $msccData) {
-			$currUsagev = $usagev;
+			$redirectionAnswer = array();
+			$currUsagev = $msccData['usagev'];
+			$returnCode = $this->getMsccReturnCode($msccData['granted_return_code'], $currUsagev);
+			unset($msccData['granted_return_code']);
+			unset($msccData['usagev']);
+			$quotaHoldingTimeArray = array("quotaHoldingTime" => $defaultQuotaHoldingTime);
+			if ($redirectionConfig["finalUnitAction"] && $returnCode == Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_CREDIT_LIMIT_REACHED", -1)) {
+				$returnCode = Billrun_Factory::config()->getConfigValue("realtimeevent.data.returnCode.DIAMETER_SUCCESS", -1);
+				$redirectionAnswer = $redirectionConfig;
+				$quotaHoldingTimeArray = array();
+			}
 			$freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
 			if (isset($msccData['rating_group']) && in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
 				$currUsagev = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroupsDefaultUsagev', 0);
 			}
-			$retMsccData[] = array_merge(
-				Billrun_Util::parseBillrunConventionToCamelCase($msccData), array(
+			$basic_data = array(
 				"grantedUnits" => $currUsagev,
 				"validityTime" => $validityTime,
-				"quotaHoldingTime" => $defaultQuotaHoldingTime,
 				"resultCode" => $returnCode,
-			));
+			);
+			$retMsccData[] = array_merge(Billrun_Util::parseBillrunConventionToCamelCase($msccData), $redirectionAnswer, $basic_data, $quotaHoldingTimeArray);
 		}
 		return $retMsccData;
 	}
