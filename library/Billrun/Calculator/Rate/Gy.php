@@ -76,5 +76,9 @@ class Billrun_Calculator_Rate_Gy extends Billrun_Calculator_Rate {
 			"rating_group" => '$params.rating_group'
 		);
 	}
+	
+	protected function getRatingGroupMatchQuery() {
+		return array('$in' => array($this->rowDataForQuery['rating_group']));
+	}
 
 }
