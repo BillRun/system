@@ -50,7 +50,7 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function onQueryAction($results) {
-		$error_code = $results['error_code'];
+		$error_code = $results['code'];
 		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
 		if(!$assertResult) {
 			return $this->onExecuteFailed($results);

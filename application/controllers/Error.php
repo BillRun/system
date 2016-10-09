@@ -25,7 +25,11 @@ class ErrorController extends Yaf_Controller_Abstract {
 	   }
 	   // TODO: THIS IS DEBUG CODE!!!!!!!!!!!!!!!!!!
 
-	   Billrun_Factory::log()->logCrash($exception);
+	   $logLevel = Zend_Log::CRIT;
+	   if(isset($exception->logLevel)) {
+		   $logLevel = $exception->logLevel;
+	   }
+	   Billrun_Factory::log()->logCrash($exception, $logLevel);
 	} 
 
 	/**

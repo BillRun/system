@@ -25,6 +25,8 @@ trait Billrun_ActionManagers_ErrorReporter {
 	 */
 	protected function reportError($errorCode, $errorLevel = Zend_Log::INFO, array $args = array()) {
 		$apiCode = $this->baseCode + $errorCode;
-		throw new Billrun_Exceptions_Api($apiCode, $args);
+		$exception = new Billrun_Exceptions_Api($apiCode, $args);
+		$exception->logLevel = $errorLevel;
+		throw $exception;
 	}
 }
