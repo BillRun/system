@@ -21,12 +21,6 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 	protected $serviceQuery = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying service"));
-	}
-
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -38,13 +32,12 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 			$returnData = $service->getRawData();
 		} else {
 			$returnData = array();
-			$this->reportError(Billrun_Factory::config()->getConfigValue("services_error_base") + 23);
+			$this->reportError(23);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying service",
 			'details' => $returnData 
 		);
 		return $outputResult;
@@ -72,20 +65,24 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 21;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(21, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$invalidFields = $this->setQueryFields($jsonData);
 
-		// If there were errors.
+		// If the query is empty.
 		if (empty($this->serviceQuery)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 22;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
+			$this->reportError(22, Zend_Log::NOTICE);
 			return false;
 		}
 
+		// If there were errors.
+		if (!empty($invalidFields)) {
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
+		}
+		
 		return true;
 	}
 
@@ -110,7 +107,7 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 			if (isset($queryData[$fieldName]) && !empty($queryData[$fieldName])) {
 				$this->serviceQuery[$fieldName] = $queryData[$fieldName];
 			} else {
-				$invalidFields[] = $fieldName;
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			}
 		}
 
