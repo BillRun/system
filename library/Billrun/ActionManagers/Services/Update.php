@@ -34,7 +34,13 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	 */
 	public function execute() {
 		try {
-			$this->collection->update($this->query, array('$set' => $this->update));
+			$this->time = new MongoDate();
+			if (!$oldEntity = $this->getOldEntity()) {
+				return false;
+			}
+			$this->updateEntity($oldEntity);
+			
+			$this->closeEntity($oldEntity);
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 1;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -63,6 +69,32 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		return true;
 	}
 
+	protected function getOldEntity() {
+		$old = Billrun_Factory::db()->servicesCollection()->query($this->query)->cursor()->current();
+		if ($old->isEmpty()) {
+			return false;
+		}
+		return $old;
+	}
+	
+	protected function updateEntity($oldEntity){
+		$new = $oldEntity->getRawData();
+		unset($new['_id']);
+		$new['from'] = $this->time;
+		foreach ($this->update as $field => $value) {
+			$new[$field] = $value;
+		}
+		$newEntity = new Mongodloid_Entity($new);
+		$this->collection->save($newEntity, 1);
+		return $newEntity;
+	}
+	
+	protected function closeEntity($entity) {
+		$entity['to'] = $this->time;
+		$this->collection->save($entity, 1);
+	}
+
+	
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
