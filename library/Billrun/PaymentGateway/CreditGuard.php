@@ -13,8 +13,6 @@
  */
 class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
-	protected $successUrl;
-	protected $failUrl;
 	protected $cgConf;
 	protected $EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
 	protected $billrunName = "CreditGuard";
@@ -31,7 +29,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	
 	
-	public function charge(){
+	protected function charge(){
 		
 	}
 	
@@ -196,6 +194,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		)
 		);
 	}
-
+	
 
 }

@@ -57,7 +57,8 @@
 	public function getRequestAction(){
 		$request = $this->getRequest();
 		// Validate the data.
-		$data = $this->validateData($request);
+		//$data = $this->validateData($request);
+		$data = $request->get('data');
 		if($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
@@ -81,6 +82,7 @@
 		}
 		
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+		//$paymentGateway->makePayment();
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
 	}
 
@@ -98,9 +100,24 @@
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 	
-		$paymentGateway->saveTransactionDetails($transactionId);
-//		$this->forceRedirect($this->return_url);	
+		$paymentGateway->saveTransactionDetails($transactionId);	
 	}
+	
+//	public function failPageAction(){
+//		$request = $this->getRequest();
+//		$name = $request->get("name");
+//		if (is_null($name)) {
+//			return $this->setError("Missing payment gateway name", $request);
+//		}
+//		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+//		$transactionName = $paymentGateway->getTransactionIdName();
+//		$transactionId = $request->get($transactionName);
+//		if (is_null($transactionId)) {
+//			return $this->setError("Operation Failed. Try Again...", $request);
+//		}
+//	
+//		$paymentGateway->operationFailed();
+//	}
 	
 	
 	/**

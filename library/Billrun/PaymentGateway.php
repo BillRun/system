@@ -85,7 +85,7 @@ abstract class Billrun_PaymentGateway {
 		return in_array($gateway, $supported);
 	}
 	
-	abstract public function charge();
+	abstract protected function charge();
 	
 	abstract protected function updateRedirectUrl($result);
 		
@@ -98,18 +98,18 @@ abstract class Billrun_PaymentGateway {
 	abstract protected function getResponseDetails($result);
 	
 	abstract protected function buildSetQuery();
-
-	//abstract protected function checkAndValidateResponse();
-
-
-	public function getToSuccessPage(){  // TODO: Meantime there's another function named getOkPage who does the same function.
-		$this->forceRedirect($this->successUrl);
-	}
 	
-	public function getToFailurePage(){
-		$this->forceRedirect($this->failUrl);
-	}
+
+
+
+//	public function getToSuccessPage(){  // TODO: Meantime there's another function named getOkPage who does the same function.
+//		$this->forceRedirect($this->successUrl);
+//	}
 	
+//	public function getToFailurePage(){
+//		$this->forceRedirect($this->failUrl);
+//	}
+//	
 	
 	protected function getToken($aid, $returnUrl){
 		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
@@ -132,7 +132,9 @@ abstract class Billrun_PaymentGateway {
 		if ($this->getResponseDetails($result) === FALSE){
 			return $this->setError("Operation Failed. Try Again...");
 		}
-		
+		if (empty($this->saveDetails['aid'])){
+			$this->getAidFromProxy();
+		}
 		if(!$this->validatePaymentProcess($txId)) {
 			return $this->setError("Operation Failed. Try Again...");			
 		}
@@ -145,6 +147,8 @@ abstract class Billrun_PaymentGateway {
 			$returnUrl = (string)$this->saveDetails['return_url'];
 			$this->forceRedirect($returnUrl);
 		}
+		$successUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');  // TODO: check	if more correct to define it when we get the request(getRequestAction)
+		$this->forceRedirect($successUrl);
 	}
 	
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -172,7 +176,7 @@ abstract class Billrun_PaymentGateway {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 		
 		// Get is started
-		$query = array("name" => $this->billrunName, "tx" => $txId, "aid" => (int)$this->saveDetails['aid']);
+		$query = array("name" => $this->billrunName, "tx" => $txId); // removing aid shoud solve the problem.
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		if($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
@@ -199,39 +203,45 @@ abstract class Billrun_PaymentGateway {
 		return $paymentRow['done'];
 	}
 	
+//	public function operationFailed(){
+//		printr("try again");
+//		
+//	}
 	
-	//abstract protected function makePayment();
+	
+	
 	
 	// if omnipay supported need to use this function for making charge, for others like CG need to implement it.
-//	public function makePayment(){
-//
-//    try {
-//        $omnipay  = Omnipay\Omnipay::create('PayPal_Express');
-//        $omnipay->setUsername("shani.dalal_api1.billrun.com");
-//        $omnipay->setPassword("RRM2W92HC9VTPV3Y");
-//        $omnipay->setSignature("AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR");
-//        $omnipay->setTestMode(true);
-//        $purchaseData   = [
-//                      'testMode'    => true,
-//                      'amount'      => 1.00,
-//                      'currency'    => 'USD',
-//                      'returnUrl'   => 'http://www.google.com',
-//                      'cancelUrl'   => 'http://www.ynet.co.il'
-//					  
-//        ];
-//        $response = $omnipay->purchase($purchaseData)->send();
-//        $ref = $response->getTransactionReference();
-//        if(!is_null($ref)) { // when there's a Token
-//          $response->redirect();
-//        }else{
-//           //dd("ERROR");   <= This line works but if I put a redirect method as shown below it just shows a blank page. No errors nothing!
-//           return redirect(route('payment.error'));
-//        }   
-//    }catch(Exception $e){  
-//        return redirect(route('payment.error'));
-//    }
-//
-//
-//}
+	// TODO: need to check for omnipay supported gateways.
+	public function makePayment(){
+//		if (!$this->supportsOmnipay()){
+//			
+//		}
+//    else {
+        $omnipay  = Omnipay\Omnipay::create('PayPal_Express');
+        $omnipay->setUsername("shani.dalal_api1.billrun.com");
+        $omnipay->setPassword("RRM2W92HC9VTPV3Y");
+        $omnipay->setSignature("AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR");
+        $omnipay->setTestMode(true);
+        $purchaseData   = [
+                      'testMode'    => true,
+                      'amount'      => 1.00,
+                      'currency'    => 'USD',
+                      'returnUrl'   => 'http://www.google.com',
+                      'cancelUrl'   => 'http://www.ynet.co.il'
+					  
+        ];
+        $response = $omnipay->purchase($purchaseData)->send();
+        $ref = $response->getTransactionReference();
+        if(!is_null($ref)) { // when there's a Token
+          $response->redirect();
+        }else{
+           //dd("ERROR");   <= This line works but if I put a redirect method as shown below it just shows a blank page. No errors nothing!
+           return redirect(route('payment.error'));
+        }   
+   // }
+
+
+	}
 	
 }
