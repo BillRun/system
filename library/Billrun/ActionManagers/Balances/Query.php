@@ -70,7 +70,9 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$cursor = $this->collection
 				->setReadPreference(MongoClient::RP_PRIMARY, array())
 				->query($this->balancesQuery)
-				->cursor();
+				->cursor()
+				->sort(array($this->sortField => ($this->sortOrder >= 1 ? 1 : -1)))
+				;
 			$returnData = $this->availableBalances;
 			$added = array();
 			// Going through the lines
@@ -80,13 +82,19 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				
  				// Check if already added
  				if($this->aggregate) {
- 					$toAdd = Billrun_Balances_Util::getBalanceValue($returnData[$externalID]);
-					Billrun_Balances_Util::incBalanceValue($rawItem, $toAdd);
+					$toAdd = Billrun_Balances_Util::getBalanceValue($returnData[$externalID]);
+					if ($this->sortOrder >= 1 || $toAdd == 0) {
+						Billrun_Balances_Util::incBalanceValue($rawItem, $toAdd);
+						$returnData[$externalID] = $rawItem;
+					} else {
+						$toAdd = Billrun_Balances_Util::getBalanceValue($rawItem);
+						Billrun_Balances_Util::incBalanceValue($returnData[$externalID], $toAdd);
+					}
  				} else { // we don't aggregate and we have duplicate wallets from the same type
 					// TODO
+					$returnData[$externalID] = $rawItem;
 				}
 
-				$returnData[$externalID] = $rawItem;
  				$added[] = $externalID;
 			}
 			
