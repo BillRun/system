@@ -20,7 +20,6 @@ class Billrun_Cycle_Service extends Billrun_Cycle_Plan {
 	
 	public function aggregate($planData = array()) {
 		$price = $planData['price'];
-		Billrun_Factory::log("Service price: " . $price);
 		$charges = array("service" => $price);
 		
 		// Get the charge.

@@ -217,9 +217,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$sortedPlans = $this->constructPlans($plans);
 		$sortedServices = $this->constructServices($services);
 		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans, $sortedRates, $sortedServices);
-
-		// Save the accounts
-		$this->acounts = $accounts;
 		
 		return $accounts;
 	}
@@ -307,14 +304,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$accountData = array();
 		$billrunData = array(
 			'billrun_key' => $cycle->key(),
-			'autoload' => !empty($this->overrideAccountIds),
-			'rates' => &$rates);
+			'autoload' => !empty($this->overrideAccountIds));
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = $subscriberPlan['id']['aid'];
 			
 			// If the aid is different, store the account.
 			if($accountData && $lastAid && ($lastAid != $aid)) {	
-				$accountToAdd = $this->getAccount($billrunData, $accountData, $aid, $cycle, $plans, $services);
+				$accountToAdd = $this->getAccount($billrunData, $accountData, $aid, $cycle, $plans, $services, $rates);
 				if($accountToAdd) {
 					$accounts[] = $accountToAdd;
 				}
@@ -339,7 +335,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		if($accountData) {
-			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services);
+			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services, $rates);
 			if($accountToAdd) {
 				$accounts[] = $accountToAdd;
 			}
@@ -356,24 +352,26 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @param array $plans
 	 * @param array $services
+	 * @param array $rates
 	 * @return Billrun_Cycle_Account | false 
 	 */
-	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$services) {
+	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$services, array &$rates) {
 		$accountData['cycle'] = $cycle;
 		$accountData['plans'] = &$plans;
 		$accountData['services'] = &$services;
+		$accountData['rates'] = &$rates;
 
 		$billrunData['aid'] = $aid;
 		$billrunData['attributes'] = $accountData['attributes'];
-		$billrun = new Billrun_Cycle_Account_Invoice($billrunData);
+		$invoice = new Billrun_Cycle_Account_Invoice($billrunData);
 
 		// Check if already exists.
-		if($billrun->exists()) {
+		if($invoice->exists()) {
 			Billrun_Factory::log("Billrun " . $cycle->key() . " already exists for account " . $aid, Zend_Log::ALERT);
 			return false;
 		} 
 		
-		$accountData['billrun'] = $billrun;
+		$accountData['invoice'] = $invoice;
 		return new Billrun_Cycle_Account($accountData);
 	}
 	
@@ -403,7 +401,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$firstname = $subscriberPlan['id']['first_name'];
 		$lastname = $subscriberPlan['id']['last_name'];
 		
-		$paymentDetails = '';
+		$paymentDetails = 'No payment details';
 		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
 			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
 		}
@@ -429,7 +427,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->handleInvoices($data);
 		}
 
-		Billrun_Factory::log("aggregator entities loaded: " . count($data), Zend_Log::INFO);
+		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 		
@@ -438,6 +436,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
+		$this->acounts = &$data;
 	}
 	
 	protected function clearForAcountPreload($data) {
@@ -567,6 +566,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 
 	protected function afterAggregate($results) {
+		Billrun_Factory::log("Writing the invoice data!");
 		// Write down the invoice data.
 		foreach ($this->acounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);

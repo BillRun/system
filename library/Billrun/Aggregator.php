@@ -51,9 +51,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 * 
 	 * @param array $results - Array of aggregate results
 	 */
-	protected function afterAggregate($results) {
-		
-	}
+	protected abstract function afterAggregate($results);
 	
 	// TODO: Make this function abstract!!!!!!!!
 	protected function beforeLoad() {
@@ -61,9 +59,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	}
 	
 	// TODO: Make this function abstract!!!!!!!!
-	protected function afterLoad($data) {
-		
-	}
+	protected abstract function afterLoad($data);
 	
 	/**
 	 * Internal log logic

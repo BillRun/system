@@ -14,7 +14,23 @@
  */
 class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 
+	/**
+	 * 
+	 * @var Billrun_Cycle_Subscriber_Invoice
+	 */
+	protected $invoice;
+	
+	/**
+	 * The next plan for the subscriber.
+	 * @var string
+	 */
 	protected $nextPlan;
+	
+	/**
+	 * Current plan.
+	 * @var string 
+	 */
+	protected $plan;
 	
 	/**
 	 * Validate the input
@@ -24,15 +40,61 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['plans']) && is_array($input['plans']) &&
+			   isset($input['mongo_plans']) && is_array($input['mongo_plans']) &&
 			   isset($input['cycle']) && is_a($input['cycle'], 'Billrun_DataTypes_CycleTime') &&
+			   isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Subscriber_Invoice') &&
 			   (!isset($input['services']) || is_array($input['services'])); 
 	}
 	
+	/**
+	 * Get the subscriber invoice data
+	 * @return Billrun_Cycle_Subscriber_Invoice
+	 */
+	public function getInvoice() {
+		return $this->invoice;
+	}
+	
+	/**
+	 * Get the subscriber plan 
+	 * @return string
+	 */
+	public function getPlan() {
+		return $this->plan;
+	}
+	
+	/**
+	 * Get the subscriber's next plan
+	 * @return string or null
+	 */
+	public function getNextPlan() {
+		return $this->nextPlan;
+	}
+	
+	/**
+	 * Get the current status of the subscriber.
+	 * @return string
+	 */
 	public function getStatus() {
 		if (!is_null($this->nextPlan)) {
 			return "open";
 		}
 		return "closed";
+	}
+	
+	/**
+	 * Get the plan related data of the subscriber
+	 * @return array
+	 */
+	public function getPlanData() {
+		$data = array();
+		if($this->plan) {
+			$data['plan'] = $this->getPlan();
+		}
+		if($this->nextPlan) {
+			$data['next_plan'] = $this->nextPlan;
+		}
+		$data['subscriber_status'] = $this->getStatus();
+		return $data;
 	}
 	
 	/**
@@ -44,7 +106,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$aggregatedServices = $this->aggregateServices();
 		
 		$results = $aggregatedPlans + $aggregatedServices;
-		Billrun_Factory::log("Subscribers aggregated: " . count($results));
+		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
+		
+		// Write the results to the invoice
+		$this->invoice->addLines($results);
 		return $results;
 	}
 
@@ -98,8 +163,19 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		$this->constructServices($data);
 		$this->constructPlans($data);
+		$this->constructInvoice($data);
 	}
 
+	protected function constructInvoice($data) {
+		$this->invoice = &$data['invoice'];
+		
+		$this->invoice->setData('aid', $data['aid']);
+		$this->invoice->setData('sid', $data['sid']);
+		$this->invoice->setData('firstname', $data['firstname']);
+		$this->invoice->setData('lastname', $data['lastname']);
+		$this->invoice->setData('plan', $data['plan']);
+	}
+	
 	/**
 	 * Construct the services array
 	 * @param type $data
@@ -141,10 +217,11 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['plans'] = array();
 		$plans = Billrun_Util::getFieldVal($data['plans'], array());
 		if(empty($plans)) {
+			$this->plan = "";
 			Billrun_Factory::log("Received no plans!");
 			return;
 		}
-		
+		$this->plan = $plans[count($plans) - 1]['plan'];
 		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
 		
 		/**
