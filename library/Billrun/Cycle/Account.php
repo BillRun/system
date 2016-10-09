@@ -15,7 +15,7 @@
 class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	/**
 	 * 
-	 * @var Billrun_Cycle_Account_Billrun
+	 * @var Billrun_Cycle_Account_Invoice
 	 */
 	protected $billrun;
 	

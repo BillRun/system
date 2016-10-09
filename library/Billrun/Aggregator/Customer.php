@@ -365,7 +365,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$billrunData['aid'] = $aid;
 		$billrunData['attributes'] = $accountData['attributes'];
-		$billrun = new Billrun_Cycle_Account_Billrun($billrunData);
+		$billrun = new Billrun_Cycle_Account_Invoice($billrunData);
 
 		// Check if already exists.
 		if($billrun->exists()) {
@@ -998,7 +998,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {
 		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
-		$billrun->populateBillrunWithAccountData($account, $options);
+		$billrun->populateInvoiceWithAccountData($account, $options);
 	}
 
 }

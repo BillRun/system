@@ -7,12 +7,12 @@
  */
 
 /**
- * Represents an aggregated account's billrun container
+ * Represents an aggregated subscriber's invoice container
  *
  * @package  Cycle
  * @since    5.2
  */
-class Billrun_Cycle_Account_Billrun {
+class Billrun_Cycle_Subscriber_Invoice {
 	
 	protected $aid;
 	protected $key;
@@ -52,7 +52,7 @@ class Billrun_Cycle_Account_Billrun {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$this->constructByOptions($options);
-		$this->populateBillrunWithAccountData($options['attributes']);
+		$this->populateInvoiceWithAccountData($options['attributes']);
 	}
 
 	/**
@@ -270,7 +270,7 @@ class Billrun_Cycle_Account_Billrun {
 	 * @param Mongodloid_Entity $row the input line
 	 * @param boolean $vatable is the line vatable or not
 	 */
-	public function updateBillrun($counters, $pricingData, $row, $vatable) {
+	public function updateInvoice($counters, $pricingData, $row, $vatable) {
 		if(!isset($row['sid'])) {
 			Billrun_Factory::log("Invalid line:");
 			Billrun_Factory::log(print_r($row,1));
@@ -284,7 +284,7 @@ class Billrun_Cycle_Account_Billrun {
 		// it could be that this sid hasn't been returned on active_subscribers...
 		if (!$sraw) {
 			$this->addClosedSubscriber($sid, $row['aid']);
-			$this->updateBillrun($counters, $pricingData, $row, $vatable);
+			$this->updateInvoice($counters, $pricingData, $row, $vatable);
 			return;
 		}
 		
@@ -440,36 +440,6 @@ class Billrun_Cycle_Account_Billrun {
 	}
 
 	/**
-	 * Returns the plan flag (in / over / out / partial) for a given row day based on the previous flag
-	 * @param type $row the row to get plan flag by
-	 * @param type $current_flag the previous flag of the row day
-	 * @return string the new plan flag for the row day after considering the input row plan flag
-	 */
-	protected function getDayPlanFlagByDataRow($row, $current_flag = 'in') {
-		$levels = array(
-			'in' => 0,
-			'over' => 1,
-			'partial' => 2,
-			'out' => 3
-		);
-		if (isset($row['over_plan'])) {
-			if (($row['usagev'] - $row['over_plan']) > 0) {
-				$plan_flag = 'partial';
-			} else {
-				$plan_flag = 'over';
-			}
-		} else if (isset($row['out_plan'])) {
-			$plan_flag = 'out';
-		} else {
-			$plan_flag = 'in';
-		}
-		if ($levels[$plan_flag] <= $levels[$current_flag]) {
-			return $current_flag;
-		}
-		return $plan_flag;
-	}
-
-	/**
 	 * Add pricing data to the account totals.
 	 */
 	public function updateTotals() {
@@ -493,25 +463,35 @@ class Billrun_Cycle_Account_Billrun {
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
 		);
 		foreach ($this->data['subs'] as $sub) {
-			//Billrun_Factory::log(print_r($sub));
-			$newTotals['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['before_vat'], 0);
-			$newTotals['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['after_vat'], 0);
-			$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
-			$newTotals['vatable'] += Billrun_Util::getFieldVal($sub['totals']['vatable'], 0);
-			$newTotals['flat']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['before_vat'], 0);
-			$newTotals['flat']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['flat']['after_vat'], 0);
-			$newTotals['flat']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['flat']['vatable'], 0);
-			$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['before_vat'], 0);
-			$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['service']['after_vat'], 0);
-			$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['service']['vatable'], 0);
-			$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['before_vat'], 0);
-			$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($sub['totals']['usage']['after_vat'], 0);
-			$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($sub['totals']['usage']['vatable'], 0);
+			$newTotals = $this->addSubToTotals($newTotals, $sub);
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
 	}
 
+	/**
+	 * Add a single subscriber record to the array of totals
+	 * @param type $newTotals
+	 * @param type $subscriber
+	 * @return type
+	 */
+	protected function addSubToTotals($newTotals, $subscriber) {
+		$newTotals['before_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['before_vat'], 0);
+		$newTotals['after_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['after_vat'], 0);
+		$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
+		$newTotals['vatable'] += Billrun_Util::getFieldVal($subscriber['totals']['vatable'], 0);
+		$newTotals['flat']['before_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['flat']['before_vat'], 0);
+		$newTotals['flat']['after_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['flat']['after_vat'], 0);
+		$newTotals['flat']['vatable'] += Billrun_Util::getFieldVal($subscriber['totals']['flat']['vatable'], 0);
+		$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['service']['before_vat'], 0);
+		$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['service']['after_vat'], 0);
+		$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($subscriber['totals']['service']['vatable'], 0);
+		$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['usage']['before_vat'], 0);
+		$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($subscriber['totals']['usage']['after_vat'], 0);
+		$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($subscriber['totals']['usage']['vatable'], 0);
+		return $newTotals;
+	}
+	
 	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * Get a rate from the row
@@ -559,12 +539,7 @@ class Billrun_Cycle_Account_Billrun {
 			if (isset($updatedLines[$line['stamp']])) {
 				continue;
 			}
-			$pricingData = array('aprice' => $line['aprice']);
-			if (isset($line['over_plan'])) {
-				$pricingData['over_plan'] = $line['over_plan'];
-			} else if (isset($line['out_plan'])) {
-				$pricingData['out_plan'] = $line['out_plan'];
-			}
+			$pricingData = $this->getPricingData($line);
 
 			if ($line['type'] == 'flat') {
 				if(!$this->processFlatLine($line)) {
@@ -573,7 +548,7 @@ class Billrun_Cycle_Account_Billrun {
 			} else {
 				$rate = $this->getRowRate($line);
 				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
-				$this->updateBillrun(array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
+				$this->updateInvoice(array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 			} 
 			
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
@@ -582,6 +557,11 @@ class Billrun_Cycle_Account_Billrun {
 		return $updatedLines;
 	}
 
+	/**
+	 * Get the pricing data array for a line
+	 * @param type $line
+	 * @return type
+	 */
 	protected function getPricingData($line) {
 		$pricingData = array('aprice' => $line['aprice']);
 		if (isset($line['over_plan'])) {
@@ -589,6 +569,7 @@ class Billrun_Cycle_Account_Billrun {
 		} else if (isset($line['out_plan'])) {
 			$pricingData['out_plan'] = $line['out_plan'];
 		}
+		return $pricingData;
 	}
 	
 	/**
@@ -598,26 +579,8 @@ class Billrun_Cycle_Account_Billrun {
 	 */
 	protected function processFlatLine($line) {
 		$vatable = isset($line['vatable']);
-		$this->updateBillrun(array(), array('aprice' => $line['aprice']), $line, !$vatable);
+		$this->updateInvoice(array(), array('aprice' => $line['aprice']), $line, !$vatable);
 		return true;
-	}
-	
-	/**
-	 * removes deactivated accounts from the list if they still have lines (and therfore should be in the billrun)
-	 * @param $deactivated_subscribers array of subscribers sids and their deactivation date
-	 */
-	protected function filterSubscribers($account_lines, &$deactivated_subscribers) {
-		if (empty($deactivated_subscribers) || empty($account_lines)) {
-			return;
-		}
-		foreach ($account_lines as $line) {
-			foreach ($deactivated_subscribers as $key => $ds) {
-				if ($ds['sid'] == $line['sid']) {
-					Billrun_Factory::log("Subscriber " . $ds['sid'] . " has current plan null and next plan null, yet has lines", Zend_Log::NOTICE);
-					unset($deactivated_subscribers[$key]);
-				}
-			}
-		}
 	}
 
 	/**
@@ -666,52 +629,30 @@ class Billrun_Cycle_Account_Billrun {
 		$invoice_id_field = (isset($this->data['invoice_id']) ? array('invoice_id' => $this->data['invoice_id']) : array());
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
 		$this->data = new Mongodloid_Entity(array_merge($empty_billrun_entry, $invoice_id_field, $id_field), $this->billrun_coll);
-		$this->initBillrunDates();
-	}
-
-	/**
-	 * returns true if account has no active subscribers and no relevant lines for next billrun
-	 * @return true if account is deactivated (causes no xml to be produced for this account)
-	 */
-	public function is_deactivated() {
-		$deactivated = true;
-		foreach ($this->data['subs'] as $subscriber) {
-			$its_empty = $this->empty_subscriber($subscriber);
-			if (!$its_empty) {
-				$deactivated = false;
-				break;
-			}
-		}
-		return $deactivated;
-	}
-
-	/**
-	 * checks for a given account if its "empty" : its status is closed and it has no relevant lines for next billrun
-	 * @param type $subscriber : sid
-	 * @return true if its "emtpy"
-	 */
-	public function empty_subscriber($subscriber) {
-		$status = $subscriber['subscriber_status'];
-		return ( ($status == "closed") && !isset($subscriber['breakdown']));
+		$this->initInvoiceDates();
 	}
 	
 	/**
 	 * Get an empty billrun account entry structure.
 	 * @return array an empty billrun document
 	 */
-	public function populateBillrunWithAccountData($attributes) {
+	public function populateInvoiceWithAccountData($attributes) {
 		$rawData = $this->data->getRawData();
 		$rawData['attributes'] = $attributes;
 		$this->data->setRawData($rawData);
 	}
 	
-	protected function initBillrunDates() {
-		
+	/**
+	 * Init the date values of the invoice.
+	 */
+	protected function initInvoiceDates() {
 		$billrunDate = Billrun_Billingcycle::getEndTime($this->getBillrunKey());
-		$this->data['creation_date'] = new MongoDate(time());
-		$this->data['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
-		$this->data['end_date'] = new MongoDate($billrunDate);
-		$this->data['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
-		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$initData = $this->data->getRawData();
+		$initData['creation_date'] = new MongoDate(time());
+		$initData['invoice_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.invoicing_date', "first day of this month"), $billrunDate));
+		$initData['end_date'] = new MongoDate($billrunDate);
+		$initData['start_date'] = new MongoDate(Billrun_Billingcycle::getStartTime($this->getBillrunKey()));
+		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
+		$this->data->setRawData($initData);
 	}
 }
