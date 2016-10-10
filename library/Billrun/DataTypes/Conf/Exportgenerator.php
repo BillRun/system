@@ -11,8 +11,6 @@
  */
 class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base {
 
-	use Billrun_Traits_Api_UserPermissions;
-
 	protected $listData;
 	protected $names;
 	
@@ -87,9 +85,4 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 	public function value() {
 		return $this->val;
 	}
-
-	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
-	}
-
 }
