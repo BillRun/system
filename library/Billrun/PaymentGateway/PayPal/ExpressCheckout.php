@@ -17,13 +17,12 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected $conf;
 	protected $EndpointUrl = "https://api-3t.sandbox.paypal.com/nvp";
 	protected $billrunName = "PayPal_ExpressCheckout";
-	
-	
+
 	public function updateSessionTransactionId() {
 		$url_array = parse_url($this->redirectUrl);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
-		$this->transactionId = $str_response['token'];	
+		$this->transactionId = $str_response['token'];
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
@@ -71,7 +70,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 			'TOKEN' => $txId,
 		);
 	}
-	
+
 	public function getTransactionIdName() {
 		return "token";
 	}
@@ -93,11 +92,6 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 				'transaction_exhausted' => true
 			)
 		);
-	}
-
-
-	public function charge() {
-		
 	}
 
 }

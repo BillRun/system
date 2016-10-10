@@ -12,33 +12,22 @@
  * @since    5.2
  */
 class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
-	
+
 	protected $cgConf;
 	protected $EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
 	protected $billrunName = "CreditGuard";
-	
-	
-	
-	public function updateSessionTransactionId() {			
+
+	public function updateSessionTransactionId() {
 		$url_array = parse_url($this->redirectUrl);
 		$str_response = array();
 		parse_str($url_array['query'], $str_response);
-		$this->transactionId = $str_response['txId'];	
+		$this->transactionId = $str_response['txId'];
 	}
-	
-	
-	
-	
-	protected function charge(){
-		
-	}
-	
-	
-	
-	protected function buildPostArray($aid, $returnUrl, $okPage){
+
+	protected function buildPostArray($aid, $returnUrl, $okPage) {
 		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
-		$this->cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
-		$this->cgConf['amount'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.amount');
+		$this->cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$this->cgConf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
 		$this->cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
 		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
@@ -46,11 +35,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['ok_page'] = $okPage;
 		$this->cgConf['return_url'] = $returnUrl;
 		$this->cgConf['language'] = "ENG";
-		
+
 		return $post_array = array(
 			'user' => $this->cgConf['user'],
 			'password' => $this->cgConf['password'],
-			 /* Build Ashrait XML to post */
+			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>                                      
 							<request>
 								 <version>1000</version>
@@ -96,7 +85,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 						   </ashrait>'
 		);
 	}
-	
+
 	protected function updateRedirectUrl($result) {
 		if (function_exists("simplexml_load_string")) {
 			if (strpos(strtoupper($result), 'HEB')) {
@@ -117,11 +106,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
-	
+
 	protected function buildTransactionPost($txId) {
 		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
-		$cgConf['mid'] = (int)Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
 		$cgConf['txId'] = $txId;
 		$cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
 		$cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
@@ -130,7 +118,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		return $post_array = array(
 			'user' => $cgConf['user'],
 			'password' => $cgConf['password'],
-			 /* Build Ashrait XML to post */
+			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
@@ -150,16 +138,14 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							 </inquireTransactions>
 							</request>
 					   </ashrait>'
-			);
+		);
 	}
 
-
-
-	public function getTransactionIdName(){
+	public function getTransactionIdName() {
 		return "txId";
 	}
-	
-	protected function getResponseDetails($result){
+
+	protected function getResponseDetails($result) {
 		if (function_exists("simplexml_load_string")) {
 			if (strpos(strtoupper($result), 'HEB')) {
 				$result = iconv("utf-8", "iso-8859-8", $result);
@@ -169,31 +155,29 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
 				return false;
 			echo "<br /> THE TRANSACTION WAS A SUCCESS ";   // TODO: remove after tests
-			
+
 			$this->saveDetails['card_token'] = $xmlObj->response->inquireTransactions->row->cardId;
 			$this->saveDetails['card_expiration'] = $xmlObj->response->inquireTransactions->row->cardExpiration;
-			$this->saveDetails['aid']= $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
+			$this->saveDetails['aid'] = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['return_url'] = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$this->saveDetails['personal_id'] = $xmlObj->response->inquireTransactions->row->personalId;
-			
+
 			return true;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
 	}
-	
-	
-	protected function buildSetQuery(){
-	return array(
-		'payment_gateway' => array(
-			'name' => $this->billrunName,
-			'card_token' => (string) $this->saveDetails['card_token'], 
-			'card_expiration' => (string) $this->saveDetails['card_expiration'], 
-			'personal_id' => (string) $this->saveDetails['personal_id'], 
-			'transaction_exhausted' => true
-		)
+
+	protected function buildSetQuery() {
+		return array(
+			'payment_gateway' => array(
+				'name' => $this->billrunName,
+				'card_token' => (string) $this->saveDetails['card_token'],
+				'card_expiration' => (string) $this->saveDetails['card_expiration'],
+				'personal_id' => (string) $this->saveDetails['personal_id'],
+				'transaction_exhausted' => true
+			)
 		);
 	}
-	
 
 }
