@@ -113,7 +113,7 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 		$queryFields = $this->getQueryFields();
 
 		// Initialize the query with date bound values.
-		$this->query = Billrun_Util::getDateBoundQuery();
+		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!

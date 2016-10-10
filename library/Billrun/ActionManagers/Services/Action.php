@@ -12,6 +12,8 @@
  */
 abstract class Billrun_ActionManagers_Services_Action implements Billrun_ActionManagers_IAPIAction {
 
+	use Billrun_ActionManagers_ErrorReporter;
+
 	protected $collection = null;
 
 	/**
@@ -20,7 +22,6 @@ abstract class Billrun_ActionManagers_Services_Action implements Billrun_ActionM
 	public function __construct($params) {
 		$this->collection = Billrun_Factory::db()->servicesCollection();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/services/errors.ini");
-		parent::__construct($params);
 	}
 
 	/**
