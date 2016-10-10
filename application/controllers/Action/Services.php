@@ -17,8 +17,6 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class ServicesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
-	protected $model;
-
 	/**
 	 * Get the correct action to use for this request.
 	 * @return Billrun_ActionManagers_Action
@@ -35,13 +33,6 @@ class ServicesAction extends ApiAction {
 
 		// This is the method which is going to be executed.
 		return $this->manager->getAction();
-	}
-
-	/**
-	 * This method is for initializing the API Action's model.
-	 */
-	protected function initializeModel() {
-		$this->model = new ServicesModel(array('sort' => array('from' => 1)));
 	}
 
 	/**
@@ -78,23 +69,6 @@ class ServicesAction extends ApiAction {
 			//		$output['input'] = $request->getRequest();
 		}
 		$this->getController()->setOutput(array($output));
-	}
-
-	/**
-	 * basic fetch data method used by the cache
-	 * 
-	 * @param array $params parameters to fetch the data
-	 * 
-	 * @return boolean
-	 */
-	protected function fetchData($params) {
-		$model = new ServicesModel($params['options']);
-		$results = $model->getData($params['find']);
-		$ret = array();
-		foreach ($results as $row) {
-			$ret[] = $row->getRawData();
-		}
-		return $ret;
 	}
 
 	protected function getPermissionLevel() {
