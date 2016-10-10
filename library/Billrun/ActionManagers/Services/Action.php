@@ -13,15 +13,15 @@
 abstract class Billrun_ActionManagers_Services_Action implements Billrun_ActionManagers_IAPIAction {
 
 	use Billrun_ActionManagers_ErrorReporter;
-
+	
 	protected $collection = null;
 
 	/**
 	 * Create an instance of the ServiceAction type.
 	 */
-	public function __construct($params) {
+	public function __construct($params = array()) {
 		$this->collection = Billrun_Factory::db()->servicesCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/services/errors.ini");
+		$this->baseCode = 1400;
 	}
 
 	/**

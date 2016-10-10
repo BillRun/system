@@ -19,12 +19,6 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 	protected $query = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success deleting service"));
-	}
-
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -35,23 +29,20 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 			
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
-				$this->errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 15;
-				$this->reportError($this->errorCode, Zend_Log::NOTICE);
+				$this->reportError(15, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
 				$details = $rowToDelete->getRawData();
 			}
 
-		} catch (\Exception $e) {
-			$this->errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 11;
-			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
-			$this->reportError($this->errorCode, Zend_Log::NOTICE);
+		} catch (\MongoException $e) {
+			$errorCode =  11;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success deleting service",
 			'details' => $details
 		);
 
@@ -80,18 +71,13 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 12;
-			$error = "Failed decoding JSON data";
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(12, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// If there were errors.
 		if (!$this->setQueryFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 13;
-			$error = "Services delete received invalid query values";
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
+			$this->reportError(13, Zend_Log::NOTICE);
 		}
 
 		return true;
@@ -103,11 +89,8 @@ class Billrun_ActionManagers_Services_Delete extends Billrun_ActionManagers_Serv
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
-
 		if (!isset($queryData['name']) || empty($queryData['name'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 14;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			return false;
+			$this->reportError(14, Zend_Log::NOTICE);
 		}
 
 		$queryFields = $this->getQueryFields();
