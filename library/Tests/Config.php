@@ -181,7 +181,32 @@ class Tests_Config extends UnitTestCase {
 					'enabled' => 'true'
 				),
 				"valid" => false, 
-				"msg" => "Invalid type"),
+				"msg" => "No list"
+			),
+			array(
+				't' => "Exportgenerator", 
+				'list' => array(),
+				'v' => array(
+					"name" => "ABC",
+					"file_type" => "A",     
+					"segments" => 
+						array(
+							array(
+								"field" => "field1",
+								"from" => 100,
+								"to" => 200,
+							),
+							array(
+								"field"=>"field2",
+								"from"=> 1000,
+								"to" => 2000,
+							)
+					),
+					'enabled' => 'true'
+				),
+				"valid" => false, 
+				"msg" => "Invalid type"
+			),
 		);
 	
 	public function testStringWrappers() {
