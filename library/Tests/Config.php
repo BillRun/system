@@ -238,9 +238,29 @@ class Tests_Config extends UnitTestCase {
 	}
 	
 	public function testExportGeneratorWrappers() {
-		$this->complexWrapperTest($this->exportGeneratorTests);
+		$withExpected = $this->generateExpected($this->exportGeneratorTests, 'list');
+		$this->complexWrapperTest($withExpected);
 	}
 	
+	public function generateExpected($testcases, $valueField) {
+		$expected = array();
+		foreach ($testcases as &$case) {
+			// Skip invalid cases.
+			if(!$case['valid']) {
+				continue;
+			}
+			
+			$expected = $case[$valueField];
+			$expected[] = $case['v'];
+			$case['expected'] = $expected;
+		}
+		return $testcases;
+	}
+	
+	/**
+	 * Run the test cases for the complex wrappers
+	 * @param array $testCases - Array of test cases to run.
+	 */
 	public function complexWrapperTest($testCases) {
 		foreach ($testCases as $test) {
 			$wrapper = Billrun_Config::getComplexWrapper($test);
