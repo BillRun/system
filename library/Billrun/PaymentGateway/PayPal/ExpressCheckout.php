@@ -76,8 +76,9 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function getResponseDetails($result) {
+		$resultArray = array();
 		parse_str($result, $resultArray);
-		if ($resultArray['ACK'] != "Success") {
+		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
 			throw new Exception($resultArray['L_LONGMESSAGE0']);
 		}
 		$this->saveDetails['billing_agreement_id'] = $resultArray['BILLINGAGREEMENTID'];

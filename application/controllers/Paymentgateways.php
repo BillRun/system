@@ -49,6 +49,10 @@ class PaymentGatewaysController extends ApiController {
 		return parent::render('index', $parameters);
 	}
 
+	/**
+	 * Request for transaction with the chosen payment gateway for getting billing agreement id.
+	 * 
+	 */
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
@@ -78,7 +82,11 @@ class PaymentGatewaysController extends ApiController {
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
 	}
-
+	
+	/**
+	 * handling the response from the payment gateway and saving the details to db.
+	 * 
+	 */
 	public function OkPageAction() {
 		$request = $this->getRequest();
 		$name = $request->get("name");
@@ -94,30 +102,16 @@ class PaymentGatewaysController extends ApiController {
 
 		$paymentGateway->saveTransactionDetails($transactionId);
 	}
+	
 
-//	public function PayAction() { // how to block unwanted action. 
-//		$request = $this->getRequest();
-//		// Validate the data.
-//		//$data = $this->validateData($request);
-//		$data = $request->get('data');
-//
-//		$name = $request->get('name');
-//		if (is_null($name)) {
-//			return $this->setError("Missing payment gateway name", $request);
-//		}
-//		$params = $request->get('name');
-//		$aid = $request->get('aid');
-//		if (is_null($aid) || !Billrun_Util::IsIntegerValue($aid)) {
-//			return $this->setError("need to pass numeric aid", $request);
-//		}
-//
-//
-//		if ($paramsArray['']) {
-//			return $this->setError("Invalid arguments", $request);
-//		}
-//		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-//		$paymentGateway->makePayment($name, $paramsArray);
-//	}
+	public function PayAction() {  
+		$request = $this->getRequest();
+		$stamp = $request->get('stamp'); 
+		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)){
+			return $this->setError("Illegal stamp", $request);
+		}	
+		Billrun_PaymentGateway::makePayment($stamp);
+	}
 
 	/**
 	 * Validates the input data.
