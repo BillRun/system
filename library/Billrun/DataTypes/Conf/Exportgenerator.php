@@ -11,35 +11,77 @@
  */
 class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base {
 
-	protected $listData;
-	protected $names;
-	
 	public function __construct(&$obj) {
 		$this->val = &$obj['v'];
-		$this->names = Billrun_Util::getFieldVal(&$obj['names'], array());
-		$type = $this->val['type'];
-		$template = Billrun_Util::getFieldVal(&$obj['template'][$type], array());
-		$matchKey = 'field';
-		$listData['k'] = $matchKey;
-		$listData['template'] = $template;
-		$this->listData = $listData;
+		$this->list = &$obj['list'];
 	}
 
+	/**
+	 * Validate the value
+	 * @return boolean
+	 */
 	public function validate() {
 		if (empty($this->val) ||
 			!is_array($this->val) ||
-			empty($this->listData['template']) ||
+			!is_array($this->list) ||
 			!isset($this->val['name']) ||
-			!is_string($this->val['name'])) {
-			return false;
-		}
-
-		// Validate the name.
-		if(in_array($this->val['name'], $this->names)) {
-			Billrun_Factory::log("Export generator " . $this->val['name'] . " already exists");
+			!is_string($this->val['name']) ||
+			!isset($this->val['file_type']) ||
+			!is_string($this->val['file_type'])) {
 			return false;
 		}
 		
+		if(!$this->validateName()) {
+			return false;
+		}
+		
+		if(!$this->validateSegments()) {
+			return false;
+		}
+		
+		$this->setToList();
+		return true;
+	}
+
+	/**
+	 * Set the validated value to the list of values.
+	 */
+	protected function setToList() {
+		// Set in the list.
+		if ($this->val !== null) {
+			$this->list[] = $this->val;
+			$this->val = null;
+		}
+	}
+	
+	/**
+	 * Handle name
+	 * @return boolean
+	 */
+	protected function validateName() {
+		$name = $this->val['name'];
+		
+		// Validate the name.
+		$nameArray = Billrun_Factory::config()->getConfigValue('export_generator.names', array());
+		if(in_array($name, $nameArray)) {
+			Billrun_Factory::log("Export generator " . $name . " already exists");
+			return false;
+		}
+		
+		// Add the current name to the list.
+		$nameArray[] = $name;
+		
+		// Set it in the db config.
+		Billrun_Factory::config()->setDbConfig('export_generator.names', $nameArray);
+		
+		return true;
+	}
+	
+	/**
+	 * Validate the segments
+	 * @return boolean
+	 */
+	protected function validateSegments() {
 		// Get the segments.
 		$segments = Billrun_Util::getFieldVal($this->val['segments'], array());
 		
@@ -48,41 +90,57 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 			return false;
 		}
 		
-		if(!$this->validateSegments($segments)) {
+		// Get the available fields.
+		$fields = $this->getFields();
+		if(empty($fields)) {
 			return false;
 		}
 		
+		// Validate each segment.
+		foreach ($segments as $segValue) {
+			if(!$this->validateSegment($segValue, $fields)) {
+				return false;
+			}
+		}
 		return true;
 	}
 
-	protected function addName($name) {
-		/**
-		 * @var Mongodloid_Collection  $coll
-		 */
-		$coll = Billrun_Factory::db()->configCollection();
-		
-		// Update name query.
-		$update = array('$push' => array('export_generator.names' => $name));
-		
-		// Add the name
-		$coll->update(array(), $update);
-	}
-	
-	protected function validateSegments($segments) {
-		$listData = $this->listData;
-		
-		// Validate each segment.
-		foreach ($segments as $segValue) {
-			$listData['v'] = $segValue;
-			$list = new Billrun_DataTypes_Conf_List($listData);
-			if(!$list->validate()) {
+	/**
+	 * Validate a single segment.
+	 * @param type $segment
+	 * @param type $fields
+	 * @return boolean
+	 */
+	protected function validateSegment($segment, $fields) {
+		foreach ($segment as $key => $value) {
+			if(!in_array($key, $fields)) {
 				return false;
 			}
 		}
 		return true;
 	}
 	
+	/**
+	 * Get the available fields according to the input processor.
+	 */
+	protected function getFields() {
+		$fileTypes = Billrun_Factory::config()->getConfigValue('file_types');
+		$type = $this->val['file_type'];
+
+		$fields = array();
+		foreach ($fileTypes as $record) {
+			if($record['file_type'] != $type) {
+				continue;
+			}
+			
+			$fields = Billrun_Util::getFieldVal($record['parser']['structure'], array());
+			break;
+		}
+		
+		return $fields;
+	}
+	
 	public function value() {
-		return $this->val;
+		return $this->list;
 	}
 }
