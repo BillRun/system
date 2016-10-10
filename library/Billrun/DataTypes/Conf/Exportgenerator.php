@@ -11,6 +11,12 @@
  */
 class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base {
 
+	/**
+	 * Internal list of objects
+	 * @var array
+	 */
+	protected $list = array();
+		
 	public function __construct(&$obj) {
 		$this->val = &$obj['v'];
 		$this->list = &$obj['list'];
@@ -62,17 +68,11 @@ class Billrun_DataTypes_Conf_Exportgenerator extends Billrun_DataTypes_Conf_Base
 		$name = $this->val['name'];
 		
 		// Validate the name.
-		$nameArray = Billrun_Factory::config()->getConfigValue('export_generator.names', array());
-		if(in_array($name, $nameArray)) {
-			Billrun_Factory::log("Export generator " . $name . " already exists");
-			return false;
+		foreach ($this->list as $generator) {
+			if($generator['name'] == $name) {
+				return false;
+			}
 		}
-		
-		// Add the current name to the list.
-		$nameArray[] = $name;
-		
-		// Set it in the db config.
-		Billrun_Factory::config()->setDbConfig('export_generator.names', $nameArray);
 		
 		return true;
 	}

@@ -29,12 +29,6 @@ class Billrun_Config {
 	protected $config;
 	
 	/**
-	 * Config data from the config collection in the database.
-	 * @var array
-	 */
-	protected $dbConfig;
-	
-	/**
 	 * the name of the tenant (or null if not running with tenant)
 	 * 
 	 * @var string
@@ -73,40 +67,6 @@ class Billrun_Config {
 		} else {
 			$this->tenant = $this->getEnv();
 		}
-	}
-
-	/**
-	 * Set value to the db config.
-	 * @param string $key - Dot seperated string.
-	 * @param mixed $value - Value to set
-	 * @param boolean $flush - If true, the changes are flushed to the DB. 
-	 * True by default.
-	 */
-	public function setDbConfig($key, $value, $flush = true) {
-		Billrun_Utils_Mongo::setValueByMongoIndex($value, $this->dbConfig, $key);
-		$this->dbConfig[$key] = $value;
-		$dbConfig = $this->dbConfig;
-		$iniConfig = $this->config->toArray();
-		$this->translateComplex($dbConfig);
-		$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
-		
-		if($flush) {
-			$this->flushDbConfig();
-		}
-	}
-	
-	/**
-	 * Flush the db data to the config collection.
-	 * @return boolean - True if successful.
-	 */
-	public function flushDbConfig() {
-		$ret = $this->collection->insert($this->dbConfig);
-		$saveResult = !empty($ret['ok']);
-		if ($saveResult) {
-			// Reload timezone.
-			Billrun_Config::getInstance()->refresh();
-		}
-		return $saveResult;
 	}
 	
 	public function addConfig($path) {
@@ -208,7 +168,6 @@ class Billrun_Config {
 				}
 				$dbConfig = $dbCursor->getRawData();
 				unset($dbConfig['_id']);
-				$this->dbConfig = $dbConfig;
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
 				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
