@@ -198,6 +198,24 @@ class ConfigModel {
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
+			$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways'); // TODO: Remove when finished to do more generic
+			$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
+				return $paymentGateway['omnipay_supported'] == true;
+				});
+			if (in_array($data['name'], array_keys($omnipay_supported))) {
+					$gateway = Omnipay\Omnipay::create($data['name']);
+					$defaultParameters = $gateway->getDefaultParameters();
+			}
+			else{
+				$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			}
+			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
+			$neededParameters = array_keys($releventParameters);
+			foreach ($data['params'] as $key => $value) {
+				if (!in_array($key, $neededParameters)){
+					unset($data['params'][$key]);
+				}
+			}
 			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
 			if ($rawPgSettings) {
 				$pgSettings = array_merge($rawPgSettings, $data);
@@ -449,14 +467,15 @@ class ConfigModel {
 	
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
- 		$connectionParameters = $pg['params'];
+ 		$connectionParameters = array_keys($pg['params']);
  		$name = $pg['name'];
 		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways');
 		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
  			return $paymentGateway['supported'] == true;
  		});
 		if (!in_array($name, array_keys($supportedGateways))){
-			throw new Exception('Unsupported Payment Gateway');
+			Billrun_Factory::log("Unsupported Payment Gateway: ", $name);
+			return false;
 		}
 		$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
  			return $paymentGateway['omnipay_supported'] == true;
@@ -464,19 +483,22 @@ class ConfigModel {
 		if (in_array($name, array_keys($omnipay_supported))) {
 			$gateway = Omnipay\Omnipay::create($name);
 			$defaultParameters = $gateway->getDefaultParameters();
-			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
-			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
-				throw new Exception('Missing parameter for connection');
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
 			}
 			// TODO: check Auth to gateway through Omnipay
 		}
 		
  		else if ($name == "CreditGuard"){
 			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
-			$maxSize = count($defaultParameters) > count($connectionParameters) ? count($defaultParameters) : count($connectionParameters);
-			if (count(array_intersect_key($connectionParameters, $defaultParameters)) != $maxSize) {
-				throw new Exception('Missing parameter for connection');
-
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
 			}
 		// meanewhile credentials of credit guard, TODO generic for all payemnt gateways not ompipay supported and functions for identical code.
 		}
@@ -599,10 +621,13 @@ class ConfigModel {
 	protected function validateProcessorConfiguration($processorSettings) {
 		$processorSettings['type'] = 'Usage';
 		if (isset($processorSettings['date_format'])) {
+			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
+				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
+			}
 			// TODO validate date format
 		}
 		if (!isset($processorSettings['date_field'])) {
-			throw new Exception('Missing processor time field');
+			throw new Exception('Missing processor date field');
 		}
 		if (!isset($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
