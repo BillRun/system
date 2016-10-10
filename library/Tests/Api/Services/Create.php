@@ -25,7 +25,7 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 	}
 	
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Create();
+		return new Billrun_ActionManagers_Services_Create($param);
 	}
 
 	protected function getQuery($case) {

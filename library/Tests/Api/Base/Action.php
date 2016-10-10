@@ -273,13 +273,25 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 			return false;
 		}
 		
-		// Test parsing.
-		if(!$action->parse($test)) {
+		
+		try{
+			// Test parsing.
+			$parseResult = $action->parse($test);
+		} catch(Billrun_Exceptions_Base $ex) {
+			$parseResult = false;
+		}
+		
+		if(!$parseResult) {
 			$this->assertFalse($case['valid'], "Faild parsing " . $case['msg']);
 			return false;
 		}
 		
-		$result = $action->execute();
+		try {
+			$result = $action->execute();
+		} catch (Billrun_Exceptions_Base $ex) {
+			$result = json_decode($ex->output(), 1);
+		}
+		
 		if(!$this->handleResult($result)) {
 			$this->assertFalse($case['valid'], "Faild executing " . $case['msg']);
 			return false;

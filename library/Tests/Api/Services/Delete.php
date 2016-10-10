@@ -25,7 +25,7 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 	}
 	
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Delete();
+		return new Billrun_ActionManagers_Services_Delete($param);
 	}
 
 	protected function getQuery($case) {
@@ -50,8 +50,11 @@ class Tests_Api_Services_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function onQueryAction($results) {
-		$error_code = $results['error_code'];
-		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
+		$details = array();
+		if(isset($results['details'])) {
+			$details = $results['details'];
+		}
+		$assertResult = $this->assertTrue(empty($details), $this->current['msg']);
 		if(!$assertResult) {
 			return $this->onExecuteFailed($results);
 		}
