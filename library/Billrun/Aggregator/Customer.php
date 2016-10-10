@@ -310,7 +310,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			
 			// If the aid is different, store the account.
 			if($accountData && $lastAid && ($lastAid != $aid)) {	
-				$accountToAdd = $this->getAccount($billrunData, $accountData, $aid, $cycle, $plans, $services, $rates);
+				$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services, $rates);
 				if($accountToAdd) {
 					$accounts[] = $accountToAdd;
 				}
