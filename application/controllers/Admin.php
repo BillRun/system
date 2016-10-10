@@ -43,19 +43,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 	
 	protected function initCommit() {
-		if (Billrun_Factory::config()->isProd()) {
-			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
-				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
-				$branch = rtrim(end(explode('/', $HEAD)));
-				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
-				} else {
-					$this->commit = md5(date('ymd')); // cache for 1 calendar day
-				}
-			} else {
-				$this->commit = md5(date('ymd'));
-			}
-		} else { // all other envs do not cache
+		if (!Billrun_Factory::config()->isProd() || !($this->commit = Billrun_Git_Util::getGitLastCommit())) {
 			$this->commit = md5(time());
 		}
 	}
