@@ -57,7 +57,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		$outputResult = array(
 			'status' => 1,
-			'desc' => "Success creating subscriber",
+			'desc' => "Success updating subscriber",
 		);
 
 		if (isset($oldEntity)) {
