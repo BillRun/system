@@ -315,14 +315,13 @@ class Billrun_Utils_Mongo {
 			return "id error 1";
 		}
 		
-		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (new MongoId());
-		if (!$id) {
-			return "id error 2";			
+ 		if(!$new) {
+			$id = self::getId($searchKeys);
+			if(is_string($id)) {
+				return $id;
+			}
+			unset($searchKeys['_id']);
 		}
-		if($id instanceof Mongodloid_Id) {
-			$id = $id->getMongoID();
-		}
-		unset($searchKeys['_id']);
 		
 		$ret = array();
 		foreach ($searchKeys as $key => $pair) {
@@ -342,5 +341,16 @@ class Billrun_Utils_Mongo {
 			$ret['_id'] = array('$ne' => $id);
 		}
 		return $ret;
+	}
+	
+	protected static function getId($searchKeys) {
+		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (NULL);
+		if (!$id) {
+			return "id error 2";			
+		}
+		if($id instanceof Mongodloid_Id) {
+			return $id->getMongoID();
+		}
+		return $id;
 	}
 }
