@@ -314,7 +314,8 @@ class Billrun_Utils_Mongo {
 		if(!$new && !isset($searchKeys['_id'])) {
 			return "id error 1";
 		}
-		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (NULL);
+		
+		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (new MongoId());
 		if (!$id) {
 			return "id error 2";			
 		}
