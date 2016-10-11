@@ -298,7 +298,7 @@ class Billrun_Utils_Mongo {
 			$from_date = new MongoDate(strtotime($searchKeys['from']));
 		}
 		if (!$from_date) {
-			return "date error";
+			return "date error 1";
 		}
 		unset($searchKeys['from']);
 		if ($searchKeys['to'] instanceof MongoDate) {
@@ -307,18 +307,25 @@ class Billrun_Utils_Mongo {
 			$to_date = new MongoDate(strtotime($searchKeys['to']));
 		}
 		if (!$to_date) {
-			return "date error";
+			return "date error 2";
 		}
 		unset($searchKeys['to']);
 		
-		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId(isset($searchKeys['_id'])? $searchKeys['_id'] : NULL))) {
-			return "id error";
+		if(!$new && !isset($searchKeys['_id'])) {
+			return "id error 1";
+		}
+		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (NULL);
+		if (!$id) {
+			return "id error 2";			
+		}
+		if($id instanceof Mongodloid_Id) {
+			$id = $id->getMongoID();
 		}
 		unset($searchKeys['_id']);
 		
 		$ret = array();
-		foreach ($searchKeys as $pair) {
-			$ret[] = $pair;
+		foreach ($searchKeys as $key => $pair) {
+			$ret[$key] = $pair;
 		}
 		$ret['$or'] = array(
 				array('from' => array(

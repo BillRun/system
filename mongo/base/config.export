@@ -156,7 +156,6 @@
             }, {
                  "field_name": "payment_gateway",
                  "editable": false,
-                 "mandatory": true,
  				 "display": true
              }, {
                 "field_name": "personal_id",
