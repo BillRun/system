@@ -74,7 +74,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	 */
 	protected function setQueryRecord($input) {
 		$jsonData = null;
-		$query = $input->get('service');
+		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
 			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
