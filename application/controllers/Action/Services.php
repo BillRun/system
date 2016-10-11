@@ -41,7 +41,6 @@ class ServicesAction extends ApiAction {
 	public function execute() {
 		$this->allowed();
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/services/conf.ini');
-		$this->initializeModel();
 
 		$request = $this->getRequest();
 
