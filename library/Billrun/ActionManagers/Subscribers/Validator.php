@@ -43,7 +43,9 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 	protected function validateOverlap($new = true) {
 		// Get overlapping query.
 		$overlapQuery = Billrun_Utils_Mongo::getOverlappingDatesQuery($this->validatorData, $new);
+		Billrun_Factory::log(print_r($overlapQuery,1));
 		if(is_string($overlapQuery)) {
+			throw new Exception($overlapQuery);
 			Billrun_Factory::log("Invalid query: " . $overlapQuery);
 			return false;
 		}
