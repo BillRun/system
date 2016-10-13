@@ -63,6 +63,11 @@ class Tests_Api_Services extends UnitTestCase {
 		array('valid' => true, 'msg' => 'Only mendatory past updating from', 'update' => array("from" => "-2 years"), 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 	);
 	
+	function testInit() {
+		// Initialize the config file.
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/services/conf.ini');
+	}
+	
     function testCreate() {
 		$create = new Tests_Api_Services_Create($this->createTests, $this);
 		$create->run();
