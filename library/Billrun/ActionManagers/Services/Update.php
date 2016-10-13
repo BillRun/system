@@ -101,16 +101,10 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonData);
+		$this->setQueryFields($jsonData);
 		
 		if(empty($this->query)) {
 			$this->reportError(22, Zend_Log::NOTICE);
-		}
-		
-		// If there were errors.
-		if (!empty($invalidFields)) {
-			// Create an exception.
-			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 		
 		$update = $input->get('update');
@@ -126,32 +120,24 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
-	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
 		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 		
-		$fields = Billrun_Factory::config()->getConfigValue('services.fields');
-		
-		// Array of errors to report if any error occurs.
-		$invalidFields = array();
-
-		// Get only the values to be set in the update record.
-		foreach ($fields as $field) {
-			if(!isset($field['mandatory']) || !$field['mandatory']) {
-				continue;
-			}
-			
-			$fieldName = $field['field_name'];
-			
-			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
-				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
-			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
-			}
+		// Get the mongo ID.
+		if(!isset($queryData['_id'])) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id');
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
-
-		return $invalidFields;
+		
+		try {
+			$this->query['_id'] = new MongoId($queryData['_id']);
+		} catch (MongoException $ex) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+		
+		return true;
 	}
 	
 	/**

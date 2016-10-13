@@ -71,16 +71,15 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		$invalidFields = $this->setQueryFields($jsonData);
 
+		// If there were errors.
+		if (count($invalidFields) == count($this->getQueryFields())) {
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
+		}
+		
 		// If the query is empty.
 		if (empty($this->serviceQuery)) {
 			$this->reportError(22, Zend_Log::NOTICE);
-			return false;
-		}
-
-		// If there were errors.
-		if (!empty($invalidFields)) {
-			// Create an exception.
-			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 		
 		return true;
@@ -99,15 +98,10 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		// Get only the values to be set in the update record.
 		foreach ($queryFields as $field) {
-			if(!isset($field['mandatory']) || !$field['mandatory']) {
-				continue;
-			}
-			
-			$fieldName = $field['field_name'];
-			if (isset($queryData[$fieldName]) && !empty($queryData[$fieldName])) {
-				$this->serviceQuery[$fieldName] = $queryData[$fieldName];
+			if (isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->serviceQuery[$field] = $queryData[$field];
 			} else {
-				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($field);
 			}
 		}
 
