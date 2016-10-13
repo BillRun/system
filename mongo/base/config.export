@@ -132,10 +132,12 @@
                 "editable": false
             }, {
                 "field_name": "firstname",
-                "mandatory": true
+                "mandatory": true,
+                "title": "First name"
             }, {
                 "field_name": "lastname",
-                "mandatory": true
+                "mandatory": true,
+                "title": "Last name"
             }, {
                 "field_name": "email",
                 "mandatory": true
