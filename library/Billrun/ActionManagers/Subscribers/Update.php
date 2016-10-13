@@ -104,6 +104,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * @return true if valid.
 	 */
 	public function parse($input) {
+		// Translate
 		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
@@ -145,7 +146,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonData);
+		$translated = $this->handleMongoId($jsonData);
+		$invalidFields = $this->setQueryFields($translated);
+		
 		// If there were errors.
 		if (!empty($invalidFields)) {
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
@@ -163,29 +166,56 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 
 	/**
+	 * Handle the mongo ID inside the received input
+	 * @param array $input
+	 * @return The input array with the mongo ID translated.
+	 */
+	protected function handleMongoId(array $input) {
+		$result = $input;
+		
+		// Check that it exists.
+		if(!isset($input['_id']) || !($input['_id'])) {
+			$this->reportError(42, Zend_Log::NOTICE);
+		}
+		
+		$id = $input['_id'];
+		try {
+			$mongoID = new MongoId($id);
+			
+			// Set the mongo ID in the input array
+			$result['_id'] = $mongoID;
+		} catch (MongoException $ex) {
+			$this->reportError(43, Zend_Log::NOTICE, array($id));			
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
 	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
 		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
-		$this->query['type'] = $this->type;
-		if ($this->type === 'account') {
-			$queryMandatoryFields = array('aid');
-		} else {
-			$queryMandatoryFields = array('sid');
-		}
+		
+		// Get the mongo ID
+		$id = $queryData['_id'];		
+		$this->query['_id'] = $id;
+		
+//		$queryMandatoryFields = array('_id');
+//		
 		// Array of errors to report if any error occurs.
 		$invalidFields = array();
-
-		// Get only the values to be set in the update record.
-		foreach ($queryMandatoryFields as $fieldName) {
-			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
-				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
-			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
-			}
-		}
+//
+//		// Get only the values to be set in the update record.
+//		foreach ($queryMandatoryFields as $fieldName) {
+//			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
+//				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
+//			} else if (isset($queryData[$fieldName])) {
+//				$this->query[$fieldName] = $queryData[$fieldName];
+//			}
+//		}
 
 		return $invalidFields;
 	}
