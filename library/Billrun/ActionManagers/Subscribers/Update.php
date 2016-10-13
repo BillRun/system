@@ -23,6 +23,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 */
 	protected $query = array();
 	protected $update = array();
+	
+	/**
+	 *
+	 * @var Mongodloid_Entity
+	 */
 	protected $oldEntity = array();
 	protected $time;
 
@@ -52,7 +57,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 		$outputResult = array(
 			'status' => 1,
-			'desc' => "Success creating subscriber",
+			'desc' => "Success updating subscriber",
 		);
 
 		if (isset($oldEntity)) {
@@ -64,6 +69,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		return $outputResult;
 	}
 	
+	/**
+	 * Get the old entity
+	 * @return false if not found or Mongodloid_Entity
+	 */
 	protected function getOldEntity() {
 		$old = Billrun_Factory::db()->subscribersCollection()->query($this->query)->cursor()->current();
 		if ($old->isEmpty()) {
@@ -112,7 +121,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 
 	protected function validateOverlap() {
 		$this->validatorData['_id'] = $this->oldEntity['_id'];
-		if(!isset($this->validatorData['sid'])) {
+		if(!isset($this->validatorData['sid']) && isset($this->query['sid'])) {
 			$this->validatorData['sid'] = $this->query['sid'];
 		}
 		if(!isset($this->validatorData['aid'])) {
@@ -216,7 +225,10 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	}
 
 	protected function getSubscriberData() {
-		return $this->update;
+		$oldData = $this->oldEntity->getRawData();
+		$subscriberData = array_merge($oldData, $this->update);
+		
+		return $subscriberData;
 	}
 
 }
