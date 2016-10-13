@@ -100,7 +100,7 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			$basic_data = array(
 				"grantedUnits" => $currUsagev,
 				"validityTime" => $validityTime,
-				"resultCode" => $returnCode,
+				"returnCode" => $returnCode,
 			);
 			$retMsccData[] = array_merge(Billrun_Util::parseBillrunConventionToCamelCase($msccData), $redirectionAnswer, $basic_data, $quotaHoldingTimeArray);
 		}
