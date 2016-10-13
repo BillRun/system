@@ -82,6 +82,9 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 			$this->reportError(22, Zend_Log::NOTICE);
 		}
 		
+		// Set the mongo ID
+		$this->setMongoID($jsonData);
+		
 		return true;
 	}
 
@@ -107,7 +110,25 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		return $invalidFields;
 	}
-
+		
+	/**
+	 * TODO: Use the translators instead.
+	 */
+	protected function setMongoID($queryData) {
+		// Get the mongo ID.
+		if(!isset($queryData['_id'])) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id');
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+		
+		try {
+			$this->serviceQuery['_id'] = new MongoId($queryData['_id']);
+		} catch (MongoException $ex) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+	}
+	
 	protected function getQueryFields() {
 		return Billrun_Factory::config()->getConfigValue('services.query_fields', array());
 	}

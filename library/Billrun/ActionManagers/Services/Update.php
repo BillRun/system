@@ -124,6 +124,15 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	protected function setQueryFields($queryData) {
 		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 		
+		$this->setMongoID($queryData);
+		
+		return true;
+	}
+	
+	/**
+	 * TODO: Use the translators instead.
+	 */
+	protected function setMongoID($queryData) {
 		// Get the mongo ID.
 		if(!isset($queryData['_id'])) {
 			$invalidField = new Billrun_DataTypes_InvalidField('_id');
@@ -136,8 +145,6 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
 			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
-		
-		return true;
 	}
 	
 	/**
