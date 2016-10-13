@@ -108,4 +108,7 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 		return $invalidFields;
 	}
 
+	protected function getQueryFields() {
+		return Billrun_Factory::config()->getConfigValue('services.query_fields', array());
+	}
 }
