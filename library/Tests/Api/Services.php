@@ -18,12 +18,12 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 class Tests_Api_Services extends UnitTestCase {
 	
     protected $createTests = array(
-		array('valid' => true, 'msg' => 'Only mendatory active', 'service' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
-		array('valid' => true, 'msg' => 'Only mendatory future', 'service' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
-		array('valid' => true, 'msg' => 'Only mendatory past', 'service' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory active', 'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory future', 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
+		array('valid' => true, 'msg' => 'Only mendatory past', 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 		
 		array('valid' => true, 'msg' => 'With include', 
-			  'service' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test", 
+			  'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test", 
 				'include' => array("value" => -20,
 								   'period' => array(
 										"unit" => "month",
@@ -33,7 +33,7 @@ class Tests_Api_Services extends UnitTestCase {
 				"pp_includes_external_id" => "9"
 		))),
 		array('valid' => true, 'msg' => 'With include core balance', 
-			  'service' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test", 
+			  'query' => array("from" => "-1 month","to" => "+1 month", "name" => "TestService", "price" => 100, "description" => "This is a test", 
 				'include' => array("value" => -20,
 								   'period' => array(
 										"unit" => "month",
@@ -62,6 +62,11 @@ class Tests_Api_Services extends UnitTestCase {
 		array('valid' => true, 'msg' => 'Only mendatory future updating from', 'update' => array("from" => "+2 months"), 'query' => array("from" => "+1 month","to" => "+1 year", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 		array('valid' => true, 'msg' => 'Only mendatory past updating from', 'update' => array("from" => "-2 years"), 'query' => array("from" => "-1 year","to" => "-1 month", "name" => "TestService", "price" => 100, "description" => "This is a test")),
 	);
+	
+	function testInit() {
+		// Initialize the config file.
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/services/conf.ini');
+	}
 	
     function testCreate() {
 		$create = new Tests_Api_Services_Create($this->createTests, $this);
