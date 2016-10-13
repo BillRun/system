@@ -109,11 +109,32 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {				
 				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
+				$type = (isset($field['type'])) ? ($field['type']) : (null);
+				$this->setField($queryData[$fieldName], $fieldName, $type);
 			}
 		}
 
 		return $invalidFields;
+	}
+	
+	/**
+	 * TODO: Use the translators when it is merged
+	 * @param array $field
+	 */
+	protected function setField($data, $fieldName, $type) {
+		if(!$type) {
+			$this->query[$fieldName] = $data;
+			return;
+		}
+		
+		// Translate by type.
+		if($type == 'date') {
+			$date = strtotime($data);
+			$newData = new MongoDate($date);
+			$this->setField($newData, $fieldName, null);
+		} else {
+			throw new Exception("Invalid field type");
+		}
 	}
 	
 	/**
