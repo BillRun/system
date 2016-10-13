@@ -519,14 +519,15 @@ class Billrun_Billrun {
 //			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 //		}
 		
-		// TODO: apply arategroup to new billrun object
-		if (isset($row['arategroup'])) {
+		// TODO: apply arategroups to new billrun object
+		// TODO: change arategroups to the new array structure
+		if (isset($row['arategroups'])) {
 			if (isset($row['in_plan'])) {
-				$sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
+				$sraw['groups'][$row['arategroups']]['in_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroups']]['in_plan']['totals'][key($counters)]['usagev'], 0) + $row['in_plan'];
 			}
 			if (isset($row['over_plan'])) {
-				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
-				$sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroup']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
+				$sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['usagev'] = $this->getFieldVal($sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['usagev'], 0) + $row['over_plan'];
+				$sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
 			}
 		}
 		
