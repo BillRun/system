@@ -356,6 +356,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @return Billrun_Cycle_Account | false 
 	 */
 	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$services, array &$rates) {
+		// Handle no subscribers.
+		if(!isset($accountData['subscribers'])) {
+			$accountData['subscribers'] = array();
+		}
+		
 		$accountData['cycle'] = $cycle;
 		$accountData['plans'] = &$plans;
 		$accountData['services'] = &$services;
