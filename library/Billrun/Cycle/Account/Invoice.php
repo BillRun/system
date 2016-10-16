@@ -156,6 +156,24 @@ class Billrun_Cycle_Account_Invoice {
 		
 		$invoiceRawData = $this->getRawData();
 		
+		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
+		$newRawData = $this->setInvoicID($rawDataWithSubs, $invoiceId);
+		$this->data->setRawData($newRawData);		
+
+		$ret = $this->billrun_coll->save($this->data);
+		if (!$ret) {
+			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
+		}
+	}
+
+	/**
+	 * Set the subss to the raw data array
+	 * @param array $invoiceRawData - Input array
+	 * @return array with subscribers
+	 */
+	protected function setSubscribers(array $invoiceRawData) {
 		// Add the subscribers.
 		$invoiceSubs = Billrun_Util::getFieldVal($invoiceRawData['subs'], array());
 		foreach ($this->subscribers as $currSub) {
@@ -163,18 +181,23 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		
 		$invoiceRawData['subs'] = $invoiceSubs;
-		$invoiceRawData['invoice_id'] = $invoiceId;
-		
-		$this->data->setRawData($invoiceRawData);
-		$ret = $this->billrun_coll->createAutoIncForEntity($this->data, "invoice_id", $invoiceId);
-		$this->billrun_coll->save($this->data);
-		if (is_null($ret)) {
-			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
-		} else {
-			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
-		}
+		return $invoiceRawData;
 	}
+	
+	/**
+	 * Sets the id to the raw data
+	 * @param array $invoiceRawData - Raw data to calculate id by
+	 * @param integer $invoiceId - Min invoice id
+	 * @return array Raw data with the invoice id
+	 */
+	protected function setInvoicID(array $invoiceRawData, $invoiceId) {
+		$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
+		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);
 
+		$invoiceRawData['invoice_id'] = $currentId;
+		return $invoiceRawData;
+	}
+	
 	/**
 	 * Gets the current billrun document raw data
 	 * @return Mongodloid_Entity
@@ -220,6 +243,7 @@ class Billrun_Cycle_Account_Invoice {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
+		Billrun_Factory::log("ID is: " . print_r($id_field,1));
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
