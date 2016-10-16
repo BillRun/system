@@ -21,7 +21,7 @@ abstract class Billrun_ActionManagers_Services_Action implements Billrun_ActionM
 	 */
 	public function __construct($params = array()) {
 		$this->collection = Billrun_Factory::db()->servicesCollection();
-		$this->baseCode = 1400;
+		$this->baseCode = 1500;
 	}
 
 	/**

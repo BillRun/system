@@ -20,7 +20,7 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 
 	public function __construct($testCases, $intenalTestInstance = null, $label = false) {		
 		$collection = Billrun_Factory::db()->servicesCollection();
-		$inputParameters = array('service');
+		$inputParameters = array('query');
 		parent::__construct($collection, $testCases, $inputParameters, $intenalTestInstance, $label);
 	}
 	
@@ -29,7 +29,7 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 	}
 
 	protected function getQuery($case) {
-		$query = $case['service'];
+		$query = $case['query'];
 		
 		// Remove unnecessary fields
 //		unset($query['to']);
@@ -40,7 +40,7 @@ class Tests_Api_Services_Create extends Tests_Api_Base_Create {
 	}
 
 	protected function getDataForDB($case) {
-		$data = $case['service'];
+		$data = $case['query'];
 		
 		// Translate the dates.
 		
