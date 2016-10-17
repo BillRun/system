@@ -886,17 +886,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			// update balance group (if exists); supported only on postpaid
-			foreach ($pricingData['arategroups'] as &$arategroup) {
-				$group = $arategroup['name'];
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
-//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				if (isset($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
-					$arategroup['usagesb'] = floatval($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
-				} else {
-					$arategroup['usagesb'] = 0;
-				}
-			}
+			$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_key);
 			$pricingData['usagesb'] = floatval($old_usage); /// #### ///
 		} else { // prepaid
 			$cost = $pricingData[$this->pricingField];
@@ -915,6 +905,32 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		return array($query, $update);
+	}
+
+	/**
+	 * build (on) balamce update query groups of usages
+	 * 
+	 * @param array $update update query
+	 * @param array $pricingData pricing data
+	 * @param string $balance_totals_key the balance key (usage type based)
+	 * 
+	 * @return void
+	 */
+	protected function buildBalanceGroupsUpdateQuery(&$update, &$pricingData, $balance_totals_key) {
+		if (!isset($pricingData['arategroups'])) {
+			return;
+		}
+		foreach ($pricingData['arategroups'] as &$arategroup) {
+			$group = $arategroup['name'];
+			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
+			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
+//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+			if (isset($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
+				$arategroup['usagesb'] = floatval($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+			} else {
+				$arategroup['usagesb'] = 0;
+			}
+		}
 	}
 
 	protected function initMinBalanceValues($rate, $usaget, $plan) {
@@ -1189,7 +1205,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		return $ret; // array of service objects
 	}
-	
+
 	protected function isPrepaid($row) {
 		return isset($row['charging_type']) && $row['charging_type'] === 'prepaid';
 	}
