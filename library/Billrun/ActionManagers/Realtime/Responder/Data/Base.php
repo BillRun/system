@@ -79,7 +79,10 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Data_Base extends Billr
 			$validityTime = max(min($defaultValidityTime, $secondsUntilEndOfBalance), 60); // protection - in case there is a problem with the balance or default value
 		}
 		$defaultQuotaHoldingTime = Billrun_Factory::config()->getConfigValue("realtimeevent.data.quotaHoldingTime", 0);
-		$redirectionConfig = Billrun_Factory::config()->getConfigValue("realtimeevent.data.redirect", array("active" => 0));
+		$redirectionConfig = Billrun_Factory::config()->getConfigValue("realtimeevent.data.redirect", array("finalUnitAction" => 0));
+		if (isset($redirectionConfig["finalUnitAction"])) {
+			$redirectionConfig["finalUnitAction"] = intval($redirectionConfig["finalUnitAction"]);
+		}
 
 		foreach ($this->row['mscc_data'] as $msccData) {
 			$redirectionAnswer = array();
