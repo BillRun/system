@@ -258,7 +258,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			$usage_type = $row['usaget'];
 
-			if (isset($row['usagev']) || $row['charging_type'] == 'prepaid') {  // for prepaid, volume is by balance left over
+			if (isset($row['usagev']) || $this->isPrepaid($row)) {  // for prepaid, volume is by balance left over
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
 				if ($row['type'] == 'credit') {
@@ -270,7 +270,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) {
-						return ($row['charging_type'] == 'prepaid' ? TRUE : FALSE);
+						return $this->isPrepaid($row) ? TRUE : FALSE;
 					}
 				}
 
@@ -280,7 +280,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 
 					// billrun cannot override on api calls
-					if ((!isset($row['charging_type']) || $row['charging_type'] != 'prepaid') && (!isset($row['billrun']) || $row['source'] != 'api')) {
+					if (!$this->isPrepaid($row) && (!isset($row['billrun']) || $row['source'] != 'api')) {
 						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 					}
 				}
@@ -428,7 +428,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['out_plan'] = $volumeToCharge;
 			}
 		} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
-			$ret['out_plan'] = $volumeToCharge;
+			$ret['out_plan'] = $volumeToCharge = $volume;
 		}
 
 		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
@@ -732,7 +732,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	protected function isFreeLine(&$row) {
-		if (isset($row['charging_type']) && $row['charging_type'] === 'prepaid') {
+		if ($this->isPrepaid($row)) {
 			$isFreeLine = false;
 			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row, &$isFreeLine));
 			if ($isFreeLine) {
@@ -760,7 +760,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 */
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
-		$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+		if ($this->isPrepaid($row)) {
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+		}
 		$planSettings = array(
 			'name' => $row['plan'],
 			'time' => $row['urt']->sec,
@@ -768,14 +770,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		);
 		$plan = Billrun_Factory::plan($planSettings);
 		$services = $this->loadSubscriberServices(isset($row['services']) ? $row['services'] : array(), $row['urt']->sec);
-		if ($row['charging_type'] === 'prepaid') {
+		if ($this->isPrepaid($row)) {
 			$this->initMinBalanceValues($rate, $row['usaget'], $plan);
 		} else {
 			$this->min_balance_volume = null;
 			$this->min_balance_cost = null;
 		}
 		if (!$this->loadSubscriberBalance($row, $this->min_balance_volume, $this->min_balance_cost)) { // will load $this->balance
-			if ($row['charging_type'] === 'prepaid') {
+			if ($this->isPrepaid($row)) {
 				// check first if this free call and allow it if so
 				if ($this->min_balance_cost == '0') {
 					if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
@@ -799,9 +801,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 
-		$balance_totals_key = ($row['charging_type'] === 'postpaid' ? $plan->getBalanceTotalsKey($usage_type, $rate) : $this->balance->getBalanceChargingTotalsKey($usage_type));
+		$balance_totals_key = (!$this->isPrepaid($row) ? $plan->getBalanceTotalsKey($usage_type, $rate) : $this->balance->getBalanceChargingTotalsKey($usage_type));
 
-		if ($row['charging_type'] === 'prepaid' && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
+		if ($this->isPrepaid($row) && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
@@ -878,7 +880,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			)
 		);
 
-		if (!isset($row['charging_type']) || $row['charging_type'] === 'postpaid') {
+		if (!$this->isPrepaid($row)) {
 			$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $old_usage + $volume;
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
@@ -1186,6 +1188,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 
 		return $ret; // array of service objects
+	}
+	
+	protected function isPrepaid($row) {
+		return isset($row['charging_type']) && $row['charging_type'] === 'prepaid';
 	}
 
 }
