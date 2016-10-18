@@ -20,6 +20,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $filePermissions =  0666; 
 	protected $invoice_threshold= 0.005;
 	
+	/**
+	 *
+	 * @var Mongodloid_Cursor
+	 */
+	protected $billrun_data;
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		
