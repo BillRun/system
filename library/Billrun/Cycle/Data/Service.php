@@ -12,10 +12,11 @@
 class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	
 	public function __construct(array $options) {
-		if(!isset($options['service'])) {
-			return;
+		if(!isset($options['service'], $options['cycle'])) {
+			throw new InvalidArgumentException("Received empty service!");
 		}
 		$this->plan = $options['service'];
+		$this->cycle = $options['cycle'];
 		$this->constructOptions($options);
 	}
 	
@@ -24,11 +25,10 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	 * @return type
 	 */
 	protected function getFlatLine() {
-		$flatLine = parent::getFlatLine();
+		$flatLine = parent::getFlatLine();	
 		$planValue = $flatLine['plan'];
 		unset($flatLine['plan']);
 		$flatLine['service'] = $planValue;
-		Billrun_Factory::log("Service line: " . print_r($flatLine,1));
 		return $flatLine;
 	}
 
