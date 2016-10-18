@@ -196,7 +196,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
-				Billrun_Factory::log(print_r($mongoServices,1));
 				continue;
 			}
 			
