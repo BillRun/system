@@ -25,6 +25,7 @@ class Billrun_Cycle_Service extends Billrun_Cycle_Plan {
 		// Get the charge.
 		$planData['charges'] = $charges;
 		$result = $this->getLine($planData);
+		
 		return $result;
 	}
 }
