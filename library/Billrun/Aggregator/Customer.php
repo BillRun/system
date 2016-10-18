@@ -648,7 +648,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		);
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		// Sort again because this is all just bad code
-		$cursor = $coll->aggregate($pipelines)->sort(array('id.aid' => 1, 'id.type' => -1));
+		$cursor = $coll->aggregate($pipelines);
 		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
 			(isset($results['success']) && ($results['success'] === FALSE))) {
@@ -729,7 +729,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return array(
 			'$sort' => array(
 				'aid' => 1,
-				'sid' => -1,
+				'sid' => 1,
 				'type' => -1,
 				'plan' => 1,
 				'from' => 1,
