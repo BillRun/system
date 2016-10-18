@@ -217,7 +217,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * execute the calculation process
-	 * @TODO this function mighh  be a duplicate of  @see Billrun_Calculator::calc() do we really  need the diffrence  between Rate/Pricing? (they differ in the plugins triggered)
+	 * @TODO this function might  be a duplicate of  @see Billrun_Calculator::calc() do we really  need the difference between Rate/Pricing? (they differ in the plugins triggered)
 	 */
 	public function calc() {
 		Billrun_Factory::dispatcher()->trigger('beforePricingData', array('data' => $this->data));
@@ -300,6 +300,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 			foreach ($pricingData as $key => $value) {
+				if (!is_string($value) && !is_numeric($value)) {
+					continue;
+				}
 				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
 			Billrun_Factory::log($pricingDataTxt, Zend_Log::DEBUG);
@@ -403,6 +406,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
+				$ret['arategroups'][] = array(
+					'name' => $plan->getEntityGroup(),
+					'usagev' => $volume,
+				);
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
@@ -411,14 +418,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 					$ret['arategroups'][] = array(
 						'name' => $plan->getEntityGroup(),
-						'usagev' => (isset($ret['in_group']) ? $ret['in_group'] : 0) + (isset($ret['over_group']) ? $ret['over_group'] : 0),
+						'usagev' => (isset($ret['in_group']) ? $ret['in_group'] : 0),
 					);
+				} else if ($volumeToCharge > 0) {
+					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
 				}
 
 				if ($volumeToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
 					$ret['over_group'] = $ret['over_plan'] = $this->usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
-				} else if ($volumeToCharge > 0) {
-					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
 				}
 			}
 		} else if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
@@ -756,7 +763,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @return mixed array with the pricing data on success, false otherwise
 	 * @todo refactoring and make it more abstract
 	 * @todo create unit test for this method because it's critical method
-	 * @todo add compatiblity to prepaid
+	 * @todo add compatibility to prepaid
 	 * 
 	 */
 	public function updateSubscriberBalance($row, $usage_type, $rate) {
@@ -801,22 +808,20 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 
-		$balance_totals_key = (!$this->isPrepaid($row) ? $plan->getBalanceTotalsKey($usage_type, $rate) : $this->balance->getBalanceChargingTotalsKey($usage_type));
-
 		if ($this->isPrepaid($row) && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && $this->isFreeLine($row)) {
 				return $this->getFreeRowPricingData();
 			}
 			$row['balance_ref'] = $this->balance->createRef();
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $balance_totals_key);
+			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $this->balance->getBalanceChargingTotalsKey($usage_type));
 		} else {
 			$volume = $row['usagev'];
 		}
 
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
-		$pricingData = $this->updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $balance_totals_key, $services);
+		$pricingData = $this->updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $services);
 		if ($pricingData === false) {
 			return false;
 		}
@@ -824,7 +829,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
-	protected function updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $balance_totals_key, $services) {
+	protected function updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $services) {
 		$balanceRaw = $this->balance->getRawData();
 		$tx = $this->balance->get('tx');
 		if (is_array($tx) && empty($tx)) {
@@ -843,7 +848,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$balance_id = $this->balance->getId();
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-		list($query, $update) = $this->updateSubscriberBalanceBuildQuery($pricingData, $balance_totals_key, $row, $volume, $balanceRaw);
+		list($query, $update) = $this->updateSubscriberBalanceBuildQuery($pricingData, $row, $volume, $balanceRaw);
 
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->balances->update($query, $update);
@@ -863,9 +868,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
-	protected function updateSubscriberBalanceBuildQuery($pricingData, $balance_totals_key, $row, $volume, $balanceRaw) {
+	protected function updateSubscriberBalanceBuildQuery($pricingData, $row, $volume, $balanceRaw) {
 		$update = array();
 		$update['$set']['tx.' . $row['stamp']] = $pricingData;
+		$balance_totals_key = $this->getBalanceTotalsKey($row, $pricingData);
 		if (!isset($this->balance->get('balance')['totals'][$balance_totals_key]['usagev'])) {
 			$old_usage = 0;
 		} else {
@@ -886,7 +892,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$set']['balance.cost'] = $balanceRaw['balance']['cost'] + $pricingData[$this->pricingField];
 			// update balance group (if exists); supported only on postpaid
-			$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_key);
+			$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_totals_key);
 			$pricingData['usagesb'] = floatval($old_usage); /// #### ///
 		} else { // prepaid
 			$cost = $pricingData[$this->pricingField];
@@ -908,7 +914,24 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * build (on) balamce update query groups of usages
+	 * method to get balance totals key
+	 * 
+	 * @param array $row
+	 * @param array $pricingData rate handle
+	 * 
+	 * @return string
+	 */
+	protected function getBalanceTotalsKey($row, $pricingData) {
+		if ($this->isPrepaid($row)) {
+			return $this->balance->getBalanceChargingTotalsKey($row['usaget']);
+		} else if (isset($pricingData['in_plan']) || isset($pricingData['over_plan'])) {
+			return $row['usaget'];
+		}
+		return 'out_plan_' . $row['usaget'];
+	}
+
+	/**
+	 * build (on) balance update query groups of usages
 	 * 
 	 * @param array $update update query
 	 * @param array $pricingData pricing data

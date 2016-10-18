@@ -410,6 +410,15 @@ class Billrun_Plan {
 		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 
+	/**
+	 * method to get balance totals key
+	 * 
+	 * @param string $usage_type
+	 * @param array $rate rate handle
+	 * @return string
+	 * 
+	 * @deprecated since version 5.2
+	 */
 	public function getBalanceTotalsKey($usage_type, $rate) {
 		if ($this->isRateInBasePlan($rate, $usage_type)) {
 			$usage_class_prefix = "";
