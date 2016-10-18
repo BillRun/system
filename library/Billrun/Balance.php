@@ -77,8 +77,8 @@ class Billrun_Balance extends Mongodloid_Entity {
 		}
 
 		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-		$from = Billrun_Billrun::getBillrunStartTimeByDate($urtDate);
-		$to = Billrun_Billrun::getBillrunEndTimeByDate($urtDate);
+		$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
+		$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 		$plan_ref = $plan->createRef();
 		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
