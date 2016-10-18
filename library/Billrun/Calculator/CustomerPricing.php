@@ -126,7 +126,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * balance that customer pricing update
 	 * 
-	 * @param Billrun_Balance $balance
+	 * @param Billrun_Balance
 	 */
 	protected $balance;
 
@@ -147,7 +147,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * call offset
 	 * 
-	 * @param int $balance
+	 * @param int
 	 */
 	protected $call_offset = 0;
 
@@ -339,8 +339,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$row['plan_ref'] = $plan_ref;
 		}
 		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
-		$balance = new Billrun_Balance($instanceOptions);
-		if (!$balance || !$balance->isValid()) {
+		$loadedBalance = new Billrun_Balance($instanceOptions);
+		if (!$loadedBalance || !$loadedBalance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
 			$row['apr'] = 0;
@@ -348,7 +348,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		} else {
 			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		}
-		$this->balance = $balance;
+		$this->balance = $loadedBalance;
 		return true;
 	}
 
@@ -391,14 +391,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param mixed $rate The rate of associated with the usage.
 	 * @param mixed $subscriberBalance the  subscriber that generated the usage.
 	 * @param Billrun_Plan $plan the subscriber's current plan
-	 * @param array $services of Billrun_Service objects
 	 * @param array $row the row handle
 	 * @return type
 	 */
-	protected function getLinePricingData($volume, $usageType, $rate, $subscriberBalance, $plan, $services, $row = null) {
+	protected function getLinePricingData($volume, $usageType, $rate, $subscriberBalance, $plan, $row = null) {
 		if ($this->isFreeLine($row)) {
 			return $this->getFreeRowPricingData();
 		}
+		$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
 		$ret = array();
 		if ($plan->isRateInEntityGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInEntityGroup($subscriberBalance, $rate, $usageType);
@@ -412,7 +412,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				);
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
-					$ret['in_group'] = $ret['in_plan'] = $volume - $volumeToCharge;
+					$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
 				}
 				if ($plan->getEntityGroup() !== FALSE) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
@@ -498,14 +498,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			if ($volumeRequired <= $groupVolume) {
 				$groups[] = array(
-					'name' => $service,
+					'name' => $service->getEntityGroup(),
 					'usagev' => $volumeRequired,
 				);
 				$volumeRequired = 0;
 				break; // foreach
 			}
-			$groups[][$service] = array(
-				'name' => $service,
+			$groups[] = array(
+				'name' => $service->getEntityGroup(),
 				'usagev' => $groupVolume,
 			);
 			$volumeRequired -= $groupVolume;
@@ -776,7 +776,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			/* 'disableCache' => true */
 		);
 		$plan = Billrun_Factory::plan($planSettings);
-		$services = $this->loadSubscriberServices(isset($row['services']) ? $row['services'] : array(), $row['urt']->sec);
 		if ($this->isPrepaid($row)) {
 			$this->initMinBalanceValues($rate, $row['usaget'], $plan);
 		} else {
@@ -821,7 +820,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		$this->countConcurrentRetries++;
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
-		$pricingData = $this->updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $services);
+		$pricingData = $this->updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume);
 		if ($pricingData === false) {
 			return false;
 		}
@@ -829,7 +828,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
-	protected function updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume, $services) {
+	protected function updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume) {
 		$balanceRaw = $this->balance->getRawData();
 		$tx = $this->balance->get('tx');
 		if (is_array($tx) && empty($tx)) {
@@ -840,7 +839,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
 			return $pricingData;
 		}
-		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $services, $row);
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $this->balance, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 			return $pricingData;

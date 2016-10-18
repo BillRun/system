@@ -24,6 +24,17 @@ trait Billrun_Traits_Group {
 	protected $groupSelected = null;
 	protected $groups = null;
 
+	/**
+	 * method to pull current plan data
+	 * 
+	 * @param string $name the property name; could be mongo key
+	 * 
+	 * @return mixed the property value
+	 */
+	public function get($name) {
+		return $this->data->get($name);
+	}
+
 	public function getName() {
 		return $this->get('name');
 	}

@@ -16,7 +16,7 @@
 class Billrun_Service {
 
 	use Billrun_Traits_Group;
-	
+
 	/**
 	 * constructor
 	 * set the data instance
@@ -32,12 +32,12 @@ class Billrun_Service {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$this->data = $this->load(new MongoId($params['id']));
+			$this->load(new MongoId($params['id']));
 		} else if (isset($params['name'])) {
-			$this->data = $this->load($params['name'], $time, 'name');
+			$this->load($params['name'], $time, 'name');
 		}
 	}
-	
+
 	/**
 	 * load the service from DB
 	 * 
@@ -62,7 +62,6 @@ class Billrun_Service {
 		$serviceRecord = $servicesColl->query($serviceQuery)->lessEq('from', $queryTime)->cursor()->current();
 		$serviceRecord->collection($servicesColl);
 		$this->data = $serviceRecord;
-
 	}
 
 }

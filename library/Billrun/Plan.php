@@ -177,17 +177,6 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * method to pull current plan data
-	 * 
-	 * @param string $name the property name; could be mongo key
-	 * 
-	 * @return mixed the property value
-	 */
-	public function get($name) {
-		return $this->data->get($name);
-	}
-
-	/**
 	 * check if a usage type included as part of the plan
 	 * @param type $rate
 	 * @param type $type
