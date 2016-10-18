@@ -243,7 +243,6 @@ class Billrun_Cycle_Account_Invoice {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
-		Billrun_Factory::log("ID is: " . print_r($id_field,1));
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
