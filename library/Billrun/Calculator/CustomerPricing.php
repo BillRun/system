@@ -425,7 +425,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				}
 
 				if ($volumeToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
-					$ret['over_group'] = $ret['over_plan'] = $this->usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
+					$volumeToCharge = $ret['over_group'] = $ret['over_plan'] = $this->usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
 				}
 			}
 		} else if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
