@@ -120,7 +120,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function aggregatePlans() {
 		$plans = $this->records['plans'];
 		$aggregator = new Billrun_Cycle_Plan();
-		
+		Billrun_Factory::log("Aggregating plans!");		
 		return $this->generalAggregate($plans, $aggregator);
 	}
 	
@@ -193,7 +193,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		foreach ($services as &$arrService) {
 			// Plan name
-			$index = $arrService['name'];
+			$index = $arrService['service'];
 			if(!isset($mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
 				continue;
