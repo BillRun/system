@@ -19,13 +19,13 @@ class Billrun_Billingcycle {
 	 * Table holding the values of the charging end dates.
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
-	protected $cycleEndTable = null;
+	protected static $cycleEndTable = null;
 	
 	/**
 	 * Table holding the values of the charging start dates.
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
-	protected $cycleStartTable = null;
+	protected static $cycleStartTable = null;
 	
 	/**
 	 * returns the end timestamp of the input billing period
