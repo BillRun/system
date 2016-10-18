@@ -115,7 +115,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
 			unset($constructed['plans']);
-			$filterKey = $sub['sto'];
+			unset($constructed['services']);
+			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
 				$constructed += $filtered[$filterKey]; 
 			} else {
@@ -185,6 +186,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 
 		if($to > $endTime) {
 			$to = $endTime;
+			Billrun_Factory::log("Taking the end time! " . $endTime);
 		}
 		
 		$subscriber['firstname'] = $subscriber['first_name'];
@@ -215,46 +217,73 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 	
 	/**
+	 * Build the aggregator plan data array
+	 * @param array $plans
+	 * @return array
+	 */
+	protected function buildPlansSubAggregator(array $plans) {
+		$name = null;
+		$from = null;
+		$to = null;
+		$aggregatorData = array();
+		
+		// Go through the plans
+		foreach ($plans as $subPlan) {
+			// First iteration.
+			if($name === null) {
+				$name = $subPlan['plan'];
+				$from = $subPlan['from']->sec;
+				$to = $subPlan['to']->sec;
+				continue;
+			}
+			$currName = $subPlan['plan'];
+			// If it is the same plan name, continue
+			if($name == $currName) {
+				$to = $subPlan['to']->sec;
+				continue;
+			}
+			
+			// It is a different plan name, construct the aggregator plan record
+			$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
+			$aggregatorData["$to"]['plans'][] = $toAdd;
+			
+			// Update all the details.
+			$name = $subPlan['plan'];
+			$from = $subPlan['from']->sec;
+			$to = $subPlan['to']->sec;
+		}
+		// Add the last value.
+		$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
+		$aggregatorData["$to"]['plans'][] = $toAdd;
+			
+		return $aggregatorData;
+	}
+	
+	/**
 	 * Create a subscriber aggregator from an array of subscriber records.
 	 * @param array $current - Array of subscriber records.
 	 * @param int $endTime
 	 * @todo: Rewrite this function better
 	 */
 	protected function buildSubAggregator(array $current, $endTime) {		
-		$aggregatorData = array();
+		$servicesAggregatorData = array();
 		
-		$plan = null;
+		$subscriberPlans = array();
 		$services = array();
 		$servicesData = array();
+		$sto = 0;
 		foreach ($current as $subscriber) {
-			// Get the plan
-			$currPlan = $subscriber['plan'];
-			$arrPlanDate = $subscriber['plans'][count($subscriber['plans']) - 1];
-			// If it is the same plan
-			if(($currPlan && !$plan) || ($plan['name'] !== $currPlan)) {
-				// Update the last plan
-				if($plan) {
-					$planEnd = $arrPlanDate['from'];
-					Billrun_Factory::log("Plan end: " . $planEnd);
-					$planStart = $plan['start'];
-					if(!($planStart instanceof MongoDate)) {
-						throw new Exception("For not plan dates are mongo dates");
-					}
-					
-					$aggregatorData[$planEnd]['plans'][] = array("plan" => $plan['name'], "start" => $planStart->sec, "end" => $planEnd);
-				}
-
-				// Set the plan
-				$plan['name'] = $currPlan;
-				$plan['start'] = $arrPlanDate['plan_activation'];
-			}
+			$sto = $subscriber['sto'];
+			
+			// Get the plans
+			$subscriberPlans[]= $subscriber['plans'][0];
 			
 			// Get the services.
 			$currServices = array();
 			if(isset($subscriber['services'])) {
 				$currServices = $subscriber['services'];
 			}
-			
+				
 			// Check the differences in the services.
 			$removed  = array_diff($services, $currServices);
 			$added = array_diff($currServices, $services);
@@ -269,7 +298,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 					Billrun_Factory::log("from " . $serviceStart);
 					throw new Exception("For not plan dates are mongo dates");
 				}
-				$serviceRow = array("service" => $addedService, "start" => $serviceStart->sec);
+				$serviceRow = array("service" => $key, "start" => $serviceStart->sec);
 				$servicesData[$key] = $serviceRow;
 			}
 			
@@ -278,30 +307,26 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$key = $removedService['name'];
 				$updateService = $servicesData[$key];
 				unset($servicesData[$key]);
-				$serviceEnd = $arrPlanDate['from'];
+				$serviceEnd = $subscriber['plans'][0]['from']->sec;
 				$updateService['end'] = $serviceEnd;
-				
+
 				// Push back
-				$aggregatorData[$serviceEnd]['services'][] = $updateService;
+				$servicesAggregatorData[$serviceEnd][] = $updateService;
 			}
 		}
-		
-		// Handle all the remaining values.
-		if($plan) {
-			$planStart = $plan['start'];
-			if(!($planStart instanceof MongoDate)) {
-				throw new Exception("For not plan dates are mongo dates");
-			}
-			$planData = array("plan" => $plan['name'], "start" => $planStart->sec, "end" => $endTime);
-			$aggregatorData[$endTime]['plans'][] = $planData;
-			$aggregatorData[$endTime]['next_plan'] = $plan;
-		}
-		
+
 		foreach ($servicesData as $lastService) {
-			$lastService['end'] = $endTime;
-			$aggregatorData[$endTime]['services'][] = $lastService;
+			$lastService['end'] = $sto;
+			$servicesAggregatorData["$sto"][] = $lastService;
 		}
 		
-		return $aggregatorData;
+		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans);
+		
+		// Merge the results
+		foreach ($servicesAggregatorData as $key => $value) {
+			$planAggregatorData[$key]['services'] = $value;
+		}
+		
+		return $planAggregatorData;
 	}
 }
