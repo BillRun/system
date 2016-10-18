@@ -19,12 +19,14 @@ class Billrun_Plans_Charge_Month extends Billrun_Plans_Charge_Base {
 	 */
 	public function getPrice() {
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->start())));
-		$formatEnd = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->end())));
+		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
+//		$formatEnd = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->end())));
+		$formatEnd = date(Billrun_Base::base_dateformat, $this->cycle->end() - 1);
 		
 		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
-		$endOffset = Billrun_Plan::getMonthsDiff($formatEnd, $formatActivation);
+		$endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
 		$charge = 0;
+		
 		foreach ($this->price as $tariff) {
 			$charge += Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset);
 		}
