@@ -211,7 +211,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$rates = $rawResults['rates'];
 		$services = $rawResults['services'];
 		$data = $rawResults['data'];
-
+		Billrun_Factory::log("Raw data: " . print_r($data,1));
+		die;
 		
 		$sortedRates = $this->constructRates($rates);
 		$sortedPlans = $this->constructPlans($plans);
@@ -646,14 +647,23 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'card_token' => 1,
 			)
 		);
+		
+	
 		$coll = Billrun_Factory::db()->subscribersCollection();
+		return $this->aggregatePipelines($pipelines, $coll);
+	}
+	
+	
+	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
+		Billrun_Factory::log("Pipelines: " . print_r($pipelines,1));
+		
 		// Sort again because this is all just bad code
-		$cursor = $coll->aggregate($pipelines);
+		$cursor = $collection->aggregate($pipelines);
 		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
 			(isset($results['success']) && ($results['success'] === FALSE))) {
 			return array();
-		} 
+		} 	
 		return $results;
 	}
 	
@@ -729,7 +739,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return array(
 			'$sort' => array(
 				'aid' => 1,
-				'sid' => 1,
+				'sid' => -1,
 				'type' => -1,
 				'plan' => 1,
 				'from' => 1,
