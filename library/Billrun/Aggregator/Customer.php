@@ -211,8 +211,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$rates = $rawResults['rates'];
 		$services = $rawResults['services'];
 		$data = $rawResults['data'];
-		Billrun_Factory::log("Raw data: " . print_r($data,1));
-		die;
 		
 		$sortedRates = $this->constructRates($rates);
 		$sortedPlans = $this->constructPlans($plans);
@@ -577,7 +575,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if ($aid) {
 			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
 		}
-		$pipelines[] = $this->getSortPipeline();
 		
 		$pipelines[] = array(
 			'$group' => array(
@@ -639,6 +636,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 			),
 		);
+		
+		$pipelines[] = $this->getSortPipeline();
+
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 0,
@@ -655,9 +655,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
-		Billrun_Factory::log("Pipelines: " . print_r($pipelines,1));
-		
-		// Sort again because this is all just bad code
 		$cursor = $collection->aggregate($pipelines);
 		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
@@ -738,11 +735,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
-				'aid' => 1,
-				'sid' => -1,
-				'type' => -1,
-				'plan' => 1,
-				'from' => 1,
+				'_id.aid' => 1,
+				'_id.sid' => 1,
+				'_id.type' => -1,
+				'_id.plan' => 1,
+				
+				// TODO: We might want to uncomment this
+//				'plan_dates.from' => 1,
 			),
 		);
 	}
