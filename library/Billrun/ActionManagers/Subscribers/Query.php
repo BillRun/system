@@ -27,12 +27,6 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	protected $queryInRange = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying subscriber"));
-	}
-
-	/**
 	 * Query the subscribers collection to receive data in a range.
 	 */
 	protected function queryRangeSubscribers() {
@@ -48,9 +42,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 				$rawItem = $line->getRawData();
 				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem);
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 20;
-			$error = 'failed quering DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+		} catch (\MongoException $e) {
+			$errorCode =  20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -68,13 +61,12 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			$returnData = array();
-			$this->reportError(Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 23);
+			$this->reportError(23);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying subscriber",
 			'details' => $returnData
 		);
 		return $outputResult;
@@ -125,7 +117,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
+			$errorCode = 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -134,7 +126,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 
 		// If there were errors.
 		if (empty($this->subscriberQuery)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 21;
+			$errorCode = 22;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
 			return false;
 		}

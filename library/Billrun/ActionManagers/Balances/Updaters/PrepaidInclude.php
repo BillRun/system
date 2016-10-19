@@ -36,14 +36,14 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 	public function update($query, $recordToSet, $subscriberId) {
 		// If updating by prepaid include the user must specify an expiration date.
 		if (!$recordToSet['to']) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 6;
+			$errorCode =  6;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// No value is set.
 		if (!isset($recordToSet['value'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 7;
+			$errorCode =  7;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -52,7 +52,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$prepaidIncludes = $db->prepaidincludesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
 		$prepaidRecord = $this->getRecord($query, $prepaidIncludes, $this->getTranslateFields());
 		if (!$prepaidRecord) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 8;
+			$errorCode =  8;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

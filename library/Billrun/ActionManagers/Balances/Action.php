@@ -11,8 +11,9 @@
  *
  */
 // TODO: Make an interface for these classes.
-abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionManagers_APIAction {
-
+abstract class Billrun_ActionManagers_Balances_Action  {
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 
 	/**
@@ -20,8 +21,7 @@ abstract class Billrun_ActionManagers_Balances_Action extends Billrun_ActionMana
 	 */
 	public function __construct($params) {
 		$this->collection = Billrun_Factory::db()->balancesCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/balances/errors.ini");
-		parent::__construct($params);
+		$this->baseCode = 1200;
 	}
 
 	/**

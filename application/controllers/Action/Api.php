@@ -37,6 +37,11 @@ abstract class ApiAction extends Action_Base {
 			$output['input'] = $input;
 		}
 
+		// Throwing a general exception.
+		// TODO: Debug default code
+		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
+		throw $ex;
+		
 		// If failed to report to controller.
 		if (!$this->getController()->setOutput(array($output))) {
 			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);

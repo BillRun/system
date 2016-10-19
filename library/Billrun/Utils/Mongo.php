@@ -154,6 +154,33 @@ class Billrun_Utils_Mongo {
 	}
 	
 	/**
+	 * Coverts a $seperator seperated array to an haierchy tree
+	 * @param string $array - Input string
+	 * @param string $seperator 
+	 * @param mixed $toSet - Value to be set to inner level of array
+	 * @return array
+	 */
+	public static function mongoArrayToInvalidFieldsArray($array, $seperator) {
+		if(!is_string($array)) {
+			return null;
+		}
+		
+		$parts = explode($seperator, $array);
+		$result = array();
+		$previous = null;
+		$iter = &$result;
+		foreach ($parts as $value) {
+			if($previous !== null) {
+				$iter[$previous] = new Billrun_DataTypes_InvalidField($value);
+				$iter = &$iter[$previous];
+			}
+			$previous = $value;
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * convert assoc array to MongoDB query
 	 * 
 	 * @param array $array the array to convert
@@ -271,7 +298,7 @@ class Billrun_Utils_Mongo {
 			$from_date = new MongoDate(strtotime($searchKeys['from']));
 		}
 		if (!$from_date) {
-			return "date error";
+			return "date error 1";
 		}
 		unset($searchKeys['from']);
 		if ($searchKeys['to'] instanceof MongoDate) {
@@ -280,18 +307,25 @@ class Billrun_Utils_Mongo {
 			$to_date = new MongoDate(strtotime($searchKeys['to']));
 		}
 		if (!$to_date) {
-			return "date error";
+			return "date error 2";
 		}
 		unset($searchKeys['to']);
 		
-		if(!$new && !isset($searchKeys['_id']) || !($id = new MongoId(isset($searchKeys['_id'])? $searchKeys['_id'] : NULL))) {
-			return "id error";
+		if(!$new && !isset($searchKeys['_id'])) {
+			return "id error 1";
 		}
-		unset($searchKeys['_id']);
+		
+ 		if(!$new) {
+			$id = self::getId($searchKeys);
+			if(is_string($id)) {
+				return $id;
+			}
+			unset($searchKeys['_id']);
+		}
 		
 		$ret = array();
-		foreach ($searchKeys as $pair) {
-			$ret[] = $pair;
+		foreach ($searchKeys as $key => $pair) {
+			$ret[$key] = $pair;
 		}
 		$ret['$or'] = array(
 				array('from' => array(
@@ -307,5 +341,16 @@ class Billrun_Utils_Mongo {
 			$ret['_id'] = array('$ne' => $id);
 		}
 		return $ret;
+	}
+	
+	protected static function getId($searchKeys) {
+		$id = isset($searchKeys['_id']) ? ($searchKeys['_id']) : (NULL);
+		if (!$id) {
+			return "id error 2";			
+		}
+		if($id instanceof Mongodloid_Id) {
+			return $id->getMongoID();
+		}
+		return $id;
 	}
 }

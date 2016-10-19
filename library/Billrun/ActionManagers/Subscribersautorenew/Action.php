@@ -10,17 +10,18 @@
  * This is a prototype for a subscriber action.
  *
  */
-abstract class Billrun_ActionManagers_Subscribersautorenew_Action extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Subscribersautorenew_Action {
 
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
 	public function __construct($params) {
+		$this->baseCode = 1300;
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/autorenew/errors.ini");
-		parent::__construct($params);
 	}
 
 	protected function normalizeInterval($interval) {

@@ -132,10 +132,12 @@
                 "editable": false
             }, {
                 "field_name": "firstname",
-                "mandatory": true
+                "mandatory": true,
+                "title": "First name"
             }, {
                 "field_name": "lastname",
-                "mandatory": true
+                "mandatory": true,
+                "title": "Last name"
             }, {
                 "field_name": "email",
                 "mandatory": true
@@ -154,6 +156,10 @@
                 "editable": false,
                 "display": false
             }, {
+                 "field_name": "payment_gateway",
+                 "editable": false,
+ 				 "display": true
+             }, {
                 "field_name": "personal_id",
                 "editable": false,
                 "display": false
@@ -259,5 +265,6 @@
                 "class_method": "getHeaderDate"
             }
         }
-    }
+    },
+	"payment_gateways" : [ ]
 }
