@@ -322,8 +322,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 * 
 	 * @return Billrun_Balance
-	 * 
-	 * @todo Add compatiblity to prepaid
 	 */
 	public function loadSubscriberBalance($row, $granted_volume = null, $granted_cost = null) {
 		// we moved the init of plan_ref to customer calc, we leave it here only for verification and avoid b/c issues
@@ -358,6 +356,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * 
 	 * @param array $sub_balance the subscriber balance
 	 * @return type
+	 * 
+	 * @deprecated since version 4.0
 	 */
 	protected function getPlan($sub_balance) {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
@@ -552,6 +552,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @todo : changed mms behavior as soon as we will add mms to rates
 	 * 
 	 * @return array the calculated charges
+	 * @todo move to rate class or rates util
 	 */
 	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
@@ -593,6 +594,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $ret;
 	}
 
+	/**
+	 * 
+	 * @param type $rate
+	 * @param type $usageType
+	 * @param type $volume
+	 * @param type $plan
+	 * @param type $offset
+	 * @param type $time
+	 * @return type
+	 * 
+	 * @todo move to rate class or rates util
+	 */
 	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
 	}
@@ -672,6 +685,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param int $offset call start offset in seconds
 	 * 
 	 * @return int the calculated volume
+	 * 
+	 * @todo move to rate class or rates util
 	 */
 	protected function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
 		// Check if the price is enough for default usagev
@@ -828,6 +843,19 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
+	/**
+	 * method to update subscriber balance to db
+	 * 
+	 * @param Mongodloid_Entity $row the input line
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param Billrun_Plan $plan the customer plan
+	 * @param string $usage_type The type  of the usage (call/sms/data)
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * 
+	 * @return mixed on success update return pricing data array, else false
+	 * 
+	 * @todo move to balance object
+	 */
 	protected function updateSubscriberBalanceDb($row, $rate, $plan, $usage_type, $volume) {
 		$balanceRaw = $this->balance->getRawData();
 		$tx = $this->balance->get('tx');
@@ -867,6 +895,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
+	/**
+	 * method to build update query of the balance
+	 * 
+	 * @param array $pricingData pricing data array
+	 * @param Mongodloid_Entity $row the input line
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param array $balanceRaw balance array details
+	 * 
+	 * @return array update query array (mongo style)
+	 * 
+	 * @todo move to balance object
+	 */
 	protected function updateSubscriberBalanceBuildQuery($pricingData, $row, $volume, $balanceRaw) {
 		$update = array();
 		$update['$set']['tx.' . $row['stamp']] = $pricingData;
@@ -1027,6 +1067,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		}
 	}
 
+	/**
+	 * method to load rates to memory
+	 * 
+	 * @deprecated since version 4.0
+	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$rates = $rates_coll->query()->cursor();
@@ -1056,12 +1101,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
 	 * @param type $db_ref
+	 * 
+	 * @deprecated since version 4.0
 	 */
 	protected function getBalancePlan($sub_balance) {
 		return $this->getPlanByRef($sub_balance->get('current_plan', true));
 	}
 
+	/**
+	 * method to get plan details
+	 * 
+	 * @param type $plan_ref
+	 * @return type
+	 * 
+	 * @deprecated since version 4.0
+	 */
 	protected function getPlanByRef($plan_ref) {
+		Billrun_Factory::log("Use of deprecated method", Zend_Log::NOTICE);
 		if (isset($plan_ref['$id'])) {
 			$id_str = strval($plan_ref['$id']);
 			if (isset($this->plans[$id_str])) {
@@ -1228,6 +1284,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $ret; // array of service objects
 	}
 
+	/**
+	 * check if row is prepaid
+	 * 
+	 * @param array $row row handled by the calculator
+	 * 
+	 * @return boolean true it it's prepaid row
+	 */
 	protected function isPrepaid($row) {
 		return isset($row['charging_type']) && $row['charging_type'] === 'prepaid';
 	}

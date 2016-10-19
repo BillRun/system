@@ -28,7 +28,7 @@ class Billrun_Plan {
 	 * constructor
 	 * set the data instance
 	 * 
-	 * @param array $params array of parmeters (plan name & time)
+	 * @param array $params array of parameters (plan name & time)
 	 */
 	public function __construct(array $params = array()) {
 		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) && (!isset($params['data']))) {
