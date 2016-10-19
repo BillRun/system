@@ -47,7 +47,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function updateRedirectUrl($result) {
 		parse_str($result, $resultArray);
-		if ($resultArray['ACK'] != "Success") {
+		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
 			throw new Exception($resultArray['L_LONGMESSAGE0']);
 		}
 
@@ -93,6 +93,87 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 				'transaction_exhausted' => true
 			)
 		);
+	}
+	
+	protected function setConnectionParameters($params){
+		if ((!isset($params["username"])) || (!isset($params["password"])) || (!isset($params["signature"]))){
+			throw new Exception("Missing necessary credentials");
+		}
+		
+		return array(
+			'username' => $params["user"],
+			'password' => $params["password"],
+			'signature' => $params["signature"]
+		);
+	}
+	
+	
+	protected function pay($gatewayDetails){
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
+		$paymentString = http_build_query($paymentArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+
+		$status = $this->payResponse($result);
+		if ($status == "Pending"){
+			// TODO: Handle pending payments.
+		}
+	}
+	
+	protected function payResponse($result){
+		$resultArray = array();
+		parse_str($result, $resultArray);
+		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
+			throw new Exception($resultArray['L_LONGMESSAGE0']);
+		}
+		return $resultArray['PAYMENTSTATUS'];
+		
+		// TODO: redirect to success page or failure
+	}
+	
+	
+	protected function buildPaymentRequset($gatewayDetails){
+		$this->conf['user'] = "shani.dalal_api1.billrun.com";
+		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
+		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
+
+		return $post_array = array(
+			'USER' => $this->conf['user'],
+			'PWD' => $this->conf['password'],
+			'SIGNATURE' => $this->conf['signature'],
+			'METHOD' => "DoReferenceTransaction",
+			'VERSION' => "95",
+			'AMT' => $gatewayDetails['amount'],
+			'CURRENCYCODE' => $gatewayDetails['currency'],
+			'PAYMENTACTION' => "SALE", 
+			'REFERENCEID' => $gatewayDetails['card_token'],
+		);
+	}
+	
+	
+	public function authenticateCredentials($params){
+		$authArray = array(
+			'USER' => $params['username'],
+			'PWD' => $params['password'],
+			'SIGNATURE' => $params['signature'],
+			'METHOD' => "GetPalDetails",
+			'VERSION' => "95",
+		);
+
+		$authString = http_build_query($authArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		$resultArray = array();
+		parse_str($result, $resultArray);
+		$message = $resultArray['L_LONGMESSAGE0'];
+		if ($message == "Security header is not valid"){
+			return false;
+		}
+		else{
+			return true;
+		}
 	}
 
 }

@@ -7,6 +7,8 @@
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 require_once APPLICATION_PATH . '/library/vendor/autoload.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
 /**
  * This class returns the available payment gateways in Billrun.
@@ -22,20 +24,22 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	public function listAction() {
-		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways');
+		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
+		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
 		$settings = array();
-		foreach ($gateways as $name => $properties) {
+		foreach ($gateways as $name) {
+			$setting = array();
 			$setting['name'] = $name;
-			foreach ($properties as $property => $value) {
-				$setting[$property] = $value;
-				if ($property == 'omnipay_supported' && $value == true) {
-					$gateway = Omnipay\Omnipay::create($name);
-					$fields = $gateway->getParameters();
-					$setting['params'] = $fields;
-				} else if ($name == 'CreditGuard') {  // TODO: make more generic when there's generic payment gateways class.
-					$setting['params'] = array("user" => "", "password" => "", 'terminal_id' => "");
-				}
+			$setting['supported'] = true;
+			$setting['image_url'] = $imagesUrl[$name];
+			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			if (is_null($paymentGateway)){
+				$setting['supported'] = false;
+				$settings[] = $setting;
+				break;
 			}
+			$fields = $paymentGateway->getDefaultParameters();
+			$setting['params'] = $fields;
 			$settings[] = $setting;
 		}
 		$this->setOutput(array(
@@ -44,7 +48,7 @@ class PaymentGatewaysController extends ApiController {
 			'details' => empty($settings) ? array() : $settings,
 		));
 	}
-
+	
 	protected function render($tpl, array $parameters = array()) {
 		return parent::render('index', $parameters);
 	}
@@ -56,7 +60,8 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-		$data = $this->validateData($request);
+	//	$data = $this->validateData($request);
+	$data = $request->get('data');
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
@@ -76,7 +81,7 @@ class PaymentGatewaysController extends ApiController {
 		$aid = $jsonData['aid'];
 		$returnUrl = $jsonData['return_url'];
 		if (empty($returnUrl)) {
-			$returnUrl = Billrun_Factory::config()->getConfigValue('cg_return_url');
+			$returnUrl = Billrun_Factory::config()->getConfigValue('return_url'); 
 		}
 
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
@@ -104,7 +109,7 @@ class PaymentGatewaysController extends ApiController {
 	}
 	
 
-	public function PayAction() {  
+	public function payAction() {  
 		$request = $this->getRequest();
 		$stamp = $request->get('stamp'); 
 		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)){
@@ -112,7 +117,12 @@ class PaymentGatewaysController extends ApiController {
 		}	
 		Billrun_PaymentGateway::makePayment($stamp);
 	}
-
+	
+	
+	public function successAction() {  
+		print_r("SUCCESS"); 
+	}
+	
 	/**
 	 * Validates the input data.
 	 * @return data - Request data if validated, null if error.

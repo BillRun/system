@@ -179,5 +179,115 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			)
 		);
 	}
+		
+	protected function setConnectionParameters($params){
+		
+	}
+	
+	
+	public function getDefaultParameters(){
+		return array("user" => "", "password" => "", 'terminal_id' => "", 'mid' => "");
+	}
+	
+	public function authenticateCredentials($params){
+		$cgConf['tid'] = $params['terminal_id'];
+		$cgConf['mid'] = $params['mid'];
+		$cgConf['user'] = $params['user'];
+		$cgConf['password'] = $params['password'];
+		
+		 $authArray = array(
+			'user' => $cgConf['user'],
+			'password' => $cgConf['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
+							<request>
+							 <language>HEB</language>
+							 <command>inquireTransactions</command>
+							 <inquireTransactions>
+							  <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
+							  <mainTerminalNumber/>
+							  <queryName>mpiTransaction</queryName>
+							  <mid>' . $cgConf['mid'] . '</mid>
+							  <mpiTransactionId>' . 1 . '</mpiTransactionId>
+							  <mpiValidation>Token</mpiValidation>
+							  <userData1/>
+							  <userData2/>
+							  <userData3/>
+							  <userData4/>
+							  <userData5/>
+							 </inquireTransactions>
+							</request>
+					   </ashrait>'
+		);
+		 
+		$authString = http_build_query($authArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (strpos(strtoupper($result), 'HEB')) {
+				$result = iconv("utf-8", "iso-8859-8", $result);
+			}
+		$xmlObj = simplexml_load_string($result);
+		$codeResult = (string )$xmlObj->response->result;
+		if ($codeResult == "405"){
+			return false;
+		}
+		else{
+			return true;
+		}
+	}
+	
+	protected function pay($gatewayDetails){
+		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
+		$paymentString = http_build_query($paymentArray);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $paymentString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (strpos(strtoupper($result), 'HEB')) {
+			$result = iconv("utf-8", "iso-8859-8", $result);
+		}
+		$xmlObj = simplexml_load_string($result);
+		$codeResult = (string )$xmlObj->response->result;
+		if ($codeResult != "000") {
+			throw new Exception((string )$xmlObj->response->message);
+		}
+		
+	}
+
+	protected function buildPaymentRequset($gatewayDetails) {
+		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
+		$this->cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$this->cgConf['amount'] = (int) $gatewayDetails['amount'];
+		$this->cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
+		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
+		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
+		$this->cgConf['language'] = "ENG";
+
+		return $post_array = array(
+			'user' => $this->cgConf['user'],
+			'password' => $this->cgConf['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
+								<request>
+								<command>doDeal</command>
+								<requestId>23468</requestId>
+								<version>1001</version>
+								<language>Eng</language>
+								<mayBeDuplicate>0</mayBeDuplicate>
+									<doDeal>
+										<terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
+										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
+										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
+										<creditType>RegularCredit</creditType>
+										<currency>Usd</currency>
+										<transactionCode>Phone</transactionCode>
+										<transactionType>Debit</transactionType>
+										<total>' . $gatewayDetails['amount'] . '</total>
+										<validation>AutoComm</validation>
+									</doDeal>
+								</request>
+						</ashrait>'
+		);
+	}
 
 }
