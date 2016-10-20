@@ -115,6 +115,12 @@ class PaymentGatewaysController extends ApiController {
 		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)){
 			return $this->setError("Illegal stamp", $request);
 		}	
+		$pendingPayments = $this->loadPending();
+		foreach ($pendingPayments as $payment) {
+			$gatewayName = $payment['payment_gateway'];
+			$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+			
+		}
 		Billrun_PaymentGateway::makePayment($stamp);
 	}
 	
@@ -160,6 +166,15 @@ class PaymentGatewaysController extends ApiController {
 
 		// Validate checksum
 		return hash_equals($crc, $calculatedCrc);
+	}
+	
+	protected function loadPending(){
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$query = array(
+			'waiting_for_confirmation' => true
+		);
+		$res = $billsColl->query($query);
+		return $res;
 	}
 
 }

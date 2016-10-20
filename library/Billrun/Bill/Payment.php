@@ -386,4 +386,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setConfirmationStatus($status){
 		$this->data['waiting_for_confirmation'] = $status;
 	}
+	
+	public function setPaymentStatus($status, $gatewayName){
+		$this->data['vendor_response'] = array('name' => $gatewayName, 'status' => $status);
+		$this->save();
+	}
+	
+	public function setPaymentGateway($gatewayName){
+		$this->data['payment_gateway'] = $gatewayName;
+		$this->save();
+	}
 }

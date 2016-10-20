@@ -14,8 +14,16 @@
 class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected $cgConf;
-	protected $EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
+	protected $EndpointUrl;
 	protected $billrunName = "CreditGuard";
+
+	protected function __construct() {
+		if (Billrun_Factory::config()->isProd()) {
+			// TODO: define 'live' url for payment gateway.
+		} else {  //testing environment
+			$this->EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
+		}
+	}
 
 	public function updateSessionTransactionId() {
 		$url_array = parse_url($this->redirectUrl);
@@ -156,11 +164,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				return false;
 			echo "<br /> THE TRANSACTION WAS A SUCCESS ";   // TODO: remove after tests
 
-			$this->saveDetails['card_token'] = $xmlObj->response->inquireTransactions->row->cardId;
-			$this->saveDetails['card_expiration'] = $xmlObj->response->inquireTransactions->row->cardExpiration;
-			$this->saveDetails['aid'] = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
-			$this->saveDetails['return_url'] = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
-			$this->saveDetails['personal_id'] = $xmlObj->response->inquireTransactions->row->personalId;
+			$this->saveDetails['card_token'] = (string) $xmlObj->response->inquireTransactions->row->cardId;
+			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
+			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
+			$this->saveDetails['return_url'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
+			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 
 			return true;
 		} else {
@@ -179,23 +187,22 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			)
 		);
 	}
-		
-	protected function setConnectionParameters($params){
+
+	protected function setConnectionParameters($params) {
 		
 	}
-	
-	
-	public function getDefaultParameters(){
+
+	public function getDefaultParameters() {
 		return array("user" => "", "password" => "", 'terminal_id' => "", 'mid' => "");
 	}
-	
-	public function authenticateCredentials($params){
+
+	public function authenticateCredentials($params) {
 		$cgConf['tid'] = $params['terminal_id'];
 		$cgConf['mid'] = $params['mid'];
 		$cgConf['user'] = $params['user'];
 		$cgConf['password'] = $params['password'];
-		
-		 $authArray = array(
+
+		$authArray = array(
 			'user' => $cgConf['user'],
 			'password' => $cgConf['password'],
 			/* Build Ashrait XML to post */
@@ -219,25 +226,24 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							</request>
 					   </ashrait>'
 		);
-		 
+
 		$authString = http_build_query($authArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
-				$result = iconv("utf-8", "iso-8859-8", $result);
-			}
-		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string )$xmlObj->response->result;
-		if ($codeResult == "405"){
-			return false;
+			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
-		else{
+		$xmlObj = simplexml_load_string($result);
+		$codeResult = (string) $xmlObj->response->result;
+		if ($codeResult == "405") {
+			return false;
+		} else {
 			return true;
 		}
 	}
-	
-	protected function pay($gatewayDetails){
+
+	protected function pay($gatewayDetails) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
@@ -247,11 +253,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$result = iconv("utf-8", "iso-8859-8", $result);
 		}
 		$xmlObj = simplexml_load_string($result);
-		$codeResult = (string )$xmlObj->response->result;
-		if ($codeResult != "000") {
-			throw new Exception((string )$xmlObj->response->message);
-		}
-		
+		$codeResult = (string) $xmlObj->response->result;
+		return $codeResult;
 	}
 
 	protected function buildPaymentRequset($gatewayDetails) {
@@ -288,6 +291,28 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								</request>
 						</ashrait>'
 		);
+	}
+
+	protected function isCompleted($status) {
+		if ($status == "000") {
+			return true;
+		}
+		return false;
+	}
+
+	protected function isPending($status) {
+		return false;
+	}
+
+	protected function isRejected($status) {
+		if ($status != "000") {
+			return true;
+		}
+		return false;
+	}
+	
+	protected function verifyPending(){
+		// TODO: need to find out how to verify pending for each payment gateway.
 	}
 
 }

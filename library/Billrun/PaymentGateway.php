@@ -26,7 +26,6 @@ abstract class Billrun_PaymentGateway {
 	protected $saveDetails;
 	protected $billrunName;
 	protected $transactionId;
-	//protected static $paymentMethods = array('Credit');
 	protected $subscribers;
 	protected $returnUrl;
 
@@ -35,8 +34,8 @@ abstract class Billrun_PaymentGateway {
 		if ($this->supportsOmnipay()) {
 			$this->omnipayGateway = Omnipay\Omnipay::create($this->getOmnipayName());
 		}
-		
-		if (empty($this->returnUrl)){
+
+		if (empty($this->returnUrl)) {
 			$this->returnUrl = Billrun_Factory::config()->getConfigValue('return_url');
 		}
 	}
@@ -149,12 +148,20 @@ abstract class Billrun_PaymentGateway {
 	 * @return array - payment gateway object with the wanted details
 	 */
 	abstract protected function buildSetQuery();
-	
+
 	abstract protected function setConnectionParameters($params);
-	
+
 	abstract public function authenticateCredentials($params);
-	
+
 	abstract protected function pay($gatewayDetails);
+
+	abstract protected function isPending($status);
+
+	abstract protected function isRejected($status);
+
+	abstract protected function isCompleted($status);
+	
+	abstract protected function verifyPending();
 
 
 	/**
@@ -191,9 +198,9 @@ abstract class Billrun_PaymentGateway {
 		if (empty($this->saveDetails['aid'])) {
 			$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
 		}
-//		if (!$this->validatePaymentProcess($txId)) {
-//			return $this->setError("Operation Failed. Try Again...");
-//		}
+		if (!$this->validatePaymentProcess($txId)) {
+			return $this->setError("Operation Failed. Try Again...");
+		}
 		$this->saveAndRedirect();
 	}
 
@@ -202,18 +209,16 @@ abstract class Billrun_PaymentGateway {
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$setQuery = $this->buildSetQuery();
 		$this->subscribers->update(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $setQuery));
-		
+
 		if (isset($this->saveDetails['return_url'])) {
 			$url = (string) $this->saveDetails['return_url'];
 		}
-		
-		if (!empty($url)){
+
+		if (!empty($url)) {
 			$returnUrl = $url;
-		}
-		else if (!empty($this->returnUrl)){
+		} else if (!empty($this->returnUrl)) {
 			$returnUrl = $this->returnUrl;
-		}	
-		else{
+		} else {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
 		}
 		$this->forceRedirect($returnUrl);
@@ -285,10 +290,7 @@ abstract class Billrun_PaymentGateway {
 		return $paymentRow['aid'];
 	}
 
-	// if omnipay supported need to use this function for making charge, for others like CG need to implement it.
-	// TODO: need to check for omnipay supported gateways.
 	public function makePayment($stamp) {
-		
 		$today = new MongoDate();
 		$paymentParams = array(
 			'dd_stamp' => $stamp
@@ -296,13 +298,7 @@ abstract class Billrun_PaymentGateway {
 		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
 			throw new Exception('Error removing payments before rerun');
 		}
-		//$this->customers = iterator_to_array($this->getCustomers());
 		$customers = iterator_to_array(self::getCustomers());
-
-//		
-//		Billrun_Factory::log()->log('generator entities loaded: ' . count($customers), Zend_Log::INFO);
-//		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-//		$sequence = $this->getSequenceField();
 		$involvedAccounts = array();
 		$options = array('collect' => FALSE);
 		$data = array();
@@ -319,69 +315,39 @@ abstract class Billrun_PaymentGateway {
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
-			//$paymentSuccessful = false;
-			//$omniRedirect = false;
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = $customer['amount'];
+			$paymentParams['amount'] = $customer['due'];
 			$paymentParams['source'] = $customer['source'];
 			$gatewayDetails = $subscriber['payment_gateway'];
 			$gatewayDetails['amount'] = $customer['amount'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$gateway = self::getInstance($gatewayName);
-			$credentials = $gateway->getConnectionCredentials($gateway);
-		//	if ($gatewayName == "PayPal_ExpressCheckout"){
-				$gateway->pay($gatewayDetails);  // FOR PAYPAL EXPRESS CHECKOUT
-		//	}
+			$payment = payAction::pay('credit', array($paymentParams), $options)[0];
+			$paymentStatus = $gateway->pay($gatewayDetails);
+			$response = self::checkPaymentStatus($paymentStatus, $gateway);
+			$payment->setPaymentGateway($gatewayName);
 			
-//			if ($gateway->supportsOmnipay()) {  // TODO: need to implement else for not omnipay supported e.g credit guard.
-//				$omniName = $gateway->getOmnipayName();
-//				$omniGateway = Omnipay\Omnipay::create($omniName);
-//				$omniGateway->setTestMode(true); // TODO: remove when not test mode.
-//				$purchaseData = [
-//					'amount' => 1.00,
-//					'currency' => 'USD',
-//					'return_url' => 'http://billrun.com',
-//					'cancel_url' => 'http://billrun.com',
-//					'token' => $gatewayDetails['card_token'],
-//				//	'card' => ['email' => 'foxession-buyer@gmail.com']
-//				];
-//				$data = array_merge($purchaseData, $credentials);
-			//$response = $omniGateway->purchase($data)->send();
-			
-			
-			
-				//$a = $response->getRedirectUrl();
-			//	$b = $omniGateway->getLogoImageUrl();
-//
-//				$ref = $response->getTransactionReference();
-//				
-//				if ($response->isSuccessful()) { // payment is complete
-//					$paymentSuccessful = true;
-//				} elseif ($response->isRedirect()) {
-//					$paymentSuccessful = true;
-//					$omniRedirect = true;
-//					//$response->redirect(); //  payment is complete + this will automatically forward the customer
-//				} 
-
-
-		//	}
-
-//			if ($paymentSuccessful){
-//				$payment = payAction::pay('credit', array($paymentParams), $options)[0];
-//			}
-
-//			if ($omniRedirect){
-//				$response->redirect();
-//			}
-
-			//	$payment = payAction::pay('credit', array($paymentParams), $options)[0];
-
+			if ($response['stage'] == "Completed") { // payment succeeded 
+				$payment->updateConfirmation();
+				$payment->setPaymentStatus($response['status'], $gatewayName);
+			} else if ($response['stage'] == "Pending") { // handle pending
+				$payment->setPaymentStatus($response['status'], $gatewayName);
+			} else { //handle rejections
+				if (!$payment->isRejected()) {
+					Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
+					$rejection = $payment->getRejectionPayment($response['status']);
+					$rejection->save();
+					$payment->markRejected();
+				} else {
+					Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
+				}
+			}
 		}
 	}
+
 	protected function getCustomers() {
 		$billsColl = Billrun_Factory::db()->billsCollection();
-		//$a = self::$paymentMethods;
 		$sort = array(
 			'$sort' => array(
 				'type' => 1,
@@ -427,9 +393,6 @@ abstract class Billrun_PaymentGateway {
 				'source' => array(
 					'$first' => '$source',
 				),
-				'amount' => array(
-					'$sum' => '$amount',
-				),
 				'currency' => array(
 					'$first' => '$currency',
 				),
@@ -440,7 +403,7 @@ abstract class Billrun_PaymentGateway {
 				'due' => array(
 					'$gt' => Billrun_Bill::precision,
 				),
-				'aid' => 1234,  // TODO: remove after tests
+				'aid' => 1234, // TODO: remove after tests
 				'payment_method' => array(
 					'$in' => array('Credit'),
 				),
@@ -450,23 +413,34 @@ abstract class Billrun_PaymentGateway {
 		$res = $billsColl->aggregate($sort, $group, $match);
 		return $res;
 	}
-	
-	
+
 	/**
 	 * Get from config the merchant credentials for connecting to the payment gateway. 
 	 * 
-	 *@param paymentGateway $gateway - the gateway the client chose to pay through.
+	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
 	 * @return array - the credentials that are a must for connection.
 	 */
-	protected function getConnectionCredentials($gateway){
+	protected function getConnectionCredentials($gateway) {
 		$paymentGateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $gateway->billrunName;
 		$gatewayDetails = array_filter($paymentGateways, function($paymentGateway) use ($gatewayName) {
 			return $paymentGateway['name'] == $gatewayName;
-			});
+		});
 		$gatewayCredentials = current($gatewayDetails);
 		$requiredCredentials = $gateway->setConnectionParameters($gatewayCredentials['params']);
 		return $requiredCredentials;
+	}
+
+	protected function checkPaymentStatus($status, $gateway) {
+		if ($gateway->isCompleted($status)) {
+			return array('status' => $status, 'stage' => "Completed");
+		} else if ($gateway->isPending($status)) {
+			return array('status' => $status, 'stage' => "Pending");
+		} else if ($gateway->isRejected($status)) {
+			return array('status' => $status, 'stage' => "Rejected");
+		} else {
+			throw new Exception("Unknown status");
+		}
 	}
 
 }
