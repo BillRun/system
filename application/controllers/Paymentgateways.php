@@ -118,7 +118,7 @@ class PaymentGatewaysController extends ApiController {
 		$pendingPayments = $this->loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment['payment_gateway'];
-			$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
 			
 		}
 		Billrun_PaymentGateway::makePayment($stamp);
