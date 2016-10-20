@@ -383,9 +383,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * Get pricing data for a given rate / subcriber.
-	 * @param 
-	 * @return Array the 
-	 * @todo refactoring the if-else-if-else-if-else to methods
+	 * 
 	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
 	 * @param string $usageType The type  of the usage (call/sms/data)
 	 * @param mixed $rate The rate of associated with the usage.
@@ -393,6 +391,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param Billrun_Plan $plan the subscriber's current plan
 	 * @param array $row the row handle
 	 * @return array pricing data details of the specific volume
+	 * 
+	 * @todo refactoring the if-else-if-else-if-else to methods
 	 * @todo remove (in/over/out)_plan support (group used instead)
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $subscriberBalance, $plan, $row = null) {
@@ -431,6 +431,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
 					$ret['in_plan'] = $ret['in_group'] += $volumeToCharge - $groupVolumeLeft;
 					$volumeToCharge = $groupVolumeLeft;
+					unset($ret['out_group'], $ret['out_plan']);
 				}
 			}
 		} else if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
@@ -439,7 +440,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$ret['in_plan'] = $ret['in_group'] = $volumeToCharge - $groupVolumeLeft;
 			$volumeToCharge = $groupVolumeLeft;
 		} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
-			$ret['out_plan'] = $volumeToCharge = $volume;
+			$ret['out_plan'] = $ret['out_group'] = $volumeToCharge = $volume;
 		}
 
 		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), $this->getCallOffset());
