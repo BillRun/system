@@ -122,39 +122,57 @@ trait Billrun_Traits_Group {
 	}
 
 	/**
-	 * method to receive the usage left in group of rates of current plan
+	 * method to receive the usage left in group of rates
 	 * 
 	 * @param array $subscriberBalance subscriber balance
 	 * @param array $rate the rate to check the balance
 	 * @param string $usageType the 
-	 * @return mixed
+	 * @return int usage left in the group
 	 */
-	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType) {
-		do {
-			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
-			// group not found
-			if ($groupSelected === FALSE) {
-				$rateUsageIncluded = 0;
-				// @todo: add more logic instead of fallback to first
-				$this->setEntityGroup($this->setNextStrongestGroup($rate, $usageType, true));
-				break; // do-while
+	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null) {
+		if (is_null($staticGroup)) {
+			$limit = 10; // protect infinit loop
+			do {
+				$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
+				// group not found
+				if ($groupSelected === FALSE) {
+					$rateUsageIncluded = 0;
+					// @todo: add more logic instead of fallback to first
+					$this->setEntityGroup($this->setNextStrongestGroup($rate, $usageType, true));
+					break; // do-while
+				}
+				// not group included in the specific usage try to take iterate next group
+				if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+					continue;
+				}
+				$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+				if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+					// on some cases we have limits to check through plugin
+					$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+					Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+					if ($rateUsageIncluded === FALSE) {
+						$this->unsetGroup($this->getEntityGroup());
+					}
+				}
 			}
-			// not group included in the specific usage try to take iterate next group
+			// @todo: protect max 5 loops
+			while ($groupSelected === FALSE && is_null($staticGroup) && $limit--);
+		} else { // specific group required to check
+			$groupSelected = $staticGroup;
 			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-				continue;
-			}
-			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-				// on some cases we have limits to unlimited
-				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($rateUsageIncluded === FALSE) {
-					$this->unsetGroup($this->getEntityGroup());
+				return 0;
+			} else {
+				$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+				if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+					// on some cases we have limits to check through plugin
+					$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+					Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+					if ($rateUsageIncluded === FALSE) {
+						return 0;
+					}
 				}
 			}
 		}
-		// @todo: protect max 5 loops
-		while ($groupSelected === FALSE);
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;

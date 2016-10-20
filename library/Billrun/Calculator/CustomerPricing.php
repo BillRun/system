@@ -392,7 +392,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param mixed $subscriberBalance the  subscriber that generated the usage.
 	 * @param Billrun_Plan $plan the subscriber's current plan
 	 * @param array $row the row handle
-	 * @return type
+	 * @return array pricing data details of the specific volume
+	 * @todo remove (in/over/out)_plan support (group used instead)
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $subscriberBalance, $plan, $row = null) {
 		if ($this->isFreeLine($row)) {
@@ -413,6 +414,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else if ($volumeToCharge > 0) {
 				if ($groupVolumeLeft > 0) {
 					$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
+				} else {
+					$ret['in_group'] = $ret['in_plan'] = 0;
 				}
 				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
@@ -484,32 +487,34 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param string $usageType usage type
 	 * @param array $services array of Billrun_Service objects
 	 * @param int $volumeRequired the volume required to charge
-	 * @param array $groups the group services to return to
+	 * @param array $arategroups the group services to return to (reference - will be added to this array)
 	 * 
 	 * @return int volume left to charge after used by all services groups
 	 */
-	protected function usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeRequired, &$groups) {
+	protected function usageLeftInServicesGroups($subscriberBalance, $rate, $usageType, $services, $volumeRequired, &$arategroups) {
 		foreach ($services as $service) {
 			if ($volumeRequired <= 0) {
 				break;
 			}
-			$groupVolume = $service->usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $services);
-			if ($groupVolume === FALSE || $groupVolume <= 0) {
-				continue;
-			}
-			if ($volumeRequired <= $groupVolume) {
-				$groups[] = array(
-					'name' => $service->getEntityGroup(),
-					'usagev' => $volumeRequired,
+			$serviceGroups = $service->getRateGroups($rate, $usageType);
+			foreach ($serviceGroups as $serviceGroup) {
+				$groupVolume = $service->usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $serviceGroup);
+				if ($groupVolume === FALSE || $groupVolume <= 0) {
+					continue;
+				}
+				if ($volumeRequired <= $groupVolume) {
+					$arategroups[] = array(
+						'name' => $serviceGroup,
+						'usagev' => $volumeRequired,
+					);
+					return 0;
+				}
+				$arategroups[] = array(
+					'name' => $serviceGroup,
+					'usagev' => $groupVolume,
 				);
-				$volumeRequired = 0;
-				break; // foreach
+				$volumeRequired -= $groupVolume;
 			}
-			$groups[] = array(
-				'name' => $service->getEntityGroup(),
-				'usagev' => $groupVolume,
-			);
-			$volumeRequired -= $groupVolume;
 		}
 		return $volumeRequired; // volume left to charge
 	}
