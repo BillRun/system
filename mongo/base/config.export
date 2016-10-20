@@ -1,7 +1,7 @@
 {
     "company_name": "Company A",
     "shared_folder": "shared",
-    "cg_return_url": "http://fromConfig.com",
+    "cg_return_url": "",
     "shared_secret": {
         "key": "secretsecret123",
         "crc" : "02f23a5e"
