@@ -261,11 +261,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if (isset($row['usagev']) || $this->isPrepaid($row)) {  // for prepaid, volume is by balance left over
 				$volume = $row['usagev'];
 				$plan_name = isset($row['plan']) ? $row['plan'] : null;
-				if ($row['type'] == 'credit') {
+				$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
+				if (in_array($row['type'], $typesWithoutBalance)) {
 					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
-					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
-				} else if ($row['type'] == 'service') {
-					$charges = self::getPriceByRate($rate, $usage_type, $volume, $plan_name, $this->getCallOffset());
 					$pricingData = array($this->pricingField => $charges['total'], $this->interconnectChargeField => $charges['interconnect']);
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
