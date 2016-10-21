@@ -68,7 +68,7 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * Gets default balance for subscriber (when no balance was found).
 	 * For post-paid subscribers, create new empty balance, for prepaid return no balance.
 	 * 
-	 * @param type $options subsciber's db line
+	 * @param type $options subscriber db line
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance($options) {
