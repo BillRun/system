@@ -1415,5 +1415,15 @@ class Billrun_Util {
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
+	
+	public static function setHttpSessionTimeout($timeout = null) {
+		if (!is_null($timeout)) {
+			$session_timeout = $timeout;
+		} else {
+			$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
+		}
+		ini_set('session.gc_maxlifetime', $session_timeout);
+		session_set_cookie_params($session_timeout);
+	}
 
 }

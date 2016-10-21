@@ -34,14 +34,18 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
-		session_set_cookie_params(1);
-//		$this->initSession();
+//		session_set_cookie_params(1);
+		$this->initSession();
 		$this->initCommit();
 		$this->initConfig();
 		$this->initBaseUrl();
 		$this->initHtmlHeaders();
 	}
 	
+	protected function initSession() {
+		Billrun_Util::setHttpSessionTimeout();
+	}
+		
 	protected function initCommit() {
 		if (!Billrun_Factory::config()->isProd() || !($this->commit = Billrun_Git_Util::getGitLastCommit())) {
 			$this->commit = md5(time());
