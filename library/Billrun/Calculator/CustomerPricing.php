@@ -410,18 +410,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$ret['arategroups'][] = array(
 					'name' => $plan->getEntityGroup(),
 					'usagev' => $volume,
+					'left' => $groupVolumeLeft - $volume,
 				);
 			} else if ($volumeToCharge > 0) {
-				if ($groupVolumeLeft > 0) {
-					$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
-				} else {
-					$ret['in_group'] = $ret['in_plan'] = 0;
-				}
+				$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
 				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 					$ret['arategroups'][] = array(
 						'name' => $plan->getEntityGroup(),
 						'usagev' => $ret['in_group'],
+						'left' => 0,
 					);
 				} else if ($volumeToCharge > 0) {
 					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
@@ -507,12 +505,14 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$arategroups[] = array(
 						'name' => $serviceGroup,
 						'usagev' => $volumeRequired,
+						'left' => $groupVolume - $volumeRequired,
 					);
 					return 0;
 				}
 				$arategroups[] = array(
 					'name' => $serviceGroup,
 					'usagev' => $groupVolume,
+					'left' => 0,
 				);
 				$volumeRequired -= $groupVolume;
 			}
@@ -993,6 +993,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$group = $arategroup['name'];
 			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
 			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
+			$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
 //				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
 			if (isset($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
 				$arategroup['usagesb'] = floatval($this->balance->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
