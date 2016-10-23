@@ -7,7 +7,7 @@
  */
 
 /**
- * Util class for the balances
+ * Util class for the rates
  *
  * @package  Util
  * @since    5.1
