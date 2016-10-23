@@ -12,9 +12,7 @@
  * @package  Plan
  * @since    0.5
  */
-class Billrun_Plan {
-
-	use Billrun_Traits_Group;
+class Billrun_Plan extends Billrun_Service {
 
 	const PLAN_SPAN_YEAR = 'year';
 	const PLAN_SPAN_MONTH = 'month';
@@ -49,6 +47,7 @@ class Billrun_Plan {
 	/**
 	 * Query the DB with the input ID and set it as the plan data.
 	 * @param type $id
+	 * @todo use load method
 	 */
 	protected function constructWithID($id) {
 		if ($id instanceof Mongodloid_Id) {
@@ -72,6 +71,7 @@ class Billrun_Plan {
 	 * Construct the plan with the active plan in the data base
 	 * @param type $params
 	 * @return type
+	 * @todo use load method
 	 */
 	protected function constructWithActivePlan($params) {
 		$date = new MongoDate($params['time']);
