@@ -51,8 +51,6 @@ trait Billrun_Traits_Group {
 			$groups = $rate['rates'][$usageType]['groups'];
 		} else if (($name = $this->getName()) && isset($rate['rates'][$usageType]['groups'][$name])) {
 			$groups = $rate['rates'][$usageType]['groups'][$name];
-		} else if (isset($rate['rates'][$usageType]['groups']['BASE'])) {
-			$groups = $rate['rates'][$usageType]['groups']['BASE'];
 		} else {
 			return array();
 		}
