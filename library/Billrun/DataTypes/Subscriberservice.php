@@ -89,7 +89,7 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		return array('name' => $this->name);
+		return $this->name;
 //		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
 	}
 }
