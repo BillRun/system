@@ -20,7 +20,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
 			// TODO: define 'live' url for payment gateway.
-		} else {  //testing environment
+		} else {  // test/dev environment
 			$this->EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
 		}
 	}
@@ -310,9 +310,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		return false;
 	}
-	
-	protected function verifyPending(){
-		// TODO: need to find out how to verify pending for each payment gateway.
+
+	public function verifyPending($txId) {
+		
+	}
+
+	public function hasPendingStatus() {
+		return false;
 	}
 
 }

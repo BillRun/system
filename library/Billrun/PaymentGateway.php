@@ -149,20 +149,67 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function buildSetQuery();
 
+	/**
+	 * Sets necessary parameters for connection to chosen payment gateway.
+	 * 
+	 * @param Array $params - details of the payment gateway.
+	 * @return Array - Array of gateway credentials.
+	 */
 	abstract protected function setConnectionParameters($params);
 
+	/**
+	 * Checks against the chosen payment gateway if the credentials passed are correct.
+	 * 
+	 * @param Array $params - details of the payment gateway.
+	 * @return Boolean - true if the credentials are correct.
+	 */
 	abstract public function authenticateCredentials($params);
 
+	/**
+	 * Sending request to chosen payment gateway to charge the subscriber according to his bills.
+	 * 
+	 * @param array $gatewayDetails - Details of the chosen payment gateway
+	 * @return String - Status of the payment.
+	 */
 	abstract protected function pay($gatewayDetails);
 
+	/**
+	 * Checks if the payment is pending.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means pending payment
+	 */
 	abstract protected function isPending($status);
 
+	/**
+	 * Checks if the payment is rejected.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means rejected payment
+	 */
 	abstract protected function isRejected($status);
 
+	/**
+	 * Checks if the payment is accepted.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means completed payment
+	 */
 	abstract protected function isCompleted($status);
-	
-	abstract protected function verifyPending();
 
+	/**
+	 * Check the status of previously pending payment.
+	 * 
+	 * @param string $txId - String that represents the transaction.
+	 * @return string - Payment status.
+	 */
+	abstract public function verifyPending($txId);
+
+	/**
+	 * True if the payment gateway can return pending has a status of a payment. 
+	 * 
+	 */
+	abstract public function hasPendingStatus();
 
 	/**
 	 * Redirect to the payment gateway page of card details.
@@ -319,30 +366,15 @@ abstract class Billrun_PaymentGateway {
 			$paymentParams['amount'] = $customer['due'];
 			$paymentParams['source'] = $customer['source'];
 			$gatewayDetails = $subscriber['payment_gateway'];
-			$gatewayDetails['amount'] = $customer['amount'];
+			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$gateway = self::getInstance($gatewayName);
 			$payment = payAction::pay('credit', array($paymentParams), $options)[0];
 			$paymentStatus = $gateway->pay($gatewayDetails);
 			$response = self::checkPaymentStatus($paymentStatus, $gateway);
-			$payment->setPaymentGateway($gatewayName);
-			
-			if ($response['stage'] == "Completed") { // payment succeeded 
-				$payment->updateConfirmation();
-				$payment->setPaymentStatus($response['status'], $gatewayName);
-			} else if ($response['stage'] == "Pending") { // handle pending
-				$payment->setPaymentStatus($response['status'], $gatewayName);
-			} else { //handle rejections
-				if (!$payment->isRejected()) {
-					Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
-					$rejection = $payment->getRejectionPayment($response['status']);
-					$rejection->save();
-					$payment->markRejected();
-				} else {
-					Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
-				}
-			}
+			$payment->setPaymentGateway($gatewayName, $gateway->transactionId);
+			self::updateAccordingToStatus($response, $payment, $gatewayName);
 		}
 	}
 
@@ -403,7 +435,6 @@ abstract class Billrun_PaymentGateway {
 				'due' => array(
 					'$gt' => Billrun_Bill::precision,
 				),
-				'aid' => 1234, // TODO: remove after tests
 				'payment_method' => array(
 					'$in' => array('Credit'),
 				),
@@ -431,7 +462,7 @@ abstract class Billrun_PaymentGateway {
 		return $requiredCredentials;
 	}
 
-	protected function checkPaymentStatus($status, $gateway) {
+	public function checkPaymentStatus($status, $gateway) {
 		if ($gateway->isCompleted($status)) {
 			return array('status' => $status, 'stage' => "Completed");
 		} else if ($gateway->isPending($status)) {
@@ -440,6 +471,24 @@ abstract class Billrun_PaymentGateway {
 			return array('status' => $status, 'stage' => "Rejected");
 		} else {
 			throw new Exception("Unknown status");
+		}
+	}
+
+	public function updateAccordingToStatus($response, $payment, $gatewayName) {
+		if ($response['stage'] == "Completed") { // payment succeeded 
+			$payment->updateConfirmation();
+			$payment->setPaymentStatus($response['status'], $gatewayName);
+		} else if ($response['stage'] == "Pending") { // handle pending
+			$payment->setPaymentStatus($response['status'], $gatewayName);
+		} else { //handle rejections
+			if (!$payment->isRejected()) {
+				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
+				$rejection = $payment->getRejectionPayment($response['status']);
+				$rejection->save();
+				$payment->markRejected();
+			} else {
+				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
+			}
 		}
 	}
 

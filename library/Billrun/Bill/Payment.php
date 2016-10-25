@@ -368,7 +368,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function isCancellation() {
 		return isset($this->data['cancel']);
 	}
-		/**
+
+	/**
 	 * Update payment status
 	 * @since 5.0
 	 */
@@ -377,23 +378,34 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['confirmation_time'] = new MongoDate();
 		$this->save();
 	}
-	
-	public function isWaiting(){
+
+	public function isWaiting() {
 		$status = $this->data['waiting_for_confirmation'];
-		return is_null($status)?false:$status;
+		return is_null($status) ? false : $status;
 	}
-	
-	public function setConfirmationStatus($status){
+
+	public function setConfirmationStatus($status) {
 		$this->data['waiting_for_confirmation'] = $status;
 	}
-	
-	public function setPaymentStatus($status, $gatewayName){
+
+	public function setPaymentStatus($status, $gatewayName) {
 		$this->data['vendor_response'] = array('name' => $gatewayName, 'status' => $status);
+		$this->data['last_checked_pending'] = new MongoDate();
 		$this->save();
 	}
-	
-	public function setPaymentGateway($gatewayName){
-		$this->data['payment_gateway'] = $gatewayName;
+
+	public function setPaymentGateway($gatewayName, $txId) {
+		if (is_null($txId)) {
+			$this->data['payment_gateway'] = array('name' => $gatewayName);
+		} else {
+			$this->data['payment_gateway'] = array('name' => $gatewayName, 'transactionId' => $txId);
+		}
 		$this->save();
 	}
+
+	public function updateLastPendingCheck() {
+		$this->data['last_checked_pending'] = new MongoDate();
+		$this->save();
+	}
+
 }

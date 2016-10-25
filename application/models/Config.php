@@ -478,19 +478,6 @@ class ConfigModel {
 			return false;
 		}	
 		
-
-		
-		
-//		
-//		if ($paymentGateway->supportsOmnipay()) {
-//			$gateway = Omnipay\Omnipay::create($name);
-//
-//			
-//			
-//		}
-		
-		// TODO: check Auth to gateway through Omnipay
-		
  		return true;
  	}
  

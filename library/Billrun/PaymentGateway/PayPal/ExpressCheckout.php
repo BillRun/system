@@ -17,11 +17,12 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected $conf;
 	protected $EndpointUrl;
 	protected $billrunName = "PayPal_ExpressCheckout";
+	protected $transactionId;
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
-			// TODO: define 'live' url for payment gateway.
-		} else { // testing environment
+			$this->EndpointUrl = "https://api-3t.paypal.com/nvp";
+		} else { // test/dev environment
 			$this->EndpointUrl = "https://api-3t.sandbox.paypal.com/nvp";
 		}
 	}
@@ -130,6 +131,9 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
 			throw new Exception($resultArray['L_LONGMESSAGE0']);
 		}
+		if (isset($resultArray['TRANSACTIONID'])) {
+			$this->transactionId = $resultArray['TRANSACTIONID'];
+		}
 		return $resultArray['PAYMENTSTATUS'];
 	}
 
@@ -194,9 +198,46 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		}
 		return false;
 	}
-	
-	protected function verifyPending(){
-		// TODO: need to find out how to verify pending for each payment gateway.
+
+	public function verifyPending($txId) {
+		$response = $this->getCheckoutDetails($txId);
+		return $response['PAYMENTSTATUS'];
+	}
+
+	public function hasPendingStatus() {
+		return true;
+	}
+
+	/**
+	 * Inquire Transaction by transaction Id to check status of a payment.
+	 * 
+	 * @param string $txId - String that represents the transaction.
+	 * @return array - array of the response from PayPal
+	 */
+	protected function getCheckoutDetails($txId) {
+		$this->conf['user'] = "shani.dalal_api1.billrun.com";
+		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
+		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
+
+		$requestDetails = array(
+			'USER' => $this->conf['user'],
+			'PWD' => $this->conf['password'],
+			'SIGNATURE' => $this->conf['signature'],
+			'METHOD' => "GetTransactionDetails",
+			'VERSION' => "95",
+			'TRANSACTIONID' => $txId,
+		);
+		$requestString = http_build_query($requestDetails);
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $requestString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		$resultArray = array();
+		parse_str($result, $resultArray);
+		return $resultArray;
+	}
+
+	public function getDefaultParameters() {
+		return array("user" => "", "password" => "", "signature" => "");
 	}
 
 }

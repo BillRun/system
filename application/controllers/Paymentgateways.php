@@ -33,7 +33,7 @@ class PaymentGatewaysController extends ApiController {
 			$setting['supported'] = true;
 			$setting['image_url'] = $imagesUrl[$name];
 			$paymentGateway = Billrun_Factory::paymentGateway($name);
-			if (is_null($paymentGateway)){
+			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
 				break;
@@ -48,7 +48,7 @@ class PaymentGatewaysController extends ApiController {
 			'details' => empty($settings) ? array() : $settings,
 		));
 	}
-	
+
 	protected function render($tpl, array $parameters = array()) {
 		return parent::render('index', $parameters);
 	}
@@ -60,8 +60,8 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-	//	$data = $this->validateData($request);
-	$data = $request->get('data');
+		$data = $this->validateData($request);
+		$data = NULL;
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
@@ -81,13 +81,13 @@ class PaymentGatewaysController extends ApiController {
 		$aid = $jsonData['aid'];
 		$returnUrl = $jsonData['return_url'];
 		if (empty($returnUrl)) {
-			$returnUrl = Billrun_Factory::config()->getConfigValue('return_url'); 
+			$returnUrl = Billrun_Factory::config()->getConfigValue('return_url');
 		}
 
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
 	}
-	
+
 	/**
 	 * handling the response from the payment gateway and saving the details to db.
 	 * 
@@ -107,28 +107,41 @@ class PaymentGatewaysController extends ApiController {
 
 		$paymentGateway->saveTransactionDetails($transactionId);
 	}
-	
 
-	public function payAction() {  
+	/**
+	 * handling making the payments against the payment gateways and checking status of pending payments.
+	 * 
+	 */
+	public function payAction() {
 		$request = $this->getRequest();
-		$stamp = $request->get('stamp'); 
-		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)){
+		$stamp = $request->get('stamp');
+		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)) {
 			return $this->setError("Illegal stamp", $request);
-		}	
+		}
 		$pendingPayments = $this->loadPending();
 		foreach ($pendingPayments as $payment) {
-			$gatewayName = $payment['payment_gateway'];
+			$gatewayName = $payment['payment_gateway']['name'];
 			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
-			
+			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
+				continue;
+			}
+			$txId = $payment['payment_gateway']['transactionId'];
+			$status = $paymentGateway->verifyPending($txId);
+			$paymentData = Billrun_Bill_Payment::getInstanceByData($payment);
+			if ($status == 'Pending') { // Payment is still pending
+				$paymentData->updateLastPendingCheck();
+				continue;
+			}
+			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			Billrun_PaymentGateway::updateAccordingToStatus($response, $paymentData, $gatewayName);
 		}
 		Billrun_PaymentGateway::makePayment($stamp);
 	}
-	
-	
-	public function successAction() {  
-		print_r("SUCCESS"); 
+
+	public function successAction() {
+		print_r("SUCCESS");
 	}
-	
+
 	/**
 	 * Validates the input data.
 	 * @return data - Request data if validated, null if error.
@@ -167,11 +180,14 @@ class PaymentGatewaysController extends ApiController {
 		// Validate checksum
 		return hash_equals($crc, $calculatedCrc);
 	}
-	
-	protected function loadPending(){
+
+	protected function loadPending() {
 		$billsColl = Billrun_Factory::db()->billsCollection();
+		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
+		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
 		$query = array(
-			'waiting_for_confirmation' => true
+			'waiting_for_confirmation' => true,
+			'last_checked_pending' => array('$lte' => $paymentsOrphan)
 		);
 		$res = $billsColl->query($query);
 		return $res;
