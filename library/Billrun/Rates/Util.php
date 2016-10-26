@@ -152,4 +152,9 @@ class Billrun_Rates_Util {
 	public static function getTotalCharge($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		return static::getCharges($rate, $usageType, $volume, $plan, $offset, $time)['total'];
 	}
+	
+	// TODO: This is a temporary function
+	public static function getVat($default = 0.18) {
+		return Billrun_Factory::config()->getConfigValue('pricing.vat', $default);
+	}
 }
