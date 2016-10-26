@@ -50,8 +50,8 @@
 		},
 		{
 			"name": "PLAN-X1",
-			"plan_code": "PLAN-X",
-			"description": "PLAN-X",
+			"plan_code": "PLAN-X1",
+			"description": "PLAN-X1",
 			"recurrence": {
 				"unit": 1,
 				"periodicity": "month"
@@ -59,7 +59,31 @@
 			"upfront": false,
 			"price": [
 				{
-					"price": "90",
+					"price": "50",
+					"from": 0,
+					"to": 999999999
+				}
+			],
+			"from": 1375653916,
+			"to": 4731327516
+		},
+		{
+			"name": "PLAN-X4",
+			"plan_code": "PLAN-X4",
+			"description": "PLAN-X4",
+			"recurrence": {
+				"unit": 1,
+				"periodicity": "month"
+			},
+			"upfront": false,
+			"price": [
+				{
+					"price": "50",
+					"from": 0,
+					"to": 999999999
+				},
+				{
+					"price": "10",
 					"from": 0,
 					"to": 999999999
 				}

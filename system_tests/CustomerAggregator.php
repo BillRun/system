@@ -7,21 +7,29 @@ $CONFIGURATION = loadConfigurations();
 $m = new MongoClient();
 $subColl = getSubscriberCollection($CONFIGURATION, $m);
 $planColl = getPlansCollection($CONFIGURATION, $m);
+$invoiceColl = getInvoiceCollection($CONFIGURATION, $m);
+$cycleColl = getCycleCollection($CONFIGURATION, $m);
 
 // Get the subscribers before the test.
 $plansBefore = getBefore($planColl);
 $subsBefore = getBefore($subColl);
+$invoiceBefore = getBefore($invoiceColl);
+$cycleBefore = getBefore($cycleColl);
 
 // Erase the subscribers and plans collections.
 $planColl->remove(array());
 $subColl->remove(array());
+$invoiceColl->remove(array());
+$cycleColl->remove(array());
 
 handlePlans($planColl, $CONFIGURATION);
-handleSubscribers($subColl, $CONFIGURATION);
+handleSubscribers($subColl, $invoiceColl, $cycleColl, $CONFIGURATION);
 
 // Erase the subscribers and plans collections.
 $planColl->remove(array());
 $subColl->remove(array());
+$invoiceColl->remove(array());
+$cycleColl->remove(array());
 
 // Put them all back
 if(!empty($subsBefore)) {
@@ -32,7 +40,16 @@ if(!empty($plansBefore)) {
 	$planColl->batchInsert($plansBefore);
 }
 
-function handleSubscribers(MongoCollection $subColl, $config) {
+
+if(!empty($invoiceBefore)) {
+	$invoiceColl->batchInsert($invoiceBefore);
+}
+
+if(!empty($cycleBefore)) {
+	$cycleColl->batchInsert($cycleBefore);
+}
+
+function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceColl,MongoCollection $cycleColl, $config) {
 	// Get the subscriber data files
 	$subData = $config['subscribers']['data'];
 	foreach ($subData as $dataFile) {
@@ -50,6 +67,7 @@ function handleSubscribers(MongoCollection $subColl, $config) {
 		
 		$dates = $jsonData['dates'];
 		$testName = $jsonData['test'];
+		echo("Running test: " . $testName);
 		$testRawData = $jsonData['data'];
 		$testData = translateDates($testRawData, $dates);
 		
@@ -61,10 +79,28 @@ function handleSubscribers(MongoCollection $subColl, $config) {
 		
 		// Erase the collection.
 		$subColl->remove();
+		$invoiceColl->remove(array());
+		$cycleColl->remove(array());
 		$subColl->batchInsert($testData);
 		
 		aggregate($config);
+		
 		generate($config, $testName);
+
+		// Get the invoice data
+		$invoice = $invoiceColl->find()->getNext();
+		if(!$invoice) {
+			echo("INVOICE WAS NOT CREATED!\n");
+			continue;
+		}
+		
+		$subs = isset($invoice['subs']) ? (count($invoice['subs'])) : 0;
+		if($subs != $jsonData['subs']) {
+			echo($subs . "SUBSCRIBERS LISTED ISNTEAD OF " . $jsonData['subs'] . "!\n");
+			continue;
+		}
+		
+		echo "TEST SUCCESSFUL!!!!\n";
 	}
 }
 
@@ -162,12 +198,20 @@ function getCollection($configuration, MongoClient $m, $collName) {
 	return $db->$dbCollName;
 }
 
+function getInvoiceCollection($configuration, MongoClient $m) {
+	return getCollection($configuration, $m, 'invoice');
+}
+
 function getPlansCollection($configuration, MongoClient $m) {
 	return getCollection($configuration, $m, 'plans');
 }
 
 function getSubscriberCollection($configuration, MongoClient $m) {
 	return getCollection($configuration, $m, 'subscribers');
+}
+
+function getCycleCollection($configuration, MongoClient $m) {
+	return getCollection($configuration, $m, 'cycle');
 }
 
 function getBefore(MongoCollection $coll) {

@@ -1,0 +1,49 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "One subscriber switch plans",
+	"subs" : 2,
+	"data": [
+		{
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "country": "UK",
+		  "address": "10 Downing st.",
+		  "type": "account",
+		  "from": 1471589424,
+		  "plan_activation": 1475280000,
+		  "to" : 4627262024,
+		  "aid": 6,
+	          "sid" : 0
+		},
+		{
+		  "aid": "6",
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "plan": "PLAN-X1",
+		  "address": "10 downing st.",
+		  "country": "UK",
+		  "type": "subscriber",
+		  "from": 1471589424,
+		  "plan_activation": 1471589424,
+		  "to": 1476604650,
+		  "sid": "7"
+		},
+		{
+		  "aid": "6",
+		  "firstname": "Mister",
+		  "lastname": "Bean",
+		  "plan": "PLAN-X3",
+		  "address": "10 downing st.",
+		  "country": "UK",
+		  "type": "subscriber",
+		  "from": 1476604650,
+		  "plan_activation": 1476604650,
+		  "to": 1477872000,
+		  "sid": "7"
+		}
+
+
+	]
+}
