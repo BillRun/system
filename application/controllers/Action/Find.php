@@ -71,7 +71,7 @@ class FindAction extends ApiAction {
 			// Get timeout
 			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
 			$find->timeout($timeout);
-			$entities = iterator_to_array($find);
+			$entities = array_values(iterator_to_array($find));
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
