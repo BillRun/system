@@ -275,16 +275,8 @@ class Billrun_Factory {
 	 * @deprecated since version 4.0
 	 */
 	static public function balance($params = array()) {
-		/*
-		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
-		  $stamp = md5(serialize($params));
-
-		  if (!isset(self::$balance[$stamp])) {
-		  $balanceSettings = self::config()->getConfigValue('balance', array());
-		  self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
-		  } */
 		$balanceSettings = self::config()->getConfigValue('balance', array());
-		return new Billrun_Balance(array_merge($balanceSettings, $params));
+		return Billrun_Balance::getInstance(array_merge($balanceSettings, $params));
 	}
 
 	/**
