@@ -15,6 +15,14 @@
 abstract class ApiAction extends Action_Base {
 
 	/**
+	 * initialize API action (run on constructor)
+	 */
+	public function init() {
+		// this will extend session timeout
+		Billrun_Util::setHttpSessionTimeout();
+	}
+
+	/**
 	 * how much time to store in cache (seconds)
 	 * 
 	 * @var int
@@ -41,7 +49,7 @@ abstract class ApiAction extends Action_Base {
 		// TODO: Debug default code
 		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
 		throw $ex;
-		
+
 		// If failed to report to controller.
 		if (!$this->getController()->setOutput(array($output))) {
 			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
@@ -124,7 +132,7 @@ abstract class ApiAction extends Action_Base {
 	protected function getCacheLifeTime() {
 		return $this->cacheLifetime;
 	}
-	
+
 	/**
 	 * render override to handle HTTP 1.0 requests
 	 * 
