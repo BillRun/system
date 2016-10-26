@@ -23,7 +23,7 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 		
 		$proccessedServices = array();
 		foreach ($services as $current) {
-			$serviceObj = new Billrun_DataTypes_Subscriberservice($current);
+			$serviceObj = new Billrun_DataTypes_Subscriberservice(array('name' => $current));
 			if(!$serviceObj->isValid()) {
 				continue;
 			}

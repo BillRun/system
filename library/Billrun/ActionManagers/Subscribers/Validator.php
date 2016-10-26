@@ -43,7 +43,7 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 	protected function validateOverlap($new = true) {
 		// Get overlapping query.
 		$overlapQuery = Billrun_Utils_Mongo::getOverlappingDatesQuery($this->validatorData, $new);
-		Billrun_Factory::log(print_r($overlapQuery,1));
+//		Billrun_Factory::log(print_r($overlapQuery,1));
 		if(is_string($overlapQuery)) {
 			throw new Exception($overlapQuery);
 			Billrun_Factory::log("Invalid query: " . $overlapQuery);
@@ -73,7 +73,9 @@ trait Billrun_ActionManagers_Subscribers_Validator {
 
 		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$planQuery["name"] = $this->validatorData['plan'];
-		$planQuery["service_provider"] = $this->validatorData['service_provider'];
+		if (isset($this->validatorData['service_provider'])) {
+			$planQuery["service_provider"] = $this->validatorData['service_provider'];
+		}
 		$plansColl = Billrun_Factory::db()->plansCollection();
 		$planEntity = $plansColl->query($planQuery)->cursor()->current();
 		return !$planEntity->isEmpty();
