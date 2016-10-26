@@ -21,7 +21,7 @@ abstract class Billrun_Aggregator_Subscriber_Base {
 	protected $lines;
 	
 	public function __construct() {
-		$this->lines = Billrun_Factory::db()->linesCollection;
+		$this->lines = Billrun_Factory::db()->linesCollection();
 	}
 	
 	/**

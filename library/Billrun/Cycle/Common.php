@@ -53,10 +53,10 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	/**
 	 * Aggregate main action.
 	 */
-	public function aggregate() {
+	public function aggregate($data = array()) {
 		$results = array();
 		foreach ($this->records as $current) {
-			$results[] = $current->aggregate();
+			$results += $current->aggregate();
 		}
 		return $results;
 	}

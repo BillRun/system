@@ -27,7 +27,7 @@ abstract class Billrun_ActionManagers_Subscribers_Action {
 	/**
 	 * Create an instance of the SubscibersAction type.
 	 */
-	public function __construct($params) {
+	public function __construct($params = array()) {
 		$this->collection = Billrun_Factory::db()->subscribersCollection();
 		$this->baseCode = 1000;
 	}
@@ -58,7 +58,7 @@ abstract class Billrun_ActionManagers_Subscribers_Action {
 	}
 	
 	protected function initSubscriberType($input) {
-		$subscriberTypes = Billrun_Factory::config()->getConfigValue('subscribers.types', array());
+		$subscriberTypes = Billrun_Factory::config()->getConfigValue('subscribers.types', array('account', 'subscriber'));
 		if (empty($this->type = $input->get('type')) ||
 			!in_array($this->type, $subscriberTypes)) {
 			$errorCode =  7;
