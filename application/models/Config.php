@@ -474,8 +474,7 @@ class ConfigModel {
 		}
 		$isAuth = $paymentGateway->authenticateCredentials($pg['params']);
 		if (!$isAuth){
-			Billrun_Factory::log("Wrong Credentials for connecting to ", $name);
-			return false;
+			throw new Exception('Wrong credentials for connection to ', $name); 
 		}	
 		
  		return true;

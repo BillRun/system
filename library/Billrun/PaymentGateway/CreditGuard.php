@@ -33,11 +33,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
-		$this->cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 		$this->cgConf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
-		$this->cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
-		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = $okPage;
@@ -45,8 +42,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['language'] = "ENG";
 
 		return $post_array = array(
-			'user' => $this->cgConf['user'],
-			'password' => $this->cgConf['password'],
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
 			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>                                      
 							<request>
@@ -56,7 +53,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <command>doDeal</command>
 								 <doDeal>
 										 <successUrl>' . $this->cgConf['ok_page'] . '</successUrl>
-										  <terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
+										  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $this->cgConf['amount'] . '</total>
@@ -71,7 +68,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <validation>TxnSetup</validation>
 										  <dealerNumber/>
 										  <user>something</user>
-										  <mid>' . $this->cgConf['mid'] . '</mid>
+										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
 										  <mpiValidation>Normal</mpiValidation>
 										  <email>someone@creditguard.co.il</email>
@@ -116,26 +113,23 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildTransactionPost($txId) {
-		$cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
-		$cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 		$cgConf['txId'] = $txId;
-		$cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
-		$cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
 		$cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
 
 		return $post_array = array(
-			'user' => $cgConf['user'],
-			'password' => $cgConf['password'],
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
 			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>
 							<request>
 							 <language>HEB</language>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
-							  <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
+							  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 							  <mainTerminalNumber/>
 							  <queryName>mpiTransaction</queryName>
-							  <mid>' . $cgConf['mid'] . '</mid>
+							  <mid>' . (int) $credentials['mid'] . '</mid>
 							  <mpiTransactionId>' . $cgConf['txId'] . '</mpiTransactionId>
 							  <mpiValidation>Token</mpiValidation>
 							  <userData1/>
@@ -258,17 +252,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPaymentRequset($gatewayDetails) {
-		$this->cgConf['tid'] = Billrun_Factory::config()->getConfigValue('CG.conf.tid');
-		$this->cgConf['mid'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.mid');
-		$this->cgConf['amount'] = (int) $gatewayDetails['amount'];
-		$this->cgConf['user'] = Billrun_Factory::config()->getConfigValue('CG.conf.user');
-		$this->cgConf['password'] = Billrun_Factory::config()->getConfigValue('CG.conf.password');
-		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
-		$this->cgConf['language'] = "ENG";
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 
 		return $post_array = array(
-			'user' => $this->cgConf['user'],
-			'password' => $this->cgConf['password'],
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
 			/* Build Ashrait XML to post */
 			'int_in' => '<ashrait>
 								<request>
@@ -278,7 +266,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
-										<terminalNumber>' . $this->cgConf['tid'] . '</terminalNumber>
+										<terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>

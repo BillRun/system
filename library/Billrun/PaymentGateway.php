@@ -240,13 +240,13 @@ abstract class Billrun_PaymentGateway {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if ($this->getResponseDetails($result) === FALSE) {
-			return $this->setError("Operation Failed. Try Again...");
+			throw new Exception("Operation Failed. Try Again...");
 		}
 		if (empty($this->saveDetails['aid'])) {
 			$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
 		}
 		if (!$this->validatePaymentProcess($txId)) {
-			return $this->setError("Operation Failed. Try Again...");
+			throw new Exception("Too much time passed");
 		}
 		$this->saveAndRedirect();
 	}
@@ -490,6 +490,15 @@ abstract class Billrun_PaymentGateway {
 				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
 			}
 		}
+	}
+
+	protected function getGatewayCredentials($gatewayName) {
+		$gateways = Billrun_Factory::config()->getConfigValue(payment_gateways);
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['params'];
 	}
 
 }

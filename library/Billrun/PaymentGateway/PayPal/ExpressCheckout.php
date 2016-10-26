@@ -35,16 +35,14 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$this->conf['user'] = "shani.dalal_api1.billrun.com";
-		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
-		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
-		$this->conf['return_url'] = $okPage;
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 		$this->conf['redirect_url'] = "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=";
+		$this->conf['return_url'] = $okPage;
 
 		return $post_array = array(
-			'USER' => $this->conf['user'],
-			'PWD' => $this->conf['password'],
-			'SIGNATURE' => $this->conf['signature'],
+			'USER' => $credentials['username'],
+			'PWD' => $credentials['password'],
+			'SIGNATURE' => $credentials['signature'],
 			'METHOD' => "SetExpressCheckout",
 			'VERSION' => "95",
 			'AMT' => 0,
@@ -55,6 +53,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function updateRedirectUrl($result) {
+		if (empty($result)) {
+			throw new Exception("No Response");
+		}
+		$resultArray = array();
 		parse_str($result, $resultArray);
 		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
 			throw new Exception($resultArray['L_LONGMESSAGE0']);
@@ -64,16 +66,13 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildTransactionPost($txId) {
-		$this->conf['user'] = "shani.dalal_api1.billrun.com";
-		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
-		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
-		//$this->conf['return_url'] = $returnUrl;	
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 		$this->conf['redirect_url'] = "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=";
 
 		return $post_array = array(
-			'USER' => $this->conf['user'],
-			'PWD' => $this->conf['password'],
-			'SIGNATURE' => $this->conf['signature'],
+			'USER' => $credentials['username'],
+			'PWD' => $credentials['password'],
+			'SIGNATURE' => $credentials['signature'],
 			'METHOD' => "CreateBillingAgreement",
 			'VERSION' => "95",
 			'TOKEN' => $txId,
@@ -85,6 +84,9 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function getResponseDetails($result) {
+		if (empty($result)) {
+			throw new Exception("No Response");
+		}
 		$resultArray = array();
 		parse_str($result, $resultArray);
 		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
@@ -138,14 +140,12 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildPaymentRequset($gatewayDetails) {
-		$this->conf['user'] = "shani.dalal_api1.billrun.com";
-		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
-		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 
 		return $post_array = array(
-			'USER' => $this->conf['user'],
-			'PWD' => $this->conf['password'],
-			'SIGNATURE' => $this->conf['signature'],
+			'USER' => $credentials['username'],
+			'PWD' => $credentials['password'],
+			'SIGNATURE' => $credentials['signature'],
 			'METHOD' => "DoReferenceTransaction",
 			'VERSION' => "95",
 			'AMT' => $gatewayDetails['amount'],
@@ -170,8 +170,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		}
 		$resultArray = array();
 		parse_str($result, $resultArray);
-		$message = $resultArray['L_LONGMESSAGE0'];
-		if ($message == "Security header is not valid") {
+		if (isset($resultArray['L_LONGMESSAGE0'])) {
+			$message = $resultArray['L_LONGMESSAGE0'];
+		}
+		if (!empty($message) && $message == "Security header is not valid") {
 			return false;
 		} else {
 			return true;
@@ -215,14 +217,12 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	 * @return array - array of the response from PayPal
 	 */
 	protected function getCheckoutDetails($txId) {
-		$this->conf['user'] = "shani.dalal_api1.billrun.com";
-		$this->conf['password'] = "RRM2W92HC9VTPV3Y";
-		$this->conf['signature'] = "AiPC9BjkCyDFQXbSkoZcgqH3hpacA3CKMEmo7jRUKaB3pfQ8x5mChgoR";
+		$credentials = $this->getGatewayCredentials($this->billrunName);
 
 		$requestDetails = array(
-			'USER' => $this->conf['user'],
-			'PWD' => $this->conf['password'],
-			'SIGNATURE' => $this->conf['signature'],
+			'USER' => $credentials['username'],
+			'PWD' => $credentials['password'],
+			'SIGNATURE' => $credentials['signature'],
 			'METHOD' => "GetTransactionDetails",
 			'VERSION' => "95",
 			'TRANSACTIONID' => $txId,
@@ -237,7 +237,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	public function getDefaultParameters() {
-		return array("user" => "", "password" => "", "signature" => "");
+		return array("username" => "", "password" => "", "signature" => "");
 	}
 
 }
