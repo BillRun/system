@@ -16,6 +16,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $cgConf;
 	protected $EndpointUrl;
 	protected $billrunName = "CreditGuard";
+	protected $subscribers;
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -23,6 +24,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		} else {  // test/dev environment
 			$this->EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
 		}
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
 
 	public function updateSessionTransactionId() {
@@ -39,7 +41,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = $okPage;
 		$this->cgConf['return_url'] = $returnUrl;
-		$this->cgConf['language'] = "ENG";
+ 		$today = new MongoDate();
+ 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+ 		$this->cgConf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
 
 		return $post_array = array(
 			'user' => $credentials['user'],
