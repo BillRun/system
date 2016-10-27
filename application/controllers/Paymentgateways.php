@@ -60,8 +60,7 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-		//	$data = $this->validateData($request);
-		$data = $request->get('data');
+		$data = $this->validateData($request);
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
