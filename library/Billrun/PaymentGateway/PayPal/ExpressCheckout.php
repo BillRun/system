@@ -100,7 +100,8 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 			'payment_gateway' => array(
 				'name' => $this->billrunName,
 				'card_token' => (string) $this->saveDetails['billing_agreement_id'],
-				'transaction_exhausted' => true
+				'transaction_exhausted' => true,
+				'generate_token_time' => new MongoDate(time())
 			)
 		);
 	}

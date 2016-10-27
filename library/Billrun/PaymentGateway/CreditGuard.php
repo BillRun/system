@@ -41,9 +41,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->cgConf['aid'] = $aid;
 		$this->cgConf['ok_page'] = $okPage;
 		$this->cgConf['return_url'] = $returnUrl;
- 		$today = new MongoDate();
- 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
- 		$this->cgConf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$today = new MongoDate();
+		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+		$this->cgConf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -160,7 +160,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			// Example to print out status text
 			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
 				return false;
-			echo "<br /> THE TRANSACTION WAS A SUCCESS ";   // TODO: remove after tests
 
 			$this->saveDetails['card_token'] = (string) $xmlObj->response->inquireTransactions->row->cardId;
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
@@ -181,7 +180,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_token' => (string) $this->saveDetails['card_token'],
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
-				'transaction_exhausted' => true
+				'transaction_exhausted' => true,
+				'generate_token_time' => new MongoDate(time())
 			)
 		);
 	}

@@ -36,7 +36,7 @@ abstract class Billrun_PaymentGateway {
 		}
 
 		if (empty($this->returnUrl)) {
-			$this->returnUrl = Billrun_Factory::config()->getConfigValue('return_url');
+			$this->returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
 	}
 
@@ -258,15 +258,10 @@ abstract class Billrun_PaymentGateway {
 		$this->subscribers->update(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $setQuery));
 
 		if (isset($this->saveDetails['return_url'])) {
-			$url = (string) $this->saveDetails['return_url'];
-		}
-
-		if (!empty($url)) {
-			$returnUrl = $url;
-		} else if (!empty($this->returnUrl)) {
-			$returnUrl = $this->returnUrl;
+			$returnUrl = (string) $this->saveDetails['return_url'];
 		} else {
-			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
+			$account = $this->subscribers->query(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+			$returnUrl = $account['tennant_return_url'];
 		}
 		$this->forceRedirect($returnUrl);
 	}
@@ -337,6 +332,12 @@ abstract class Billrun_PaymentGateway {
 		return $paymentRow['aid'];
 	}
 
+	/**
+	 * Responsible for paying payments and classifying payments responses: completed, pending or rejected.
+	 * 
+	 * @param string $stamp - Billrun key that represents the cycle.
+	 *
+	 */
 	public function makePayment($stamp) {
 		$today = new MongoDate();
 		$paymentParams = array(
@@ -462,6 +463,13 @@ abstract class Billrun_PaymentGateway {
 		return $requiredCredentials;
 	}
 
+	/**
+	 * Checking the state of the payment - completed, pending or rejected. 
+	 * 
+	 * @param paymentGateway $status - status returned from the payment gateway.
+	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
+	 * @return Array - the status and stage of the payment.
+	 */
 	public function checkPaymentStatus($status, $gateway) {
 		if ($gateway->isCompleted($status)) {
 			return array('status' => $status, 'stage' => "Completed");

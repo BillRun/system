@@ -60,7 +60,8 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-		$data = $this->validateData($request);
+		//	$data = $this->validateData($request);
+		$data = $request->get('data');
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
@@ -78,11 +79,20 @@ class PaymentGatewaysController extends ApiController {
 		}
 		$name = $jsonData['name'];
 		$aid = $jsonData['aid'];
-		$returnUrl = $jsonData['return_url'];
-		if (empty($returnUrl)) {
-			$returnUrl = Billrun_Factory::config()->getConfigValue('return_url');
+		if (isset($jsonData['return_url'])) {
+			$returnUrl = $jsonData['return_url'];
+		} else {
+			$returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}
-
+		if (empty($returnUrl)) {
+			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
+		}
+		$today = new MongoDate();
+		$subscribers = Billrun_Factory::db()->subscribersCollection();
+		$query = array(
+			'tennant_return_url' => $returnUrl
+		);
+		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
 	}
@@ -180,6 +190,10 @@ class PaymentGatewaysController extends ApiController {
 		return hash_equals($crc, $calculatedCrc);
 	}
 
+	/**
+	 * Load payments with status pending and that their status had not been checked for some time. 
+	 * 
+	 */
 	protected function loadPending() {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
