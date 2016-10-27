@@ -30,6 +30,12 @@ class ConfigModel {
 	protected $data;
 
 	/**
+	 * The config template.
+	 * @var array
+	 */
+	protected $template;
+	
+	/**
 	 * options of config
 	 * @var array
 	 */
@@ -42,6 +48,10 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
 		$this->loadConfig();
+		
+		// Load the config template.
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
+		$this->template = parse_ini_file($templateFileName, 1);
 	}
 
 	public function getOptions() {
@@ -284,7 +294,23 @@ class ConfigModel {
 
 		return 1;
 	}
-
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 * @param string $category - The current category.
+	 */
+	protected function handleNewCategory($data, &$currentConfig, $category) {
+		// Check if the value exists in the settings template ini.
+		if(!isset($this->template[$category])) {
+			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
+			return 0;
+		}
+		
+		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+	}
+	
 	protected function setConfigValue(&$config, $category, $toSet) {
 		// Check if complex object.
 		if (Billrun_Config::isComplex($toSet)) {
