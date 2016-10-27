@@ -148,14 +148,15 @@ class OkPageAction extends ApiAction {
 			$xmlObj = simplexml_load_string($result);
 			// Example to print out status text
 			//print_r($xmlObj);
-			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result))
+			if (!isset($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->result)) {
 				return false;
-			echo "<br /> THE TRANSACTION WAS A SUCCESS ";
+			}
+//			echo "<br /> THE TRANSACTION WAS A SUCCESS ";
 			
 			$this->card_token = $xmlObj->response->inquireTransactions->row->cardId;
 			$this->card_expiration = $xmlObj->response->inquireTransactions->row->cardExpiration;
-			$this->aid = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
-			$this->return_url = $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
+			$this->aid = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
+			$this->return_url = strval($xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2);
 			$this->personal_id = $xmlObj->response->inquireTransactions->row->personalId;
 			
 			return true;

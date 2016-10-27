@@ -68,7 +68,7 @@ class Billrun_Config {
 			$this->tenant = $this->getEnv();
 		}
 	}
-
+	
 	public function addConfig($path) {
 		if (file_exists($path)) {
 			$addedConf = new Yaf_Config_Ini($path);
@@ -167,7 +167,6 @@ class Billrun_Config {
 					return true;
 				}
 				$dbConfig = $dbCursor->getRawData();
-				
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
@@ -176,7 +175,7 @@ class Billrun_Config {
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
 			}
-		} catch (Exception $e) {
+		} catch (MongoException $e) {
 			// TODO: Exception should be thrown and handled by the error controller.
 			error_log('cannot load database config');
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);

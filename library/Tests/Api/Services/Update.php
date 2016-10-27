@@ -25,14 +25,18 @@ class Tests_Api_Services_Update extends Tests_Api_Base_Update {
 	}
 
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Update();
+		return new Billrun_ActionManagers_Services_Update($param);
 	}
 
-	protected function getDataForDB($case) {
+	protected function getDataForDB($case, $order = true) {
 		$query = $case['query'];
 		$update = $case['update'];
 		
-		$data = array_merge($query, $update);
+		if($order) {
+			$data = array_merge($update, $query);
+		} else {
+			$data = array_merge($query, $update);			
+		}
 		
 		return $data;
 	}
@@ -57,7 +61,7 @@ class Tests_Api_Services_Update extends Tests_Api_Base_Update {
 	 * @return array Update query.
 	 */
 	protected function getUpdateQuery($case) {
-		$data = $this->getDataForDB($case);
+		$data = $this->getDataForDB($case, 0);
 //		unset($data['description']);
 		return $data;
 	}
