@@ -268,7 +268,7 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			$result = $this->handleNewCategory($currentConfig, $category, $data);
+			$result = $this->handleNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
 
@@ -297,11 +297,11 @@ class ConfigModel {
 	
 	/**
 	 * Handle the scenario of a category that doesn't exist in the database
-	 * @param array $currenConfig - Current configuration data.
 	 * @param string $category - The current category.
 	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
 	 */
-	protected function handleNewCategory(&$currentConfig, $category, $data) {
+	protected function handleNewCategory($category, $data, &$currentConfig) {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
