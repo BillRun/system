@@ -81,6 +81,11 @@
              }
         }
     },
+    "export_generators" : {
+	"v" : "",
+	"t" : "Exportgenerator",
+	"list": [] 
+    },
     "subscribers": {
         "types": [
             "subscriber",

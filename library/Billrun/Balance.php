@@ -12,7 +12,7 @@
  * @package  Billing
  * @since    0.5
  */
-class Billrun_Balance extends Mongodloid_Entity {
+abstract class Billrun_Balance extends Mongodloid_Entity {
 
 	/**
 	 * Type of object
@@ -20,92 +20,110 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @var string
 	 */
 	static protected $type = 'balance';
-
-	protected $collection = null;
-	protected $granted = array();
+	static protected $instance = array();
 
 	/**
-	 * Saves the name of the selected balance type cost/usagev/total_cost.
-	 * Used to acces remaining balance in the balance object.
-	 * 
+	 * the row that load the balance
+	 * @var array
+	 */
+	protected $row;
+
+	/**
+	 * constant of calculator db field
+	 */
+	const DEF_CALC_DB_FIELD = 'aprice';
+
+	/**
+	 * the pricing field
 	 * @var string
+	 * @todo take from customer pricing
 	 */
-	protected $selectedBalance = '';
-	
-	protected $chargingTotalsKey = null;
+	public $pricingField = self::DEF_CALC_DB_FIELD;
 
-	public function __construct($options = array()) {
-		// TODO: refactoring the read preference to the factory to take it from config
-		$this->collection = self::getCollection();
+	/**
+	 * constructor of balance entity
+	 * 
+	 * @param array $values options to load the balance
+	 * 
+	 * @return void
+	 * 
+	 */
+	public function __construct($values = null, $collection = null) {
+		// Balance require to be used only with primary preferred (specially on real-time)
+		$this->collection(Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY'));
 
-		if (!isset($options['sid']) || !isset($options['aid'])) {
+		$this->row = $values;
+
+		if (!isset($this->row['sid']) || !isset($this->row['aid'])) {
 			Billrun_Factory::log('Error creating balance, no aid or sid', Zend_Log::ALERT);
-			return false;
+			return;
 		}
 
-		if (isset($options['granted_usagev']) && is_numeric($options['granted_usagev'])) {
-			$this->granted['usagev'] = (-1) * $options['granted_usagev'];
-		}
+		$this->init($values); // this for override behaviour by the inheritance classes
 
-		if (isset($options['granted_cost']) && is_numeric($options['granted_cost'])) {
-			$this->granted['cost'] = (-1) * $options['granted_cost'];
-		}
+		$balance_values = $this->load();
 
-		if (!isset($options['charging_type'])) {
-			$options['charging_type'] = 'postpaid';
-		}
-		$ret = $this->load($options['sid'], $options['urt'], $options['charging_type'], $options['usaget'])->getRawData();
-
-		if (empty($ret) || count($ret) == 0) {
-			$ret = $this->getDefaultBalance($options);
-		}
-		$this->selectedBalance = self::getSelectedBalanceKey($ret);
-
-		parent::__construct($ret, self::getCollection());
+		$this->setRawData($balance_values);
 	}
 
 	/**
-	 * Gets default balance for subscriber (when no balance was found).
-	 * For post-paid subscribers, create new empty balance, for prepaid return no balance.
-	 * 
-	 * @param type $options subscriber db line
-	 * @return array The default balance
+	 * abstract class to extend constructor before load the balance from DB after set the row
 	 */
-	protected function getDefaultBalance($options) {
-		if ($options['charging_type'] == 'prepaid') {
-			return array();
+	abstract protected function init();
+
+	/**
+	 * method to get the instance of the class (singleton)
+	 * 
+	 * @param type $params
+	 * 
+	 * @return Billrun_Balance
+	 */
+	static public function getInstance($params = null) {
+		$stamp = Billrun_Util::generateArrayStamp($params);
+		if (empty(self::$instance[$stamp])) {
+			if (empty($params)) {
+				$params = Yaf_Application::app()->getConfig();
+			}
+			if (isset($params['charging_type'])) {
+				$class = 'Billrun_Balance_' . $params['charging_type'];
+			} else { // fallback to default postpaid balance
+				$class = 'Billrun_Balance_Postpaid';
+			}
+			self::$instance[$stamp] = new $class($params);
+		} else {
+			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
+				self::$instance[$stamp]->load();
+			}
 		}
 
-		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-		$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
-		$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
-		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-		$plan_ref = $plan->createRef();
-		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
+		return self::$instance[$stamp];
 	}
 
+	/**
+	 * get balance collection
+	 * 
+	 * @return collection object
+	 * 
+	 * @deprecated since version 5.3
+	 */
 	public static function getCollection() {
+		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
+		// Balance require to be used only with primary preferred (specially on real-time)
 		return Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 	}
 
-
 	/**
 	 * Loads the balance for subscriber
-	 * @param type $subscriberId
-	 * @param type $urt
-	 * @param type $chargingType prepaid/postpaid
-	 * @return subscriber's balance
+	 * @return array subscriber's balance
 	 */
-	public function load($subscriberId, $urt, $chargingType = 'postpaid', $usageType = "") {
-		Billrun_Factory::log("Trying to load balance for subscriber " . $subscriberId . ". urt: " . $urt->sec . ". charging_type: " . $chargingType, Zend_Log::DEBUG);
+	protected function load() {
+		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". charging_type: " . $this->charging_type, Zend_Log::DEBUG);
+		$query = $this->getBalanceLoadQuery();
+		return $this->collection()->query($query)->cursor()->sort($this->loadQuerySort())->setReadPreference('RP_PRIMARY')->limit(1)->current();
+	}
 
-		$query = $this->getGetBalanceQuery($subscriberId, $urt, $chargingType, $usageType);
-		$cursor = $this->collection->query($query)->cursor();
-		if ($chargingType === 'prepaid') { // for pre-paid subscribers - choose correct balance by priority field
-			$cursor = $cursor->sort(array('priority' => -1, 'to' => 1,));
-		}
-		return $cursor->setReadPreference('RP_PRIMARY')
-				->limit(1)->current();
+	protected function loadQuerySort() {
+		return array();
 	}
 
 	/**
@@ -117,35 +135,13 @@ class Billrun_Balance extends Mongodloid_Entity {
 	 * @param type $usageType
 	 * @return array
 	 */
-	protected function getGetBalanceQuery($subscriberId, $timeNow, $chargingType = 'postpaid', $usageType = "") {
-		$query = array(
-			'sid' => $subscriberId,
-			'from' => array('$lte' => $timeNow),
-			'to' => array('$gte' => $timeNow),
-		);
+	protected function getBalanceLoadQuery(array $query = array()) {
+		$query['sid'] = $this->row['sid'];
+		$query['sid'] = array('$lte' => $this->row['urt']);
+		$query['to'] = array('$gte' => $this->row['urt']);
 
-		if (isset($this->granted['usagev'])) {
-			$minUsage = $this->granted['usagev'];
-		} else {
-			$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
-		}
+		Billrun_Factory::dispatcher()->trigger('getBalanceLoadQuery', array(&$query, $this->row, $this));
 
-		if (isset($this->granted['cost'])) {
-			$minCost = $this->granted['cost'];
-		} else {
-			$minCost = (float) Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', 0, 'float')); // float avoid set type to int
-		}
-
-		if ($chargingType === 'prepaid') {
-			$query['$or'] = array(
-				array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
-				array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
-				array("balance.cost" => array('$lte' => $minCost)),
-			);
-		}
-
-		Billrun_Factory::dispatcher()->trigger('extendGetBalanceQuery', array(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, $this));
-		
 		return $query;
 	}
 
@@ -157,168 +153,249 @@ class Billrun_Balance extends Mongodloid_Entity {
 	}
 
 	/**
-	 * Create a new subscriber in a given month and load it (if none exists).
-	 * @param type $billrun_month
-	 * @param type $sid
-	 * @param type $plan
-	 * @param type $aid
-	 * @return boolean
-	 * @deprecated since version 4.0
+	 * method to update subscriber balance to db
+	 * 
+	 * @param Mongodloid_Entity $row the input line
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param Billrun_Plan $plan the customer plan
+	 * @param string $usage_type The type  of the usage (call/sms/data)
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * 
+	 * @return mixed on success update return pricing data array, else false
+	 * 
+	 * @todo move to balance object
 	 */
-	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = $this->createBasicBalance($subscriber->aid, $subscriber->sid, $billrunKey, $plan_ref);
-		$this->load($subscriber->sid, $billrunKey);
-		return $ret;
-	}
+	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
+		$tx = $this->get('tx');
+		if (is_array($tx) && empty($tx)) {
+			$this->set('tx', new stdClass());
+			$this->save();
+		}
+		if (!empty($tx) && array_key_exists($row['stamp'], $tx)) { // we're after a crash
+			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
+			return $pricingData;
+		}
+		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan, $row);
+		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
+			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this, &$pricingData, $this));
+			return $pricingData;
+		}
 
-	/**
-	 * Create a new balance  for a subscriber  in a given billrun
-	 * @param type $account_id the account ID  of the subscriber.
-	 * @param type $subscriber_id the subscriber ID.
-	 * @param type $from billrun start date
-	 * @param type $to billrun end date
-	 * @param type $plan_ref the subscriber plan.
-	 * @return boolean true  if the creation was sucessful false otherwise.
-	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan_ref) {
-		$query = array(
-			'sid' => $sid,
-		);
-		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref),
-		);
-		$options = array(
-			'upsert' => true,
-			'new' => true,
-		);
-		Billrun_Factory::log()->log("Create empty balance, from: " . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ", if not exists for subscriber " . $sid, Zend_Log::DEBUG);
-		$output = $this->collection->findAndModify($query, $update, array(), $options, false);
+		$balance_id = $this->getId();
+		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+		list($query, $update) = $this->BuildBalanceUpdateQuery($pricingData, $row, $volume);
 
-		if (!is_array($output)) {
-			Billrun_Factory::log('Error creating balance  , from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', for subscriber ' . $sid . '. Output was: ' . print_r($output->getRawData(), true), Zend_Log::ALERT);
+		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
+		$ret = $this->collection()->update($query, $update);
+		if (!($ret['ok'] && $ret['updatedExisting'])) {
+			Billrun_Factory::log('Update subscriber balance failed on updated existing document', Zend_Log::INFO);
 			return false;
 		}
-		Billrun_Factory::log('Added balance from: ' . date("Y-m-d", $from) . " to: " . date("Y-m-d", $to) . ', to subscriber ' . $sid, Zend_Log::INFO);
-		return $output;
+		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
+		return $pricingData;
 	}
 
 	/**
-	 * get a new subscriber array to be place in the DB.
-	 * @param type $billrun_month
-	 * @param type $aid
-	 * @param type $sid
-	 * @param type $current_plan
-	 * @return type
-	 */
-	public static function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref) {
-		return array(
-			//'billrun_month' => $billrun_month,
-			'from' => new MongoDate($from),
-			'to' => new MongoDate($to),
-			'aid' => $aid,
-			'sid' => $sid,
-			'current_plan' => $plan_ref,
-//			'balance' => self::getEmptyBalance("out_plan_"),
-			'balance' => self::getEmptyBalance(),
-			'tx' => new stdclass,
-		);
-	}
-
-	/**
-	 * Check  if  a given  balnace exists.
-	 * @param type $subscriberId (optional)
-	 * @param type $billrunKey (optional)
-	 * @return boolean
-	 */
-	protected function isExists($subscriberId, $billrunKey) {
-
-		$balance = $this->collection->query(array(
-				'sid' => $subscriberId,
-				'billrun_month' => $billrunKey
-			))->cursor()->setReadPreference('RP_PRIMARY')
-			->current();
-
-		if (!count($balance->getRawData())) {
-			return FALSE;
-		}
-		return TRUE;
-	}
-
-	/**
-	 * Get an empty balance structure
+	 * method to build update query of the balance
 	 * 
-	 * @return array containing an empty balance structure.
+	 * @param array $pricingData pricing data array
+	 * @param Mongodloid_Entity $row the input line
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * 
+	 * @return array update query array (mongo style)
+	 * 
+	 * @todo move to balance object
 	 */
-	static public function getEmptyBalance() {
-		$ret = array(
-//			'totals' => array(),
-			'cost' => 0,
+	protected function BuildBalanceUpdateQuery($pricingData, $row, $volume) {
+		$update = array();
+		$update['$set']['tx.' . $row['stamp']] = $pricingData;
+		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
+		$balance_key = 'balance.totals.' . $balance_totals_key . '.usagev';
+		$query = array(
+			'_id' => $this->getId()->getMongoID(),
+			'$or' => array(
+				array($balance_key => $this->getCurrentUsage($balance_totals_key)),
+				array($balance_key => array('$exists' => 0))
+			)
 		);
-//		$usage_types = array('call', 'sms', 'data', 'incoming_call', 'incoming_sms', 'mms');
-//		if (!is_null($prefix)) {
-//			foreach ($usage_types as $usage_type) {
-//				$usage_types[] = $prefix . $usage_type;
-//			}
-//		}
-//		foreach ($usage_types as $usage_type) {
-//			$ret['totals'][$usage_type] = self::getEmptyUsageTypeTotals();
-//		}
+
+		return array($query, $update);
+	}
+
+	/**
+	 * get current usage which will the old (after update)
+	 * @return int
+	 */
+	protected function getCurrentUsage($balance_totals_key) {
+		if (!isset($this->get('balance')['totals'][$balance_totals_key]['usagev'])) {
+			return 0;
+		}
+		return $this->get('balance')['totals'][$balance_totals_key]['usagev'];
+	}
+
+	/**
+	 * method to get balance totals key
+	 * 
+	 * @param array $row
+	 * @param array $pricingData rate handle
+	 * 
+	 * @return string
+	 */
+	abstract protected function getBalanceTotalsKey($pricingData);
+
+	/**
+	 * Get pricing data for a given rate / subscriber.
+	 * 
+	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
+	 * @param string $usageType The type  of the usage (call/sms/data)
+	 * @param mixed $rate The rate of associated with the usage.
+	 * @param Billrun_Plan $plan the subscriber's current plan
+	 * @param array $row the row handle
+	 * @return array pricing data details of the specific volume
+	 * 
+	 * @todo refactoring the if-else-if-else-if-else to methods
+	 * @todo remove (in/over/out)_plan support (group used instead)
+	 */
+	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
+		if (Billrun_Calculator_CustomerPricing::isFreeLine($row)) {
+			return $this->getFreeRowPricingData();
+		}
+		$ret = array();
+		if ($plan->isRateInEntityGroup($rate, $usageType)) {
+			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this, $rate, $usageType);
+			$volumeToCharge = $volume - $groupVolumeLeft;
+			if ($volumeToCharge < 0) {
+				$volumeToCharge = 0;
+				$ret['in_group'] = $ret['in_plan'] = $volume;
+				$ret['arategroups'][] = array(
+					'name' => $plan->getEntityGroup(),
+					'usagev' => $volume,
+					'left' => $groupVolumeLeft - $volume,
+					'total' => $plan->getGroupVolume($usageType),
+				);
+			} else if ($volumeToCharge > 0) {
+				$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
+				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
+					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
+					$ret['arategroups'][] = array(
+						'name' => $plan->getEntityGroup(),
+						'usagev' => $ret['in_group'],
+						'left' => 0,
+						'total' => $plan->getGroupVolume($usageType),
+					);
+				} else if ($volumeToCharge > 0) {
+					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
+				}
+				$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
+				if ($volumeToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
+					$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
+					$ret['in_plan'] = $ret['in_group'] += $volumeToCharge - $groupVolumeLeft;
+					$volumeToCharge = $groupVolumeLeft;
+					unset($ret['out_group'], $ret['out_plan']);
+				}
+			}
+		} else {
+			$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
+			if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
+				$ret['arategroups'] = array();
+				$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
+				$ret['in_plan'] = $ret['in_group'] = $volumeToCharge - $groupVolumeLeft;
+				$volumeToCharge = $groupVolumeLeft;
+			} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
+				$ret['out_plan'] = $ret['out_group'] = $volumeToCharge = $volume;
+			}
+		}
+
+		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), 0); // TODO: handle call offset (set 0 for now)
+		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, $this));
+
+		$ret[$this->pricingField] = $charges['total'];
 		return $ret;
 	}
 
 	/**
-	 * Get an empty plan usage counters.
-	 * @return array containing an empty plan structure.
+	 * load subscribers services objects by their name
+	 * 
+	 * @param array $services services names
+	 * @param int $time unix timestamp of effective datetime
+	 * 
+	 * @return array of services objects
 	 */
-	static public function getEmptyUsageTypeTotals() {
-		return array(
-			'usagev' => 0,
-			'cost' => 0,
-			'count' => 0,
-		);
+	protected function loadSubscriberServices($services, $time) {
+		$ret = array();
+		foreach ($services as $service) {
+			$serviceSettings = array(
+				'name' => $service,
+				'time' => $time
+			);
+			$ret[] = new Billrun_Service($serviceSettings);
+		}
+
+		return $ret; // array of service objects
 	}
 
 	/**
-	 * Gets the key of the current balance
+	 * check if rate is includes in customer services groups
 	 * 
-	 * @param type $balance
-	 * @return string balance key
+	 * @param object $rate
+	 * @param string $usageType
+	 * @param array $services
+	 * 
+	 * @return boolean true if rate in services groups else false
+	 * 
+	 * @todo check also if there is available includes in the group (require subscriber balance object)
 	 */
-	public static function getSelectedBalanceKey($balance) {
-		$selectedBalance = false;
+	protected function isRateInServicesGroups($rate, $usageType, $services) {
+		foreach ($services as $service) {
+			if ($service->isRateInEntityGroup($rate, $usageType)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-		if (isset($balance['balance']['totals'])) {
-			foreach ($balance['balance']['totals'] as $usageType => $value) {
-				foreach (array_keys($value) as $usageBy) {
-					$selectedBalance = 'balance.totals.' . $usageType . '.' . $usageBy;
+	/**
+	 * method to check subset of services if there are groups includes available to use
+	 * 
+	 * @param array $rate the rate
+	 * @param string $usageType usage type
+	 * @param array $services array of Billrun_Service objects
+	 * @param int $volumeRequired the volume required to charge
+	 * @param array $arategroups the group services to return to (reference - will be added to this array)
+	 * 
+	 * @return int volume left to charge after used by all services groups
+	 */
+	protected function usageLeftInServicesGroups($rate, $usageType, $services, $volumeRequired, &$arategroups) {
+		foreach ($services as $service) {
+			if ($volumeRequired <= 0) {
+				break;
+			}
+			$serviceGroups = $service->getRateGroups($rate, $usageType);
+			foreach ($serviceGroups as $serviceGroup) {
+				$groupVolume = $service->usageLeftInEntityGroup($this, $rate, $usageType, $serviceGroup);
+				if ($groupVolume === FALSE || $groupVolume <= 0) {
+					continue;
 				}
-			}
-		} else if (isset($balance['balance']['cost'])) {
-			$selectedBalance = 'balance.cost';
-		}
-
-		return $selectedBalance;
-	}
-	
-	/**
-	 * get the totals key in the balance object 
-	 * (in order to support additional types)
-	 * For example: we can use "call" balance in "video_call" records
-	 * 
-	 * @param type $usaget
-	 * @return usage type in balance
-	 */
-	public function getBalanceChargingTotalsKey($usaget) {
-		if (is_null($this->chargingTotalsKey)) {
-			$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array("external_id" => $this->get("pp_includes_external_id")));
-			$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($query)->cursor()->current();
-			if (isset($ppincludes['additional_charging_usaget']) && is_array($ppincludes['additional_charging_usaget']) && in_array($usaget, $ppincludes['additional_charging_usaget'])) {
-				$this->chargingTotalsKey = $ppincludes['charging_by_usaget'];
-			} else {
-				$this->chargingTotalsKey = $usaget;
+				if ($volumeRequired <= $groupVolume) {
+					$arategroups[] = array(
+						'name' => $serviceGroup,
+						'usagev' => $volumeRequired,
+						'left' => $groupVolume - $volumeRequired,
+						'total' => $service->getGroupVolume($usageType, $serviceGroup),
+					);
+					return 0;
+				}
+				$arategroups[] = array(
+					'name' => $serviceGroup,
+					'usagev' => $groupVolume,
+					'left' => 0,
+					'total' => $service->getGroupVolume($usageType, $serviceGroup),
+				);
+				$volumeRequired -= $groupVolume;
 			}
 		}
-		return $this->chargingTotalsKey;
+		return $volumeRequired; // volume left to charge
 	}
 
 }

@@ -80,8 +80,6 @@ class Billrun_Billrun {
 		if (isset($options['filter_fields'])) {
 			$this->filter_fields = array_map("intval", $options['filter_fields']);
 		}
-		
-		$this->billingCycle = new Billrun_DataTypes_Billingcycle();
 	}
 
 	/**
@@ -186,6 +184,27 @@ class Billrun_Billrun {
 		$this->data['subs'] = array_values($subscribers);
 	}
 
+	/**
+	 * Return an array of account ID's which exist in the 
+	 * billrun for a specific key.
+	 * @param string $key - The billrun key
+	 * @return array
+	 */
+	public static function existingAccountsQuery($key) {
+		$billColl = Billrun_Factory::db()->billrunCollection();
+		$query = array('billrun_key' => $key);
+		$project = array('_id' => 0, 'aid' => 1);
+		$cursor = $billColl->find($query, $project);
+		
+		$idList = array();
+		foreach ($cursor as $account) {
+			$idList[] = $account['aid'];
+		}
+		Billrun_Factory::log("Found " . count($idList) . " accounts already existing for key: " . $key);
+		
+		return array('$nin' => $idList);
+	}
+	
 	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
@@ -738,6 +757,23 @@ class Billrun_Billrun {
 		$account_lines = $this->getAccountLines($this->aid);
 
 		$lines = array_merge($account_lines, $manual_lines);
+		$this->filterSubscribers($lines, $deactivated_subscribers);
+		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
+
+		$updatedLines = $this->processLines(array_values($lines));
+		Billrun_Factory::log("Finished processing account $this->aid lines. Total: " . count($updatedLines), Zend_Log::DEBUG);
+		$this->updateTotals();
+		return $updatedLines;
+	}
+	
+	/**
+	 * Add all lines of the account to the billrun object
+	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
+	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
+	 * @return array the stamps of the lines used to create the billrun
+	 */
+	public function saveLines($lines, &$deactivated_subscribers = array()) {
+		Billrun_Factory::log("Querying account " . $this->aid . " for lines...", Zend_Log::DEBUG);
 		$this->filterSubscribers($lines, $deactivated_subscribers);
 		Billrun_Factory::log("Processing account Lines $this->aid", Zend_Log::DEBUG);
 

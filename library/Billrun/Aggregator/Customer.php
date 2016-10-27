@@ -114,6 +114,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $billrun;
 	
+	protected $acounts;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -167,7 +169,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 
-		$this->loadRates();
 		if (!$this->recreateInvoices){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
 			$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
@@ -177,10 +178,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			$this->page = $pageResult;
 		}
-		
-		// TODO: Get the types of subscriber aggregator
-		$types = array('flat', 'credit', 'services');
-		$this->subscriberAggregator = new Billrun_Aggregator_Subscriber_Manager($types);
 		
 		$this->isValid = true;
 	}
@@ -207,74 +204,219 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * load the data to aggregate
 	 */
 	public function load() {
-		$cycle = new Billrun_DataTypes_CycleTime($this->getStamp());
-		$data = $this->loadRawData($cycle);
-		$aggregatedData = $this->translateRawData($data);
-		return $data;
+		$billrunKey = $this->getStamp();
+		$cycle = new Billrun_DataTypes_CycleTime($billrunKey);
+		$rawResults = $this->loadRawData($cycle);
+		$plans = $rawResults['plans'];
+		$rates = $rawResults['rates'];
+		$services = $rawResults['services'];
+		$data = $rawResults['data'];
+		
+		$sortedRates = $this->constructRates($rates);
+		$sortedPlans = $this->constructPlans($plans);
+		$sortedServices = $this->constructServices($services);
+		$accounts = $this->parseToAccounts($data, $cycle, $sortedPlans, $sortedRates, $sortedServices);
+		
+		return $accounts;
 	}
 
+	/**
+	 * Construct the rates array from the mongo raw data.
+	 * @param type $rates
+	 * @return type
+	 */
+	protected function constructRates($rates) {
+		$sorted = array();
+		foreach ($rates as $value) {
+			$key = strval($value['_id']);
+			$sorted[$key] = $value;
+		}
+		return $sorted;
+	}
+	
+	/**
+	 * Construct the plans array from the mongo raw data.
+	 * @param type $plans
+	 * @return type
+	 */
+	protected function constructPlans($plans) {
+		$sorted = array();
+		foreach ($plans as $value) {
+			$name = $value['plan'];
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$sorted[$name] = $translatedDates;
+		}
+		return $sorted;
+	}
+	
+	protected function constructServices($services) {
+		$sorted = array();
+		foreach ($services as $value) {
+			$name = $value['name'];
+			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
+			$sorted[$name] = $translatedDates;
+		}
+		return $sorted;
+	}
+	
 	/**
 	 * Get the raw data
 	 * @param Billrun_DataTypes_CycleTime $cycle
 	 * @return array of raw data
 	 */
 	protected function loadRawData($cycle) {
+		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
+		
+		// Load the plans
+		$planResults = $this->aggregatePlans($mongoCycle);
+		Billrun_Factory::log("PlanResults: " . count($planResults));
+		$ratesResults = $this->aggregateRates($mongoCycle);
+		Billrun_Factory::log("RateResults: " . count($ratesResults));
+		$servicesResults = $this->aggregateServices($mongoCycle);
+		Billrun_Factory::log("ServicesResults: " . count($servicesResults));
+		$result = array('plans' => $planResults, 'rates' => $ratesResults, 'services' => $servicesResults);
 		if (!$this->overrideAccountIds) {
-			return $this->aggregateMongo($cycle, $this->page, $this->size);
+			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size);
+			$result['data'] = $data;
+			return $result;
 		}
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
-			$data = $data + $this->aggregateMongo($cycle, 0, 1, $account_id);
+			$data = $data + $this->aggregateMongo($mongoCycle, 0, 1, $account_id);
 		}
-		return $data;
+		$result['data'] = $data;
+		return $result;
 	}
 	
 	/**
-	 * Translate the raw data to aggregateable data
-	 * @param array $rawData
-	 * @return array Array of aggregateable data.
+	 * 
+	 * @param type $outputArr
+	 * @param Billrun_DataTypes_CycleTime $cycle
+	 * @param array $plans
+	 * @param array $rates
+	 * @return \Billrun_Cycle_Account
 	 */
-	protected function translateRawData($rawData) {
-		$data = array();
-		$billruns_count = 0;
-		$dataKeys = array_keys($rawData);
-		foreach ($rawData as $accid => $account) {
-			Billrun_Factory::log("Aggregate loop");
-			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
-				// TODO: Memory limit should not be here as magic number.
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_Log::ALERT);
-				break;
+	protected function parseToAccounts($outputArr, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$rates, array &$services) {
+		$accounts = array();
+		$lastAid = null;
+		$accountData = array();
+		$billrunData = array(
+			'billrun_key' => $cycle->key(),
+			'autoload' => !empty($this->overrideAccountIds));
+		foreach ($outputArr as $subscriberPlan) {
+			$aid = $subscriberPlan['id']['aid'];
+			
+			// If the aid is different, store the account.
+			if($accountData && $lastAid && ($lastAid != $aid)) {	
+				$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services, $rates);
+				if($accountToAdd) {
+					$accounts[] = $accountToAdd;
+				}
+				$accountData = array();
 			}
-			//pre-load  account lines 
-			if ($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
-				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
-				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
-			}
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
-			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_Log::INFO);
-
-			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
-				Billrun_Factory::log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
-				$skipped_billruns_count++;
+			
+			$lastAid = $aid;
+			
+			$type = $subscriberPlan['id']['type'];
+			if ($type === 'account') {
+				$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 				continue;
 			}
-			$params = array(
-				'aid' => $accid,
-				'billrun_key' => $billrun_key,
-				'autoload' => !empty($this->overrideAccountIds),
-			);
-			$account_billrun = Billrun_Factory::billrun($params);
-			if ($this->overrideAccountIds) {
-				$account_billrun->resetBillrun();
+			
+			if (($type === 'subscriber') && $accountData) {
+				$raw = $subscriberPlan['id'];
+				$raw['plans'] = $subscriberPlan['plan_dates'];
+				$raw['from'] = $subscriberPlan['plan_dates'][0]['from'];
+				$raw['to'] = $subscriberPlan['plan_dates'][count($subscriberPlan['plan_dates']) - 1]['to'];
+				$accountData['subscribers'][] = $raw;
 			}
-			
-			$this->addAccountFieldsToBillrun($account_billrun, $account);
-			
-			$this->data[] = new Billrun_Cycle_Account($account);
 		}
 		
-		return $data;
+		if($accountData) {
+			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid, $cycle, $plans, $services, $rates);
+			if($accountToAdd) {
+				$accounts[] = $accountToAdd;
+			}
+		}
+		
+		return $accounts;
+	}
+	
+	/**
+	 * Returns a single cycle account instnace.
+	 * If the account already exists in billrun, returns false..
+	 * @param array $billrunData
+	 * @param int $aid
+	 * @param Billrun_DataTypes_CycleTime $cycle
+	 * @param array $plans
+	 * @param array $services
+	 * @param array $rates
+	 * @return Billrun_Cycle_Account | false 
+	 */
+	protected function getAccount($billrunData, $accountData, $aid, Billrun_DataTypes_CycleTime $cycle, array &$plans, array &$services, array &$rates) {
+		// Handle no subscribers.
+		if(!isset($accountData['subscribers'])) {
+			$accountData['subscribers'] = array();
+		}
+		
+		$accountData['cycle'] = $cycle;
+		$accountData['plans'] = &$plans;
+		$accountData['services'] = &$services;
+		$accountData['rates'] = &$rates;
+
+		$billrunData['aid'] = $aid;
+		$billrunData['attributes'] = $accountData['attributes'];
+		$invoice = new Billrun_Cycle_Account_Invoice($billrunData);
+
+		// Check if already exists.
+		if($invoice->exists()) {
+			Billrun_Factory::log("Billrun " . $cycle->key() . " already exists for account " . $aid, Zend_Log::ALERT);
+			return false;
+		} 
+		
+		$accountData['invoice'] = $invoice;
+		return new Billrun_Cycle_Account($accountData);
+	}
+	
+	/**
+	 * Construct the account data
+	 * @param string $key - Billrun key
+	 * @param int $aid - Current account id
+	 * @param array $subscriberPlan - Current subscriber plan
+	 * @return type
+	 */
+	protected function constructAccountData($key, $aid, $subscriberPlan) {
+		$vat = self::getVATByBillrunKey($key);
+		$accountData = array(
+			'aid' => $aid,
+			'vat' => $vat,
+			'billrun_key' => $key,
+		);
+		
+		$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
+	}
+	
+	/**
+	 * This function constructs the account attributes for a billrun cycle account
+	 * @param array $subscriberPlan - Current subscriber plan.
+	 */
+	protected function constructAccountAttributes($subscriberPlan) {
+		$firstname = $subscriberPlan['id']['first_name'];
+		$lastname = $subscriberPlan['id']['last_name'];
+		
+		$paymentDetails = 'No payment details';
+		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
+			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
+		}
+		
+		return array(
+			'firstname' => $firstname,
+			'lastname' => $lastname,
+			'fullname' => $firstname . ' ' . $lastname,
+			'address' => $subscriberPlan['id']['address'],
+			'payment_details' => $paymentDetails
+		);
 	}
 	
 	protected function handleInvoices($data) {
@@ -289,7 +431,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->handleInvoices($data);
 		}
 
-		Billrun_Factory::log("aggregator entities loaded: " . count($data), Zend_Log::INFO);
+		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 		
@@ -298,6 +440,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
+		$this->acounts = &$data;
 	}
 	
 	protected function clearForAcountPreload($data) {
@@ -307,151 +450,131 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		foreach ($dataKeys as $key => $aid) {
 			if (!$this->overrideAccountIds && $this->billrun->exists($aid)) {
 				unset($dataKeys[$key]);
-				//$existingAccounts[$aid]  = $this->data[$aid];
 			}
 		}
 		return $dataKeys;
 	}
 	
-	/**
-	 * execute aggregate
-	 */
-	public function aggregate() {
-		foreach ($this->data as $accid => $account) {
-			Billrun_Factory::log("Aggregate loop");
-			if ($this->memory_limit > -1 && memory_get_usage() > $this->memory_limit) {
-				// TODO: Memory limit should not be here as magic number.
-				Billrun_Factory::log('Customer aggregator memory limit of ' . $this->memory_limit / 1048576 . 'M has reached. Exiting (page: ' . $this->page . ', size: ' . $this->size . ').', Zend_Log::ALERT);
-				break;
-			}
-			//pre-load  account lines 
-			if ($this->bulkAccountPreload && !($billruns_count % $this->bulkAccountPreload) && count($dataKeys) > $billruns_count) {
-				$aidsToLoad = array_slice($dataKeys, $billruns_count, $this->bulkAccountPreload);
-				Billrun_Billrun::preloadAccountsLines($aidsToLoad, $billrun_key);
-			}
-			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($accid, $account, &$this));
-			Billrun_Factory::log('Current account index: ' . ++$billruns_count, Zend_Log::INFO);
-//			if (!Billrun_Factory::config()->isProd()) {
-//				if ($this->testAcc && is_array($this->testAcc) && !in_array($accid, $this->testAcc)) {//TODO : remove this??
-//					//Billrun_Factory::log(" Moving on nothing to see here... , account Id : $accid");
-//					continue;
-//				}
-//			}
-
-			if (!$this->overrideAccountIds && Billrun_Billrun::exists($accid, $billrun_key)) {
-				Billrun_Factory::log("Billrun " . $billrun_key . " already exists for account " . $accid, Zend_Log::ALERT);
-				$skipped_billruns_count++;
-				continue;
-			}
-			$params = array(
-				'aid' => $accid,
-				'billrun_key' => $billrun_key,
-				'autoload' => !empty($this->overrideAccountIds),
-			);
-			$account_billrun = Billrun_Factory::billrun($params);
-			if ($this->overrideAccountIds) {
-				$account_billrun->resetBillrun();
-			}
-			
-			$this->addAccountFieldsToBillrun($account_billrun, $account);
-			
-			$manual_lines = array();
-			$deactivated_subscribers = array();
-			foreach ($account['subscribers'] as $subscriber) {
-				/* @var $subscriber Billrun_Subscriber */
-				Billrun_Factory::dispatcher()->trigger('beforeAggregateSubscriber', array($subscriber, $account_billrun, &$this));
-				$sid = $subscriber->getId();
-				if ($account_billrun->subscriberExists($sid)) {
-					Billrun_Factory::log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
-					continue;
-				}
-				$next_plan_name = $subscriber->getNextPlanName();
-				if (is_null($next_plan_name)) {
-					$subscriber_status = "closed";
-					$currentPlans = $subscriber->getCurrentPlans();
-					if (empty($currentPlans)) {
-						Billrun_Factory::log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
-						$deactivated_subscribers[] = array("sid" => $sid);
-					}
-				} else {
-					$subscriber_status = "open";
-				}
-				foreach ($deactivated_subscribers as $value) {
-					
-				}
-				$manual_lines = array_merge($manual_lines, $this->subscriberAggregator->aggregate($subscriber, $billrun_key));
-				$account_billrun->addSubscriber($subscriber, $subscriber_status);
-				Billrun_Factory::dispatcher()->trigger('afterAggregateSubscriber', array($subscriber, $account_billrun, &$this));
-			}
-			$lines = $account_billrun->addLines($manual_lines, $deactivated_subscribers);
-
-			$account_billrun->filter_disconected_subscribers($deactivated_subscribers);
-
-			//save the billrun
-			if ($account_billrun->is_deactivated() === true) {
-				Billrun_Factory::log('deactivated account, no need for invoice ' . $accid, Zend_Log::DEBUG);
-				continue;
-			}
-			Billrun_Factory::log('Saving account ' . $accid, Zend_Log::DEBUG);
-			if ($account_billrun->save() === false) {
-				Billrun_Factory::log('Error saving account ' . $accid, Zend_Log::ALERT);
-				continue;
-			}
-			$this->successfulAccounts[] = $accid;
-			Billrun_Factory::log('Finished saving account ' . $accid, Zend_Log::DEBUG);
-
-			Billrun_Factory::dispatcher()->trigger('aggregateBeforeCloseAccountBillrun', array($accid, $account, $account_billrun, $lines, &$this));
-			Billrun_Factory::log("Closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
-			$account_billrun->close($this->min_invoice_id);
-			Billrun_Factory::log("Finished closing billrun $billrun_key for account $accid", Zend_Log::DEBUG);
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($accid, $account, $account_billrun, $lines, &$this));
-			if ($this->bulkAccountPreload) {
-				Billrun_Billrun::clearPreLoadedLines(array($accid));
-			}
+	protected function afterAggregate($results) {
+		Billrun_Factory::log("Writing the invoice data!");
+		// Write down the invoice data.
+		foreach ($this->acounts as $account) {
+			$account->writeInvoice($this->min_invoice_id);
 		}
-		if ($billruns_count == count($this->data)) {
-			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
-			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
-			Billrun_Factory::log($end_msg, Zend_Log::INFO);
-			$this->sendEndMail($end_msg);
-		}
+		
+		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
+		$end_msg .="Processed " . (count($results)) . " accounts";
+		Billrun_Factory::log($end_msg, Zend_Log::INFO);
+		$this->sendEndMail($end_msg);
 
 		// @TODO trigger after aggregate
 		if (!$this->recreateInvoices){
-			$cycleQuery = array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size);
+			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
 			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);
 		}
-		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
-		return $this->successfulAccounts;
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($results, &$this));
 	}
-
+	
 	protected function sendEndMail($msg) {
 		$recipients = Billrun_Factory::config()->getConfigValue('log.email.writerParams.to');
 		if ($recipients) {
 			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
 		}
 	}
+
+	// TODO: Move this function to a "collection aggregator class"
+	protected function aggregatePlans($cycle) {
+		$pipelines[] = $this->getPlansMatchPipeline($cycle);
+		$pipelines[] = $this->getPlansProjectPipeline();
+		$coll = Billrun_Factory::db()->plansCollection();
+		$results = iterator_to_array($coll->aggregate($pipelines));
+		
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
+	}
+	
+	// TODO: Move this function to a "collection aggregator class"
+	protected function aggregateServices($cycle) {
+		$pipelines[] = $this->getPlansMatchPipeline($cycle);
+		$coll = Billrun_Factory::db()->servicesCollection();
+		$results = iterator_to_array($coll->aggregate($pipelines));
+		
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
+	}
+	
+	// TODO: Move this function to a "collection aggregator class"
+	protected function aggregateRates($cycle) {
+		$pipelines[] = $this->getPlansMatchPipeline($cycle);
+		
+		$coll = Billrun_Factory::db()->ratesCollection();
+		$results = iterator_to_array($coll->aggregate($pipelines));
+		
+		if (!is_array($results) || empty($results) ||
+			(isset($results['success']) && ($results['success'] === FALSE))) {
+			return array();
+		}
+		return $results;
+	}
+	
+	/**
+	 * 
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle
+	 * @return type
+	 */
+	// TODO: Move this function to a "collection aggregator class"
+	protected function getPlansMatchPipeline($cycle) {
+		return array(
+			'$match' => array(
+				'from' => array(
+					'$lt' => $cycle->end()
+					),
+				'to' => array(
+					'$gt' => $cycle->start()
+					)
+				)
+			);
+	}
+	
+	// TODO: Move this function to a "collection aggregator class"
+	protected function getPlansProjectPipeline() {
+		return array(
+			'$project' => array(
+				'plan' => '$name',
+				'upfront' => 1,
+				'vatable' => 1,
+				'price' => 1,
+				'recurrence.periodicity' => 1,
+				'plan_activation' => 1,
+				'plan_deactivation' => 1
+			)
+		);
+	}
 	
 	/**
 	 * Aggregate mongo with a query
-	 * @param Billrun_DataTypes_CycleTime $cycle - Current cycle time
+	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
 	 * @param int $aid - Account id, null by deafault
 	 * @return array 
 	 */
 	public function aggregateMongo($cycle, $page, $size, $aid = null) {
-		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
 		if ($aid) {
 			$page = 0;
 			$size = 1;
 		}
-		$pipelines[] = $this->getMatchPiepline($mongoCycle);
+		$pipelines[] = $this->getMatchPiepline($cycle);
 		if ($aid) {
 			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
 		}
-		$pipelines[] = $this->getSortPipeline();
 		
 		$pipelines[] = array(
 			'$group' => array(
@@ -501,6 +624,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 				'plan_dates' => array(
 					'$push' => array(
+						'plan' => '$sub_plans.plan',
 						'from' => '$sub_plans.from',
 						'to' => '$sub_plans.to',
 						'plan_activation' => '$sub_plans.plan_activation',
@@ -512,6 +636,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 			),
 		);
+		
+		$pipelines[] = $this->getSortPipeline();
+
 		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 0,
@@ -520,20 +647,41 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'card_token' => 1,
 			)
 		);
-		$coll = Billrun_Factory::db()->subscribersCollection();
-		$results = iterator_to_array($coll->aggregate($pipelines));
 		
+	
+		$coll = Billrun_Factory::db()->subscribersCollection();
+		return $this->aggregatePipelines($pipelines, $coll);
+	}
+	
+	
+	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
+		$cursor = $collection->aggregate($pipelines);
+		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
 			(isset($results['success']) && ($results['success'] === FALSE))) {
 			return array();
-		} 
+		} 	
 		return $results;
 	}
 	
+	/**
+	 * 
+	 * @param Billrun_DataTypes_MongoCycleTime $mongoCycle
+	 * @return type
+	 */
 	protected function getMatchPiepline($mongoCycle) {
-		return array(
+		$match = array(
 			'$match' => array(
 				'$or' => array(
+					array( // Account records
+						'type' => 'account',
+						'from' => array(
+							'$lte' => $mongoCycle->end(),
+						),
+						'to' => array(
+							'$gte' => $mongoCycle->start(),
+						),
+					),
 					array( // Subscriber records
 						'type' => 'subscriber',
 						'plan' => array(
@@ -569,125 +717,46 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 								),
 							),
 						)
-					),
-					array( // Account records
-						'type' => 'account',
-						'from' => array(
-							'$lte' => $mongoCycle->end(),
-						),
-						'to' => array(
-							'$gte' => $mongoCycle->start(),
-						),
-					),
+					)
 				)
 			)
 		);
+		
+		// If the accounts should not be overriden, filter the existing ones before.
+		if(!$this->overrideAccountIds) {
+			// Get the aid exclusion query
+			$exclusionQuery = $this->billrun->existingAccountsQuery();
+			$match['$match']['aid'] = $exclusionQuery;
+		}
+		
+		return $match;
 	}
 	
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
-				'aid' => 1,
-				'sid' => 1,
-				'plan' => 1,
-				'from' => 1,
+				'_id.aid' => 1,
+				'_id.sid' => 1,
+				'_id.type' => -1,
+				'_id.plan' => 1,
+				
+				// TODO: We might want to uncomment this
+//				'plan_dates.from' => 1,
 			),
 		);
-	}
-	
-	/**
-	 * Creates and saves a flat line to the db
-	 * @param Billrun_Subscriber $subscriber the subscriber to create a flat line to
-	 * @param string $billrun_key the billrun for which to add the flat line
-	 * @return array the inserted line or the old one if it already exists
-	 * @deprecated since version 5.1
-	 */
-	protected function saveFlatLines($subscriber, $billrun_key) {
-		$flatEntries = $subscriber->getFlatEntries($billrun_key, true);
-		try {
-			if ($flatEntries) {
-				$flatEntriesRaw = array_map(function($obj) {
-					return $obj->getRawData();
-				}, $flatEntries);
-				$ret = $this->lines->batchInsert($flatEntriesRaw, array("w" => 1));
-				if (empty($ret['ok']) || empty($ret['nInserted']) || $ret['nInserted'] != count($flatEntries)) {
-					Billrun_Factory::log('Error when trying to insert ' . count($flatEntries) . ' flat entries for subscriber ' . $subscriber->sid . '. Details: ' . print_r($ret, 1), Zend_Log::ALERT);
-				}
-			}
-		} catch (Exception $e) {
-			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-				Billrun_Factory::log("Flat line already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
-			} else {
-				Billrun_Factory::log("Problem inserting flat lines for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . ". error message: " . $e->getMessage() . ". error code: " . $e->getCode(), Zend_Log::ALERT);
-				Billrun_Util::logFailedCreditRow($flatEntries);
-			}
-		}
-		return $flatEntries;
-	}
-
-	/**
-	 * create and save service lines
-	 * @param type $subscriber
-	 * @param type $billrun_key
-	 * @return array of inserted lines
-	 * @deprecated since version 5.1
-
-	 */
-	protected function saveServiceLines($subscriber, $billrun_key) {
-		$services = $subscriber->getServices($billrun_key, true);
-		$ret = array();
-		foreach ($services as $service) {
-			$rawData = $service->getRawData();
-			try {
-				$this->lines->insert($rawData, array("w" => 1));
-			} catch (Exception $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Service already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " service details: " . print_R($rawData, 1), Zend_Log::ALERT);
-				} else {
-					Billrun_Factory::log("Problem inserting service for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". service details:" . print_R($rawData, 1), Zend_Log::ALERT);
-					Billrun_Util::logFailedServiceRow($rawData);
-				}
-			}
-			$ret[$service['stamp']] = $service;
-		}
-		return $ret;
-	}
-
-	/**
-	 * create and save credit lines
-	 * @param type $subscriber
-	 * @param type $billrun_key
-	 * @return array of inserted lines
-	 * @deprecated since version 5.1
-	 */
-	protected function saveCreditLines($subscriber, $billrun_key) {
-		$credits = $subscriber->getCredits($billrun_key, true);
-		$ret = array();
-		foreach ($credits as $credit) {
-			$rawData = $credit->getRawData();
-			try {
-				$this->lines->insert($rawData, array("w" => 1));
-			} catch (Exception $e) {
-				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
-					Billrun_Factory::log("Credit already exists for subscriber " . $subscriber->sid . " for billrun " . $billrun_key . " credit details: " . print_R($rawData, 1), Zend_Log::ALERT);
-				} else {
-					Billrun_Factory::log("Problem inserting credit for subscriber " . $subscriber->sid . " for billrun " . $billrun_key
-						. ". error message: " . $e->getMessage() . ". error code: " . $e->getCode() . ". credit details:" . print_R($rawData, 1), Zend_Log::ALERT);
-					Billrun_Util::logFailedCreditRow($rawData);
-				}
-			}
-			$ret[$credit['stamp']] = $credit;
-		}
-		return $ret;
 	}
 
 	protected function saveCredit($credit, $billrun_key) {
 		return $insertRow;
 	}
 
-	protected function save($data) {
-		
+	protected function save($results) {
+		if(empty($results)) {
+			Billrun_Factory::log("Empty aggregate customer results, skipping save");
+			return;
+		}
+		$linesCol = Billrun_Factory::db()->linesCollection();
+		$linesCol->batchInsert($results);
 	}
 
 	/**
@@ -709,18 +778,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected function updateBillrun($billrun, $line) {
 		
-	}
-
-	/**
-	 * Load all rates from db into memory
-	 */
-	protected function loadRates() {
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
-		foreach ($rates as $rate) {
-			$rate->collection($rates_coll);
-			$this->rates[strval($rate->getId())] = $rate;
-		}
 	}
 
 	/**
@@ -841,7 +898,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {
 		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
-		$billrun->populateBillrunWithAccountData($account, $options);
+		$billrun->populateInvoiceWithAccountData($account, $options);
 	}
 
 }

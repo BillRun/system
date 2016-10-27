@@ -614,7 +614,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	/**
-	 * use to store the row to extend balance query (method extendGetBalanceQuery)
+	 * use to store the row to extend balance query (method getBalanceLoadQuery)
 	 * 
 	 * @param array $row
 	 * @param Billrun_Calculator $calculator
@@ -637,7 +637,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo change the values to be with flag taken from pp_includes into balance object
 	 * 
 	 */
-	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
+	public function getBalanceLoadQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
