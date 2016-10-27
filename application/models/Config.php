@@ -243,6 +243,8 @@ class ConfigModel {
 			}
 		}
 		
+		Billrun_Factory::log(print_r($updatedData,1));
+
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -267,9 +269,8 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			// TODO: Do we allow setting values with NEW keys into the settings?
-			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
-			return 0;
+			$result = $this->handleNewCategory($data, $currentConfig, $category);
+			return $result;
 		}
 
 		// Check if complex object.
@@ -302,13 +303,39 @@ class ConfigModel {
 	 * @param string $category - The current category.
 	 */
 	protected function handleNewCategory($data, &$currentConfig, $category) {
+		$splitCategory = explode('.', $category);
+
+		$found = true;
+		$ptrTemplate = &$this->template;
+		$newConfig = $currentConfig;
+		$newValueIndex = &$newConfig;
+		
+		Billrun_Factory::log(print_r($this->template,1));
+		// Go through the keys
+		foreach ($splitCategory as $key) {
+//			if($key === 1) {
+//				break;
+//			}
+			$newValueIndex[$key] = array();
+			$newValueIndex = &$newValueIndex[$key];
+			if(!isset($ptrTemplate[$key])) {
+				$found = false;
+				break;
+			}
+			$ptrTemplate = &$ptrTemplate[$key];
+		}
+		
 		// Check if the value exists in the settings template ini.
-		if(!isset($this->template[$category])) {
+		if(!$found) {
 			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
 			return 0;
 		}
 		
-		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+		// Set the data
+		$currentConfig = $newConfig;
+
+		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+		return $result;
 	}
 	
 	protected function setConfigValue(&$config, $category, $toSet) {
