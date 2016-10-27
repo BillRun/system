@@ -313,7 +313,9 @@ class ConfigModel {
 		
 		// Go through the keys
 		foreach ($splitCategory as $key) {
-			$newValueIndex[$key] = array();
+			if(!isset($newValueIndex[$key])) {
+				$newValueIndex[$key] = array();
+			}
 			$newValueIndex = &$newValueIndex[$key];
 			if(!isset($ptrTemplate[$key])) {
 				$found = false;
