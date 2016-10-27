@@ -28,12 +28,6 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $data;
-
-	/**
-	 * The config template.
-	 * @var array
-	 */
-	protected $template;
 	
 	/**
 	 * options of config
@@ -48,10 +42,6 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
 		$this->loadConfig();
-		
-		// Load the config template.
-		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
-		$this->template = parse_ini_file($templateFileName, 1);
 	}
 
 	public function getOptions() {
@@ -243,8 +233,6 @@ class ConfigModel {
 			}
 		}
 		
-		Billrun_Factory::log(print_r($updatedData,1));
-
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -255,6 +243,17 @@ class ConfigModel {
 		return $saveResult;
 	}
 
+	/**
+	 * Load the config template.
+	 * @return array The array representing the config template
+	 */
+	protected function loadTemplate() {
+		// Load the config template.
+		// TODO: Move the file path to a constant
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
+		return parse_ini_file($templateFileName, 1);
+	}
+	
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {
@@ -305,12 +304,13 @@ class ConfigModel {
 	protected function handleNewCategory($data, &$currentConfig, $category) {
 		$splitCategory = explode('.', $category);
 
+		$template = $this->loadTemplate();
+		
 		$found = true;
-		$ptrTemplate = &$this->template;
+		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
 		$newValueIndex = &$newConfig;
 		
-		Billrun_Factory::log(print_r($this->template,1));
 		// Go through the keys
 		foreach ($splitCategory as $key) {
 //			if($key === 1) {
