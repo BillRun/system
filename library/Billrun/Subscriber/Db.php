@@ -66,6 +66,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 //		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
 
 
+		if (isset($subscriberQuery['sid'])) {
+			settype($subscriberQuery['sid'], 'int');
+		}
 		$data = $this->customerQueryDb($subscriberQuery);
 		if (!$data) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
@@ -252,7 +255,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$results = iterator_to_array($coll->aggregate($pipelines));
 		return $this->parseActiveSubscribersOutput($results, $startTime, $endTime);
 	}
-
+	
 	/**
 	 * @param array $outputArr
 	 * @param int $time
@@ -271,6 +274,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 		$lastSid = null;
 		$accountData = array();
 		foreach ($outputArr as $subscriberPlan) {
+			$aid = $subscriberPlan['id']['aid'];
 			$type = $subscriberPlan['id']['type'];
 			$firstname = $subscriberPlan['id']['first_name'];
 			$lastname = $subscriberPlan['id']['last_name'];
@@ -283,7 +287,6 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 				);
 				continue;
 			}
-			$aid = $subscriberPlan['id']['aid'];
 			$sid = $subscriberPlan['id']['sid'];
 			$plan = $subscriberPlan['id']['plan'];
 			if ($lastSid && ($lastSid != $sid)) {

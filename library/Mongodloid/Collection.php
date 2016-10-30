@@ -440,6 +440,7 @@ class Mongodloid_Collection {
 		// check if id exists (cannot create auto increment without id)
 		$id = $entity->getId();
 		if (!$id) {
+			Billrun_Factory::log("createAutoIncForEntity no id.");
 			// TODO: Report error?
 			return;
 		}
@@ -486,7 +487,7 @@ class Mongodloid_Collection {
 
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
-			} catch (MongoCursorException $e) {
+			} catch (MongoException $e) {
 				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 					// duplicate - need to check if oid already exists
 					$ret = $this->getAutoInc($oid);
