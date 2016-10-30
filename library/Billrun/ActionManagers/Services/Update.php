@@ -23,34 +23,28 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	protected $time;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating service"));
-	}
-
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
 	public function execute() {
+		$details = array();
 		try {
 			$this->time = new MongoDate();
-			if (!$oldEntity = $this->getOldEntity()) {
-				return false;
+			$oldEntity = $this->getOldEntity();
+			if (!$oldEntity) {
+				$this->reportError(42, Zend_Log::NOTICE);
 			}
-			$this->updateEntity($oldEntity);
+			$details = $this->updateEntity($oldEntity);
 			
 			$this->closeEntity($oldEntity);
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 1;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
-			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
+		} catch (\MongoException $e) {
+			$this->reportError(1, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success updating service",
+			'details' => $details
 		);
 
 		return $outputResult;
@@ -94,7 +88,6 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		$this->collection->save($entity, 1);
 	}
 
-	
 	/**
 	 * Set the values for the query record to be set.
 	 * @param httpRequest $input - The input received from the user.
@@ -104,23 +97,19 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 2;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
 		}
 		
-		$invalidFields = $this->setQueryFields($jsonData);
-		// If there were errors.
-		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 3;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+		$this->setQueryFields($jsonData);
+		
+		if(empty($this->query)) {
+			$this->reportError(22, Zend_Log::NOTICE);
 		}
-
+		
 		$update = $input->get('update');
 		if (empty($update) || (!($jsonData = json_decode($update, true))) || !$this->setUpdateFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 2;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
 		}
 		
@@ -131,32 +120,31 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.
-	 * @return array - Array of strings of invalid field name. Empty if all is valid.
 	 */
 	protected function setQueryFields($queryData) {
-		$this->query = Billrun_Util::getDateBoundQuery();
+		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 		
-		$fields = Billrun_Factory::config()->getConfigValue('services.fields');
+		$this->setMongoID($queryData);
 		
-		// Array of errors to report if any error occurs.
-		$invalidFields = array();
-
-		// Get only the values to be set in the update record.
-		foreach ($fields as $field) {
-			if(!isset($field['mandatory']) || !$field['mandatory']) {
-				continue;
-			}
-			
-			$fieldName = $field['field_name'];
-			
-			if (!isset($queryData[$fieldName]) || empty($queryData[$fieldName])) {
-				$invalidFields[] = $fieldName;
-			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
-			}
+		return true;
+	}
+	
+	/**
+	 * TODO: Use the translators instead.
+	 */
+	protected function setMongoID($queryData) {
+		// Get the mongo ID.
+		if(!isset($queryData['_id'])) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id');
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
 		}
-
-		return $invalidFields;
+		
+		try {
+			$this->query['_id'] = new MongoId($queryData['_id']);
+		} catch (MongoException $ex) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
 	}
 	
 	/**

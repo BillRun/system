@@ -21,12 +21,6 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 	protected $serviceQuery = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success querying service"));
-	}
-
-	/**
 	 * Execute the action.
 	 * @return data for output.
 	 */
@@ -38,13 +32,12 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 			$returnData = $service->getRawData();
 		} else {
 			$returnData = array();
-			$this->reportError(Billrun_Factory::config()->getConfigValue("services_error_base") + 23);
+			$this->reportError(23);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying service",
 			'details' => $returnData 
 		);
 		return $outputResult;
@@ -72,20 +65,26 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 21;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(21, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$invalidFields = $this->setQueryFields($jsonData);
 
 		// If there were errors.
-		if (empty($this->serviceQuery)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 22;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+		if (count($invalidFields) == count($this->getQueryFields())) {
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
-
+		
+		// If the query is empty.
+		if (empty($this->serviceQuery)) {
+			$this->reportError(22, Zend_Log::NOTICE);
+		}
+		
+		// Set the mongo ID
+		$this->setMongoID($jsonData);
+		
 		return true;
 	}
 
@@ -102,19 +101,35 @@ class Billrun_ActionManagers_Services_Query extends Billrun_ActionManagers_Servi
 
 		// Get only the values to be set in the update record.
 		foreach ($queryFields as $field) {
-			if(!isset($field['mandatory']) || !$field['mandatory']) {
-				continue;
-			}
-			
-			$fieldName = $field['field_name'];
-			if (isset($queryData[$fieldName]) && !empty($queryData[$fieldName])) {
-				$this->serviceQuery[$fieldName] = $queryData[$fieldName];
+			if (isset($queryData[$field]) && !empty($queryData[$field])) {
+				$this->serviceQuery[$field] = $queryData[$field];
 			} else {
-				$invalidFields[] = $fieldName;
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($field);
 			}
 		}
 
 		return $invalidFields;
 	}
-
+		
+	/**
+	 * TODO: Use the translators instead.
+	 */
+	protected function setMongoID($queryData) {
+		// Get the mongo ID.
+		if(!isset($queryData['_id'])) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id');
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+		
+		try {
+			$this->serviceQuery['_id'] = new MongoId($queryData['_id']);
+		} catch (MongoException $ex) {
+			$invalidField = new Billrun_DataTypes_InvalidField('_id',2);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+	}
+	
+	protected function getQueryFields() {
+		return Billrun_Factory::config()->getConfigValue('services.query_fields', array());
+	}
 }

@@ -76,7 +76,11 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 			return false;
 		}
 		
-		$result = $queryAction->execute();
+		try {
+			$result = $queryAction->execute();
+		} catch (Billrun_Exceptions_Base $e) {
+			$result = $e->output();
+		}
 		$queryActionResult = $this->onQueryAction($result);
 		
 		// Clear the new test case

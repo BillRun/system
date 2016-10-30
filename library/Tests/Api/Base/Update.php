@@ -30,7 +30,7 @@ abstract class Tests_Api_Base_Update extends Tests_Api_Base_Delete {
 	 * @return array
 	 */
 	protected function getQueryParams($case) {
-		return array('query' => $this->getDataForDB($case));
+		return array('query' => $this->getDataForDB($case, 0));
 	}
 	
 	/**

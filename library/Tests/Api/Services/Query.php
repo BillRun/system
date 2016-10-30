@@ -29,7 +29,7 @@ class Tests_Api_Services_Query extends Tests_Api_Base_Query {
 	 * @return Billrun_ActionManagers_APIAction
 	 */
 	protected function getAction($param = array()) {
-		return new Billrun_ActionManagers_Services_Query();
+		return new Billrun_ActionManagers_Services_Query($param);
 	}
 
 	/**

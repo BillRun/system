@@ -47,12 +47,12 @@ trait Billrun_Traits_DateSpan {
 	 * @param array $data
 	 */
 	protected function setSpan($data) {
-		if(isset($data['activation'])) {
-			$this->activation = $data['activation'];
+		if(isset($data['start'])) {
+			$this->activation = $data['start'];
 		}
 		
-		if(isset($data['deactivation'])) {
-			$this->deactivation = $data['deactivation'];
+		if(isset($data['end'])) {
+			$this->deactivation = $data['end'];
 		}
 	}
 }

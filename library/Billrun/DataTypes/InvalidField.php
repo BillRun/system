@@ -42,6 +42,6 @@ class Billrun_DataTypes_InvalidField {
 	 * @return array
 	 */
 	public function output() {
-		return array($this->fieldName => $this->error);
+		return array('name' => $this->fieldName, 'error' => $this->error);
 	}
 }

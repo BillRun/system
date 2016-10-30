@@ -36,7 +36,7 @@ class Billrun_DataTypes_CycleTime {
 	 * Create a new instance of the cycle time class.
 	 * @param string $billrunKey - Billrun key to set the cycle times by.
 	 */
-	public function __construct(string $billrunKey) {
+	public function __construct($billrunKey) {
 		$this->key = $billrunKey;
 		$this->start = Billrun_Billingcycle::getStartTime($billrunKey);
 		$this->end = Billrun_Billingcycle::getEndTime($billrunKey);

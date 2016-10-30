@@ -15,6 +15,18 @@
 abstract class Billrun_Exceptions_Base extends Exception{
 	use Billrun_Exceptions_InputContainer;
 	
+	/**
+	 * The log level of the exception
+	 * @var integer
+	 */
+	public $logLevel = Zend_Log::CRIT;
+	
+	/**
+	 * Create a new instnace of the billrun exception base
+	 * @param type $message
+	 * @param type $code
+	 * @param \Exception $previous
+	 */
 	public function __construct($message = "", $code = 0, \Exception $previous = null) {
 		parent::__construct($message, $code, $previous);
 	}
@@ -25,6 +37,7 @@ abstract class Billrun_Exceptions_Base extends Exception{
 	 */
 	public function output() {
 		$output = array();
+		$output['status'] = 0;
 		$output['code'] = $this->code;
 		$output['message'] = $this->message;
 		$output['display'] = $this->generateDisplay();

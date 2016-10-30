@@ -21,12 +21,6 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	protected $query = array();
 	
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success creating service"));
-	}
-
-	/**
 	 * Get the array of fields to be inserted in the create record from the user input.
 	 * @return array - Array of fields to be inserted.
 	 */
@@ -39,25 +33,23 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	 * @return data for output.
 	 */
 	public function execute() {
-		$exception = null;
+		$details = array();
 		try {
 			if (!$this->serviceExists()) {
 				$entity = new Mongodloid_Entity($this->query);
 				$this->collection->save($entity, 1);
+				$details = $entity->getRawData();
 			}
-		} catch (\Exception $e) {
-			$exception = $e;
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 1;
+		} catch (\MongoException $e) {
+			$errorCode =  1;
+			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Billrun_Log::WARN);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				('Service added') :
-				('Fail to add service')
+			'status' => 1,
+			'desc' => "Success creating service",
+			'details' => $details
 		);
 		return $outputResult;
 	}
@@ -82,10 +74,9 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 	 */
 	protected function setQueryRecord($input) {
 		$jsonData = null;
-		$query = $input->get('service');
+		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 2;
-			$this->reportError($errorCode, Zend_Log::NOTICE);
+			$this->reportError(2, Zend_Log::NOTICE);
 			return false;
 		}
 
@@ -93,11 +84,10 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 
 		// If there were errors.
 		if (!empty($invalidFields)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base") + 3;
-			$this->reportError($errorCode, Zend_Log::NOTICE, array(implode(',', $invalidFields)));
-			return false;
+			// Create an exception.
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
-
+		
 		return true;
 	}
 	
@@ -116,14 +106,35 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 		foreach ($fields as $field) {
 			$fieldName = $field['field_name'];
 			if ((isset($field['mandatory']) && $field['mandatory']) &&
-				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {
-				$invalidFields[] = $fieldName;
+				(!isset($queryData[$fieldName]) || empty($queryData[$fieldName]))) {				
+				$invalidFields[] = new Billrun_DataTypes_InvalidField($fieldName);
 			} else if (isset($queryData[$fieldName])) {
-				$this->query[$fieldName] = $queryData[$fieldName];
+				$type = (isset($field['type'])) ? ($field['type']) : (null);
+				$this->setField($queryData[$fieldName], $fieldName, $type);
 			}
 		}
 
 		return $invalidFields;
+	}
+	
+	/**
+	 * TODO: Use the translators when it is merged
+	 * @param array $field
+	 */
+	protected function setField($data, $fieldName, $type) {
+		if(!$type) {
+			$this->query[$fieldName] = $data;
+			return;
+		}
+		
+		// Translate by type.
+		if($type == 'date') {
+			$date = strtotime($data);
+			$newData = new MongoDate($date);
+			$this->setField($newData, $fieldName, null);
+		} else {
+			throw new Exception("Invalid field type");
+		}
 	}
 	
 	/**
@@ -137,8 +148,7 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 		$service = $this->collection->query($serviceQuery);
 
 		if ($service->count() > 0) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("services_error_base");
-			$this->reportError($errorCode, Zend_Log::NOTICE, array($this->query['name']));
+			$this->reportError(0, Zend_Log::NOTICE, array($this->query['name']));
 			return true;
 		}
 
