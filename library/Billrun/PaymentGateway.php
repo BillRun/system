@@ -40,7 +40,6 @@ abstract class Billrun_PaymentGateway {
 		}
 	}
 
-	abstract function updateSessionTransactionId();
 
 	public function __call($name, $arguments) {
 		if ($this->supportsOmnipay()) {
@@ -103,6 +102,13 @@ abstract class Billrun_PaymentGateway {
 		return in_array($gateway, $supported);
 	}
 
+	
+	/**
+	 * Updates the current transactionId.
+	 * 
+	 */
+	abstract function updateSessionTransactionId();
+	
 	/**
 	 * Get the Redirect url of the payment gateway.
 	 * 
