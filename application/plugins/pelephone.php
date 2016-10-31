@@ -839,7 +839,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				if ($event['call_type'] == "11") { // roaming calls to israel, let's enforce country prefix if not already added
 					$event[$numberField] = Billrun_Util::msisdn($event[$numberField]); // this will add 972
-				} else if ($event['call_type'] >= "11") {
+				} else if ($event['call_type'] >= "11" && $event['call_type'] != "13") { // roaming callback calls (specifically) should keep leading zeros
 					$event[$numberField] = Billrun_Util::cleanLeadingZeros($event[$numberField]); // this will cleaning leading zeros and pluses
 				}
 			}
