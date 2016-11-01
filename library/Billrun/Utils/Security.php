@@ -45,7 +45,12 @@ class Billrun_Utils_Security {
 		return $validData;
 	}
 	
-	protected static function validateSecret($secret) {
+	/**
+	 * Validate a secret's type and crc
+	 * @param array $secret - Input secret value to validate.
+	 * @return boolean - True if the secret is valid.
+	 */
+	protected static function validateSecret(array $secret) {
 		if(empty($secret) || !is_string($secret)) {
 			return false;
 		}
