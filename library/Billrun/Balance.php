@@ -398,4 +398,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		return $volumeRequired; // volume left to charge
 	}
 
+	public function getBalanceChargingTotalsKey($usaget) {
+		return $this->chargingTotalsKey = $usaget;
+	}
+
 }
