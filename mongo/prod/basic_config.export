@@ -2,7 +2,7 @@
     "company_name": "[COMPANY_NAME]",
     "shared_folder": "shared",
     "cg_return_url": "",
-    "shared_secret": [SHARED_SECRET],
+    "shared_secret": "[SHARED_SECRET]",
     "usage_types": {
         "array": [],
         "t": "Array"

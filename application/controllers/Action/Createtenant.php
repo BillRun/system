@@ -14,10 +14,10 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since	5.0
  */
 class CreatetenantAction extends ApiAction {
+
 	protected $request;
 	protected $status = true;
 	protected $desc = '';
-	
 	protected $db;
 	protected $userName;
 	protected $password;
@@ -26,52 +26,51 @@ class CreatetenantAction extends ApiAction {
 	protected $db_pass;
 	protected $db_name;
 
-
 	public function execute() {
 		Billrun_Factory::log('Create Tenant - starting API', Zend_Log::INFO);
 		if (!$this->isWhiteListed()) {
 			Billrun_Factory::log('Create Tenant - not allowed', Zend_Log::INFO);
 			return false;
 		}
-		
+
 		$this->init();
-		
-		if (!$this->createUserInBillrun()			||
+
+		if (!$this->createUserInBillrun() ||
 			!$this->generateDbUsernameAndPassword() ||
-			!$this->createConfigFile()				||
-			!$this->createDB()						||
-			!$this->createUserInTenantBillrun()		||
-			!$this->createDbConfig()) {
+			!$this->createConfigFile() ||
+			!$this->createDB() ||
+			!$this->createUserInTenantBillrun() ||
+			!$this->createDbConfig() ||
+			!$this->createTenantFolders()) {
 			Billrun_Factory::log('Create Tenant - error: ' . $this->desc, Zend_Log::INFO);
 			$this->status = false;
 		}
 
 		$this->response();
 	}
-	
+
 	protected function isWhiteListed() {
 		$ip = $_SERVER['REMOTE_ADDR'];
+		Billrun_Factory::log('Create Tenant - Got request from: ' . $ip, Zend_Log::INFO);
 		$whiteList = Billrun_Factory::config()->getConfigValue('create_tenant.remotes.white_list', array());
 		return in_array($ip, $whiteList);
 	}
 
-
-	protected function init() {
+	public function init() {
 		Billrun_Factory::log('Create Tenant - initializing...', Zend_Log::INFO);
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
-		$this->tenant = $this->request['tenant'];
+		$this->tenant = strtolower($this->request['tenant']);
 		$this->db_name = 'billing_' . $this->tenant;
 		$this->userName = $this->request['email'];
 		$this->password = $this->request['password'];
 	}
-	
+
 	protected function buildResponse() {
 		return array(
 			'status' => $this->status,
 			'desc' => $this->desc,
 		);
 	}
-
 
 	protected function response() {
 		$response = $this->buildResponse();
@@ -82,7 +81,7 @@ class CreatetenantAction extends ApiAction {
 
 		return false;
 	}
-	
+
 	/**
 	 * Create a subscriber in Billrun's env
 	 * 
@@ -92,15 +91,13 @@ class CreatetenantAction extends ApiAction {
 		Billrun_Factory::log('Create Tenant - Creating user in BillRun', Zend_Log::INFO);
 		return true;
 	}
-	
+
 	protected function replaceConfigValues($config) {
-		$host = '127.0.0.1:27017';
-		$port = '';
-		$search = array('[USER]', '[PASS]', '[NAME]', '[HOST]', '[PORT]');
-		$replace = array($this->db_user, $this->db_pass, $this->db_name, $host, $port);
+		$search = array('[USER]', '[PASS]', '[NAME]');
+		$replace = array($this->db_user, $this->db_pass, $this->db_name);
 		return str_replace($search, $replace, $config);
 	}
-	
+
 	/**
 	 * craete a .ini file for the tenant (with db connection parameters)
 	 * 
@@ -123,10 +120,9 @@ class CreatetenantAction extends ApiAction {
 			$this->desc = 'Cannot save config file to path: "' . $configPath . '"';
 			return false;
 		}
-		Billrun_Factory::config()->addConfig($configPath);
 		return true;
 	}
-	
+
 	/**
 	 * create a user and a db for the tenant
 	 * 
@@ -145,16 +141,20 @@ class CreatetenantAction extends ApiAction {
 		}
 		return $this->connectToDb();
 	}
-	
+
 	protected function connectToDb() {
 		$options = Billrun_Factory::config()->getConfigValue('db');
+		$options['user'] = $this->db_user;
+		$options['password'] = $this->db_pass;
+		$options['name'] = $this->db_name;
+		$options['host'] = "localhost:27017"; // this is a hack because mongo does not create new instance otherwise
 		$this->db = Billrun_Factory::db($options);
 		if (empty($this->db)) {
 			return false;
 		}
 		return true;
 	}
-	
+
 	protected function createSecret() {
 		$key = bin2hex(openssl_random_pseudo_bytes(16));
 		$crc = hash("crc32b", $key);
@@ -163,7 +163,7 @@ class CreatetenantAction extends ApiAction {
 			'crc' => $crc
 		);
 	}
-	
+
 	protected function addDbConfigData(&$dbConfig) {
 		$dbConfig['shared_secret'] = $this->createSecret();
 		$dbConfig['company_name'] = $this->tenant;
@@ -204,7 +204,7 @@ class CreatetenantAction extends ApiAction {
 		$query = array(
 			'username' => $this->userName,
 			'password' => password_hash($this->password, PASSWORD_DEFAULT),
-			'roles' => array('admin'),
+			'roles' => array('admin', 'read', 'write'),
 		);
 		if (!$this->db->usersCollection()->insert($query)) {
 			$this->desc = 'Cannot create user in DB.';
@@ -212,7 +212,7 @@ class CreatetenantAction extends ApiAction {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * create a username and password for the tenant's DB
 	 * 
@@ -223,6 +223,21 @@ class CreatetenantAction extends ApiAction {
 		$this->db_user = 'user_' . $this->tenant;
 		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());
 		$this->db_pass = Billrun_Util::generateArrayStamp($arr);
+		return true;
+	}
+
+	/**
+	 * Create shared folder for the tenant
+	 * 
+	 * @return boolean
+	 * 
+	 * @todo fix hard coded values
+	 */
+	protected function createTenantFolders() {
+		Billrun_Factory::log('Create Tenant - Creating log file', Zend_Log::INFO);
+		$tenantPath = APPLICATION_PATH . '../shared/' . $this->tenant . DIRECTORY_SEPARATOR;
+		mkdir($tenantPath . 'logs', 0777, true);
+		mkdir($tenantPath . 'workspace', 0777, true);
 		return true;
 	}
 
