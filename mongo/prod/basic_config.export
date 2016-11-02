@@ -2,7 +2,7 @@
     "company_name": "[COMPANY_NAME]",
     "shared_folder": "shared",
     "cg_return_url": "",
-    "shared_secret": "[SHARED_SECRET]",
+    "shared_secret": [SHARED_SECRET],
     "usage_types": {
         "array": [],
         "t": "Array"
@@ -27,18 +27,14 @@
     },
     "pricing": {
         "vat": {
-            "v": 0,
+            "v": 0.17,
             "t": "Float",
             "range": {
                 "max": 1,
                 "min" : 0
             }
         },
-        "currency": "NIS"
-    },
-    "timezone": {
-        "v": "Asia/Jerusalem",
-        "t": "Timezone"
+        "currency": "USD"
     },
     "log": {
         "debug": {
@@ -63,8 +59,29 @@
     "billrun": {
         "charging_day": {
             "v": 1,
-            "t": "Number"
+            "t": "Number",
+             "range": {
+                   "min": 1,
+                   "max": 28
+             }
+        },
+        "timezone": {
+          "v": "UTC",
+           "t": "Timezone"
+        },
+        "start_hours_lag": {
+            "v": 3,
+            "t": "Number",
+             "range": {
+                   "min": 0,
+                   "max": 23
+             }
         }
+    },
+    "export_generators" : {
+	"v" : "",
+	"t" : "Exportgenerator",
+	"list": [] 
     },
     "subscribers": {
         "types": [
@@ -81,12 +98,12 @@
                 "generated": true,
                 "unique": true,
                 "editable": false,
-	"display": false
+    "display": false
             }, {
                 "field_name": "aid",
                 "mandatory": true,
                 "editable": false,
-	"display": false
+    "display": false
             }, {
                 "field_name": "firstname",
                 "mandatory": true
@@ -100,14 +117,14 @@
                 "field_name": "plan_activation",
                 "mandatory": false
             }, {
-                "field_name": " ",
-                "field_type": "boolean"
-            }, {
                 "field_name": "address",
                 "mandatory": true
             }, {
                 "field_name": "country"
-            }]
+            }, {
+    "field_name":"services",
+    "mandatory": false
+           }]
         },
         "account": {
             "fields": [{
@@ -117,9 +134,14 @@
                 "editable": false
             }, {
                 "field_name": "firstname",
-                "mandatory": true
+                "mandatory": true,
+                "title": "First name"
             }, {
                 "field_name": "lastname",
+                "mandatory": true,
+                "title": "Last name"
+            }, {
+                "field_name": "email",
                 "mandatory": true
             }, {
                 "field_name": "country",
@@ -136,6 +158,10 @@
                 "editable": false,
                 "display": false
             }, {
+                 "field_name": "payment_gateway",
+                 "editable": false,
+ 				 "display": true
+             }, {
                 "field_name": "personal_id",
                 "editable": false,
                 "display": false
@@ -186,13 +212,35 @@
             "type": "boolean"
         }]
     },
+   "services": {
+        "fields": [{
+            "field_name": "from",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "to",
+            "mandatory": true,
+            "type": "date"
+        }, {
+            "field_name": "name",
+            "mandatory": true
+        }, {
+            "field_name": "price",
+            "mandatory": true
+        }, {
+            "field_name": "description",
+            "mandatory": true
+        }, {
+            "field_name": "include"
+        } ]
+    },
     "file_types": [],
     "receive": "1",
     "process": "1",
     "calculate": "1",
-
     "wkpdf": {
         "export": "files/invoices/",
+        "currency": "NIS",
         "generator": {
             "type": "WkPdf"
         },
@@ -219,5 +267,6 @@
                 "class_method": "getHeaderDate"
             }
         }
-    }
+    },
+	"payment_gateways" : [ ]
 }
