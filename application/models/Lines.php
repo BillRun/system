@@ -25,7 +25,11 @@ class LinesModel extends TableModel {
 	protected $lines_coll = null;
 	
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db()->lines;
+		if ($params['db'] == 'archive') {
+			$params['collection'] = 'lines';
+		} else {
+			$params['collection'] = Billrun_Factory::db()->lines;
+		}
 		parent::__construct($params);
 		$this->search_key = "stamp";
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
