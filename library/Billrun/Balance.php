@@ -402,4 +402,20 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		return $this->chargingTotalsKey = $usaget;
 	}
 
+	/**
+	 * method to get free row pricing data
+	 * 
+	 * @return array
+	 */
+	public function getFreeRowPricingData() {
+		return array(
+			'in_plan' => 0,
+			'over_plan' => 0,
+			'out_plan' => 0,
+			'in_group' => 0,
+			'over_group' => 0,
+			$this->pricingField => 0,
+		);
+	}
+
 }

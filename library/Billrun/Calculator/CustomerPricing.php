@@ -316,36 +316,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * get subscriber plan object
-	 * identification using the balance collection
-	 * 
-	 * @param array $sub_balance the subscriber balance
-	 * @return type
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function getPlan($sub_balance) {
-		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
-		return Billrun_Factory::plan(array('data' => $subscriber_current_plan));
-	}
-
-	/**
-	 * method to get free row pricing data
-	 * 
-	 * @return array
-	 */
-	protected function getFreeRowPricingData() {
-		return array(
-			'in_plan' => 0,
-			'over_plan' => 0,
-			'out_plan' => 0,
-			'in_group' => 0,
-			'over_group' => 0,
-			$this->pricingField => 0,
-		);
-	}
-
-	/**
 	 * Determines if a rate should not produce billable lines, but only counts the usage
 	 * @param Mongodloid_Entity|array $rate the input rate
 	 * @return boolean
@@ -458,7 +428,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (self::isPrepaid($row) && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
 			if (!$this->balance && self::isFreeLine($row)) {
-				return $this->getFreeRowPricingData();
+				return $this->balance->getFreeRowPricingData();
 			}
 			$row['balance_ref'] = $this->balance->createRef();
 			$row['usagev'] = $volume = Billrun_Rates_Util::getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $this->balance->getBalanceChargingTotalsKey($usage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
