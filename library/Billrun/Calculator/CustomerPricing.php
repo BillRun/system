@@ -519,6 +519,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
+	 * 
+	 * @todo Move to trait because it also use by processor
 	 */
 	public function getCalculatorQueueType() {
 		return self::$type;
@@ -535,7 +537,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
+	 * set queue calculator tag
 	 * 
+	 * @todo Move to trait because it also use by processor
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		parent::setCalculatorTag($query, $update);
@@ -543,36 +547,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			if ($this->isLineLegitimate($item) && !empty($item['tx_saved'])) {
 				$this->removeBalanceTx($item); // we can safely remove the transactions after the lines have left the current queue
 			}
-		}
-	}
-
-	/**
-	 * method to load rates to memory
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function loadRates() {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
-		foreach ($rates as $rate) {
-			$rate->collection($rates_coll);
-			$this->rates[strval($rate->getId())] = $rate;
-		}
-	}
-
-	/**
-	 * method to load rates to memory
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function loadPlans() {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
-		foreach ($plans as $plan) {
-			$plan->collection($plans_coll);
-			$this->plans[strval($plan->getId())] = $plan;
 		}
 	}
 
