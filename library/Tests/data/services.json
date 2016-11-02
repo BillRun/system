@@ -1,0 +1,39 @@
+  {
+    "collection": "servicesCollection",
+    "data":
+    [
+        {
+          "name" : "SERVICE1", "description" : "SERVICE1", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+          "include" : {
+              "groups" : {
+                  "AAA" : {"call" : 40}
+                          }
+                      }
+        },
+         {
+          "name" : "SERVICE2", "description" : "SERVICE2", "price" : 45, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+          "include" : {
+              "groups" : {
+                  "BBB" : {"call" : 75}
+                          }
+                      }
+          },
+        {
+          "name" : "SERVICE3", "description" : "SERVICE3", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+          "include" : {
+              "groups" : {
+                  "AAA" : {"call" : 40},
+                  "BBB" : {"call" : 75}
+                          }
+                      }
+        },
+        {
+          "name" : "SERVICE4", "description" : "SERVICE4", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+          "include" : {
+              "groups" : {
+                  "SR4" : {"gr" : 200}
+                          }
+                      }
+        }
+        ]
+}
