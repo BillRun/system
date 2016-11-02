@@ -16,15 +16,14 @@ class UsageVolumeAction extends ApiAction {
 
 	public function execute() {
 		$request = $this->getRequest();
-		//	$send_to = Billrun_Factory::config()->getConfigValue('');
+		$send_to = Billrun_Factory::config()->getConfigValue('datausage.email_recipients');
 		$billrun_key = Billrun_Util::getBillrunKey(time());
 		$start_time = Billrun_Util::getStartTime($billrun_key);
 		$since = new MongoDate($start_time);
 		$results = $this->calculateUsageVolume($since);
-
-		$filepath = '/tmp/test5';
+		$filepath = '/tmp/' . date('YmdHi') . '_volume_usage_abroad.csv';
 		$attachment = $this->generateCsvToMail($filepath, $results);
-		//Billrun_Util::sendMail("Daily Report: Data usage abroad by sid", "File Attached.", $send_to, array($attachment));
+		Billrun_Util::sendMail("Daily Report: Data usage abroad by sid", "File Attached.", $send_to, array($attachment));
 	}
 
 	protected function calculateUsageVolume($since) {
