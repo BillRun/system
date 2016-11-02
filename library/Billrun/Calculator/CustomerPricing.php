@@ -247,7 +247,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
 				if (in_array($row['type'], $typesWithoutBalance)) {
 					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
-					$pricingData = array($this->pricingField => $charges['total']/* , $this->interconnectChargeField => $charges['interconnect'] */);
+					$pricingData = array($this->pricingField => $charges['total']);
 				} else {
 					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
 					if ($pricingData === FALSE) { // prepaid hack
@@ -342,7 +342,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			'in_group' => 0,
 			'over_group' => 0,
 			$this->pricingField => 0,
-//			$this->interconnectChargeField => 0,
 		);
 	}
 
@@ -379,7 +378,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array($this->pricingField, /* $this->interconnectChargeField, */ 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate');
+		return array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate');
 	}
 
 	/**
@@ -445,7 +444,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$granted_cost = $charges['total'];
 					return array(
 						$this->pricingField => $granted_cost,
-//						$this->interconnectChargeField => $charges['interconnect'],
 						'usagev' => $granted_volume,
 					);
 				}
