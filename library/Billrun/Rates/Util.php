@@ -212,8 +212,8 @@ class Billrun_Rates_Util {
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
 		$currentUsage = $defaultUsage - (abs($defaultUsage - $min_balance_volume) / 2);
-		$epsilon = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.epsilon', 0.5);
-		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 40);
+		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.5);
+		$limitLoop = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.limitLoop', 40);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
 			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset);
 			$diff = abs($currentUsage - $previousUsage) / 2;
@@ -299,7 +299,7 @@ class Billrun_Rates_Util {
 			return $usagevDefault;
 		}
 
-		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $callOffset);
+		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $callOffset, $min_balance_cost, $min_balance_volume);
 	}
 
 
