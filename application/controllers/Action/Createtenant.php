@@ -28,7 +28,9 @@ class CreatetenantAction extends ApiAction {
 
 
 	public function execute() {
+		Billrun_Factory::log('Create Tenant - starting API', Zend_Log::INFO);
 		if (!$this->isWhiteListed()) {
+			Billrun_Factory::log('Create Tenant - not allowed', Zend_Log::INFO);
 			return false;
 		}
 		
@@ -40,6 +42,7 @@ class CreatetenantAction extends ApiAction {
 			!$this->createDB()						||
 			!$this->createUserInTenantBillrun()		||
 			!$this->createDbConfig()) {
+			Billrun_Factory::log('Create Tenant - error: ' . $this->desc, Zend_Log::INFO);
 			$this->status = false;
 		}
 
@@ -54,6 +57,7 @@ class CreatetenantAction extends ApiAction {
 
 
 	protected function init() {
+		Billrun_Factory::log('Create Tenant - initializing...', Zend_Log::INFO);
 		$this->request = $this->getRequest()->getRequest(); // supports GET / POST requests 
 		$this->tenant = $this->request['tenant'];
 		$this->db_name = 'billing_' . $this->tenant;
@@ -85,6 +89,7 @@ class CreatetenantAction extends ApiAction {
 	 * @todo complete function - with API
 	 */
 	protected function createUserInBillrun() {
+		Billrun_Factory::log('Create Tenant - Creating user in BillRun', Zend_Log::INFO);
 		return true;
 	}
 	
@@ -102,6 +107,7 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function createConfigFile() {
+		Billrun_Factory::log('Create Tenant - Creating configuraition file', Zend_Log::INFO);
 		if (empty($configFileBasePath = Billrun_Config::getMultitenantConfigPath())) {
 			$this->desc = 'System does not work in multi-tenant method or cannot get multi-tenant config base path.';
 			return false;
@@ -127,6 +133,7 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function createDB() {
+		Billrun_Factory::log('Create Tenant - Creating database instance', Zend_Log::INFO);
 		$permissions = Billrun_Factory::config()->getConfigValue('create_tenant.db_permissions', 'readWrite');
 		$createDbPath = Billrun_Factory::config()->getConfigValue('create_tenant.create_db_path', '');
 		$cmd = $createDbPath . ' ' . $this->db_name . ' ' . $this->db_user . ' ' . $this->db_pass . ' ' . $permissions;
@@ -168,6 +175,7 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function createDbConfig() {
+		Billrun_Factory::log('Create Tenant - Creating DB configuration', Zend_Log::INFO);
 		$baseDbConfigPath = Billrun_Factory::config()->getConfigValue('create_tenant.db_base_config', '');
 		if (empty($baseDbConfigJson = file_get_contents($baseDbConfigPath))) {
 			$this->desc = 'Basic db config was not found in path: "' . $baseDbConfigPath . '"';
@@ -192,6 +200,7 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function createUserInTenantBillrun() {
+		Billrun_Factory::log('Create Tenant - Creating user for tenant', Zend_Log::INFO);
 		$query = array(
 			'username' => $this->userName,
 			'password' => password_hash($this->password, PASSWORD_DEFAULT),
@@ -210,6 +219,7 @@ class CreatetenantAction extends ApiAction {
 	 * @return boolean
 	 */
 	protected function generateDbUsernameAndPassword() {
+		Billrun_Factory::log('Create Tenant - Generating username and password', Zend_Log::INFO);
 		$this->db_user = 'user_' . $this->tenant;
 		$arr = array('t' => Billrun_Util::generateCurrentTime(), 'r' => Billrun_Util::generateRandomNum());
 		$this->db_pass = Billrun_Util::generateArrayStamp($arr);
