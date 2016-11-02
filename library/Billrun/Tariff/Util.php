@@ -40,9 +40,15 @@ class Billrun_Tariff_Util {
 	}
 
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
-		$charge = 0;
+		if(!$tariffs) {
+            Billrun_Factory::log("Empty tariff array");
+            return 0;
+        }
+        
+        $charge = 0;
 		$lastRate = array();
 		$volumeCount = $volume;
+        
 		foreach ($tariffs as $currRate) {
 			// Check that it is an array.
 			// TODO: Use a rate class.
