@@ -12,27 +12,21 @@
  * @package  Plan
  * @since    0.5
  */
-class Billrun_Plan {
+class Billrun_Plan extends Billrun_Service {
 
 	const PLAN_SPAN_YEAR = 'year';
 	const PLAN_SPAN_MONTH = 'month';
 
-	/**
-	 * container of the plan data
-	 * 
-	 * @var mixed
-	 */
-	protected $data = null;
 	protected static $plans = array();
 	protected $plan_ref = array();
-	protected $groupSelected = null;
-	protected $groups = null;
+	protected $planActivation;
+	protected $planDeactivation = null;
 
 	/**
 	 * constructor
 	 * set the data instance
 	 * 
-	 * @param array $params array of parmeters (plan name & time)
+	 * @param array $params array of parameters (plan name & time)
 	 */
 	public function __construct(array $params = array()) {
 		if ((!isset($params['name']) || !isset($params['time'])) && (!isset($params['id'])) && (!isset($params['data']))) {
@@ -42,39 +36,74 @@ class Billrun_Plan {
 		if (isset($params['data'])) {
 			$this->data = $params['data'];
 		} else if (isset($params['id'])) {
-			$id = $params['id'];
-			if ($id instanceof Mongodloid_Id) {
-				$filter_id = strval($id->getMongoId());
-			} else if ($id instanceof MongoId) {
-				$filter_id = strval($id);
-			} else {
-				// probably a string
-				$filter_id = $id;
-			}
-			if ($plan = $this->getPlanById($filter_id)) {
-				$this->data = $plan;
-			} else {
-				$this->data = Billrun_Factory::db()->plansCollection()->findOne($params['id']);
-				$this->data->collection(Billrun_Factory::db()->plansCollection());
-			}
+			$this->constructWithID($params['id']);
 		} else {
-			$date = new MongoDate($params['time']);
-			if ($plan = self::getPlanByNameAndTime($params['name'], $date)) {
-				$this->data = $plan;
-			} else {
-				$this->data = Billrun_Factory::db()->plansCollection()
-					->query(array(
-						'name' => $params['name'],
-						'$or' => array(
-							array('to' => array('$gt' => $date)),
-							array('to' => null)
-						)
-					))
-					->lessEq('from', $date)
-					->cursor()
-					->current();
-				$this->data->collection(Billrun_Factory::db()->plansCollection());
-			}
+			$this->constructWithActivePlan($params);
+		}
+
+		$this->constructExtraOptions($params);
+	}
+
+	/**
+	 * Query the DB with the input ID and set it as the plan data.
+	 * @param type $id
+	 * @todo use load method
+	 */
+	protected function constructWithID($id) {
+		if ($id instanceof Mongodloid_Id) {
+			$filter_id = strval($id->getMongoId());
+		} else if ($id instanceof MongoId) {
+			$filter_id = strval($id);
+		} else {
+			// probably a string
+			$filter_id = $id;
+		}
+		$plan = $this->getPlanById($filter_id);
+		if ($plan) {
+			$this->data = $plan;
+		} else {
+			$this->data = Billrun_Factory::db()->plansCollection()->findOne($id);
+			$this->data->collection(Billrun_Factory::db()->plansCollection());
+		}
+	}
+
+	/**
+	 * Construct the plan with the active plan in the data base
+	 * @param type $params
+	 * @return type
+	 * @todo use load method
+	 */
+	protected function constructWithActivePlan($params) {
+		$date = new MongoDate($params['time']);
+		$plan = self::getPlanByNameAndTime($params['name'], $date);
+		if ($plan) {
+			$this->data = $plan;
+			return;
+		}
+
+		$planQuery = array(
+			'name' => $params['name'],
+			'$or' => array(
+				array('to' => array('$gt' => $date)),
+				array('to' => null)
+			)
+		);
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planRecord = $plansColl->query($planQuery)->lessEq('from', $date)->cursor()->current();
+		$planRecord->collection($plansColl);
+		$this->data = $planRecord;
+	}
+
+	/**
+	 * Handle constructing the instance with extra input options, if available
+	 * @param arrray $options
+	 */
+	protected function constructExtraOptions($options) {
+		if (isset($options['activation'])) {
+			$this->planActivation = $options['activation'];
+		}
+		if (isset($options['deactivation'])) {
+			$this->planDeactivation = $options['deactivation'];
 		}
 	}
 
@@ -83,6 +112,14 @@ class Billrun_Plan {
 			return $this->data->getRawData();
 		}
 		return $this->data;
+	}
+
+	public function getActivation() {
+		return $this->planActivation;
+	}
+
+	public function getDectivation() {
+		return $this->planDeactivation;
 	}
 
 	protected static function initPlans() {
@@ -137,17 +174,6 @@ class Billrun_Plan {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * method to pull current plan data
-	 * 
-	 * @param string $name the property name; could be mongo key
-	 * 
-	 * @return mixed the property value
-	 */
-	public function get($name) {
-		return $this->data->get($name);
 	}
 
 	/**
@@ -212,134 +238,11 @@ class Billrun_Plan {
 	}
 
 	/**
-	 * method to receive all group rates of the current plan
-	 * @param array $rate the rate to check
-	 * @param string $usageType usage type to check
-	 * @return false when no group rates, else array list of the groups
-	 * @since 2.6
-	 */
-	public function getRateGroups($rate, $usageType) {
-		if (isset($rate['rates'][$usageType]['groups'])) {
-			$groups = $rate['rates'][$usageType]['groups'];
-			if (!empty($groups) && isset($this->data['include']['groups'])) {
-				return array_intersect($groups, array_keys($this->data['include']['groups']));
-			}
-		}
-		return array();
-	}
-
-	/**
-	 * method to check if rate is part of group of rates balance
-	 * there is option to create balance for group of rates
-	 * 
-	 * @param array $rate the rate to check
-	 * @param string $usageType the usage type to check
-	 * @return true when the rate is part of group else false
-	 */
-	public function isRateInPlanGroup($rate, $usageType) {
-		if (count($this->getRateGroups($rate, $usageType))) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * method to receive the strongest group of list of groups 
-	 * method will init the groups list if not loaded yet
-	 * by default, the strongest rule is simple the first rule selected (in the plan)
-	 * rules can be complex with plugins (see vodafone and ird plugins for example)
-	 * 
-	 * @param array $rate the rate to check
-	 * @param string $usageType the usage type to check
-	 * @param boolean $reset reset to the first group plan
-	 * 
-	 * @return false when no group found, else string name of the group selected
-	 */
-	protected function setNextStrongestGroup($rate, $usageType, $reset = FALSE) {
-		if (is_null($this->groups)) {
-			$this->groups = $this->getRateGroups($rate, $usageType);
-		}
-		if (!count($this->groups)) {
-			$this->setPlanGroup(FALSE);
-		} else if ($reset || is_null($this->getPlanGroup())) { // if reset required or it's the first set
-			$this->setPlanGroup(reset($this->groups));
-		} else if (next($this->groups) !== FALSE) {
-			$this->setPlanGroup(current($this->groups));
-		} else {
-			$this->setPlanGroup(FALSE);
-		}
-
-		return $this->getPlanGroup();
-	}
-
-	public function setPlanGroup($group) {
-		$this->groupSelected = $group;
-	}
-
-	public function getPlanGroup() {
-		return $this->groupSelected;
-	}
-
-	public function unsetGroup($group) {
-		$item = array_search($group, $this->groups);
-		if (isset($this->groups[$item])) {
-			unset($this->groups[$item]);
-		}
-	}
-
-	/**
-	 * method to receive the usage left in group of rates of current plan
-	 * 
-	 * @param array $subscriberBalance subscriber balance
-	 * @param array $rate the rate to check the balance
-	 * @param string $usageType the 
-	 * @return int|string
-	 */
-	public function usageLeftInPlanGroup($subscriberBalance, $rate, $usageType = 'call') {
-		do {
-			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
-			// group not found
-			if ($groupSelected === FALSE) {
-				$rateUsageIncluded = 0;
-				// @todo: add more logic instead of fallback to first
-				$this->setPlanGroup($this->setNextStrongestGroup($rate, $usageType, true));
-				break; // do-while
-			}
-			// not group included in the specific usage try to take iterate next group
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-				continue;
-			}
-			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-				// on some cases we have limits to unlimited
-				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
-				if ($rateUsageIncluded === FALSE) {
-					$this->unsetGroup($this->getPlanGroup());
-				}
-			}
-		}
-		// @todo: protect max 5 loops
-		while ($groupSelected === FALSE);
-
-		if ($rateUsageIncluded === 'UNLIMITED') {
-			return PHP_INT_MAX;
-		}
-
-		if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
-		} else {
-			$subscriberSpent = 0;
-		}
-		$usageLeft = $rateUsageIncluded - $subscriberSpent;
-		return floatval($usageLeft < 0 ? 0 : $usageLeft);
-	}
-
-	/**
 	 * Get the usage left in the current plan.
 	 * @param $subscriberBalance the current sunscriber balance.
 	 * @param $usagetype the usage type to check.
 	 * @return int  the usage  left in the usage type of the subscriber.
+	 * @deprecated since version 5.0
 	 */
 	public function usageLeftInBasePlan($subscriberBalance, $rate, $usagetype = 'call') {
 
@@ -360,36 +263,100 @@ class Billrun_Plan {
 	 * Get the price of the current plan.
 	 * @return float the price of the plan without VAT.
 	 */
-	public function getPrice($firstActivation, $from, $to) {
+	public function getPrice($from, $to, $firstActivation = null) {
+		if ($firstActivation === null) {
+			$firstActivation = $this->getActivation();
+		}
+
 		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
 		$endOffset = static::getMonthsDiff($firstActivation, $to);
 		$charge = 0;
-		if (!$this->isUpfrontPayment()) {
-			if ($this->getPeriodicity() == 'month') {
-				foreach ($this->data['price'] as $tariff) {
-					if ($tariff['from'] <= $startOffset && $tariff['to'] >= $endOffset) {
-						$charge += ($endOffset - $startOffset) * $tariff['price'];
-					} else if ($startOffset >= $tariff['from'] && $startOffset <= $tariff['to'] && $endOffset >= $tariff['to']) {
-						$charge += ($tariff['to'] - $startOffset) * $tariff['price'];
-					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['to']) {
-						$charge += ($tariff['to'] - $tariff['from']) * $tariff['price'];
-					} else if ($startOffset < $tariff['from'] && $endOffset >= $tariff['from'] && $endOffset < $tariff['to']) {
-						$charge += ($endOffset - $tariff['from']) * $tariff['price'];
-					}
-				}
-			}
-		} else {
-			if ($this->getPeriodicity() == 'year') {
-				$startOffset = $startOffset / 12;
-			}
-			foreach ($this->data['price'] as $tariff) {
-				if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
-					$charge = $tariff['price'];
-					break;
-				}
-			}
+		if ($this->isUpfrontPayment()) {
+			return $this->getPriceForUpfrontPayment($startOffset);
+		}
+
+		if ($this->getPeriodicity() != 'month') {
+			Billrun_Factory::log("Plan get price cannot handle non month periodicity value");
+			return 0;
+		}
+
+		foreach ($this->data['price'] as $tariff) {
+			$charge += self::getPriceByTariff($tariff, $startOffset, $endOffset);
 		}
 		return $charge;
+	}
+
+	/**
+	 * Validate the input to the getPriceByTariff function
+	 * @param type $tariff
+	 * @param type $startOffset
+	 * @param type $endOffset
+	 * @return boolean
+	 */
+	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
+		if ($tariff['from'] > $tariff['to']) {
+			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
+			return false;
+		}
+
+		if ($startOffset > $endOffset) {
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.");
+			return false;
+		}
+
+		if ($startOffset > $tariff['to']) {
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.");
+			return false;
+		}
+
+		if ($endOffset < $tariff['from']) {
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.");
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Get the price to charge by a tariff
+	 * @param type $tariff
+	 * @param type $startOffset
+	 * @param type $endOffset
+	 * @return int
+	 */
+	public static function getPriceByTariff($tariff, $startOffset, $endOffset) {
+		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
+			return 0;
+		}
+
+		$endPricing = $endOffset;
+		$startPricing = $startOffset;
+
+		if ($tariff['from'] > $startOffset) {
+			$startPricing = $tariff['from'];
+		}
+		if ($tariff['to'] < $endOffset) {
+			$endPricing = $tariff['to'];
+		}
+
+		return ($endPricing - $startPricing) * $tariff['price'];
+	}
+
+	/**
+	 * Get the price of the current plan when the plan is to be paid upfront
+	 * @param type $startOffset
+	 * @return price
+	 */
+	protected function getPriceForUpfrontPayment($startOffset) {
+		if ($this->getPeriodicity() == 'year') {
+			$startOffset = $startOffset / 12;
+		}
+		foreach ($this->data['price'] as $tariff) {
+			if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
+				return $tariff['price'];
+			}
+		}
+
+		return 0;
 	}
 
 	public function getSpan() {
@@ -398,10 +365,6 @@ class Billrun_Plan {
 
 	public function getPeriodicity() {
 		return $this->data['recurrence']['periodicity'];
-	}
-
-	public function getName() {
-		return $this->get('name');
 	}
 
 	/**
@@ -429,13 +392,22 @@ class Billrun_Plan {
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
-		$groupSelected = $this->getPlanGroup();
+		$groupSelected = $this->getEntityGroup();
 		if ($groupSelected === FALSE) {
 			return FALSE;
 		}
 		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
 	}
 
+	/**
+	 * method to get balance totals key
+	 * 
+	 * @param string $usage_type
+	 * @param array $rate rate handle
+	 * @return string
+	 * 
+	 * @deprecated since version 5.2
+	 */
 	public function getBalanceTotalsKey($usage_type, $rate) {
 		if ($this->isRateInBasePlan($rate, $usage_type)) {
 			$usage_class_prefix = "";
@@ -480,8 +452,8 @@ class Billrun_Plan {
 	}
 
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {
-		$billing_start_date = Billrun_Billrun::getStartTime($billrunKey);
-		$billing_end_date = Billrun_Billrun::getEndTime($billrunKey);
+		$billing_start_date = Billrun_Billingcycle::getStartTime($billrunKey);
+		$billing_end_date = Billrun_Billingcycle::getEndTime($billrunKey);
 		$days_in_month = (int) date('t', $billing_start_date);
 		$temp_start = strtotime($start_date);
 		$temp_end = is_null($end_date) ? PHP_INT_MAX : strtotime($end_date);

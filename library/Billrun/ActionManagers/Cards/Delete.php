@@ -20,12 +20,6 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 	protected $delete = array();
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success deleting cards"));
-	}
-
-	/**
 	 * Get the array of fields to be set in the query record from the user input.
 	 * @return array - Array of fields to set.
 	 */
@@ -54,7 +48,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 10;
+			$errorCode =  10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -62,7 +56,7 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		$errLog = array_diff($queryFields, array_keys($jsonQueryData));
 
 		if (empty($jsonQueryData['batch_number'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 11;
+			$errorCode =  11;
 			$missingQueryFields = implode(', ', $errLog);
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($missingQueryFields));
 			return false;
@@ -100,24 +94,20 @@ class Billrun_ActionManagers_Cards_Delete extends Billrun_ActionManagers_Cards_A
 		try {
 			$deleteResult = $this->removeCreated($bulkOptions);
 			$count = $deleteResult['n'];
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 12;
-			$error = 'failed deleting from the DB got error : ' . $e->getCode() . ' : ' . $e->getMessage();
+		} catch (\MongoException $e) {
+			$errorCode =  12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$count) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("cards_error_base") + 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => (!$this->errorCode) ?
-				('Deleted ' . $count . ' card(s)') :
-				($error)
+			'status' => 1,
+			'desc' => "Success deleting cards",
+			'details' => 'Deleted ' . $count . ' card(s)'
 		);
 
 		return $outputResult;

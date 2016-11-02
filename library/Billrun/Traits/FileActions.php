@@ -78,7 +78,7 @@ trait Billrun_Traits_FileActions {
 		);
 
 		if (!empty($more_fields)) {
-			$query = array_merge($query, Billrun_Util::arrayToMongoQuery($query));
+			$query = array_merge($query, Billrun_Utils_Mongo::arrayToMongoQuery($query));
 		}
 
 		//Billrun_Factory::dispatcher()->trigger('alertisFileReceivedQuery', array(&$query, $type, $this));

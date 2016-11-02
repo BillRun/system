@@ -24,12 +24,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	 */
 	protected $sid;
 
-	const DEFAULT_ERROR = "Success updating auto renew by delta";
-
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -59,18 +56,11 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 		$defaultRecord = $this->getDefaultRecord();
 
-		$success = $deltaUpdater->execute($query, $this->expected, $defaultRecord);
-
-		if ($deltaUpdater->getErrorCode() != 0) {
-			$this->error = $deltaUpdater->getError();
-			$this->errorCode = $deltaUpdater->getErrorCode();
-			$success = false;
-		}
+		$deltaUpdater->execute($query, $this->expected, $defaultRecord);
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'error_code' => $this->errorCode,
-			'desc' => $this->error,
+			'status' => 1,
+			'desc' => "Success updating auto renew by delta",
 			'details' => $this->expected
 		);
 		return $outputResult;
@@ -81,12 +71,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 	 */
 	protected function validateExpected(&$expected) {
 		if (!is_array($expected)) {
-			return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
+			return 23;
 		}
 
 		foreach ($expected as &$record) {
 			if (!is_array($record)) {
-				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 23;
+				return 23;
 			}
 
 			if (!isset($record['interval'])) {
@@ -94,7 +84,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 			}
 			$norm = $this->normalizeInterval($record['interval']);
 			if ($norm === false) {
-				return Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+				return 41;
 			}
 
 			$record['interval'] = $norm;
@@ -129,7 +119,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 			// This fails if the date is in the wrong format
 			if ($time === false) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 24;
+				$errorCode = 24;
 				$this->reportError($errorCode, Zend_Log::ALERT, array($record[$field]));
 				return false;
 			}
@@ -149,7 +139,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$jsonData = null;
 		$expected = $input->get('expected');
 		if (empty($expected) || (!($jsonData = json_decode($expected, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 21;
+			$errorCode = 21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -163,7 +153,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 
 		$sid = $input->get('sid');
 		if (empty($sid)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 20;
+			$errorCode = 20;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -194,7 +184,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Bydelta extends Billrun_Action
 		$this->sid = Billrun_Util::toNumber($sid);
 
 		if ($this->sid === false) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 22;
+			$errorCode = 22;
 			$this->reportError($errorCode, Zend_Log::ERR, array($this->sid));
 			return false;
 		}

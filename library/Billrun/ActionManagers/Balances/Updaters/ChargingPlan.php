@@ -37,17 +37,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		$walletPeriod = $wallet->getPeriod();
-		if ($walletPeriod) {
-			return $this->getDateFromPeriod($walletPeriod);
-		} else {
-			Billrun_Factory::log("Invalid data!", Zend_Log::ERR);
-			return null;
-		}
+		return Billrun_Utils_Mongo::getDateFromPeriod($walletPeriod);
 	}
 
 	protected function getChargingPlanQuery($query) {
 		$charging_plan_query = $query;
-		if ($this->recurring) {
+		if ($this->updateOperation->isRecurring()) {
 			$charging_plan_query['recurring'] = 1;
 		} else {
 			$charging_plan_query['$or'] = array(
@@ -72,7 +67,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$chargingPlanRecord = $this->getRecord($charging_plan_query, $chargingPlansCollection, $this->getTranslateFields());
 		if (!$chargingPlanRecord || $chargingPlanRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base");
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -101,7 +96,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		if (!isset($query['service_provider'])) {
 			$query['service_provider'] = $subscriber['service_provider'];
 		} else if ($query['service_provider'] != $subscriber['service_provider']) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 13;
+			$errorCode =  13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -120,6 +115,15 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 			return false;
 		}
 
+		// Handle the operation.
+		$this->updateOperation = $this->updateOperation->reconfigure($chargingPlanRecord);
+		if(!$this->updateOperation) {
+			// [Balances Error 1229]
+			$errorCode =  29;
+			$this->reportError($errorCode);
+			return false;
+		}
+		
 		$balancesArray = array();
 		if (isset($chargingPlanRecord['include'])) {
 			$balancesArray = $chargingPlanRecord['include'];
@@ -128,9 +132,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Check if we have core balance.
 		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
 		if ($coreBalance !== null) {
-			if ($this->blockMax($subscriber['plan'], $coreBalance, $updateQuery)) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 26;
-				$this->reportError($errorCode);
+			if (!$this->handleCoreBalance($subscriber['plan'], $coreBalance, $updateQuery)) {
 				return false;
 			}
 		}
@@ -197,10 +199,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @return boolean true if get to max value, else false
 	 */
-	protected function blockMax($planName, $wallet, $query) {
+	protected function handleCoreBalance($planName, $wallet, $query) {
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $wallet->getPPID();
-		return parent::blockMax($planName, $wallet, $query);
+		return parent::handleCoreBalance($planName, $wallet, $query);
 	}
 
 	/**
@@ -346,54 +348,6 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		// Set the plan reference.
 		$query['current_plan'] = $plansCollection->createRefByEntity($planRecord);
 		unset($query['charging_plan_name']);
-	}
-
-	/**
-	 * 
-	 * @param Mongoldoid_Collection $balancesColl
-	 * @param array $query - Query for getting tha balance.
-	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @return array Query for set updating the balance.
-	 */
-	protected function getUpdateBalanceQuery($balancesColl, $query, $wallet, $defaultBalance) {
-		$update = array();
-
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
-		$balance = $balancesColl->query($balanceQuery)->cursor()->current();
-		$this->balanceBefore[$balanceQuery['pp_includes_external_id']] = $balance;
-
-		// If the balance doesn't exist take the setOnInsert query, 
-		// if it exists take the set query.
-		if ($balance->isEmpty()) {
-			$update = $this->getSetOnInsert($wallet, $defaultBalance);
-		} else {
-			$this->handleZeroing($balanceQuery, $balancesColl, $wallet->getFieldName());
-			$update = $this->getSetQuery($wallet);
-		}
-
-		return $update;
-	}
-
-	/**
-	 * Update a single balance.
-	 * @param Billrun_DataTypes_Wallet $wallet
-	 * @param array $query
-	 * @return Mongoldoid_Entity
-	 */
-	protected function updateBalance($wallet, $query, $defaultBalance, $toTime) {
-		$balancesColl = Billrun_Factory::db()->balancesCollection()->setReadPreference(MongoClient::RP_PRIMARY, array());
-		$balanceQuery = array_merge($query, Billrun_Util::getDateBoundQuery());
-		$update = $this->getUpdateBalanceQuery($balancesColl, $balanceQuery, $wallet, $defaultBalance);
-
-		$this->setToForUpdate($update, $toTime, $wallet);
-		
-		$options = array(
-			'upsert' => true,
-			'new' => true,
-		);
-
-		// Return the new document.
-		return $balancesColl->findAndModify($balanceQuery, $update, array(), $options, true);
 	}
 
 	/**

@@ -75,7 +75,7 @@ class Billrun_Config {
 			$this->tenant = $this->getEnv();
 		}
 	}
-
+	
 	public function addConfig($path) {
 		if (file_exists($path)) {
 			$addedConf = new Yaf_Config_Ini($path);
@@ -97,9 +97,6 @@ class Billrun_Config {
 		// Return the conf value.
 		if (!is_array($moreImportantConf)) {
 			return $moreImportantConf;
-		}
-		if(self::isComplex($moreImportantConf)) {
-			return self::getComplexValue($moreImportantConf);
 		}
 
 		foreach ($moreImportantConf as $key => $value) {
@@ -177,19 +174,23 @@ class Billrun_Config {
 					return true;
 				}
 				$dbConfig = $dbCursor->getRawData();
+				unset($dbConfig['_id']);
+				$iniConfig = $this->config->toArray();
+				$this->translateComplex($dbConfig);
+				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
 				
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
-				
-				unset($dbConfig['_id']);
-				$iniConfig = $this->config->toArray();
-				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
 			}
-		} catch (Exception $e) {
-			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
-			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
+		} catch (MongoException $e) {
+			// TODO: Exception should be thrown and handled by the error controller.
+			error_log('cannot load database config');
+//			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
+//			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			return false;
 		}
+		
+		return true;
 	}
 
 	/**
@@ -197,22 +198,22 @@ class Billrun_Config {
 	 */
 	public function refresh() {
 		$this->setTenantTimezone($this->toArray());
+		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
 	}
 	
 	protected function setTenantTimezone($dbConfig) {
-		if(!isset($dbConfig['timezone'])){
+		if(!isset($dbConfig['billrun']['timezone'])){
 			return;
 		}
 		
 		// Get the timezone.
-		$timezone = $this->getComplexValue($dbConfig['timezone']);
+		$timezone = $dbConfig['billrun']['timezone'];
 		if(empty($timezone)) {
 			return;
 		}
 		
 		// Setting the default timezone.
 		$setTimezone = @date_default_timezone_set($timezone);
-		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
 	}
 	
 	/**
@@ -252,11 +253,6 @@ class Billrun_Config {
 			settype($currConf, $type);
 		}
 
-		// Check if the value is complex.
-		if(self::isComplex($currConf)) {
-			return self::getComplexValue($currConf);
-		}
-		
 		return $currConf;
 	}
 
@@ -276,6 +272,27 @@ class Billrun_Config {
 	}
 	
 	/**
+	 * Translate all complex values in a config array
+	 * @param array $config - Config array, changed by reference.
+	 */
+	public static function translateComplex(&$config) {
+		if(self::isComplex($config)) {
+			return self::getComplexValue($config);
+		}
+		if(!Billrun_Util::isMultidimentionalArray($config)) {
+			// Check if it is a complex value.
+			return $config;
+		}
+		
+		// Go through the config values.
+		foreach ($config as $key => $value) {
+			$config[$key] = self::translateComplex($value);
+		}
+		
+		return $config;
+	}
+	
+	/**
 	 * Check if complex data set is valid by creating a wrapper and validating.
 	 * @param mixed $complex - Complex data
 	 * @return boolean - True if valid.
@@ -291,6 +308,11 @@ class Billrun_Config {
 		return true;
 	}
 	
+	/**
+	 * Get the complex value from a complex record
+	 * @param array $complex - Complex record.
+	 * @return type
+	 */
 	public static function getComplexValue(&$complex) {
 		$wrapper = self::getComplexWrapper($complex);
 		if(!$wrapper) {

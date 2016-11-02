@@ -27,7 +27,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 
 		// Subscriber was not found.
 		if (!$subscriber) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 3;
+			$errorCode =  3;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -61,7 +61,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	 */
 	protected function getIDQuery($query) {
 		// Convert the string ID to mongo ID.
-		$id = $query['_id']['$id'];
+		$id = $query['_id'];
 		$mongoId = new MongoId($id);
 		return array("_id" => $mongoId);
 	}
@@ -81,7 +81,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 
 		$this->getBalanceRecord($coll, $idQuery);
 		if (!$this->balancesRecord) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 2;
+			$errorCode =  2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -113,7 +113,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		$balanceRecord = $cursor->current();
 
 		if (!$balanceRecord || $balanceRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 4;
+			$errorCode =  4;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return;
 		}
@@ -177,7 +177,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 	protected function updateBalance($query, $balancesColl, $recordToSet) {
 		// Find the record in the collection.
 		if (!$this->balancesRecord) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 5;
+			$errorCode =  5;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -187,14 +187,15 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 		// Set the old record
 		$this->balanceBefore[$usedWallet->getPPID()] = $this->balancesRecord;
 
-		$queryType = $this->isIncrement ? '$inc' : '$set';
+		$queryType = $this->updateOperation ? '$set' : '$inc';
 		$valueFieldName = $usedWallet->getFieldName();
 		$valueUpdateQuery = array();
-		$valueUpdateQuery[$queryType]
-			[$valueFieldName] = $usedWallet->getValue();
+		$valueUpdateQuery[$queryType][$valueFieldName] = $usedWallet->getValue();
 		$to = $recordToSet['to'];
-		if (isset($to['sec'])) {
+		if (is_array($to) && isset($to['sec'])) {
 			$to = new MongoDate($to['sec']);
+		} else if (is_object($to) && isset($to->sec)) {
+			$to = new MongoDate($to->sec);
 		}
 		$valueUpdateQuery['$set']['to'] = $to;
 

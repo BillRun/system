@@ -231,7 +231,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan
-			$added_values[$this->aprField] = Billrun_Calculator_CustomerPricing::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan']);
+			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan']);
 		}
 		$newData = array_merge($current, $added_values);
 		$row->setRawData($newData);
@@ -291,8 +291,16 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			return false;
 		}
 
-		$key = $matchedRate->get('key');
-		return $rates_coll->query(array("key" => $key))->cursor()->current();
+ 		$rawData = $matchedRate->getRawData();
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 			return false;	
+ 		}
+ 		$idQuery = array(
+ 			"key" => $rawData['key'], // this is for sharding purpose
+ 			"_id" => $rawData['_id']['_id'],
+ 		);
+ 		
+ 		return $rates_coll->query($idQuery)->cursor()->current();
 	}
 
 	/**

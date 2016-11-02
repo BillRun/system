@@ -102,7 +102,7 @@ class SendrequestController extends Yaf_Controller_Abstract {
 			$sid = intval($additionalParams['sid']);
 			// Update subscriber in DB
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
-			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
+			$findQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
 					'in_data_slowness' => true,

@@ -26,18 +26,12 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	protected $keepBalances = false;
 
 	/**
-	 */
-	public function __construct() {
-		parent::__construct(array('error' => "Success deleting subscriber"));
-	}
-
-	/**
 	 * Close all the open balances for a subscriber.
 	 */
 	protected function closeBalances($sid, $aid) {
 		// Find all balances.
 		$balancesUpdate = array('$set' => array('to' => new MongoDate()));
-		$balancesQuery = Billrun_Util::getDateBoundQuery();
+		$balancesQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$balancesQuery['sid'] = $sid;
 		$balancesQuery['aid'] = $aid;
 		$options = array(
@@ -59,7 +53,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 
 			// Could not find the row to be deleted.
 			if (!$rowToDelete || $rowToDelete->isEmpty()) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 15;
+				$errorCode =  15;
 				$this->reportError($errorCode, Zend_Log::NOTICE);
 			} else {
 				$this->collection->updateEntity($rowToDelete, array('to' => new MongoDate()));
@@ -69,16 +63,15 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 				// Close balances.
 				$this->closeBalances($rowToDelete['sid'], $rowToDelete['aid']);
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 11;
+		} catch (\MongoException $e) {
+			$errorCode =  11;
 			Billrun_Factory::log("Exception: " . print_R($e->getCode() . " - " . $e->getMessage(), 1), Zend_Log::ALERT);
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $errorCode,
+			'status' => 1,
+			'desc' => "Success deleting subscriber",
 		);
 
 		return $outputResult;
@@ -108,7 +101,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 12;
+			$errorCode =  12;
 			$error = "Failed decoding JSON data";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -116,7 +109,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 
 		// If there were errors.
 		if (!$this->setQueryFields($jsonData)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 13;
+			$errorCode =  13;
 			$error = "Subscribers delete received invalid query values";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -133,7 +126,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 	protected function setQueryFields($queryData) {
 
 		if (!isset($queryData['sid']) || empty($queryData['sid'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("subscriber_error_base") + 14;
+			$errorCode =  14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -141,7 +134,7 @@ class Billrun_ActionManagers_Subscribers_Delete extends Billrun_ActionManagers_S
 		$queryFields = $this->getQueryFields();
 
 		// Initialize the query with date bound values.
-		$this->query = Billrun_Util::getDateBoundQuery();
+		$this->query = Billrun_Utils_Mongo::getDateBoundQuery();
 
 		// Get only the values to be set in the update record.
 		// TODO: If no update fields are specified the record's to and from values will still be updated!

@@ -94,7 +94,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function hasAvailableBalances($row) {
-		$query = Billrun_Util::getDateBoundQuery();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['sid'] = $row['sid'];
 		if ($this->canUseDataFromCurrencyBalances($row)) {
 			$query['$or'] = array(
@@ -192,7 +192,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getSubscriber($subscriberId) {
 		// Get subscriber query.
-		$subscriberQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $subscriberId));
+		$subscriberQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $subscriberId));
 
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		$results = $coll->query($subscriberQuery)->cursor()->limit(1)->current();
@@ -203,7 +203,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function getSubscriberPlan($subscriber) {
-		$planQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('name' => $subscriber['plan']));
+		$planQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('name' => $subscriber['plan']));
 
 		$coll = Billrun_Factory::db()->plansCollection();
 		$results = $coll->query($planQuery)->cursor()->limit(1)->current();
@@ -570,7 +570,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$sid = $additionalParams['sid'];
 			// Update subscriber in DB
 			$subscribersColl = Billrun_Factory::db()->subscribersCollection();
-			$findQuery = array_merge(Billrun_Util::getDateBoundQuery(), array('sid' => $sid));
+			$findQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('sid' => $sid));
 			if ($enterDataSlowness) {
 				$updateQuery = array('$set' => array(
 					'in_data_slowness' => true,
@@ -614,7 +614,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	/**
-	 * use to store the row to extend balance query (method extendGetBalanceQuery)
+	 * use to store the row to extend balance query (method getBalanceLoadQuery)
 	 * 
 	 * @param array $row
 	 * @param Billrun_Calculator $calculator
@@ -637,7 +637,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo change the values to be with flag taken from pp_includes into balance object
 	 * 
 	 */
-	public function extendGetBalanceQuery(&$query, &$timeNow, &$chargingType, &$usageType, Billrun_Balance $balance) {
+	public function getBalanceLoadQuery(&$query, &$timeNow, &$chargingType, &$usageType, $minUsage, $minCost, Billrun_Balance $balance) {
 		if (!empty($this->row)) {
 			$pp_includes_external_ids = array();
 			// Only certain subscribers can use data from CORE BALANCE
@@ -656,7 +656,30 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!empty($unique_pp_includes_external_ids) && is_array($unique_pp_includes_external_ids)) {
 				$query['pp_includes_external_id'] = array('$nin' => $unique_pp_includes_external_ids);
 			}
+			
+			$additionalUsageTypes = $this->getUsageTypesByAdditionalUsageType($usageType);
+			foreach ($additionalUsageTypes as $additionalUsageType) {
+				$query['$or'][] = array("balance.totals.$additionalUsageType.usagev" => array('$lte' => $minUsage));
+				$query['$or'][] = array("balance.totals.$additionalUsageType.cost" => array('$lte' => $minCost));
+			}
 		}
+	}
+	
+	/**
+	 * this will return also available usage types (in balances) 
+	 * according to the additional types set in the prepaid includes document.
+	 * 
+	 * @param type $usaget
+	 * @return main usaget types
+	 */
+	protected function getUsageTypesByAdditionalUsageType($usaget) {
+		$pp_includes_query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array("additional_charging_usaget" => array('$in' => array($usaget))));
+		$ppincludes = Billrun_Factory::db()->prepaidincludesCollection()->query($pp_includes_query)->cursor();
+		$usageTypes = array();
+		foreach ($ppincludes as $ppinclude) {
+			$usageTypes[] = $ppinclude['charging_by_usaget'];
+		}
+		return array_unique($usageTypes);
 	}
 
 	protected function getPPIncludesToExclude($plan_name, $rate_key) {

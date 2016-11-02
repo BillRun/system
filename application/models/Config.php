@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once APPLICATION_PATH . '/library/vendor/autoload.php';
+
 /**
  * Configmodel class
  *
@@ -26,13 +28,12 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $data;
-
+	
 	/**
 	 * options of config
 	 * @var array
 	 */
 	protected $options;
-	protected $invalidFields = array();
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
 
@@ -45,12 +46,6 @@ class ConfigModel {
 
 	public function getOptions() {
 		return $this->options;
-	}
-
-	public function getInvalidFields() {
-		$result = $this->invalidFields;
-		$this->invalidFields = array();
-		return $result;
 	}
 
 	protected function loadConfig() {
@@ -103,39 +98,49 @@ class ConfigModel {
 			throw new Exception('Unknown file type ' . $data['file_type']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
+		} else if ($category == 'payment_gateways') {
+ 			if (!is_array($data)) {
+ 				Billrun_Factory::log("Invalid data for payment_gateways.");
+ 				return 0;
+ 			}
+ 			if (empty($data['name'])) {
+ 				return $currentConfig['payment_gateways'];
+ 			}
+ 			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
+ 				return $pgSettings;
+ 			}
+ 			throw new Exception('Unknown payment gateway ' . $data['name']);
 		}
 
 		return $this->_getFromConfig($currentConfig, $category, $data);
 	}
 
+	/**
+	 * Internal getFromConfig function, recursively extracting values and handling
+	 * any complex values.
+	 * @param type $currentConfig
+	 * @param type $category
+	 * @param array $data
+	 * @return mixed value
+	 * @throws Exception
+	 */
 	protected function _getFromConfig($currentConfig, $category, $data) {
 		if (is_array($data) && !empty($data)) {
-			foreach ($data as $key => $_) {
+			$dataKeys = array_keys($data);
+			foreach ($dataKeys as $key) {
 				$result[] = $this->_getFromConfig($currentConfig, $category . "." . $key, null);
 			}
 			return $result;
 		}
 
-		$valueInCategory = Billrun_Util::getValueByMongoIndex($currentConfig, $category);
+		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
 			throw new Exception('Unknown category ' . $category);
 		}
-
-		return $this->extractComplexValue($valueInCategory);
-	}
-
-	protected function extractComplexValue($toExtract) {
-		if (Billrun_Config::isComplex($toExtract)) {
-			// Get the complex object.
-			return Billrun_Config::getComplexValue($toExtract);
-		}
-
-		if (is_array($toExtract)) {
-			return $this->extractComplexFromArray($toExtract);
-		}
-
-		return $toExtract;
+		
+		$translated = Billrun_Config::translateComplex($valueInCategory);
+		return $translated;
 	}
 
 	protected function extractComplexFromArray($array) {
@@ -181,12 +186,53 @@ class ConfigModel {
 			}
 			$this->setFileTypeSettings($updatedData, $fileSettings);
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+		} else if ($category === 'payment_gateways') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for payment gateways.");
+				return 0;
+			}
+			if (empty($data['name'])) {
+				throw new Exception('Couldn\'t find payment gateway name');
+			}
+			$supported = Billrun_Factory::config()->getConfigValue('PaymentGateways.' . $data['name'] . '.supported');
+			if (is_null($supported) || !$supported) {
+				throw new Exception('Payment gateway is not supported');
+			}
+			$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways'); // TODO: Remove when finished to do more generic
+			$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
+				return $paymentGateway['omnipay_supported'] == true;
+				});
+			if (in_array($data['name'], array_keys($omnipay_supported))) {
+					$gateway = Omnipay\Omnipay::create($data['name']);
+					$defaultParameters = $gateway->getDefaultParameters();
+			}
+			else{
+				$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			}
+			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
+			$neededParameters = array_keys($releventParameters);
+			foreach ($data['params'] as $key => $value) {
+				if (!in_array($key, $neededParameters)){
+					unset($data['params'][$key]);
+				}
+			}
+			$rawPgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name']);
+			if ($rawPgSettings) {
+				$pgSettings = array_merge($rawPgSettings, $data);
+			} else {
+				$pgSettings = $data;
+			}
+			$this->setPaymentGatewaySettings($updatedData, $pgSettings);
+ 			$pgSettings = $this->validatePaymentGatewaySettings($updatedData, $data);
+ 			if (!$pgSettings){
+ 				return 0;
+ 			}
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
 			}
 		}
-
+		
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -197,6 +243,17 @@ class ConfigModel {
 		return $saveResult;
 	}
 
+	/**
+	 * Load the config template.
+	 * @return array The array representing the config template
+	 */
+	protected function loadTemplate() {
+		// Load the config template.
+		// TODO: Move the file path to a constant
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
+		return parse_ini_file($templateFileName, 1);
+	}
+	
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {
@@ -208,18 +265,17 @@ class ConfigModel {
 			return 1;
 		}
 
-		$valueInCategory = Billrun_Util::getValueByMongoIndex($currentConfig, $category);
+		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			// TODO: Do we allow setting values with NEW keys into the settings?
-			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
-			return 0;
+			$result = $this->handleNewCategory($category, $data, $currentConfig);
+			return $result;
 		}
 
 		// Check if complex object.
 		if (!Billrun_Config::isComplex($valueInCategory)) {
 			// TODO: Do we allow setting?
-			return Billrun_Util::setValueByMongoIndex($data, $currentConfig, $category);
+			return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		}
 		// Set the value for the complex object,
 		$valueInCategory['v'] = $data;
@@ -227,18 +283,60 @@ class ConfigModel {
 		// Validate the complex object.
 		if (!Billrun_Config::isComplexValid($valueInCategory)) {
 			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory, 1), Zend_Log::NOTICE);
-			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
-			return 0;
+			$invalidFields[] = Billrun_Utils_Mongo::mongoArrayToInvalidFieldsArray($category, ".");
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		// Update the config.
-		if (!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
+		if (!Billrun_Utils_Mongo::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
 			return 0;
 		}
 
 		return 1;
 	}
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param string $category - The current category.
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 */
+	protected function handleNewCategory($category, $data, &$currentConfig) {
+		$splitCategory = explode('.', $category);
 
+		$template = $this->loadTemplate();
+		
+		$found = true;
+		$ptrTemplate = &$template;
+		$newConfig = $currentConfig;
+		$newValueIndex = &$newConfig;
+		
+		// Go through the keys
+		foreach ($splitCategory as $key) {
+			if(!isset($newValueIndex[$key])) {
+				$newValueIndex[$key] = array();
+			}
+			$newValueIndex = &$newValueIndex[$key];
+			if(!isset($ptrTemplate[$key])) {
+				$found = false;
+				break;
+			}
+			$ptrTemplate = &$ptrTemplate[$key];
+		}
+		
+		// Check if the value exists in the settings template ini.
+		if(!$found) {
+			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
+			return 0;
+		}
+		
+		// Set the data
+		$currentConfig = $newConfig;
+
+		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+		return $result;
+	}
+	
 	protected function setConfigValue(&$config, $category, $toSet) {
 		// Check if complex object.
 		if (Billrun_Config::isComplex($toSet)) {
@@ -249,7 +347,7 @@ class ConfigModel {
 			return $this->setConfigArrayValue($toSet);
 		}
 
-		return Billrun_Util::setValueByMongoIndex($toSet, $config, $category);
+		return Billrun_Utils_Mongo::setValueByMongoIndex($toSet, $config, $category);
 	}
 
 	protected function setConfigArrayValue($toSet) {
@@ -269,12 +367,12 @@ class ConfigModel {
 		// Validate the complex object.
 		if (!Billrun_Config::isComplexValid($valueInCategory)) {
 			Billrun_Factory::log("Invalid complex object " . print_r($valueInCategory, 1), Zend_Log::NOTICE);
-			$this->invalidFields[] = Billrun_Util::mongoArrayToPHPArray($category, ".", false);
-			return 0;
+			$invalidFields = Billrun_Utils_Mongo::mongoArrayToInvalidFieldsArray($category, ".", false);
+			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 
 		// Update the config.
-		if (!Billrun_Util::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
+		if (!Billrun_Utils_Mongo::setValueByMongoIndex($valueInCategory, $currentConfig, $category)) {
 			return 0;
 		}
 
@@ -314,6 +412,24 @@ class ConfigModel {
 				}
 			}
 		}
+		if ($category === 'payment_gateways') {
+ 			if (isset($data['name'])) {
+ 				if (count($data) == 1) {
+ 					$this->unsetPaymentGatewaySettings($updatedData, $data['name']);
+ 				} else {
+ 					if (!$pgSettings = $this->getPaymentGatewaySettings($updatedData, $data['name'])) {
+ 						throw new Exception('Unkown payment gateway ' . $data['name']);
+ 					}
+ 					foreach (array_keys($data) as $key) {
+ 						if ($key != 'name') {
+ 							unset($pgSettings[$key]);
+ 						}
+ 					}
+ 					$this->setPaymentGatewaySettings($updatedData, $pgSettings);
+ 				}
+ 			}
+ 		}
+ 
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
@@ -326,6 +442,16 @@ class ConfigModel {
 		}
 		return FALSE;
 	}
+	
+	protected function getPaymentGatewaySettings($config, $pg) {
+ 		if ($filtered = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
+ 			return $pgSettings['name'] === $pg;
+ 		})) {
+ 			return current($filtered);
+ 		}
+ 		return FALSE;
+ 	}
+ 
 
 	protected function setFileTypeSettings(&$config, $fileSettings) {
 		$fileType = $fileSettings['file_type'];
@@ -337,14 +463,35 @@ class ConfigModel {
 		}
 		$config['file_types'] = array_merge($config['file_types'], array($fileSettings));
 	}
+	
+	
+	protected function setPaymentGatewaySettings(&$config, $pgSettings) {
+ 		$paymentGateway = $pgSettings['name'];
+ 		foreach ($config['payment_gateways'] as &$somePgSettings) {
+ 			if ($somePgSettings['name'] == $paymentGateway) {
+ 				$somePgSettings = $pgSettings;
+ 				return;
+ 			}
+ 		}
+ 		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
+ 	}
+ 
 
 	protected function unsetFileTypeSettings(&$config, $fileType) {
 		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
 		});
 	}
+	
+	
+	protected function unsetPaymentGatewaySettings(&$config, $pg) {
+ 		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
+ 			return $pgSettings['name'] !== $pg;
+ 		});
+ 	}
+ 
 
-	protected function validateFileSettings($config, $fileType) {
+	protected function validateFileSettings(&$config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
@@ -369,6 +516,50 @@ class ConfigModel {
 		$this->setFileTypeSettings($config, $updatedFileSettings);
 		return $this->checkForConflics($config, $fileType);
 	}
+	
+	
+	protected function validatePaymentGatewaySettings(&$config, $pg) {
+ 		$connectionParameters = array_keys($pg['params']);
+ 		$name = $pg['name'];
+		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways');
+		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
+ 			return $paymentGateway['supported'] == true;
+ 		});
+		if (!in_array($name, array_keys($supportedGateways))){
+			Billrun_Factory::log("Unsupported Payment Gateway: ", $name);
+			return false;
+		}
+		$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
+ 			return $paymentGateway['omnipay_supported'] == true;
+ 		});
+		if (in_array($name, array_keys($omnipay_supported))) {
+			$gateway = Omnipay\Omnipay::create($name);
+			$defaultParameters = $gateway->getDefaultParameters();
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
+			}
+			// TODO: check Auth to gateway through Omnipay
+		}
+		
+ 		else if ($name == "CreditGuard"){
+			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
+			$defaultParametersKeys = array_keys($defaultParameters);
+			$diff = array_diff($defaultParametersKeys, $connectionParameters);
+			if (!empty($diff)) {
+				Billrun_Factory::log("Wrong parameters for connection to", $name);
+				return false;
+			}
+		// meanewhile credentials of credit guard, TODO generic for all payemnt gateways not ompipay supported and functions for identical code.
+		}
+		
+		
+		
+ 		return true;
+ 	}
+ 
 
 	protected function checkForConflics($config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
@@ -379,7 +570,12 @@ class ConfigModel {
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];
-			}, $fileSettings['processor']['usaget_mapping']);
+			}, array_filter($fileSettings['processor']['usaget_mapping'], function($mapping) {
+					return isset($mapping['src_field']);
+				}));
+			if (array_diff($usagetMappingSource, $customFields)) {
+				throw new Exception('Unknown fields used for usage type mapping: ' . implode(', ', $usagetMappingSource));
+			}
 			$usagetTypes = array_map(function($mapping) {
 				return $mapping['usaget'];
 			}, $fileSettings['processor']['usaget_mapping']);
@@ -477,24 +673,29 @@ class ConfigModel {
 	protected function validateProcessorConfiguration($processorSettings) {
 		$processorSettings['type'] = 'Usage';
 		if (isset($processorSettings['date_format'])) {
+			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
+				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
+			}
 			// TODO validate date format
 		}
 		if (!isset($processorSettings['date_field'])) {
-			throw new Exception('Missing processor time field');
+			throw new Exception('Missing processor date field');
 		}
 		if (!isset($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
 		}
-		if (!isset($processorSettings['usaget_mapping'])) {
-			throw new Exception('Missing processor usage type mappings');
+		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
+			throw new Exception('Missing processor usage type mapping rules');
 		}
-		if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
-			throw new Exception('Missing mandatory processor configuration');
-		}
-		$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
-		foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-			if (!isset($mapping['src_field'], $mapping['pattern']) || !Billrun_Util::isValidRegex($mapping['pattern']) || empty($mapping['usaget'])) {
-				throw new Exception('Illegal usaget mapping at index ' . $index);
+		if (isset($processorSettings['usaget_mapping'])) {
+			if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
+				throw new Exception('Missing mandatory processor configuration');
+			}
+			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
+			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
+				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usaget mapping at index ' . $index);
+				}
 			}
 		}
 		if (!isset($processorSettings['orphan_files_time'])) {

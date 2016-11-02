@@ -29,7 +29,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success upserting auto renew"));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -44,7 +43,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			return true;
 		}
 
-		$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
+		$errorCode = 14;
 		$this->reportError($errorCode);
 		return false;
 	}
@@ -74,21 +73,20 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 			$count = $updateResult['nModified'] + (isset($updateResult['nUpserted']) ? $updateResult['nUpserted'] : 0);
 			$found = $updateResult['n'];
 			$success = $this->handleResult($count, $found);
-		} catch (\Exception $e) {
+		} catch (\MongoException $e) {
 			$success = false;
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 10;
+			$errorCode = 10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		if (!$updateResult) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 11;
+			$errorCode = 11;
 			$this->reportError($errorCode);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success upserting auto renew",
 			'details' => ($updateResult) ? $updateResult : 'No results',
 		);
 		return $outputResult;
@@ -103,13 +101,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 12;
+			$errorCode = 12;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		if (!isset($jsonUpdateData['to'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 13;
+			$errorCode = 13;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -160,7 +158,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function populateUpdateQuery($jsonUpdateData) {
 		$interval = $this->getInterval($jsonUpdateData);
 		if ($interval === false) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 41;
+			$errorCode = 41;
 			$this->reportError($errorCode, Zend_Log::ALERT, array($interval));
 			return false;
 		}
@@ -284,12 +282,12 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function fillWithSubscriberValues() {
 		$this->updateQuery['$set']['sid'] = $this->query['sid'];
 		$subCollection = Billrun_Factory::db()->subscribersCollection();
-		$subQuery = Billrun_Util::getDateBoundQuery(time(), true);
+		$subQuery = Billrun_Utils_Mongo::getDateBoundQuery(time(), true);
 		$subQuery['sid'] = $this->query['sid'];
 		$subRecord = $subCollection->query($subQuery)->cursor()->current();
 
 		if ($subRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 14;
+			$errorCode = 14;
 			$this->reportError($errorCode, Zend_Log::NOTICE, array($subQuery['sid']));
 			return false;
 		}
@@ -303,7 +301,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function fillWithChargingPlanValues() {
 		// Get the charging plan.
 		$plansCollection = Billrun_Factory::db()->plansCollection();
-		$chargingPlanQuery = Billrun_Util::getDateBoundQuery();
+		$chargingPlanQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$chargingPlanQuery['type'] = 'charging';
 		$chargingPlanQuery['name'] = $this->query['charging_plan'];
 		$chargingPlanQuery['service_provider'] = $this->updateQuery['$set']['service_provider'];
@@ -311,7 +309,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 
 		$planRecord = $plansCollection->query($chargingPlanQuery)->cursor()->current();
 		if ($planRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 15;
+			$errorCode = 15;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -360,7 +358,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		foreach ($queryFields as $field) {
 			// ATTENTION: This check will not allow updating to empty values which might be legitimate.
 			if (!isset($queryData[$field]) || empty($queryData[$field])) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 16;
+				$errorCode = 16;
 				$this->reportError($errorCode, Zend_Log::NOTICE, array($field));
 				return false;
 			}
@@ -380,14 +378,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 17;
+			$errorCode = 17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		// If there were errors.
 		if ($this->setQueryFields($jsonQueryData) === FALSE) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 18;
+			$errorCode = 18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -422,7 +420,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 	protected function handleDuplicates() {
 		$updatedQuery = array_merge($this->query, $this->updateQuery['$set']);
 		if (!$this->collection->query($updatedQuery)->cursor()->limit(1)->current()->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 40;
+			$errorCode = 40;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 
 			// TODO: Pelephone does not want this to return a failure indication.

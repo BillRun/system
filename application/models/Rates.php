@@ -43,31 +43,47 @@ class RatesModel extends TabledateModel {
 	 * 
 	 * @param Mongodloid collection $collection
 	 * @param array $entity
+	 * @deprecated since version 5.0
 	 * 
 	 * @return type
 	 */
-	public function getItem($id) {
+//	public function getItem($id) {
+//
+//		$entity = parent::getItem($id);
+//
+//		if (isset($entity['rates'])) {
+//			$this->processEntityRatesOnGet($entity);
+//		}
+//
+//		return $entity;
+//	}
 
-		$entity = parent::getItem($id);
-
-		if (isset($entity['rates'])) {
-			$raw_data = $entity->getRawData();
-			foreach ($raw_data['rates'] as &$rate) {
-				if (isset($rate['plans'])) {
-					foreach ($rate['plans'] as &$plan) {
-						$data = $this->collection->getRef($plan);
-						if ($data instanceof Mongodloid_Entity) {
-							$plan = $data->get('name');
-						}
-					}
+	/**
+	 * Process the internal rates values of an entity.
+	 * @param Mongodloid_Entity $entity
+	 * @deprecated since 5.0 The rates field in the rate record holds the plan
+	 * data instead of a reference.
+	 */
+	protected function processEntityRatesOnGet(&$entity) {
+		$raw_data = $entity->getRawData();
+		foreach ($raw_data['rates'] as &$rate) {
+			if (!isset($rate['plans'])) {
+				continue;
+			}
+			
+			// TODO: The internal logic of this loop is very ambigious, it will
+			// be great help if someone from the core team can replace this TODO
+			// with a proper comment describing this logic.
+			foreach ($rate['plans'] as &$plan) {
+				$data = $this->collection->getRef($plan);
+				if ($data instanceof Mongodloid_Entity) {
+					$plan = $data->get('name');
 				}
 			}
-			$entity->setRawData($raw_data);
 		}
-
-		return $entity;
+		$entity->setRawData($raw_data);
 	}
-
+	
 	/**
 	 * method to convert plans names into their refs
 	 * triggered before save the rate entity for edit
@@ -79,35 +95,56 @@ class RatesModel extends TabledateModel {
 	 */
 	public function update($data) {
 		if (isset($data['rates'])) {
-			$plansColl = Billrun_Factory::db()->plansCollection();
-			$currentDate = new MongoDate();
-			$rates = $data['rates'];
-			//convert plans
-			foreach ($rates as &$rate) {
-				if (isset($rate['plans'])) {
-					$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
-					$newRefPlans = array(); // this will be the new array of DBRefs
-					unset($rate['plans']);
-					foreach ($sourcePlans as &$plan) {
-						if (MongoDBRef::isRef($plan)) {
-							$newRefPlans[] = $plan;
-						} else {
-							$planEntity = $plansColl->query('name', $plan)
-									->lessEq('from', $currentDate)
-									->greaterEq('to', $currentDate)
-									->cursor()->current();
-							$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
-						}
-					}
-					$rate['plans'] = $newRefPlans;
-				}
-			}
-			$data['rates'] = $rates;
+			$this->processRatesOnUpdate($data);
 		}
 
 		return parent::update($data);
 	}
 
+	/**
+	 * Process the internal rates values of input data to update.
+	 * @param array $data - Data to update
+	 */
+	protected function processRatesOnUpdate(&$data) {
+		$plansColl = Billrun_Factory::db()->plansCollection();
+		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$rates = $data['rates'];
+		//convert plans
+		foreach ($rates as &$rate) {
+			if (!isset($rate['plans'])) {
+				continue;
+			}
+			$this->processSingleRateOnUpdate($rate, $plansColl, $planQuery);
+		}
+		$data['rates'] = $rates;
+	}
+	
+	/**
+	 * Processing a single rate from the input rates in the data received to update
+	 * @param array $rate - reference to the single rate object
+	 * @param Mongodloid_Collection $plansColl - The plans collection
+	 * @param array $planQuery - The query to use in the plan collection.
+	 */
+	protected function processSingleRateOnUpdate(&$rate, $plansColl, $planQuery) {
+		$sourcePlans = (array) $rate['plans']; // this is array of strings (retreive from client)
+		$newRefPlans = array(); // this will be the new array of DBRefs
+		unset($rate['plans']);
+
+		// TODO: The internal logic of this loop is very ambigious, it will
+		// be great help if someone from the core team can replace this TODO
+		// with a proper comment describing this logic.
+		foreach ($sourcePlans as &$plan) {
+			if (MongoDBRef::isRef($plan)) {
+				$newRefPlans[] = $plan;
+			} else {
+				$planQuery['name'] = $plan;
+				$planEntity = $plansColl->query($planQuery)->cursor()->current();
+				$newRefPlans[] = $plansColl->createRefByEntity($planEntity);
+			}
+		}
+		$rate['plans'] = $newRefPlans;
+	}
+	
 	public function getTableColumns() {
 		if ($this->showprefix) {
 			$columns = array(
@@ -326,7 +363,7 @@ class RatesModel extends TabledateModel {
 					}
 				}
 				$ret[] = $row;
-			} else if ($item->get('rates') && !$this->showprefix) {
+			} else if (!$this->isEmptyRatesObject($item->get('rates')) && !$this->showprefix) {
 				foreach ($item->get('rates') as $key => $rate) {
 					foreach ($this->filter_by_plan as $filteredPlan) {
 						if (is_array($rate) && isset($rate[$filteredPlan])) {
@@ -335,7 +372,7 @@ class RatesModel extends TabledateModel {
 								'tprice' => $rate[$filteredPlan]['rate'][0]['price'],
 								'taccess' => isset($rate[$filteredPlan][0]['access']) ? $rate[$filteredPlan][0]['access'] : 0,
 								'tunit' => $rate[$filteredPlan]['unit'],
-								'tinterconnect' => $rate[$filteredPlan]['interconnect']
+								'tinterconnect' => isset($rate[$filteredPlan]['interconnect']) ? $rate[$filteredPlan]['interconnect'] : null,
 							);
 							if (strpos($key, 'call') !== FALSE) {
 								$added_columns['tduration'] = Billrun_Util::durationFormat($rate[$filteredPlan]['rate'][0]['interval']);
@@ -365,6 +402,27 @@ class RatesModel extends TabledateModel {
 			}
 		}
 		return $ret;
+	}
+	
+	/**
+	 * Checks if a rate object is empty, 
+	 * in order to display it when filtering by plan
+	 * (to handle the case of UI saving empty rates)
+	 * 
+	 * @param type $rates
+	 * @return boolean
+	 */
+	protected function isEmptyRatesObject($rates) {
+		if (!$rates) {
+			return true;
+		}
+		
+		foreach ($rates as $key => $rate) {
+			if (!empty($rate)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public function getRates($filter_query) {
@@ -598,60 +656,4 @@ class RatesModel extends TabledateModel {
 		return $plansColl->createRefByEntity($planEntity);
 	}
 	
-	public function validate($data, $type) {
-		$validationMethods = array('validateMandatoryFields', 'validateTypeOfFields', 'validateRates');
-		foreach ($validationMethods as $validationMethod) {
-			if (($res = $this->{$validationMethod}($data)) !== true) {
-				return $this->validationResponse(false, $res);
-			}
-		}
-		return $this->validationResponse(true);
-	}
-	
-	protected function validateRates($data) {
-		if (empty($data['rates'])) {
-			return '"rates" field must be set in rate';
-		}
-		foreach ($data['rates'] as $usaget => $plans) {
-			if (!$this->isUsagetValid($usaget)) {
-				return 'Usage type "' . $usaget . '" is not valid';
-			}
-			foreach ($plans as $plan => $rate) {
-				if (!PlansModel::isPlanExists($plan)) {
-					return 'Plan "' . $plan . '" does not exists';
-				}
-				if (empty($rate['rate'])) {
-					return 'No "rate" object found under usaget "' . $usaget . '" and plan "' . $plan . '"';
-				}
-				$lastInterval = 0;
-				foreach ($rate['rate'] as $interval) {
-					if (!isset($interval['from']) || !isset($interval['to']) || !isset($interval['price']) || !isset($interval['interval'])) {
-						return 'Illegal rate structure';
-					}
-					
-					$typeFields = array(
-						'interval' => 'integer',
-						'from' => 'integer',
-						'to' => 'integer',
-						'price' => 'float',
-					);
-					$validateTypes = $this->validateTypes($interval, $typeFields);
-					if ($validateTypes !== true) {
-						return $validateTypes;
-					}
-					if ($interval['from'] != $lastInterval) {
-						return 'Rate intervals must be continuous';
-					}
-					$lastInterval = $interval['to'];
-				}
-			}
-		}
-		
-		return true;
-	}
-	
-	protected function isUsagetValid($usaget) {
-		return in_array($usaget, Billrun_Factory::config()->getConfigValue('usage_types'));
-	}
-
 }

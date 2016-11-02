@@ -22,6 +22,8 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 */
 	protected $data = null;
 
+	protected $isValid = true;
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -34,13 +36,72 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		}
 	}
 
+	public function isValid() {
+		return $this->isValid;
+	}
+	
+	// TODO: Make this function abstract!!!!!!!!
+	protected function beforeAggregate() {
+		
+	}
+	
+	// TODO: Make this function abstract!!!!!!!!
+	// The results of this function are returned from the aggregate function
+	/**
+	 * 
+	 * @param array $results - Array of aggregate results
+	 */
+	protected abstract function afterAggregate($results);
+	
+	// TODO: Make this function abstract!!!!!!!!
+	protected function beforeLoad() {
+		
+	}
+	
+	// TODO: Make this function abstract!!!!!!!!
+	protected abstract function afterLoad($data);
+	
+	/**
+	 * Internal log logic
+	 * @return type
+	 */
+	private function _load() {
+		$this->beforeLoad();
+		$data = $this->load();
+		$this->afterLoad($data);
+		return $data;
+	}
+	
 	/**
 	 * execute aggregate
 	 */
-	abstract public function aggregate();
+	public function aggregate() {
+		$data = $this->_load();
+		if(!is_array($data)) {
+			// TODO: Create an aggregator exception.
+			throw new Exception("Aggregator internal error.");
+		}
+		
+		$this->beforeAggregate();
+		
+		$aggregated = array();
+		
+		// Go through the aggregateable
+		foreach ($data as $aggregateable) {
+			$result = $aggregateable->aggregate();
+			
+			$aggregated += $result;
+		}
+		
+		$this->save($aggregated);
+		Billrun_Factory::log("Done aggregating!");
+		return $this->afterAggregate($aggregated);
+	}
 
 	/**
 	 * load the data to aggregate
+	 * Loads an array of aggregateable records.
+	 * @return Billrun_Aggregator_Aggregateable
 	 */
 	abstract public function load();
 
@@ -77,5 +138,9 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		return $object;
 	}
 
-	abstract protected function save($data);
+	/**
+	 * 
+	 * @param array $aggregated - Array of results
+	 */
+	protected abstract function save($aggregated);
 }

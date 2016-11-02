@@ -303,7 +303,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$rebalanceCharges = Billrun_Calculator_CustomerPricing::getChargesByRate($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		$rebalanceCharges = Billrun_Rates_Util::getCharges($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
 		$rebalanceCost = $rebalanceCharges['total'];
 		if (isset($lineToRebalance['over_max_currency'])) {
 			$rebalanceCost -= $lineToRebalance['over_max_currency'];
@@ -342,17 +342,20 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$balance['tx'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
+			$balanceObj = new Billrun_Balance();
+			$balanceObj->setRawData($balance->getRawData());
+			$balanceTotalKeys = $balanceObj->getBalanceChargingTotalsKey($usaget);
 			$originalRow['call_offset'] += $rebalanceUsagev;
-			if (!is_null($balance->get('balance.totals.' . $usaget . '.usagev'))) {
+			if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.usagev'))) {
 				if ($this->handleRebalanceOfUsagev($lineToRebalance, $originalRow, $realUsagev, $rebalanceUsagev)) {
 					$realUsagevAfterCeiling = $realUsagev;
 					if ($originalRow['type'] == 'callrt') {
 						$realUsagevAfterCeiling -= $lineToRebalance['call_offset'];
 					}
 				}
-				$balance['balance.totals.' . $usaget . '.usagev'] += $rebalanceUsagev;
-			} else if (!is_null($balance->get('balance.totals.' . $usaget . '.cost'))) {
-				$balance['balance.totals.' . $usaget . '.cost'] += $rebalanceCost;
+				$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
+			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
+				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
 			} else {
 				$balance['balance.cost'] += $rebalanceCost;
 			}
@@ -393,12 +396,11 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @param type $row
 	 * @return type
-	 * @todo remove roaming restriction after it will be tested with roaming
+	 * @todo remove hard-coded values to be configurable
 	 */
 	protected function needToRebalanceUsagev($row) {
-		// TODO: currently we are only using it for data and roaming calls
-		return	($row['type'] === 'gy' && $row['record_type'] === 'final_request' && substr($row['service']['mcc_mnc'], 0, 3) !== '425') ||
-				($row['type'] === 'callrt' && $row['api_name'] === 'release_call' && stripos($row['usaget'], 'roaming') !== FALSE);
+		return	($row['type'] === 'gy' && $row['record_type'] === 'final_request') ||
+				($row['type'] === 'callrt' && $row['api_name'] === 'release_call');
 	}
 
 
@@ -416,12 +418,12 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$tariff = Billrun_Calculator_CustomerPricing::getTariff($rate, $lineToRebalance['usaget'], $lineToRebalance['plan']);
+		$tariff = Billrun_Rates_Util::getTariff($rate, $lineToRebalance['usaget'], $lineToRebalance['plan']);
 		if ($originalRow['type'] == 'gy') {
-			$realUsagevCeil = Billrun_Calculator_CustomerPricing::getIntervalCeiling($tariff, $realUsagev + $lineToRebalance['call_offset']);
+			$realUsagevCeil = Billrun_Tariff_Util::getIntervalCeiling($tariff, $realUsagev + $lineToRebalance['call_offset']);
 			$rebalanceUsagev += ($realUsagevCeil - $realUsagev - $lineToRebalance['call_offset']);
 		} else {
-			$realUsagevCeil = Billrun_Calculator_CustomerPricing::getIntervalCeiling($tariff, $realUsagev);
+			$realUsagevCeil = Billrun_Tariff_Util::getIntervalCeiling($tariff, $realUsagev);
 			$rebalanceUsagev += ($realUsagevCeil - $realUsagev);
 		}
 		return true;

@@ -45,7 +45,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $min_time;
 
 	public function __construct() {
-		$this->min_time = Billrun_Billrun::getStartTime(Billrun_Billrun::getBillrunKeyByTimestamp(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400));
+		$this->min_time = Billrun_Billingcycle::getStartTime($billrunKey); // minus 1.5 hours
 	}
 
 	/**
@@ -237,7 +238,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		) {
 			return false;
 		} else if (isset($rule['limitGroups'])) { // if limit by specific groups
-			if ((is_array($rule['limitGroups']) && isset($row['arategroup']) && !in_array(strtoupper($row['arategroup']), $rule['limitGroups'])) || !isset($row['arategroup'])) {
+			if ((is_array($rule['limitGroups']) && isset($row['arategroups']) && !in_array(strtoupper($row['arategroups']), $rule['limitGroups'])) || !isset($row['arategroups'])) {
 				return false;
 			}
 		}
@@ -260,7 +261,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$before+=$value;
 			}
 		} else if (isset($rule['limitGroups'])) {
-			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev']) ? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
+			$before = isset($balance['groups'][$row['arategroups']][$usaget]['usagev']) ? $balance['groups'][$row['arategroups']][$usaget]['usagev'] : 0;
 		} else { // fallback: rule based on general usage
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
@@ -602,9 +603,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if ($arate['key'] == 'INTERNET_VF') {
-			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
+			if (isset($pricingData['arategroups']) && $pricingData['arategroups'] == 'VF_INCLUDED') {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
-				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
+				$pricingData = array('arategroups' => $pricingData['arategroups'], 'usagesb' => $pricingData['usagesb']);
 				$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
 				foreach (array_keys($update['$inc']) as $key) {
 					if (!Billrun_Util::startsWith($key, 'balance.groups')) {

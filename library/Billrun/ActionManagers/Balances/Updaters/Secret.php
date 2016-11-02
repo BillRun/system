@@ -29,11 +29,11 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		if (isset($query['secret'])) {
 			$query['secret'] = hash('sha512', $query['secret']);
 		} else {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 22;
+			$errorCode =  22;
 			$this->reportError($errorCode, Zend_Log::ALERT);
 			return false;
 		}
-		$dateQuery = Billrun_Util::getDateBoundQuery();
+		$dateQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$finalQuery = array_merge($dateQuery, $query);
 		$finalQuery['status'] = array('$eq' => 'Active');
 		$cardsColl = Billrun_Factory::db()->cardsCollection();
@@ -56,7 +56,7 @@ class Billrun_ActionManagers_Balances_Updaters_Secret extends Billrun_ActionMana
 		}
 
 		if ($cardRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 10;
+			$errorCode =  10;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

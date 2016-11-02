@@ -34,28 +34,20 @@ class AdminController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::db();
-		session_set_cookie_params(1);
-//		$this->initSession();
+//		session_set_cookie_params(1);
+		$this->initSession();
 		$this->initCommit();
 		$this->initConfig();
 		$this->initBaseUrl();
 		$this->initHtmlHeaders();
 	}
 	
+	protected function initSession() {
+		Billrun_Util::setHttpSessionTimeout();
+	}
+		
 	protected function initCommit() {
-		if (Billrun_Factory::config()->isProd()) {
-			if (file_exists(APPLICATION_PATH . '/.git/HEAD')) {
-				$HEAD = file_get_contents(APPLICATION_PATH . '/.git/HEAD');
-				$branch = rtrim(end(explode('/', $HEAD)));
-				if (file_exists(APPLICATION_PATH . '/.git/refs/heads/' . $branch)) {
-					$this->commit = rtrim(file_get_contents(APPLICATION_PATH . '/.git/refs/heads/' . $branch), "\n");
-				} else {
-					$this->commit = md5(date('ymd')); // cache for 1 calendar day
-				}
-			} else {
-				$this->commit = md5(date('ymd'));
-			}
-		} else { // all other envs do not cache
+		if (!Billrun_Factory::config()->isProd() || !($this->commit = Billrun_Git_Util::getGitLastCommit())) {
 			$this->commit = md5(time());
 		}
 	}
@@ -300,7 +292,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			if (isset($entity['source_ref'])) {
 				$source_ref = $entity->get('source_ref', false)->getRawData();
 				unset($source_ref['_id']);
-				$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
+				$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
 			}
 			$entity = $entity->getRawData();
 			foreach ($model->getHiddenKeys($entity, $type) as $key) {
@@ -347,7 +339,14 @@ class AdminController extends Yaf_Controller_Abstract {
 					sort($ppincludes);
 				}
 			}
-			$response->setBody(json_encode(array('authorized_write' => AdminController::authorized('write'), 'entity' => $entity, 'plan_rates' => $plan_rates, 'ppincludes' => $ppincludes, 'default_max_currency' => $default_max_currency)));
+			$ret = array(
+				'authorized_write' => AdminController::authorized('write'), 
+				'entity' => isset($entity) ? $entity : array(), 
+				'plan_rates' => isset($plan_rates) ? $plan_rates : array(), 
+				'ppincludes' => isset($ppincludes) ? $ppincludes : array(), 
+				'default_max_currency' => isset($default_max_currency) ? $default_max_currency : array(),
+			);
+			$response->setBody(json_encode($ret));
 			$response->response();
 			return false;
 		}
@@ -437,7 +436,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				array('id' => $data['id']),
 			)
 		);
-		$query = array_merge(Billrun_Util::getDateBoundQuery(), $query);
+		$query = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), $query);
 		if (!empty($id = $data['_id'])) {
 			$query['_id'] =  array('$ne' => new MongoId($id));
 		}
@@ -575,10 +574,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		);
 		$interconnect_rates = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->sort(array('key' => 1));
 		$availableInterconnect = array();
+		$current_time = time();
 		foreach ($interconnect_rates as $interconnect) {
-			$future = $interconnect->from->sec > new DateTime();
-			$ic = $interconnect->getRawData();
-			$availableInterconnect[] = array('key' => $ic['key'], 'future' => $future);
+			$future = ($interconnect->get('from')->sec > $current_time);
+			$availableInterconnect[] = array('key' => $interconnect->get('key'), 'future' => $future);
 		}
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availableInterconnect));
@@ -623,6 +622,9 @@ class AdminController extends Yaf_Controller_Abstract {
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));
 		$data['priority'] = (int) $data['priority'];
+		if (!isset($data['additional_charging_usaget'])) {
+			$data['additional_charging_usaget'] = array();
+		}
 		if ($this->getRequest()->get('new_entity') == 'true') {
 			Billrun_Factory::db()->prepaidincludesCollection()->insert($data);
 		} else {
@@ -688,7 +690,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (isset($entity['source_ref'])) {
 			$source_ref = $entity->get('source_ref', false)->getRawData();
 			unset($source_ref['_id']);
-			$entity['source_ref'] = Billrun_Util::convertRecordMongoDatetimeFields($source_ref);
+			$entity['source_ref'] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($source_ref);
 		}
 
 		// passing values into the view
@@ -819,7 +821,8 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 
 		$data = @json_decode($flatData, true);
-
+		unset($data['id']);
+		
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 
 			return $this->responseError($v->setReport(array("Data is empty !!!")));
@@ -843,11 +846,15 @@ class AdminController extends Yaf_Controller_Abstract {
 		  }
 		 */
 		if (is_subclass_of($model, "TabledateModel")) {
-			if ($type != 'update' && $model->hasEntityWithOverlappingDates($data, in_array($type, array('new', 'duplicate')))) {
+			if ($type != 'update' && $model->hasEntityWithOverlappingDates($params, in_array($type, array('new', 'duplicate')))) {
 				return $this->responseError("There's an entity with overlapping dates");
 			}
-			$validate = $model->validate($data, $type);
-			if (!$validate['validate']) {
+
+			$validatorOptions = array(
+				'modelName' => $coll,
+			);
+			$validate = Billrun_ModelValidator_Manager::validate($data, $type, $validatorOptions);
+			if (!$validate['validate']) { // TODO: change to throwing an exception - need to verify acceptance of client side
 				return $this->responseError(array("message" => $validate['errorMsg'], "status" => false));
 			}
 		}
@@ -1499,8 +1506,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function buildTableComponent($table, $filter_query, $options = array()) {
 		if ($this->getRequest()->isPost()) {
 			$redirectUrl = $this->baseUrl . '/admin/';
-			if ($options['plan_type'])
+			if (isset($options['plan_type']) && $options['plan_type']) {
 				$redirectUrl .= $options['plan_type'];
+			}
 			$redirectUrl .= str_replace('_', '', $table);
 			$this->redirect($redirectUrl);
 			return;

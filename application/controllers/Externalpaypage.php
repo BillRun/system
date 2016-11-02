@@ -24,17 +24,21 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			'type' => 'account',
 			'aid' => intval($request['aid'])
 		);
+		$query = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
+		$selectedPlan = $request['plan'];
 		$account = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->getRawData();
 		$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->current()->getRawData();
-		$plans = Billrun_Factory::db()->plansCollection()->query()->cursor();
+		$plans = Billrun_Factory::db()->plansCollection()->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();
 		$planNames = array();
 		foreach ($plans as $plan) {
 			$p = $plan->getRawData();
 			$planNames[] = $p['name'];
 		}
 		$this->getView()->assign('account', $account);
-		$this->getView()->assign('config', $config['subscribers']['account']['fields']);
+	        $this->getView()->assign('config', $config['subscribers']['account']['fields']);
+	        $this->getView()->assign('payment_gateways', $config['payment_gateways']);
 		$this->getView()->assign('plans', $planNames);
+		$this->getView()->assign('plan', $selectedPlan);
 		return $view->render();
 	}
 
@@ -71,7 +75,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			"signature" => $hashResult
 		);
 
-		header("Location: /api/creditguard?signature=".$hashResult."&data=".json_encode($data));
+		header("Location: /creditguard/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
 	}
 

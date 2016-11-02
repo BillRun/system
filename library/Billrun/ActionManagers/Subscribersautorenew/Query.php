@@ -20,12 +20,9 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected $query = array();
 
-	const DEFAULT_ERROR = "Success querying auto renew";
-
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => self::DEFAULT_ERROR));
 		$this->collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
 	}
 
@@ -36,7 +33,7 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function getPlanRecord($record) {
 		$planCollection = Billrun_Factory::db()->plansCollection();
-		$planQuery = Billrun_Util::getDateBoundQuery();
+		$planQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$planQuery["name"] = $record['charging_plan_name'];
 		$planQuery["type"] = 'charging';
 		return $planCollection->query($planQuery)->cursor()->current();
@@ -48,14 +45,14 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 	 */
 	protected function populatePlanValues(&$record) {
 		if (!isset($record['charging_plan_name'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 4;
+			$errorCode = 4;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		$planRecord = $this->getPlanRecord($record);
 		if ($planRecord->isEmpty()) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 5;
+			$errorCode = 5;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -145,10 +142,10 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 					// TODO: What error is reported?
 					return false;
 				}
-				$returnData[] = Billrun_Util::convertRecordMongoDatetimeFields($rawItem, $date_fields);
+				$returnData[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($rawItem, $date_fields);
 			}
-		} catch (\Exception $e) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base");
+		} catch (\MongoException $e) {
+			$errorCode = 0;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -166,17 +163,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		// Check if the return data is invalid.
 		if (!$returnData) {
 			// If no internal error occured, report on empty data.
-			if ($this->error == self::DEFAULT_ERROR) {
-				$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 1;
-				$this->reportError($errorCode, Zend_Log::NOTICE);
-			}
-			$returnData = array();
+			$errorCode = 1;
+			$this->reportError($errorCode, Zend_Log::NOTICE);
 		}
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
+			'status' => 1,
+			'desc' => "Success querying auto renew",
 			'details' => $returnData
 		);
 		return $outputResult;
@@ -225,13 +218,13 @@ class Billrun_ActionManagers_Subscribersautorenew_Query extends Billrun_ActionMa
 		$jsonData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 2;
+			$errorCode = 2;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 
 		if (!isset($jsonData['sid'])) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("autorenew_error_base") + 3;
+			$errorCode = 3;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}

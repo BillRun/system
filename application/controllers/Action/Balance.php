@@ -21,7 +21,7 @@ class BalanceAction extends ApiAction {
 		$request = $this->getRequest();
 		$aid = $request->get("aid");
 		Billrun_Factory::log("Execute balance api call to " . $aid, Zend_Log::INFO);
-		$stamp = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+		$stamp = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		$subscribers = $request->get("subscribers");
 		if (!is_numeric($aid)) {
 			return $this->setError("aid is not numeric", $request);

@@ -296,7 +296,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * @param type $imsi
 	 */
 	protected function getSid($searchQuery) {
-		$cursor = Billrun_Factory::db()->subscribersCollection()->query(array_merge($searchQuery, Billrun_Util::getDateBoundQuery()))->cursor()->limit(100000);
+		$cursor = Billrun_Factory::db()->subscribersCollection()->query(array_merge($searchQuery, Billrun_Utils_Mongo::getDateBoundQuery()))->cursor()->limit(100000);
 		foreach ($cursor as $row) {
 			return $row['sid'];
 		}
@@ -336,7 +336,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	protected function getSubscriber($sid) {
 		$subscribers = array();
-		$searchQuery = array_merge(array("sid" => (int) $sid), Billrun_Util::getDateBoundQuery());
+		$searchQuery = array_merge(array("sid" => (int) $sid), Billrun_Utils_Mongo::getDateBoundQuery());
 		$cursor = Billrun_Factory::db()->subscribersCollection()->query($searchQuery)->cursor()->limit(100000)->sort(['to' => 1]);
 		foreach ($cursor as $row) {
 			$rowData = $row->getRawData();
@@ -419,7 +419,7 @@ class UtestController extends Yaf_Controller_Abstract {
 			$total_usagev += $rowData['usagev'];
 			$line = array(
 				'time_date' => date('d/m/Y H:i:s', $rowData['urt']->sec),
-				'record_type' => $rowData['record_type'],
+				'record_type' => isset($rowData['record_type']) ? $rowData['record_type'] : null,
 				'aprice' => $rowData['aprice'],
 				'usaget' => $rowData['usaget'],
 				'usagev' => $rowData['usagev'],

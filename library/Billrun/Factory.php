@@ -275,16 +275,8 @@ class Billrun_Factory {
 	 * @deprecated since version 4.0
 	 */
 	static public function balance($params = array()) {
-		/*
-		 * No caching for now as we need updated data  each time (as more then once calculator  can run at the same time).
-		  $stamp = md5(serialize($params));
-
-		  if (!isset(self::$balance[$stamp])) {
-		  $balanceSettings = self::config()->getConfigValue('balance', array());
-		  self::$balance[$stamp] = new Billrun_Balance( array_merge($balanceSettings,$params) );
-		  } */
 		$balanceSettings = self::config()->getConfigValue('balance', array());
-		return new Billrun_Balance(array_merge($balanceSettings, $params));
+		return Billrun_Balance::getInstance(array_merge($balanceSettings, $params));
 	}
 
 	/**
@@ -356,16 +348,9 @@ class Billrun_Factory {
 		return self::$users[$stamp];
 	}
 
-	protected static function setSessionTimeout($defaultTimeout) {
-		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', $defaultTimeout);
-		ini_set('session.gc_maxlifetime', $session_timeout);
-		session_set_cookie_params($session_timeout);
-	}
-	
 	public static function auth() {
 		if (!isset(self::$auth)) {
-			// One hour
-			self::setSessionTimeout(3600);
+			Billrun_Util::setHttpSessionTimeout();
 			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
 		}
 		return self::$auth;

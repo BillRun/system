@@ -1,4 +1,5 @@
 /.directory
+.idea/*
 backups
 backup
 exports
@@ -13,3 +14,5 @@ crontab
 conf/dori.ini
 /nbproject/
 /conf/tenants/*
+/scripts/locks/*
+shared

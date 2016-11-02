@@ -288,38 +288,12 @@ class TableModel {
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
-		if (isset($params['_id'])) {
-			$entity = $this->collection->findOne($params['_id']);
-			$protected_keys = $this->getProtectedKeys($entity, "update");
-			$hidden_keys = $this->getHiddenKeys($entity, "update");
-			$raw_data = $entity->getRawData();
-			$new_data = array();
-			foreach ($protected_keys as $value) {
-				if (isset($raw_data[$value])) {
-					$new_data[$value] = $raw_data[$value];
-				}
-			}
-			foreach ($hidden_keys as $value) {
-				$new_data[$value] = $raw_data[$value];
-			}
-			foreach ($params as $key => $value) {
-				if (in_array($key, array("to", "from")) && is_array($value)) {
-					if (get_class($value) !== 'MongoDate') {
-						//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
-						$value = new MongoDate($value['sec']);
-					}
-				} else if (in_array($key, array("to", "from"))) {
-					if (get_class($value) !== 'MongoDate') {
-						//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
-						$value = new MongoDate(strtotime($value));
-					}
-				}
-				$new_data[$key] = $value;
-			}
-			$entity->setRawData($new_data);
-		} else {
+		if (!isset($params['_id'])) {
 			$entity = new Mongodloid_Entity($params);
+		} else {
+			$entity = $this->getEntityToUpdateById($params);
 		}
+		
 		$this->collection->save($entity, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
@@ -327,6 +301,43 @@ class TableModel {
 		return $entity;
 	}
 
+	/**
+	 * Get the entity object by the input _id value
+	 * @param arrray $params input params to return an entity by.
+	 * @return \Mongodloid_Entity
+	 */
+	protected function getEntityToUpdateById($params) {
+		$entity = $this->collection->findOne($params['_id']);
+		$protected_keys = $this->getProtectedKeys($entity, "update");
+		$hidden_keys = $this->getHiddenKeys($entity, "update");
+		$raw_data = $entity->getRawData();
+		$new_data = array();
+		foreach ($protected_keys as $value) {
+			if (isset($raw_data[$value])) {
+				$new_data[$value] = $raw_data[$value];
+			}
+		}
+		foreach ($hidden_keys as $value) {
+			$new_data[$value] = $raw_data[$value];
+		}
+		foreach ($params as $key => $value) {
+			if (in_array($key, array("to", "from")) && is_array($value)) {
+				if (get_class($value) !== 'MongoDate') {
+					//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate($value['sec']);
+				}
+			} else if (in_array($key, array("to", "from"))) {
+				if (get_class($value) !== 'MongoDate') {
+					//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate(strtotime($value));
+				}
+			}
+			$new_data[$key] = $value;
+		}
+		$entity->setRawData($new_data);
+		return $entity;
+	}
+	
 	public function getProtectedKeys($entity, $type) {
 		return array("_id");
 	}

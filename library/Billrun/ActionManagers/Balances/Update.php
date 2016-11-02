@@ -52,7 +52,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	/**
 	 */
 	public function __construct() {
-		parent::__construct(array('error' => "Success updating balances"));
+		parent::__construct(array());
 		$this->collection->setReadPreference(MongoClient::RP_PRIMARY, array());
 	}
 
@@ -71,7 +71,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		$manager = new Billrun_ActionManagers_Balances_Updaters_Manager($updaterManagerInput);
 		if (!$manager) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 14;
+			$errorCode =  14;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
@@ -161,7 +161,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$archiveLine['rand'] = rand(1, 1000000);
 			$archiveLine['stamp'] = Billrun_Util::generateArrayStamp($archiveLine);
 			$processedLines[] = $archiveLine;
-			$balancesRecords[] = Billrun_Util::convertRecordMongoDatetimeFields($balance->getRawData());
+			$balancesRecords[] = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($balance->getRawData());
 		}
 
 		return array("records" => $balancesRecords, "lines" => $processedLines);
@@ -240,45 +240,32 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return data for output.
 	 */
 	public function execute() {
-		$success = true;
-
 		// Get the updater for the filter.
 		$this->updater = $this->getAction();
 
 		$outputDocuments = $this->updater->update($this->query, $this->recordToSet, $this->subscriberId);
 
-		if ($outputDocuments === false) {
-			$success = false;
-		} elseif (!$outputDocuments) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 21;
+		if(!$outputDocuments) {
+			$errorCode =  21;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
-		} else {
-			$documents = $outputDocuments;
-			// Write the action to the lines collection.
-			$outputDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
-			foreach ($documents as $document) {
-				$subscriber = $document['subscriber'];
-				$balance = $document['balance'];
-				$source = $document['source'];
-				Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
-			}
+		}
+		
+		$documents = $outputDocuments;
+		// Write the action to the lines collection.
+		$reportedDocuments = $this->reportInLines($outputDocuments, $this->updater->getBeforeUpdate());
+		foreach ($documents as $document) {
+			$subscriber = $document['subscriber'];
+			$balance = $document['balance'];
+			$source = $document['source'];
+			Billrun_Factory::dispatcher()->trigger('afterBalanceLoad', array($balance, $subscriber, $source));
 		}
 
-		if ($success) {
-			$this->stripTx($outputDocuments);
-		} else {
-			$updaterError = $this->updater->getError();
-			if ($updaterError) {
-				$this->error = $updaterError;
-				$this->errorCode = $this->updater->getErrorCode();
-			}
-		}
+		$this->stripTx($reportedDocuments);
 
 		$outputResult = array(
-			'status' => $this->errorCode == 0 ? 1 : 0,
-			'desc' => $this->error,
-			'error_code' => $this->errorCode,
-			'details' => ($outputDocuments) ? $outputDocuments : 'Empty balance',
+			'status' => 1,
+			'desc' => "Success updating balances",
+			'details' => ($reportedDocuments) ? $reportedDocuments : 'Empty balance',
 		);
 		return $outputResult;
 	}
@@ -313,7 +300,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		if (!$upsertNeeded) {
 			return true;
 		}
-		$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 15;
+		$errorCode =  15;
 		$this->reportError($errorCode, Zend_Log::NOTICE);
 		return false;
 	}
@@ -324,25 +311,31 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 	 * @return true if successful false otherwise.
 	 */
 	protected function setUpdateRecord($input) {
-		$jsonUpdateData = null;
 		$update = $input->get('upsert');
 
 		$upsertNeeded = true;
 
-		if (empty($update) || (!($jsonUpdateData = json_decode($update, true)))) {
+		if (empty($update)){
 			if (!$this->handleNoUpsert()) {
 				return false;
 			}
-
 			$upsertNeeded = false;
 		}
 
-		$operation = "inc";
+		$jsonUpdateData = json_decode($update, true);
+		// If the JSON is invalid
+		if($upsertNeeded && ($jsonUpdateData==null)) {
+			// [Balances error] 1227
+			$errorCode =  27;
+			$this->reportError($errorCode, Zend_Log::NOTICE, array(print_r($update,1)));
+			return false;
+		}
+		
 		if (isset($jsonUpdateData['operation'])) {
 			// TODO: What if this is not INC and not SET? Should we check and raise error?
 			$operation = $jsonUpdateData['operation'];
+			$this->recordToSet['operation'] = $operation;
 		}
-		$this->recordToSet['operation'] = $operation;
 
 		// TODO: If to is not set, but received opration set, it's an error, report?
 		$to = isset($jsonUpdateData['expiration_date']) ? ($jsonUpdateData['expiration_date']) : 0;
@@ -403,7 +396,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$jsonQueryData = null;
 		$query = $input->get('query');
 		if (empty($query) || (!($jsonQueryData = json_decode($query, true)))) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 16;
+			$errorCode =  16;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -411,13 +404,13 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 		$this->query = $this->getUpdateFilter($jsonQueryData);
 		// This is a critical error!
 		if ($this->query === null) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 17;
+			$errorCode =  17;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
 		// No filter found.
 		else if (empty($this->query)) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 18;
+			$errorCode =  18;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}
@@ -435,7 +428,7 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 
 		// Check that sid exists.
 		if (!$sid) {
-			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 19;
+			$errorCode =  19;
 			$error = "Update action did not receive a subscriber ID!";
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
@@ -469,20 +462,40 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$this->additional = array();
 		}
 
-		$this->updaterOptions['increment'] = ($this->recordToSet['operation'] == "inc");
-
-		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
-		$this->updaterOptions['zero'] = true;
-
 		// Check for recurring.
 		$recurring = $input->get('recurring');
-		if ($recurring) {
-			$this->updaterOptions['recurring'] = 1;
+		$this->constructOperation($recurring);
+		if(!$this->updaterOptions['operation']) {
+			// [Balances Error 1228]
+			$errorCode =  28;
+			$this->reportError($errorCode, Zend_Log::WARN);
+			return false;
 		}
 
 		return true;
 	}
 
+	/**
+	 * Construct the operation object to be passed on to the balance updater.
+	 * @param mixed $recurring - The recurring input received from the user.
+	 */
+	protected function constructOperation($recurring) {
+		// TODO: For now this is hard-coded, untill the API will define this as a parameter.
+		$options = array();
+		$options['zero'] = true;
+
+		// Check for recurring.
+		if ($recurring) {
+			$options['recurring'] = true;
+		}
+		
+		/**
+		 * @var Billrun_Balances_Update_Operation
+		 */
+		$operation = Billrun_Balances_Util::getOperation($this->recordToSet, $options);
+		$this->updaterOptions['operation'] = $operation;
+	}
+	
 	/**
 	 * Get the query to use to update mongo.
 	 * 

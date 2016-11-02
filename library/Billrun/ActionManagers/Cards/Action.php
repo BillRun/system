@@ -10,8 +10,10 @@
  * This is a prototype for a cards action.
  *
  */
-abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManagers_APIAction {
+abstract class Billrun_ActionManagers_Cards_Action {
 
+	use Billrun_ActionManagers_ErrorReporter;
+	
 	protected $collection = null;
 
 	/**
@@ -19,8 +21,7 @@ abstract class Billrun_ActionManagers_Cards_Action extends Billrun_ActionManager
 	 */
 	public function __construct($params) {
 		$this->collection = Billrun_Factory::db()->cardsCollection();
-		Billrun_Factory::config()->addConfig(APPLICATION_PATH . "/conf/cards/errors.ini");
-		parent::__construct($params);
+		$this->baseCode = 1100;
 	}
 
 	/**
