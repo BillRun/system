@@ -500,7 +500,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			'collection' => $collection_name,
 			'db' => $db_name,
 			'sort' => $sort,
-		);		
+		);
 		self::initModel($table, $options);
 
 		$session = $this->getSession($table);
