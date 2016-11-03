@@ -13,6 +13,22 @@
 class Billrun_Utils_Security {
 
 	/**
+	 * Calculate the 'signature' using the hmac method and add it to the data
+	 * under a new field name '_sig_',
+	 * This function also adds a timestamp under the field 't'.
+	 * @param array $data - Data to sign
+ 	 * @param array $key - Key to sign with
+	 * @return array Output data with signature.
+	 */
+	public static function addSignature(array $data, array $key) {
+		// Add the timestamp
+		$data['t'] = date(Billrun_Base::base_datetimeformat);
+		$signature = $this->sign($data, $key);
+		$data['_sig_'] = $signature;
+		return $data;
+	}
+	
+	/**
 	 * Validates the input data.
 	 * @param array $request
 	 * @return data - Request data if validated, null if error.
@@ -34,7 +50,7 @@ class Billrun_Utils_Security {
 		$data = $request;
 		unset($data['_sig_']);
 		unset($data['t']);
-		$hashResult = hash_hmac("sha512", $data, $secret);
+		$hashResult = $this->sign($data, $secret);
 		
 		// state whether signature is okay or not
 		$validData = null;
@@ -43,6 +59,16 @@ class Billrun_Utils_Security {
 			$validData = $data;
 		}
 		return $validData;
+	}
+	
+	/**
+	 * Sign data with a secret
+	 * @param array $data
+	 * @param array $secret
+	 * @return array Signature
+	 */
+	protected static function sign(array $data, array $secret) {
+		return hash_hmac("sha512", $data, $secret);
 	}
 	
 	/**
