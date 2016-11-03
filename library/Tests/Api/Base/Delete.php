@@ -52,15 +52,15 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		if(!parent::handleResult($result)) {
 			return false;
 		}
-		
-		if(!isset($result['details']) || !isset($result['details']['to'])) {
-			$this->assertTrue(false, "Invalid API action results " . $this->current['msg']);
-			$this->dump($result);
-			return false;
-		}
-		
-		// Deleting the record updates the to field, take the new 'to' field.
-		$this->current['query']['to'] = $result['details']['to'];
+
+//		if(!isset($result['details']) || !isset($result['details']['to'])) {
+//			$this->assertTrue(false, "Invalid API action results " . $this->current['msg']);
+//			$this->dump($result);
+//			return false;
+//		}
+//		
+//		// Deleting the record updates the to field, take the new 'to' field.
+//		$this->current['query']['to'] = $result['details']['to'];
 		return true;
 	}
 	
@@ -79,7 +79,7 @@ abstract class Tests_Api_Base_Delete extends Tests_Api_Base_Action {
 		try {
 			$result = $queryAction->execute();
 		} catch (Billrun_Exceptions_Base $e) {
-			$result = $e->output();
+			$result = json_decode($e->output(), 1);
 		}
 		$queryActionResult = $this->onQueryAction($result);
 		

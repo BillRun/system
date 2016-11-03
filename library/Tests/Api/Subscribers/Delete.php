@@ -50,7 +50,11 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 	}
 
 	protected function onQueryAction($results) {
-		$error_code = $results['code'];
+		$error_code = Billrun_Util::getFieldVal($results['code'], null);
+		if($results['status'] && $error_code === null) {
+			return true;
+		}
+		
 		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
 		if(!$assertResult) {
 			return $this->onExecuteFailed($results);

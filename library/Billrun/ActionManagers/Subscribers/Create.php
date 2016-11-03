@@ -121,6 +121,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		// If there were errors.
 		if (!empty($invalidFields)) {
 			// Create an exception.
+			Billrun_Factory::log("Invalid fields: " . print_r($invalidFields,1));
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 

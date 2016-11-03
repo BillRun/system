@@ -40,11 +40,36 @@ class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
 	}
 
 	protected function getDataForDB($case) {
-		$data = $case['service'];
+		$data = $case['subscriber'];
+		$type = $case['type'];
+		$data['type'] = $type;
 		
 		// Translate the dates.
 		
 		return $data;
 	}
 
+	protected function createRecord($case) {
+		parent::createRecord($case);
+		
+		$dataForDB = $this->getDataForDB($case);
+		$cloned = array_merge($dataForDB);
+		$cloned['type'] = 'account';
+		$cloned['to'] = new MongoDate(strtotime('+1 year'));
+		$cloned['from'] = new MongoDate(strtotime('-1 year'));
+		$this->coll->insert($cloned);
+	}
+	
+	protected function clearCase($case) {
+		if(!parent::clearCase($case)) {
+			return false;
+		}
+		
+		// Remove the account case as well.
+		$query = $this->getClearCaseQuery($case);
+		$query['type'] = 'account';
+		$removed = $this->coll->remove($query);
+		return $removed > 0;
+	}
+	
 }

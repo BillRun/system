@@ -62,4 +62,27 @@ class Tests_Api_Subscribers_Update extends Tests_Api_Base_Update {
 		return $data;
 	}
 
+	protected function preRun($case) {
+		if(!parent::preRun($case)) {
+			Billrun_Factory::log("Failed: " . print_r($this->current,1));
+			return false;
+		}
+		
+		// Get the query again.
+		$query = $this->getQuery($case);
+		
+		// Check if it exists.
+		$created = $this->coll->find($query)->current();
+		
+		if($created->isEmpty()) {
+			return false;
+		}
+		
+		// Get the ID.
+		$id = $created->getRawData()['_id'];
+		
+		// Put the id to our case.
+		$this->current['query']['_id'] = $id;
+		return true;
+	}
 }

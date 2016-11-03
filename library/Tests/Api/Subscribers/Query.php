@@ -61,4 +61,16 @@ class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 		return $query;
 	}
 
+	protected function extractFromResults($results) {
+		$details = parent::extractFromResults($results);
+		foreach ($details as $key => &$value) {
+			foreach ($value as $fieldName => &$fieldValue) {
+				if(in_array($fieldName, array('to', 'from'))) {
+					$fieldValue = new MongoDate(strtotime($fieldValue));
+				}
+			}
+		}
+		return Billrun_Util::getFieldVal($details[0], array());
+	}
+	
 }
