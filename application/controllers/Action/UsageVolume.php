@@ -27,6 +27,7 @@ class UsageVolumeAction extends ApiAction {
 	}
 
 	protected function calculateUsageVolume($since) {
+		$to_mb = 1024 * 1024;
 		$match = array(
 			'$match' => array(
 				'type' => 'ggsn',
@@ -61,7 +62,10 @@ class UsageVolumeAction extends ApiAction {
 			)
 		);
 		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $project);
-		return $res;
+		return array_map(function($ele) use($to_mb){
+			$ele['total_volume'] = $ele['total_volume'] / $to_mb;
+			return $ele;
+		}, $res);	
 	}
 
 	protected function generateCsvToMail($filepath, $results) {
