@@ -78,7 +78,7 @@
 							echo '<br>';
 							echo "<div id='databases'>";
 								echo "<select class='form-control multiselect'  name='collection'>";
-								$results = LinesModel::getDatabaseCollections();
+								$results = LinesModel::getDatabaseLinesCollections();
 									foreach ($results as $database => $collections){
 										foreach($collections as $collection){
 											if ($database == 'billing'){
