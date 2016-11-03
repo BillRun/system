@@ -484,10 +484,21 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('read'))
 			return false;
 		
+		$request = $this->getRequest();
+		$coll_db = $request->get('collection');
+		if (empty($coll_db)){
+			$db_name = 'billing';
+			$collection_name = 'lines';
+		} else {
+			$coll_array = explode('_', $coll_db);
+			$db_name = array_pop($coll_array);
+			$collection_name = array_pop($coll_array);
+		}
 		$table = 'lines';
 		$sort = $this->applySort($table);
 		$options = array(
-			'collection' => $table,
+			'collection' => $collection_name,
+			'db' => $db_name,
 			'sort' => $sort,
 		);
 		self::initModel($table, $options);

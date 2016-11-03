@@ -25,7 +25,11 @@ class LinesModel extends TableModel {
 	protected $lines_coll = null;
 	
 	public function __construct(array $params = array()) {
-		$params['collection'] = Billrun_Factory::db()->lines;
+		if ($params['db'] == 'archive') {
+			$params['collection'] = 'lines';
+		} else {
+			$params['collection'] = Billrun_Factory::db()->lines;
+		}
 		parent::__construct($params);
 		$this->search_key = "stamp";
 		$this->lines_coll = Billrun_Factory::db()->linesCollection();
@@ -477,6 +481,17 @@ class LinesModel extends TableModel {
 		// first remove line from queue (collection) than from lines collection (parent)
 		Billrun_Factory::db()->queueCollection()->remove($params);
 		return parent::remove($params);
+	}
+
+	public static function getDatabaseLinesCollections() {
+		$databases = Billrun_Factory::config()->getConfigValue('admin_panel.lines.databases');
+		$results = array();
+		foreach ($databases as $database) {
+			$db = Billrun_Factory::db(array('name' => $database));
+			$filtered_collections = $db->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
+			$results[$database] = $filtered_collections;
+		}
+		return $results;
 	}
 
 }

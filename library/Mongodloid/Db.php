@@ -127,5 +127,16 @@ class Mongodloid_Db {
 		}
 		ini_set('mongo.native_long', $status);
 	}
+	
+	/**
+	 * Gets an array of names for all collections in this database
+	 * 
+	 * @param array $options An array of options for listing the collections
+	 * 
+	 * @return array returns the collection names as an array of strings.
+	 */
+	public function getCollectionNames(array $options = array()) {
+		return $this->_db->getCollectionNames($options);
+	}
 
 }
