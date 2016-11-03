@@ -490,7 +490,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$db_name = 'billing';
 			$collection_name = 'lines';
 		} else {
-			$coll_array = explode('_', $coll_db);
+			$coll_array = explode('|', $coll_db);
 			$db_name = array_pop($coll_array);
 			$collection_name = array_pop($coll_array);
 		}
