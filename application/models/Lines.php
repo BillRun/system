@@ -483,15 +483,10 @@ class LinesModel extends TableModel {
 		return parent::remove($params);
 	}
 
-	public static function getDatabaseLinesCollections() {
-		$databases = Billrun_Factory::config()->getConfigValue('admin_panel.lines.databases');
-		$results = array();
-		foreach ($databases as $database) {
-			$db = Billrun_Factory::db(array('name' => $database));
-			$filtered_collections = $db->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
-			$results[$database] = $filtered_collections;
-		}
-		return $results;
+	public static function getArchiveLinesCollections() {
+		$archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
+		$filtered_collections = $archiveDb->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
+		return $filtered_collections;
 	}
 
 }
