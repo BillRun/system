@@ -30,7 +30,7 @@ class UsageVolumeAction extends ApiAction {
 		$match = array(
 			'$match' => array(
 				'type' => 'ggsn',
-				'urt' => array(
+				'unified_record_time' => array(
 					'$gt' => $since,
 				),
 			),
