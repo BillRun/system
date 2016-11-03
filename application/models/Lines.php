@@ -483,7 +483,7 @@ class LinesModel extends TableModel {
 		return parent::remove($params);
 	}
 
-	public function getDatabaseCollections() {
+	public static function getDatabaseLinesCollections() {
 		$databases = Billrun_Factory::config()->getConfigValue('admin_panel.lines.databases');
 		$results = array();
 		foreach ($databases as $database) {
