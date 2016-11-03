@@ -28,7 +28,7 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $data;
-
+	
 	/**
 	 * options of config
 	 * @var array
@@ -243,6 +243,17 @@ class ConfigModel {
 		return $saveResult;
 	}
 
+	/**
+	 * Load the config template.
+	 * @return array The array representing the config template
+	 */
+	protected function loadTemplate() {
+		// Load the config template.
+		// TODO: Move the file path to a constant
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
+		return parse_ini_file($templateFileName, 1);
+	}
+	
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {
@@ -257,9 +268,8 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			// TODO: Do we allow setting values with NEW keys into the settings?
-			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
-			return 0;
+			$result = $this->handleNewCategory($category, $data, $currentConfig);
+			return $result;
 		}
 
 		// Check if complex object.
@@ -284,7 +294,49 @@ class ConfigModel {
 
 		return 1;
 	}
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param string $category - The current category.
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 */
+	protected function handleNewCategory($category, $data, &$currentConfig) {
+		$splitCategory = explode('.', $category);
 
+		$template = $this->loadTemplate();
+		
+		$found = true;
+		$ptrTemplate = &$template;
+		$newConfig = $currentConfig;
+		$newValueIndex = &$newConfig;
+		
+		// Go through the keys
+		foreach ($splitCategory as $key) {
+			if(!isset($newValueIndex[$key])) {
+				$newValueIndex[$key] = array();
+			}
+			$newValueIndex = &$newValueIndex[$key];
+			if(!isset($ptrTemplate[$key])) {
+				$found = false;
+				break;
+			}
+			$ptrTemplate = &$ptrTemplate[$key];
+		}
+		
+		// Check if the value exists in the settings template ini.
+		if(!$found) {
+			Billrun_Factory::log("Unknown category", Zend_Log::NOTICE);
+			return 0;
+		}
+		
+		// Set the data
+		$currentConfig = $newConfig;
+
+		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+		return $result;
+	}
+	
 	protected function setConfigValue(&$config, $category, $toSet) {
 		// Check if complex object.
 		if (Billrun_Config::isComplex($toSet)) {

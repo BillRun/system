@@ -66,6 +66,9 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 //		$queryParams['to'] = array('$gt' => new MongoDate($datetime));
 
 
+		if (isset($subscriberQuery['sid'])) {
+			settype($subscriberQuery['sid'], 'int');
+		}
 		$data = $this->customerQueryDb($subscriberQuery);
 		if (!$data) {
 			Billrun_Factory::log('Failed to load subscriber data for params: ' . print_r($params, 1), Zend_Log::NOTICE);
