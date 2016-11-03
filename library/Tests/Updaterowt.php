@@ -25,7 +25,10 @@ class Tests_Updaterowt extends UnitTestCase {
     protected $linesCol;
     protected $calculator;
     protected $servicesToUse=["SERVICE1", "SERVICE2"];
-    
+	
+    protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
+	
     protected $rows = [
         //case A: PLAN-X3+SERVICE1+SERVICE2
         array('stamp' => 'a1','sid'=>51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev'=> 60,'services'=>["SERVICE1", "SERVICE2"]),
@@ -118,6 +121,7 @@ class Tests_Updaterowt extends UnitTestCase {
           print('<p style="border-top: 1px dashed black;"></p>');
           
         }
+		$init ->restoreColletions();
         //$this->assertTrue(True);
     }
     
@@ -138,11 +142,11 @@ class Tests_Updaterowt extends UnitTestCase {
       {
           if ((!isset($returnRow['in_group'])) || ($returnRow['in_group']==0))
           {
-            $messege=$messege.'— in_group: 0 <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
+            $messege=$messege.'— in_group: 0'. $this -> pass;
           }
           else 
           {
-            $messege=$messege.'— in_group: '.$returnRow['in_group'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+            $messege=$messege.'— in_group: '.$returnRow['in_group'].$this -> fail;
             $passed = False;
           }
       }
@@ -150,35 +154,35 @@ class Tests_Updaterowt extends UnitTestCase {
       {
           if (!isset($returnRow['in_group']))
           {
-              $messege=$messege.'— in_group: 0'.' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+              $messege=$messege.'— in_group: 0'.$this -> fail;
               $passed = False;
           }
           else if ($returnRow['in_group'] != $this ->  expected[$key]['in_group'])
           {
-              $messege=$messege.'— in_group: '.$returnRow['in_group'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+              $messege=$messege.'— in_group: '.$returnRow['in_group'].$this -> fail;
               $passed = False;
           }
           else
           {
-              $messege=$messege.'— in_group: '.$returnRow['in_group'].' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';  
+              $messege=$messege.'— in_group: '.$returnRow['in_group'].$this -> pass;  
           }
       }
       if ($this -> expected[$key]['over_group']==0)
       {
           if (((!isset($returnRow['over_group'])) || ($returnRow['over_group']==0)) && ((!isset($returnRow['out_plan'])) || ($returnRow['out_plan']==0)))
           {
-            $messege=$messege.'— over_group and out_plan: doesnt set <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
+            $messege=$messege.'— over_group and out_plan: doesnt set'. $this -> pass;
           }
           else 
           {
             if (isset($returnRow['over_group']))
             {
-                $messege = $messege.'— over_group: '.$returnRow['over_group'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+                $messege = $messege.'— over_group: '.$returnRow['over_group'].$this -> fail;
                 $passed = False;  
             }
             else
             {
-                $messege = $messege.'— out_plan: '.$returnRow['out_plan'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+                $messege = $messege.'— out_plan: '.$returnRow['out_plan'].$this -> fail;
                 $passed = False;  
             }
             $passed = False;
@@ -188,41 +192,37 @@ class Tests_Updaterowt extends UnitTestCase {
       {
           if ((!isset($returnRow['over_group'])) && (!isset($returnRow['out_plan'])))
           {
-              $messege=$messege.'— over_group and out_plan: doesnt set'.' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+              $messege=$messege.'— over_group and out_plan: dont set'.$this -> fail;
               $passed = False;
           }
           else if (isset($returnRow['over_group']))
           {
               if ($returnRow['over_group'] != $this -> expected[$key]['over_group'])
               {
-                $messege=$messege.'— over_group: '.$returnRow['over_group'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+                $messege=$messege.'— over_group: '.$returnRow['over_group'].$this -> fail;
                 $passed = False;  
               }
               else
               {
-                $messege=$messege.'— over_group: '.$returnRow['over_group'].' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';   
+                $messege=$messege.'— over_group: '.$returnRow['over_group'].$this -> pass;   
               }
           }
           else if (isset($returnRow['out_plan']))
           {
             if ($returnRow['out_plan'] != $this -> expected[$key]['over_group'])
               {
-                $messege=$messege.'— out_plan: '.$returnRow['out_plan'].' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
+                $messege=$messege.'— out_plan: '.$returnRow['out_plan'].$this -> fail;
                 $passed = False;  
               }
               else
               {
-                $messege=$messege.'— out_plan: '.$returnRow['out_plan'].' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';   
+                $messege=$messege.'— out_plan: '.$returnRow['out_plan'].$this -> pass;   
               }  
           }
       }
       $messege=$messege.' </p>';
       return [$passed,$messege];
     }
-    
-    
-    
-    
     
     protected function fixRow($row,$key)
           {

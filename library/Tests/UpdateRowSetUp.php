@@ -16,18 +16,26 @@
 
 class Tests_UpdateRowSetUp  {
     
-    protected $importData = ['plans','services','subscribers','rates'];
-    
+	/**
+	 * json files names in data dir
+	 * each file will be added to the relevant collection.
+	 * 
+	 * @var array
+	 */
+	protected $collectionToClean = ['plans', 'services','subscribers','rates','lines','balances'];
+    protected $importData = ['plans', 'services','subscribers','rates'];
+    protected $backUpData=array();
     public function __construct() {
            
         }
-        
-    public function setColletions()
-    {
-        $this -> cleanCollection(array('linesCollection','balancesCollection','plansCollection','ratesCollection','subscribersCollection','servicesCollection'));
-        
-        foreach ($this -> importData as $file)
-        {
+	/**
+	 * executes set up for update row test
+	 */   
+    public function setColletions(){
+		$this -> backUpCollection($this -> collectionToClean);
+        $this -> cleanCollection($this -> collectionToClean);
+		
+        foreach ($this -> importData as $file){
             $dataAsText = file_get_contents( dirname(__FILE__).'/data/'.$file.'.json');
             $parsedData = json_decode($dataAsText, true);
             if($parsedData === null) {
@@ -38,24 +46,27 @@ class Tests_UpdateRowSetUp  {
             $coll = Billrun_Factory::db()->$parsedData['collection']();
             $coll->batchInsert($data);
         }
-        
+		
        /*$dir = dirname(__FILE__).'/data';
        $files1 = scandir($dir);*/
-
-        //$this -> insertToCol($this -> products,'rates');
     }
+	
+	public function restoreColletions(){
+		$this -> cleanCollection($this -> collectionToClean);
+		$this ->restoreCollection();
+	}
+	
+	/**
+	 * tranform all fields starts with time* into MongoDate object
+	 * @param array $jsonAr 
+	 */
     protected function fixDates($jsonAr)
     {
-        foreach ($jsonAr as $key => $jsonFile)
-        {
-            foreach ($jsonFile as  $jsonFiled => $value)
-            {
-             
-                if (gettype($value) == 'string')
-                {   
+        foreach ($jsonAr as $key => $jsonFile){
+            foreach ($jsonFile as  $jsonFiled => $value){
+                if (gettype($value) == 'string'){   
                     $value = explode("*", $value);
-                    if ((count($value) == 2) && ($value[0] == 'time'))
-                    {
+                    if ((count($value) == 2) && ($value[0] == 'time')){
                         $value = new MongoDate(strtotime($value[1]));
                         $jsonAr[$key][$jsonFiled] = $value;
                     }
@@ -64,28 +75,47 @@ class Tests_UpdateRowSetUp  {
         }
         return $jsonAr;
     }
-    protected function insertToCol($items,$col)
-    {
-        
-        
+	
+	// old function for inserting data
+    protected function insertToCol($items,$col){ 
         foreach ($items as $item)
         {
             Billrun_Factory::db()-> execute('db.'.$col.'.insert('.$item.')');
         }
-        //Billrun_Factory::db()-> execute($this -> rates);
     }
-    protected function cleanCollection($colNames)
-    {
-        foreach($colNames as $colName )
-        {
-            $colName = Billrun_Factory::db()->$colName();
-            while ($colName->count() > 0)
-                {
-                    $entity = $colName->query('{}') -> cursor() -> current();
-                    $colName->remove($entity);
-                }
+	
+	/**
+	 * @param array $colNames array of collectins names to clean
+	 */
+    protected function cleanCollection($colNames){
+		
+        foreach($colNames as $colName ){
+			Billrun_Factory::db()-> execute('db.'.$colName.'.remove({})');
         }
     }
+	
+	 protected function backUpCollection($colNames){
+		foreach($colNames as $colName ){
+			$colName=$colName.'Collection';
+			$items = iterator_to_array(Billrun_Factory::db()->$colName()->query(array())->getIterator());
+			$this -> backUpData[$colName]=array();
+			foreach($items as $item){
+				array_push($this -> backUpData[$colName],$item -> getRawData());
+			}
+		}
 
+    }
+	
+	protected function restoreCollection(){
+		foreach($this -> backUpData as $colName=>$items){
+			if (count($items)>0)
+			{
+				Billrun_Factory::db()->$colName()->batchInsert($items);
+			}
+			
+		}
+		
+	}
+	
 }
 
