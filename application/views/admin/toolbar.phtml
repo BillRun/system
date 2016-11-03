@@ -78,18 +78,12 @@
 							echo '<br>';
 							echo "<div id='databases'>";
 								echo "<select class='form-control multiselect'  name='collection'>";
-								$results = LinesModel::getDatabaseLinesCollections();
-									foreach ($results as $database => $collections){
-										foreach($collections as $collection){
-											if ($database == 'billing'){
-												$mark = "selected";
-											}
-											else{
-												$mark = "";
-											}
-											echo	"<option value='" . $collection . "_" . $database . "' $mark>$collection ($database)</option>";
-										}
-									}
+								echo	"<option value='" . 'lines' . "|" . 'billing' . "' selected>lines (billing)</option>";
+								$collections = LinesModel::getArchiveLinesCollections();
+								foreach($collections as $collection){
+									echo	"<option value='" . $collection . "|" . 'archive' . "'>$collection (archive)</option>";
+								}
+									
 								echo "</select>";
 							echo "</div>";
 							
