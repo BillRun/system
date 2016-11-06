@@ -1,0 +1,1 @@
+mongo admin -uadmin -p --eval "db = db.getSiblingDB('$1'); db.createUser({user: '$2',pwd: '$3', roles: [{role: '$4', db: '$1'}]})"

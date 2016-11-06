@@ -36,6 +36,13 @@ class Billrun_Config {
 	protected $tenant = null;
 	
 	/**
+	 * path for tenants config file
+	 * 
+	 * @var type 
+	 */
+	protected static $multitenantDir = null;
+	
+	/**
 	 * save all available values for environment while running in production
 	 * 
 	 * @var array
@@ -362,6 +369,7 @@ class Billrun_Config {
 		} else {
 			$multitenant_basedir = APPLICATION_PATH . '/conf/tenants/';
 		}
+		self::$multitenantDir = $multitenant_basedir;
 		if (file_exists($tenant_conf = $multitenant_basedir . $this->tenant . '.ini')) {
 			$this->addConfig($tenant_conf);
 		}
@@ -423,6 +431,10 @@ class Billrun_Config {
 	
 	protected function isCompanyInProd() {
 		return in_array($this->getInstance()->getConfigValue("environment"), $this->productionValues);
+	}
+	
+	public static function getMultitenantConfigPath() {
+		return self::$multitenantDir;
 	}
 
 }
