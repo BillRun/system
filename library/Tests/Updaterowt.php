@@ -95,7 +95,7 @@ class Tests_Updaterowt extends UnitTestCase {
         ];
     
     public function __construct($label = false) {
-            parent::__construct('teset UpdateRow');
+            parent::__construct('test UpdateRow');
 
         }
     public function testUpdateRow() {
@@ -114,10 +114,10 @@ class Tests_Updaterowt extends UnitTestCase {
           $row = $this -> fixRow($row,$key);
           $this -> linesCol->insert($row);
           $updatedRow = $this -> runT($row['stamp']);
-          $resault = $this -> compareExpected($key,$updatedRow);
+          $result = $this -> compareExpected($key,$updatedRow);
 
-          $this->assertTrue($resault[0]);
-          print ($resault[1]);
+          $this->assertTrue($result[0]);
+          print ($result[1]);
           print('<p style="border-top: 1px dashed black;"></p>');
           
         }
@@ -137,7 +137,7 @@ class Tests_Updaterowt extends UnitTestCase {
     protected function compareExpected($key,$returnRow)
     {
       $passed = True;
-      $messege='<p style="font: 14px arial; color: rgb(0, 0, 80);"> '.($key+1).'. <b> Expected: </b> <br> — in_group:'.$this -> expected[$key]['in_group'].'<br> — over_group:'.$this -> expected[$key]['over_group'].'<br> <b> &nbsp;&nbsp;&nbsp; Resault: </b> <br>';
+      $messege='<p style="font: 14px arial; color: rgb(0, 0, 80);"> '.($key+1).'. <b> Expected: </b> <br> — in_group:'.$this -> expected[$key]['in_group'].'<br> — over_group:'.$this -> expected[$key]['over_group'].'<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
       if ($this -> expected[$key]['in_group']==0)
       {
           if ((!isset($returnRow['in_group'])) || ($returnRow['in_group']==0))
