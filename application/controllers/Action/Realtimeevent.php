@@ -123,19 +123,17 @@ class RealtimeeventAction extends ApiAction {
 	}
         
         
-        protected function unifyLines($lines) {
-            
-           switch ($this->usaget) {
-                        case ('data'):
-                		return $this->unifyDataLines($lines);
-			case ('sms'):	
-			case ('mms'):	
-			                               return current($lines);	
-            }
-            
-        }
-        
-       protected function unifyDataLines($lines) {
+	protected function unifyLines($lines) {
+
+		switch ($this->usaget) {
+			case ('data'):
+				return $this->unifyDataLines($lines);
+			default:
+				return current($lines);
+		}
+	}
+
+	protected function unifyDataLines($lines) {
             
            $current =  current($lines);	
            $current["mscc_data"] = array();
