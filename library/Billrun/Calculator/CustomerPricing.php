@@ -401,28 +401,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$this->min_balance_volume = null;
 			$this->min_balance_cost = null;
 		}
-		if (!$this->loadSubscriberBalance($row, $this->min_balance_volume, $this->min_balance_cost)) { // will load $this->balance
-			if (self::isPrepaid($row)) {
-				// check first if this free call and allow it if so
-				if ($this->min_balance_cost == '0') {
-					if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
-						$granted_volume = 0;
-					} else {
-						$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
-					}
-					$charges = Billrun_Rates_Util::getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
-					$granted_cost = $charges['total'];
-					return array(
-						$this->pricingField => $granted_cost,
-						'usagev' => $granted_volume,
-					);
-				}
-				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
-			}
-			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
-			if ($row['usagev'] === 0) {
-				return false;
-			}
+		if (!$this->loadSubscriberBalance($row, $this->min_balance_volume, $this->min_balance_cost) && // will load $this->balance
+			($balanceNoAvailableResponse = $this->handleNoBalance($row, $rate, $plan)) !== TRUE) {
+			return $balanceNoAvailableResponse;
 		}
 
 		if (self::isPrepaid($row) && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
@@ -442,7 +423,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
 			if (++$this->countConcurrentRetries >= $this->concurrentMaxRetries) {
-				Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
+				Billrun_Factory::log()->log('Too many pricing retries for line stamp: ' . $row['stamp'], Zend_Log::ALERT);
 				return false;
 			}
 			usleep($this->countConcurrentRetries);
@@ -452,10 +433,35 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $pricingData;
 	}
 
+	protected function handleNoBalance($row, $rate, $plan) {
+		if (self::isPrepaid($row)) {
+			// check first if this free call and allow it if so
+			if ($this->min_balance_cost == '0') {
+				if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
+					$granted_volume = 0;
+				} else {
+					$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
+				}
+				$charges = Billrun_Rates_Util::getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
+				$granted_cost = $charges['total'];
+				return array(
+					$this->pricingField => $granted_cost,
+					'usagev' => $granted_volume,
+				);
+			}
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
+		}
+		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
+		if ($row['usagev'] === 0) {
+			return false;
+		}
+		return true;
+	}
+
 	protected function initMinBalanceValues($rate, $usaget, $plan) {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
-			$this->min_balance_cost = $this->getTotalChargeByRate($rate, $usaget, $this->min_balance_volume, $plan->getName(), $this->getCallOffset());
+			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($rate, $usaget, $this->min_balance_volume, $plan->getName(), $this->getCallOffset());
 		}
 	}
 
@@ -498,7 +504,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate', TRUE));
+		$arate = Billrun_Rates_Util::getRateByRef($line->get('arate', TRUE));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;

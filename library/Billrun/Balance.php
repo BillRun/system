@@ -188,7 +188,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->collection()->update($query, $update);
 		if (!($ret['ok'] && $ret['updatedExisting'])) {
-			Billrun_Factory::log('Update subscriber balance failed on updated existing document', Zend_Log::INFO);
+			Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
 			return false;
 		}
 		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
