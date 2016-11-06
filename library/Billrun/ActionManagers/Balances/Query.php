@@ -75,6 +75,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				;
 			$returnData = $this->availableBalances;
 			$added = array();
+			$lastRand = 1;
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
@@ -92,7 +93,9 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 					}
  				} else { // we don't aggregate and we have duplicate wallets from the same type
 					// TODO
-					$returnData[$externalID] = $rawItem;
+					$lastRand = rand($lastRand, $lastRand+1000);
+					unset($returnData[$externalID]);
+					$returnData[$externalID . $lastRand] = $rawItem; // add rand value to handle cases where same wallet exists twice
 				}
 
  				$added[] = $externalID;
@@ -225,7 +228,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 		
 		$aggregate = $input->get('aggregate');
-		if (!empty($aggregate) && is_numeric($aggregate)){
+		if (isset($aggregate) && is_numeric($aggregate)){
 			$this->aggregate = $aggregate;
 		}
 		
