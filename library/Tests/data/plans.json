@@ -1,0 +1,139 @@
+  {
+    "collection": "plansCollection",
+    "data":
+    [
+    {
+    "name" : "PLAN-X3",
+    "plan_code" : "PLAN-X3",
+    "description" : "PLAN-X3",
+    "recurrence" : {
+        "unit" :1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "10",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z",
+    "include" : {
+        "groups" : {
+            "GROUPO" : {
+                "call" : "100"
+            }
+        }
+    }
+  },
+  {
+    "name" : "PLAN-A0",
+    "plan_code" : "PLAN-A0",
+    "description" : "PLAN-A0",
+    "recurrence" : {
+        "unit" : 1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "50",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z"
+  },
+  {
+    "name" : "PLAN-A1",
+    "plan_code" : "PLAN-A1",
+    "description" : "PLAN-A1",
+    "recurrence" : {
+        "unit" : 1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "50",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z",
+    "include" : {
+        "groups" : {
+            "AAA" : {
+                "call" : "50"
+            },
+            "SR4" : {
+                "gr" : "50"
+            }
+        }
+    }
+
+    },
+    {
+        "name" : "PLAN-A2",
+        "plan_code" : "PLAN-A2",
+        "description" : "PLAN-A2",
+        "recurrence" : {
+            "unit" : 1,
+            "periodicity" : "month"
+        },
+        "upfront" : false,
+        "price" : [
+            {
+                "price" : "50",
+                "from" : 0,
+                "to" : 2,
+                "trial" : false
+            },
+            {
+                "price" : "25",
+                "from" : 2,
+                "to" : 999999999
+            }
+        ],
+        "from" : "time*2016-10-05T08:08:36Z",
+        "to" : "time*2116-10-05T08:08:36Z",
+        "include" : {
+            "groups" : {
+                "AAA" : {
+                    "call" : "60"
+                },
+                "AAA" : {
+                    "call" : "60"
+                },
+                "GROUPO" : {
+                    "call" : "40"
+                }
+            }
+        }
+
+        }
+
+]
+}

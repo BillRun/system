@@ -1,0 +1,88 @@
+  {
+    "collection": "subscribersCollection",
+    "data":
+    [
+        {
+            "firstname" : "r1",
+            "lastname" : "r1",
+            "email" : "r1",
+            "country" : "r1",
+            "address" : "r1",
+            "type" : "account",
+            "from" : "time*2016-10-11T09:16:27.567Z",
+            "plan_activation" : "time*2016-10-11T09:16:27.569Z",
+            "to" : "time*2116-10-11T09:16:10Z",
+            "aid" : 1234
+        }
+        ,
+        {
+            "aid" : 1234,
+            "firstname" : "r4",
+            "lastname" : "r4",
+            "plan" : "PLAN-X3",
+            "address" : "r4",
+            "country" : "r4",
+            "type" : "subscriber",
+            "from" : "time*2016-10-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-10-11T09:17:58.865Z",
+            "to" : "time*2116-10-11T09:17:58Z",
+            "sid" : 51,
+            "services" : ["SERVICE1", "SERVICE2"]
+        },
+        {
+            "aid" : 1234,
+            "firstname" : "r3",
+            "lastname" : "r3",
+            "plan" : "PLAN-X3",
+            "address" : "r3",
+            "country" : "r3",
+            "type" : "subscriber",
+            "from" : "time*2016-10-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-10-11T09:17:58.865Z",
+            "to" : "time*2116-10-11T09:17:58Z",
+            "sid" : 52,
+            "services" : ["SERVICE3"]
+        },
+        {
+            "aid" : 1234,
+            "firstname" : "r5",
+            "lastname" : "r5",
+            "plan" : "PLAN-A0",
+            "address" : "r5",
+            "country" : "r5",
+            "type" : "subscriber",
+            "from" : "time*2016-10-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-10-11T09:17:58.865Z",
+            "to" : "time*2116-10-11T09:17:58Z",
+            "sid" : 53,
+            "services" : ["SERVICE1", "SERVICE4"]
+        },
+        {
+            "aid" : 1234,
+            "firstname" : "r6",
+            "lastname" : "r6",
+            "plan" : "PLAN-A1",
+            "address" : "r6",
+            "country" : "r6",
+            "type" : "subscriber",
+            "from" : "time*2016-10-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-10-11T09:17:58.865Z",
+            "to" : "time*2116-10-11T09:17:58Z",
+            "sid" : 54
+        },
+        {
+            "aid" : 1234,
+            "firstname" : "r7",
+            "lastname" : "r7",
+            "plan" : "PLAN-A2",
+            "address" : "r7",
+            "country" : "r7",
+            "type" : "subscriber",
+            "from" : "time*2016-10-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-10-11T09:17:58.865Z",
+            "to" : "time*2116-10-11T09:17:58Z",
+            "sid" : 55,
+            "services" : ["SERVICE1"]
+        }
+        ]
+    }
