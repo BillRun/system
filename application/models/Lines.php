@@ -486,6 +486,7 @@ class LinesModel extends TableModel {
 	public static function getArchiveLinesCollections() {
 		$archiveDb = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
 		$filtered_collections = $archiveDb->getCollectionNames(array('filter' => array('name' => array('$regex' => '^lines'))));
+		sort($filtered_collections);
 		return $filtered_collections;
 	}
 
