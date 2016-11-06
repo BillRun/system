@@ -14,7 +14,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 		
 		$valuesServices = Billrun_Util::getFieldVal($values['services'], array());
 		$subscriberServices = $this->getSubscriberServices($valuesServices, $services);
-		if(!$subscriberServices) {
+		if($subscriberServices) {
 			$values['services'] = $subscriberServices;
 		}
 		
@@ -31,7 +31,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 
 		// Get the diff
 		$oldServicesNames = $this->getNames($oldServices);
-		$removedServices = array_diff($services, $oldServicesNames);			
+		$removedServices = array_diff($oldServicesNames,$services);			
 
 		foreach ($oldServices as $service) {
 			// Check if removed
@@ -41,7 +41,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 			$subscriberServices[] = $service;
 		}
 
-		$addedServices = array_diff($oldServicesNames, $services);
+		$addedServices = array_diff($services,$oldServicesNames);
 		foreach ($addedServices as $service) {
 			$service['activation'] = $serviceTime;
 			$subscriberServices[] = $service;
