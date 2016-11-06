@@ -299,8 +299,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
 			if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
 				$ret['arategroups'] = array();
-				$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
-				$ret['in_plan'] = $ret['in_group'] = $volumeToCharge - $groupVolumeLeft;
+				$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volume, $ret['arategroups']);
+				$ret['in_plan'] = $ret['in_group'] = $volume - $groupVolumeLeft;
 				$volumeToCharge = $groupVolumeLeft;
 			} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
 				$ret['out_plan'] = $ret['out_group'] = $volumeToCharge = $volume;
