@@ -92,7 +92,6 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 						Billrun_Balances_Util::incBalanceValue($returnData[$externalID], $toAdd);
 					}
  				} else { // we don't aggregate and we have duplicate wallets from the same type
-					// TODO
 					$lastRand = rand($lastRand, $lastRand+1000);
 					unset($returnData[$externalID]);
 					$returnData[$externalID . $lastRand] = $rawItem; // add rand value to handle cases where same wallet exists twice
