@@ -218,6 +218,10 @@ class Billrun_Service {
 				}
 			}
 		}
+		
+		if (!isset($rateUsageIncluded)) {
+			return 0;
+		}
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
