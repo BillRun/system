@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 S.D.O.C. LTD. All rights reserved.
@@ -12,18 +13,18 @@
  * @since    0.5
  */
 class Billrun_Util {
+
 	public static $dataUnits = array(
-		'B' => 0, 
-		'KB' => 1, 
-		'MB' => 2, 
-		'GB' => 3, 
+		'B' => 0,
+		'KB' => 1,
+		'MB' => 2,
+		'GB' => 3,
 		'TB' => 4,
-		'PB' => 5, 
-		'EB' => 6, 
-		'ZB' => 7, 
+		'PB' => 5,
+		'EB' => 6,
+		'ZB' => 7,
 		'YB' => 8
 	);
-	
 	public static $timeUnits = array(
 		"second" => 1,
 		"minute" => 60,
@@ -33,7 +34,6 @@ class Billrun_Util {
 		"year" => 220752000, // 365 * 7 * 24 * 60 * 60
 	);
 
-	
 	/**
 	 * method to filter user input
 	 * 
@@ -344,36 +344,36 @@ class Billrun_Util {
 
 		return 0;
 	}
-        
-        /**
-         * convert KB/MB/GB/TB/PB/EB/ZB/YB to bytes
-         * @param string $unitSizeToByte 
-         * @param string $convertToOtherUnit use when we want to return different unit size
-         * @param int $decimals 
-         * @param string $dec_point sets the separator for the decimal point
-         * @return int of bytes
-         */
-        public static function computerUnitToBytes($unitSizeToByte = '0B', $convertToOtherUnit = 'B', $decimals = 0 , $dec_point = ".", $thousands_sep = ","){
-            $unitSizeAndType = [];
-            $pattern = '/(\d+\.\d+|\d+)(\w+)$/';
-            preg_match($pattern, $unitSizeToByte, $unitSizeAndType);
-            $unitSize = $unitSizeAndType[1];
-            $unitType = $unitSizeAndType[2];
-            $bytes = 0;
-            $powerCalc = self::$dataUnits[$unitType] - self::$dataUnits[$convertToOtherUnit];
-            
-            if(isset(self::$dataUnits[$unitType]) && !empty($unitSize)){
-                if($powerCalc >= 0){
-                    $bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep );
-                }else{
-					$decimals = 6;
-                    $bytes = number_format($unitSize / pow(1024, floor(abs($powerCalc))), $decimals, $dec_point, $thousands_sep );
-                }
-            }
-            
-            return $bytes;
-        }
-        
+
+	/**
+	 * convert KB/MB/GB/TB/PB/EB/ZB/YB to bytes
+	 * @param string $unitSizeToByte 
+	 * @param string $convertToOtherUnit use when we want to return different unit size
+	 * @param int $decimals 
+	 * @param string $dec_point sets the separator for the decimal point
+	 * @return int of bytes
+	 */
+	public static function computerUnitToBytes($unitSizeToByte = '0B', $convertToOtherUnit = 'B', $decimals = 0, $dec_point = ".", $thousands_sep = ",") {
+		$unitSizeAndType = [];
+		$pattern = '/(\d+\.\d+|\d+)(\w+)$/';
+		preg_match($pattern, $unitSizeToByte, $unitSizeAndType);
+		$unitSize = $unitSizeAndType[1];
+		$unitType = $unitSizeAndType[2];
+		$bytes = 0;
+		$powerCalc = self::$dataUnits[$unitType] - self::$dataUnits[$convertToOtherUnit];
+
+		if (isset(self::$dataUnits[$unitType]) && !empty($unitSize)) {
+			if ($powerCalc >= 0) {
+				$bytes = number_format($unitSize * pow(1024, floor($powerCalc)), $decimals, $dec_point, $thousands_sep);
+			} else {
+				$decimals = 6;
+				$bytes = number_format($unitSize / pow(1024, floor(abs($powerCalc))), $decimals, $dec_point, $thousands_sep);
+			}
+		}
+
+		return $bytes;
+	}
+
 	/**
 	 * convert seconds to requested format
 	 * 
@@ -394,7 +394,7 @@ class Billrun_Util {
 		}
 		return $seconds;
 	}
-	
+
 	/**
 	 * method to convert seconds to closest unit or by specific unit
 	 * 
@@ -418,22 +418,21 @@ class Billrun_Util {
 				}
 			}
 		}
-		
+
 		$value = $seconds / self::$timeUnits[$unit];
-		
+
 		if ($round_method != 'none' && function_exists($round_method)) {
 			$value = call_user_func_array($round_method, array($value));
 		}
-		
+
 		$number = number_format($value, $decimals, $decimal_sep, $thousands_sep);
-		
+
 		if ($includeUnit) {
 			return $number . ' ' . $unit . ($value > 1 || $value == 0 ? 's' : '');
 		}
 		return $number;
-		
 	}
-	
+
 	/**
 	 * convert seconds to readable format [English]
 	 * 
@@ -658,7 +657,7 @@ class Billrun_Util {
 		if (substr($msisdn, 0, $prefixLength) != $defaultPrefix) {
 			return $msisdn;
 		}
-		if (substr($msisdn, 0, $prefixLength+1) == $defaultPrefix . '1') {
+		if (substr($msisdn, 0, $prefixLength + 1) == $defaultPrefix . '1') {
 			$prefix = '';
 		} else {
 			$prefix = '0';
@@ -952,7 +951,7 @@ class Billrun_Util {
 		}
 		return $query;
 	}
-	
+
 	/**
 	 * Convert associative Array to XML
 	 * @param Array $data Associative Array
@@ -1078,7 +1077,7 @@ class Billrun_Util {
 	public static function getHostName() {
 		return function_exists('gethostname') ? @gethostname() : false;
 	}
-	
+
 	/**
 	 * method to get current operating system process id runnning the PHP
 	 * 
@@ -1213,7 +1212,7 @@ class Billrun_Util {
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
-			if(!$response) {
+			if (!$response) {
 				$response = $e->getMessage();
 			}
 		}
@@ -1433,7 +1432,7 @@ class Billrun_Util {
 	 * @param type $separator
 	 * @return type
 	 */
-	function setDotArrayToArray(&$original, $dotArray, $value, $separator = '.') {
+	public static function setDotArrayToArray(&$original, $dotArray, $value, $separator = '.') {
 		$parts = explode($separator, $dotArray);
 		if (count($parts) <= 1) {
 			return $dotArray;
@@ -1448,7 +1447,7 @@ class Billrun_Util {
 		}
 	}
 
-	function constructAssocArray($parts) {
+	public static function constructAssocArray($parts) {
 		if ((count($parts)) <= 1) {
 			return $parts[0];
 		}
@@ -1464,7 +1463,7 @@ class Billrun_Util {
 	 * @param array $array - The array to get the value of.
 	 * @return The first value of the array.
 	 */
-	public function getFirstValueOfMultidimentionalArray($array) {
+	public static function getFirstValueOfMultidimentionalArray($array) {
 		if (is_array($array)) {
 			$next = reset($array);
 			return self::getFirstValueOfMultidimentionalArray($next);
@@ -1472,7 +1471,48 @@ class Billrun_Util {
 
 		return $array;
 	}
-	
+
+	/**
+	 * Sets the first value of a multidimentional array.
+	 * Example:
+	 * array: [a => [b => [c => 4]]] 
+	 * value: 8
+	 * result: [a => [b => [c => 8]]] .
+	 * @param array $array - The array to get the value of.
+	 * @param int $value - The value to set
+	 * @return The first value of the array.
+	 */
+	public static function setFirstValueOfMultidimentionalArray(&$array, $value) {
+		if (is_array($array)) {
+			$next = reset($array);
+			return self::setFirstValueOfMultidimentionalArray($next, $value);
+		}
+
+		$array = $value;
+	}
+
+	/**
+	 * Sets the first value of a multidimentional array.
+	 * Example:
+	 * array: [a => [b => [c => 4]]] 
+	 * value: 8
+	 * result: [a => [b => [c => 12]]] .
+	 * @param array $array - The array to get the value of.
+	 * @param int $value - The value to inc
+	 * @return The first value of the array.
+	 */
+	public static function incFirstValueOfMultidimentionalArray(&$array, $value) {
+		if (is_array($array)) {
+			$next = reset($array);
+			$key = key($array);
+			self::incFirstValueOfMultidimentionalArray($next, $value);
+			$array[$key] = $next;
+			return;
+		}
+
+		$array += $value;
+	}
+
 	public static function getCallTypes() {
 		return array_values(Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array('call', 'video_call')));
 	}

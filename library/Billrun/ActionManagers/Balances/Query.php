@@ -43,11 +43,23 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 * @var array
 	 */
 	protected $availableBalances = array();
-
+	
 	/**
+	 * helper variable for class time offset (for object life-time)
+	 * @var int unix timestamp
 	 */
+	protected $relativeTime = null;
+	
+	/**
+	 * flag to indicate if to aggregate results
+	 * 
+	 * @var boolean
+	 */
+	protected $aggregate = true;
+
 	public function __construct() {
 		parent::__construct(array('error' => "Success querying balances"));
+		$this->relativeTime = strtotime('1 day ago'); // this will be start time of non-existing balances
 	}
 
 	/**
@@ -58,36 +70,56 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$cursor = $this->collection
 				->setReadPreference(MongoClient::RP_PRIMARY, array())
 				->query($this->balancesQuery)
-				->cursor();
+				->cursor()
+				->sort(array($this->sortField => ($this->sortOrder >= 1 ? 1 : -1)))
+				;
 			$returnData = $this->availableBalances;
+			$added = array();
+			$lastRand = 1;
 			// Going through the lines
 			foreach ($cursor as $line) {
 				$rawItem = $line->getRawData();
+				$externalID = $rawItem['pp_includes_external_id'];
 				
-				if (empty($rawItem[$this->sortField])) {
-					$returnData[] = $rawItem;
-					continue;
+ 				// Check if already added
+ 				if($this->aggregate) {
+					$toAdd = Billrun_Balances_Util::getBalanceValue($returnData[$externalID]);
+					if ($this->sortOrder >= 1 || $toAdd == 0) {
+						Billrun_Balances_Util::incBalanceValue($rawItem, $toAdd);
+						$returnData[$externalID] = $rawItem;
+					} else {
+						$toAdd = Billrun_Balances_Util::getBalanceValue($rawItem);
+						Billrun_Balances_Util::incBalanceValue($returnData[$externalID], $toAdd);
+					}
+ 				} else { // we don't aggregate and we have duplicate wallets from the same type
+					// TODO
+					$lastRand = rand($lastRand, $lastRand+1000);
+					unset($returnData[$externalID]);
+					$returnData[$externalID . $lastRand] = $rawItem; // add rand value to handle cases where same wallet exists twice
 				}
-				
-				$returnData[$this->getBalanceIndex($rawItem, $this->sortField)] = $rawItem;
+
+ 				$added[] = $externalID;
+			}
+			
+			$sortArray = array();
+			foreach ($returnData as $row) {
+				$sortKey = $this->getBalanceIndex($row, $this->sortField);
+				$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
 
 			if ($this->sortOrder >= 1) {
-				ksort($returnData);
+				ksort($sortArray);
 			} else {
-				krsort($returnData);
+				krsort($sortArray);
 			}
 			
-			foreach ($returnData as &$row) {
-				$row = Billrun_Util::convertRecordMongoDatetimeFields($row);
-			}
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return null;
 		}
 
-		return array_values($returnData);
+		return array_values($sortArray);
 	}
 	
 	protected function getBalanceIndex($item, $field) {
@@ -127,7 +159,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$balance = $wallet->getPartialBalance();
 		$balance['aid'] = $subscriber['aid'];
 		$balance['sid'] = $subscriber['sid'];
-		$balance['from'] = new MongoDate(time() + $balance['pp_includes_external_id']); // the second argument in the brackets is for the case we are sorting by from or to
+		$balance['from'] = new MongoDate($this->relativeTime + $balance['pp_includes_external_id']); // the second argument in the brackets is for the case we are sorting by from or to
 		$balance['to'] = $balance['from'];
 		$balance['charging_type'] = $subscriber['charging_type'];
 
@@ -194,6 +226,12 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if (!empty($sortOrder) && is_numeric($sortOrder)){
 			$this->sortOrder = $sortOrder;
 		}
+		
+		$aggregate = $input->get('aggregate');
+		if (isset($aggregate) && is_numeric($aggregate)){
+			$this->aggregate = $aggregate;
+		}
+		
 	}
 
 	/**
@@ -302,7 +340,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				continue;
 			}
 
-			$availableBalances[$this->getBalanceIndex($constructed, $this->sortField)] = $constructed;
+			$availableBalances[$id] = $constructed;
 		}
 
 		return $availableBalances;
