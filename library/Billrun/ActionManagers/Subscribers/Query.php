@@ -32,6 +32,7 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 	protected function queryRangeSubscribers() {
 		try {
 			$cursor = $this->collection->query($this->subscriberQuery)->cursor()->sort(array('_id' => -1));
+			Billrun_Factory::log("Query: " . print_r($this->subscriberQuery,1));
 			if (!$this->queryInRange) {
 				$cursor->limit(1);
 			}
@@ -131,7 +132,8 @@ class Billrun_ActionManagers_Subscribers_Query extends Billrun_ActionManagers_Su
 			return false;
 		}
 
-		$this->parseDateParameters($input);
+//		$this->parseDateParameters($input);
+		$this->parseDateParameters(new Billrun_AnObj($jsonData));
 
 		return true;
 	}

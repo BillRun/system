@@ -35,7 +35,6 @@ class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
 //		unset($query['to']);
 //		unset($query['from']);
 		unset($query['description']);
-		
 		return $query;
 	}
 
@@ -57,7 +56,16 @@ class Tests_Api_Subscribers_Create extends Tests_Api_Base_Create {
 		$cloned['type'] = 'account';
 		$cloned['to'] = new MongoDate(strtotime('+1 year'));
 		$cloned['from'] = new MongoDate(strtotime('-1 year'));
+		$cloned['test'] = 1;
 		$this->coll->insert($cloned);
+	}
+	
+	protected function getClearCaseQuery($case) {
+		$query = parent::getClearCaseQuery($case);
+		unset($query['to']);
+		unset($query['from']);
+		unset($query['sid']);
+		return $query;
 	}
 	
 	protected function clearCase($case) {

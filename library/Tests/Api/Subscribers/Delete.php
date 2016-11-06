@@ -32,8 +32,8 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 		$query = $case['query'];
 		
 		// Remove unnecessary fields
-//		unset($query['to']);
-//		unset($query['from']);
+		$query['to'] = new MongoDate(strtotime($query['to']));
+		$query['from'] = new MongoDate(strtotime($query['from']));
 		unset($query['description']);
 		
 		return $query;
@@ -41,6 +41,15 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 
 	protected function getDataForDB($case) {
 		$data = $case['query'];
+		
+		foreach ($data as $key => &$value) {
+			if(in_array($key, array('to', 'from'))) {
+				$value = new MongoDate(strtotime($value));
+			}
+		}
+		
+		$type = $case['type'];
+		$data['type'] = $type;
 		
 		return $data;
 	}
@@ -55,11 +64,18 @@ class Tests_Api_Subscribers_Delete extends Tests_Api_Base_Delete {
 			return true;
 		}
 		
-		$assertResult = $this->assertEqual(1423, $error_code, $this->current['msg']);
+		$apiCode = Billrun_Util::getFieldVal($results['display']['code'], null);
+		$assertResult = $this->assertEqual(1023, $apiCode, $this->current['msg']);
 		if(!$assertResult) {
 			return $this->onExecuteFailed($results);
 		}
 		return true;
 	}
 
+	protected function translateSingleCase($key, $value) {
+		if(in_array($key, array("from", "to"))) {
+//			return new MongoDate(strtotime($value));
+		}
+		return $value;
+	}
 }

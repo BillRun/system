@@ -12,7 +12,8 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 			$values['plan_activation'] = new MongoDate();
 		}
 		
-		$subscriberServices = $this->getSubscriberServices($values['services'], $services);
+		$valuesServices = Billrun_Util::getFieldVal($values['services'], array());
+		$subscriberServices = $this->getSubscriberServices($valuesServices, $services);
 		if(!$subscriberServices) {
 			$values['services'] = $subscriberServices;
 		}
@@ -59,5 +60,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 			
 			$names[] = $v;
 		}
+		
+		return $names;
 	}
 }

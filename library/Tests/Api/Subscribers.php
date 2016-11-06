@@ -25,21 +25,21 @@ class Tests_Api_Subscribers extends UnitTestCase {
     );
 		
 	protected $deleteTests = array(
-		array('valid' => true, 'msg' => 'Only mendatory active', 'type'=>'subscriber','query' => array("from" => "-1 month","to" => "+1 month", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory future', 'type'=>'subscriber','query' => array("from" => "+1 month","to" => "+1 year", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory past', 'type'=>'subscriber', 'query' => array("from" => "-1 year","to" => "-1 month", "sid" => 99887711)),
+		array('valid' => true, 'msg' => 'Only mendatory active', 'type'=>'subscriber','query' => array("plan" => "PLAN-X1", "address" => "There", "aid" => "109", "firstname" => "Gog","lastname" => "Spiegel", "from" => "-1 month","to" => "+1 month", "sid" => 99887711)),
+		array('valid' => true, 'msg' => 'Only mendatory future', 'type'=>'subscriber','query' => array("plan" => "PLAN-X2", "address" => "Right there", "aid" => "109", "firstname" => "George","lastname" => "Plarv", "from" => "+1 month","to" => "+1 year", "sid" => 99887711)),
+		array('valid' => true, 'msg' => 'Only mendatory past', 'type'=>'subscriber', 'query' => array("plan" => "PLAN-X3", "address" => "Left There", "aid" => "109", "firstname" => "Geff","lastname" => "Aharon", "from" => "-1 year","to" => "-1 month", "sid" => 99887711)),
 	);
 	
 	protected $queryTests = array(
-		array('valid' => true, 'msg' => 'Only mendatory active', 'type'=>'subscriber', 'query' => array("from" => "-1 month","to" => "+1 month", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory future', 'type'=>'subscriber', 'query' => array("from" => "+1 month","to" => "+1 year", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory past', 'type'=>'subscriber', 'query' => array("from" => "-1 year","to" => "-1 month", "sid" => 99887711)),
+		array('valid' => true, 'msg' => 'Only mendatory active', 'type'=>'subscriber', 'query' => array("plan" => "PLAN-X1", "address" => "Somewhere", "aid" => "109", "firstname" => "Bob","lastname" => "Boom", "from" => "-1 month","to" => "+1 month", "sid" => "99887711")),
+		array('valid' => true, 'msg' => 'Only mendatory future', 'type'=>'subscriber', 'query' => array("plan" => "PLAN-X2", "address" => "Somewhere", "aid" => "109", "firstname" => "Bob","lastname" => "Ding","from" => "+1 month","to" => "+1 year", "sid" => "99887711")),
+		array('valid' => true, 'msg' => 'Only mendatory past', 'type'=>'subscriber', 'query' => array("plan" => "PLAN-X3", "address" => "Somewhere", "aid" => "109", "firstname" => "Bob","lastname" => "Shlag", "from" => "-1 year","to" => "-1 month", "sid" => "99887711")),
 	);
 	
 	protected $updateTests = array(
-		array('valid' => true, 'msg' => 'Only mendatory active updating from',  'type'=>'subscriber', 'update' => array("from" => "-2 months"), 'query' => array("from" => "-1 month","to" => "+1 month", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory future updating from', 'type'=>'subscriber', 'update' => array("from" => "+2 months"), 'query' => array("from" => "+1 month","to" => "+1 year", "sid" => 99887711)),
-		array('valid' => true, 'msg' => 'Only mendatory past updating from', 'type'=>'subscriber', 'update' => array("from" => "-2 years"), 'query' => array("from" => "-1 year","to" => "-1 month", "sid" => 99887711)),
+		array('valid' => true, 'msg' => 'Only mendatory active updating from',  'type'=>'subscriber', 'update' => array("firstname" => "Updated"), 'query' => array("plan" => "PLAN-X3", "address" => "Ohio", "aid" => "109", "firstname" => "Bob","lastname" => "Shlag", "from" => "-1 month","to" => "+1 month", "sid" => "99887712")),
+		array('valid' => true, 'msg' => 'Only mendatory future updating from', 'type'=>'subscriber', 'update' => array("lastname" => "Updated", "firstname" => "Updated"), 'query' => array("plan" => "PLAN-X3", "address" => "Ohio", "aid" => "109", "firstname" => "Bob","lastname" => "Shlag", "from" => "+1 month","to" => "+1 year", "sid" => "99887713")),
+		array('valid' => true, 'msg' => 'Only mendatory past updating from', 'type'=>'subscriber', 'update' => array("lastname" => "Updated", "from" => "-2 years"), 'query' => array("plan" => "PLAN-X3", "address" => "Ohio", "aid" => "109", "firstname" => "Bob","lastname" => "Shlag","from" => "-1 year","to" => "-1 month", "sid" => "99887714")),
 	);
 	
 	function testInit() {
@@ -58,12 +58,12 @@ class Tests_Api_Subscribers extends UnitTestCase {
 	}
 	
 	function testQuery() {
-		$query = new Tests_Api_Subscribers_Query($this->queryTests, $this);
-		$query->run();
+//		$query = new Tests_Api_Subscribers_Query($this->queryTests, $this);
+//		$query->run();
 	}
 	
 	function testUpdate() {
-//		$update = new Tests_Api_Subscribers_Update($this->updateTests, $this);
-//		$update->run();
+		$update = new Tests_Api_Subscribers_Update($this->updateTests, $this);
+		$update->run();
 	}
 }

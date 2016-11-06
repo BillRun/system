@@ -43,6 +43,15 @@ class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 	protected function getDataForDB($case) {
 		$data = $case['query'];
 		
+		foreach ($data as $key => &$value) {
+			if(in_array($key, array('to', 'from'))) {
+				$value = new MongoDate(strtotime($value));
+			}
+		}
+		
+ 		$type = $case['type'];
+		$data['type'] = $type;
+		
 		return $data;
 	}
 
@@ -54,8 +63,8 @@ class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 		$query = $case['query'];
 		
 		// Remove unnecessary fields
-//		unset($query['to']);
-//		unset($query['from']);
+		$query['to'] = new MongoDate(strtotime($query['to']));
+		$query['from'] = new MongoDate(strtotime($query['from']));
 		unset($query['description']);
 		
 		return $query;
@@ -64,7 +73,7 @@ class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 	protected function extractFromResults($results) {
 		$details = parent::extractFromResults($results);
 		foreach ($details as $key => &$value) {
-			foreach ($value as $fieldName => &$fieldValue) {
+			foreach ($value as $fieldName => &$fieldValue) {				
 				if(in_array($fieldName, array('to', 'from'))) {
 					$fieldValue = new MongoDate(strtotime($fieldValue));
 				}
@@ -73,4 +82,32 @@ class Tests_Api_Subscribers_Query extends Tests_Api_Base_Query {
 		return Billrun_Util::getFieldVal($details[0], array());
 	}
 	
+	protected function constructExpectedClause($translatedCases, $expectedField) { 
+		if(!isset($translatedCases['query'])) {
+			return $translatedCases;
+		}
+		
+		$testData = parent::constructExpectedClause($translatedCases, $expectedField);
+		return $this->constructExpectedStep($testData);
+	}
+	
+	protected function constructExpectedStep($caseData) {
+		$type = $caseData['type'];
+		$caseData[self::EXPECTED_IDENTIFIER]['type'] = $type;
+		return $caseData;
+	}
+	
+	protected function getExpected() {
+		$expected = parent::getExpected();
+		$expected['from'] = new MongoDate(strtotime($expected['from']));
+		$expected['to'] = new MongoDate(strtotime($expected['to']));
+		return $expected;
+	}
+	
+	protected function translateSingleCase($key, $value) {
+		if(in_array($key, array("from", "to"))) {
+//			return new MongoDate(strtotime($value));
+		}
+		return $value;
+	}
 }

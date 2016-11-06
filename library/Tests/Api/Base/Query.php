@@ -19,13 +19,17 @@ abstract class Tests_Api_Base_Query extends Tests_Api_Base_Action {
 	
 	const EXPECTED_IDENTIFIER = 'expected';
 
+	protected function getExpected() {
+		return $this->current['expected'];
+	}
+	
 	/**
 	 * Compare the expected value with the queried value
 	 * @param type $result
 	 * @return type
 	 */
 	protected function checkExpected($result) {
-		$expected = $this->current['expected'];
+		$expected = $this->getExpected();
 		$resultData = $this->extractFromResults($result);
 		$message = $this->current['msg'];
 		if(!$this->assertEqual($resultData, $expected, $message . ": Comparing expected and result.")) {
@@ -34,7 +38,7 @@ abstract class Tests_Api_Base_Query extends Tests_Api_Base_Action {
 			return false;
 		}
 		
-		return true;
+		return true; 
 	}
 	
 	protected function handleResult($result) {
