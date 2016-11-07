@@ -34,23 +34,25 @@ class Billrun_ModelValidator_Plans extends Billrun_ModelValidator_Base {
 	 * @return true on succes, error message on failure
 	 */
 	protected function validatePrice($data) {
-		foreach ($data['price'] as $price) {
-			if (!isset($price['price']) || !isset($price['from']) || !isset($price['to'])) {
-				return "Illegal price structure";
-			}
+		if (!empty($data['price']) && is_array($data['price'])) {
+			foreach ($data['price'] as $price) {
+				if (!isset($price['price']) || !isset($price['from']) || !isset($price['to'])) {
+					return "Illegal price structure";
+				}
 
-			$typeFields = array(
-				'price' => 'float',
-				'from' => 'integer',
-				'to' => 'integer',
-			);
-			$validateTypes = $this->validateTypes($price, $typeFields);
-			if ($validateTypes !== true) {
-				return $validateTypes;
+				$typeFields = array(
+					'price' => 'float',
+					'from' => 'integer',
+					'to' => 'integer',
+				);
+				$validateTypes = $this->validateTypes($price, $typeFields);
+				if ($validateTypes !== true) {
+					return $validateTypes;
+				}
 			}
+			return true;
 		}
-
-		return true;
+		return 'No price array supplied';
 	}
 
 	/**

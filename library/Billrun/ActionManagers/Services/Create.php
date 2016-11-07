@@ -88,9 +88,20 @@ class Billrun_ActionManagers_Services_Create extends Billrun_ActionManagers_Serv
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 		
-		return true;
+		return $this->validate();
 	}
 	
+	protected function validate() {
+		$validatorOptions = array(
+			'modelName' => 'services',
+		);
+		$validate = Billrun_ModelValidator_Manager::validate($this->query, 'new', $validatorOptions);
+		if (!$validate['validate']) {
+			throw new Exception($validate['errorMsg']);
+		}
+		return TRUE;
+	}
+
 	/**
 	 * Set all the query fields in the record with values.
 	 * @param array $queryData - Data received.

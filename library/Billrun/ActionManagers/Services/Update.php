@@ -113,8 +113,18 @@ class Billrun_ActionManagers_Services_Update extends Billrun_ActionManagers_Serv
 			return false;
 		}
 		
-
-		return true;
+		return $this->validate();
+	}
+	
+	protected function validate() {
+		$validatorOptions = array(
+			'modelName' => 'services',
+		);
+		$validate = Billrun_ModelValidator_Manager::validate($this->update, 'update', $validatorOptions);
+		if (!$validate['validate']) {
+			throw new Exception($validate['errorMsg']);
+		}
+		return TRUE;
 	}
 
 	/**
