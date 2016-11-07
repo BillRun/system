@@ -234,40 +234,36 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		try {
 			$this->countConcurrentRetries = 0;
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
+			
+			if (!isset($row['usagev']) && !self::isPrepaid($row)) {  // for prepaid, volume calculated by balance left over
+				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+				return false;
+			}
+			
 			$this->setCallOffset(isset($row['call_offset']) ? $row['call_offset'] : 0);
 			$rate = $this->getRowRate($row);
 
 			//TODO  change this to be configurable.
 			$pricingData = array();
-
 			$usage_type = $row['usaget'];
+			$volume = isset($row['usagev']) ? $row['usagev'] : null;
+			$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
+			if (in_array($row['type'], $typesWithoutBalance)) {
+				$charges = Billrun_Rates_Util::getTotalCharge($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
+				$pricingData = array($this->pricingField => $charges['total']);
+			} else if (($pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate)) === FALSE) {
+				return self::isPrepaid($row); // prepaid hack - on prepaid return true and false on post paid
+			}
 
-			if (isset($row['usagev']) || self::isPrepaid($row)) {  // for prepaid, volume is by balance left over
-				$volume = $row['usagev'];
-				$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-				if (in_array($row['type'], $typesWithoutBalance)) {
-					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
-					$pricingData = array($this->pricingField => $charges['total']);
-				} else {
-					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
-					if ($pricingData === FALSE) { // prepaid hack
-						return self::isPrepaid($row) ? TRUE : FALSE;
-					}
+			if ($this->isBillable($rate)) {
+				if (!$pricingData) {
+					return false;
 				}
 
-				if ($this->isBillable($rate)) {
-					if (!$pricingData) {
-						return false;
-					}
-
-					// billrun cannot override on api calls
-					if (!self::isPrepaid($row) && (!isset($row['billrun']) || $row['source'] != 'api')) {
-						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
-					}
+				// billrun cannot override on api calls
+				if (!self::isPrepaid($row) && (!isset($row['billrun']) || $row['source'] != 'api')) {
+					$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 				}
-			} else {
-				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
-				return false;
 			}
 
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
