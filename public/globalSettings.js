@@ -16,6 +16,7 @@ var globalSetting = {
   },
   statusMessageDisplayTimeout: 5000,
   planCycleUnlimitedValue: 999999999,
+  serviceCycleUnlimitedValue: 999999999,
   productUnlimitedValue: 999999999,
   keyUppercaseRegex: /^[A-Z0-9_]*$/,
 };
