@@ -60,9 +60,10 @@ class CronController extends Yaf_Controller_Abstract {
 		$filter_field = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.field');
 		$types = Billrun_Factory::config()->getConfigValue('cron.log.' . $process . '.types', array());
 		foreach ($types as $type => $timediff) {
-			$hosts = array_keys(Billrun_Factory::config()->getConfigValue($type . '.ftp', array()));
+			$ftp_settings = array_keys(Billrun_Factory::config()->getConfigValue($type . '.ftp', array()));
+			$hosts = in_array("host", $ftp_settings) ? array("_HOST_") : $ftp_settings;
 			foreach ($hosts as $server) {
-				if (count($hosts) < 2){// if the file type is being processed from one server
+				if (in_array("_HOST_", $hosts)){ 
 					$server = $type;
 					$query = array(
 						'source' => $type,
