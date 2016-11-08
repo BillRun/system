@@ -48,15 +48,14 @@ class InternalPaypageController extends ExternalPaypageController {
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
-			"t" => time()
+            "name" => $request['payment_gateway'],
 		);
-		$hashResult = hash_hmac("sha512", json_encode($data), $secret);
+        $signed = Billrun_Utils_Security::addSignature($data, $secret);
 		$sendData = array(
-			"data" => $data,
-			"signature" => $hashResult
+			"data" => $signed,
 		);
 
-		header("Location: /creditguard/creditguard?signature=".$hashResult."&data=".json_encode($data));
+		header("Location: /paymentgateways/getRequest?data=".json_encode($signed));
 		return false;
 	}
 	
