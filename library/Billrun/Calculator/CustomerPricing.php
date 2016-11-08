@@ -40,20 +40,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	static protected $precision = 0.000001;
 
 	/**
-	 * the field name of chargable interconnect
-	 * @var type string
-	 * @todo move to separated class
-	 */
-//	public $interconnectChargableFlagField = 'interconnect_chargable';
-
-	/**
-	 * the field name of interconnect price
-	 * @var type string
-	 * @todo move to separated class
-	 */
-//	public $interconnectChargeField = 'interconnect_aprice';
-
-	/**
 	 *
 	 * @var boolean is customer price vatable by default
 	 */
@@ -101,21 +87,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @var string
 	 */
 	protected $next_active_billrun;
-
-	/**
-	 * inspect loops in updateSubscriberBalance
-	 * @see mongodb update where value equale old value
-	 * 
-	 * @var int
-	 */
-	protected $countConcurrentRetries;
-
-	/**
-	 * max retries on concurrent balance updates loops
-	 * 
-	 * @var int
-	 */
-	protected $concurrentMaxRetries;
 
 	/**
 	 * Array of subscriber ids queued for rebalance in rebalance_queue collection
@@ -191,8 +162,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 
-		// max recursive retrues for value=oldValue tactic
-		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
 	}
 
@@ -245,58 +214,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($this->sidsQueuedForRebalance[$row['sid']])) {
 			return false;
 		}
+
 		try {
-			$this->countConcurrentRetries = 0;
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$this->setCallOffset(isset($row['call_offset']) ? $row['call_offset'] : 0);
-			$rate = $this->getRowRate($row);
-
-			//TODO  change this to be configurable.
-			$pricingData = array();
-
-			$usage_type = $row['usaget'];
-
-			if (isset($row['usagev']) || self::isPrepaid($row)) {  // for prepaid, volume is by balance left over
-				$volume = $row['usagev'];
-				$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-				if (in_array($row['type'], $typesWithoutBalance)) {
-					$charges = self::getPriceByRate($rate, $usage_type, $volume, $row['plan'], $this->getCallOffset());
-					$pricingData = array($this->pricingField => $charges['total']/* , $this->interconnectChargeField => $charges['interconnect'] */);
-				} else {
-					$pricingData = $this->updateSubscriberBalance($row, $usage_type, $rate);
-					if ($pricingData === FALSE) { // prepaid hack
-						return self::isPrepaid($row) ? TRUE : FALSE;
-					}
-				}
-
-				if ($this->isBillable($rate)) {
-					if (!$pricingData) {
-						return false;
-					}
-
-					// billrun cannot override on api calls
-					if (!self::isPrepaid($row) && (!isset($row['billrun']) || $row['source'] != 'api')) {
-						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
-					}
-				}
-			} else {
-				Billrun_Factory::log("Line with stamp " . $row['stamp'] . " is missing volume information", Zend_Log::ALERT);
-				return false;
-			}
-
-//			$interconnect_arate_key = self::getInterconnect($rate, $row['usaget'], $row['plan']);
-//			if (!empty($interconnect_arate_key)) {
-//				$row['interconnect_arate_key'] = $interconnect_arate_key;
-//			}
-//
-//			if (isset($rate['params']['interconnect']) && $rate['params']['interconnect']) {
-//				$row['interconnect_arate_key'] = $rate['key'];
-//			}
-
+			$updateRow = Billrun_Calculator_Updaterow::getInstance('Customerpricing', $row, $this);
+			$pricingData = $updateRow->update();
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
-
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
-			return $row;
 		} catch (Exception $e) {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
@@ -339,37 +263,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	/**
-	 * get subscriber plan object
-	 * identification using the balance collection
-	 * 
-	 * @param array $sub_balance the subscriber balance
-	 * @return type
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function getPlan($sub_balance) {
-		$subscriber_current_plan = $this->getBalancePlan($sub_balance);
-		return Billrun_Factory::plan(array('data' => $subscriber_current_plan));
-	}
-
-	/**
-	 * method to get free row pricing data
-	 * 
-	 * @return array
-	 */
-	protected function getFreeRowPricingData() {
-		return array(
-			'in_plan' => 0,
-			'over_plan' => 0,
-			'out_plan' => 0,
-			'in_group' => 0,
-			'over_group' => 0,
-			$this->pricingField => 0,
-//			$this->interconnectChargeField => 0,
-		);
-	}
-
-	/**
 	 * Determines if a rate should not produce billable lines, but only counts the usage
 	 * @param Mongodloid_Entity|array $rate the input rate
 	 * @return boolean
@@ -402,337 +295,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array($this->pricingField, /* $this->interconnectChargeField, */ 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate');
-	}
-
-	/**
-	 * Calculates the charges for the given volume
-	 * 
-	 * @param array $rate the rate entry
-	 * @param string $usageType the usage type
-	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes of data)
-	 * @param object $plan The plan the line is associate to
-	 * @param int $offset call start offset in seconds
-	 * @param int $time start of the call (unix timestamp)
-	 * @todo : changed mms behavior as soon as we will add mms to rates
-	 * 
-	 * @return array the calculated charges
-	 * @todo move to rate class or rates util
-	 */
-	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-//		if (!empty($interconnect = self::getInterConnect($rate, $usageType, $plan))) {
-//			$query = array_merge(
-//				array(
-//				'key' => $interconnect,
-//				'params.interconnect' => TRUE,
-//				), Billrun_Utils_Mongo::getDateBoundQuery($time)
-//			);
-//			$interconnectRate = Billrun_Factory::db()->ratesCollection()->query($query)->cursor()->limit(1)->current();
-//			$interconnectCharge = static::getTotalChargeByRate($interconnectRate, $usageType, $volume, $plan, $offset, $time);
-//		} else {
-//			$interconnectCharge = 0;
-//		}
-
-		$tariff = static::getTariff($rate, $usageType, $plan);
-		if ($offset) {
-			$chargeWoIC = static::getChargeByVolume($tariff, $offset + $volume) - static::getChargeByVolume($tariff, $offset);
-		} else {
-			$chargeWoIC = static::getChargeByVolume($tariff, $volume);
-		}
-//		if ($interconnectCharge && $interconnectRate && (!isset($interconnectRate['params']['chargable']) || $interconnectRate['params']['chargable'])) {
-//			$ret = array(
-//				'interconnect' => $interconnectCharge,
-//				'total' => $interconnectCharge + $chargeWoIC,
-//			);
-//		} else if (isset($rate['params']['interconnect'], $rate['params']['chargable']) && $rate['params']['interconnect'] && $rate['params']['chargable']) { // the rate charge is interconnect charge
-//			$total = $chargeWoIC + $interconnectCharge;
-//			$ret = array(
-//				'interconnect' => $total,
-//				'total' => $total,
-//			);
-//		} else {
-//			$ret = array(
-//				'interconnect' => $interconnectCharge,
-//				'total' => $chargeWoIC,
-//			);
-//		}
-		return array(
-			'total' => $chargeWoIC,
-		);
-	}
-
-	/**
-	 * 
-	 * @param type $rate
-	 * @param type $usageType
-	 * @param type $volume
-	 * @param type $plan
-	 * @param type $offset
-	 * @param type $time
-	 * @return type
-	 * 
-	 * @todo move to rate class or rates util
-	 */
-	public static function getTotalChargeByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		return static::getChargesByRate($rate, $usageType, $volume, $plan, $offset, $time)['total'];
-	}
-
-	public static function getIntervalCeiling($tariff, $volume) {
-		$ret = 0;
-		foreach ($tariff['rate'] as $currRate) {
-			if (!isset($currRate['from'])) {
-				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
-			}
-			if (isset($currRate['rate'])) {
-				$currRate = $currRate['rate'];
-			}
-			if (0 == $volume) { // volume could be negative if it's a refund amount
-				break;
-			}//break if no volume left to price.
-			$maxVolumeInRate = $currRate['to'] - $currRate['from'];
-			$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
-			$volume -= $volumeToPriceCurrentRating;
-			$ret += (ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['interval']);
-			$lastRate = $currRate;
-		}
-
-		return $ret;
-	}
-
-	public static function getChargeByVolume($tariff, $volume) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$accessPrice = self::getAccessPrice($tariff);
-		if ($volume < 0) {
-			$volume *= (-1);
-			$isNegative = true;
-		} else {
-			$isNegative = false;
-		}
-		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume);
-		$ret = $accessPrice + $price;
-		return ($isNegative ? $ret * (-1) : $ret);
-	}
-
-	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$charge = 0;
-		foreach ($tariffs as $currRate) {
-			if (!isset($currRate['from'])) {
-				$currRate['from'] = isset($lastRate['to']) ? $lastRate['to'] : 0;
-			}
-			if (isset($currRate['rate'])) {
-				$currRate = $currRate['rate'];
-			}
-			if (0 == $volume) { // volume could be negative if it's a refund amount
-				break;
-			}//break if no volume left to price.
-			$maxVolumeInRate = $currRate['to'] - $currRate['from'];
-			$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate; // get the volume that needed to be priced for the current rating
-			if (isset($currRate['ceil'])) {
-				$ceil = $currRate['ceil'];
-			} else {
-				$ceil = true;
-			}
-			if ($ceil) {
-				$charge += floatval(ceil($volumeToPriceCurrentRating / $currRate['interval']) * $currRate['price']); // actually price the usage volume by the current 	
-			} else {
-				$charge += floatval($volumeToPriceCurrentRating / $currRate['interval'] * $currRate['price']); // actually price the usage volume by the current 
-			}
-			$volume = $volume - $volumeToPriceCurrentRating; //decrease the volume that was priced
-			$lastRate = $currRate;
-		}
-		return $charge;
-	}
-
-	/**
-	 * Calculates the volume for the given price
-	 * 
-	 * @param array $rate the rate entry
-	 * @param string $usage_type the usage type
-	 * @param int $price The price
-	 * @param object $plan The plan the line is associate to
-	 * @param int $offset call start offset in seconds
-	 * 
-	 * @return int the calculated volume
-	 * 
-	 * @todo move to rate class or rates util
-	 */
-	protected function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0) {
-		// Check if the price is enough for default usagev
-		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 0, 'float'); // float avoid set type to int
-		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset);
-		if ($price >= $defaultUsagePrice) {
-			return $defaultUsage;
-		}
-
-		$this->initMinBalanceValues($rate, $usage_type, $plan);
-
-		// Check if the price is enough for minimum cost
-		if ($price < $this->min_balance_cost) {
-			return 0;
-		}
-
-		// we removed this in case we have rate tiers
-//		if ($price == $this->min_balance_cost) {
-//			return $this->min_balance_volume;
-//		}
-		// Let's find the best volume by lion in the desert algorithm
-		$previousUsage = $defaultUsage;
-		$currentUsage = $defaultUsage - (abs($defaultUsage - $this->min_balance_volume) / 2);
-		$epsilon = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.epsilon', 0.5);
-		$limitLoop = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.getVolumeByRate.limitLoop', 40);
-		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
-			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset);
-			$diff = abs($currentUsage - $previousUsage) / 2;
-			if ($price < $currentPrice) {
-				$previousUsage = $currentUsage;
-				$currentUsage -= $diff;
-			} else {
-				$previousUsage = $currentUsage;
-				$currentUsage += $diff;
-			}
-		}
-
-		// Check if the price is enough for minimum cost
-		if ($currentPrice >= $this->min_balance_cost) {
-			return floor($currentUsage);
-		}
-		return 0;
-	}
-
-	public static function getTariff($rate, $usage_type, $planName = null) {
-		if (!is_null($planName) && isset($rate['rates'][$usage_type][$planName])) {
-			return $rate['rates'][$usage_type][$planName];
-		}
-		if (isset($rate['rates'][$usage_type]['BASE'])) {
-			return $rate['rates'][$usage_type]['BASE'];
-		}
-		return $rate['rates'][$usage_type];
-	}
-
-	/**
-	 * Gets correct access price from tariff
-	 * @param array $tariff the tariff structure
-	 * @return float Access price
-	 * @deprecated since version 5.2
-	 */
-	static protected function getAccessPrice($tariff) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		if (isset($tariff['access'])) {
-			return $tariff['access'];
-		}
-		return 0;
-	}
-
-	/**
-	 * plugin-able check if line is free
-	 * 
-	 * @param array $row row to check
-	 * 
-	 * @return true if it's free row else false
-	 */
-	public static function isFreeLine(&$row) {
-		if (self::isPrepaid($row)) {
-			$isFreeLine = false;
-			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row, &$isFreeLine));
-			if ($isFreeLine) {
-				$row['free_line'] = true;
-			}
-			return $isFreeLine;
-		}
-		return false;
-	}
-
-	/**
-	 * Update the subscriber balance for a given usage
-	 * Method is recursive - it tries to update subscriber balances with value=oldValue tactic
-	 * There is max retries for the recursive to run and the value is configured
-	 * 
-	 * @param Mongodloid_Entity $row the input line
-	 * @param string $usage_type The type  of the usage (call/sms/data)
-	 * @param mixed $rate The rate of associated with the usage.
-	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
-	 * 
-	 * @return mixed array with the pricing data on success, false otherwise
-	 * @todo refactoring and make it more abstract
-	 * @todo create unit test for this method because it's critical method
-	 * @todo add compatibility to prepaid
-	 * 
-	 */
-	public function updateSubscriberBalance($row, $usage_type, $rate) {
-		if (self::isPrepaid($row)) {
-			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
-		}
-		$planSettings = array(
-			'name' => $row['plan'],
-			'time' => $row['urt']->sec,
-		);
-		$plan = Billrun_Factory::plan($planSettings);
-		if (self::isPrepaid($row)) {
-			$this->initMinBalanceValues($rate, $row['usaget'], $plan);
-		} else {
-			$this->min_balance_volume = null;
-			$this->min_balance_cost = null;
-		}
-		if (!$this->loadSubscriberBalance($row, $this->min_balance_volume, $this->min_balance_cost)) { // will load $this->balance
-			if (self::isPrepaid($row)) {
-				// check first if this free call and allow it if so
-				if ($this->min_balance_cost == '0') {
-					if (isset($row['api_name']) && in_array($row['api_name'], array('start_call', 'release_call'))) {
-						$granted_volume = 0;
-					} else {
-						$granted_volume = $this->getPrepaidGrantedVolumeByRate($rate, $row['usaget'], $plan->getName());
-					}
-					$charges = $this->getChargesByRate($rate, $row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
-					$granted_cost = $charges['total'];
-					return array(
-						$this->pricingField => $granted_cost,
-//						$this->interconnectChargeField => $charges['interconnect'],
-						'usagev' => $granted_volume,
-					);
-				}
-				$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
-			}
-			Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$row));
-			if ($row['usagev'] === 0) {
-				return false;
-			}
-		}
-
-		if (self::isPrepaid($row) && !(isset($row['prepaid_rebalance']) && $row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$row['apr'] = self::getTotalChargeByRate($rate, $row['usaget'], $row['usagev'], $row['plan'], $this->getCallOffset());
-			if (!$this->balance && self::isFreeLine($row)) {
-				return $this->getFreeRowPricingData();
-			}
-			$row['balance_ref'] = $this->balance->createRef();
-			$row['usagev'] = $volume = $this->getPrepaidGrantedVolume($row, $rate, $this->balance, $usage_type, $this->balance->getBalanceChargingTotalsKey($usage_type));
-		} else {
-			$volume = $row['usagev'];
-		}
-
-		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$row, $rate, $this));
-		$pricingData = $this->balance->updateBalanceByRow($row, $rate, $plan, $usage_type, $volume);
-		if ($pricingData === false) {
-			// failed because of different totals (could be that another server with another line raised the totals). 
-			// Need to calculate pricingData from the beginning
-			if (++$this->countConcurrentRetries >= $this->concurrentMaxRetries) {
-				Billrun_Factory::log()->log('Too many pricing retries for line ' . $row['stamp'] . '. Update status: ' . print_r($ret, true), Zend_Log::ALERT);
-				return false;
-			}
-			usleep($this->countConcurrentRetries);
-			return $this->updateSubscriberBalance($row, $usage_type, $rate);
-		}
-		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
-		return $pricingData;
-	}
-
-	protected function initMinBalanceValues($rate, $usaget, $plan) {
-		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
-			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
-			$this->min_balance_cost = $this->getTotalChargeByRate($rate, $usaget, $this->min_balance_volume, $plan->getName(), $this->getCallOffset());
-		}
+		return array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate');
 	}
 
 	public function getPricingField() {
@@ -763,6 +326,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	/**
 	 * @see Billrun_Calculator::getCalculatorQueueType
+	 * 
+	 * @todo Move to trait because it also use by processor
 	 */
 	public function getCalculatorQueueType() {
 		return self::$type;
@@ -772,14 +337,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = $this->getRateByRef($line->get('arate', TRUE));
+		$arate = Billrun_Rates_Util::getRateByRef($line->get('arate', TRUE));
 		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
 			isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
 	/**
+	 * set queue calculator tag
 	 * 
+	 * @todo Move to trait because it also use by processor
 	 */
 	protected function setCalculatorTag($query = array(), $update = array()) {
 		parent::setCalculatorTag($query, $update);
@@ -789,149 +356,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 		}
 	}
-
-	/**
-	 * method to load rates to memory
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function loadRates() {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query()->cursor();
-		foreach ($rates as $rate) {
-			$rate->collection($rates_coll);
-			$this->rates[strval($rate->getId())] = $rate;
-		}
-	}
-
-	/**
-	 * method to load rates to memory
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function loadPlans() {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		$plans_coll = Billrun_Factory::db()->plansCollection();
-		$plans = $plans_coll->query()->cursor();
-		foreach ($plans as $plan) {
-			$plan->collection($plans_coll);
-			$this->plans[strval($plan->getId())] = $plan;
-		}
-	}
-
-	/**
-	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
-	 * @param type $db_ref
-	 */
-	public function getRowRate($row) {
-		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
-	}
-
-	/**
-	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
-	 * @param type $db_ref
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function getBalancePlan($sub_balance) {
-		Billrun_Factory::log("Use deprecated method: " . __FUNCTION__, Zend_Log::DEBUG);
-		return $this->getPlanByRef($sub_balance->get('current_plan', true));
-	}
-
-	/**
-	 * method to get plan details
-	 * 
-	 * @param type $plan_ref
-	 * @return type
-	 * 
-	 * @deprecated since version 4.0
-	 */
-	protected function getPlanByRef($plan_ref) {
-		Billrun_Factory::log("Use of deprecated method", Zend_Log::NOTICE);
-		if (isset($plan_ref['$id'])) {
-			$id_str = strval($plan_ref['$id']);
-			if (isset($this->plans[$id_str])) {
-				return $this->plans[$id_str];
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Calculates the volume granted for subscriber by rate and balance
-	 * @param type $row
-	 * @param type $rate
-	 * @param type $balance
-	 * @param type $usageType
-	 */
-	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType, $balanceTotalKeys = null) {
-		if (empty($balanceTotalKeys)) {
-			$balanceTotalKeys = $usageType;
-		}
-		if (isset($row['api_name']) && $row['api_name'] == 'release_call') {
-			return 0;
-		}
-		$requestedVolume = PHP_INT_MAX;
-		if (isset($row['usagev'])) {
-			$requestedVolume = $row['usagev'];
-		}
-		if ((isset($row['billrun_pretend']) && $row['billrun_pretend']) ||
-			(isset($row['free_call']) && $row['free_call'])) {
-			return 0;
-		}
-		$maximumGrantedVolume = $this->getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan']);
-		$rowInOrOutOfBalanceKey = 'in';
-		if (isset($balance->get("balance")["totals"][$balanceTotalKeys]["usagev"])) {
-			$currentBalanceVolume = $balance->get("balance")["totals"][$balanceTotalKeys]["usagev"];
-		} else {
-			if (isset($balance->get("balance")["totals"][$balanceTotalKeys]["cost"])) {
-				$price = $balance->get("balance")["totals"][$balanceTotalKeys]["cost"];
-			} else {
-				$price = $balance->get("balance")["cost"];
-				$rowInOrOutOfBalanceKey = 'out';
-			}
-			$currentBalanceVolume = $this->getVolumeByRate($rate, $usageType, abs($price), $row['plan'], $this->getCallOffset());
-		}
-		$currentBalanceVolume = abs($currentBalanceVolume);
-		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
-		$row[$rowInOrOutOfBalanceKey . '_balance_usage'] = $usagev;
-		return $usagev;
-	}
-
-	/**
-	 * Gets the maximum allowed granted volume for rate
-	 * @param type $rate
-	 * @param type $usageType
-	 */
-	protected function getPrepaidGrantedVolumeByRate($rate, $usageType, $planName) {
-		if (isset($rate["rates"][$usageType]["prepaid_granted_usagev"])) {
-			return $rate["rates"][$usageType]["prepaid_granted_usagev"];
-		}
-		if (isset($rate["rates"][$usageType]["prepaid_granted_cost"])) {
-			return $this->getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, $this->getCallOffset());
-		}
-
-		$usagevDefault = Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.usagev", 0);
-		if ($usagevDefault) {
-			return $usagevDefault;
-		}
-
-		return $this->getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $this->getCallOffset());
-	}
-
-//	protected static function getInterconnect($rate, $usage_type, $plan) {
-//		if (isset($rate['rates'][$usage_type][$plan]['interconnect'])) {
-//			return $rate['rates'][$usage_type][$plan]['interconnect'];
-//		}
-//		if (isset($rate['rates'][$usage_type]['BASE']['interconnect'])) {
-//			return $rate['rates'][$usage_type]['BASE']['interconnect'];
-//		}
-//
-//		if (isset($rate['rates'][$usage_type]['interconnect'])) {
-//			return $rate['rates'][$usage_type]['interconnect'];
-//		}
-//	}
 
 	public static function getPrecision() {
 		return static::$precision;
