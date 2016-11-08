@@ -150,21 +150,28 @@ class CronController extends Yaf_Controller_Abstract {
 				'charging_by_usaget' => 'data',
 				'to' => array(
 					'$gt' => new MongoDate(strtotime("yesterday midnight")),
-					'$lte' => new MongoDate(strtotime("midnight")),
 				),
 			),
 		);
 		$group = array(
 			'$group' => array(
 				'_id' => '$sid',
+				'to' => array('$max' => '$to'),
 			),
+		);
+		$match2 = array(
+			'$match' => array(
+				'to' => array(
+					'$lte' => new MongoDate(strtotime("midnight")),
+				),
+			)
 		);
 		$project = array(
 			'$project' => array(
 				'sid' => '$_id',
 			),
 		);
-		$balances = $balancesCollection->aggregate($match, $group, $project);
+		$balances = $balancesCollection->aggregate($match, $group, $match2, $project);
 		$sids = array_map(function($doc) {
 			return $doc['sid'];
 		}, iterator_to_array($balances));
@@ -211,12 +218,31 @@ class CronController extends Yaf_Controller_Abstract {
 	 */
 	protected function notifyForBalances($subscriber, $balances) {
 		foreach ($balances as $balance) {
-			// Do not notify on an empty balance
-			if(Billrun_Balances_Util::getBalanceValue($balance) == 0) {
+			// Do not notify on an empty balance or balance that has another non-expired balance with same price
+			if(Billrun_Balances_Util::getBalanceValue($balance) == 0 || $this->hasAnotherNotExpiredBalance($balance)) {
 				continue;
 			}
 			Billrun_Factory::dispatcher()->trigger('balanceExpirationDate', array($balance, $subscriber->getRawData()));
 		}
+	}
+	
+	/**
+	 * Checks if the notification has another balance that handles same usage type.
+	 * added to support multi-balances
+	 * 
+	 * @param type $balance
+	 * @return boolean
+	 */
+	protected function hasAnotherNotExpiredBalance($balance) {
+		$balancesCollection = Billrun_Factory::db()->balancesCollection();
+		$query = array(
+			'sid' => $balance->get('sid'),
+			'to' => array(
+				'$gt' => $balance->get('to'),
+			),
+			'pp_includes_external_id' => $balance->get('pp_includes_external_id')
+		);
+		return ($balancesCollection->query($query)->cursor()->count() > 0);
 	}
 	
 	protected function getBalancesToNotify($subscriberId, $notification) {
