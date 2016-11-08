@@ -42,7 +42,15 @@ class Billrun_Db extends Mongodloid_Db {
 			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
 		}
 	}
-
+	
+	/**
+	 * Get the current MongoDB
+	 * @return MongoDB
+	 */
+	public function getDb() {
+		return $this->_db;
+	}
+	
 	/**
 	 * Method to override the base getInstance
 	 * 
