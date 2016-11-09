@@ -206,7 +206,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		if (!isset($row['usaget'])) {
 			$row['usaget'] = 'call';
 		}
-
 		$rate = $this->ratesCol->query(array('key' => $row['arate_key']))->cursor()->current();
 		$row['arate'] = MongoDBRef::create('rates', (new MongoId((string) $rate['_id'])));
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
