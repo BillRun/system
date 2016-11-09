@@ -207,7 +207,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @todo move to balance object
 	 */
-	protected function BuildBalanceUpdateQuery($pricingData, $row, $volume) {
+	protected function BuildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		$update = array();
 		$update['$set']['tx.' . $row['stamp']] = $pricingData;
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
