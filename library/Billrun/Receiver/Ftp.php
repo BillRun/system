@@ -117,9 +117,12 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 
 			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields) ) {
-				continue;
+				if ($this->isLongTimeSinceReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
+					$file->delete();//delete file
+				}		
+				continue;	
 			}
-
+			
 			$fileData = $this->getFileLogData($file->name, static::$type, $isFileReceivedMoreFields);
 
 			Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
@@ -233,5 +236,22 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
+	
+	protected function isLongTimeSinceReceive($filename, $type, $more_fields = array()){
+		$log = Billrun_Factory::db()->logCollection();
+		$orphan_window = $this->file_delete_orphan_time;
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		$query = array(
+			'stamp' => $logData['stamp'],
+			'file_name' => $filename,
+			'received_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
+		);
 
+		$result = $log->query($query)->cursor()->current();	
+		if (empty($result)){
+			return FALSE;
+		}
+		
+		return TRUE;
+	}
 }

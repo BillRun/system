@@ -43,6 +43,9 @@ trait Billrun_Traits_FileActions {
 	 * @var boolean whether to preserve the modification timestamps of the received files
 	 */
 	protected $file_fetch_orphan_time = 3600;
+	
+
+	protected $file_delete_orphan_time = 3600;
 
 	/**
 	 * Get the data the is stored in the file name.
