@@ -244,6 +244,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		$query = array(
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
+			'source' => 'nsn',
 			'received_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
 		);
 
