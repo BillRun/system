@@ -82,8 +82,8 @@ abstract class Billrun_PaymentGateway {
 	 * @param Int $timestamp - Unix timestamp
 	 * @return Int - Account id
 	 */
-	public function redirectForToken($aid, $returnUrl, $timestamp) {
-		$this->getToken($aid, $returnUrl);
+	public function redirectForToken($aid, $returnUrl, $timestamp, $request) {
+		$this->getToken($aid, $returnUrl, $request);
 		$this->updateSessionTransactionId();
 
 		// Signal starting process.
@@ -223,15 +223,17 @@ abstract class Billrun_PaymentGateway {
 	 * @param $aid - Account id of the client.
 	 * @param $returnUrl - The page to redirect the client after success of the whole process.
 	 */
-	protected function getToken($aid, $returnUrl) {
+	protected function getToken($aid, $returnUrl, $request) {
 		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
-		$okPage = sprintf($okTemplate, $this->billrunName);
+		$pageRoot = $request->getServer()['HTTP_HOST'];
+		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
+		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		$postString = http_build_query($postArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
-		$this->updateRedirectUrl($result);
+		$this->updateRedirectUrl($result);	
 	}
 
 	/**

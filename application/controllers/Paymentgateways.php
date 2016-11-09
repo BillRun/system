@@ -93,7 +93,7 @@ class PaymentGatewaysController extends ApiController {
 		);
 		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp);
+		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
 	}
 
 	/**
