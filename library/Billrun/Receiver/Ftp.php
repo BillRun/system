@@ -35,6 +35,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 	protected $ftpConfig = false;
+	
+	protected $file_delete_orphan_time;
 
 	protected $checkReceivedSize = true;
 	public function __construct($options) {
@@ -52,7 +54,8 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (isset($options['received']['check_received_size'])) {
 			$this->checkReceivedSize = $options['received']['check_received_size'];
 		}
-
+		
+		$this->file_delete_orphan_time = Billrun_Factory::config()->getConfigValue('nsn.orphan_delete_time');
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
 		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');

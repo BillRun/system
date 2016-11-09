@@ -45,8 +45,6 @@ trait Billrun_Traits_FileActions {
 	protected $file_fetch_orphan_time = 3600;
 	
 
-	protected $file_delete_orphan_time = 3600;
-
 	/**
 	 * Get the data the is stored in the file name.
 	 * @return an array containing the sequence data. ie:
