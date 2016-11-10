@@ -368,7 +368,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function isCancellation() {
 		return isset($this->data['cancel']);
 	}
-		/**
+
+	/**
 	 * Update payment status
 	 * @since 5.0
 	 */
@@ -377,13 +378,55 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		$this->data['confirmation_time'] = new MongoDate();
 		$this->save();
 	}
-	
-	public function isWaiting(){
+
+	/**
+	 * Checks the status of the payment.
+	 * 
+	 * @return boolean - true if the payment is still not got through.
+	 */
+	public function isWaiting() {
 		$status = $this->data['waiting_for_confirmation'];
-		return is_null($status)?false:$status;
+		return is_null($status) ? false : $status;
 	}
-	
-	public function setConfirmationStatus($status){
+
+	/**
+	 * Sets to true if the payment not yet approved.
+	 * 
+	 */
+	public function setConfirmationStatus($status) {
 		$this->data['waiting_for_confirmation'] = $status;
 	}
+
+	/**
+	 * Saves the response from the gateway about the status of the payment.
+	 * 
+	 */
+	public function setPaymentStatus($status, $gatewayName) {
+		$this->data['vendor_response'] = array('name' => $gatewayName, 'status' => $status);
+		$this->data['last_checked_pending'] = new MongoDate();
+		$this->save();
+	}
+
+	/**
+	 * Saves the chosen payment gateway for paying and the transactionId if exists.
+	 * 
+	 */
+	public function setPaymentGateway($gatewayName, $txId) {
+		if (is_null($txId)) {
+			$this->data['payment_gateway'] = array('name' => $gatewayName);
+		} else {
+			$this->data['payment_gateway'] = array('name' => $gatewayName, 'transactionId' => $txId);
+		}
+		$this->save();
+	}
+
+	/**
+	 * Saves the current time that represents the check to see if the a payment is pending.
+	 * 
+	 */
+	public function updateLastPendingCheck() {
+		$this->data['last_checked_pending'] = new MongoDate();
+		$this->save();
+	}
+
 }

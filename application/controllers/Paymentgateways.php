@@ -1,55 +1,208 @@
- <?php
- 
- /**
-  * @package         Billing
-  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
-  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
-  */
- require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
- require_once APPLICATION_PATH . '/library/vendor/autoload.php';
- 
- /**
-  * This class returns the available payment gateways in Billrun.
-  *
-  * @package     Controllers
-  * @subpackage  Action
-  * @since       5.2
-  */
- class PaymentGatewaysController extends ApiController {
- 
-	 
- 	public function init() {
+<?php
+
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
+require_once APPLICATION_PATH . '/library/vendor/autoload.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
+require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
+
+/**
+ * This class returns the available payment gateways in Billrun.
+ *
+ * @package     Controllers
+ * @subpackage  Action
+ * @since       5.2
+ */
+class PaymentGatewaysController extends ApiController {
+
+	public function init() {
 		parent::init();
- 		
- 	}
-	
-	public function listAction(){
-	 $gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways');
- 		$settings = array();
- 		foreach ($gateways as $name => $properties) {
-			$setting['name'] = $name;
- 			foreach($properties as $property => $value){
- 				$setting[$property] = $value;
-				if ($property == 'omnipay_supported' && $value == true){
-					$gateway = Omnipay\Omnipay::create($name);	 
-					$fields = $gateway->getParameters();
-					$setting['params'] = $fields;
-				}
-				else if ($name == 'CreditGuard'){  // TODO: make more generic when there's generic payment gateways class.
-					$setting['params'] = array("user" => "", "password" => "", 'terminal_id' => "");
-				}
- 			}
- 			$settings[] = $setting;
- 		}
- 		$this->setOutput(array(
- 					'status' => !empty($settings) ? 1 : 0,
- 					'desc' => !empty($settings) ? 'success' : 'error',
- 					'details' => empty($settings) ? array() : $settings,
- 			));
 	}
-	
+
+	public function listAction() {
+		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
+		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
+		$settings = array();
+		foreach ($gateways as $name) {
+			$setting = array();
+			$setting['name'] = $name;
+			$setting['supported'] = true;
+			$setting['image_url'] = $imagesUrl[$name];
+			$paymentGateway = Billrun_Factory::paymentGateway($name);
+			if (is_null($paymentGateway)) {
+				$setting['supported'] = false;
+				$settings[] = $setting;
+				break;
+			}
+			$fields = $paymentGateway->getDefaultParameters();
+			$setting['params'] = $fields;
+			$settings[] = $setting;
+		}
+		$this->setOutput(array(
+			'status' => !empty($settings) ? 1 : 0,
+			'desc' => !empty($settings) ? 'success' : 'error',
+			'details' => empty($settings) ? array() : $settings,
+		));
+	}
+
 	protected function render($tpl, array $parameters = array()) {
 		return parent::render('index', $parameters);
 	}
- 
- }
+
+	/**
+	 * Request for transaction with the chosen payment gateway for getting billing agreement id.
+	 * 
+	 */
+	public function getRequestAction() {
+		$request = $this->getRequest();
+		// Validate the data.
+		$data = $this->validateData($request);
+		if ($data === null) {
+			return $this->setError("Failed to authenticate", $request);
+		}
+		$jsonData = json_decode($data, true);
+		if (!isset($jsonData['aid']) || is_null(($aid = $jsonData['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
+			return $this->setError("need to pass numeric aid", $request);
+		}
+
+		if (!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
+			return $this->setError("Invalid arguments", $request);
+		}
+
+		if (!isset($jsonData['name'])) {
+			return $this->$setError("need to pass payment gateway name", $request);
+		}
+		$name = $jsonData['name'];
+		$aid = $jsonData['aid'];
+		if (isset($jsonData['return_url'])) {
+			$returnUrl = $jsonData['return_url'];
+		} else {
+			$returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
+		}
+		if (empty($returnUrl)) {
+			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
+		}
+		$today = new MongoDate();
+		$subscribers = Billrun_Factory::db()->subscribersCollection();
+		$query = array(
+			'tennant_return_url' => $returnUrl
+		);
+		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
+		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
+	}
+
+	/**
+	 * handling the response from the payment gateway and saving the details to db.
+	 * 
+	 */
+	public function OkPageAction() {
+		$request = $this->getRequest();
+		$name = $request->get("name");
+		if (is_null($name)) {
+			return $this->setError("Missing payment gateway name", $request);
+		}
+		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
+		$transactionName = $paymentGateway->getTransactionIdName();
+		$transactionId = $request->get($transactionName);
+		if (is_null($transactionId)) {
+			return $this->setError("Operation Failed. Try Again...", $request);
+		}
+
+		$paymentGateway->saveTransactionDetails($transactionId);
+	}
+
+	/**
+	 * handling making the payments against the payment gateways and checking status of pending payments.
+	 * 
+	 */
+	public function payAction() {
+		$request = $this->getRequest();
+		$stamp = $request->get('stamp');
+		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)) {
+			return $this->setError("Illegal stamp", $request);
+		}
+		$pendingPayments = $this->loadPending();
+		foreach ($pendingPayments as $payment) {
+			$gatewayName = $payment['payment_gateway']['name'];
+			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
+			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
+				continue;
+			}
+			$txId = $payment['payment_gateway']['transactionId'];
+			$status = $paymentGateway->verifyPending($txId);
+			$paymentData = Billrun_Bill_Payment::getInstanceByData($payment);
+			if ($status == 'Pending') { // Payment is still pending
+				$paymentData->updateLastPendingCheck();
+				continue;
+			}
+			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			Billrun_PaymentGateway::updateAccordingToStatus($response, $paymentData, $gatewayName);
+		}
+		Billrun_PaymentGateway::makePayment($stamp);
+	}
+
+	public function successAction() {
+		print_r("SUCCESS");
+	}
+
+	/**
+	 * Validates the input data.
+	 * @return data - Request data if validated, null if error.
+	 */
+	public function validateData($request) {
+		$data = $request->get("data");
+		$signature = $request->get("signature");
+		if (empty($signature)) {
+			return false;
+		}
+
+		// Get the secret
+		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
+		if (!$this->validateSecret($secret)) {
+			return null;
+		}
+
+		$hashResult = hash_hmac("sha512", $data, $secret);
+
+		// state whether signature is okay or not
+		$validData = null;
+
+		if (hash_equals($signature, $hashResult)) {
+			$validData = $data;
+		}
+		return $validData;
+	}
+
+	protected function validateSecret($secret) {
+		if (empty($secret) || !is_string($secret)) {
+			return false;
+		}
+		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
+		$calculatedCrc = hash("crc32b", $secret);
+
+		// Validate checksum
+		return hash_equals($crc, $calculatedCrc);
+	}
+
+	/**
+	 * Load payments with status pending and that their status had not been checked for some time. 
+	 * 
+	 */
+	protected function loadPending() {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
+		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
+		$query = array(
+			'waiting_for_confirmation' => true,
+			'last_checked_pending' => array('$lte' => $paymentsOrphan)
+		);
+		$res = $billsColl->query($query);
+		return $res;
+	}
+
+}

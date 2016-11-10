@@ -194,21 +194,17 @@ class ConfigModel {
 			if (empty($data['name'])) {
 				throw new Exception('Couldn\'t find payment gateway name');
 			}
-			$supported = Billrun_Factory::config()->getConfigValue('PaymentGateways.' . $data['name'] . '.supported');
+			$paymentGateway = Billrun_Factory::paymentGateway($data['name']);
+			if (!is_null($paymentGateway)){
+				$supported = true;
+			}
+			else{
+				$supported = false;
+			}
 			if (is_null($supported) || !$supported) {
 				throw new Exception('Payment gateway is not supported');
 			}
-			$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways'); // TODO: Remove when finished to do more generic
-			$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
-				return $paymentGateway['omnipay_supported'] == true;
-				});
-			if (in_array($data['name'], array_keys($omnipay_supported))) {
-					$gateway = Omnipay\Omnipay::create($data['name']);
-					$defaultParameters = $gateway->getDefaultParameters();
-			}
-			else{
-				$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
-			}
+			$defaultParameters = $paymentGateway->getDefaultParameters();
 			$releventParameters = array_intersect_key($defaultParameters, $data['params']); 
 			$neededParameters = array_keys($releventParameters);
 			foreach ($data['params'] as $key => $value) {
@@ -223,7 +219,7 @@ class ConfigModel {
 				$pgSettings = $data;
 			}
 			$this->setPaymentGatewaySettings($updatedData, $pgSettings);
- 			$pgSettings = $this->validatePaymentGatewaySettings($updatedData, $data);
+ 			$pgSettings = $this->validatePaymentGatewaySettings($updatedData, $data, $paymentGateway);
  			if (!$pgSettings){
  				return 0;
  			}
@@ -232,7 +228,7 @@ class ConfigModel {
 				return 0;
 			}
 		}
-		
+
 		$ret = $this->collection->insert($updatedData);
 		$saveResult = !empty($ret['ok']);
 		if ($saveResult) {
@@ -518,44 +514,20 @@ class ConfigModel {
 	}
 	
 	
-	protected function validatePaymentGatewaySettings(&$config, $pg) {
+	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
  		$connectionParameters = array_keys($pg['params']);
- 		$name = $pg['name'];
-		$gatewaysSettings = Billrun_Factory::config()->getConfigValue('PaymentGateways');
-		$supportedGateways = array_filter($gatewaysSettings, function($paymentGateway){
- 			return $paymentGateway['supported'] == true;
- 		});
-		if (!in_array($name, array_keys($supportedGateways))){
-			Billrun_Factory::log("Unsupported Payment Gateway: ", $name);
+ 		$name = $pg['name'];	
+		$defaultParameters = $paymentGateway->getDefaultParameters();
+		$defaultParametersKeys = array_keys($defaultParameters);
+		$diff = array_diff($defaultParametersKeys, $connectionParameters);
+		if (!empty($diff)) {
+			Billrun_Factory::log("Wrong parameters for connection to ", $name);
 			return false;
 		}
-		$omnipay_supported = array_filter($gatewaysSettings, function($paymentGateway){
- 			return $paymentGateway['omnipay_supported'] == true;
- 		});
-		if (in_array($name, array_keys($omnipay_supported))) {
-			$gateway = Omnipay\Omnipay::create($name);
-			$defaultParameters = $gateway->getDefaultParameters();
-			$defaultParametersKeys = array_keys($defaultParameters);
-			$diff = array_diff($defaultParametersKeys, $connectionParameters);
-			if (!empty($diff)) {
-				Billrun_Factory::log("Wrong parameters for connection to", $name);
-				return false;
-			}
-			// TODO: check Auth to gateway through Omnipay
-		}
-		
- 		else if ($name == "CreditGuard"){
-			$defaultParameters = array('terminal_id' => "", 'user'=>"", 'password'=>"");
-			$defaultParametersKeys = array_keys($defaultParameters);
-			$diff = array_diff($defaultParametersKeys, $connectionParameters);
-			if (!empty($diff)) {
-				Billrun_Factory::log("Wrong parameters for connection to", $name);
-				return false;
-			}
-		// meanewhile credentials of credit guard, TODO generic for all payemnt gateways not ompipay supported and functions for identical code.
-		}
-		
-		
+		$isAuth = $paymentGateway->authenticateCredentials($pg['params']);
+		if (!$isAuth){
+			throw new Exception('Wrong credentials for connection to ', $name); 
+		}	
 		
  		return true;
  	}

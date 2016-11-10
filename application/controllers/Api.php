@@ -219,5 +219,34 @@ class ApiController extends Yaf_Controller_Abstract {
 	protected function sourceToLog() {
 		return "api";
 	}
+	
+	/**
+	 * Set an error message to the controller.
+	 * @param string $errorMessage - Error message to send to the controller.
+	 * @param object $input - The input the triggerd the error.
+	 * @return ALWAYS false.
+	 */
+	function setError($errorMessage, $input = null) {
+		Billrun_Factory::log("Sending Error : {$errorMessage}", Zend_Log::NOTICE);
+		$output = array(
+			'status' => 0,
+			'desc' => $errorMessage,
+		);
+		if (!is_null($input)) {
+			$output['input'] = $input;
+		}
+
+		// Throwing a general exception.
+		// TODO: Debug default code
+		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
+		throw $ex;
+		
+		// If failed to report to controller.
+		if (!$this->setOutput(array($output))) {
+			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
+		}
+
+		return false;
+	}
 
 }
