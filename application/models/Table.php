@@ -75,7 +75,7 @@ class TableModel {
 	public function __construct(array $params = array()) {
 
 		if (isset($params['collection'])) {
-			if (isset($params['db']) && $params['db'] == "billing") {
+			if (isset($params['db']) && ($params['db'] == "billing" || $params['db'] == 'balances')) {
 				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
 			} else if (isset($params['db']) && $params['db'] == "archive") {
 				$db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
