@@ -491,10 +491,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$offset += $this->bulkInsert;
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 
 			if ($e->getCode() == "11000") {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
 				return $this->addToCollection($collection);
 			}
 			return false;
@@ -537,10 +537,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$offset += $this->bulkInsert;
 			}
 		} catch (Exception $e) {
-			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 
 			if ($e->getCode() == "11000") {
-				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::NOTICE);
+				Billrun_Factory::log()->log("Processor store " . basename($this->filePath) . " to queue failed on bulk insert on duplicate stamp.", Zend_Log::ALERT);
 				return $this->addToQueue($queue_data);
 			}
 
