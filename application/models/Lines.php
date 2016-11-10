@@ -26,7 +26,7 @@ class LinesModel extends TableModel {
 	
 	public function __construct(array $params = array()) {
 		if ($params['db'] == 'archive') {
-			$params['collection'] = 'lines';
+			$params['collection'] = $params['collection'];
 		} else {
 			$params['collection'] = Billrun_Factory::db()->lines;
 		}

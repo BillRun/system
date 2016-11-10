@@ -512,6 +512,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		
 		// this use for export
 		$this->getSetVar($session, $query, 'query', $query);
+		$this->getSetVar($session, 'collection', 'collectionSelect', 'lines|billing');
 
 		$this->getView()->component = $this->buildTableComponent('lines', $query);
 	}
