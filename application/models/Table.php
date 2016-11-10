@@ -73,19 +73,12 @@ class TableModel {
 	 * @param array $params of parameters to preset the object
 	 */
 	public function __construct(array $params = array()) {
-
+		
 		if (isset($params['collection'])) {
-			if (isset($params['db']) && $params['db'] == "billing") {
-				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
-			} else if (isset($params['db']) && $params['db'] == "archive") {
-				$db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('archive.db'));
-				$this->collection = $db->getCollection($params['collection']);
-			} else {
-				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-			}
+			$this->initializeCollection($params);
 			$this->collection_name = $params['collection'];
 		}
-
+				
 		if (isset($params['page'])) {
 			$this->setPage($params['page']);
 		}
@@ -550,6 +543,14 @@ class TableModel {
 
 	protected function formatCsvCell($row, $header) {
 		return $row[$header];
+	}
+	
+	protected function initializeCollection($params) {
+		if (isset($params['db'])) {
+			$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
+		} else {
+			$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
+		}
 	}
 
 }
