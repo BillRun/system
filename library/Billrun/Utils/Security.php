@@ -23,7 +23,7 @@ class Billrun_Utils_Security {
 	public static function addSignature(array $data, $key) {
 		// Add the timestamp
 		$data['t'] = date(Billrun_Base::base_datetimeformat);
-		$signature = $this->sign($data, $key);
+		$signature = self::sign($data, $key);
 		$data['_sig_'] = $signature;
 		return $data;
 	}
