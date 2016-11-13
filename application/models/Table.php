@@ -73,12 +73,12 @@ class TableModel {
 	 * @param array $params of parameters to preset the object
 	 */
 	public function __construct(array $params = array()) {
-		
+
 		if (isset($params['collection'])) {
 			$this->initializeCollection($params);
 			$this->collection_name = $params['collection'];
 		}
-				
+
 		if (isset($params['page'])) {
 			$this->setPage($params['page']);
 		}
