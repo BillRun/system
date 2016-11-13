@@ -110,7 +110,7 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
 		}
 		
-		if ($pricingData === FALSE) {
+		if ($pricingData === false) {
 			return false;
 		}
 
