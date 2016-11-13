@@ -65,23 +65,40 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 	 */
 	protected $rate;
 
+	/**
+	 * row plan details
+	 * 
+	 * @param array
+	 */
+	protected $plan;
+
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
+		$planSettings = array(
+			'name' => $this->row['plan'],
+			'time' => $this->row['urt']->sec,
+		);
+		$this->plan = Billrun_Factory::plan($planSettings);
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
 	}
 
-	public function update() {
-		$this->countConcurrentRetries = 0;
+	/**
+	 * generic validation step before start the update row
+	 * 
+	 * @return boolean true on valid else false
+	 */
+	protected function validate() {
+		return true;
+	}
 
-		if (!isset($this->row['usagev']) && !self::isPrepaid($this->row)) {  // for prepaid, volume calculated by balance left over
-			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+	public function update() {
+		if (!$this->validate()) {
 			return false;
 		}
-
-
+		$this->countConcurrentRetries = 0;
 		//TODO  change this to be configurable.
 		$pricingData = array();
 		$volume = isset($this->row['usagev']) ? $this->row['usagev'] : null;
@@ -89,19 +106,30 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
 			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset());
 			$pricingData = array($this->pricingField => $charges['total']);
-		} else if (($pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate)) === FALSE) {
-			return self::isPrepaid($this->row); // prepaid hack - on prepaid return true and false on post paid
+		} else {
+			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
 		}
 
-		if (Billrun_Rates_Util::isBillable($this->rate)) {
-			// billrun cannot override on api calls
-			if (!self::isPrepaid($this->row) && (!isset($this->row['billrun']) || $this->row['source'] != 'api')) {
-				$pricingData['billrun'] = $this->row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
-			}
+		if ($pricingData === FALSE) {
+			return false;
 		}
 
+		if (!$this->isBillable($this->rate)) {
+			return $pricingData;
+		}
+
+		$pricingData['billrun'] = $this->row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 
 		return $pricingData;
+	}
+
+	/**
+	 * Determines if a rate should not produce billable lines, but only counts the usage
+	 * 
+	 * @return boolean
+	 */
+	protected function isBillable() {
+		return Billrun_Rates_Util::isBillable($this->rate);
 	}
 
 	/**
@@ -114,38 +142,13 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 	 * 
 	 */
 	protected function updateSubscriberBalance() {
-		if (self::isPrepaid($this->row)) {
-			$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
-		}
-		$planSettings = array(
-			'name' => $this->row['plan'],
-			'time' => $this->row['urt']->sec,
-		);
-		$plan = Billrun_Factory::plan($planSettings);
-		if (self::isPrepaid($this->row)) {
-			$this->initMinBalanceValues($this->rate, $this->row['usaget'], $plan);
-		} else {
-			$this->min_balance_volume = null;
-			$this->min_balance_cost = null;
-		}
 		if (!$this->loadSubscriberBalance($this->row, $this->min_balance_volume, $this->min_balance_cost) && // will load $this->balance
-			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $plan)) !== TRUE) {
+			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
 
-		if (self::isPrepaid($this->row) && !(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset());
-			if (!$this->balance && self::isFreeLine($this->row)) {
-				return $this->balance->getFreeRowPricingData();
-			}
-			$this->row['balance_ref'] = $this->balance->createRef();
-			$this->row['usagev'] = $volume = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
-		} else {
-			$volume = $this->usagev;
-		}
-
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this));
-		$pricingData = $this->balance->updateBalanceByRow($this->row, $this->rate, $plan, $this->usaget, $volume);
+		$pricingData = $this->balance->updateBalanceByRow($this->row, $this->rate, $this->plan, $this->usaget, $this->usagev);
 		if ($pricingData === false) {
 			// failed because of different totals (could be that another server with another line raised the totals). 
 			// Need to calculate pricingData from the beginning
@@ -160,24 +163,11 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 		return $pricingData;
 	}
 
-	protected function handleNoBalance($plan) {
-		if (self::isPrepaid($this->row)) {
-			// check first if this free call and allow it if so
-			if ($this->min_balance_cost == '0') {
-				if (isset($this->row['api_name']) && in_array($this->row['api_name'], array('start_call', 'release_call'))) {
-					$granted_volume = 0;
-				} else {
-					$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($this->rate, $this->row['usaget'], $plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
-				}
-				$charges = Billrun_Rates_Util::getChargesByRate($this->rate, $this->row['usaget'], $granted_volume, $plan->getName(), $this->getCallOffset());
-				$granted_cost = $charges['total'];
-				return array(
-					$this->pricingField => $granted_cost,
-					'usagev' => $granted_volume,
-				);
-			}
-			$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
-		}
+	/**
+	 * method that handle cases when balance is not available (on real-time)
+	 * @return boolean true if you want to continue even if there is no available balance else false
+	 */
+	protected function handleNoBalance() {
 		Billrun_Factory::dispatcher()->trigger('afterSubscriberBalanceNotFound', array(&$this->row));
 		if ($this->row['usagev'] === 0) {
 			return false;
@@ -253,25 +243,6 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 
 	public function getCallOffset() {
 		return $this->call_offset;
-	}
-	
-	/**
-	 * plugin-able check if line is free
-	 * 
-	 * @param array $row row to check
-	 * 
-	 * @return true if it's free row else false
-	 */
-	public static function isFreeLine(&$row) {
-		if (self::isPrepaid($row)) {
-			$isFreeLine = false;
-			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row, &$isFreeLine));
-			if ($isFreeLine) {
-				$row['free_line'] = true;
-			}
-			return $isFreeLine;
-		}
-		return false;
 	}
 
 }

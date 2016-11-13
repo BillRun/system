@@ -68,6 +68,8 @@ abstract class Billrun_Calculator_Updaterow {
 			$class = 'Billrun_Calculator_Updaterow_' . ucfirst($calc);
 			if (!is_null($subcalc)) {
 				$class .= '_' . ucfirst($subcalc);
+			} else { // default is postpaid sub-calc
+				$class .= '_Postpaid';
 			}
 			self::$instances[$stamp] = new $class($row, $callerClass);
 		}

@@ -13,8 +13,22 @@
  * @subpackage  updaterow
  * @since       5.3
  */
-class Billrun_Calculator_Updaterow_Customerpricing_Postpaid extends Billrun_Calculator_Updaterow_Customerpricing_Updaterow {
+class Billrun_Calculator_Updaterow_Customerpricing_Postpaid extends Billrun_Calculator_Updaterow_Customerpricing {
 
-	public function update() {}
+	protected function init() {
+		parent::init();
+	}
+	
+	protected function validate() {
+		if (!isset($this->row['usagev'])) {
+			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " is missing volume information", Zend_Log::ALERT);
+			return false;
+		}
+		return parent::validate();
+	}
+	
+	public function update() {
+		return parent::update();
+	}
 	
 }
