@@ -49,8 +49,7 @@ class Billrun_Utils_Security {
 		
 		$data = $request;
 		unset($data['_sig_']);
-		unset($data['t']);
-		$hashResult = $this->sign($data, $secret);
+		$hashResult = self::sign($data, $secret);
 		
 		// state whether signature is okay or not
 		$validData = null;
