@@ -60,7 +60,8 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-		$data = $this->validateData($request);
+		$requestData = json_decode($request->get('data'), true);
+		$data = Billrun_Utils_Security::validateData($requestData);
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
@@ -151,45 +152,6 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	/**
-	 * Validates the input data.
-	 * @return data - Request data if validated, null if error.
-	 */
-	public function validateData($request) {
-		$data = $request->get("data");
-		$signature = $request->get("signature");
-		if (empty($signature)) {
-			return false;
-		}
-
-		// Get the secret
-		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
-		if (!$this->validateSecret($secret)) {
-			return null;
-		}
-
-		$hashResult = hash_hmac("sha512", $data, $secret);
-
-		// state whether signature is okay or not
-		$validData = null;
-
-		if (hash_equals($signature, $hashResult)) {
-			$validData = $data;
-		}
-		return $validData;
-	}
-
-	protected function validateSecret($secret) {
-		if (empty($secret) || !is_string($secret)) {
-			return false;
-		}
-		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
-		$calculatedCrc = hash("crc32b", $secret);
-
-		// Validate checksum
-		return hash_equals($crc, $calculatedCrc);
-	}
-
-	/**
 	 * Load payments with status pending and that their status had not been checked for some time. 
 	 * 
 	 */
@@ -204,5 +166,5 @@ class PaymentGatewaysController extends ApiController {
 		$res = $billsColl->query($query);
 		return $res;
 	}
-
+	
 }
