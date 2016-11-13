@@ -489,5 +489,16 @@ class LinesModel extends TableModel {
 		sort($filtered_collections);
 		return $filtered_collections;
 	}
+	
+	protected function initializeCollection($params){
+		if (isset($params['db']) && $params['db'] == "billing") {
+			$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
+		} else if (isset($params['db'])) {
+			$db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue($params['db'] . '.db'));
+			$this->collection = $db->getCollection($params['collection']);
+		} else {
+			$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
+		}
+	}
 
 }
