@@ -65,22 +65,22 @@ class PaymentGatewaysController extends ApiController {
 		if ($data === null) {
 			return $this->setError("Failed to authenticate", $request);
 		}
-		$jsonData = json_decode($data, true);
-		if (!isset($jsonData['aid']) || is_null(($aid = $jsonData['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
+
+		if (!isset($data['aid']) || is_null(($aid = $data['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
 			return $this->setError("need to pass numeric aid", $request);
 		}
 
-		if (!isset($jsonData['t']) || is_null(($timestamp = $jsonData['t']))) {
+		if (!isset($data['t']) || is_null(($timestamp = $data['t']))) {
 			return $this->setError("Invalid arguments", $request);
 		}
 
-		if (!isset($jsonData['name'])) {
-			return $this->$setError("need to pass payment gateway name", $request);
+		if (!isset($data['name'])) {
+			return $this->setError("need to pass payment gateway name", $request);
 		}
-		$name = $jsonData['name'];
-		$aid = $jsonData['aid'];
-		if (isset($jsonData['return_url'])) {
-			$returnUrl = $jsonData['return_url'];
+		$name = $data['name'];
+		$aid = $data['aid'];
+		if (isset($data['return_url'])) {
+			$returnUrl = $data['return_url'];
 		} else {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('billrun.return_url');
 		}

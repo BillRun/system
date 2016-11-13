@@ -50,7 +50,6 @@ class Billrun_Utils_Security {
 		$data = $request;
 		unset($data['_sig_']);
 		$hashResult = self::sign($data, $secret);
-		unset($data['t']);
 		
 		// state whether signature is okay or not
 		$validData = null;
