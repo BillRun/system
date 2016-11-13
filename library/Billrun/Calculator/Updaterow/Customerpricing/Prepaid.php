@@ -21,9 +21,6 @@ class Billrun_Calculator_Updaterow_Customerpricing_Prepaid extends Billrun_Calcu
 		$this->initMinBalanceValues($this->rate, $this->row['usaget'], $this->plan);
 		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset());
-			if (!$this->balance && $this->isFreeLine($this->row)) {
-				return $this->balance->getFreeRowPricingData();
-			}
 			$this->row['balance_ref'] = $this->balance->createRef();
 			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
 		} else {
@@ -36,6 +33,9 @@ class Billrun_Calculator_Updaterow_Customerpricing_Prepaid extends Billrun_Calcu
 	 * @return boolean true if you want to continue even if there is no available balance else false
 	 */
 	protected function handleNoBalance() {
+		if ($this->isFreeLine()) {
+			return $this->balance->getFreeRowPricingData();
+		}
 		// check first if this free call and allow it if so
 		if ($this->min_balance_cost == '0') { // @TODO: check why we put string and not int
 			if (isset($this->row['api_name']) && in_array($this->row['api_name'], array('start_call', 'release_call'))) {
