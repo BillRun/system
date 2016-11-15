@@ -71,20 +71,31 @@
 									  </div>
 									  <div class="row">
 									    <?php
-									       foreach ($payment_gateways as $pg) {
-									       echo "<div class='col-md-3'>";
-									       echo "<div class='radio'>";
-									       echo "<label>";
-									       echo "<input type='radio' name='payment_gateway' value='" . $pg['name'] . "'>";
-									       if (!empty($pg['image_url'])) {
-  									           echo "<img src='" . $pg['image_url'] . "' />";
-									       } else {
-									           echo $pg['name'];
-									       }
-									       echo "</label>";
-									       echo "</div>";
-									       echo "</div>";
-									       }
+										$accountOn = (isset($account['gateway']) && $account['gateway']);
+										foreach ($payment_gateways as $pg) {
+											if($accountOn && $account['gateway'] != $pg['name']) {
+												continue;
+											}
+											echo "<div class='col-md-3'>";
+											echo "<div class='radio'>";
+											echo "<label>";
+											if($accountOn) {
+												echo "<input type='radio' name='payment_gateway' checked value='" . $pg['name'] . "'>";												
+											} else {
+												echo "<input type='radio' name='payment_gateway' value='" . $pg['name'] . "'>";
+											}
+											if (!empty($pg['image_url'])) {
+												echo "<img src='" . $pg['image_url'] . "' />";
+											} else {
+												echo $pg['name'];
+											}
+											echo "</label>";
+											echo "</div>";
+											echo "</div>";
+											if($accountOn) {
+												break;
+											}
+										}
 									       ?>
 									  </div>
 								</div>
