@@ -77,8 +77,22 @@ class PaymentGatewaysController extends ApiController {
 		if (!isset($data['name'])) {
 			return $this->setError("need to pass payment gateway name", $request);
 		}
+
 		$name = $data['name'];
 		$aid = $data['aid'];
+		
+		// Get the accound object.
+		// TODO: Should this query be bound with from and to fields?
+		$accountQuery = array('type' => 'account', 'aid' => $aid);
+		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		if($account && !$account->isEmpty() && isset($account['gateway'])) {
+			// Check the payment gateway
+			if($account['gateway'] != $name) {
+				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
+				throw new Billrun_Exceptions_InvalidFields(array($invField));
+			}
+		}
+
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
 		} else {
@@ -90,8 +104,13 @@ class PaymentGatewaysController extends ApiController {
 		$today = new MongoDate();
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$query = array(
-			'tennant_return_url' => $returnUrl
+			'tennant_return_url' => $returnUrl,
+			'gateway' => $name
 		);
+//		if($type == "account") {
+//			$query['gateway'] = $name;
+//		}
+		
 		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
