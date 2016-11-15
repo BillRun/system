@@ -102,7 +102,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			
 			$sortArray = array();
 			foreach ($returnData as $row) {
-				$sortKey = $this->getBalanceIndex($row, $this->sortField);
+				$i = 100; // avoid infinite loop
+				do {
+					$sortKey = $this->getBalanceIndex($row, $this->sortField);
+				} while (isset($sortArray[$sortKey]) && !$i--);
+
 				$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
 
@@ -124,6 +128,16 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	protected function getBalanceIndex($item, $field) {
 		if ($item[$field] instanceof MongoDate) {
 			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT);
+		}
+		if (is_numeric($item[$field])) {
+			$randRange = 10000;
+			return $item[$field] * $randRange + rand(0, $randRange-1);
+		}
+		if (is_string($item[$field])) {
+			$randRange = 10000;
+			$suffix = $randRange + rand(0, $randRange-1);
+			settype($suffix, 'string');
+			return $item[$field] . $suffix;
 		}
 		return $item[$field];
 	}
