@@ -80,18 +80,7 @@ class PaymentGatewaysController extends ApiController {
 
 		$name = $data['name'];
 		$aid = $data['aid'];
-		
-		// Get the accound object.
-		// TODO: Should this query be bound with from and to fields?
-		$accountQuery = array('type' => 'account', 'aid' => $aid);
-		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
-		if($account && !$account->isEmpty() && isset($account['gateway'])) {
-			// Check the payment gateway
-			if($account['gateway'] != $name) {
-				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
-				throw new Billrun_Exceptions_InvalidFields(array($invField));
-			}
-		}
+		$this->validatePaymentGateway($name, $aid);
 
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
@@ -116,6 +105,29 @@ class PaymentGatewaysController extends ApiController {
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
 	}
 
+	/**
+	 * Validate that the input payment gateway fits the payment gateway that is
+	 * stored in the database with the account.
+	 * If the account doesn't have a gateway the validation does not throw an error.
+	 * @param string $name - The name of the payment gateway
+	 * @param int $aid - The Account identification number
+	 * @throws Billrun_Exceptions_InvalidFields Throws an invalid field 
+	 * exception if the input is invalid
+	 */
+	protected function validatePaymentGateway($name, $aid) {
+		// Get the accound object.
+		// TODO: Should this query be bound with from and to fields?
+		$accountQuery = array('type' => 'account', 'aid' => $aid);
+		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		if($account && !$account->isEmpty() && isset($account['gateway'])) {
+			// Check the payment gateway
+			if($account['gateway'] != $name) {
+				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
+				throw new Billrun_Exceptions_InvalidFields(array($invField));
+			}
+		}
+	}
+	
 	/**
 	 * handling the response from the payment gateway and saving the details to db.
 	 * 
