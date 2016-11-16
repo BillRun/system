@@ -102,6 +102,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 	// 
 
 	protected function loadBalancesForBulk($sids) {
+		Billrun_Factory::log("loading balances...");
 		unset($this->balances);
 		$this->balances = array();
 		$balances = $this->db->balancesCollection()
@@ -109,9 +110,11 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		foreach ($balances as $balance) {
 			$this->balances[$balance['sid']][] = $balance;
 		}
+		Billrun_Factory::log("Done loading balances.");
 	}
 	
         protected function loadTransactions($sids) {
+		Billrun_Factory::log("loading transactions...");
                 unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
@@ -125,6 +128,7 @@ class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggr
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']][$transaction['type']] = $transaction['urt'];
 		}
+		Billrun_Factory::log("Done loading transactions.");
     }
         
 	protected function countBalances($sid, $parameters, &$line) {
