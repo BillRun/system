@@ -95,5 +95,20 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 
 		return true;
 	}
+	
+	 public function _initRoutes()  {
+		Yaf_Dispatcher::getInstance()->getRouter()->addRoute(
+			"billapi", new Yaf_Route_Regex(
+			"#^/billapi/(\w+)/(\w+)/?(\w*)#", array(
+			'module' => 'billapi',
+			'controller' => ':action',
+			), array(
+			1 => "collection",
+			2 => "action",
+			3 => "id",
+			)
+			)
+		);
+	}
 
 }
