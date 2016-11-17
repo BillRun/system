@@ -119,7 +119,7 @@ class LogoAction extends ApiAction {
 	public function retrieve(array $query) {
 		$gfsFile = $this->collection->findOne($query);
 		if(!$gfsFile) {
-			Billrun_Factory::log("FSBytes is null :(");
+			Billrun_Factory::log("FSBytes is null.");
 			return null;
 		}
 		
