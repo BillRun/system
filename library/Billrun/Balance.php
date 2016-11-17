@@ -188,7 +188,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->collection()->update($query, $update);
 		if (!($ret['ok'] && $ret['updatedExisting'])) {
-			Billrun_Factory::log('Update subscriber balance failed on updated existing document', Zend_Log::INFO);
+			Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
 			return false;
 		}
 		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -207,7 +207,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @todo move to balance object
 	 */
-	protected function BuildBalanceUpdateQuery($pricingData, $row, $volume) {
+	protected function BuildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		$update = array();
 		$update['$set']['tx.' . $row['stamp']] = $pricingData;
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
@@ -258,9 +258,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo remove (in/over/out)_plan support (group used instead)
 	 */
 	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
-		if (Billrun_Calculator_CustomerPricing::isFreeLine($row)) {
-			return $this->getFreeRowPricingData();
-		}
 		$ret = array();
 		if ($plan->isRateInEntityGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this, $rate, $usageType);
@@ -396,6 +393,26 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			}
 		}
 		return $volumeRequired; // volume left to charge
+	}
+
+	public function getBalanceChargingTotalsKey($usaget) {
+		return $this->chargingTotalsKey = $usaget;
+	}
+
+	/**
+	 * method to get free row pricing data
+	 * 
+	 * @return array
+	 */
+	public function getFreeRowPricingData() {
+		return array(
+			'in_plan' => 0,
+			'over_plan' => 0,
+			'out_plan' => 0,
+			'in_group' => 0,
+			'over_group' => 0,
+			$this->pricingField => 0,
+		);
 	}
 
 }

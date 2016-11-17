@@ -51,6 +51,13 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 			$this->granted['cost'] = (-1) * $this->row['granted_cost'];
 		}
 	}
+	
+	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
+		if (Billrun_Calculator_Updaterow_Customerpricing::isFreeLine($row)) {
+			return $this->getFreeRowPricingData();
+		}
+		return parent::getLinePricingData($volume, $usageType, $rate, $plan, $row);
+	}
 
 	/**
 	 * on prepaid there is no default balance, return no balance (empty array)
@@ -141,7 +148,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return array update query array (mongo style)
 	 */
-	protected function BuildBalanceUpdateQuery($pricingData, $row, $volume) {
+	protected function BuildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		list($query, $update) = parent::BuildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
@@ -158,7 +165,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 			}
 		}
 		$pricingData['usagesb'] = floatval($currentUsage);
-
+		return array($query, $update);
 	}
 	
 	/**

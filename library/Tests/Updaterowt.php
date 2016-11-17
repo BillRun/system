@@ -92,7 +92,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
-
+		
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -127,60 +127,64 @@ class Tests_Updaterowt extends UnitTestCase {
 	//checks return data
 	protected function compareExpected($key, $returnRow) {
 		$passed = True;
-		$messege = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — in_group:' . $this->expected[$key]['in_group'] . '<br> — over_group:' . $this->expected[$key]['over_group'] . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
-		if ($this->expected[$key]['in_group'] == 0) {
-			if ((!isset($returnRow['in_group'])) || ($returnRow['in_group'] == 0)) {
-				$messege = $messege . '— in_group: 0' . $this->pass;
+		$epsilon = 0.000001;
+		$inGroupE= $this -> expected[$key]['in_group'];
+		$overGroupE= $this -> expected[$key]['over_group'];
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — in_group:'. $inGroupE .'<br> — over_group:' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
+		
+		if ($inGroupE == 0) {
+			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'],0,$epsilon)) {
+				$message = $message . '— in_group: 0' . $this->pass;
 			} else {
-				$messege = $messege . '— in_group: ' . $returnRow['in_group'] . $this->fail;
+				$message = $message . '— in_group: ' . $returnRow['in_group'] . $this->fail;
 				$passed = False;
 			}
 		} else {
 			if (!isset($returnRow['in_group'])) {
-				$messege = $messege . '— in_group: 0' . $this->fail;
+				$message = $message . '— in_group: 0' . $this->fail;
 				$passed = False;
-			} else if ($returnRow['in_group'] != $this->expected[$key]['in_group']) {
-				$messege = $messege . '— in_group: ' . $returnRow['in_group'] . $this->fail;
+			} else if (!Billrun_Util::isEqual($returnRow['in_group'],$inGroupE,$epsilon)) {
+				$message = $message . '— in_group: ' . $returnRow['in_group'] . $this->fail;
 				$passed = False;
 			} else {
-				$messege = $messege . '— in_group: ' . $returnRow['in_group'] . $this->pass;
+				$message = $message . '— in_group: ' . $returnRow['in_group'] . $this->pass;
 			}
 		}
-		if ($this->expected[$key]['over_group'] == 0) {
-			if (((!isset($returnRow['over_group'])) || ($returnRow['over_group'] == 0)) && ((!isset($returnRow['out_plan'])) || ($returnRow['out_plan'] == 0))) {
-				$messege = $messege . '— over_group and out_plan: doesnt set' . $this->pass;
+		if ($overGroupE == 0) {
+			if (((!isset($returnRow['over_group'])) || (Billrun_Util::isEqual($returnRow['over_group'],0,$epsilon))) && ((!isset($returnRow['out_plan'])) || (Billrun_Util::isEqual($returnRow['out_plan'],0,$epsilon)))) {
+				$message = $message . '— over_group and out_plan: doesnt set' . $this->pass;
 			} else {
 				if (isset($returnRow['over_group'])) {
-					$messege = $messege . '— over_group: ' . $returnRow['over_group'] . $this->fail;
+					$message = $message . '— over_group: ' . $returnRow['over_group'] . $this->fail;
 					$passed = False;
 				} else {
-					$messege = $messege . '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
+					$message = $message . '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
 					$passed = False;
 				}
 				$passed = False;
 			}
 		} else {
 			if ((!isset($returnRow['over_group'])) && (!isset($returnRow['out_plan']))) {
-				$messege = $messege . '— over_group and out_plan: dont set' . $this->fail;
+				$message = $message . '— over_group and out_plan: dont set' . $this->fail;
 				$passed = False;
 			} else if (isset($returnRow['over_group'])) {
-				if ($returnRow['over_group'] != $this->expected[$key]['over_group']) {
-					$messege = $messege . '— over_group: ' . $returnRow['over_group'] . $this->fail;
+				if (!Billrun_Util::isEqual($returnRow['over_group'],$overGroupE,$epsilon)) {
+					$message = $message . '— over_group: ' . $returnRow['over_group'] . $this->fail;
 					$passed = False;
 				} else {
-					$messege = $messege . '— over_group: ' . $returnRow['over_group'] . $this->pass;
+					$message = $message . '— over_group: ' . $returnRow['over_group'] . $this->pass;
 				}
 			} else if (isset($returnRow['out_plan'])) {
-				if ($returnRow['out_plan'] != $this->expected[$key]['over_group']) {
-					$messege = $messege . '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
+				if (!Billrun_Util::isEqual($returnRow['out_plan'],$overGroupE,$epsilon)) {
+					$message = $message . '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
 					$passed = False;
 				} else {
-					$messege = $messege . '— out_plan: ' . $returnRow['out_plan'] . $this->pass;
+					$message = $message . '— out_plan: ' . $returnRow['out_plan'] . $this->pass;
 				}
 			}
 		}
-		$messege = $messege . ' </p>';
-		return [$passed, $messege];
+		$message = $message . ' </p>';
+		return [$passed, $message];
 	}
 
 	protected function fixRow($row, $key) {
@@ -201,7 +205,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		if (!isset($row['usaget'])) {
 			$row['usaget'] = 'call';
 		}
-
 		$rate = $this->ratesCol->query(array('key' => $row['arate_key']))->cursor()->current();
 		$row['arate'] = MongoDBRef::create('rates', (new MongoId((string) $rate['_id'])));
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();

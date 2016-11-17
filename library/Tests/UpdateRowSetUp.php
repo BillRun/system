@@ -76,20 +76,14 @@ class Tests_UpdateRowSetUp {
 		return $jsonAr;
 	}
 
-	// old function for inserting data
-	protected function insertToCol($items, $col) {
-		foreach ($items as $item) {
-			Billrun_Factory::db()->execute('db.' . $col . '.insert(' . $item . ')');
-		}
-	}
-
 	/**
 	 * @param array $colNames array of collectins names to clean
 	 */
 	protected function cleanCollection($colNames) {
-
+	
 		foreach ($colNames as $colName) {
-			Billrun_Factory::db()->execute('db.' . $colName . '.remove({})');
+			$colName = $colName . 'Collection';
+			Billrun_Factory::db() -> $colName() -> remove([null]);
 		}
 	}
 
