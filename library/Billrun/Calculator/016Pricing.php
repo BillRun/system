@@ -105,7 +105,7 @@ class Billrun_Calculator_016Pricing extends Billrun_Calculator {
 		$rate = $this->getRowRate($row);
 		$volume = $row->get('duration');
 
-		if ($volume == '0') {
+		if ($volume == '0' || empty($volume)) {
 			$records_type = '005';
 			$pricingData = '0.0000';
 		} else if (!$rate) {
