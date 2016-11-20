@@ -77,8 +77,11 @@ class PaymentGatewaysController extends ApiController {
 		if (!isset($data['name'])) {
 			return $this->setError("need to pass payment gateway name", $request);
 		}
+
 		$name = $data['name'];
 		$aid = $data['aid'];
+		$this->validatePaymentGateway($name, $aid);
+
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
 		} else {
@@ -90,13 +93,49 @@ class PaymentGatewaysController extends ApiController {
 		$today = new MongoDate();
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$query = array(
-			'tennant_return_url' => $returnUrl
+			'tennant_return_url' => $returnUrl,
+			'gateway' => $name
 		);
+		
 		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
 	}
 
+	/**
+	 * Get a db query for an active account according to the account id.
+	 * @param int $aid - The account id.
+	 * @return array The active account query
+	 */
+	protected function getAccoundQuery($aid) {
+		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountQuery['type'] = 'account';
+		$accountQuery['aid'] = $aid;
+		return $accountQuery;
+	}
+	
+	/**
+	 * Validate that the input payment gateway fits the payment gateway that is
+	 * stored in the database with the account.
+	 * If the account doesn't have a gateway the validation does not throw an error.
+	 * @param string $name - The name of the payment gateway
+	 * @param int $aid - The Account identification number
+	 * @throws Billrun_Exceptions_InvalidFields Throws an invalid field 
+	 * exception if the input is invalid
+	 */
+	protected function validatePaymentGateway($name, $aid) {
+		// Get the accound object.
+		$accountQuery = $this->getAccoundQuery($aid);
+		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+		if($account && !$account->isEmpty() && isset($account['gateway'])) {
+			// Check the payment gateway
+			if($account['gateway'] != $name) {
+				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
+				throw new Billrun_Exceptions_InvalidFields(array($invField));
+			}
+		}
+	}
+	
 	/**
 	 * handling the response from the payment gateway and saving the details to db.
 	 * 
