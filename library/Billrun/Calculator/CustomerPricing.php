@@ -217,8 +217,11 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$updateRow = Billrun_Calculator_Updaterow::getInstance('Customerpricing', $row, $this);
+			$updateRow = Billrun_Calculator_Updaterow::getInstance('Customerpricing', $row, $this, $row['charging_type']);
 			$pricingData = $updateRow->update();
+			if (is_bool($pricingData)) {
+				return $pricingData;
+			}
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
