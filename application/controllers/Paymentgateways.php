@@ -106,6 +106,18 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	/**
+	 * Get a db query for an active account according to the account id.
+	 * @param int $aid - The account id.
+	 * @return array The active account query
+	 */
+	protected function getAccoundQuery($aid) {
+		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountQuery['type'] = 'account';
+		$accountQuery['aid'] = $aid;
+		return $accountQuery;
+	}
+	
+	/**
 	 * Validate that the input payment gateway fits the payment gateway that is
 	 * stored in the database with the account.
 	 * If the account doesn't have a gateway the validation does not throw an error.
@@ -116,8 +128,7 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	protected function validatePaymentGateway($name, $aid) {
 		// Get the accound object.
-		// TODO: Should this query be bound with from and to fields?
-		$accountQuery = array('type' => 'account', 'aid' => $aid);
+		$accountQuery = $this->getAccoundQuery($aid);
 		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
 		if($account && !$account->isEmpty() && isset($account['gateway'])) {
 			// Check the payment gateway
