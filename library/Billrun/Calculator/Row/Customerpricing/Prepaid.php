@@ -10,10 +10,11 @@
  * Billing calculator update row for customer pricing prepaid calc in row level
  *
  * @package     calculator
- * @subpackage  updaterow
+ * @subpackage  row
  * @since       5.3
+ * @todo probably this is not specific for prepaid but for real-time
  */
-class Billrun_Calculator_Updaterow_Customerpricing_Prepaid extends Billrun_Calculator_Updaterow_Customerpricing {
+class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_Row_Customerpricing {
 
 	protected function init() {
 		parent::init();

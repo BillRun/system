@@ -52,13 +52,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected $unlimited_to_balances = true;
 
 	/**
-	 * plans list
-	 * @var array
-	 * @deprecated since version 4.0
-	 */
-	protected $plans = array();
-
-	/**
 	 * balances collection
 	 * @var Mongodloid_Collection 
 	 */
@@ -217,7 +210,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$updateRow = Billrun_Calculator_Updaterow::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+			$updateRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
 			$pricingData = $updateRow->update();
 			if (is_bool($pricingData)) {
 				return $pricingData;
@@ -362,18 +355,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getPrecision() {
 		return static::$precision;
-	}
-
-	/**
-	 * check if row is prepaid
-	 * 
-	 * @param array $row row handled by the calculator
-	 * 
-	 * @return boolean true it it's prepaid row
-	 * @todo refactoring prepaid to strategy pattern
-	 */
-	public static function isPrepaid($row) {
-		return isset($row['charging_type']) && $row['charging_type'] === 'prepaid';
 	}
 
 }

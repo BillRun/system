@@ -119,7 +119,13 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function load() {
 		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". charging_type: " . $this->charging_type, Zend_Log::DEBUG);
 		$query = $this->getBalanceLoadQuery();
-		return $this->collection()->query($query)->cursor()->sort($this->loadQuerySort())->setReadPreference('RP_PRIMARY')->limit(1)->current();
+		return $this->collection()
+			->query($query)
+			->cursor()
+			->sort($this->loadQuerySort())
+			->setReadPreference('RP_PRIMARY')
+			->limit(1)
+			->current();
 	}
 
 	protected function loadQuerySort() {
@@ -183,7 +189,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 
 		$balance_id = $this->getId();
 		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-		list($query, $update) = $this->BuildBalanceUpdateQuery($pricingData, $row, $volume);
+		list($query, $update) = $this->buildBalanceUpdateQuery($pricingData, $row, $volume);
 
 		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
 		$ret = $this->collection()->update($query, $update);
@@ -207,7 +213,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @todo move to balance object
 	 */
-	protected function BuildBalanceUpdateQuery(&$pricingData, $row, $volume) {
+	protected function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		$update = array();
 		$update['$set']['tx.' . $row['stamp']] = $pricingData;
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);

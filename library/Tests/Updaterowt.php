@@ -29,31 +29,31 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'a1', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 60, 'services' => ["SERVICE1", "SERVICE2"]),
 		array('stamp' => 'a2', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services' => ["SERVICE1", "SERVICE2"]),
 		array('stamp' => 'a3', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a4', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 280, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a5', 'sid' => 51, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 180, 'services' => ["SERVICE1", "SERVICE2"]),
-		//case B: PLAN-X3+SERVICE3
-		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services' => ["SERVICE3"]),
-		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
-		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["SERVICE4"]),
-		array('stamp' => 'c2', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services' => ["SERVICE1"]),
-		array('stamp' => 'c3', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services' => ["SERVICE4"]),
-		array('stamp' => 'c4', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services' => ["SERVICE1"]),
-		array('stamp' => 'c5', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services' => ["SERVICE1"]),
-		//case D PLAN-A1 (with two groups) no services
-		array('stamp' => 'd1', 'sid' => 54, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
-		array('stamp' => 'd2', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
-		array('stamp' => 'd3', 'sid' => 54, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50),
-		array('stamp' => 'd4', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
-		array('stamp' => 'd5', 'sid' => 54, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
-		//case E PLAN-A2 multiple groups with same name
-		array('stamp' => 'e1', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e2', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e3', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e4', 'sid' => 55, 'arate_key' => 'VEG', 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["SERVICE1"])
+//		array('stamp' => 'a4', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 280, 'services' => ["SERVICE1", "SERVICE2"]),
+//		array('stamp' => 'a5', 'sid' => 51, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 180, 'services' => ["SERVICE1", "SERVICE2"]),
+//		//case B: PLAN-X3+SERVICE3
+//		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services' => ["SERVICE3"]),
+//		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
+//		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["SERVICE4"]),
+//		array('stamp' => 'c2', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services' => ["SERVICE1"]),
+//		array('stamp' => 'c3', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services' => ["SERVICE4"]),
+//		array('stamp' => 'c4', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services' => ["SERVICE1"]),
+//		array('stamp' => 'c5', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services' => ["SERVICE1"]),
+//		//case D PLAN-A1 (with two groups) no services
+//		array('stamp' => 'd1', 'sid' => 54, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
+//		array('stamp' => 'd2', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
+//		array('stamp' => 'd3', 'sid' => 54, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50),
+//		array('stamp' => 'd4', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
+//		array('stamp' => 'd5', 'sid' => 54, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
+//		//case E PLAN-A2 multiple groups with same name
+//		array('stamp' => 'e1', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
+//		array('stamp' => 'e2', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services' => ["SERVICE1"]),
+//		array('stamp' => 'e3', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
+//		array('stamp' => 'e4', 'sid' => 55, 'arate_key' => 'VEG', 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["SERVICE1"])
 	];
 	protected $expected = [
 		//case A expected
@@ -111,7 +111,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$init->restoreColletions();
+//		$init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 

@@ -10,10 +10,10 @@
  * Billing calculator update row for customer pricing calc in row level
  *
  * @package     calculator
- * @subpackage  updaterow
+ * @subpackage  row
  * @since       5.3
  */
-class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Updaterow {
+class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	/**
 	 * inspect loops in updateSubscriberBalance
@@ -109,7 +109,7 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
 		}
-		
+
 		if ($pricingData === false) {
 			return false;
 		}
@@ -223,18 +223,6 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 	 */
 	public function getRowRate($row) {
 		return Billrun_Rates_Util::getRateByRef($this->row->get('arate', true));
-	}
-
-	/**
-	 * check if row is prepaid
-	 * 
-	 * @param array $row row handled by the calculator
-	 * 
-	 * @return boolean true it it's prepaid row
-	 * @todo refactoring prepaid to strategy pattern
-	 */
-	protected function isPrepaid() {
-		return $this->charging_type === 'prepaid';
 	}
 
 	public function setCallOffset($val) {
