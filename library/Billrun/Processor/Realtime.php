@@ -12,21 +12,30 @@
  * @package  Billing
  * @since    4.0
  */
-class Billrun_Processor_Realtime extends Billrun_Processor {
+class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	static protected $type = 'realtime';
+	
+	public function __construct($options) {
+		if (!empty($options['default_usaget'])) {
+			$this->defaultUsaget = $options['default_usaget'];
+		}
+		if (!empty($options['usaget_mapping'])) {
+			$this->usagetMapping = $options['usaget_mapping'];
+		}
+	}
 
 	/**
 	 * override abstract method
 	 * @return true
 	 */
-	public function parse() {
+	public function parse($config) {
 		// real-time have only one event (currently)
 		reset($this->data['data']);
 		$rowKey = key($this->data['data']);
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row);
-		$row['usagev'] = $this->getLineVolume($row);
+		$row['usagev'] = $this->getLineVolume($row, $config);
 		if (!isset($row['urt'])) {
 			$row['urt'] = new MongoDate();
 		}
@@ -48,10 +57,10 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		return true;
 	}
 
-	public function process() {
+	public function process($config) {
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorParsing', array($this));
 
-		if ($this->parse() === FALSE) {
+		if ($this->parse($config) === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
@@ -72,55 +81,22 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 		return count($this->data['data']);
 	}
 
-	protected function getLineVolume($row) {
-		if (in_array($row['usaget'], Billrun_Util::getCallTypes())) {
-			return Billrun_Factory::config()->getConfigValue('realtimeevent.callReservationTime.default', 180);
+	protected function getLineVolume($row, $config) {
+		if (isset($config['default_values'][$row['record_type']])) {
+			return $config['default_values'][$row['record_type']];
 		}
 		
-		switch ($row['usaget']) {
-			case ('data'):
-				/* 				$sum = 0;
-				  $freeOfChargeRatingGroups = Billrun_Factory::config()->getConfigValue('realtimeevent.data.freeOfChargeRatingGroups', array());
-				  foreach ($row['mscc_data'] as $msccData) {
-				  if (!in_array($msccData['rating_group'], $freeOfChargeRatingGroups)) {
-				  $sum += $msccData['requested_units'];
-				  }
-				  }
-				  return $sum; */
-				if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.data.requestType.FINAL_REQUEST'))) {
-					return 0;
-				}
-				return Billrun_Factory::config()->getConfigValue('realtimeevent.data.quotaDefaultValue', 0);
-			case ('sms'):
-			case ('mms'):
-			case ('service'):
-				return (isset($row['reverse_charge']) && $row['reverse_charge'] === true ? -1 : 1);
+		if (isset($config['default_values']['default'])) {
+			return $config['default_values']['default'];
 		}
-		return 0;
+		
+		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
+			return 0;
+		}
+		return Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0));
 	}
 
-	/**
-	 * Get the line usage type (SMS/Call/Data/etc..)
-	 * @param $row the CDR line  to get the usage for.
-	 */
-	protected function getLineUsageType($row) {
-		if (isset($row['mscc_data'])) {
-			return 'data';
-		}
-		if (isset($row['call_reference'])) {
-			$callTypesConf = Billrun_Factory::config()->getConfigValue('realtimeevent.callTypes', array());
-			return (isset($callTypesConf[$row['call_type']]) ? $callTypesConf[$row['call_type']] : 'call');
-		}
-		if (isset($row['record_type']) && $row['record_type'] === 'sms') {
-			return 'sms';
-		}
-		if (isset($row['record_type']) && $row['record_type'] === 'service') {
-			return 'service';
-		}
-		if (isset($row['record_type']) && $row['record_type'] === 'mms') {
-			return 'mms';
-		}
-		return '';
+	protected function processLines() {
 	}
 
 }

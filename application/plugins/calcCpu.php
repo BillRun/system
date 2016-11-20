@@ -46,18 +46,27 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $unifyCalc;
 
-	public function beforeProcessorStore($processor) {
+	public function beforeProcessorStore($processor, $realtime = false) {
+		if (!$realtime) { // full cycle should only work for realtime events
+			return;
+		}
+		
 		Billrun_Factory::log('Plugin ' . $this->name . ' triggered', Zend_Log::INFO);
 		$options = array(
-			'autoload' => false,
+			'autoload' => 0,
+			'realtime' => $realtime,
 		);
 
 		$remove_duplicates = Billrun_Factory::config()->getConfigValue('calcCpu.remove_duplicates', true);
 		if ($remove_duplicates) {
 			$this->removeDuplicates($processor);
 		}
+		
 		$data = &$processor->getData();
-		$this->queue_calculators = Billrun_Factory::config()->getConfigValue("queue.calculators");
+		if ($realtime) {
+			$this->reuseExistingFields($data, $options);
+		}
+		$this->queue_calculators = $this->getQueueCalculators($realtime);
 		$calc_name_in_queue = array_merge(array(false), $this->queue_calculators);
 		$last_calc = array_pop($calc_name_in_queue);
 		$index = 0;
@@ -73,6 +82,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$calc->prepareData($data['data']);
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
+					$line['realtime'] = $realtime;
 					$entity = new Mongodloid_Entity($line);
 					if ($calc->isLineLegitimate($entity)) {
 						if ($calc->updateRow($entity) !== FALSE) {
@@ -93,10 +103,24 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					}
 					$line = $entity->getRawData();
 				}
+
+				if ($realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
+					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
+					$this->unifyCalc($processor, $data);
+					return false;
+				}
 			}
 			$index++;
 		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
+	}
+	
+	protected function getQueueCalculators($realtime) {
+		$queue_calcs = Billrun_Factory::config()->getConfigValue("queue.calculators", array());
+		if ($realtime && !array_search('unify', $queue_calcs)) { // realtime must run a unify calculator
+			$queue_calcs[] = 'unify';
+		}
+		return $queue_calcs;
 	}
 
 	public function unifyCalc(Billrun_Processor $processor, &$data) {
@@ -271,6 +295,43 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (function_exists('pcntl_wait')) {
 			while ($waitNum-- && pcntl_wait($status, WNOHANG) > 0) {
 				$this->childProcesses--;
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param type $data
+	 * @param type $options
+	 * @todo do this with one query
+	 */
+	protected function reuseExistingFields(&$data, $options) {
+		$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());
+		foreach ($data['data'] as &$line) {
+			$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok');
+			if (!isset($sessionIdFields[$line['type']]) || (
+				isset($line['record_type']) && in_array($line['record_type'], Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreRecordTypes', array()))
+			)) {
+				continue;
+			}
+			$customerCalc = $this->getCalculator('customer', $options, $line);
+			$rateCalc = $this->getCalculator('rate', $options, $line);
+			if (!$rateCalc) {
+				continue;
+			}
+			$possibleNewFields = array_merge($customerCalc->getCustomerPossiblyUpdatedFields(), array($rateCalc->getRatingField()), Billrun_Factory::config()->getConfigValue('calcCpu.reuse.addedFields', array()));
+			$query = array_intersect_key($line, array_flip($sessionIdFields[$line['type']]));
+			if ($query) {
+				$flipedArr = array_flip($possibleNewFields);
+				$fieldsToIgnore = Billrun_Factory::config()->getConfigValue('calcCpu.reuse.ignoreFields', array());
+				foreach ($fieldsToIgnore as $fieldToIgnore) {
+					unset($flipedArr[$fieldToIgnore]);
+				}
+				$formerLine = Billrun_Factory::db()->linesCollection()->query($query)->cursor()->sort(array('urt' => -1))->limit(1)->current();
+				if (!$formerLine->isEmpty()) {
+					$addArr = array_intersect_key($formerLine->getRawData(), $flipedArr);
+					$line = array_merge($addArr, $line);
+				}
 			}
 		}
 	}

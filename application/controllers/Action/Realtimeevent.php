@@ -4,6 +4,7 @@
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ * @deprecated since version 5.3
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 

@@ -156,7 +156,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 		}
-		$row['subscriber_lang'] = $subscriber->language;
 
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
 		$plan_ref = $plan->createRef();
@@ -214,12 +213,23 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::db()->linesCollection()->update($where, $save);
 		}
 
-		if (!isset($line['usagev']) || $line['usagev'] === 0) {
+		if ((!isset($line['usagev']) || $line['usagev'] === 0) && !$this->shouldUsagevBeZero($line)) {
 			$this->removeLineFromQueue($line);
 			unset($this->data[$dataKey]);
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
+	}
+	
+	/**
+	 * in some realtime cases a line usagev should be zero
+	 * 
+	 * @param type $line
+	 * @return boolean
+	 * @todo add logic
+	 */
+	protected function shouldUsagevBeZero($line) {
+		return $line['realtime'] && $line['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'));
 	}
 
 	public function getPossiblyUpdatedFields() {

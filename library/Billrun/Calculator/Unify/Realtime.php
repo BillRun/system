@@ -26,134 +26,10 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 		if (isset($options['unification_fields'])) {
 			return $options['unification_fields'];
 		} else {
-			// TODO: put in seperate config dedicate to unify
+			$type = $options['type'];
+			// all realtime lines should be unified the same
 			return array(
-				'callrt' => array(
-					'required' => array(
-						'fields' => array('urt', 'call_reference', 'api_name'),
-						'match' => array(
-							'api_name' => '/start_call|answer_call|reservation_time|release_call/',
-						),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('call_reference', 'usaget', 'imsi', 'calling_number', 'called_number'), // no urt intentionally
-						'field' => array()
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-								'api_name' => '/.*/',
-							),
-							'update' => array(
-								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'calling_number', 'called_number', 'call_reference', 'call_id', 'connected_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'imsi', 'aid', 'sid', 'pp_includes_name', 'interconnect_arate_key'),
-								'$set' => array('process_time', 'np_code', 'call_type', 'balance_after', 'granted_return_code', 'call_offset'),
-								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
-							),
-						),
-						array(
-							'match' => array(
-								'api_name' => '/^start_call$|^answer_call$/',
-							),
-							'update' => array(
-								'$set' => array('urt', 'balance_before'),
-							),
-						),
-						array(
-							'match' => array(
-								'api_name' => '/^release_call$/',
-							),
-							'update' => array(
-								'$set' => array('isup_release_cause'),
-							),
-						),
-					),
-				),
-//				'smsrt' => array(
-//					'required' => array(
-//						'fields' => array('urt', 'association_number'),
-//					),
-//					'date_seperation' => 'Ymd',
-//					'stamp' => array(
-//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-//						'field' => array()
-//					),
-//					'fields' => array(
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-//								'$set' => array('process_time'),
-//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-//							),
-//						),
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$set' => array('balance_after'),
-//							),
-//						),
-//					),
-//				),
-//				'mmsrt' => array(
-//					'required' => array(
-//						'fields' => array('urt', 'association_number'),
-//					),
-//					'date_seperation' => 'Ymd',
-//					'stamp' => array(
-//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-//						'field' => array()
-//					),
-//					'fields' => array(
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'called_number', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-//								'$set' => array('process_time'),
-//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-//							),
-//						),
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$set' => array('balance_after'),
-//							),
-//						),
-//					),
-//				),
-//				'service' => array(
-//					'required' => array(
-//						'fields' => array('urt', 'association_number', 'service_name'),
-//					),
-//					'date_seperation' => 'Ymd',
-//					'stamp' => array(
-//						'value' => array('association_number', 'usaget', 'calling_number', 'called_number'), // no urt intentionally
-//						'field' => array()
-//					),
-//					'fields' => array(
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$setOnInsert' => array('urt', 'balance_before', 'arate', 'usaget', 'calling_number', 'service_name', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'association_number', 'transaction_id'),
-//								'$set' => array('process_time'),
-//								'$inc' => array('usagev', 'apr', 'out_balance_usage', 'aprice'),
-//							),
-//						),
-//						array(
-//							'match' => array(
-//							),
-//							'update' => array(
-//								'$set' => array('balance_after'),
-//							),
-//						),
-//					),
-//				),
-				'gy' => array(
+				$type => array(
 					'required' => array(
 						'fields' => array('session_id', 'urt', 'request_num', 'request_type'),
 						'match' => array(
@@ -171,17 +47,9 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'request_type' => '/.*/',
 							),
 							'update' => array(
-								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'service_provider', 'subscriber_lang', 'aid', 'sid', 'pp_includes_name', 'balance_before', 'msisdn', 'interconnect_arate_key'),
-								'$set' => array('process_time', 'in_data_slowness', 'granted_return_code', 'call_offset'),
-								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice', 'interconnect_aprice'),
-							),
-						),
-						array(
-							'match' => array(
-								'classMethod' => 'isNotInDataSlowness',
-							),
-							'update' => array(
-								'$set' => array('balance_after'),
+								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'aid', 'sid', 'msisdn'),
+								'$set' => array('process_time', 'granted_return_code'),
+								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice'),
 							),
 						),
 					),
@@ -195,8 +63,8 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 	 * @return type
 	 */
 	protected function getLines() {
-		$types = array('callrt', 'smsrt', 'mmsrt', 'service', 'gy');
-		return $this->getQueuedLines(array('type' => array('$in' => $types)));
+		$query = array('realtime' => true);
+		return $this->getQueuedLines($query);
 	}
 
 	protected function setUnifiedLineDefaults(&$line) {
@@ -205,13 +73,6 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 
 	protected function getDateSeparation($line, $typeData) {
 		return FALSE;
-	}
-
-	public function isNotInDataSlowness($line) {
-		if (!isset($line['in_data_slowness']) || !$line['in_data_slowness']) {
-			return true;
-		}
-		return false;
 	}
 
 }

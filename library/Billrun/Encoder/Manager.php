@@ -25,7 +25,9 @@ class Billrun_Encoder_Manager {
 	protected static function getEncoderClassName($params) {
 		$encoderName = null;
 
-		if (!is_null($usaget = $params['usaget'])) {
+		if (!is_null($encoder = $params['encoder'])) {
+			$encoderName = $encoder;
+		} else if (!is_null($usaget = $params['usaget'])) {
 			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($usaget) . ".encode");
 		} else if (!is_null($controllerName = $params['controllerName']) && !is_null($actionName = $params['actionName'])) {
 			$encoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".encode." . strtolower($actionName));
