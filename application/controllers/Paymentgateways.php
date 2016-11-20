@@ -96,9 +96,6 @@ class PaymentGatewaysController extends ApiController {
 			'tennant_return_url' => $returnUrl,
 			'gateway' => $name
 		);
-//		if($type == "account") {
-//			$query['gateway'] = $name;
-//		}
 		
 		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
