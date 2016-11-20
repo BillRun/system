@@ -197,6 +197,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
 		$instanceOptions['balance_db_refresh'] = true;
+		if ($this->plan->isGroupAccountShared($this->rate, $this->usaget)) {
+			$instanceOptions['sid'] = 0;
+		}
 		$loadedBalance = Billrun_Balance::getInstance($instanceOptions);
 		if (!$loadedBalance || !$loadedBalance->isValid()) {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
