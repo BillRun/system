@@ -441,5 +441,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 		return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];		
 	}
+	
+	protected function getGenerationTime($value, $parameters, $line) {
+		return $this->translateUrt(new MongoDate($this->startTime), $parameters);
+	}
 
 }
