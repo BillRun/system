@@ -35,7 +35,7 @@ class Billrun_Billingcycle {
 	public static function getEndTime($key) {
 		// Create the table if not already initialized
 		if(!self::$cycleEndTable) {
-			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable('+1 month');
+			self::$cycleEndTable = new Billrun_DataTypes_CachedChargingTimeTable();
 		}
 		
 		return self::$cycleEndTable->get($key);
@@ -49,7 +49,7 @@ class Billrun_Billingcycle {
 	public static function getStartTime($key) {
 		// Create the table if not already initialized
 		if(!self::$cycleStartTable) {
-			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable();
+			self::$cycleStartTable = new Billrun_DataTypes_CachedChargingTimeTable('-1 month');
 		}
 
 		return self::$cycleStartTable->get($key);

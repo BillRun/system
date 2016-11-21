@@ -31,6 +31,9 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function beforeCalculatorUpdateRow(&$row, Billrun_Calculator $calculator) {
+		if (!isset($row['realtime']) || !$row['realtime']) {
+			return;
+		}
 		if (!isset($row['usagev_offset']) && ($calculator->getType() == 'pricing' || stripos(get_class($calculator), 'rate') !== FALSE)) {
 			$row['usagev_offset'] = $this->getRowCurrentUsagev($row);
 		}
@@ -75,7 +78,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
-		return ($row['type'] == 'datart' && in_array($row['record_type'], array('final_request', 'update_request')));
+		return ($row['realtime'] && in_array($row['record_type'], array('final_request', 'update_request')));
 	}
 
 	/**
@@ -98,22 +101,19 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getLineToUpdate($row) {
 		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
-		if ($row['type'] == 'datart') {
-			$findQuery = array(
-				"sid" => $row['sid'],
-				"session_id" => $row['session_id'],
-				"request_num" => array('$lt' => $row['request_num']),
-			);
-			$sort = array(
-				'sid' => 1,
-				'session_id' => 1,
-				'request_num' => -1, 
-				'_id' => -1,
-			);
-			$line = $lines_archive_coll->query($findQuery)->cursor()->sort($sort)->limit(1);
-			return $line;
-		}
-		return false;
+		$findQuery = array(
+			"sid" => $row['sid'],
+			"session_id" => $row['session_id'],
+			"request_num" => array('$lt' => $row['request_num']),
+		);
+		$sort = array(
+			'sid' => 1,
+			'session_id' => 1,
+			'request_num' => -1, 
+			'_id' => -1,
+		);
+		$line = $lines_archive_coll->query($findQuery)->cursor()->sort($sort)->limit(1);
+		return $line;
 	}
 
 	/**
@@ -123,16 +123,11 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	protected function getRealUsagev($row) {
-		if ($row['type'] == 'datart') {
-			$sum = 0;
-			foreach ($row['mscc_data'] as $msccData) {
-				if (isset($msccData['used_units'])) {
-					$sum += intval($msccData['used_units']);
-				}
-			}
-			return $sum;
+		$config = Billrun_Factory::config()->getFileTypeSettings($row['type']);
+		if (!isset($row[$config['used_usagev_field']])) {
+			return 0;
 		}
-		return 0;
+		return $row[$config['used_usagev_field']];
 	}
 
 	/**
@@ -141,43 +136,18 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	protected function getChargedUsagev($row, $lineToRebalance) {
-		if ($row['type'] == 'datart') {
-			return $lineToRebalance['usagev'];
-		}
-		return null;
-	}
-	
-	protected function getRebalanceApr($lineToRebalance, $realUsagev, $rate) {
-		if ((isset($lineToRebalance['free_line']) && $lineToRebalance['free_line']) ||
-			($lineToRebalance['type'] === 'datart' && $lineToRebalance['in_data_slowness'])) {
-			return 0;
-		}
-		$offsetCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $lineToRebalance['usaget'], $lineToRebalance['usagev_offset'], 0, $lineToRebalance);
-		$currentCost = Billrun_Calculator_CustomerPricing::getPriceByRate($rate, $lineToRebalance['usaget'], $lineToRebalance['usagev_offset'] + $realUsagev, 0, $lineToRebalance);
-		$realCost = $currentCost - $offsetCost;
-		$chargedCost = $lineToRebalance['apr'];
-		return $realCost - $chargedCost;
+		return $lineToRebalance['usagev'];
 	}
 	
 	protected function getRebalancePricingData($lineToRebalance, $realUsagev, $rate, $balance, $plan) {
-		$customerPricingCalc = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		return $customerPricingCalc->getLinePricingData($realUsagev, $lineToRebalance['usaget'], $rate, $balance, $plan, $lineToRebalance);
-	}
-
-	protected function getRebalanceUsagevc($rate, $currentUsagevc, $usaget, $usagev, $offset, $planName = null) {
-		$tariff = Billrun_Rate::getTariff($rate, $usaget, $planName);
-		$rates_arr = $tariff['rate'];
-		$offsetCeil = Billrun_Calculator_Rate::getAccumulatedVolumeByRate($rates_arr, $offset, 'rounded');
-		$usagevWithOffsetCeil = Billrun_Calculator_Rate::getAccumulatedVolumeByRate($rates_arr, $offset + $usagev, 'rounded');
-		$realUsagevc = $usagevWithOffsetCeil - $offsetCeil;
-		return $realUsagevc - $currentUsagevc;
+		$loadedBalance = Billrun_Balance::getInstance($lineToRebalance->getRawData());
+		return $loadedBalance->getLinePricingData($realUsagev, $lineToRebalance['usaget'], $rate, $plan, $lineToRebalance);
 	}
 	
 	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget, $rebalancePricingData) {
 		$rebalanceData = array(
 			'usagev' => $rebalanceUsagev,
-			'apr' => $this->getRebalanceApr($lineToRebalance, $realUsagev, $rate),
-			'usagevc' => $this->getRebalanceUsagevc($rate, $lineToRebalance['usagevc'], $usaget, $realUsagev, $lineToRebalance['usagev_offset'], $lineToRebalance['plan']),
+			'aprice' => $lineToRebalance['aprice'] - $rebalancePricingData['aprice'],
 		);
 		
 		foreach ($rebalancePricingData as $rebalanceKey => $rebalanceVal) {
@@ -246,10 +216,12 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		// Update balance cost
 		if ($balance) {
-			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalancePricingData['aprice'];
+			$rebalanceAprice = ($lineToRebalance['aprice'] - $rebalancePricingData['aprice']);
+			$balance['balance.cost'] -= $rebalanceAprice;
+			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
 				$group = $lineToRebalance['arategroup'];
-				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.cost'] -= $rebalancePricingData['aprice'];
+				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			}
 			$balance->save();
 		}
@@ -265,7 +237,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 		// Update line in Lines collection will be done by Unify calculator
 		$sessionIdFields = Billrun_Factory::config()->getConfigValue('realtimeevent.session_id_field', array());
-		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields[$lineToRebalance['type']]));
+		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
@@ -280,7 +252,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo move hard-coded values to configuration
 	 */
 	protected function needToRebalanceUsagev($row) {
-		return ($row['type'] === 'datart' && $row['record_type'] === 'final_request');
+		return ($row['realtime'] && $row['record_type'] === 'final_request');
 	}
 
 	/**

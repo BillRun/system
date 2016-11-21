@@ -138,7 +138,6 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 			if (!$this->balance && self::isFreeLine($this->row)) {
 				return $this->balance->getFreeRowPricingData();
 			}
-			$this->row['balance_ref'] = $this->balance->createRef();
 			$this->row['usagev'] = $volume = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
 		} else {
 			$volume = $this->usagev;
@@ -156,6 +155,7 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 			usleep($this->countConcurrentRetries);
 			return $this->updateSubscriberBalance($this->row, $this->usaget, $this->rate);
 		}
+		$this->row['balance_ref'] = $this->balance->createRef();
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
 	}

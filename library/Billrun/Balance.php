@@ -257,7 +257,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo refactoring the if-else-if-else-if-else to methods
 	 * @todo remove (in/over/out)_plan support (group used instead)
 	 */
-	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
+	public function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
 		$ret = array();
 		if ($plan->isRateInEntityGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this, $rate, $usageType);

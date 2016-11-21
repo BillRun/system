@@ -64,7 +64,7 @@ class RealtimeController extends ApiController {
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
-		$this->event['pretend'] = $this->isPretend($this->event);
+		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 		
 		if (isset($this->event['time_date'])) {
 			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
