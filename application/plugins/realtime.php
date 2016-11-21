@@ -124,10 +124,10 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getRealUsagev($row) {
 		$config = Billrun_Factory::config()->getFileTypeSettings($row['type']);
-		if (!isset($row[$config['used_usagev_field']])) {
+		if (!isset($row[$config['realtime']['used_usagev_field']])) {
 			return 0;
 		}
-		return $row[$config['used_usagev_field']];
+		return $row[$config['realtime']['used_usagev_field']];
 	}
 
 	/**
@@ -220,7 +220,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$balance['balance.cost'] -= $rebalanceAprice;
 			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
-				$group = $lineToRebalance['arategroup'];
+				$group = $lindefault_valueseToRebalance['arategroup'];
 				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			}
 			$balance->save();
@@ -236,7 +236,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 
 		// Update line in Lines collection will be done by Unify calculator
-		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($originalRow['type'])['session_id_fields'];
+		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($originalRow['type'])['realtime']['session_id_fields'];
 		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		$lines_coll = Billrun_Factory::db()->linesCollection();

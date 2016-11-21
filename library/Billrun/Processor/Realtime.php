@@ -82,12 +82,12 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	}
 
 	protected function getLineVolume($row, $config) {
-		if (isset($config['default_values'][$row['record_type']])) {
-			return $config['default_values'][$row['record_type']];
+		if (isset($config['realtime']['default_values'][$row['record_type']])) {
+			return $config['realtime']['default_values'][$row['record_type']];
 		}
 		
-		if (isset($config['default_values']['default'])) {
-			return $config['default_values']['default'];
+		if (isset($config['realtime']['default_values']['default'])) {
+			return $config['realtime']['default_values']['default'];
 		}
 		
 		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
