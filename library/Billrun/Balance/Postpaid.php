@@ -123,7 +123,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $currentUsage + $volume;
+		$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 		$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 		$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 		$update['$set']['balance.cost'] = $this->get('balance')['cost'] + $pricingData[$this->pricingField];

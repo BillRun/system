@@ -42,6 +42,13 @@ abstract class Billrun_Calculator_Row {
 	 * @return array update data
 	 */
 	abstract public function update();
+	
+	/**
+	 * initialization of the class
+	 * 
+	 * @return void
+	 */
+	abstract protected function init();
 
 	public function getRow() {
 		return $this->row;

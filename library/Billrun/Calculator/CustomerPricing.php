@@ -210,8 +210,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$updateRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
-			$pricingData = $updateRow->update();
+			$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+			$pricingData = $calcRow->update();
 			if (is_bool($pricingData)) {
 				return $pricingData;
 			}
@@ -221,41 +221,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
-	}
-
-	/**
-	 * Gets the subscriber balance. If it does not exist, creates it.
-	 * 
-	 * @param type $row
-	 * 
-	 * @return Billrun_Balance
-	 */
-	public function loadSubscriberBalance($row, $granted_volume = null, $granted_cost = null) {
-		// we moved the init of plan_ref to customer calc, we leave it here only for verification and avoid b/c issues
-		if (!isset($row['plan_ref'])) {
-			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /* 'disableCache' => true */));
-			$plan_ref = $plan->createRef();
-			if (is_null($plan_ref)) {
-				Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
-				$row['usagev'] = 0;
-				$row['apr'] = 0;
-				return false;
-			}
-			$row['plan_ref'] = $plan_ref;
-		}
-		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
-		$instanceOptions['balance_db_refresh'] = true;
-		$loadedBalance = Billrun_Balance::getInstance($instanceOptions);
-		if (!$loadedBalance || !$loadedBalance->isValid()) {
-			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
-			$row['usagev'] = 0;
-			$row['apr'] = 0;
-			return false;
-		} else {
-			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
-		}
-		$this->balance = $loadedBalance;
-		return true;
 	}
 
 	/**

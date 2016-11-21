@@ -142,7 +142,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * 
 	 */
 	protected function updateSubscriberBalance() {
-		if (!$this->loadSubscriberBalance($this->row, $this->min_balance_volume, $this->min_balance_cost) && // will load $this->balance
+		if (!$this->loadSubscriberBalance() && // will load $this->balance
 			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
@@ -178,45 +178,43 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * Gets the subscriber balance. If it does not exist, creates it.
 	 * 
-	 * @param type $row
-	 * 
-	 * @return Billrun_Balance
+	 * @return boolean
 	 */
-	public function loadSubscriberBalance($row, $granted_volume = null, $granted_cost = null) {
+	public function loadSubscriberBalance() {
 		// we moved the init of plan_ref to customer calc, we leave it here only for verification and avoid b/c issues
-		if (!isset($row['plan_ref'])) {
-			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, /* 'disableCache' => true */));
+		if (!isset($this->row['plan_ref'])) {
+			$plan = Billrun_Factory::plan(array('name' => $this->plan, 'time' => $this->urt->sec, /* 'disableCache' => true */));
 			$plan_ref = $plan->createRef();
 			if (is_null($plan_ref)) {
-				Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
-				$row['usagev'] = 0;
-				$row['apr'] = 0;
+				Billrun_Factory::log('No plan found for subscriber ' . $this->sid, Zend_Log::ALERT);
+				$this->usagev = 0;
+				$this->apr = 0;
 				return false;
 			}
-			$row['plan_ref'] = $plan_ref;
+			$this->plan_ref = $plan_ref;
 		}
-		$instanceOptions = array_merge($row->getRawData(), array('granted_usagev' => $granted_volume, 'granted_cost' => $granted_cost));
+		$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
 		$instanceOptions['balance_db_refresh'] = true;
 		if ($this->plan->isGroupAccountShared($this->rate, $this->usaget)) {
 			$instanceOptions['sid'] = 0;
 		}
 		$loadedBalance = Billrun_Balance::getInstance($instanceOptions);
 		if (!$loadedBalance || !$loadedBalance->isValid()) {
-			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
-			$row['usagev'] = 0;
-			$row['apr'] = 0;
+			Billrun_Factory::log("couldn't get balance for subscriber: " . $this->sid, Zend_Log::INFO);
+			$this->usagev = 0;
+			$this->apr = 0;
 			return false;
 		} else {
-			Billrun_Factory::log("Found balance for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			Billrun_Factory::log("Found balance for subscriber " . $this->sid, Zend_Log::DEBUG);
 		}
 		$this->balance = $loadedBalance;
 		return true;
 	}
 
-	protected function initMinBalanceValues($usaget, $plan) {
+	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
-			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
-			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $usaget, $this->min_balance_volume, $plan->getName(), $this->getCallOffset());
+			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
+			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getCallOffset());
 		}
 	}
 
@@ -225,7 +223,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param type $db_ref
 	 */
 	public function getRowRate($row) {
-		return Billrun_Rates_Util::getRateByRef($this->row->get('arate', true));
+		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
 	}
 
 	public function setCallOffset($val) {

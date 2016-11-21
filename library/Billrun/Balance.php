@@ -169,7 +169,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @return mixed on success update return pricing data array, else false
 	 * 
-	 * @todo move to balance object
 	 */
 	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
 		$tx = $this->get('tx');
