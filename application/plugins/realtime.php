@@ -236,7 +236,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 
 		// Update line in Lines collection will be done by Unify calculator
-		$sessionIdFields = Billrun_Factory::config()->getConfigValue('realtimeevent.session_id_field', array());
+		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($originalRow['type'])['session_id_fields'];
 		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
