@@ -146,20 +146,7 @@ class Billrun_Calculator_Updaterow_Customerpricing extends Billrun_Calculator_Up
 			($balanceNoAvailableResponse = $this->handleNoBalance($this->row, $this->rate, $this->plan)) !== TRUE) {
 			return $balanceNoAvailableResponse;
 		}
-
-<<<<<<< HEAD
-		if (self::isPrepaid($this->row) && !(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset());
-			if (!$this->balance && self::isFreeLine($this->row)) {
-				return $this->balance->getFreeRowPricingData();
-			}
-			$this->row['usagev'] = $volume = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
-		} else {
-			$volume = $this->usagev;
-		}
-
-=======
->>>>>>> ece1fe92f3bd5db02420351a21b32d8ff1efa4d3
+		
 		Billrun_Factory::dispatcher()->trigger('beforeUpdateSubscriberBalance', array($this->balance, &$this->row, $this->rate, $this));
 		$pricingData = $this->balance->updateBalanceByRow($this->row, $this->rate, $this->plan, $this->usaget, $this->usagev);
 		if ($pricingData === false) {
