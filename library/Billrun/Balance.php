@@ -171,14 +171,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 */
 	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
-		$tx = $this->get('tx');
-		if (is_array($tx) && empty($tx)) {
-			$this->set('tx', new stdClass());
-			$this->save();
-		}
-		if (!empty($tx) && array_key_exists($row['stamp'], $tx)) { // we're after a crash
-			$pricingData = $tx[$row['stamp']]; // restore the pricingData before the crash
-			return $pricingData;
+		if (($crashedPricingData = $this->getTx($row['stamp'])) !== FALSE) {
+			return $crashedPricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
@@ -199,6 +193,26 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		return $pricingData;
+	}
+	
+	/**
+	 * try to fetch previous calculation which is not complete
+	 * 
+	 * @param string $stamp the row stamp
+	 * 
+	 * @return mixed false if not found transaction, else the transaction info
+	 */
+	protected function getTx($stamp) {
+		$tx = $this->get('tx');
+		if (is_array($tx) && empty($tx)) {
+			$this->set('tx', new stdClass());
+			$this->save();
+		}
+		if (!empty($tx) && array_key_exists($stamp, $tx)) { // we're after a crash
+			$pricingData = $tx[$stamp]; // restore the pricingData before the crash
+			return $pricingData;
+		}
+		return false;
 	}
 
 	/**
