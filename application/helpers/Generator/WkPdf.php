@@ -14,7 +14,7 @@
  */
 class Generator_WkPdf extends Billrun_Generator_Pdf {
 
-	protected static $type = 'wkpdf';
+	protected static $type = 'invoice_export';
 	
 	protected $accountsToInvoice = FALSE;
 	protected $filePermissions =  0666; 
@@ -34,8 +34,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//handle accounts both as  an array and as a comma seperated list (CSV row)
 		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return is_array($acts) ? $acts : explode(',',$acts); });
 		
-		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header'], Billrun_Factory::config()->getConfigValue('wkpdf.header') );
-		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer'],Billrun_Factory::config()->getConfigValue('wkpdf.footer') );
+		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
+		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
 		
@@ -60,13 +60,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	public function prepereView($params = FALSE) {
 		$this->view = new Billrun_View_Invoice($this->view_path);
-		$this->view->assign('css_path',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.theme'));
-		$this->view->assign('decimal_mark',  Billrun_Factory::config()->getConfigValue('wkpdf.decimal_mark', '.'));
-		$this->view->assign('thousands_separator',  Billrun_Factory::config()->getConfigValue('wkpdf.thousands_separator', ','));
+		$this->view->assign('css_path',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme'));
+		$this->view->assign('decimal_mark',  Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
+		$this->view->assign('thousands_separator',  Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
-		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.sumup_template', ''));
-		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.details_template', ''));
-		$this->view->assign('lines_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.lines_template', ''));
+		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
+		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
+		$this->view->assign('lines_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.lines_template', ''));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 	}
 	
@@ -134,29 +134,32 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getTranslations() {
-		return Billrun_Factory::config()->getConfigValue('wkpdf.html_translation', array());
+		return Billrun_Factory::config()->getConfigValue(self::$type . '.html_translation', array());
 	}
-	
+
 	protected function updateHtmlDynamicData($account) {
 		$translations = $this->getTranslations();
+		
 		$headerContent = file_get_contents($this->header_path);
+		$headerContent = str_replace("[[invoiceHeaderTemplate]]", $this->getInvoiceHeaderContent(), $headerContent);		
+		
 		$footerContent = file_get_contents($this->footer_path);
-		foreach ($translations as $find => $replaceObj) {
-			$replace = "";
-			if (!is_array($replaceObj)) {
-				$replace = $replaceObj;
-			} else if (isset ($replaceObj['class_method']) && method_exists($this, $replaceObj['class_method'])) {
-				$replace = $this->{$replaceObj['class_method']}($account, $replaceObj);
+		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
+
+		foreach ($translations as $translation) {
+			switch ($translation) {
+				case "company_name":
+					$replace = $this->getCompanyName();
+					$headerContent = str_replace("[[$translation]]", $replace, $headerContent);
+					$footerContent = str_replace("[[$translation]]", $replace, $footerContent);
+				case "date":
+					$replace = $this->getHeaderDate();
+					$headerContent = str_replace("[[$translation]]", $replace, $headerContent);
+					$footerContent = str_replace("[[$translation]]", $replace, $footerContent);
 			}
-			$headerContent = str_replace("~$find~", $replace, $headerContent);
-			$footerContent = str_replace("~$find~", $replace, $footerContent);
 		}
 		file_put_contents($this->tmp_paths['header'], $headerContent);
 		file_put_contents($this->tmp_paths['footer'], $footerContent);
-	}
-	
-	protected function getLogoPath() {
-		return APPLICATION_PATH . Billrun_Factory::config()->getConfigValue('wkpdf.logo', '');
 	}
 	
 	protected function getCompanyName() {
@@ -164,7 +167,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getHeaderDate() {
-		$date_seperator = Billrun_Factory::config()->getConfigValue('wkpdf.date_seperator', '/');
+		$date_seperator = Billrun_Factory::config()->getConfigValue(self::$type . '.date_seperator', '/');
 		return date('d' . $date_seperator . 'm' . $date_seperator . 'Y');
 	}
+	
+	protected function getInvoiceHeaderContent() {
+		return Billrun_Factory::config()->getConfigValue(self::$type . '.header', '');
+	}
+	
+	protected function getInvoiceFooterContent() {
+		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
+	}
+	
 }
