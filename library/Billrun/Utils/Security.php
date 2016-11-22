@@ -13,6 +13,16 @@
 class Billrun_Utils_Security {
 
 	/**
+	 * The name of the timestamp field in the input request.
+	 */
+	const TIMESTAMP_FIELD = '_t_';
+	
+	/**
+	 * The name of the signature field in the input request.
+	 */
+	const SIGNATURE_FIELD = '_sig_';
+	
+	/**
 	 * Calculate the 'signature' using the hmac method and add it to the data
 	 * under a new field name '_sig_',
 	 * This function also adds a timestamp under the field 't'.
@@ -22,9 +32,9 @@ class Billrun_Utils_Security {
 	 */
 	public static function addSignature(array $data, $key) {
 		// Add the timestamp
-		$data['t'] = date(Billrun_Base::base_datetimeformat);
+		$data[self::TIMESTAMP_FIELD] = date(Billrun_Base::base_datetimeformat);
 		$signature = self::sign($data, $key);
-		$data['_sig_'] = $signature;
+		$data[self::SIGNATURE_FIELD] = $signature;
 		return $data;
 	}
 	
@@ -35,11 +45,11 @@ class Billrun_Utils_Security {
 	 */
 	public static function validateData(array $request) {
 		// Validate the signature and the timestamp.
-		if(!isset($request['_sig_'], $request['t'])) {
+		if(!isset($request[self::SIGNATURE_FIELD], $request[self::TIMESTAMP_FIELD])) {
 			return false;
 		}
 		
-		$signature = $request['_sig_'];
+		$signature = $request[self::SIGNATURE_FIELD];
 
 		// Get the secret
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
@@ -48,7 +58,7 @@ class Billrun_Utils_Security {
 		}
 		
 		$data = $request;
-		unset($data['_sig_']);
+		unset($data[self::SIGNATURE_FIELD]);
 		$hashResult = self::sign($data, $secret);
 		
 		// state whether signature is okay or not
