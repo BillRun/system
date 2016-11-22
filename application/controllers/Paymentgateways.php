@@ -70,7 +70,9 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("need to pass numeric aid", $request);
 		}
 
-		if (!isset($data['t']) || is_null(($timestamp = $data['t']))) {
+		// No need to check isset, the validateData function validates that the 
+		// timestamp value exists.
+		if (is_null($timestamp = $data[Billrun_Utils_Security::TIMESTAMP_FIELD])) {
 			return $this->setError("Invalid arguments", $request);
 		}
 
