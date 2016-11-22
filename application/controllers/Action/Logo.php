@@ -17,8 +17,19 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class LogoAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
+	/**
+	 * The instance of the Grid FS collection.
+	 * @var MongoGridFS
+	 */
 	protected $collection;
 	
+	/**
+	 * Decode the 64 base input.
+	 * @param string $name - The name of the value.
+	 * @param mixed $request - The request instance.
+	 * @param mixed $default - Default value to be returned if no value is fond
+	 * @return The decoded value or a default value if none is found in the request.
+	 */
 	protected function decodeValue($name, $request, $default = array()) {
 		$rawValue = $request->get($name);
 		if(!$rawValue) {
