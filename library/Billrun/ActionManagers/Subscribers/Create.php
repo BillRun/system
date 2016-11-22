@@ -16,6 +16,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		validate as baseValidate;
 	}
 	use Billrun_ActionManagers_Subscribers_Servicehandler;
+	use Billrun_Traits_FieldValidator;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -41,6 +42,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		return $subscriberQuery;
 	}
 
+	protected function _getBaseQuery() {
+		return array('type' => $this->type);
+	}
+	
 	/**
 	 * Check if the subscriber to create already exists.
 	 * @return boolean - true if the subscriber exists.
@@ -98,7 +103,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -116,6 +121,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			return false;
 		}
 
+		// Validate the fields.
+		$this->enforce($this->fields, $jsonData);
+		
 		$invalidFields = $this->setQueryFields($jsonData);
 
 		// If there were errors.
@@ -187,6 +195,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 
 	protected function validate() {
+		// Validate the input.
 		if (($this->type === 'subscriber') && (!$this->isAccountExists($this->query['aid']))) {
 				return false;
 		}
@@ -209,6 +218,10 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 	protected function getSubscriberData() {
 		return $this->query;
+	}
+
+	protected function _getCollection() {
+		return Billrun_Factory::db()->subscribersCollection();
 	}
 
 }

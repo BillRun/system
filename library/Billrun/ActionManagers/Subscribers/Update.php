@@ -16,6 +16,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	use Billrun_ActionManagers_Subscribers_Validator {
 		validateOverlap as baseValidateOverlap;
 	}
+	use Billrun_Traits_FieldValidator;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -161,6 +162,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
+		// Enforce the update.
+		$this->enforce($this->fields, $jsonData);
 
 		return true;
 	}
@@ -261,4 +264,11 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		return $subscriberData;
 	}
 
+	protected function _getCollection() {
+		return Billrun_Factory::db()->subscribersCollection();
+	}
+	
+	protected function _getBaseQuery() {
+		return array('type' => $this->type);
+	}
 }

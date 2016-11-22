@@ -20,6 +20,6 @@ abstract class Billrun_TypeValidator_Base {
 	 * @param type $params - optional extra params
 	 * @return boolean
 	 */
-	abstract function validate($value, $params);
+	abstract public function validate($value, $params);
 	
 }
