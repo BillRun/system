@@ -32,7 +32,7 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PREPAID_DELETED_SUBSCRIBERS_' . date('YmdHi',$this->startTime), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PS1_SUBS_4_DEL_' . date('Ymd',$this->startTime), 'source' => static::$type);
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------

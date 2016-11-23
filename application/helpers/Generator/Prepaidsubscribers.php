@@ -12,7 +12,7 @@
  * @package  Models
  * @since    4.0
  */
-class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
+abstract class Generator_Prepaidsubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
 	static $type = 'prepaidsubscribers';
 	

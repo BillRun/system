@@ -37,7 +37,7 @@ class Generator_Pssubsbalances extends Billrun_Generator_ConfigurableCDRAggregat
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PPS_SUBSCRIBERS_' . date('YmdHi',$this->startTime), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PS1_SUBS_BALANCE_H_' . date('Ymd',$this->startTime), 'source' => static::$type);
 	}
 	
 	public function load() {
