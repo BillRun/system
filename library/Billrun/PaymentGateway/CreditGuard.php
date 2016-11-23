@@ -13,10 +13,12 @@
  */
 class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
-	protected $cgConf;
-	protected $EndpointUrl;
+	protected $conf;
 	protected $billrunName = "CreditGuard";
 	protected $subscribers;
+	protected $rejectionCodes = "/!(000)/";
+	protected $pendingCodes = "/^false$/";
+	protected $completionCodes = "/^000$/";
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -35,15 +37,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
-		$this->cgConf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
-		$this->cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
-		$this->cgConf['aid'] = $aid;
-		$this->cgConf['ok_page'] = $okPage;
-		$this->cgConf['return_url'] = $returnUrl;
+		$credentials = $this->getGatewayCredentials();
+		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
+		$this->conf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
+		$this->conf['aid'] = $aid;
+		$this->conf['ok_page'] = $okPage;
+		$this->conf['return_url'] = $returnUrl;
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
-		$this->cgConf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -52,15 +54,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			'int_in' => '<ashrait>                                      
 							<request>
 								 <version>1000</version>
-								 <language>' . $this->cgConf['language'] . '</language>
+								 <language>' . $this->conf['language'] . '</language>
 								 <dateTime></dateTime>
 								 <command>doDeal</command>
 								 <doDeal>
-										 <successUrl>' . $this->cgConf['ok_page'] . '</successUrl>
+										 <successUrl>' . $this->conf['ok_page'] . '</successUrl>
 										  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
-										  <total>' . $this->cgConf['amount'] . '</total>
+										  <total>' . $this->conf['amount'] . '</total>
 										  <transactionType>Debit</transactionType>
 										  <creditType>RegularCredit</creditType>
 										  <currency>ILS</currency>
@@ -78,8 +80,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <email>someone@creditguard.co.il</email>
 										  <clientIP/>
 										  <customerData>
-										   <userData1>' . $this->cgConf['aid'] . '</userData1>
-										   <userData2>' . $this->cgConf['return_url'] . '</userData2>
+										   <userData1>' . $this->conf['aid'] . '</userData1>
+										   <userData2>' . $this->conf['return_url'] . '</userData2>
 										   <userData3/>
 										   <userData4/>
 										   <userData5/>
@@ -117,34 +119,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildTransactionPost($txId) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
-		$cgConf['txId'] = $txId;
-		$cgConf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
+		$params = $this->getGatewayCredentials();
+		$params['txId'] = $txId;
+		$params['tid'] = $params['terminal_id'];
 
-		return $post_array = array(
-			'user' => $credentials['user'],
-			'password' => $credentials['password'],
-			/* Build Ashrait XML to post */
-			'int_in' => '<ashrait>
-							<request>
-							 <language>HEB</language>
-							 <command>inquireTransactions</command>
-							 <inquireTransactions>
-							  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
-							  <mainTerminalNumber/>
-							  <queryName>mpiTransaction</queryName>
-							  <mid>' . (int) $credentials['mid'] . '</mid>
-							  <mpiTransactionId>' . $cgConf['txId'] . '</mpiTransactionId>
-							  <mpiValidation>Token</mpiValidation>
-							  <userData1/>
-							  <userData2/>
-							  <userData3/>
-							  <userData4/>
-							  <userData5/>
-							 </inquireTransactions>
-							</request>
-					   </ashrait>'
-		);
+		return $this->buildInquireQuery($params);
 	}
 
 	public function getTransactionIdName() {
@@ -186,45 +165,14 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		);
 	}
 
-	protected function setConnectionParameters($params) {
-		
-	}
-
 	public function getDefaultParameters() {
-		return array("user" => "", "password" => "", 'terminal_id' => "", 'mid' => "");
+		$params = array("user", "password", "terminal_id", "mid");
+		return $this->rearrangeParametres($params);
 	}
 
 	public function authenticateCredentials($params) {
-		$cgConf['tid'] = $params['terminal_id'];
-		$cgConf['mid'] = $params['mid'];
-		$cgConf['user'] = $params['user'];
-		$cgConf['password'] = $params['password'];
-
-		$authArray = array(
-			'user' => $cgConf['user'],
-			'password' => $cgConf['password'],
-			/* Build Ashrait XML to post */
-			'int_in' => '<ashrait>
-							<request>
-							 <language>HEB</language>
-							 <command>inquireTransactions</command>
-							 <inquireTransactions>
-							  <terminalNumber>' . $cgConf['tid'] . '</terminalNumber>
-							  <mainTerminalNumber/>
-							  <queryName>mpiTransaction</queryName>
-							  <mid>' . $cgConf['mid'] . '</mid>
-							  <mpiTransactionId>' . 1 . '</mpiTransactionId>
-							  <mpiValidation>Token</mpiValidation>
-							  <userData1/>
-							  <userData2/>
-							  <userData3/>
-							  <userData4/>
-							  <userData5/>
-							 </inquireTransactions>
-							</request>
-					   </ashrait>'
-		);
-
+		$params['txId'] = 1;
+		$authArray = $this->buildInquireQuery($params);
 		$authString = http_build_query($authArray);
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
@@ -241,7 +189,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 	}
 
-	protected function pay($gatewayDetails) {
+	public function pay($gatewayDetails) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
@@ -256,7 +204,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPaymentRequset($gatewayDetails) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
+		$credentials = $this->getGatewayCredentials();
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -285,30 +233,39 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		);
 	}
 
-	protected function isCompleted($status) {
-		if ($status == "000") {
-			return true;
-		}
-		return false;
-	}
-
-	protected function isPending($status) {
-		return false;
-	}
-
-	protected function isRejected($status) {
-		if ($status != "000") {
-			return true;
-		}
-		return false;
-	}
-
 	public function verifyPending($txId) {
 		
 	}
 
 	public function hasPendingStatus() {
 		return false;
+	}
+	
+	protected function buildInquireQuery($params){
+		return array(
+			'user' => $params['user'],
+			'password' => $params['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>
+							<request>
+							 <language>HEB</language>
+							 <command>inquireTransactions</command>
+							 <inquireTransactions>
+							  <terminalNumber>' . $params['tid'] . '</terminalNumber>
+							  <mainTerminalNumber/>
+							  <queryName>mpiTransaction</queryName>
+							  <mid>' . (int)$params['mid'] . '</mid>
+							  <mpiTransactionId>' . $params['txId'] . '</mpiTransactionId>
+							  <mpiValidation>Token</mpiValidation>
+							  <userData1/>
+							  <userData2/>
+							  <userData3/>
+							  <userData4/>
+							  <userData5/>
+							 </inquireTransactions>
+							</request>
+					   </ashrait>'
+		);
 	}
 
 }

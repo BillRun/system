@@ -90,16 +90,11 @@ class PaymentGatewaysController extends ApiController {
 		if (empty($returnUrl)) {
 			$returnUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.success_url');
 		}
-		$today = new MongoDate();
-		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$query = array(
-			'tennant_return_url' => $returnUrl,
-			'gateway' => $name
-		);
 		
-		$subscribers->update(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $query));
+		$accountQuery = $this->getAccountQuery($aid);
+		$accountQuery['tennant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$paymentGateway->redirectForToken($aid, $returnUrl, $timestamp, $request);
+		$paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
 	}
 
 	/**
@@ -107,7 +102,7 @@ class PaymentGatewaysController extends ApiController {
 	 * @param int $aid - The account id.
 	 * @return array The active account query
 	 */
-	protected function getAccoundQuery($aid) {
+	protected function getAccountQuery($aid) {
 		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 		$accountQuery['type'] = 'account';
 		$accountQuery['aid'] = $aid;
@@ -125,11 +120,11 @@ class PaymentGatewaysController extends ApiController {
 	 */
 	protected function validatePaymentGateway($name, $aid) {
 		// Get the accound object.
-		$accountQuery = $this->getAccoundQuery($aid);
+		$accountQuery = $this->getAccountQuery($aid);
 		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
-		if($account && !$account->isEmpty() && isset($account['gateway'])) {
+		if($account && !$account->isEmpty() && isset($account['payment_gateway']['name'])) {
 			// Check the payment gateway
-			if($account['gateway'] != $name) {
+			if($account['payment_gateway']['name'] != $name) {
 				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
 				throw new Billrun_Exceptions_InvalidFields(array($invField));
 			}
@@ -166,44 +161,13 @@ class PaymentGatewaysController extends ApiController {
 		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)) {
 			return $this->setError("Illegal stamp", $request);
 		}
-		$pendingPayments = $this->loadPending();
-		foreach ($pendingPayments as $payment) {
-			$gatewayName = $payment['payment_gateway']['name'];
-			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
-			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
-				continue;
-			}
-			$txId = $payment['payment_gateway']['transactionId'];
-			$status = $paymentGateway->verifyPending($txId);
-			$paymentData = Billrun_Bill_Payment::getInstanceByData($payment);
-			if ($status == 'Pending') { // Payment is still pending
-				$paymentData->updateLastPendingCheck();
-				continue;
-			}
-			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
-			Billrun_PaymentGateway::updateAccordingToStatus($response, $paymentData, $gatewayName);
-		}
-		Billrun_PaymentGateway::makePayment($stamp);
+		Billrun_Bill_Payment::checkPendingStatus();
+		Billrun_Bill_Payment::makePayment($stamp);
 	}
 
 	public function successAction() {
 		print_r("SUCCESS");
 	}
 
-	/**
-	 * Load payments with status pending and that their status had not been checked for some time. 
-	 * 
-	 */
-	protected function loadPending() {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
-		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
-		$query = array(
-			'waiting_for_confirmation' => true,
-			'last_checked_pending' => array('$lte' => $paymentsOrphan)
-		);
-		$res = $billsColl->query($query);
-		return $res;
-	}
 	
 }

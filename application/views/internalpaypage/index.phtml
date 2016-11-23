@@ -71,9 +71,9 @@
 									  </div>
 									  <div class="row">
 									    <?php
-										$accountOn = (isset($account['gateway']) && $account['gateway']);
+										$accountOn = (isset($account['payment_gateway']['name']) && $account['payment_gateway']['name']);
 										foreach ($payment_gateways as $pg) {
-											if($accountOn && $account['gateway'] != $pg['name']) {
+											if($accountOn && $account['payment_gateway']['name'] != $pg['name']) {
 												continue;
 											}
 											echo "<div class='col-md-3'>";

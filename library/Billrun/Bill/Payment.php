@@ -385,7 +385,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @return boolean - true if the payment is still not got through.
 	 */
 	public function isWaiting() {
-		$status = $this->data['waiting_for_confirmation'];
+		if (isset($this->data['waiting_for_confirmation'])){
+			$status = $this->data['waiting_for_confirmation'];
+		}
 		return is_null($status) ? false : $status;
 	}
 
@@ -393,7 +395,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Sets to true if the payment not yet approved.
 	 * 
 	 */
-	public function setConfirmationStatus($status) {
+	public function setConfirmationStatus(boolean $status) {
 		$this->data['waiting_for_confirmation'] = $status;
 	}
 
@@ -408,24 +410,127 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	}
 
 	/**
-	 * Saves the chosen payment gateway for paying and the transactionId if exists.
-	 * 
-	 */
-	public function setPaymentGateway($gatewayName, $txId) {
-		if (is_null($txId)) {
-			$this->data['payment_gateway'] = array('name' => $gatewayName);
-		} else {
-			$this->data['payment_gateway'] = array('name' => $gatewayName, 'transactionId' => $txId);
-		}
-		$this->save();
-	}
-
-	/**
 	 * Saves the current time that represents the check to see if the a payment is pending.
 	 * 
 	 */
 	public function updateLastPendingCheck() {
 		$this->data['last_checked_pending'] = new MongoDate();
+		$this->save();
+	}
+	
+		/**
+	 * Load payments with status pending and that their status had not been checked for some time. 
+	 * 
+	 */
+	public function loadPending() {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
+		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
+		$query = array(
+			'waiting_for_confirmation' => true,
+			'last_checked_pending' => array('$lte' => $paymentsOrphan)
+		);
+		$res = $billsColl->query($query);
+		return $res;
+	}
+	
+	/**
+	 * Responsible for paying payments and classifying payments responses: completed, pending or rejected.
+	 * 
+	 * @param string $stamp - Billrun key that represents the cycle.
+	 *
+	 */
+	public function makePayment($stamp) {
+		$paymentParams = array(
+			'dd_stamp' => $stamp
+		);
+		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
+			throw new Exception('Error removing payments before rerun');
+		}
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers());
+		$involvedAccounts = array();
+		$options = array('collect' => FALSE);
+		$customers_aid = array_map(function($ele) {
+			return $ele['aid'];
+		}, $customers);
+		
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['aid'] = array(
+			'$in' => $customers_aid
+		);
+		$query['type'] = "account";
+		$subscribers = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor();
+		foreach ($subscribers as $subscriber) {
+			$subscribers_in_array[$subscriber['aid']] = $subscriber;
+		}
+		foreach ($customers as $customer) {
+			$subscriber = $subscribers_in_array[$customer['aid']];
+			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
+			$paymentParams['billrun_key'] = $customer['billrun_key'];
+			$paymentParams['amount'] = $customer['due'];
+			$paymentParams['source'] = $customer['source'];
+			$gatewayDetails = $subscriber['payment_gateway'];
+			$gatewayDetails['amount'] = $customer['due'];
+			$gatewayDetails['currency'] = $customer['currency'];
+			$gatewayName = $gatewayDetails['name'];
+			$options['payment_gateway'] = $gatewayDetails;
+			$paymentResponse = Billrun_Bill::pay('credit', array($paymentParams), $options);
+			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
+		}
+	}
+	
+	/**
+	 * Updating the payment status.
+	 * 
+	 * @param $response - the returned payment gateway status and stage of the payment.
+	 * @param Payment payment- the current payment.
+	 * @param String $gatewayName - name of the payment gateway.
+	 * 
+	 */
+	public function updateAccordingToStatus($response, $payment, $gatewayName) {
+		if ($response['stage'] == "Completed") { // payment succeeded 
+			$payment->updateConfirmation();
+			$payment->setPaymentStatus($response['status'], $gatewayName);
+		} else if ($response['stage'] == "Pending") { // handle pending
+			$payment->setPaymentStatus($response['status'], $gatewayName);
+		} else { //handle rejections
+			if (!$payment->isRejected()) {
+				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
+				$rejection = $payment->getRejectionPayment($response['status']);
+				$rejection->save();
+				$payment->markRejected();
+			} else {
+				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
+			}
+		}
+	}
+	
+	public function checkPendingStatus(){
+		$pendingPayments = self::loadPending();
+		foreach ($pendingPayments as $payment) {
+			$gatewayName = $payment['payment_gateway']['name'];
+			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
+			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
+				continue;
+			}
+			$txId = $payment['payment_gateway']['transactionId'];
+			$status = $paymentGateway->verifyPending($txId);
+			$paymentData = Billrun_Bill_Payment::getInstanceByData($payment);
+			if ($status == 'Pending') { // Payment is still pending
+				$paymentData->updateLastPendingCheck();
+				continue;
+			}
+			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			self::updateAccordingToStatus($response, $paymentData, $gatewayName);
+		}
+	}
+	
+	public function updateDetailsForPaymentGateway($gatewayName, $txId){
+		if (is_null($txId)) {
+			$this->data['payment_gateway'] = array('name' => $gatewayName);
+		} else {
+			$this->data['payment_gateway'] = array('name' => $gatewayName, 'transactionId' => $txId);
+		}
 		$this->save();
 	}
 

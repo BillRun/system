@@ -18,16 +18,76 @@ abstract class Billrun_PaymentGateway {
 
 	use Billrun_Traits_Api_PageRedirect;
 
+	/**
+	 * Name of the payment gateway in Omnipay.
+	 * @var string
+	 */
 	protected $omnipayName;
+	
+	/**
+	 * Omnipay object for payment gateway.
+	 * @var omnipay
+	 */
 	protected $omnipayGateway;
+	
 	protected static $paymentGateways;
+	
+	/**
+	 * url to redirect after getting billing agreement from the payment gateway.
+	 * @var string
+	 */
 	protected $redirectUrl;
+	
+	/**
+	 * endpoint of the payment gateway.
+	 * @var string
+	 */
 	protected $EndpointUrl;
+	
+	/**
+	 * details from the payment gateway about the user.
+	 * @var array
+	 */
 	protected $saveDetails;
+	
+	/**
+	 * billrun class name for the payment gateway.
+	 * @var string
+	 */
 	protected $billrunName;
+	
+	/**
+	 * identifier for the transaction. 
+	 * @var string
+	 */
 	protected $transactionId;
+	
+
 	protected $subscribers;
+	
+	/**
+	 * whrere to redirect the use after success.
+	 * @var string
+	 */
 	protected $returnUrl;
+	
+	/**
+	 * regex for rejection status for the payment gateway.
+	 * @var string
+	 */
+	protected $rejectionCodes;
+	
+	/**
+	 * regex for pending status for the payment gateway.
+	 * @var string
+	 */
+	protected $pendingCodes;
+	
+	/**
+	 * regex for completion status for the payment gateway.
+	 * @var string
+	 */
+	protected $completionCodes;
 
 	private function __construct() {
 
@@ -78,12 +138,14 @@ abstract class Billrun_PaymentGateway {
 	 * Redirect to the payment gateway page of card details for getting Billing Agreement id.
 	 * 
 	 * @param Int $aid - Account id
-	 * @param String $returnUrl - The page to redirect the client after success of the whole process.
+	 * @param Array $accountQuery - query to get the right account.
 	 * @param Int $timestamp - Unix timestamp
 	 * @return Int - Account id
 	 */
-	public function redirectForToken($aid, $returnUrl, $timestamp, $request) {
-		$this->getToken($aid, $returnUrl, $request);
+	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
+		$subscribers = Billrun_Factory::db()->subscribersCollection();
+		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $accountQuery['tennant_return_url'])));
+		$this->getToken($aid, $accountQuery['tennant_return_url'], $request);
 		$this->updateSessionTransactionId();
 
 		// Signal starting process.
@@ -91,18 +153,6 @@ abstract class Billrun_PaymentGateway {
 		$this->forceRedirect($this->redirectUrl);
 	}
 
-	/**
-	 * Check if the payment gateway is supported by Billrun.
-	 * 
-	 * @param $gateway - Payment Gateway object.
-	 * @return Boolean
-	 */
-	public function isSupportedGateway($gateway) {
-		$supported = Billrun_Factory::config()->getConfigValue('PaymentGateways.supported');
-		return in_array($gateway, $supported);
-	}
-
-	
 	/**
 	 * Updates the current transactionId.
 	 * 
@@ -112,7 +162,7 @@ abstract class Billrun_PaymentGateway {
 	/**
 	 * Get the Redirect url of the payment gateway.
 	 * 
-	 * @param $result - response from the payment gateway.
+	 * @param $result - response to request to get billing agreement from the payment gateway.
 	 */
 	abstract protected function updateRedirectUrl($result);
 
@@ -144,7 +194,7 @@ abstract class Billrun_PaymentGateway {
 	/**
 	 * Query the response to getting needed details.
 	 * 
-	 * @param $result - response from the payment gateway.
+	 * @param $result - response from the payment gateway to the request to get billing agreement.
 	 */
 	abstract protected function getResponseDetails($result);
 
@@ -155,13 +205,6 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function buildSetQuery();
 
-	/**
-	 * Sets necessary parameters for connection to chosen payment gateway.
-	 * 
-	 * @param Array $params - details of the payment gateway.
-	 * @return Array - Array of gateway credentials.
-	 */
-	abstract protected function setConnectionParameters($params);
 
 	/**
 	 * Checks against the chosen payment gateway if the credentials passed are correct.
@@ -178,30 +221,6 @@ abstract class Billrun_PaymentGateway {
 	 * @return String - Status of the payment.
 	 */
 	abstract protected function pay($gatewayDetails);
-
-	/**
-	 * Checks if the payment is pending.
-	 * 
-	 * @param String $status - status of the payment that returned from the payment gateway
-	 * @return Boolean - true if the status means pending payment
-	 */
-	abstract protected function isPending($status);
-
-	/**
-	 * Checks if the payment is rejected.
-	 * 
-	 * @param String $status - status of the payment that returned from the payment gateway
-	 * @return Boolean - true if the status means rejected payment
-	 */
-	abstract protected function isRejected($status);
-
-	/**
-	 * Checks if the payment is accepted.
-	 * 
-	 * @param String $status - status of the payment that returned from the payment gateway
-	 * @return Boolean - true if the status means completed payment
-	 */
-	abstract protected function isCompleted($status);
 
 	/**
 	 * Check the status of previously pending payment.
@@ -260,15 +279,17 @@ abstract class Billrun_PaymentGateway {
 	}
 
 	protected function saveAndRedirect() {
-		$today = new MongoDate();
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
-		$setQuery = $this->buildSetQuery();
-		$this->subscribers->update(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"), array('$set' => $setQuery));
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['aid'] = (int) $this->saveDetails['aid'];
+		$query['type'] = "account";
+		$setQuery = $this->buildSetQuery();       
+		$this->subscribers->update($query, array('$set' => $setQuery));
 
 		if (isset($this->saveDetails['return_url'])) {
 			$returnUrl = (string) $this->saveDetails['return_url'];
 		} else {
-			$account = $this->subscribers->query(array('aid' => (int) $this->saveDetails['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+			$account = $this->subscribers->query($query)->cursor()->current();
 			$returnUrl = $account['tennant_return_url'];
 		}
 		$this->forceRedirect($returnUrl);
@@ -341,53 +362,40 @@ abstract class Billrun_PaymentGateway {
 	}
 
 	/**
-	 * Responsible for paying payments and classifying payments responses: completed, pending or rejected.
+	 * Checking the state of the payment - completed, pending or rejected. 
 	 * 
-	 * @param string $stamp - Billrun key that represents the cycle.
-	 *
+	 * @param paymentGateway $status - status returned from the payment gateway.
+	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
+	 * @return Array - the status and stage of the payment.
 	 */
-	public function makePayment($stamp) {
-		$today = new MongoDate();
-		$paymentParams = array(
-			'dd_stamp' => $stamp
-		);
-		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
-			throw new Exception('Error removing payments before rerun');
-		}
-		$customers = iterator_to_array(self::getCustomers());
-		$involvedAccounts = array();
-		$options = array('collect' => FALSE);
-		$data = array();
-		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$customers_aid = array_map(function($ele) {
-			return $ele['aid'];
-		}, $customers);
-
-		$subscribers = $subscribers->query(array('aid' => array('$in' => $customers_aid), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor();
-		foreach ($subscribers as $subscriber) {
-			$subscribers_in_array[$subscriber['aid']] = $subscriber;
-		}
-
-		foreach ($customers as $customer) {
-			$subscriber = $subscribers_in_array[$customer['aid']];
-			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
-			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = $customer['due'];
-			$paymentParams['source'] = $customer['source'];
-			$gatewayDetails = $subscriber['payment_gateway'];
-			$gatewayDetails['amount'] = $customer['due'];
-			$gatewayDetails['currency'] = $customer['currency'];
-			$gatewayName = $gatewayDetails['name'];
-			$gateway = self::getInstance($gatewayName);
-			$payment = payAction::pay('credit', array($paymentParams), $options)[0];
-			$paymentStatus = $gateway->pay($gatewayDetails);
-			$response = self::checkPaymentStatus($paymentStatus, $gateway);
-			$payment->setPaymentGateway($gatewayName, $gateway->transactionId);
-			self::updateAccordingToStatus($response, $payment, $gatewayName);
+	public function checkPaymentStatus($status, $gateway) {
+		if ($gateway->isCompleted($status)) {
+			return array('status' => $status, 'stage' => "Completed");
+		} else if ($gateway->isPending($status)) {
+			return array('status' => $status, 'stage' => "Pending");
+		} else if ($gateway->isRejected($status)) {
+			return array('status' => $status, 'stage' => "Rejected");
+		} else {
+			throw new Exception("Unknown status");
 		}
 	}
-
-	protected function getCustomers() {
+	
+	/**
+	 * Get the Credentials of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	protected function getGatewayCredentials() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['params'];
+	}
+	
+	public function getCustomers() {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$sort = array(
 			'$sort' => array(
@@ -453,68 +461,47 @@ abstract class Billrun_PaymentGateway {
 		$res = $billsColl->aggregate($sort, $group, $match);
 		return $res;
 	}
-
-	/**
-	 * Get from config the merchant credentials for connecting to the payment gateway. 
-	 * 
-	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
-	 * @return array - the credentials that are a must for connection.
-	 */
-	protected function getConnectionCredentials($gateway) {
-		$paymentGateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
-		$gatewayName = $gateway->billrunName;
-		$gatewayDetails = array_filter($paymentGateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayCredentials = current($gatewayDetails);
-		$requiredCredentials = $gateway->setConnectionParameters($gatewayCredentials['params']);
-		return $requiredCredentials;
-	}
-
-	/**
-	 * Checking the state of the payment - completed, pending or rejected. 
-	 * 
-	 * @param paymentGateway $status - status returned from the payment gateway.
-	 * @param paymentGateway $gateway - the gateway the client chose to pay through.
-	 * @return Array - the status and stage of the payment.
-	 */
-	public function checkPaymentStatus($status, $gateway) {
-		if ($gateway->isCompleted($status)) {
-			return array('status' => $status, 'stage' => "Completed");
-		} else if ($gateway->isPending($status)) {
-			return array('status' => $status, 'stage' => "Pending");
-		} else if ($gateway->isRejected($status)) {
-			return array('status' => $status, 'stage' => "Rejected");
-		} else {
-			throw new Exception("Unknown status");
+	
+	protected function rearrangeParametres($params){
+		foreach ($params as $value) {
+			$arranged[$value] = '';
 		}
+		
+		return $arranged;
 	}
-
-	public function updateAccordingToStatus($response, $payment, $gatewayName) {
-		if ($response['stage'] == "Completed") { // payment succeeded 
-			$payment->updateConfirmation();
-			$payment->setPaymentStatus($response['status'], $gatewayName);
-		} else if ($response['stage'] == "Pending") { // handle pending
-			$payment->setPaymentStatus($response['status'], $gatewayName);
-		} else { //handle rejections
-			if (!$payment->isRejected()) {
-				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
-				$rejection = $payment->getRejectionPayment($response['status']);
-				$rejection->save();
-				$payment->markRejected();
-			} else {
-				Billrun_Factory::log('Transaction ' . $payment->getId() . ' already rejected', Zend_Log::NOTICE);
-			}
-		}
+	
+	/**
+	 * Checks if the payment is accepted.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means completed payment
+	 */
+	protected function isCompleted($status) {
+		return preg_match($this->completionCodes, $status);
 	}
-
-	protected function getGatewayCredentials($gatewayName) {
-		$gateways = Billrun_Factory::config()->getConfigValue(payment_gateways);
-		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
-			return $paymentGateway['name'] == $gatewayName;
-		});
-		$gatewayDetails = current($gateway);
-		return $gatewayDetails['params'];
+	
+	/**
+	 * Checks if the payment is pending.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means pending payment
+	 */
+	protected function isPending($status) {
+		return preg_match($this->pendingCodes, $status);
 	}
-
+	
+	/**
+	 * Checks if the payment is rejected.
+	 * 
+	 * @param String $status - status of the payment that returned from the payment gateway
+	 * @return Boolean - true if the status means rejected payment
+	 */
+	protected function isRejected($status) {
+		return preg_match($this->rejectionCodes, $status);
+	}
+	
+	public function getTransactionId(){
+		return $this->transactionId;
+	}
+ 
 }
