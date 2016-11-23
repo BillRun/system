@@ -426,14 +426,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * 
 	 */
 	public function loadPending() {
-		$billsColl = Billrun_Factory::db()->billsCollection();
 		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
 		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
 		$query = array(
 			'waiting_for_confirmation' => true,
 			'last_checked_pending' => array('$lte' => $paymentsOrphan)
 		);
-		$res = $billsColl->query($query);
+		$payments = Billrun_Bill_Payment::queryPayments($query);
+		foreach ($payments as $payment) {
+			$res[] = Billrun_Bill_Payment::getInstanceByData($payment);
+		}
+		
 		return $res;
 	}
 	
@@ -511,20 +514,19 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function checkPendingStatus(){
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
-			$gatewayName = $payment['payment_gateway']['name'];
+			$gatewayName = $payment->getPaymentGatewayName();
 			$paymentGateway = Billrun_PaymentGateway::getInstance($gatewayName);
 			if (is_null($paymentGateway) || !$paymentGateway->hasPendingStatus()) {
 				continue;
 			}
-			$txId = $payment['payment_gateway']['transactionId'];
+			$txId = $payment->getPaymentGatewayTransactionId();
 			$status = $paymentGateway->verifyPending($txId);
-			$paymentData = Billrun_Bill_Payment::getInstanceByData($payment);
 			if ($status == 'Pending') { // Payment is still pending
-				$paymentData->updateLastPendingCheck();
+				$payment->updateLastPendingCheck();
 				continue;
 			}
 			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
-			self::updateAccordingToStatus($response, $paymentData, $gatewayName);
+			self::updateAccordingToStatus($response, $payment, $gatewayName);
 		}
 	}
 	
@@ -540,5 +542,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function getPaymentGatewayDetails(){
 		return $this->data['gateway_details'];
 	}
-
+	
+	protected function getPaymentGatewayTransactionId(){
+		return $this->data['payment_gateway']['transactionId'];
+	}
+	
+		
+	protected function getPaymentGatewayName(){
+		return $this->data['payment_gateway']['name'];
+	}
 }

@@ -17,7 +17,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $billrunName = "CreditGuard";
 	protected $subscribers;
 	protected $rejectionCodes = "/!(000)/";
-	protected $pendingCodes = "/^false$/";
+	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 
 	protected function __construct() {
