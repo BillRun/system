@@ -433,6 +433,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			'last_checked_pending' => array('$lte' => $paymentsOrphan)
 		);
 		$payments = Billrun_Bill_Payment::queryPayments($query);
+		$res = array();
 		foreach ($payments as $payment) {
 			$res[] = Billrun_Bill_Payment::getInstanceByData($payment);
 		}
