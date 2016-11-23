@@ -15,9 +15,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected $omnipayName = 'PayPal_Express';
 	protected $conf;
-	protected $EndpointUrl;
 	protected $billrunName = "PayPal_ExpressCheckout";
-	protected $transactionId;
+	protected $rejectionCodes = "/^Expired$|^Failed$/";
+	protected $pendingCodes = "/^Pending$/";
+	protected $completionCodes = "/^Completed$|^Processed$/";
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -35,7 +36,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
+		$credentials = $this->getGatewayCredentials();
 		$this->conf['redirect_url'] = "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=";
 		$this->conf['return_url'] = $okPage;
 
@@ -66,7 +67,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildTransactionPost($txId) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
+		$credentials = $this->getGatewayCredentials();
 		$this->conf['redirect_url'] = "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=";
 
 		return $post_array = array(
@@ -106,19 +107,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		);
 	}
 
-	protected function setConnectionParameters($params) {
-		if ((!isset($params["username"])) || (!isset($params["password"])) || (!isset($params["signature"]))) {
-			throw new Exception("Missing necessary credentials");
-		}
-
-		return array(
-			'username' => $params["username"],
-			'password' => $params["password"],
-			'signature' => $params["signature"]
-		);
-	}
-
-	protected function pay($gatewayDetails) {
+	public function pay($gatewayDetails) {
 		$paymentArray = $this->buildPaymentRequset($gatewayDetails);
 		$paymentString = http_build_query($paymentArray);
 		if (function_exists("curl_init")) {
@@ -141,7 +130,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	protected function buildPaymentRequset($gatewayDetails) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
+		$credentials = $this->getGatewayCredentials();
 
 		return $post_array = array(
 			'USER' => $credentials['username'],
@@ -181,27 +170,6 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		}
 	}
 
-	protected function isCompleted($status) {
-		if ($status == "Completed" || $status == "Processed") {
-			return true;
-		}
-		return false;
-	}
-
-	protected function isPending($status) {
-		if ($status == "Pending") {
-			return true;
-		}
-		return false;
-	}
-
-	protected function isRejected($status) {
-		if ($status == "Expired" || $status == "Failed") {
-			return true;
-		}
-		return false;
-	}
-
 	public function verifyPending($txId) {
 		$response = $this->getCheckoutDetails($txId);
 		return $response['PAYMENTSTATUS'];
@@ -218,7 +186,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	 * @return array - array of the response from PayPal
 	 */
 	protected function getCheckoutDetails($txId) {
-		$credentials = $this->getGatewayCredentials($this->billrunName);
+		$credentials = $this->getGatewayCredentials();
 
 		$requestDetails = array(
 			'USER' => $credentials['username'],
@@ -238,7 +206,8 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 
 	public function getDefaultParameters() {
-		return array("username" => "", "password" => "", "signature" => "");
+		$params = array("username", "password", "signature");
+		return $this->rearrangeParametres($params);
 	}
-
+	
 }
