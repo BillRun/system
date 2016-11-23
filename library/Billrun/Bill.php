@@ -565,15 +565,16 @@ abstract class Billrun_Bill {
 //					CollectAction::collect($involvedAccounts);
 				}
 				if (isset($options['payment_gateway'])) {
-					$gatewayDetails = $options['payment_gateway'];
-					$gatewayName = $gatewayDetails['name'];
-					$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
-					$paymentStatus = $gateway->pay($gatewayDetails);
-					$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
-					$txId = $gateway->getTransactionId();	
-					$currentPayment = $payments[0];
-					$currentPayment->updateDetailsForPaymentGateway($gatewayName, $txId);
-				}	
+					foreach ($payments as $payment) {
+						$gatewayDetails = $payment->getPaymentGatewayDetails();
+						$gatewayName = $gatewayDetails['name'];
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						$paymentStatus = $gateway->pay($gatewayDetails);
+						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
+						$txId = $gateway->getTransactionId();
+						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
+					}
+				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
 			}

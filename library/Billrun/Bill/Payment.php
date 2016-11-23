@@ -61,6 +61,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			} else {
 				$this->data['due'] = $this->getDir() == 'fc' ? -$this->data['amount'] : $this->data['amount'];
 			}
+			if (isset($options['gateway_details'])){
+				$this->data['gateway_details'] = $options['gateway_details'];
+			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
@@ -449,7 +452,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers());
 		$involvedAccounts = array();
-		$options = array('collect' => FALSE);
+		$options = array('collect' => FALSE, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
 			return $ele['aid'];
 		}, $customers);
@@ -473,7 +476,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
-			$options['payment_gateway'] = $gatewayDetails;
+			$paymentParams['gateway_details'] = $gatewayDetails;
 			$paymentResponse = Billrun_Bill::pay('credit', array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
@@ -532,6 +535,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$this->data['payment_gateway'] = array('name' => $gatewayName, 'transactionId' => $txId);
 		}
 		$this->save();
+	}
+	
+	public function getPaymentGatewayDetails(){
+		return $this->data['gateway_details'];
 	}
 
 }
