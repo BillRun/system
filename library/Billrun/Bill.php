@@ -564,7 +564,7 @@ abstract class Billrun_Bill {
 					$involvedAccounts = array_unique($involvedAccounts);
 //					CollectAction::collect($involvedAccounts);
 				}
-				if (isset($options['payment_gateway'])) {
+				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
