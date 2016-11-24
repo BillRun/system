@@ -32,7 +32,7 @@ class Billrun_Utils_Security {
 	 */
 	public static function addSignature(array $data, $key) {
 		// Add the timestamp
-		$data[self::TIMESTAMP_FIELD] = date(Billrun_Base::base_datetimeformat);
+		$data[self::TIMESTAMP_FIELD] = time();
 		$signature = self::sign($data, $key);
 		$data[self::SIGNATURE_FIELD] = $signature;
 		return $data;
