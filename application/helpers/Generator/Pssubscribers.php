@@ -12,9 +12,9 @@
  * @package  Models
  * @since    4.0
  */
-class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
+class Generator_Pssubscribers extends Billrun_Generator_ConfigurableCDRAggregationCsv {
 
-	static $type = 'ps1subscribers';
+	static $type = 'pssubscribers';
 	
 	protected $startMongoTime;
 	
@@ -22,9 +22,10 @@ class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregat
 	protected $plans = array();
 
 	public function __construct($options) {
+		$this->transactions = array();
 		parent::__construct($options);
 		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'), $this->startTime);
+		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type); //strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'), $this->startTime);
 		$this->loadPlans();
 	}
 	
@@ -55,13 +56,11 @@ class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregat
 		$page = 0;
 		
 		do {
-			$aggregation_array = array_merge(
-				$this->aggregation_array, 
-				array(array('$skip' => $subscribersLimit * $page)),
-				array(array('$limit' => $subscribersLimit))
-			);
+			$this->loadTransactions($subscribersLimit * $page, $subscribersLimit);
+			$this->buildAggregationQuery();
+			
 			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
-			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('allowDiskUse' => true));
+			$this->data = $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true));
 			
 			$sids = array();
 			foreach ($this->data as $line) {
@@ -71,7 +70,6 @@ class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregat
 			}
 			
 			$this->loadBalancesForBulk($sids);
-		    $this->loadTransactions($sids);
 
 			$hasData = false;
 			foreach ($this->data as $line) {
@@ -87,7 +85,7 @@ class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregat
 	}
 
 	protected function getReportCandiateMatchQuery() {
-		return  array('from' => array('$lt' => new MongoDate($this->startTime)),'to' => array('$gt' => new MongoDate($this->startTime)));
+		return  array('from' => array('$lt' => new MongoDate($this->startTime)),'to' => array('$gt' => new MongoDate($this->startTime)),'sid'=> array('$in' => array_keys($this->transactions)));
 	}
 
 	protected function getReportFilterMatchQuery() {
@@ -113,17 +111,19 @@ class Generator_Ppssubscribers extends Billrun_Generator_ConfigurableCDRAggregat
 		Billrun_Factory::log("Done loading balances.");
 	}
 	
-        protected function loadTransactions($sids) {
+    protected function loadTransactions($skip,$limit) {
 		Billrun_Factory::log("loading transactions...");
-                unset($this->transactions);
+        unset($this->transactions);
 		$this->transactions = array();
 		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('sid' => array('$in' => $sids) ,'urt'=> array('$gt'=>new MongoDate($this->releventTransactionTimeStamp)) )),
+                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ) )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
                             array('$project' => array('sid'=>1,'urt'=>1,
                                                         'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
                                                     )),
-                    array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$last'=>'$urt') ))
+                    array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$last'=>'$urt') )),
+					array('$skip' => $skip),
+					array('$limit' => $limit)
                 ), array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']][$transaction['type']] = $transaction['urt'];
