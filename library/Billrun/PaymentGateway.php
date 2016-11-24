@@ -395,7 +395,7 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-	public function getCustomers() {
+	public static function getCustomers() {
 		$billsColl = Billrun_Factory::db()->billsCollection();
 		$sort = array(
 			'$sort' => array(

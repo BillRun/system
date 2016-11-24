@@ -425,7 +425,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Load payments with status pending and that their status had not been checked for some time. 
 	 * 
 	 */
-	public function loadPending() {
+	public static function loadPending() {
 		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
 		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
 		$query = array(
@@ -447,7 +447,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param string $stamp - Billrun key that represents the cycle.
 	 *
 	 */
-	public function makePayment($stamp) {
+	public static function makePayment($stamp) {
 		$paymentParams = array(
 			'dd_stamp' => $stamp
 		);
@@ -512,7 +512,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	public function checkPendingStatus(){
+	public static function checkPendingStatus(){
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment->getPaymentGatewayName();
