@@ -9,7 +9,7 @@
     "usage_types": {
         "array": [],
         "t": "Array"
-       },
+    },
     "resetlines": {
         "limit": {
             "v": 10,
@@ -63,22 +63,22 @@
         "charging_day": {
             "v": 1,
             "t": "Number",
-             "range": {
-                   "min": 1,
-                   "max": 28
-             }
+            "range": {
+                "min": 1,
+                "max": 28
+            }
         },
         "timezone": {
-          "v": "UTC",
-           "t": "Timezone"
+            "v": "UTC",
+            "t": "Timezone"
         },
         "start_hours_lag": {
             "v": 3,
             "t": "Number",
-             "range": {
-                   "min": 0,
-                   "max": 23
-             }
+            "range": {
+                "min": 0,
+                "max": 23
+            }
         }
     },
     "export_generators" : {
@@ -101,12 +101,12 @@
                 "generated": true,
                 "unique": true,
                 "editable": false,
-    "display": false
+                "display": false
             }, {
                 "field_name": "aid",
                 "mandatory": true,
                 "editable": false,
-    "display": false
+                "display": false
             }, {
                 "field_name": "firstname",
                 "mandatory": true
@@ -125,9 +125,9 @@
             }, {
                 "field_name": "country"
             }, {
-    "field_name":"services",
-    "mandatory": false
-           }]
+                "field_name":"services",
+                "mandatory": false
+            }]
         },
         "account": {
             "fields": [{
@@ -161,13 +161,18 @@
                 "editable": false,
                 "display": false
             }, {
-                 "field_name": "payment_gateway",
-                 "editable": false,
- 				 "display": true
-             }, {
+                "field_name": "payment_gateway",
+                "editable": false,
+ 		"display": true
+            }, {
                 "field_name": "personal_id",
                 "editable": false,
                 "display": false
+            }, {
+                "field_name": "salutation",
+                "editable": true,
+                "display": true,
+                "title": "Salutation"
             }]
         }
     },
@@ -215,7 +220,7 @@
             "type": "boolean"
         }]
     },
-   "services": {
+    "services": {
         "fields": [{
             "field_name": "from",
             "mandatory": true,
@@ -271,5 +276,5 @@
             }
         }
     },
-	"payment_gateways" : [ ]
+    "payment_gateways" : [ ]
 }
