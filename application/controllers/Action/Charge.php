@@ -7,13 +7,12 @@
  */
 
 /**
- * Receive action controller class
+ * Charge action controller class
  *
  * @package     Controllers
  * @subpackage  Action
  */
 class ChargeAction extends Action_Base {
-	use Billrun_Traits_TypeAll;
 	
 	/**
 	 * method to execute the pay process for payment gateways.
@@ -29,25 +28,12 @@ class ChargeAction extends Action_Base {
 		}
 
 		if (is_null($options['stamp']) || !Billrun_Util::isBillrunKey($options['stamp'])) {
-			return $this->setError("Illegal stamp", $options['stamp']);
+			return $this->setError("Illegal stamp ", $options['stamp']);
 		}
 		Billrun_Bill_Payment::checkPendingStatus();
 		$this->getController()->addOutput("Starting to charge unpaid payments");
 		Billrun_Bill_Payment::makePayment($options['stamp']);
 		$this->getController()->addOutput("Charging Done");
-	}
-
-	
-	protected function getHandleFunction() {
-
-	}
-	
-	protected function getCMD() {
-
-	}
-
-	protected function getNameType() {
-		
 	}
 
 }
