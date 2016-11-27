@@ -268,10 +268,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	 * Return the collection instance.
 	 * This is used to validate the uniqeness of sensitive input values.
 	 * @return Mongodloid_Collection 
-	 * @note This function is called '_getCollection' instead of 'getCollection'
-	 * because it is an abstract function of the trait Billrun_Traits_FieldValidator.
-	 * To avoid a clash between another getCollection function, this function is named
-	 * with an underscore.
+	 * @note '_getCollection' is an abstract function of the trait Billrun_Traits_FieldValidator.
+	 * It's named with an underscore to avoid a clash between another getCollection function.
 	 */
 	protected function _getCollection() {
 		return Billrun_Factory::db()->subscribersCollection();
