@@ -32,6 +32,8 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @var array 'regex_to_look_for_in_number' => 'replacment_string'
 	 */
 	protected $prefixTranslation = array(0 => array('^0+' => ''), 1 => array('[^\d]' => ''));
+	
+	protected $roaming_sms_rates;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -40,6 +42,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 		ksort($this->prefixTranslation);
 		$this->loadRates();
+		$this->loadRoamingSmsRates();
 	}
 
 	/**
@@ -71,28 +74,10 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
 	protected function getLineRate($row, $usage_type) {
-		if (($row['dest_protocol'] == '3') || ($row['org_protocol'] == '3')){  //smpp
-			$matchedRate = false;
-			if ($this->shouldLineBeRated($row)) {
-				$called_number = $this->extractNumber($row);
-				$line_time = $row['urt'];
-				if (isset($this->rates[$called_number])) {
-					foreach ($this->rates[$called_number] as $rate) {
-						if (isset($rate['rates'][$usage_type])) {
-							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-								$matchedRate = $rate;
-								break;
-							}
-						}
-					}
-				}
-			}
-			return $matchedRate;
-		}
-		else if ($this->shouldLineBeRated($row)) {
+		if ($this->shouldLineBeRated($row)) {
+			$line_time = $row['urt'];
 			$matchedRate = $this->rates['UNRATED'];
 			$called_number = $this->extractNumber($row);
-			$line_time = $row['urt'];
 			$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
@@ -111,6 +96,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 			return false;
 		}
 	}
+
 	/**
 	 * @see Billrun_Calculator::isRateValid()
 	 */
@@ -143,6 +129,27 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 
 		return $str;
+	}
+	
+	protected function loadRoamingSmsRates(){
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor();
+		$this->roaming_sms_rates = array();
+		foreach ($rates as $rate) {
+				$rate->collection($rates_coll);
+				if (isset($rate['kt_prefixes'])) {
+					foreach ($rate['kt_prefixes'] as $prefix) {
+						$this->roaming_sms_rates[$prefix][] = $rate;
+					}
+				} else if ($rate['key'] == 'UNRATED') {
+					$this->roaming_sms_rates['UNRATED'] = $rate;
+				}
+		}
+	}
+	
+	
+	protected function getAdditionalProperties() {
+		return array_merge(array('alpha3'), parent::getAdditionalProperties());
 	}
 
 }

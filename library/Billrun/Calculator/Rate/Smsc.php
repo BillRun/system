@@ -20,7 +20,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	 * @var array 'field_in_cdr' => 'should_match_this_regex'
 	 */
 	protected $legitimateValues = array(
-		'smsc' => array('cause_of_terminition' => "^100$", 'record_type' => '^2$', 'calling_msc' => "^0*9725[82]"),
+		'smsc' => array('cause_of_terminition' => "^100$", 'record_type' => '^2$', 'calling_msc' => "^(?!0+$)"),
 		'smpp' => array('record_type' => '2'),
 	);
 	
@@ -69,7 +69,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 		if ($row['org_protocol'] == '0'){
 			return false;
 		}
-		if (($row['org_protocol'] == '1') && ($row['dest_protocol'] != '3')) {  //smsc
+		if (($row['org_protocol'] == '1') && ($row['dest_protocol'] != '3')) {  //smsc	
 			foreach ($this->legitimateValues['smsc'] as $key => $value) {
 				if (is_array($value)) {
 					foreach ($value as $regex) {
@@ -80,7 +80,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 				} else if (!preg_match("/" . $value . "/", $row[$key])) {
 					return false;
 				}
-			}
+			}	
 		} else if (($row['dest_protocol'] == '3') || ($row['org_protocol'] == '3')) {  //smpp
 			foreach ($this->legitimateValues['smpp'] as $key => $value) {
 				if (!(is_array($value) && in_array($row[$key], $value) || $row[$key] == $value )) {
@@ -90,6 +90,62 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 		}
 
 		return true;
+	}
+
+	protected function getLineRate($row, $usage_type) {
+		$line_time = $row['urt'];
+		if (($row['dest_protocol'] == '3') || ($row['org_protocol'] == '3')) {  //smpp
+			$matchedRate = false;
+			if ($this->shouldLineBeRated($row)) {
+				$called_number = $this->extractNumber($row);
+				if (isset($this->rates[$called_number])) {
+					foreach ($this->rates[$called_number] as $rate) {
+						if (isset($rate['rates'][$usage_type])) {
+							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+								$matchedRate = $rate;
+								break;
+							}
+						}
+					}
+				}
+			}
+			return $matchedRate;
+		} else if (isset($row['roaming'])) {
+			if ($this->shouldLineBeRated($row)) {
+				$matchedRate = false;
+				$calling_msc = Billrun_Util::cleanLeadingZeros($row['calling_msc']);
+				$calling_msc_prefixes = Billrun_Util::getPrefixes($calling_msc);
+				$called_number = $this->extractNumber($row);
+				$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+				foreach ($calling_msc_prefixes as $prefix) {
+					if (isset($this->roaming_sms_rates[$prefix])) {
+						foreach ($this->roaming_sms_rates[$prefix] as $rate) {
+							if (!isset($rate['kt_prefixes'])) {
+								continue;
+							}
+							if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+								if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
+									$possible_rates[] = $rate;
+								}
+							}
+						}
+					}
+				}
+				foreach ($called_number_prefixes as $prefix) {
+					foreach ($possible_rates as $rate) {
+						if (in_array($prefix, $rate['params']['prefix'])) {
+							$matchedRate = $rate;
+							break 2;
+						}
+					}
+				}
+				return $matchedRate;
+			} else {
+				return false;
+			}
+		} else {
+			return parent::getLineRate($row, $usage_type);
+		}
 	}
 
 }

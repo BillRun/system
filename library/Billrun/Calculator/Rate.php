@@ -146,6 +146,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$usage_type = $this->getLineUsageType($row);
 		$volume = $this->getLineVolume($row, $usage_type);
 		$rate = $this->getLineRate($row, $usage_type);
+		if (isset($row['roaming']) && ($row['roaming'] == true) && (isset($rate['alpha3']))){
+			$current['alpha3'] = $rate['alpha3'];
+		}
 		$additional_values = $this->getLineAdditionalValues($row);
 		if (isset($rate['key']) && $rate['key'] == "UNRATED") {
 			return false;
