@@ -220,7 +220,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 */
 	public function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		$update = array();
-//		$update['$set']['tx.' . $row['stamp']] = $pricingData;
+		$update['$set']['tx.' . $row['stamp']] = $pricingData;
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$balance_key = 'balance.totals.' . $balance_totals_key . '.usagev';
 		$query = array(

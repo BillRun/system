@@ -246,11 +246,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed on success update return pricing data array, else false
 	 * 
 	 */
-	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
-//		if (($crashedPricingData = $this->getTx($row['stamp'], $this->balance)) !== FALSE) {
-//			return $crashedPricingData;
-//		}
-		
+	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {		
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this, &$pricingData, $this));
@@ -258,16 +254,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		
 		if (!isset($pricingData['arategroups'])) {
-			$pricingData['arategroups'] = array();
+			return $pricingData;
 		}
 
-		foreach ($pricingData['arategroups'] as $balanceKey => &$balanceData) {
+		foreach ($pricingData['arategroups'] as &$balanceData) {
+			$balance = $balanceData[0]['balance'];
+			if (($crashedPricingData = $this->getTx($row['stamp'], $balance)) !== FALSE) {
+				return $crashedPricingData;
+			}
+
 			if (!isset($balanceData[0]['balance'])) {
 				Billrun_Factory::log("No balance reference on pricing data", Zend_Log::ERR);
 				continue;
 			}
 			
-			$balance = $balanceData[0]['balance'];
 			foreach ($balanceData as &$data) {
 				unset($data['balance']);
 			}
@@ -289,18 +289,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		}
 		
-//		$balance_id = $this->balance->getId();
-//		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-//		list($query, $update) = $this->balance->buildBalanceUpdateQuery($pricingData, $row, $volume);
-//
-//		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
-//		$ret = $this->balance->update($query, $update);
-//		if (!($ret['ok'] && $ret['updatedExisting'])) {
-//			Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
-//			return false;
-//		}
-//		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
-//		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		return $pricingData;
 	}
 
