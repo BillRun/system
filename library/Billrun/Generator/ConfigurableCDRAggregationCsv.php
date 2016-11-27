@@ -46,7 +46,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 				$this->match['$or'][$idx][$key] = json_decode($val, JSON_OBJECT_AS_ARRAY);
 			}
 		}
-		$this->match = array_merge($this->match, $this->getReportCandiateMatchQuery());
+//		$this->match = array_merge($this->match, $this->getReportCandiateMatchQuery());
 
 		$this->grouping = array('_id' => array());
 		$this->grouping['_id'] = array_merge($this->grouping['_id'], $this->translateJSONConfig($config['grouping']));
@@ -93,8 +93,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected function buildAggregationQuery() {
 		$collName = Billrun_Factory::config()->getConfigValue(static::$type . '.generator.collection', 'archive') . 'Collection';
 		$fields = array();
+		$match = array_merge($this->match, $this->getReportCandiateMatchQuery());
 		//sample 100 lines  and get all the  fields  from these lines.
-		$fieldExamples = $this->db->{$collName}()->query($this->match)->cursor()->limit(1000);
+		$fieldExamples = $this->db->{$collName}()->query($match)->cursor()->limit(1000);
 		foreach ($fieldExamples as $doc) {
 			foreach ($doc->getRawData() as $key => $val) {
 				$fields[$key] = 1;
@@ -103,7 +104,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 		if (!empty($fields)) {
 			$this->aggregation_array = array(
-				array('$match' => $this->match),
+				array('$match' => $match),
 				array('$project' => array_merge($fields, $this->preProject)),
 			);
 
@@ -120,7 +121,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 				$this->aggregation_array = array_merge($this->aggregation_array, $this->postPipeline);
 			}
 		} else {
-			$this->aggregation_array = array(array('$match' => $this->match),
+			$this->aggregation_array = array(array('$match' => $match),
 				array('$sort' => array('urt' => 1)),
 				array('$group' => $this->grouping)
 			);
@@ -440,6 +441,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			return $line[$parameters['key']];
 		}
 		return $this->serviceProviders[$line[$parameters['key']]][$parameters['field']];		
+	}
+	
+	protected function getGenerationTime($value, $parameters, $line) {
+		return $this->translateUrt(new MongoDate($this->startTime), $parameters);
 	}
 
 }

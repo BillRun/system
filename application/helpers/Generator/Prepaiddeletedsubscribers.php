@@ -23,27 +23,62 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp =  strtotime(Billrun_Factory::config()->getConfigValue('prepaiddeletedsubscribers.transaction_horizion','-48 hours'));
-		$this->loadPlans();
+		//$this->loadPlans();
 	}
 	
 
 	public function getNextFileData() {
 		$seq = $this->getNextSequenceData(static::$type);
 
-		return array('seq' => $seq, 'filename' => 'PREPAID_DELETED_SUBSCRIBERS_' . date('YmdHi',$this->startTime), 'source' => static::$type);
+		return array('seq' => $seq, 'filename' => 'PS1_SUBS_4_DEL_' . date('Ymd',$this->startTime), 'source' => static::$type);
+	}
+	
+	
+	protected function writeRows() {
+		if (!empty($this->headers)) {
+			$this->writeHeaders();
+		}
+		$subscribersLimit = Billrun_Factory::config()->getConfigValue('prepaidsubscribers.generator.subscribers_limit', 10000);
+		$page = 0;
+		
+		do {
+			$aggregation_array = array_merge(
+				$this->aggregation_array, 
+				array(array('$skip' => $subscribersLimit * $page)),
+				array(array('$limit' => $subscribersLimit))
+			);
+			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
+			$this->data = $this->collection->aggregateWithOptions($aggregation_array, array('allowDiskUse' => true));
+			
+			$sids = array();
+			foreach ($this->data as $line) {
+				if ($this->isLineEligible($line)) {
+					$sids[] = $line['subscriber_no'];
+				}
+			}
+
+			$hasData = false;
+			foreach ($this->data as $line) {
+				$hasData = true;
+				$translatedLine = $this->translateCdrFields($line, $this->translations);
+				if ($this->isLineEligible($translatedLine)) {
+					$this->writeRowToFile($translatedLine, $this->fieldDefinitions);
+				}
+			}
+			$page++;
+		} while ($hasData);
+		$this->markFileAsDone();
 	}
 	
 	//--------------------------------------------  Protected ------------------------------------------------
 
 
 	protected function getReportCandiateMatchQuery() {
-		return array();
+		return array('to' => array('$lt' => new MongoDate($this->startTime),'$gte' => $this->getLastRunDate(static::$type)));
 	}
 
 	protected function getReportFilterMatchQuery() {
-		return array('to' => array('$lt' => $this->startMongoTime),'$gte' => $this->getLastRunDate(static::$type));
+		return array();
 	}
 
 	protected function isLineEligible($line) {
