@@ -132,22 +132,6 @@ class Tests_Fieldenforcer extends UnitTestCase {
 		}
 	}
 	
-	public function complexWrapperTest($testCases) {
-		foreach ($testCases as $test) {
-			$wrapper = Billrun_Config::getComplexWrapper($test);
-			if($wrapper === null) {
-				continue;
-			}
-			$result = $wrapper->validate();
-			$this->assertEqual($result, $test['valid'], $test['msg']);
-			
-			if (isset($test['expected'])) {
-				$actualResult = $wrapper->value();
-				$this->assertEqual($actualResult, $test['expected'], $test['msg']);
-			}
-		}
-    }
-
 	protected function _getCollection() {
 		if($this->currentCase && isset($this->currentCase['collection'])) {
 			return $this->currentCase['collection'];
