@@ -63,6 +63,41 @@ class Tests_Fieldenforcer extends UnitTestCase {
 
 	);
 	
+	protected $uniqueTests = array(
+		array('data' => array(), 'conf' => array(array('field_name' => 'Bla', 'unique' => 1)), "valid" => true, "msg" => "Non value supplied"),
+		array('data' => array('Bla' => 9), 'conf' => array(array('field_name' => 'Bla', 'unique' => 1)), "valid" => true, "msg" => "Unique and doesn't exist 1"),
+		array('data' => array('firstname' => "Test"), 'conf' => array(array('field_name' => 'firstname', 'unique' => 1)), "valid" => true, "msg" => "Unique and doesn't exist 2"),
+		array('data' => array('firstname' => "A"), 'conf' => array(array('field_name' => 'firstname', 'unique' => 1)), "valid" => false, "msg" => "Unique exists"),
+		array('data' => array('Bla' => "test", 'firstname' => "A"), 'conf' => array(
+																				array('field_name' => 'firstname', 'unique' => 1),
+																				array('field_name' => 'Bla', 'unique' => 1)),
+																				"valid" => false, "msg" => "One unique exists and one doesn't"),
+		array('data' => array('lastname' => "AGD", 'firstname' => "A"), 'conf' => array(
+																				array('field_name' => 'firstname', 'unique' => 1),
+																				array('field_name' => 'lastname', 'unique' => 1)),
+																				"valid" => false, "msg" => "Both unique exists"),
+		array('data' => array('lastname' => "_TEST", 'firstname' => "_TEST"), 'conf' => array(
+																				array('field_name' => 'firstname', 'unique' => 1),
+																				array('field_name' => 'lastname', 'unique' => 1)),
+																				"valid" => true, "msg" => "Both unique doesn't exists"),
+		
+		// Validate mandatory AND unique
+		array('data' => array('lastname' => "_TEST", 'firstname' => "_TEST"), 'conf' => array(
+																				array('field_name' => 'firstname', 'unique' => 1, 'mandatory' => 1)),
+																				"valid" => true, "msg" => "Unique and mandatory"),
+		array('data' => array('lastname' => "_TEST", 'firstname' => "A"), 'conf' => array(
+																				array('field_name' => 'firstname', 'unique' => 1, 'mandatory' => 1)),
+																				"valid" => false, "msg" => "Non-Unique and mandatory"),
+		// Validate unique AND type
+		array('data' => array('aid' => 343), 'conf' => array(
+															array('field_name' => 'aid', 'type' => "Integer", 'unique' => 1)),
+															"valid" => false, "msg" => "Unique and integer type"),
+		array('data' => array('aid' => 9696), 'conf' => array(
+															array('field_name' => 'aid', 'type' => "Integer", 'unique' => 1)),
+															"valid" => true, "msg" => "Non-Unique and integer type"),
+
+	);
+	
 	protected $typeTests = array(
 		// Boolean type tests
 		array('data' => array('Bla' => true), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Boolean')), "valid" => true, "msg" => "Boolean type 1"),
@@ -104,7 +139,9 @@ class Tests_Fieldenforcer extends UnitTestCase {
 		array('data' => array('Bla' => "Just a string"), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => false, "msg" => "Invalid string"),
 	);
 	
-	protected $currentCase;
+	public function testUnique() {
+		$this->runTest($this->uniqueTests);
+	}
 	
 	/**
 	 * Test the mandatory field enforcer.
@@ -122,20 +159,22 @@ class Tests_Fieldenforcer extends UnitTestCase {
 	
 	public function runTest($testCases) {
 		foreach ($testCases as $test) {
-			$result = true;
-			try {
-				$this->enforce($test['conf'], $test['data']);
-			} catch (Billrun_Exceptions_InvalidFields $e) {
-				$result = false;
-			}
-			$this->assertEqual($test['valid'], $result, $test['msg']);
+			$this->internalTestRun($test);
 		}
 	}
 	
-	protected function _getCollection() {
-		if($this->currentCase && isset($this->currentCase['collection'])) {
-			return $this->currentCase['collection'];
+	public function internalTestRun($test) {
+		$result = true;
+		try {
+			$this->enforce($test['conf'], $test['data']);
+		} catch (Billrun_Exceptions_InvalidFields $e) {
+			$result = false;
 		}
-		return null;
+		$this->assertEqual($test['valid'], $result, $test['msg']);
+	}
+	
+	protected function _getCollection() {
+		// TODO: This is just for the test!!!
+		return Billrun_Factory::db()->subscribersCollection();
 	}
 }
