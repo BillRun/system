@@ -53,8 +53,8 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 //					$sids[] = $line['subscriber_no'];
 //				}
 //			}
-			$sids = $this->getAllDataSids($this->data);
-			$this->loadBalancesForBulk($sids);
+			//$sids = $this->getAllDataSids($this->data);
+			//$this->loadBalancesForBulk($sids);
 
 //			$hasData = false;
 //			foreach ($this->data as $line) {
@@ -87,5 +87,8 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
-
+	protected function flattenBalances($sid, $parameters, &$line) {
+		//$balances = $this->getBalancesForSid($sid);
+		return $this->flattenArray(array($line->getRawData()), $parameters, $line);
+	}
 }
