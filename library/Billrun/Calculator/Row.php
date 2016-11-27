@@ -21,14 +21,26 @@ abstract class Billrun_Calculator_Row {
 	 * @var array of Billrun_Calculator_Updaterow
 	 */
 	static protected $instances = array();
-	
+
+	/**
+	 * the bulk calculator which trigger the row calculator
+	 * 
+	 * @var Billrun_Calculator
+	 */
 	protected $calculator;
-	
+
 	/**
 	 * the row that handle
 	 * @var array
 	 */
 	protected $row = null;
+
+	/**
+	 * the pricing field
+	 * 
+	 * @var string
+	 */
+	protected $pricingField = 'aprice';
 
 	public function __construct($row, $callerClass) {
 		$this->setRow($row);
@@ -42,7 +54,7 @@ abstract class Billrun_Calculator_Row {
 	 * @return array update data
 	 */
 	abstract public function update();
-	
+
 	/**
 	 * initialization of the class
 	 * 

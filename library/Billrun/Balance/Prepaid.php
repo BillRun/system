@@ -148,7 +148,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return array update query array (mongo style)
 	 */
-	protected function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
+	public function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
