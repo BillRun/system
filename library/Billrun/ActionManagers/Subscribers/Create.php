@@ -42,6 +42,14 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		return $subscriberQuery;
 	}
 
+	/**
+	 * Return the base query of the action.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return array
+	 * @note '_getBaseQuery' is a function of the Billrun_Traits_FieldValidator trait, 
+	 * its default implementation is empty.
+	 * It's named with an underscore to avoid a clash between another getBaseQuery function.
+	 */
 	protected function _getBaseQuery() {
 		return array('type' => $this->type);
 	}

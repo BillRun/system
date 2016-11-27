@@ -22,8 +22,12 @@ trait Billrun_Traits_FieldValidator {
 	abstract protected function _getCollection();
 	
 	/**
-	 * The base query to be used to verify unique values.
-	 * @return type
+	 * Return the base query of the action.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return array
+	 * @note '_getBaseQuery' is a function of the Billrun_Traits_FieldValidator trait, 
+	 * its default implementation is empty.
+	 * It's named with an underscore to avoid a clash between another getBaseQuery function.
 	 */
 	protected function _getBaseQuery() {
 		return array();
