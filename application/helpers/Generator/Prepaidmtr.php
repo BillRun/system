@@ -67,7 +67,7 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 			return $plan['external_id'];
 		}
 	}
-
+	
 	protected function flattenArray($array, $parameters, &$line) {
 		foreach ($array as $idx => $val) {
 			if ($val instanceof MongoDBRef || isset($val['$ref'], $val['$id'])) {
@@ -77,7 +77,7 @@ class Generator_Prepaidmtr extends Billrun_Generator_ConfigurableCDRAggregationC
 			foreach ($parameters['mapping'] as $dataKey => $lineKey) {
 				$fieldValue = is_array($val) || is_object($val) ? Billrun_Util::getNestedArrayVal($val, $dataKey) : $val;
 				if (!empty($fieldValue)) {
-					$line[sprintf($lineKey, $dstIdx)] = $fieldValue;
+					$line[sprintf($lineKey, $dstIdx)] =  empty($line[sprintf($lineKey, $dstIdx)]) ? $fieldValue : $line[sprintf($lineKey, $dstIdx)] + $fieldValue ;
 				}
 			}
 		}
