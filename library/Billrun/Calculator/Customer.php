@@ -165,6 +165,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$row['apr'] = 0;
 			return false;
 		}
+		
+		foreach ($plan->getFieldsForLine() as $lineKey => $planKey) {
+			if (!empty($planField = $plan->get($planKey))) {
+				$row[$lineKey] = $planField;
+			}
+		}
 		$row['plan_ref'] = $plan_ref;
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));

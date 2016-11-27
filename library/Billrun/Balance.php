@@ -85,7 +85,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 				$params = Yaf_Application::app()->getConfig();
 			}
 			if (isset($params['charging_type'])) {
-				$class = 'Billrun_Balance_' . $params['charging_type'];
+				$class = 'Billrun_Balance_' . ucfirst($params['charging_type']);
 			} else { // fallback to default postpaid balance
 				$class = 'Billrun_Balance_Postpaid';
 			}
