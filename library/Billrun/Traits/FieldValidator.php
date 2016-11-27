@@ -88,16 +88,12 @@ trait Billrun_Traits_FieldValidator {
 		
 		$invalidFields = array();
 		// Go through the input data.
-		foreach ($data as $key => $value) {
-			// Check if there are enforcers for the input field.
-			if(isset($validators[$key])) {
-				// Apply the validators.
-				$invalidFields []= $this->applyValidators($validators[$key], $data);
-			}
+		foreach ($validators as $fieldName => $validator) {
+			$invalidFields += $this->applyValidators($validator, $data);
 		}
 		
 		// If there are invalid fields, report
-		if($invalidFields) {
+		if(!empty($invalidFields)) {
 			throw new Billrun_Exceptions_InvalidFields($invalidFields);
 		}
 		return true;
