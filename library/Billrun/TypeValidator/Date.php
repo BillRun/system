@@ -26,7 +26,6 @@ class Billrun_TypeValidator_Date extends Billrun_TypeValidator_Base {
 		}
 		$result = strtotime($value);
 		return $result !== false;
-//		return (strtotime($value) === false ? false : true);
 	}
 
 }
