@@ -158,43 +158,6 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		return count($this->getRawData()) > 0;
 	}
 
-//	/**
-//	 * method to update subscriber balance to db
-//	 * 
-//	 * @param Mongodloid_Entity $row the input line
-//	 * @param mixed $rate The rate of associated with the usage.
-//	 * @param Billrun_Plan $plan the customer plan
-//	 * @param string $usage_type The type  of the usage (call/sms/data)
-//	 * @param int $volume The usage volume (seconds of call, count of SMS, bytes  of data)
-//	 * 
-//	 * @return mixed on success update return pricing data array, else false
-//	 * 
-//	 */
-//	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
-//		if (($crashedPricingData = $this->getTx($row['stamp'])) !== FALSE) {
-//			return $crashedPricingData;
-//		}
-//		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan, $row);
-//		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
-//			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this, &$pricingData, $this));
-//			return $pricingData;
-//		}
-//
-//		$balance_id = $this->getId();
-//		Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-//		list($query, $update) = $this->buildBalanceUpdateQuery($pricingData, $row, $volume);
-//
-//		Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
-//		$ret = $this->collection()->update($query, $update);
-//		if (!($ret['ok'] && $ret['updatedExisting'])) {
-//			Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
-//			return false;
-//		}
-//		Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
-//		$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-//		return $pricingData;
-//	}
-
 	/**
 	 * trigger update query on the balance collection
 	 * 
