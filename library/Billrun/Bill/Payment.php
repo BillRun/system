@@ -547,9 +547,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	protected function getPaymentGatewayTransactionId(){
 		return $this->data['payment_gateway']['transactionId'];
 	}
-	
-		
+			
 	protected function getPaymentGatewayName(){
 		return $this->data['payment_gateway']['name'];
+	}
+	
+	public function setGatewayChargeFailure($message){
+		return $this->data['failure_message'] = $message;
 	}
 }

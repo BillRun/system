@@ -549,31 +549,44 @@ abstract class Billrun_Bill {
 			}
 			$res = Billrun_Bill_Payment::savePayments($payments);
 			if ($res && isset($res['ok']) && $res['ok']) {
-				foreach ($payments as $payment) {
-					if ($payment->getDir() == 'fc') {
-						foreach ($payment->getPaidBills() as $billType => $bills) {
-							foreach ($bills as $billId => $amountPaid) {
-								$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid)->save();
-						}
-					}
-					} else {
-						Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
-					}
-				}
-				if (!isset($options['collect']) || $options['collect']) {
-					$involvedAccounts = array_unique($involvedAccounts);
-//					CollectAction::collect($involvedAccounts);
-				}
 				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
 						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
-						$paymentStatus = $gateway->pay($gatewayDetails);
+						try {
+							$paymentStatus = $gateway->pay($gatewayDetails);
+						} catch (Exception $e) {
+							$payment->setGatewayChargeFailure($e->getMessage());
+							continue;
+						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
 						$txId = $gateway->getTransactionId();
 						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
+						if ($payment->getDir() == 'fc') {
+							foreach ($payment->getPaidBills() as $billType => $bills) {
+								foreach ($bills as $billId => $amountPaid) {
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+								}
+							}
+						}
 					}
+				} else {
+					foreach ($payments as $payment) {
+						if ($payment->getDir() == 'fc') {
+							foreach ($payment->getPaidBills() as $billType => $bills) {
+								foreach ($bills as $billId => $amountPaid) {
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+								}
+							}
+						} else {
+							Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+						}
+					}
+				}
+				if (!isset($options['collect']) || $options['collect']) {
+					$involvedAccounts = array_unique($involvedAccounts);
+//					CollectAction::collect($involvedAccounts);
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');
