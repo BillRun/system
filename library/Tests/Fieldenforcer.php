@@ -62,13 +62,66 @@ class Tests_Fieldenforcer extends UnitTestCase {
 			"valid" => false, "msg" => "Three out of three doesn't exist"),
 
 	);
+	
+	protected $typeTests = array(
+		// Boolean type tests
+		array('data' => array('Bla' => true), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Boolean')), "valid" => true, "msg" => "Boolean type 1"),
+		array('data' => array('Bla' => false), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Boolean')), "valid" => true, "msg" => "Boolean type 2"),
+		array('data' => array('Bla' => 10), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Boolean')), "valid" => false, "msg" => "Int for boolean type"),
+		array('data' => array('Bla' => "10"), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Boolean')), "valid" => false, "msg" => "String for boolean type"),
+		
+		// Integer type tests
+		array('data' => array('Bla' => true), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => false, "msg" => "Boolean for integer type 1"),
+		array('data' => array('Bla' => false), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => false, "msg" => "Boolean for integer type 2"),
+		array('data' => array('Bla' => 10), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => true, "msg" => "Int type 10"),
+		array('data' => array('Bla' => 0), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => true, "msg" => "Int type 0"),
+		array('data' => array('Bla' => -10), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => true, "msg" => "Int type -10"),
+		array('data' => array('Bla' => "10"), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => true, "msg" => "Integer in string format"),
+		array('data' => array('Bla' => "a1x0"), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Integer')), "valid" => false, "msg" => "String for integer"),
+		
+		array('data' => array('A' => true, 'B' => 9), 'conf' => array(
+																	array('field_name' => 'A', 'type' => 'Boolean'),
+																	array('field_name' => 'B', 'type' => 'Integer')),
+			"valid" => true, "msg" => "Boolean and Integer"),
+		array('data' => array('A' => -10, 'B' => false), 'conf' => array(
+																	array('field_name' => 'A', 'type' => 'Integer'),
+																	array('field_name' => 'B', 'type' => 'Boolean')),
+			"valid" => true, "msg" => "Integer and Boolean"),
+		array('data' => array('A' => "None", 'B' => false), 'conf' => array(
+																	array('field_name' => 'A', 'type' => 'Integer'),
+																	array('field_name' => 'B', 'type' => 'Boolean')),
+			"valid" => false, "msg" => "Integer invalid and Boolean valid"),
+		array('data' => array('A' => 88, 'B' => 44), 'conf' => array(
+																	array('field_name' => 'A', 'type' => 'Integer'),
+																	array('field_name' => 'B', 'type' => 'Boolean')),
+			"valid" => false, "msg" => "Integer valid and Boolean invalid"),
+		
+		// Date type tests
+		array('data' => array('Bla' => '2016-10-10'), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => true, "msg" => "Valid date 1"),
+		array('data' => array('Bla' => '2016-32-10'), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => false, "msg" => "Invalid date format"),
+		array('data' => array('Bla' => '+1 month'), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => true, "msg" => "Date in spoken words"),
+		array('data' => array('Bla' => 2015), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => false, "msg" => "Integer for date"),
+		array('data' => array('Bla' => "Just a string"), 'conf' => array(array('field_name' => 'Bla', 'type' => 'Date')), "valid" => false, "msg" => "Invalid string"),
+	);
+	
 	protected $currentCase;
 	
 	/**
 	 * Test the mandatory field enforcer.
 	 */
 	public function testMandatory() {
-		foreach ($this->mandatoryTests as $test) {
+		$this->runTest($this->mandatoryTests);
+	}
+	
+	/**
+	 * Test the type field enforcer.
+	 */
+	public function testTypeEnforcer() {
+		$this->runTest($this->typeTests);
+	}
+	
+	public function runTest($testCases) {
+		foreach ($testCases as $test) {
 			$result = true;
 			try {
 				$this->enforce($test['conf'], $test['data']);
@@ -101,14 +154,4 @@ class Tests_Fieldenforcer extends UnitTestCase {
 		}
 		return null;
 	}
-
-//	protected function getWrapper($complex) {
-//		$name = "Billrun_DataTypes_Conf_" . ucfirst(strtolower($complex['t']));
-//		if(!@class_exists($name)) {
-//			return null;
-//		}
-//		
-//		$wrapper = new $name($complex);
-//		return $wrapper;
-//	}
 }
