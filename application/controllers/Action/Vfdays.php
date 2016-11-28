@@ -134,47 +134,52 @@ class VfdaysAction extends Action_Base {
 	}
 
 	public function count_days_tap3($sid, $year = null, $max_datetime = null) {
-		$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
-		if (is_null($max_datetime)) {
-			$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
-		} else {
-			$to = date('YmdHis', (!is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime));
-		}
-		
-		$match = array(
-			'$match' => array(
-				'sid' => $sid,
-				'type' => 'tap3',
-				'plan' => array('$in' => $this->plans),
-				'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
-					'$gte' => $from,
-					'$lte' => $to,
-				),
-				'arategroup' => "VF",
-				'billrun' => array(
-					'$exists' => true,
-				),
-			),
-		);
-		$group = array(
-			'$group' => array(
-				'_id' => array(
-					'day_key' => array(
-						'$substr' => array('$basicCallInformation.CallEventStartTimeStamp.localTimeStamp', 0, 8),
+		try {
+			$from = date('YmdHis', strtotime($year . '-01-01' . ' 00:00:00'));
+			if (is_null($max_datetime)) {
+				$to = date('YmdHis', strtotime($year . '-12-31' . ' 23:59:59'));
+			} else {
+				$to = date('YmdHis', (!is_numeric($max_datetime) ? strtotime($max_datetime) : $max_datetime));
+			}
+
+			$match = array(
+				'$match' => array(
+					'sid' => $sid,
+					'type' => 'tap3',
+					'plan' => array('$in' => $this->plans),
+					'basicCallInformation.CallEventStartTimeStamp.localTimeStamp' => array(
+						'$gte' => $from,
+						'$lte' => $to,
+					),
+					'arategroup' => "VF",
+					'billrun' => array(
+						'$exists' => true,
 					),
 				),
-			),
-		);
-		$group2 = array(
-			'$group' => array(
-				'_id' => 'null',
-				'day_sum' => array(
-					'$sum' => 1,
+			);
+			$group = array(
+				'$group' => array(
+					'_id' => array(
+						'day_key' => array(
+							'$substr' => array('$basicCallInformation.CallEventStartTimeStamp.localTimeStamp', 0, 8),
+						),
+					),
 				),
-			),
-		);
-		$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-		$results = $billing_connection->aggregate($match, $group, $group2);
+			);
+			$group2 = array(
+				'$group' => array(
+					'_id' => 'null',
+					'day_sum' => array(
+						'$sum' => 1,
+					),
+				),
+			);
+			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
+			$results = $billing_connection->aggregate($match, $group, $group2);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
+			Billrun_Factory::log('We will skip the billing fetch for this call.', Zend_Log::WARN);
+		}
 		return isset($results[0]['day_sum']) ? $results[0]['day_sum'] : 0;
 	}
 
