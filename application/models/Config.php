@@ -571,6 +571,9 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
+			$updatedFileSettings['type'] = $fileSettings['type'];
+		}
 		if (isset($fileSettings['parser'])) {
 			$updatedFileSettings['parser'] = $this->validateParserConfiguration($fileSettings['parser']);
 			if (isset($fileSettings['processor'])) {
@@ -590,6 +593,10 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
+	protected function validateType($type) {
+		$allowedTypes = array('realtime');
+		return in_array($type, $allowedTypes);
+	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = array_keys($pg['params']);

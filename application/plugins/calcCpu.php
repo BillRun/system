@@ -47,10 +47,6 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $unifyCalc;
 
 	public function beforeProcessorStore($processor, $realtime = false) {
-		if (!$realtime) { // full cycle should only work for realtime events
-			return;
-		}
-		
 		Billrun_Factory::log('Plugin ' . $this->name . ' triggered', Zend_Log::INFO);
 		$options = array(
 			'autoload' => 0,
