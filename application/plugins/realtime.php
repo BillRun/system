@@ -47,12 +47,9 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getRowCurrentUsagev($row) {
 		try {
-			if (!in_array($row['type'], array('datart'))) {
-				return 0;
-			}
 			$lines_coll = Billrun_Factory::db()->linesCollection();
 			$query = $this->getRowCurrentUsagevQuery($row);
-			$line = current($lines_coll->aggregate($query));
+			$line = current(iterator_to_array($lines_coll->aggregate($query)));
 		} catch (Exception $ex) {
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage());
 		}
@@ -139,9 +136,16 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $lineToRebalance['usagev'];
 	}
 	
-	protected function getRebalancePricingData($lineToRebalance, $realUsagev, $rate, $balance, $plan) {
-		$loadedBalance = Billrun_Balance::getInstance($lineToRebalance->getRawData());
-		return $loadedBalance->getLinePricingData($realUsagev, $lineToRebalance['usaget'], $rate, $plan, $lineToRebalance);
+	protected function getRebalancePricingData($lineToRebalance, $realUsagev) {
+		$row = $lineToRebalance;
+		$row['billrun_pretend'] = true;
+		$row['usagev'] = $realUsagev;
+		$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+		return $calcRow->update();
+	}
+	
+	public function getPricingField() {
+		return Billrun_Calculator_CustomerPricing::DEF_CALC_DB_FIELD;
 	}
 	
 	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget, $rebalancePricingData) {
@@ -212,7 +216,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		$rebalancePricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev, $rate, $balance, $plan);
+		$rebalancePricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev);
 		
 		// Update balance cost
 		if ($balance) {
@@ -262,6 +266,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @todo We need to update usagevc, in_plan, out_plan, in_group, usagesb
 	 */
 	protected function getUpdateLineUpdateQuery($rebalanceData) {
+		unset($rebalanceData['billrun']);
 		$ret = array('$inc' => $rebalanceData);
 		foreach ($rebalanceData as $rebalanceKey => $rebalanceValue) {
 			$ret['$inc']['rebalance_' . $rebalanceKey] = $rebalanceValue;
