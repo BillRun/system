@@ -286,4 +286,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function _getBaseQuery() {
 		return array('type' => $this->type);
 	}
+	
+	protected function getBypassList() {
+		return array('mandatory');
+	}
 }

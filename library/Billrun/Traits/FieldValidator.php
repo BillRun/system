@@ -57,20 +57,37 @@ trait Billrun_Traits_FieldValidator {
 	}
 	
 	/**
+	 * Get the list of enforcer names to be bypassed.
+	 * Override this function if you need to bypass a constraint, like
+	 * mandatory or unique.
+	 * @return array
+	 */
+	protected function getBypassList() {
+		return array();
+	}
+	
+	/**
 	 * Get all the validators for a field.
 	 * @param array $fieldConf - Field configuration (from the config collection).
 	 * @return array of rule enforcers
 	 */
 	protected function getValidatorsForField(array $fieldConf) {
 		$validators = array();
+		$bypass = $this->getBypassList();
 		foreach ($fieldConf as $key => $value) {
+			$lowerKey = strtolower($key);
+			// If the key is bypassed, skip the enforcer.
+			if(in_array($lowerKey, $bypass)) {
+				continue;
+			}
+			
 			// If the value is false skip the enforcer.
 			if(!$value) {
 				continue;
 			}
 			// Construct the validator's name
 			// TODO: Move this magic to a const.
-			$validatorName = "Billrun_DataTypes_FieldEnforcer_" . ucfirst(strtolower($key));
+			$validatorName = "Billrun_DataTypes_FieldEnforcer_" . ucfirst($lowerKey);
 			
 			// Check if the validator exists.
 			if(!@class_exists($validatorName)) {
