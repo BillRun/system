@@ -351,18 +351,28 @@ abstract class Billrun_Bill {
 		return isset($this->data['total_paid']) ? $this->data['total_paid'] : 0;
 	}
 
-	protected function recalculatePaymentFields() {
+	protected function recalculatePaymentFields($status = null) {
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
 				$amount += array_sum($this->data['paid_by']['inv']);
+				$paidAmount = $this->data['paid_by']['inv'];
+				$paymentAmount = current($paidAmount);
 			}
 			if (isset($this->data['paid_by']['rec'])) {
 				$amount += array_sum($this->data['paid_by']['rec']);
+				$paidAmount = $this->data['paid_by']['rec'];
+				$paymentAmount = current($paidAmount);
 			}
 			$this->data['total_paid'] = $amount;
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			$this->data['paid'] = $this->isPaid();
+			if (is_null($status)){
+				$this->data['paid'] = $this->isPaid();
+			} else {
+				$this->data['paid_amount'] = isset($this->data['paid_amount']) ? $this->data['paid_amount'] : 0;
+				$this->data['paid'] = $this->calcPaidStatus($status, $paymentAmount);
+			}
+				
 		}
 		return $this;
 	}
@@ -381,11 +391,11 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($billType, $billId, $amount) {
+	public function attachPayingBill($billType, $billId, $amount, $status = null) {
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
 			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
-			$this->updatePaidBy($paidBy);
+			$this->updatePaidBy($paidBy, $status);
 		}
 		return $this;
 	}
@@ -397,10 +407,10 @@ abstract class Billrun_Bill {
 		return $this;
 	}
 
-	protected function updatePaidBy($paidBy) {
+	protected function updatePaidBy($paidBy, $status = null) {
 		if ($this->getDue() > 0) {
 			$this->data['paid_by'] = $paidBy;
-			$this->recalculatePaymentFields();
+			$this->recalculatePaymentFields($status);
 		}
 	}
 
@@ -563,27 +573,22 @@ abstract class Billrun_Bill {
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
 						$txId = $gateway->getTransactionId();
 						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
-						if ($payment->getDir() == 'fc') {
-							foreach ($payment->getPaidBills() as $billType => $bills) {
-								foreach ($bills as $billId => $amountPaid) {
-									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid)->save();
-								}
-							}
-						}
+						$paymentSuccess[] = $payment;
 					}
 				} else {
-					foreach ($payments as $payment) {
+					$paymentSuccess = $payments;
+				}
+				foreach ($paymentSuccess as $payment) {
 						if ($payment->getDir() == 'fc') {
 							foreach ($payment->getPaidBills() as $billType => $bills) {
 								foreach ($bills as $billId => $amountPaid) {
-									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid)->save();
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, $responseFromGateway['stage'])->save();
 								}
 							}
 						} else {
 							Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
 						}
 					}
-				}
 				if (!isset($options['collect']) || $options['collect']) {
 					$involvedAccounts = array_unique($involvedAccounts);
 //					CollectAction::collect($involvedAccounts);
@@ -598,7 +603,34 @@ abstract class Billrun_Bill {
 			return array('payment' => $payments, 'response' => $responseFromGateway);
 		} else { 
 			return $payments;
-		}
-			
+		}		
 	}
+
+	protected function calcPaidStatus($status, $amount) {
+		switch ($status) {
+			case 'Rejected':
+				$result = '0';
+				break;
+
+			case 'Completed':
+				$this->data['paid_amount'] = $this->data['paid_amount'] + $amount;
+				if ($this->getDue() == $this->data['paid_amount']) {
+					$result = '1';
+				}
+				else {
+					$result = '2';
+				}
+				break;
+
+			case 'Pending':
+				$result = '2';
+				break;
+			default:
+				$result = '0';
+				break;
+		}
+		
+		return $result;
+	}
+
 }
