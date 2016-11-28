@@ -66,7 +66,7 @@ class Vfdays3Action extends Action_Base {
 //				'unified_record_time' => array(
 //					'$gte' => new MongoDate($from),
 //				),
-				'callEventStartTimeStamp' => array(
+				'record_opening_time' => array(
 					'$gte' => date('YmdHis', $from),
 				),
 				'$or' => array(
@@ -76,14 +76,14 @@ class Vfdays3Action extends Action_Base {
 			),
 		);
 		if ($max_datetime) {
-			$elements[count($elements)-1]['$match']['callEventStartTimeStamp']['$lte'] = date('YmdHis', strtotime($max_datetime));
+			$elements[count($elements)-1]['$match']['record_opening_time']['$lte'] = date('YmdHis', strtotime($max_datetime));
 		}
 		$elements[] = array(
 			'$group' => array(
 				'_id' => array(
 					'day_key' => array('$substr' =>
 						array(
-							'$callEventStartTimeStamp',
+							'$record_opening_time',
 							4,
 							4
 						)
