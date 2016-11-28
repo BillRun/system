@@ -148,7 +148,8 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			throw new Exception('Unknown category ' . $category);
+			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
+			return $result;
 		}
 		
 		$translated = Billrun_Config::translateComplex($valueInCategory);
@@ -306,7 +307,7 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			$result = $this->handleNewCategory($category, $data, $currentConfig);
+			$result = $this->handleSetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
 
@@ -368,9 +369,33 @@ class ConfigModel {
 			return 0;
 		}
 		
+		return $newConfig;
+	}
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param string $category - The current category.
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 */
+	protected function handleGetNewCategory($category, $data, &$currentConfig) {
 		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
 		$currentConfig = $newConfig;
-
+		$result = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		return $result;
+	}
+	
+	protected function handleSetNewCategory($category, $data, &$currentConfig) {
+		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
+		$currentConfig = $newConfig;
 		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		return $result;
 	}
