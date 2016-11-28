@@ -14,7 +14,7 @@
  */
 class Billrun_Balance_Prepaid extends Billrun_Balance {
 
-	protected $charging_type = 'prepaid';
+	protected $connection_type = 'prepaid';
 
 	/**
 	 * minimum values for balance usage (on prepaid)
