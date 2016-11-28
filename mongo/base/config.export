@@ -81,11 +81,6 @@
              }
         }
     },
-    "export_generators" : {
-	"v" : "",
-	"t" : "Exportgenerator",
-	"list": [] 
-    },
     "subscribers": {
         "types": [
             "subscriber",
@@ -271,5 +266,6 @@
             }
         }
     },
+	"export_generators": [],
 	"payment_gateways" : [ ]
 }

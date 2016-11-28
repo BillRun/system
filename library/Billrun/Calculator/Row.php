@@ -10,10 +10,10 @@
  * Billing calculator update row for calc in row level
  *
  * @package     calculator
- * @subpackage  updaterow
+ * @subpackage  row
  * @since       5.3
  */
-abstract class Billrun_Calculator_Updaterow {
+abstract class Billrun_Calculator_Row {
 
 	/**
 	 * the instances that the class handles
@@ -21,14 +21,26 @@ abstract class Billrun_Calculator_Updaterow {
 	 * @var array of Billrun_Calculator_Updaterow
 	 */
 	static protected $instances = array();
-	
+
+	/**
+	 * the bulk calculator which trigger the row calculator
+	 * 
+	 * @var Billrun_Calculator
+	 */
 	protected $calculator;
-	
+
 	/**
 	 * the row that handle
 	 * @var array
 	 */
 	protected $row = null;
+
+	/**
+	 * the pricing field
+	 * 
+	 * @var string
+	 */
+	protected $pricingField = 'aprice';
 
 	public function __construct($row, $callerClass) {
 		$this->setRow($row);
@@ -42,6 +54,13 @@ abstract class Billrun_Calculator_Updaterow {
 	 * @return array update data
 	 */
 	abstract public function update();
+
+	/**
+	 * initialization of the class
+	 * 
+	 * @return void
+	 */
+	abstract protected function init();
 
 	public function getRow() {
 		return $this->row;
@@ -65,7 +84,7 @@ abstract class Billrun_Calculator_Updaterow {
 	static public function getInstance($calc, ArrayAccess $row, $callerClass, $subcalc = null) {
 		$stamp = Billrun_Util::generateArrayStamp($row);
 		if (!isset(self::$instances[$stamp])) {
-			$class = 'Billrun_Calculator_Updaterow_' . ucfirst($calc);
+			$class = get_called_class() . '_' . ucfirst($calc);
 			if (!is_null($subcalc)) {
 				$class .= '_' . ucfirst($subcalc);
 			} else { // default is postpaid sub-calc
