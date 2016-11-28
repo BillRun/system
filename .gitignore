@@ -10,3 +10,4 @@ exports
 logs/debug.log*
 cache
 crontab
+shared
