@@ -59,6 +59,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function validateRequest($query, $data) {
+		$errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$parametersSettings = $this->getActionConfig();
 		$options = array();
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
@@ -67,7 +68,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 				$name = $param['name'];
 				if (!isset($params[$name])) {
 					if (isset($param['mandatory']) && $param['mandatory']) {
-						throw new Billrun_Exceptions_Api($parametersSettings['error_base'] + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
+						throw new Billrun_Exceptions_Api($errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
 					}
 					continue;
 				}
@@ -90,6 +91,9 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			} else {
 				$translated[$type] = array();
 			}
+		}
+		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
+			throw new Billrun_Exceptions_Api($errorBase + 1, array(), 'No query/update was found or entity not supported');
 		}
 		return array($translated['query_parameters'], $translated['update_parameters']);
 	}
