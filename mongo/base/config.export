@@ -9,7 +9,7 @@
     "usage_types": {
         "array": [],
         "t": "Array"
-    },
+       },
     "resetlines": {
         "limit": {
             "v": 10,
@@ -63,28 +63,23 @@
         "charging_day": {
             "v": 1,
             "t": "Number",
-            "range": {
-                "min": 1,
-                "max": 28
-            }
+             "range": {
+                   "min": 1,
+                   "max": 28
+             }
         },
         "timezone": {
-            "v": "UTC",
-            "t": "Timezone"
+          "v": "UTC",
+           "t": "Timezone"
         },
         "start_hours_lag": {
             "v": 3,
             "t": "Number",
-            "range": {
-                "min": 0,
-                "max": 23
-            }
+             "range": {
+                   "min": 0,
+                   "max": 23
+             }
         }
-    },
-    "export_generators" : {
-	"v" : "",
-	"t" : "Exportgenerator",
-	"list": [] 
     },
     "subscribers": {
         "types": [
@@ -220,7 +215,7 @@
             "type": "boolean"
         }]
     },
-    "services": {
+   "services": {
         "fields": [{
             "field_name": "from",
             "mandatory": true,
@@ -276,5 +271,6 @@
             }
         }
     },
-    "payment_gateways" : [ ]
+	"export_generators": [],
+	"payment_gateways" : [ ]
 }
