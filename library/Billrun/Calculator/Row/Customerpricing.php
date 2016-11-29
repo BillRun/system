@@ -257,6 +257,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		
 		if (!isset($pricingData['arategroups'])) {
+			if (($crashedPricingData = $this->getTx($row['stamp'], $this->balance)) !== FALSE) {
+				return $crashedPricingData;
+			}
 			$balance_id = $this->balance->getId();
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			list($query, $update) = $this->balance->buildBalanceUpdateQuery($pricingData, $row, $volume);
