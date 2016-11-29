@@ -352,8 +352,13 @@ class ConfigModel {
 		
 		// Go through the keys
 		foreach ($splitCategory as $key) {
+			// If the value doesn't exist check if it has a default value in the template ini
 			if(!isset($newValueIndex[$key])) {
-				$newValueIndex[$key] = array();
+				$overrideValue = Billrun_Util::getFieldVal($ptrTemplate[$key], array());
+				if(!$overrideValue) {
+					$overrideValue = array();
+				}
+				$newValueIndex[$key] = $overrideValue;
 			}
 			$newValueIndex = &$newValueIndex[$key];
 			if(!isset($ptrTemplate[$key])) {
