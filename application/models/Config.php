@@ -110,8 +110,20 @@ class ConfigModel {
  				return $pgSettings;
  			}
  			throw new Exception('Unknown payment gateway ' . $data['name']);
+		} else if ($category == 'export_generators') {
+			 if (!is_array($data)) {
+ 				Billrun_Factory::log("Invalid data for export_generators.");
+ 				return 0;
+ 			}
+ 			if (empty($data['name'])) {
+ 				return $currentConfig['export_generators'];
+ 			}
+ 			if ($exportGenSettings = $this->getExportGeneratorSettings($currentConfig, $data['name'])) {
+ 				return $exportGenSettings;
+ 			}
+ 			throw new Exception('Unknown export_generator ' . $data['name']);
 		}
-
+		
 		return $this->_getFromConfig($currentConfig, $category, $data);
 	}
 
@@ -136,7 +148,8 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			throw new Exception('Unknown category ' . $category);
+			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
+			return $result;
 		}
 		
 		$translated = Billrun_Config::translateComplex($valueInCategory);
@@ -185,7 +198,7 @@ class ConfigModel {
 				$fileSettings = $data;
 			}
 			$this->setFileTypeSettings($updatedData, $fileSettings);
-			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
+			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);	
 		} else if ($category === 'payment_gateways') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
@@ -225,6 +238,32 @@ class ConfigModel {
 			$this->setPaymentGatewaySettings($updatedData, $pgSettings);
  			$pgSettings = $this->validatePaymentGatewaySettings($updatedData, $data);
  			if (!$pgSettings){
+ 				return 0;
+ 			}
+		} else if ($category === 'export_generators') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for export generator.");
+				return 0;
+			}
+			if (empty($data['name'])) {
+				throw new Exception('Couldn\'t find export generator name');
+			}
+			if (empty($data['file_type'])) {
+				throw new Exception('Export generator must be associated to input processor');
+			}
+			if (empty($data['segments']) || !is_array($data['segments'])){
+				throw new Exception('Segments must be an array and contain at least one value');
+			}
+			
+			$rawExportGenSettings = $this->getExportGeneratorSettings($updatedData, $data['name']);
+			if ($rawExportGenSettings) {
+				$generatorSettings = array_merge($rawExportGenSettings, $data);
+			} else {
+				$generatorSettings = $data;
+			}
+			$this->setExportGeneratorSettings($updatedData, $generatorSettings);
+			$generatorSettings = $this->validateExportGeneratorSettings($updatedData, $data);	
+ 			if (!$generatorSettings){
  				return 0;
  			}
 		} else {
@@ -268,7 +307,7 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			$result = $this->handleNewCategory($category, $data, $currentConfig);
+			$result = $this->handleSetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
 
@@ -313,8 +352,10 @@ class ConfigModel {
 		
 		// Go through the keys
 		foreach ($splitCategory as $key) {
+			// If the value doesn't exist check if it has a default value in the template ini
 			if(!isset($newValueIndex[$key])) {
-				$newValueIndex[$key] = array();
+				$overrideValue = Billrun_Util::getFieldVal($ptrTemplate[$key], array());
+				$newValueIndex[$key] = $overrideValue;
 			}
 			$newValueIndex = &$newValueIndex[$key];
 			if(!isset($ptrTemplate[$key])) {
@@ -330,9 +371,33 @@ class ConfigModel {
 			return 0;
 		}
 		
+		return $newConfig;
+	}
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param string $category - The current category.
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 */
+	protected function handleGetNewCategory($category, $data, &$currentConfig) {
 		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
 		$currentConfig = $newConfig;
-
+		$result = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		return $result;
+	}
+	
+	protected function handleSetNewCategory($category, $data, &$currentConfig) {
+		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
+		$currentConfig = $newConfig;
 		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		return $result;
 	}
@@ -412,6 +477,13 @@ class ConfigModel {
 				}
 			}
 		}
+		if ($category === 'export_generators') {
+			if (isset($data['name'])) {
+				if (count($data) == 1) {
+					$this->unsetExportGeneratorSettings($updatedData, $data['name']);
+				} 
+			}
+		}
 		if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
  				if (count($data) == 1) {
@@ -451,8 +523,16 @@ class ConfigModel {
  		}
  		return FALSE;
  	}
+	
+	protected function getExportGeneratorSettings($config, $name) {
+ 		if ($filtered = array_filter($config['export_generators'], function($exportGenSettings) use ($name) {
+ 			return $exportGenSettings['name'] === $name;
+ 		})) {
+ 			return current($filtered);
+ 		}
+ 		return FALSE;
+ 	}
  
-
 	protected function setFileTypeSettings(&$config, $fileSettings) {
 		$fileType = $fileSettings['file_type'];
 		foreach ($config['file_types'] as &$someFileSettings) {
@@ -475,6 +555,22 @@ class ConfigModel {
  		}
  		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
  	}
+	
+	
+	protected function setExportGeneratorSettings(&$config, $egSettings) {
+ 		$exportGenerator = $egSettings['name'];
+ 		foreach ($config['export_generators'] as &$someEgSettings) {
+ 			if ($someEgSettings['name'] == $exportGenerator) {
+ 				$someEgSettings = $egSettings;
+ 				return;
+ 			}
+ 		}
+        if (!$config['export_generators']) {
+            $config['export_generators'] = array($egSettings);
+        } else {
+            $config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        }
+ 	}
  
 
 	protected function unsetFileTypeSettings(&$config, $fileType) {
@@ -489,8 +585,16 @@ class ConfigModel {
  			return $pgSettings['name'] !== $pg;
  		});
  	}
+	
+	protected function unsetExportGeneratorSettings(&$config, $name) {
+		$config['export_generators'] = array_map(function($ele) use($name){
+			if ($ele['name'] == $name){
+				$ele['enabled'] = false;
+			}
+			return $ele;
+		}, $config['export_generators']);	
+	}
  
-
 	protected function validateFileSettings(&$config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
@@ -498,6 +602,9 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
+			$updatedFileSettings['type'] = $fileSettings['type'];
+		}
 		if (isset($fileSettings['parser'])) {
 			$updatedFileSettings['parser'] = $this->validateParserConfiguration($fileSettings['parser']);
 			if (isset($fileSettings['processor'])) {
@@ -517,6 +624,10 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
+	protected function validateType($type) {
+		$allowedTypes = array('realtime');
+		return in_array($type, $allowedTypes);
+	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = array_keys($pg['params']);
@@ -560,6 +671,23 @@ class ConfigModel {
  		return true;
  	}
  
+	protected function validateExportGeneratorSettings(&$config, $eg) {
+		$fileTypeSettings = $this->getFileTypeSettings($config, $eg['file_type']);
+		if (empty($fileTypeSettings)){
+			Billrun_Factory::log("There's no matching file type "  . $eg['file_type']);
+			return false;
+		}
+		$parserSettings = $fileTypeSettings['parser'];
+		$inputProcessorFields = $parserSettings['structure'];
+		foreach ($eg['segments'] as $segment){
+			if (!in_array($segment['field'], $inputProcessorFields)){
+				Billrun_Factory::log("There's no matching field in the name of "  . $segment['field'] . "in input processor: ", $eg['file_type']);
+				return false;
+			}
+		}
+		
+		return true;
+ 	}
 
 	protected function checkForConflics($config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
@@ -629,14 +757,16 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed');
+		$allowedParsers = array('separator', 'fixed', 'json');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
-		if ($parserSettings['type'] == 'separator') {
+		if ($parserSettings['type'] == 'json') {
+			$customKeys = $parserSettings['structure'];
+		} else if ($parserSettings['type'] == 'separator') {
 			$customKeys = $parserSettings['structure'];
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');

@@ -20,7 +20,7 @@ class Billrun_Utils_Security {
  	 * @param array $key - Key to sign with
 	 * @return array Output data with signature.
 	 */
-	public static function addSignature(array $data, array $key) {
+	public static function addSignature(array $data, $key) {
 		// Add the timestamp
 		$data['t'] = date(Billrun_Base::base_datetimeformat);
 		$signature = $this->sign($data, $key);
@@ -67,8 +67,9 @@ class Billrun_Utils_Security {
 	 * @param array $secret
 	 * @return array Signature
 	 */
-	protected static function sign(array $data, array $secret) {
-		return hash_hmac("sha512", $data, $secret);
+	protected static function sign(array $data, $secret) {
+		$stringData = json_encode($data);
+		return hash_hmac("sha512", $stringData, $secret);
 	}
 	
 	/**
@@ -76,7 +77,7 @@ class Billrun_Utils_Security {
 	 * @param array $secret - Input secret value to validate.
 	 * @return boolean - True if the secret is valid.
 	 */
-	protected static function validateSecret(array $secret) {
+	protected static function validateSecret($secret) {
 		if(empty($secret) || !is_string($secret)) {
 			return false;
 		}

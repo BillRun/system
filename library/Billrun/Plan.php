@@ -478,5 +478,9 @@ class Billrun_Plan extends Billrun_Service {
 		$fraction = $days_in_plan / $days_in_month;
 		return $fraction;
 	}
+	
+	public function getFieldsForLine() {
+		return Billrun_Factory::config()->getConfigValue('plans.lineFields', array());
+	}
 
 }
