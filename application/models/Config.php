@@ -598,6 +598,9 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
+			$updatedFileSettings['type'] = $fileSettings['type'];
+		}
 		if (isset($fileSettings['parser'])) {
 			$updatedFileSettings['parser'] = $this->validateParserConfiguration($fileSettings['parser']);
 			if (isset($fileSettings['processor'])) {
@@ -617,6 +620,10 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
+	protected function validateType($type) {
+		$allowedTypes = array('realtime');
+		return in_array($type, $allowedTypes);
+	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = array_keys($pg['params']);
@@ -746,14 +753,16 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed');
+		$allowedParsers = array('separator', 'fixed', 'json');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
-		if ($parserSettings['type'] == 'separator') {
+		if ($parserSettings['type'] == 'json') {
+			$customKeys = $parserSettings['structure'];
+		} else if ($parserSettings['type'] == 'separator') {
 			$customKeys = $parserSettings['structure'];
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
