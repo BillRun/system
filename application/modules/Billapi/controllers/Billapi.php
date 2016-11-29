@@ -7,13 +7,14 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	protected $action;
 
 	public function indexAction() {
-		$data = $this->getRequest()->getRequest();
-		//username=shani2&roles=%5B%22admin%22%5D&password=qqqqqqq1
-		$config = $this->getActionConfig();
-		$updatedData = $this->validateRequest($data, $config);
+		$request = $this->getRequest();
+		$query = json_decode($request->get('query'), TRUE);
+		$update = json_decode($request->get('update'), TRUE);
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
 		$entityModel = $this->getModel();
-		$res = $entityModel->{$this->action}($updatedData);
-		$this->output->status = (int) $res;
+		$res = $entityModel->{$this->action}($translatedQuery, $translatedUpdate);
+		$this->output->status = 1;
+		$this->output->details = $res;
 	}
 
 	public function init() {
@@ -51,36 +52,57 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 	/**
 	 * Returns the translated (validated) request
-	 * @param array $data the input
-	 * @param array $parametersSettings the relevant config
+	 * @param array $query the query parameter
+	 * @param array $data the update parameter
 	 * @return array
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
-	protected function validateRequest(&$data, $parametersSettings) {
+	protected function validateRequest($query, $data) {
+		$parametersSettings = $this->getActionConfig();
 		$options = array();
-		foreach (Billrun_Util::getFieldVal($parametersSettings['parameters'], array()) as $param) {
-			$name = $param['name'];
-			if (isset($param['mandatory']) && $param['mandatory'] && !isset($data[$name])) {
-				throw new Billrun_Exceptions_Api($parametersSettings['error_base'] + 1, array(), 'Mandatory parameter ' . $name . ' missing');
+		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
+			$options['fields'] = array();
+			foreach (Billrun_Util::getFieldVal($parametersSettings[$type], array()) as $param) {
+				$name = $param['name'];
+				if (!isset($params[$name])) {
+					if (isset($param['mandatory']) && $param['mandatory']) {
+						throw new Billrun_Exceptions_Api($parametersSettings['error_base'] + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
+					}
+					continue;
+				}
+				$options['fields'][] = array(
+					'name' => $name,
+					'type' => $param['type'],
+					'preConversions' => isset($param['pre_conversion']) ? $param['pre_conversion'] : [],
+					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
+					'options' => [],
+				);
 			}
-			$options['fields'][] = array(
-				'name' => $name,
-				'type' => $param['type'],
-				'preConversions' => isset($param['pre_conversion']) ? $param['pre_conversion'] : [],
-				'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
-				'options' => [],
-			);
+			if ($options['fields']) {
+				$translatorModel = new Api_TranslatorModel($options);
+				$ret = $translatorModel->translate($params);
+				$translated[$type] = $ret['data'];
+				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
+				if (!$ret['success']) {
+					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
+				}
+			} else {
+				$translated[$type] = array();
+			}
 		}
-		$translatorModel = new Api_TranslatorModel($options);
-		$ret = $translatorModel->translate($data);
+		return array($translated['query_parameters'], $translated['update_parameters']);
+	}
 
-		$translated = $ret['data'];
-		Billrun_Factory::log("Translated result: " . print_r($ret, 1));
-		if (!$ret['success']) {
-			throw new Billrun_Exceptions_InvalidFields($translated);
-		}
-		return $translated;
+	/**
+	 *
+	 * @param string $tpl the default tpl the controller used; this will be override to use the general admin layout
+	 * @param array $parameters parameters of the view
+	 *
+	 * @return string the render layout including the page (component)
+	 */
+	protected function render($tpl, array $parameters = array()) {
+		return $this->getView()->render('index.phtml', $parameters);
 	}
 
 }
