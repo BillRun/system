@@ -66,7 +66,7 @@ class LogoAction extends ApiAction {
 		$success = true;
 		$output = array();
 		if ($action === 'save') {
-			$success = $this->create($query, $metadata);
+			$success = $this->create($query['filename'], $metadata);
 		} else if ($action === 'read') {
 			$success = $this->retrieve($query);
 		} else {
