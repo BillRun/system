@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
+ */
+
+/**
+ * Billapi abstract controller for BillRun entities available actions
+ *
+ * @package  Billapi
+ * @since    0.5
+ */
 abstract class BillapiController extends Yaf_Controller_Abstract {
 
 	protected $output;
