@@ -51,13 +51,6 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 			$this->granted['cost'] = (-1) * $this->row['granted_cost'];
 		}
 	}
-	
-	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
-//		if (Billrun_Calculator_Updaterow_Customerpricing::isFreeLine($row)) {
-//			return $this->getFreeRowPricingData();
-//		}
-		return parent::getLinePricingData($volume, $usageType, $rate, $plan, $row);
-	}
 
 	/**
 	 * on prepaid there is no default balance, return no balance (empty array)
@@ -148,21 +141,19 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return array update query array (mongo style)
 	 */
-	protected function BuildBalanceUpdateQuery(&$pricingData, $row, $volume) {
-		list($query, $update) = parent::BuildBalanceUpdateQuery($pricingData, $row, $volume);
+	public function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
+		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
 		$cost = $pricingData[$this->pricingField];
 		if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 			if ($cost > 0) { // If it's a free of charge, no need to reduce usagev
-				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $currentUsage + $volume;
+				$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 			}
+		} else if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 		} else {
-			if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.cost'))) {
-				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
-			} else {
-				$update['$inc']['balance.cost'] = $cost;
-			}
+			$update['$inc']['balance.cost'] = $cost;
 		}
 		$pricingData['usagesb'] = floatval($currentUsage);
 		return array($query, $update);

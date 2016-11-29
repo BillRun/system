@@ -81,11 +81,6 @@
              }
         }
     },
-    "export_generators" : {
-	"v" : "",
-	"t" : "Exportgenerator",
-	"list": [] 
-    },
     "subscribers": {
         "types": [
             "subscriber",
@@ -101,12 +96,12 @@
                 "generated": true,
                 "unique": true,
                 "editable": false,
-    "display": false
+                "display": false
             }, {
                 "field_name": "aid",
                 "mandatory": true,
                 "editable": false,
-    "display": false
+                "display": false
             }, {
                 "field_name": "firstname",
                 "mandatory": true
@@ -125,9 +120,9 @@
             }, {
                 "field_name": "country"
             }, {
-    "field_name":"services",
-    "mandatory": false
-           }]
+                "field_name":"services",
+                "mandatory": false
+            }]
         },
         "account": {
             "fields": [{
@@ -161,13 +156,18 @@
                 "editable": false,
                 "display": false
             }, {
-                 "field_name": "payment_gateway",
-                 "editable": false,
- 				 "display": true
-             }, {
+                "field_name": "payment_gateway",
+                "editable": false,
+ 		"display": true
+            }, {
                 "field_name": "personal_id",
                 "editable": false,
                 "display": false
+            }, {
+                "field_name": "salutation",
+                "editable": true,
+                "display": true,
+                "title": "Salutation"
             }]
         }
     },
@@ -271,5 +271,6 @@
             }
         }
     },
+	"export_generators": [],
 	"payment_gateways" : [ ]
 }

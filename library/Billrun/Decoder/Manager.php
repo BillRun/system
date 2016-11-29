@@ -25,7 +25,9 @@ class Billrun_Decoder_Manager {
 	protected static function getDecoderClassName($params) {
 		$decoderName = null;
 
-		if (!is_null($usaget = $params['usaget'])) {
+		if (!is_null($decoder = $params['decoder'])) {
+			$decoderName = $decoder;
+		} else if (!is_null($usaget = $params['usaget'])) {
 			$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($usaget) . ".decode");
 		} else if (!is_null($controllerName = $params['controllerName']) && !is_null($actionName = $params['actionName'])) {
 			$decoderName = Billrun_Factory::config()->getConfigValue(strtolower($controllerName) . ".decode." . strtolower($actionName));
