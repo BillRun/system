@@ -355,9 +355,6 @@ class ConfigModel {
 			// If the value doesn't exist check if it has a default value in the template ini
 			if(!isset($newValueIndex[$key])) {
 				$overrideValue = Billrun_Util::getFieldVal($ptrTemplate[$key], array());
-				if(!$overrideValue) {
-					$overrideValue = array();
-				}
 				$newValueIndex[$key] = $overrideValue;
 			}
 			$newValueIndex = &$newValueIndex[$key];
