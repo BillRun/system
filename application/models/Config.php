@@ -565,7 +565,11 @@ class ConfigModel {
  				return;
  			}
  		}
- 		$config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        if (!$config['export_generators']) {
+            $config['export_generators'] = array($egSettings);
+        } else {
+            $config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        }
  	}
  
 
