@@ -20,11 +20,15 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
 		$request = $this->getRequest();
-		$query = json_decode($request->get('query'), TRUE);
+		 $query = json_decode($request->get('query'), TRUE);
 		$update = json_decode($request->get('update'), TRUE);
+		$params['sort'] = json_decode($request->get('sort'), TRUE);
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		$entityModel = $this->getModel();
-		$res = $entityModel->{$this->action}($translatedQuery, $translatedUpdate);
+		$this->validateSort($params['sort']);
+		$params['query'] = $translatedQuery;
+		$params['update'] = $translatedUpdate;
+		$entityModel = $this->getModel($params);
+		$res = $entityModel->{$this->action}();
 		$this->output->status = 1;
 		$this->output->details = $res;
 	}
@@ -42,15 +46,13 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * Get the right model, depending on the requested collection
 	 * @return \Models_Entity
 	 */
-	protected function getModel() {
+	protected function getModel($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($this->collection);
 		if (!@class_exists($className)) {
 			$className = $modelPrefix . ucfirst('Entity');
 		}
-		$params = array(
-			'collection' => $this->collection,
-		);
+		$params['collection'] = $this->collection;
 		return new $className($params);
 	}
 
@@ -108,6 +110,10 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			throw new Billrun_Exceptions_Api($errorBase + 1, array(), 'No query/update was found or entity not supported');
 		}
 		return array($translated['query_parameters'], $translated['update_parameters']);
+	}
+	
+	protected function validateSort($sort) {
+		
 	}
 
 	/**
