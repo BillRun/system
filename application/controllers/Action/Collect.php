@@ -39,12 +39,12 @@ class CollectAction extends ApiAction {
 	}
 
 	public static function collect($aids = array()) {
-		$subscriber = Billrun_Factory::subscriber();
-		$crmInCollection = $subscriber->getInCollection($aids);
-		$contractorsInCollection = Billrun_Bill::getContractorsInCollection($aids);
-		$updateCollectionStateChanged = array('in_collection' => array_diff_key($contractorsInCollection, $crmInCollection), 'out_of_collection' => array_diff_key($crmInCollection, $contractorsInCollection));
-		$result = $subscriber->updateCrmInCollection($updateCollectionStateChanged);
-		$subscriber->markCollectionStepsCompleted($aids);
+		$account = Billrun_Factory::account();
+		$markedAsInCollection = $account->getInCollection($aids);
+		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
+		$updateCollectionStateChanged = array('in_collection' => array_diff_key($reallyInCollection, $markedAsInCollection), 'out_of_collection' => array_diff_key($markedAsInCollection, $reallyInCollection));
+		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
+//		$subscriber->markCollectionStepsCompleted($aids);
 		return $result;
 	}
 

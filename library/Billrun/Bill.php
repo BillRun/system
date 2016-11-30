@@ -434,8 +434,8 @@ abstract class Billrun_Bill {
 	}
 
 	public static function getContractorsInCollection($aids = array()) {
-		$subscriber = Billrun_Factory::subscriber();
-		$exempted = $subscriber->getExcludedFromCollection($aids);
+		$account = Billrun_Factory::account();
+		$exempted = $account->getExcludedFromCollection($aids);
 		$query = array(
 			'$or' => array(
 				array(
