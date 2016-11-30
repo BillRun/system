@@ -39,7 +39,7 @@ abstract class Billrun_Bill {
 	protected $optionalFields = array();
 
 	const precision = 0.00001;
-
+	
 	/**
 	 * 
 	 * @param type $options
@@ -351,26 +351,21 @@ abstract class Billrun_Bill {
 		return isset($this->data['total_paid']) ? $this->data['total_paid'] : 0;
 	}
 
-	protected function recalculatePaymentFields($status = null) {
+	protected function recalculatePaymentFields($billId = null, $status = null) {
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
 				$amount += array_sum($this->data['paid_by']['inv']);
-				$paidAmount = $this->data['paid_by']['inv'];
-				$paymentAmount = current($paidAmount);
 			}
 			if (isset($this->data['paid_by']['rec'])) {
 				$amount += array_sum($this->data['paid_by']['rec']);
-				$paidAmount = $this->data['paid_by']['rec'];
-				$paymentAmount = current($paidAmount);
 			}
 			$this->data['total_paid'] = $amount;
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
 			} else {
-				$this->data['paid_amount'] = isset($this->data['paid_amount']) ? $this->data['paid_amount'] : 0;
-				$this->data['paid'] = $this->calcPaidStatus($status, $paymentAmount);
+				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
 			}
 				
 		}
@@ -394,8 +389,9 @@ abstract class Billrun_Bill {
 	public function attachPayingBill($billType, $billId, $amount, $status = null) {
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
-			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
-			$this->updatePaidBy($paidBy, $status);
+			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;		
+			$this->addToWaitingPayments($billId);
+			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
 	}
@@ -407,10 +403,10 @@ abstract class Billrun_Bill {
 		return $this;
 	}
 
-	protected function updatePaidBy($paidBy, $status = null) {
+	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
 		if ($this->getDue() > 0) {
 			$this->data['paid_by'] = $paidBy;
-			$this->recalculatePaymentFields($status);
+			$this->recalculatePaymentFields($billId, $status);
 		}
 	}
 
@@ -606,19 +602,24 @@ abstract class Billrun_Bill {
 		}		
 	}
 
-	protected function calcPaidStatus($status, $amount) {
+	protected function calcPaidStatus($billId = null, $status = null) {
+		if (is_null($billId) || is_null($status)){
+			return;
+		}
 		switch ($status) {
 			case 'Rejected':
 				$result = '0';
+				$this->removeFromWaitingPayments($billId);
 				break;
 
 			case 'Completed':
-				$this->data['paid_amount'] = $this->data['paid_amount'] + $amount;
-				if ($this->getDue() == $this->data['paid_amount']) {
-					$result = '1';
+				$this->removeFromWaitingPayments($billId);
+				$pending = $this->data['waiting_payments'];
+				if (count($pending)) { 
+					$result = '2';
 				}
 				else {
-					$result = '2';
+					$result = '1';
 				}
 				break;
 
@@ -632,5 +633,21 @@ abstract class Billrun_Bill {
 		
 		return $result;
 	}
+	
+	protected function addToWaitingPayments($billId) {
+		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
+		array_push($waiting_payments, $billId);
+		$this->data['waiting_payments'] = $waiting_payments;
+	}
+	
+	protected function removeFromWaitingPayments($billId) {
+		$pending = $this->data['waiting_payments'];
+		$key = array_search($billId, $pending);
+		if($key !== false) {
+			unset($pending[$key]);
+		}
+		$this->data['waiting_payments'] = $pending;
+	}
+
 
 }
