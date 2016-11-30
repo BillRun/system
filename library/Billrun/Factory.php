@@ -62,6 +62,13 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Subscriber
 	 */
 	protected static $subscriber = null;
+	
+	/**
+	 * Account instance
+	 * 
+	 * @var Billrun_Billrun Account
+	 */
+	protected static $account = null;
 
 	/**
 	 * Balance instance
@@ -266,6 +273,20 @@ class Billrun_Factory {
 		}
 
 		return self::$subscriber;
+	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function account() {
+		if (!self::$account) {
+			$settings = self::config()->getConfigValue('account', array());
+			self::$account = Billrun_Account::getInstance($settings);
+		}
+
+		return self::$account;
 	}
 
 	/**

@@ -118,5 +118,15 @@ abstract class Billrun_Account extends Billrun_Base {
 	public function getCustomerExtraData() {
 		return $this->customerExtraData;
 	}
+	
+	/**
+	 * 
+	 * @return Billrun_Collection
+	 */
+	abstract public function getInCollection($aids = array());
+	abstract public function updateCrmInCollection($contractors);
+//	abstract public function markCollectionStepsCompleted($aids = array());
+	abstract public function getExcludedFromCollection($aids = array());
+
 
 }
