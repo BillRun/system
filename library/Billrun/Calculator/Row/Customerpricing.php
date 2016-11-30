@@ -17,7 +17,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	/**
 	 * inspect loops in updateSubscriberBalance
-	 * @see mongodb update where value equale old value
+	 * @see mongodb update where value equal old value
 	 * 
 	 * @var int
 	 */
@@ -208,6 +208,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Found balance for subscriber " . $this->sid, Zend_Log::DEBUG);
 		}
 		$this->balance = $loadedBalance;
+		if (isset($this->row['realtime']) && $this->row['realtime']) {
+			$this->row['balance_ref'] = $this->balance->createRef();
+		}
 		return true;
 	}
 
@@ -254,6 +257,21 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		
 		if (!isset($pricingData['arategroups'])) {
+			if (($crashedPricingData = $this->getTx($row['stamp'], $this->balance)) !== FALSE) {
+				return $crashedPricingData;
+			}
+			$balance_id = $this->balance->getId();
+			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($pricingData, $row, $volume);
+
+			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$pricingData, &$query, &$update, $rate, $this));
+			$ret = $this->balance->update($query, $update);
+			if (!($ret['ok'] && $ret['updatedExisting'])) {
+				Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
+				return false;
+			}
+			Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
+			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 			return $pricingData;
 		}
 
@@ -277,10 +295,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			
 			$balance_id = $balance->getId();
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $row, $volume);
+			list($query, $update) = $balance->buildBalanceUpdateQuery($balancePricingData, $row, $volume);
 
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$row, &$balancePricingData, &$query, &$update, $rate, $this));
-			$ret = $this->balance->update($query, $update);
+			$ret = $balance->update($query, $update);
 			if (!($ret['ok'] && $ret['updatedExisting'])) {
 				Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
 				return false;
