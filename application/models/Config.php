@@ -148,7 +148,8 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			throw new Exception('Unknown category ' . $category);
+			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
+			return $result;
 		}
 		
 		$translated = Billrun_Config::translateComplex($valueInCategory);
@@ -306,7 +307,7 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
-			$result = $this->handleNewCategory($category, $data, $currentConfig);
+			$result = $this->handleSetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
 
@@ -351,8 +352,10 @@ class ConfigModel {
 		
 		// Go through the keys
 		foreach ($splitCategory as $key) {
+			// If the value doesn't exist check if it has a default value in the template ini
 			if(!isset($newValueIndex[$key])) {
-				$newValueIndex[$key] = array();
+				$overrideValue = Billrun_Util::getFieldVal($ptrTemplate[$key], array());
+				$newValueIndex[$key] = $overrideValue;
 			}
 			$newValueIndex = &$newValueIndex[$key];
 			if(!isset($ptrTemplate[$key])) {
@@ -368,9 +371,33 @@ class ConfigModel {
 			return 0;
 		}
 		
+		return $newConfig;
+	}
+	
+	/**
+	 * Handle the scenario of a category that doesn't exist in the database
+	 * @param string $category - The current category.
+	 * @param array $data - Data to set.
+	 * @param array $currenConfig - Current configuration data.
+	 */
+	protected function handleGetNewCategory($category, $data, &$currentConfig) {
 		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
 		$currentConfig = $newConfig;
-
+		$result = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		return $result;
+	}
+	
+	protected function handleSetNewCategory($category, $data, &$currentConfig) {
+		// Set the data
+		$newConfig = $this->handleNewCategory($category, $data, $currentConfig);
+		if(!$newConfig) {
+			throw new Exception("Category not found " . $category);
+		}
+		$currentConfig = $newConfig;
 		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		return $result;
 	}
@@ -538,7 +565,11 @@ class ConfigModel {
  				return;
  			}
  		}
- 		$config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        if (!$config['export_generators']) {
+            $config['export_generators'] = array($egSettings);
+        } else {
+            $config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        }
  	}
  
 
@@ -571,6 +602,9 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
+			$updatedFileSettings['type'] = $fileSettings['type'];
+		}
 		if (isset($fileSettings['parser'])) {
 			$updatedFileSettings['parser'] = $this->validateParserConfiguration($fileSettings['parser']);
 			if (isset($fileSettings['processor'])) {
@@ -590,6 +624,10 @@ class ConfigModel {
 		return $this->checkForConflics($config, $fileType);
 	}
 	
+	protected function validateType($type) {
+		$allowedTypes = array('realtime');
+		return in_array($type, $allowedTypes);
+	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = array_keys($pg['params']);
@@ -719,14 +757,16 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed');
+		$allowedParsers = array('separator', 'fixed', 'json');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
-		if ($parserSettings['type'] == 'separator') {
+		if ($parserSettings['type'] == 'json') {
+			$customKeys = $parserSettings['structure'];
+		} else if ($parserSettings['type'] == 'separator') {
 			$customKeys = $parserSettings['structure'];
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');

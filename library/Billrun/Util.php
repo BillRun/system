@@ -1379,8 +1379,17 @@ class Billrun_Util {
 	}
 	
 	public static function isValidCustomLineKey($jsonKey) {
-		$protectedKeys = static::getBillRunProtectedLineKeys();
-		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+		if (strpos($jsonKey, '.') === FALSE) {
+			$protectedKeys = static::getBillRunProtectedLineKeys();
+			return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+		}
+		
+		foreach (explode('.', $jsonKey) as $key) {
+			if (!self::isValidCustomLineKey($key)) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
