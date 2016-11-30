@@ -10,18 +10,18 @@
  * Billing calculator update row for customer pricing prepaid calc in row level
  *
  * @package     calculator
- * @subpackage  updaterow
+ * @subpackage  row
  * @since       5.3
+ * @todo probably this is not specific for prepaid but for real-time
  */
-class Billrun_Calculator_Updaterow_Customerpricing_Prepaid extends Billrun_Calculator_Updaterow_Customerpricing {
+class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_Row_Customerpricing {
 
 	protected function init() {
 		parent::init();
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
-		$this->initMinBalanceValues($this->rate, $this->row['usaget'], $this->plan);
+		$this->initMinBalanceValues();
 		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset());
-			$this->row['balance_ref'] = $this->balance->createRef();
 			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
 		} else {
 			$this->row['usagev'] = 0;
@@ -51,7 +51,7 @@ class Billrun_Calculator_Updaterow_Customerpricing_Prepaid extends Billrun_Calcu
 			);
 		}
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
-		parent::handleNoBalance();
+		return parent::handleNoBalance();
 	}
 
 	protected function isBillable() {
