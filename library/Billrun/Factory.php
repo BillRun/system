@@ -69,6 +69,13 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Account
 	 */
 	protected static $account = null;
+	
+	/**
+	 * Collection Steps instance
+	 * 
+	 * @var Billrun_Billrun Collection Steps
+	 */
+	protected static $collectionSteps = null;
 
 	/**
 	 * Balance instance
@@ -288,7 +295,20 @@ class Billrun_Factory {
 
 		return self::$account;
 	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function collectionSteps() {
+		if (!self::$collectionSteps) {
+			$settings = self::config()->getConfigValue('collectionSteps', array());
+			self::$collectionSteps = Billrun_CollectionSteps::getInstance($settings);
+		}
 
+		return self::$collectionSteps;
+	}
 	/**
 	 * method to retrieve a balance instance
 	 * 
