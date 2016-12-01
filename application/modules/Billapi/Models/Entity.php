@@ -36,19 +36,19 @@ class Models_Entity {
 	 * The wanted query
 	 * @var array
 	 */
-	protected $query;
+	protected $query = array();
 
 	/**
 	 * The new data
 	 * @var array
 	 */
-	protected $update;
+	protected $update = array();
 
 	/**
 	 * The wanted sort (for get operations)
 	 * @var array
 	 */
-	protected $sort;
+	protected $sort = array();
 
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
@@ -137,7 +137,7 @@ class Models_Entity {
 	 * @return array the entities found
 	 */
 	public function get() {
-		return $this->query($this->query);
+		return $this->query($this->query, $this->sort);
 	}
 
 	/**
@@ -145,11 +145,11 @@ class Models_Entity {
 	 * @param array $query
 	 * @return array the result set
 	 */
-	protected function query($query) {
-		if (!$query) { // currently must have some query
-			return array();
-		}
+	protected function query($query, $sort) {
 		$res = $this->collection->find($query);
+		if ($sort) {
+			$res = $res->sort($sort);
+		}
 		return array_values(iterator_to_array($res));
 	}
 
