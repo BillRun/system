@@ -95,6 +95,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * method to update subsbscriber collection status
 	 */
 	public function updateCrmInCollection($updateCollectionStateChanged) {
+		$collectionSteps = Billrun_Factory::collectionSteps();
 		$result = array('in_collection' => array(), 'out_of_collection' => array());
 	
 		if(!empty($updateCollectionStateChanged['in_collection'])){
@@ -102,6 +103,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
 				if ($this->load($params)){
 					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
+					$collectionSteps->createCollectionSteps($aid);
 					if($this->close_and_new($new_values)){
 						$result['in_collection'][] = $aid;
 					} else {
@@ -116,6 +118,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
 				if ($this->load($params)){
 					$remove_values = array('in_collection', 'out_of_collection');
+					$collectionSteps->removeCollectionSteps($aid);
 					if($this->close_and_new(array(), $remove_values)){
 						$result['out_of_collection'][] = $aid;
 					} else {
@@ -135,10 +138,10 @@ class Billrun_Account_Db extends Billrun_Account {
 	public function close_and_new($set_values, $remove_values = array()){
 		
 		// Updare old item
+		$id = new MongoId($this->data['_id']->{'$id'});
+		unset($this->data['_id']);
+		$this->data['to'] = new MongoDate();
 		try {
-			$id = new MongoId($this->data['_id']->{'$id'});
-			unset($this->data['_id']);
-			$this->data['to'] = new MongoDate();
 			$this->collection->update(array('_id' => $id), array('$set' => $this->data), array('upsert' => true));
 		} catch (Exception $exc) {
 			Billrun_Factory::log("Unable to update (close_and_new) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
@@ -146,18 +149,18 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		
 		// Save new item
+		if(!isset($set_values['from'])){
+			$set_values['from'] = new MongoDate();
+		}
+		if(!isset($set_values['to'])){
+			$set_values['to'] =  new MongoDate(strtotime('+100 years'));
+		}
+		$newEntityData = array_merge($this->data, $set_values);
+		foreach ($remove_values as $remove_filed_name) {
+			unset($newEntityData[$remove_filed_name]);
+		}
+		$newEntity = new Mongodloid_Entity($newEntityData);
 		try {
-			if(!isset($set_values['from'])){
-				$set_values['from'] = new MongoDate();
-			}
-			if(!isset($set_values['to'])){
-				$set_values['to'] =  new MongoDate(strtotime('+100 years'));
-			}
-			$newEntityData = array_merge($this->data, $set_values);
-			foreach ($remove_values as $remove_filed_name) {
-				unset($newEntityData[$remove_filed_name]);
-			}
-			$newEntity = new Mongodloid_Entity($newEntityData);
 			$ret = $this->collection->insert($newEntity);
 			return !empty($ret['ok']);
 		} catch (Exception $exc) {
@@ -182,5 +185,5 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return $results;
 	}
-
+	
 }
