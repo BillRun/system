@@ -16,7 +16,8 @@ class Billrun_Utils_Time {
 	const SECONDS_IN_HOUR = 3600;
 	const MILISEC_IN_MINUTE = 60000;
 	const MILISEC_IN_HOUR = 3600000;
-
+	const UNLIMITED_DATE = "30 December 2099";
+	
 	/**
 	 * Get the number of miliseconds according to selected resolution.
 	 * @param type $seconds - How many seconds to calculate.
