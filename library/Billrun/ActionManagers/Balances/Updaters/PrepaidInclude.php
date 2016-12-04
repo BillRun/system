@@ -127,6 +127,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
+		$ppPair['unlimited'] = isset($prepaidRecord['unlimited']) && $prepaidRecord['unlimited'];
 
 		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}
