@@ -219,7 +219,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function getReturnPair($chargingByValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery) {
 		// Create a default balance record.
 		// TODO: Why are there values passed that are not used?
-		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingByValue, $recordToSet);
 		if ($defaultBalance === false) {
 			return false;
 		}
@@ -233,7 +233,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
 		
 		// Get the unlimited indicator from the charging plan record.
-		$ppPair['unlimited'] = isset($chargingPlanRecord['unlimited']) && $chargingPlanRecord['unlimited'];
+		$ppPair['unlimited'] = isset($chargingByValue['unlimited']) && $chargingByValue['unlimited'];
 		$params = array(
 			'chargingBy' => $chargingBy,
 			'chargingByValue' => $chargingByValue,
@@ -365,7 +365,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
 	 */
-	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
+	protected function getDefaultBalance($subscriber, $chargingByValue, $recordToSet) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -377,7 +377,12 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 //		}
 
 		$defaultBalance['aid'] = $subscriber['aid'];
-		$defaultBalance['sid'] = $subscriber['sid'];
+		// If the charging plan record is shared, then set the sid to 0.
+		if(isset($chargingByValue['shared']) && $chargingByValue['shared']) {
+			$defaultBalance['sid'] = 0;
+		} else {
+			$defaultBalance['sid'] = $subscriber['sid'];
+		}
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 //		$defaultBalance['charging_plan_name'] = $chargingPlanRecord['name'];
 
