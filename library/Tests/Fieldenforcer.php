@@ -63,6 +63,9 @@ class Tests_Fieldenforcer extends UnitTestCase {
 
 	);
 	
+	// TODO: Move the unique tests from the subscribers collection to some test collection,
+	// Currently this test will not be validated if executed by jenkins, need to make
+	// sure that it works.
 	protected $uniqueTests = array(
 		array('data' => array(), 'conf' => array(array('field_name' => 'Bla', 'unique' => 1)), "valid" => true, "msg" => "Non value supplied"),
 		array('data' => array('Bla' => 9), 'conf' => array(array('field_name' => 'Bla', 'unique' => 1)), "valid" => true, "msg" => "Unique and doesn't exist 1"),
