@@ -147,7 +147,7 @@ class ConfigModel {
 
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
-		if ($valueInCategory === null) {
+		if (!empty($category) && $valueInCategory === null) {
 			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
@@ -182,8 +182,13 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if(empty($category)) {
+			if (!$this->updateRoot($updatedData, $data)) {
+				return 0;
+			}
+		}
 		// TODO: Create a config class to handle just file_types.
-		if ($category === 'file_types') {
+		else if ($category === 'file_types') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for file types.");
 				return 0;
@@ -292,6 +297,36 @@ class ConfigModel {
 		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
 		return parse_ini_file($templateFileName, 1);
 	}
+	
+	protected function updateRoot(&$currentConfig, $data) {
+		foreach ($data as $key => $value) {
+			foreach ($value as $k => $v) {
+				Billrun_Factory::log("Data: " . print_r($data,1));
+				Billrun_Factory::log("Value: " . print_r($value,1));
+				if (!$this->_updateConfig($currentConfig, $k, $v)) {
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	
+//	protected function getRoot(&$currentConfig, $data) {
+//		if (!Billrun_Util::isAssoc($data)) {
+//			return 0;
+//		}
+//		
+//		foreach ($data as $key => $value) {
+//			foreach ($value as $k => $v) {
+//				Billrun_Factory::log("Data: " . print_r($data,1));
+//				Billrun_Factory::log("Value: " . print_r($value,1));
+//				if (!$this->_updateConfig($currentConfig, $k, $v)) {
+//					return 0;
+//				}
+//			}
+//		}
+//		return 1;
+//	}
 	
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
