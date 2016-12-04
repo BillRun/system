@@ -16,7 +16,6 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected $omnipayName = 'PayPal_Express';
 	protected $conf;
 	protected $billrunName = "PayPal_ExpressCheckout";
-	protected $rejectionCodes = "/^Expired$|^Failed$/";
 	protected $pendingCodes = "/^Pending$/";
 	protected $completionCodes = "/^Completed$|^Processed$/";
 
@@ -120,9 +119,6 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected function payResponse($result) {
 		$resultArray = array();
 		parse_str($result, $resultArray);
-		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
-			throw new Exception($resultArray['L_LONGMESSAGE0']);
-		}
 		if (isset($resultArray['TRANSACTIONID'])) {
 			$this->transactionId = $resultArray['TRANSACTIONID'];
 		}
@@ -208,6 +204,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	public function getDefaultParameters() {
 		$params = array("username", "password", "signature");
 		return $this->rearrangeParametres($params);
+	}
+	
+	protected function isRejected($status) {
+		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
 	
 }
