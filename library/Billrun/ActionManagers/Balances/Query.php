@@ -95,7 +95,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if (isset($this->connection_type)) {
 			$balance['connection_type'] = $this->connection_type;
 		} else {
-			$balance['connection_type'] = Billrun_Factory::config()->getConfigValue("subscriber.connection_type_default", "prepaid");
+			// Default is postpaid
+			$balance['connection_type'] = Billrun_Factory::config()->getConfigValue("subscriber.connection_type_default", "postpaid");
 		}
 
 		return $balance;
