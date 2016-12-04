@@ -163,7 +163,13 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['from'] = new MongoDate();
 
 		$defaultBalance['to'] = $recordToSet['to'];
-		$defaultBalance['sid'] = $subscriber['sid'];
+		
+		// If the prepaid record is shared, then set the sid value to 0.
+		if(isset($prepaidRecord['shared']) && $prepaidRecord['shared']) {
+			$defaultBalance['sid'] = 0;
+		} else {
+			$defaultBalance['sid'] = $subscriber['sid'];
+		}
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
 		$defaultBalance['charging_type'] = $subscriber['charging_type'];
