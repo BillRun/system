@@ -57,9 +57,9 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			return false;
 		}
 
-		if (isset($prepaidRecord['external_id']) &&
-			in_array($prepaidRecord['external_id'], Billrun_Factory::config()->getConfigValue('protected_unlimited_pp_includes', array()))) {
-			$recordToSet['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		// Check if the prepaid record is unlimited.
+		if (isset($prepaidRecord['unlimited']) && $prepaidRecord['unlimited']) {
+			$recordToSet['to'] = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
 		// Get the subscriber.
 		$subscriber = $this->getSubscriber($subscriberId);
