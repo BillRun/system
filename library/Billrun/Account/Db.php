@@ -117,7 +117,7 @@ class Billrun_Account_Db extends Billrun_Account {
 			foreach ($updateCollectionStateChanged['out_of_collection'] as $aid => $item) {
 				$params = array('aid' => $aid, 'time' => date('c'), 'type' => 'account');
 				if ($this->load($params)){
-					$remove_values = array('in_collection', 'out_of_collection');
+					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);
 					if($this->close_and_new(array(), $remove_values)){
 						$result['out_of_collection'][] = $aid;
@@ -139,10 +139,9 @@ class Billrun_Account_Db extends Billrun_Account {
 		
 		// Updare old item
 		$id = new MongoId($this->data['_id']->{'$id'});
-		unset($this->data['_id']);
-		$this->data['to'] = new MongoDate();
+		$update = array('to' => new MongoDate());
 		try {
-			$this->collection->update(array('_id' => $id), array('$set' => $this->data), array('upsert' => true));
+			$this->collection->update(array('_id' => $id), array('$set' => $update), array('upsert' => true));
 		} catch (Exception $exc) {
 			Billrun_Factory::log("Unable to update (close_and_new) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
 			return FALSE;
@@ -159,6 +158,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		foreach ($remove_values as $remove_filed_name) {
 			unset($newEntityData[$remove_filed_name]);
 		}
+		unset($newEntityData['_id']);
 		$newEntity = new Mongodloid_Entity($newEntityData);
 		try {
 			$ret = $this->collection->insert($newEntity);
