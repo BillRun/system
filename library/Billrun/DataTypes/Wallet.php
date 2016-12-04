@@ -69,6 +69,12 @@ class Billrun_DataTypes_Wallet {
 	protected $priority = null;
 
 	/**
+	 * Boolean indicator for is the wallet unlimited
+	 * @var boolean
+	 */
+	protected $unlimited = null;
+	
+	/**
 	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
 	 * @param array $chargingByValue
@@ -83,7 +89,8 @@ class Billrun_DataTypes_Wallet {
 
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
-
+		$this->unlimited = isset($ppPair['unlimited']) && $ppPair['unlimited'];
+		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
 			$this->setPeriod($chargingByValue['period']);
@@ -163,6 +170,14 @@ class Billrun_DataTypes_Wallet {
 	}
 
 	/**
+	 * Get the unlimited indication
+	 * @return boolean
+	 */
+	public function getUnlimited() {
+		return $this->unlimited;
+	}
+	
+	/**
 	 * Get the period for the current wallet, null if not exists.
 	 * @return The current wallet period.
 	 * @todo Create a period object.
@@ -241,6 +256,7 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['pp_includes_name'] = $this->getPPName();
 		$partialBalance['pp_includes_external_id'] = $this->getPPID();
 		$partialBalance['priority'] = $this->getPriority();
+		$partialBalance['unlimited'] = $this->unlimited;
 		$partialBalance[$this->getFieldName()] = $this->getValue();
 
 		if($convertToPHP) {

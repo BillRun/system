@@ -210,5 +210,5 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	public abstract function handleCoreBalance($max, $wallet, $query);
+	public abstract function handleUnlimitedBalance($max, $wallet, $query);
 }

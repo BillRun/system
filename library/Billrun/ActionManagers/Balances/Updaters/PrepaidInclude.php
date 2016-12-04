@@ -83,7 +83,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		// Check if passing the max.
-		if ($chargingPlan->getPPID() == 1 && !$this->handleCoreBalance($subscriber['plan'], $chargingPlan, $findQuery)) {
+		if ($chargingPlan->getUnlimited() && !$this->handleUnlimitedBalance($subscriber['plan'], $chargingPlan, $findQuery)) {
 			return false;
 		}
 

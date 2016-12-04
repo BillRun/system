@@ -40,7 +40,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	public function handleCoreBalance($max, $wallet, $query) {
+	public function handleUnlimitedBalance($max, $wallet, $query) {
 		$newValue = $wallet->getValue();
 
 		// we're using absolute for both cases - positive and negative values
