@@ -21,7 +21,7 @@ class Billrun_DataTypes_FieldEnforcer_Mandatory extends Billrun_DataTypes_FieldE
 	 * @param array $data - The data to enforce the rule on.
 	 * @return \Billrun_DataTypes_InvalidField
 	 */
-	public function enforce(array $data) {
+	public function enforce(array $data = array()) {
 		$parentResult = parent::enforce($data);
 			
 		if($parentResult !== true) {
