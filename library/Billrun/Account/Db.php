@@ -104,7 +104,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				if ($this->load($params)){
 					$new_values = array('in_collection' => true, 'in_collection_from' => new MongoDate());
 					$collectionSteps->createCollectionSteps($aid);
-					if($this->close_and_new($new_values)){
+					if($this->closeAndNew($new_values)){
 						$result['in_collection'][] = $aid;
 					} else {
 						$result['error'][] = $aid;
@@ -119,7 +119,7 @@ class Billrun_Account_Db extends Billrun_Account {
 				if ($this->load($params)){
 					$remove_values = array('in_collection', 'in_collection_from');
 					$collectionSteps->removeCollectionSteps($aid);
-					if($this->close_and_new(array(), $remove_values)){
+					if($this->closeAndNew(array(), $remove_values)){
 						$result['out_of_collection'][] = $aid;
 					} else {
 						$result['error'][] = $aid;
@@ -135,7 +135,7 @@ class Billrun_Account_Db extends Billrun_Account {
 	 * @param Array $set_values Key value array with values to set
 	 * @param Array $remove_values Array with keys to unset
 	 */
-	public function close_and_new($set_values, $remove_values = array()){
+	public function closeAndNew($set_values, $remove_values = array()){
 		
 		// Updare old item
 		$id = new MongoId($this->data['_id']->{'$id'});
@@ -143,7 +143,7 @@ class Billrun_Account_Db extends Billrun_Account {
 		try {
 			$this->collection->update(array('_id' => $id), array('$set' => $update), array('upsert' => true));
 		} catch (Exception $exc) {
-			Billrun_Factory::log("Unable to update (close_and_new) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
+			Billrun_Factory::log("Unable to update (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
 			return FALSE;
 		}
 		
@@ -164,7 +164,7 @@ class Billrun_Account_Db extends Billrun_Account {
 			$ret = $this->collection->insert($newEntity);
 			return !empty($ret['ok']);
 		} catch (Exception $exc) {
-			Billrun_Factory::log("Unable to insert (close_and_new) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
+			Billrun_Factory::log("Unable to insert (closeAndNew) subscriber AID: " . $this->data['aid'], Zend_Log::INFO);
 			return FALSE;
 		}
 	}
