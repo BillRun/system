@@ -32,7 +32,11 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 
 		return array('seq' => $seq, 'filename' => 'PS1_SUBS_4_DEL_' . date('Ymd',$this->startTime), 'source' => static::$type);
 	}
+	//------------------------------------------------ Protected --------------------------------------------------
 	
+	protected function getStartTime($options) {
+		return strtotime(date('Y-m-d 00:00:00P'));
+	}	
 	
 	protected function writeRows() {
 		if (!empty($this->headers)) {
