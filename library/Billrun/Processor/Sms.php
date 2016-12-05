@@ -97,7 +97,7 @@ class Billrun_Processor_Sms extends Billrun_Processor_Base_SeparatorFieldLines {
 								$row['usaget'] = 'sms';
 				}
 				$calling_msc = $row['calling_msc'];
-				if (preg_match('/^(?!0+$)/', $calling_msc) && !preg_match('/^0*972/', $calling_msc) && $row['record_type'] == "2" && $row['cause_of_terminition'] == "100"){
+				if (preg_match('/^(?!0+$)/', $calling_msc) && !preg_match('/^0*972/', $calling_msc) && $row['record_type'] == "2"){
 					$row['roaming'] = true;
 				}
 			}

@@ -93,6 +93,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 	}
 
 	protected function getLineRate($row, $usage_type) {
+		$possible_rates = array();
 		$line_time = $row['urt'];
 		if (($row['dest_protocol'] == '3') || ($row['org_protocol'] == '3')) {  //smpp
 			$matchedRate = false;
