@@ -425,10 +425,13 @@ class Billrun_Util {
 		return FALSE;
 	}
 
-	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
-		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
+	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
+		$mailer = Billrun_Factory::mailer()->setSubject($subject);
+		if($html){
+			$mailer->setBodyHtml($body);
+		} else {
+			$mailer->setBodyText($body);
+		}
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
