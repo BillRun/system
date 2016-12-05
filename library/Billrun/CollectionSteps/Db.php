@@ -91,14 +91,9 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 	}
 	
 	protected function runStep($step) {
-		switch ($step['type']) {
-			case 'mail': error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") " . "\n" . "Send mail" . " :\n" . print_r($step, 1) . "\n");
-				return true;
-			case 'sms': error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") " . "\n" . "Send SMS" . " :\n" . print_r($step, 1) . "\n");
-				return true;
-			default:
-				return false;
-		}
+		$task = new Collect_TaskManager($step);
+		$result = $task->run();
+		return $result;
 	}
 	
 	protected function markStepAsCompleted($step) {
