@@ -42,7 +42,9 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 
 	//--------------------------------------------  Protected ------------------------------------------------
 
-
+	protected function getStartTime($options) {
+		return strtotime(date('Y-m-d 00:00:00P'));
+	}
 	
 	function getNextDataChunk($skip,$size) {
 		Billrun_Factory::log('Running bulk of records ' . $skip . '-' . ($skip + $size));

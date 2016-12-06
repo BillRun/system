@@ -48,6 +48,10 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 
 	//--------------------------------------------  Protected ------------------------------------------------
 
+	protected function getStartTime($options) {
+		return strtotime(date('Y-m-d 00:00:00P'));
+	}	
+	
 	protected function writeRows() {
 		if (!empty($this->headers)) {
 			$this->writeHeaders();
