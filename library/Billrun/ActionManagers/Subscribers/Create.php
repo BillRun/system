@@ -51,7 +51,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 * It's named with an underscore to avoid a clash between another getBaseQuery function.
 	 */
 	protected function _getBaseQuery() {
-		return array('type' => $this->type);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['type'] = $this->type;
+		return $query;
 	}
 	
 	/**
