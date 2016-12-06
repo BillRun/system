@@ -11,8 +11,7 @@
 class Billrun_DataTypes_Conf_Sharedpath extends Billrun_DataTypes_Conf_Base {
 	public function __construct($obj) {
 		$path = $obj['v'];
-		// Convert to shared path.
-		$sharedPath = Billrun_Util::getBillRunSharedFolderPath($path);
+		$sharedPath = str_replace('/logs/', APPLICATION_PATH . '/logs/' . Billrun_Factory::config()->getTenant() . '/', $path);
 		
 		$this->val = $sharedPath;
 	}
