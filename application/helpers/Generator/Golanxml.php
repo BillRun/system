@@ -619,7 +619,17 @@ class Generator_Golanxml extends Billrun_Generator {
 			foreach ($subscriber_roaming as $zone_key => $zone) {
 				$this->writer->startElement('BREAKDOWN_SUBTOPIC');
 				$this->writer->writeAttribute('name', '');
-				$this->writer->writeAttribute('plmn', $zone_key);
+				foreach ($this->rates as $rate){
+					if ($rate['key'] == $zone_key){
+						$roaming_sms = $rate;
+						break;
+					}
+				}
+				if (empty($roaming_sms)){
+					$this->writer->writeAttribute('plmn', $zone_key);
+				} else {
+					$this->writer->writeAttribute('alpha3', $roaming_sms['alpha3']);
+				}
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
@@ -1118,7 +1128,24 @@ EOI;
 				if (!$line->isEmpty() && $line['type'] != 'ggsn') {
 					$lines_counter++;
 					$line->collection($this->lines_coll);
-					$this->writeBillingRecord($this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line), $this->getLineAlpha3($line));
+					$date = $this->getDate($line);
+					$tariffItem = $this->getTariffItem($line, $subscriber);
+					$alpha3 = $this->getLineAlpha3($line);
+					$usageVolume = $this->getUsageVolume($line);
+					$called = $this->getCalledNo($line);
+					$caller = $this->getCallerNo($line);
+					$charge = $this->getCharge($line);
+					$credit = $this->getCredit($line);
+					$tariffKind = $this->getTariffKind($line['usaget']);
+					$accessPrice = $this->getAccessPrice($line);
+					$interval = $this->getInterval($line);
+					$rate = $this->getRate($line);
+					$intlFlag = $this->getIntlFlag($line);
+					$discountUsage = $this->getDiscountUsage($line);
+					$roaming = $this->getRoaming($line);
+					$servingNetwork = $this->getServingNetwork($line);
+					$lineTypeBilling = $this->getLineTypeOfBillingChar($line);
+					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3);
 					if ($lines_counter % $this->flush_size == 0) {
 						$this->flush();
 					}
