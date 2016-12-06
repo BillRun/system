@@ -115,7 +115,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			} else {
 				krsort($sortArray);
 			}
-			
+
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -127,7 +127,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	
 	protected function getBalanceIndex($item, $field) {
 		if ($item[$field] instanceof MongoDate) {
-			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT);
+			// we assume difference between from/to is at least 1 day; the rand is used to help sorting by key
+			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT) + rand(0, 100);
 		}
 		if (is_numeric($item[$field])) {
 			$randRange = 10000;
