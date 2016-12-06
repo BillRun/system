@@ -17,9 +17,9 @@ class Collect_Actions_Mail implements Collect_TaskStrategy {
 	
 	public function run($task){
 		$subject = $task['content']['subject'];
-		$body = $task['content']['body'];
 		$account = $this->getAccount($task['aid']);
-		$res =  Billrun_Util::sendMail($subject, $body , $account['email'], array(), true);
+		$body = $this->updateBodyDynamicData($task, $account);
+		$res = Billrun_Util::sendMail($subject, $body , $account['email'], array(), true);
 		return !empty($res);
 	}
 	
@@ -36,5 +36,32 @@ class Collect_Actions_Mail implements Collect_TaskStrategy {
 			return false;
 		}
 		return $results->getRawData();
+	}
+	
+	protected function updateBodyDynamicData($task, $account) {
+		$body = $task['content']['body'];
+		$translations = $this->getTranslations();
+		
+		foreach ($translations as $translation) {
+			switch ($translation) {
+				case "Customer Name":
+					$replace = $account["firstname"] . " " . $account["lastname"];
+					$body = str_replace("[[$translation]]", $replace, $body);
+					break;
+				case "Debt":
+					$balance = Billrun_Bill::getTotalDueForAccount($task['aid']);
+					$replace = $balance['total'];
+					$body = str_replace("[[$translation]]", $replace, $body);
+					break;
+			}
+		}
+		return $body;
+	}
+	
+	protected function getTranslations() {
+		return array(
+			"Customer Name",
+			"Debt",
+		);
 	}
 }
