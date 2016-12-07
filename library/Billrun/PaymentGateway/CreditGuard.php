@@ -16,7 +16,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $conf;
 	protected $billrunName = "CreditGuard";
 	protected $subscribers;
-	protected $rejectionCodes = "/!(000)/";
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 
@@ -266,6 +265,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							</request>
 					   </ashrait>'
 		);
+	}
+	
+	protected function isRejected($status) {
+		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
 
 }
