@@ -147,7 +147,7 @@ class ConfigModel {
 
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
-		if ($valueInCategory === null) {
+		if (!empty($category) && $valueInCategory === null) {
 			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
@@ -182,8 +182,13 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if(empty($category)) {
+			if (!$this->updateRoot($updatedData, $data)) {
+				return 0;
+			}
+		}
 		// TODO: Create a config class to handle just file_types.
-		if ($category === 'file_types') {
+		else if ($category === 'file_types') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for file types.");
 				return 0;
@@ -293,6 +298,36 @@ class ConfigModel {
 		return parse_ini_file($templateFileName, 1);
 	}
 	
+	/**
+	 * Update the config root category.
+	 * @param array $currentConfig - The current configuration, passed by reference.
+	 * @param array $data - The data to set. Treated as an hierchical JSON structure.
+	 * (See _updateCofig).
+	 * @return int
+	 */
+	protected function updateRoot(&$currentConfig, $data) {
+		foreach ($data as $key => $value) {
+			foreach ($value as $k => $v) {
+				Billrun_Factory::log("Data: " . print_r($data,1));
+				Billrun_Factory::log("Value: " . print_r($value,1));
+				if (!$this->_updateConfig($currentConfig, $k, $v)) {
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	
+	/**
+	 * Internal update process, used to update primitive and complex config values.
+	 * @param array $currentConfig - The current configuratuin, passed by reference.
+	 * @param string $category - Name of the category in the config.
+	 * @param array $data - The data to set to the config. This array is treated
+	 * as a complete JSON hierchical structure, and can update multiple values at
+	 * once, as long as none of the values to update are arrays.
+	 * @return int
+	 * @throws Billrun_Exceptions_InvalidFields
+	 */
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {

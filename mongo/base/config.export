@@ -1,5 +1,4 @@
 {
-    "company_name": "Company A",
     "shared_folder": "shared",
     "cg_return_url": "",
     "shared_secret": {
@@ -241,36 +240,40 @@
     "receive": "1",
     "process": "1",
     "calculate": "1",
-    "wkpdf": {
-        "export": "files/invoices/",
-        "currency": "NIS",
-        "generator": {
-            "type": "WkPdf"
-        },
-        "disable_stamp_export_directory": 1,
-        "theme": "/application/views/invoices/theme/theme1.css",
-        "header": "/application/views/invoices/header/header1.html",
-        "footer": "/application/views/invoices/footer/footer1.html",
-        "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
-        "details_template": "/application/views/invoices/details/details1.phtml",
-        "lines_template": "/application/views/invoices/lines/lines1.phtml",
-        "logo": "/application/helpers/sources/logo.png",
-        "decimal_mark": ".",
-        "thousands_separator": ",",
-        "date_separator": "/",
-        "move_exported": 0,
-        "html_translation": {
-            "logo_path": {
-                "class_method": "getLogoPath"
-            },
-            "company_name": {
-                "class_method": "getCompanyName"
-            },
-            "date": {
-                "class_method": "getHeaderDate"
-            }
-        }
+		"tenant": {
+		  "name": {
+		    "t": "String",
+		    "v": "Example Company"
+		  },
+		  "address": {
+		    "t": "String",
+		    "v": "Example address"
+		  },
+		  "phone": "199-522-001",
+		  "email": "example@example.com",
+		  "website": "example.com"
+		},
+		"invoice_export": {
+      "export": "files/invoices/",
+      "generator": {
+        "type": "WkPdf"
+      },
+      "disable_stamp_export_directory": 1,
+      "theme": "/application/views/invoices/theme/theme1.css",
+      "header": "<p>Company :&nbsp;[[company_name]]</p>\n\n<p>Demo Header</p>\n",
+      "footer": "<p>Demo Footer, date&nbsp;[[date]]</p>\n",
+      "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
+      "details_template": "/application/views/invoices/details/details1.phtml",
+      "lines_template": "/application/views/invoices/lines/lines1.phtml",
+      "decimal_mark": ".",
+      "thousands_separator": ",",
+      "date_separator": "/",
+      "move_exported": 0,
+      "html_translation": [
+        "company_name",
+        "date"
+      ]
     },
-	"export_generators": [],
-	"payment_gateways" : [ ]
+  "export_generators": [],
+  "payment_gateways" : [ ]
 }
