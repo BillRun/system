@@ -235,7 +235,15 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract public function hasPendingStatus();
-
+	
+	/**
+	 * Converting between amount units.
+	 * 
+	 * @param Int $amount - The sending amount to charge in the gateway.
+	 * @return Float - the converted amount.
+	 */
+	abstract protected function convertAmountToSend($amount);
+		
 	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 

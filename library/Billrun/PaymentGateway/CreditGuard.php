@@ -204,6 +204,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPaymentRequset($gatewayDetails) {
 		$credentials = $this->getGatewayCredentials();
+		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -221,7 +222,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
-										<currency>Usd</currency>
+										<currency>' . $gatewayDetails['currency'] . '</currency>
 										<transactionCode>Phone</transactionCode>
 										<transactionType>Debit</transactionType>
 										<total>' . $gatewayDetails['amount'] . '</total>
@@ -270,5 +271,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function isRejected($status) {
 		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
-
+	
+	protected function convertAmountToSend($amount) {
+		$numOfDecimal = strlen(substr(strrchr($amount, "."), 1));
+		if ($numOfDecimal > 2) { 
+			$amount = round($amount, 2);
+		}
+		return $amount * 100;
+	}
+	
 }
