@@ -138,6 +138,10 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 							$matchedRate = $rate;
 							break 2;
 						}
+						if (preg_match('/^AC/', $rate['key'])){
+							$matchedRate = $rate;
+							break 2;
+						}
 					}
 				}
 				return $matchedRate;
