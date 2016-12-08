@@ -17,6 +17,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 class SettingsAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
+	const PERMISSIONS_PATH = APPLICATION_PATH . "/conf/config/permissions.ini";
+	
 	protected $model;
 
 	/**
@@ -27,10 +29,42 @@ class SettingsAction extends ApiAction {
 	}
 
 	/**
+	 * Enforce permissions on the settings API
+	 * @param string $category - The requested category
+	 * @param array $data - The requested data.
+	 */
+	protected function enforcePermissions($category, $data) {
+		$categoryPermissionsFile = self::PERMISSIONS_PATH;
+
+		$permissions = parse_ini_file($categoryPermissionsFile);
+		$this->enforceCategoryPermissions($category, $data, $permissions);
+	}
+	
+	/**
+	 * Enforce the category 
+	 * @param string $category - The name of the category.
+	 * @param array $data - The input data
+	 * @param array $permissions - The array of permissions
+	 */
+	protected function enforceCategoryPermissions($category, $data, &$permissions) {
+		if(isset($permissions[$category])) {
+			// Set the permission level to admin
+			$this->permissionLevel = $permissions[$category];
+			$this->allowed();
+		}
+
+		// Check if the data contains more category keys
+		if(Billrun_Util::isAssoc($data)) {
+			foreach ($data as $key => $value) {
+				$this->enforceCategoryPermissions($category . '.' . $key, $value, $permissions);
+			}
+		}
+	}
+
+		/**
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$this->initializeModel();
 		$category = $request->get('category');
@@ -43,7 +77,13 @@ class SettingsAction extends ApiAction {
 		if (!($category)) {
 			$this->setError('Missing category parameter', $request->getPost());
 			return TRUE;
-		} else if($category === 'ROOT') {
+		} 
+		
+		// Enforce permissions
+		$this->enforcePermissions($category, $data);
+		
+		// Forcing 'ROOT' to be an empty category name
+		if($category === 'ROOT') {
 			$category = "";
 		}
 		// TODO: Create action managers for the settings module.
