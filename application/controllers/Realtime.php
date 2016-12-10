@@ -61,6 +61,7 @@ class RealtimeController extends ApiController {
 	protected function setEventData() {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
+		$this->event['request_type'] = $this->getRequestType();
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
@@ -98,6 +99,16 @@ class RealtimeController extends ApiController {
 	 */
 	protected function getEventType() {
 		return $this->config['file_type'];
+	}
+	
+	/**
+	 * Gets the request type from the request
+	 * 
+	 * @return string request type
+	 */
+	protected function getRequestType() {
+		$requestTypeField = $this->config['realtime']['request_type_field'];
+		return $this->event[$requestTypeField];
 	}
 
 	/**
@@ -153,7 +164,8 @@ class RealtimeController extends ApiController {
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
-		return (isset($event['pretend']) && $event['pretend']);
+		$pretendField = $this->config['realtime']['pretend_field'];
+		return (isset($event[$pretendField]) && $event[$pretendField]);
 	}
 
 }
