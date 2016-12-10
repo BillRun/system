@@ -615,8 +615,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function savePPIncludesAction() {
-		if (!AdminController::authorized('write'))
-			return false;
+		if (!AdminController::authorized('write')) {
+			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
+		}
 		$data = $this->getRequest()->get('data');
 		$data['external_id'] = intval($data['external_id']);
 		$data['to'] = new MongoDate(strtotime('+100 years'));
