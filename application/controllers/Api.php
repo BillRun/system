@@ -78,10 +78,11 @@ class ApiController extends Yaf_Controller_Abstract {
 
 		if ($this->getRequest()->get('simple')) {
 			$this->setOutput(array($msg, 1));
+			$this->getView()->outputMethod = 'print_r';
 		} else {
 			$this->setOutput(array(array('status' => $status, 'message' => 'BillRun API ' . ucfirst($msg))));
+			$this->getView()->outputMethod = 'json_encode';
 		}
-		$this->getView()->outputMethod = 'json_encode';
 	}
 
 	/**
