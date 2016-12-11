@@ -235,9 +235,13 @@ class CreatetenantAction extends ApiAction {
 	 */
 	protected function createTenantFolders() {
 		Billrun_Factory::log('Create Tenant - Creating log file', Zend_Log::INFO);
-		$tenantPath = APPLICATION_PATH . '/shared/' . $this->tenant;
-		mkdir($tenantPath . '/logs', 0777, true);
-		mkdir($tenantPath . '/workspace', 0777, true);
+		$paths = array(
+			APPLICATION_PATH . '/logs/' . $this->tenant,
+			APPLICATION_PATH . '/shared/' . $this->tenant . '/workspace',
+		);
+		foreach ($paths as $path) {
+			mkdir($path, 0777, true);
+		}
 		return true;
 	}
 

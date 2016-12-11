@@ -172,7 +172,9 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		}
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
-		$defaultBalance['charging_type'] = $subscriber['charging_type'];
+		
+		// Setting the connection type to prepaid by deafault (when updating by prepaid includes).
+		$defaultBalance['connection_type'] = 'prepaid';
 		$defaultBalance['charging_by'] = $prepaidRecord['charging_by'];
 		$defaultBalance['charging_by_usaget'] = $prepaidRecord['charging_by_usaget'];
 

@@ -406,10 +406,11 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 //			return false;
 //		}
 //		$defaultBalance['current_plan'] = $plansCollection->createRefByEntity($planRecord);
-		if (isset($subscriber['charging_type'])) {
-			$defaultBalance['charging_type'] = $subscriber['charging_type'];
+		if (isset($chargingPlanRecord['connection_type'])) {
+			$defaultBalance['connection_type'] = $chargingPlanRecord['connection_type'];
 		} else {
-			$defaultBalance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
+			// Default is postpaid!
+			$defaultBalance['connection_type'] = Billrun_Factory::config()->getConfigValue("subscriber.connection_type_default", "postpaid");
 		}
 
 		return $defaultBalance;

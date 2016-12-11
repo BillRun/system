@@ -73,7 +73,9 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 	protected function getResponseData() {
 		$ret = array();
 		$responseFields = $this->getResponseFields();
-		foreach ($responseFields as $responseField => $rowField) {
+		foreach ($responseFields as $field) {
+			$responseField = $field['response_field_name'];
+			$rowField = $field['row_field_name'];
 			if (is_array($rowField)) {
 				$ret[$responseField] = (isset($rowField['classMethod']) ? $this->{$rowField['classMethod']}() : '');
 			} else {
