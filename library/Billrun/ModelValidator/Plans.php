@@ -61,7 +61,7 @@ class Billrun_ModelValidator_Plans extends Billrun_ModelValidator_Base {
 	 */
 	protected function validateRecurrence($data) {
 		if (!isset($data['recurrence']['periodicity']) || !isset($data['recurrence']['unit'])) {
-			return 'Illegal "recurrence" stracture';
+			return 'Illegal "recurrence" structure';
 		}
 
 		$typeFields = array(

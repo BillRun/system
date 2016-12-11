@@ -615,13 +615,16 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	public function savePPIncludesAction() {
-		if (!AdminController::authorized('write'))
-			return false;
+		if (!AdminController::authorized('write')) {
+			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
+		}
 		$data = $this->getRequest()->get('data');
 		$data['external_id'] = intval($data['external_id']);
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));
 		$data['priority'] = (int) $data['priority'];
+		$data['shared'] = boolval($data['shared']);
+		$data['unlimited'] = boolval($data['unlimited']);
 		if (!isset($data['additional_charging_usaget'])) {
 			$data['additional_charging_usaget'] = array();
 		}

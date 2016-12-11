@@ -1430,12 +1430,18 @@ class Billrun_Util {
 	
 	public static function setHttpSessionTimeout($timeout = null) {
 		if (!is_null($timeout)) {
-			$session_timeout = $timeout;
+			$sessionTimeout = $timeout;
 		} else {
-			$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
+			$sessionTimeout = Billrun_Factory::config()->getConfigValue('session.timeout', 3600);
 		}
-		ini_set('session.gc_maxlifetime', $session_timeout);
-		session_set_cookie_params($session_timeout);
+		
+		ini_set('session.gc_maxlifetime', $sessionTimeout);
+		ini_set("session.cookie_lifetime", $sessionTimeout);
+        
+		$cookieParams = session_get_cookie_params();
+		session_set_cookie_params(
+			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
+		);
 	}
 
 }
