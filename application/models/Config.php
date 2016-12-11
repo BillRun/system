@@ -147,7 +147,7 @@ class ConfigModel {
 
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
-		if ($valueInCategory === null) {
+		if (!empty($category) && $valueInCategory === null) {
 			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
@@ -182,8 +182,13 @@ class ConfigModel {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 
+		if(empty($category)) {
+			if (!$this->updateRoot($updatedData, $data)) {
+				return 0;
+			}
+		}
 		// TODO: Create a config class to handle just file_types.
-		if ($category === 'file_types') {
+		else if ($category === 'file_types') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for file types.");
 				return 0;
@@ -293,6 +298,36 @@ class ConfigModel {
 		return parse_ini_file($templateFileName, 1);
 	}
 	
+	/**
+	 * Update the config root category.
+	 * @param array $currentConfig - The current configuration, passed by reference.
+	 * @param array $data - The data to set. Treated as an hierchical JSON structure.
+	 * (See _updateCofig).
+	 * @return int
+	 */
+	protected function updateRoot(&$currentConfig, $data) {
+		foreach ($data as $key => $value) {
+			foreach ($value as $k => $v) {
+				Billrun_Factory::log("Data: " . print_r($data,1));
+				Billrun_Factory::log("Value: " . print_r($value,1));
+				if (!$this->_updateConfig($currentConfig, $k, $v)) {
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	
+	/**
+	 * Internal update process, used to update primitive and complex config values.
+	 * @param array $currentConfig - The current configuratuin, passed by reference.
+	 * @param string $category - Name of the category in the config.
+	 * @param array $data - The data to set to the config. This array is treated
+	 * as a complete JSON hierchical structure, and can update multiple values at
+	 * once, as long as none of the values to update are arrays.
+	 * @return int
+	 * @throws Billrun_Exceptions_InvalidFields
+	 */
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {
@@ -565,7 +600,11 @@ class ConfigModel {
  				return;
  			}
  		}
- 		$config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        if (!$config['export_generators']) {
+            $config['export_generators'] = array($egSettings);
+        } else {
+            $config['export_generators'] = array_merge($config['export_generators'], array($egSettings));
+        }
  	}
  
 
@@ -598,6 +637,9 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
+			$updatedFileSettings['type'] = $fileSettings['type'];
+		}
 		if (isset($fileSettings['parser'])) {
 			$updatedFileSettings['parser'] = $this->validateParserConfiguration($fileSettings['parser']);
 			if (isset($fileSettings['processor'])) {
@@ -612,11 +654,19 @@ class ConfigModel {
 					}
 				}
 			}
+			
+			if (isset($fileSettings['realtime'])) {
+				$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
+			}
 		}
 		$this->setFileTypeSettings($config, $updatedFileSettings);
 		return $this->checkForConflics($config, $fileType);
 	}
 	
+	protected function validateType($type) {
+		$allowedTypes = array('realtime');
+		return in_array($type, $allowedTypes);
+	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg) {
  		$connectionParameters = array_keys($pg['params']);
@@ -746,14 +796,16 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed');
+		$allowedParsers = array('separator', 'fixed', 'json');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}
 		if (empty($parserSettings['structure']) || !is_array($parserSettings['structure'])) {
 			throw new Exception('No file structure supplied');
 		}
-		if ($parserSettings['type'] == 'separator') {
+		if ($parserSettings['type'] == 'json') {
+			$customKeys = $parserSettings['structure'];
+		} else if ($parserSettings['type'] == 'separator') {
 			$customKeys = $parserSettings['structure'];
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
@@ -900,6 +952,25 @@ class ConfigModel {
 			}
 		}
 		return TRUE;
+	}
+	
+	protected function validateRealtimeConfiguration($realtimeSettings) {
+		if (!is_array($realtimeSettings)) {
+			throw new Exception('Realtime settings is not an array');
+		}
+		
+		$mandatoryFields = Billrun_Factory::config()->getConfigValue('configuration.realtime.mandatory_fields', array());
+		$missingFields = array();
+		foreach ($mandatoryFields as $mandatoryField) {
+			if (!isset($realtimeSettings[$mandatoryField])) {
+				$missingFields[] = $mandatoryField;
+			}
+		}
+		if (!empty($missingFields)) {
+			throw new Exception('Realtime settings missing mandatory fields: ' . implode(', ', $missingFields));
+		}
+		
+		return $realtimeSettings;
 	}
 
 	public function save($items) {

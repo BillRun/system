@@ -43,6 +43,8 @@ class SettingsAction extends ApiAction {
 		if (!($category)) {
 			$this->setError('Missing category parameter', $request->getPost());
 			return TRUE;
+		} else if($category === 'ROOT') {
+			$category = "";
 		}
 		// TODO: Create action managers for the settings module.
 		$action = $request->get('action');

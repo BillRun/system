@@ -14,7 +14,7 @@
  */
 class Billrun_Balance_Prepaid extends Billrun_Balance {
 
-	protected $charging_type = 'prepaid';
+	protected $connection_type = 'prepaid';
 
 	/**
 	 * minimum values for balance usage (on prepaid)
@@ -50,13 +50,6 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		if (isset($this->row['granted_cost']) && is_numeric($this->row['granted_cost'])) {
 			$this->granted['cost'] = (-1) * $this->row['granted_cost'];
 		}
-	}
-	
-	protected function getLinePricingData($volume, $usageType, $rate, $plan, $row = null) {
-//		if (Billrun_Calculator_Updaterow_Customerpricing::isFreeLine($row)) {
-//			return $this->getFreeRowPricingData();
-//		}
-		return parent::getLinePricingData($volume, $usageType, $rate, $plan, $row);
 	}
 
 	/**
