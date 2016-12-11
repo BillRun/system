@@ -189,7 +189,7 @@ class CronController extends Yaf_Controller_Abstract {
 		$balancesCollection = Billrun_Factory::db()->balancesCollection();
 		$match = array(
 			'$match' => array(
-				'charging_type' => 'prepaid',
+				'connection_type' => 'prepaid',
 				'charging_by_usaget' => 'data',
 				'to' => array(
 					'$gt' => new MongoDate(strtotime("yesterday midnight")),

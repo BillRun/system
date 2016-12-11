@@ -73,7 +73,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['urt'] = new MongoDate($datetime->format('U'));
 		$row['usaget'] = $this->getLineUsageType($row);
 		$row['usagev'] = $this->getLineUsageVolume($row);
-		$row['charging_type'] = isset($row['charging_type']) ? $row['charging_type'] : 'postpaid';
+		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
 		$row['source'] = self::$type;
