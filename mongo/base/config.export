@@ -85,102 +85,80 @@
             "subscriber",
             "account"
         ],
-    "fields": [
-      {
+        "fields": [{
             "field_name": "type",
             "editable": false
-      }
-    ],
+        }],
         "subscriber": {
-      "fields": [
-        {
+            "fields": [{
                 "field_name": "sid",
                 "generated": true,
                 "unique": true,
                 "editable": false,
-    "display": false
-        },
-        {
+                "display": false
+            }, {
                 "field_name": "aid",
                 "mandatory": true,
                 "editable": false,
-    "display": false
-        },
-        {
+                "display": false
+            }, {
                 "field_name": "firstname",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "lastname",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "plan",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "plan_activation",
                 "mandatory": false
-        },
-        {
+            }, {
                 "field_name": "address",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "country"
-        },
-        {
-    "field_name":"services",
-    "mandatory": false
-        }
-      ]
+            }, {
+                "field_name":"services",
+                "mandatory": false
+            }]
         },
         "account": {
-      "fields": [
-        {
+            "fields": [{
                 "field_name": "aid",
                 "generated": true,
                 "unique": true,
                 "editable": false
-        },
-        {
+            }, {
                 "field_name": "firstname",
                 "mandatory": true,
                 "title": "First name"
-        },
-        {
+            }, {
                 "field_name": "lastname",
                 "mandatory": true,
                 "title": "Last name"
-        },
-        {
+            }, {
                 "field_name": "email",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "country",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "address",
                 "mandatory": true
-        },
-        {
+            }, {
                 "field_name": "card_token",
                 "editable": false,
                 "display": false
-        },
-        {
+            }, {
                 "field_name": "card_expiration",
                 "editable": false,
                 "display": false
-        },
-        {
-                 "field_name": "payment_gateway",
-                 "editable": false,
- 				 "display": true
-        },
-        {
+            }, {
+                "field_name": "payment_gateway",
+                "editable": false,
+ 		"display": true
+            }, {
                 "field_name": "personal_id",
                 "editable": false,
                 "display": false
@@ -189,134 +167,113 @@
                 "editable": true,
                 "display": true,
                 "title": "Salutation"
-        }
-      ]
+            }]
         }
     },
     "rates": {
-    "fields": [
-      {
+        "fields": [{
             "field_name": "key",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "from",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "to",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "description",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "rates",
             "mandatory": true
-      }
-    ]
+        }]
     },
     "plans": {
-    "fields": [
-      {
+        "fields": [{
             "field_name": "from",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "to",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "name",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "price",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "description",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "upfront",
             "mandatory": true,
             "type": "boolean"
-      }
-    ]
+        }]
     },
    "services": {
-    "fields": [
-      {
+        "fields": [{
             "field_name": "from",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "to",
             "mandatory": true,
             "type": "date"
-      },
-      {
+        }, {
             "field_name": "name",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "price",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "description",
             "mandatory": true
-      },
-      {
+        }, {
             "field_name": "include"
-      }
-    ]
+        } ]
     },
     "file_types": [],
     "receive": "1",
     "process": "1",
     "calculate": "1",
-  "tenant": {
-    "name": {
-      "t": "String",
-      "v": "Example Company"
+		"tenant": {
+		  "name": {
+		    "t": "String",
+		    "v": "Example Company"
+		  },
+		  "address": {
+		    "t": "String",
+		    "v": "Example address"
+		  },
+		  "phone": "199-522-001",
+		  "email": "example@example.com",
+		  "website": "example.com"
+		},
+		"invoice_export": {
+      "export": "files/invoices/",
+      "generator": {
+        "type": "WkPdf"
+      },
+      "disable_stamp_export_directory": 1,
+      "theme": "/application/views/invoices/theme/theme1.css",
+      "header": "<p>Company :&nbsp;[[company_name]]</p>\n\n<p>Demo Header</p>\n",
+      "footer": "<p>Demo Footer, date&nbsp;[[date]]</p>\n",
+      "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
+      "details_template": "/application/views/invoices/details/details1.phtml",
+      "lines_template": "/application/views/invoices/lines/lines1.phtml",
+      "decimal_mark": ".",
+      "thousands_separator": ",",
+      "date_separator": "/",
+      "move_exported": 0,
+      "html_translation": [
+        "company_name",
+        "date"
+      ]
     },
-    "address": {
-      "t": "String",
-      "v": "Example address"
-    },
-    "phone": "199-522-001",
-    "email": "example@example.com",
-    "website": "example.com"
-  },
-  "invoice_export": {
-        "export": "files/invoices/",
-        "generator": {
-            "type": "WkPdf"
-        },
-        "disable_stamp_export_directory": 1,
-        "theme": "/application/views/invoices/theme/theme1.css",
-    "header": "<p>Company :&nbsp;[[company_name]]</p>\n\n<p>Demo Header</p>\n",
-    "footer": "<p>Demo Footer, date&nbsp;[[date]]</p>\n",
-        "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
-        "details_template": "/application/views/invoices/details/details1.phtml",
-        "lines_template": "/application/views/invoices/lines/lines1.phtml",
-        "decimal_mark": ".",
-        "thousands_separator": ",",
-        "date_separator": "/",
-        "move_exported": 0,
-    "html_translation": [
-      "company_name",
-      "date"
-    ]
-    },
-	"export_generators": [],
-	"payment_gateways" : [ ]
+  "export_generators": [],
+  "payment_gateways" : [ ]
 }
