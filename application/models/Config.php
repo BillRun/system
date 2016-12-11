@@ -654,6 +654,10 @@ class ConfigModel {
 					}
 				}
 			}
+			
+			if (isset($fileSettings['realtime'])) {
+				$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
+			}
 		}
 		$this->setFileTypeSettings($config, $updatedFileSettings);
 		return $this->checkForConflics($config, $fileType);
@@ -948,6 +952,25 @@ class ConfigModel {
 			}
 		}
 		return TRUE;
+	}
+	
+	protected function validateRealtimeConfiguration($realtimeSettings) {
+		if (!is_array($realtimeSettings)) {
+			throw new Exception('Realtime settings is not an array');
+		}
+		
+		$mandatoryFields = Billrun_Factory::config()->getConfigValue('configuration.realtime.mandatory_fields', array());
+		$missingFields = array();
+		foreach ($mandatoryFields as $mandatoryField) {
+			if (!isset($realtimeSettings[$mandatoryField])) {
+				$missingFields[] = $mandatoryField;
+			}
+		}
+		if (!empty($missingFields)) {
+			throw new Exception('Realtime settings missing mandatory fields: ' . implode(', ', $missingFields));
+		}
+		
+		return $realtimeSettings;
 	}
 
 	public function save($items) {

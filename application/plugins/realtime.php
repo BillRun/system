@@ -21,6 +21,13 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $name = 'realtime';
+	
+	/**
+	 * current configuration
+	 * 
+	 * @var type 
+	 */
+	protected $config = null;
 
 	/**
 	 * method to rebalace line if required and set usagev offset
@@ -75,7 +82,17 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
-		return ($row['realtime'] && in_array($row['record_type'], array('final_request', 'update_request')));
+		if ($this->isReblanceOnLastRequestOnly($row)) {
+			$rebalanceTypes = array('final_request');
+		} else {
+			$rebalanceTypes = array('final_request', 'update_request');
+		}
+		return ($row['realtime'] && in_array($row['record_type'], $rebalanceTypes));
+	}
+	
+	protected function isReblanceOnLastRequestOnly($row) {
+		$config = $this->getConfig($row);
+		return (isset($config['realtime']['rebalance_on_final']) && $config['realtime']['rebalance_on_final']);
 	}
 
 	/**
@@ -120,11 +137,24 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	protected function getRealUsagev($row) {
-		$config = Billrun_Factory::config()->getFileTypeSettings($row['type']);
+		$config = $this->getConfig($row);
 		if (!isset($row[$config['realtime']['used_usagev_field']])) {
 			return 0;
 		}
 		return $row[$config['realtime']['used_usagev_field']];
+	}
+	
+	/**
+	 * Gets the current configuration values
+	 * 
+	 * @param $row
+	 * @return configuration
+	 */
+	protected function getConfig($row) {
+		if (empty($this->config)) {
+			$this->config = Billrun_Factory::config()->getFileTypeSettings($row['type']);
+		}
+		return $this->config;
 	}
 
 	/**
@@ -133,7 +163,30 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return type
 	 */
 	protected function getChargedUsagev($row, $lineToRebalance) {
+		if ($this->isReblanceOnLastRequestOnly($row)) {
+			$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
+			$query = $this->getRebalanceQuery($row);
+			$line = $lines_archive_coll->aggregate($query)->current();
+			return $line['sum'];
+		}
 		return $lineToRebalance['usagev'];
+	}
+	
+	protected function getRebalanceQuery($lineToRebalance) {
+		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($lineToRebalance['type'])['realtime']['session_id_fields'];
+		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
+		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
+		return array(
+			array(
+				'$match' => $findQuery
+			),
+			array(
+				'$group' => array(
+					'_id' => 'sid',
+					'sum' => array('$sum' => '$usagev')
+				)
+			)
+		);
 	}
 	
 	protected function getRebalancePricingData($lineToRebalance, $realUsagev) {
