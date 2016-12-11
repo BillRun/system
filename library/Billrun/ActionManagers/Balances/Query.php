@@ -96,7 +96,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$balance['connection_type'] = $this->connection_type;
 		} else {
 			// Default is postpaid
-			$balance['connection_type'] = Billrun_Factory::config()->getConfigValue("subscriber.connection_type_default", "postpaid");
+			$balance['connection_type'] = Billrun_Factory::config()->getConfigValue("plans.connection_type_default", "postpaid");
 		}
 
 		return $balance;
