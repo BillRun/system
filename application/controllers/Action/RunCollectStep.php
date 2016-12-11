@@ -27,12 +27,20 @@ class  Run_collect_stepAction extends ApiAction {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
 			$result = static::runCollectStep($aids);
+			if(php_sapi_name() != "cli") {
 			$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
 					'details' => $result,
 					'input' => $request->getRequest(),
 			)));
+			} else {
+				foreach ($result as $status => $aids) {
+					foreach ($aids as $aid => $steps) {
+						$this->getController()->addOutput("Collection step run status '" . $status . "', for AID " . $aid . " run steps : " . implode(", ", $steps));
+					}
+				}
+			}
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request->getRequest());
 		}
