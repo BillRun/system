@@ -19,4 +19,16 @@ class GetController extends BillapiController {
 		
 	}
 
+	public function init() {
+		parent::init();
+		$request = $this->getRequest();
+		$this->params['sort'] = json_decode($request->get('sort'), TRUE);
+		$this->params['page'] = $request->get('page', 0);
+		$this->params['size'] = $request->get('size', 10);
+		if (!is_null($this->params['sort'])) {
+			$this->validateSort($this->params['sort']);
+		}
+
+	}
+
 }

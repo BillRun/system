@@ -15,4 +15,8 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  */
 class CreateController extends BillapiController {
 
+	public function init() {
+		parent::init();
+	}
+
 }

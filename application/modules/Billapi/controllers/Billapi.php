@@ -38,18 +38,15 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 */
 	protected $errorBase;
 
+	/**
+	 * parameters to be used by the model
+	 * 
+	 * @var array
+	 */
+	protected $params = array();
+
 	public function indexAction() {
-		$request = $this->getRequest();
-		$query = json_decode($request->get('query'), TRUE);
-		$update = json_decode($request->get('update'), TRUE);
-		$params['sort'] = json_decode($request->get('sort'), TRUE);
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		if (!is_null($params['sort'])) {
-			$this->validateSort($params['sort']);
-		}
-		$params['query'] = $translatedQuery;
-		$params['update'] = $translatedUpdate;
-		$entityModel = $this->getModel($params);
+		$entityModel = $this->getModel();
 		$res = $entityModel->{$this->action}();
 		$this->output->status = 1;
 		$this->output->details = $res;
@@ -63,20 +60,27 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
+		
+		$query = json_decode($request->get('query'), TRUE);
+		$update = json_decode($request->get('update'), TRUE);
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
+		$this->params['query'] = $translatedQuery;
+		$this->params['update'] = $translatedUpdate;
+
 	}
 
 	/**
 	 * Get the right model, depending on the requested collection
 	 * @return \Models_Entity
 	 */
-	protected function getModel($params) {
+	protected function getModel() {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($this->collection);
 		if (!@class_exists($className)) {
-			$className = $modelPrefix . ucfirst('Entity');
+			$className = $modelPrefix . 'Entity';
 		}
-		$params['collection'] = $this->collection;
-		return new $className($params);
+		$this->params['collection'] = $this->collection;
+		return new $className($this->params);
 	}
 
 	/**
@@ -123,7 +127,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 				$translatorModel = new Api_TranslatorModel($options);
 				$ret = $translatorModel->translate($knownParams);
 				$translated[$type] = $ret['data'];
-				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
+//				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
 				if (!$ret['success']) {
 					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
 				}
