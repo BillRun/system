@@ -1393,7 +1393,7 @@ class Billrun_Util {
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'aid', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'sid', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+		return array('_id', 'aid', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'connection_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'sid', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
 	public static function isValidRegex($regex) {
