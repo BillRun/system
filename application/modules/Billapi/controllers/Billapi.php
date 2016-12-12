@@ -44,8 +44,22 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * @var array
 	 */
 	protected $params = array();
+	
+	/**
+	 * config settings of the API
+	 * 
+	 * @var array
+	 */
+	protected $settings = array();
 
 	public function indexAction() {
+		$request = $this->getRequest();
+		$query = json_decode($request->get('query'), TRUE);
+		$update = json_decode($request->get('update'), TRUE);
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
+		$this->params['query'] = $translatedQuery;
+		$this->params['update'] = $translatedUpdate;
+
 		$entityModel = $this->getModel();
 		$res = $entityModel->{$this->action}();
 		$this->output->status = 1;
@@ -57,9 +71,9 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$this->collection = $request->getParam('collection');
 		$this->action = strtolower($request->getParam('action'));
-		$parametersSettings = $this->getActionConfig();
+		$this->setActionConfig();
 		
-		if (!$this->checkPermissions($parametersSettings)) {
+		if (!$this->checkPermissions()) {
 			throw new Billrun_Exceptions_NoPermission();
 		}
 		
@@ -67,11 +81,6 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->getView()->output = $this->output;
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 		
-		$query = json_decode($request->get('query'), TRUE);
-		$update = json_decode($request->get('update'), TRUE);
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $parametersSettings);
-		$this->params['query'] = $translatedQuery;
-		$this->params['update'] = $translatedUpdate;
 
 	}
 
@@ -93,26 +102,27 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * Get the relevant billapi config depending on the requested collection + action
 	 * @return array
 	 */
-	protected function getActionConfig() {
+	protected function setActionConfig() {
 		$configVar = 'billapi.' . $this->collection . '.' . $this->action;
-		return Billrun_Factory::config()->getConfigValue($configVar, array());
+		$this->settings = Billrun_Factory::config()->getConfigValue($configVar, array());
 	}
 
 	/**
 	 * Returns the translated (validated) request
 	 * @param array $query the query parameter
 	 * @param array $data the update parameter
-	 * @param array $parametersSettings the api settings
+	 * 
 	 * @return array
+	 * 
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
-	protected function validateRequest($query, $data, $parametersSettings) {
+	protected function validateRequest($query, $data) {
 		$options = array();
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
 			$translated[$type] = array();
-			foreach (Billrun_Util::getFieldVal($parametersSettings[$type], array()) as $param) {
+			foreach (Billrun_Util::getFieldVal($this->settings[$type], array()) as $param) {
 				$name = $param['name'];
 				if (!isset($params[$name])) {
 					if (isset($param['mandatory']) && $param['mandatory']) {
@@ -139,7 +149,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
 				}
 			}
-			if (!Billrun_Util::getFieldVal($parametersSettings['restrict_query'], 1) && $params) {
+			if (!Billrun_Util::getFieldVal($this->settings['restrict_query'], 1) && $params) {
 				$translated[$type] = array_merge($translated[$type], $params);
 			}
 		}
@@ -154,17 +164,17 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * 
 	 * @return true if permission allowed, else false
 	 */
-	protected function checkPermissions($config) {
+	protected function checkPermissions() {
 		if (Billrun_Utils_Security::validateData($this->getRequest()->getRequest())) { // validation by secret
 			return true;
 		}
 		
-		if (!isset($config['permission'])) {
+		if (!isset($this->settings['permission'])) {
 			Billrun_Factory::log("No permissions settings for API call.", Zend_Log::ERR);
 			return false;
 		}
 		
-		$permission = $config['permission'];
+		$permission = $this->settings['permission'];
 		$user = Billrun_Factory::user();
 		if (!$user || !$user->valid()) {
 			return false;
