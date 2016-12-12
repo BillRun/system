@@ -27,17 +27,17 @@ class CollectAction extends ApiAction {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
 			$result = static::collect($aids);	
-			if(php_sapi_name() != "cli") {
+			if(RUNNING_FROM_CLI) {
+				foreach ($result as $colection_state => $aids) {
+					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
+				}
+			} else {
 				$this->getController()->setOutput(array(array(
 					'status' => 1,
 					'desc' => 'success',
 					'details' => $result,
 					'input' => $request->getRequest(),
 				)));
-			} else {
-				foreach ($result as $colection_state => $aids) {
-					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
-				}
 			}
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request->getRequest());
