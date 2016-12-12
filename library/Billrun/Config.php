@@ -326,7 +326,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(is_scalar($obj)) {
+		if(empty($obj) || is_scalar($obj)) {
 			return false;
 		}
 		
