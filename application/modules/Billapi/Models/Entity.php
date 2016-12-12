@@ -32,10 +32,33 @@ class Models_Entity {
 	 */
 	protected $config;
 
+	/**
+	 * The wanted query
+	 * @var array
+	 */
+	protected $query = array();
+
+	/**
+	 * The new data
+	 * @var array
+	 */
+	protected $update = array();
+
+	/**
+	 * The wanted sort (for get operations)
+	 * @var array
+	 */
+	protected $sort = array();
+
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
+		foreach (array('query', 'update', 'sort') as $operation) {
+			if (isset($params[$operation])) {
+				$this->{$operation} = $params[$operation];
+			}
+		}
 	}
 
 	/**
@@ -44,10 +67,10 @@ class Models_Entity {
 	 * @return boolean
 	 * @throws Billrun_Exceptions_Api
 	 */
-	public function create($query, $update) {
-		unset($update['_id']);
-		if ($this->duplicateCheck($update)) {
-			$this->insert($update);
+	public function create() {
+		unset($this->update['_id']);
+		if ($this->duplicateCheck($this->update)) {
+			$this->insert($this->update);
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Username already exists');
 		}
@@ -85,8 +108,8 @@ class Models_Entity {
 	 * @param array $query
 	 * @param array $data
 	 */
-	public function update($query, $data) {
-		$this->dbUpdate($query, $data);
+	public function update() {
+		$this->dbUpdate($this->query, $this->update);
 	}
 
 	/**
@@ -113,8 +136,8 @@ class Models_Entity {
 	 * @param array $data
 	 * @return array the entities found
 	 */
-	public function get($query, $data = null) {
-		return $this->query($query);
+	public function get() {
+		return $this->query($this->query, $this->sort);
 	}
 
 	/**
@@ -122,11 +145,11 @@ class Models_Entity {
 	 * @param array $query
 	 * @return array the result set
 	 */
-	protected function query($query) {
-		if (!$query) { // currently must have some query
-			return array();
-		}
+	protected function query($query, $sort) {
 		$res = $this->collection->find($query);
+		if ($sort) {
+			$res = $res->sort($sort);
+		}
 		return array_values(iterator_to_array($res));
 	}
 
@@ -136,11 +159,11 @@ class Models_Entity {
 	 * @param array $update
 	 * @return type
 	 */
-	public function delete($query, $update = null) {
-		if (!$query) { // currently must have some query
+	public function delete() {
+		if (!$this->query) { // currently must have some query
 			return;
 		}
-		$this->remove($query);
+		$this->remove($this->query);
 	}
 
 	/**

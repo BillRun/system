@@ -14,23 +14,50 @@
  */
 abstract class BillapiController extends Yaf_Controller_Abstract {
 
+	/**
+	 * The output sent to the view
+	 * @var stdClass
+	 */
 	protected $output;
+
+	/**
+	 * The requested collection name
+	 * @var string
+	 */
 	protected $collection;
+
+	/**
+	 * The action to perform (create/update/delete/get)
+	 * @var string
+	 */
 	protected $action;
+
+	/**
+	 * The base error number of this module
+	 * @var int
+	 */
+	protected $errorBase;
 
 	public function indexAction() {
 		$request = $this->getRequest();
 		$query = json_decode($request->get('query'), TRUE);
 		$update = json_decode($request->get('update'), TRUE);
+		$params['sort'] = json_decode($request->get('sort'), TRUE);
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		$entityModel = $this->getModel();
-		$res = $entityModel->{$this->action}($translatedQuery, $translatedUpdate);
+		if (!is_null($params['sort'])) {
+			$this->validateSort($params['sort']);
+		}
+		$params['query'] = $translatedQuery;
+		$params['update'] = $translatedUpdate;
+		$entityModel = $this->getModel($params);
+		$res = $entityModel->{$this->action}();
 		$this->output->status = 1;
 		$this->output->details = $res;
 	}
 
 	public function init() {
 		$request = $this->getRequest();
+		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$this->collection = $request->getParam('collection');
 		$this->action = strtolower($request->getParam('action'));
 		$this->output = new stdClass();
@@ -42,15 +69,13 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * Get the right model, depending on the requested collection
 	 * @return \Models_Entity
 	 */
-	protected function getModel() {
+	protected function getModel($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($this->collection);
 		if (!@class_exists($className)) {
 			$className = $modelPrefix . ucfirst('Entity');
 		}
-		$params = array(
-			'collection' => $this->collection,
-		);
+		$params['collection'] = $this->collection;
 		return new $className($params);
 	}
 
@@ -71,16 +96,16 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function validateRequest($query, $data) {
-		$errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$parametersSettings = $this->getActionConfig();
 		$options = array();
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
+			$translated[$type] = array();
 			foreach (Billrun_Util::getFieldVal($parametersSettings[$type], array()) as $param) {
 				$name = $param['name'];
 				if (!isset($params[$name])) {
 					if (isset($param['mandatory']) && $param['mandatory']) {
-						throw new Billrun_Exceptions_Api($errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
+						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
 					}
 					continue;
 				}
@@ -91,23 +116,42 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
 					'options' => [],
 				);
+				$knownParams[$name] = $params[$name];
+				unset($params[$name]);
 			}
 			if ($options['fields']) {
 				$translatorModel = new Api_TranslatorModel($options);
-				$ret = $translatorModel->translate($params);
+				$ret = $translatorModel->translate($knownParams);
 				$translated[$type] = $ret['data'];
 				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
 				if (!$ret['success']) {
 					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
 				}
-			} else {
-				$translated[$type] = array();
+			}
+			if (!Billrun_Util::getFieldVal($parametersSettings['restrict_query'], 1) && $params) {
+				$translated[$type] = array_merge($translated[$type], $params);
 			}
 		}
-		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
-			throw new Billrun_Exceptions_Api($errorBase + 1, array(), 'No query/update was found or entity not supported');
-		}
+		$this->verifyTranslated($translated);
 		return array($translated['query_parameters'], $translated['update_parameters']);
+	}
+
+	/**
+	 * Verify the translated query & update
+	 * @param array $translated
+	 */
+	protected function verifyTranslated($translated) {
+		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
+			throw new Billrun_Exceptions_Api($this->errorBase + 2, array(), 'No query/update was found or entity not supported');
+		}
+	}
+
+	protected function validateSort($sort) {
+		if (!is_array($sort) || array_filter($sort, function ($one) {
+				return $one != 1 && $one != -1;
+			})) {
+			throw new Billrun_Exceptions_Api($this->errorBase + 3, array(), 'Illegal sort parameter');
+		}
 	}
 
 	/**
