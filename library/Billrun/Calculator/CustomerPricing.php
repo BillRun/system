@@ -210,7 +210,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+			$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
 			$pricingData = $calcRow->update();
 			if (is_bool($pricingData)) {
 				return $pricingData;

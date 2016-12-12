@@ -20,7 +20,7 @@ class Billrun_TypeValidator_Boolean extends Billrun_TypeValidator_Base {
 	 * @param type $params - optional extra params
 	 * @return boolean
 	 */
-	public function validate($value, $params) {
+	public function validate($value, $params = array()) {
 		return is_bool($value);
 	}
 

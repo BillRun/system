@@ -84,8 +84,8 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			if (empty($params)) {
 				$params = Yaf_Application::app()->getConfig();
 			}
-			if (isset($params['charging_type'])) {
-				$class = 'Billrun_Balance_' . ucfirst($params['charging_type']);
+			if (isset($params['connection_type'])) {
+				$class = 'Billrun_Balance_' . ucfirst($params['connection_type']);
 			} else { // fallback to default postpaid balance
 				$class = 'Billrun_Balance_Postpaid';
 			}
@@ -117,7 +117,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @return array subscriber's balance
 	 */
 	protected function load() {
-		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". charging_type: " . $this->charging_type, Zend_Log::DEBUG);
+		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". connection_type: " . $this->connection_type, Zend_Log::DEBUG);
 		$query = $this->getBalanceLoadQuery();
 		return $this->collection()
 				->query($query)

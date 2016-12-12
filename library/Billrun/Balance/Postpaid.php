@@ -14,7 +14,7 @@
  */
 class Billrun_Balance_Postpaid extends Billrun_Balance {
 
-	protected $charging_type = 'postpaid';
+	protected $connection_type = 'postpaid';
 
 	protected function init() {
 		
