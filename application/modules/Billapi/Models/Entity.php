@@ -49,6 +49,18 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $sort = array();
+	
+	/**
+	 * Page number for get operations
+	 * @var int
+	 */
+	protected $page = 0;
+
+	/**
+	 * Page size for get operations
+	 * @var int
+	 */
+	protected $size = 10;
 
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
@@ -59,6 +71,10 @@ class Models_Entity {
 				$this->{$operation} = $params[$operation];
 			}
 		}
+		$page = Billrun_Util::getFieldVal($params['page'], 0);
+		$this->page = Billrun_Util::IsIntegerValue($page)? $page : 0;
+		$size = Billrun_Util::getFieldVal($params['size'], 10);
+		$this->size = Billrun_Util::IsIntegerValue($size)? $size : 10;
 	}
 
 	/**
@@ -147,6 +163,15 @@ class Models_Entity {
 	 */
 	protected function query($query, $sort) {
 		$res = $this->collection->find($query);
+		
+		if ($this->page != -1) {
+			$res->skip($this->page * $this->size);
+		}
+		
+		if ($this->size != -1) {
+			$res->limit($this->size);
+		}
+		
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
@@ -160,7 +185,7 @@ class Models_Entity {
 	 * @return type
 	 */
 	public function delete() {
-		if (!$this->query) { // currently must have some query
+		if (!$this->query || empty($this->query)) { // currently must have some query
 			return;
 		}
 		$this->remove($this->query);

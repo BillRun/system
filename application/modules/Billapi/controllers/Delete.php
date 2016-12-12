@@ -15,4 +15,8 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  */
 class DeleteController extends BillapiController {
 
+	public function init() {
+		parent::init();
+	}
+
 }

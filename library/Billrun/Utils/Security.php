@@ -44,7 +44,7 @@ class Billrun_Utils_Security {
 		// Get the secret
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		if(!self::validateSecret($secret)) {
-			return null;
+			return false;
 		}
 		
 		$data = $request;
@@ -52,13 +52,10 @@ class Billrun_Utils_Security {
 		unset($data['t']);
 		$hashResult = $this->sign($data, $secret);
 		
-		// state whether signature is okay or not
-		$validData = null;
-	
 		if(hash_equals($signature, $hashResult)) {
-			$validData = $data;
+			return true;
 		}
-		return $validData;
+		return false;
 	}
 	
 	/**
