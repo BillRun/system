@@ -239,7 +239,7 @@ abstract class Billrun_PaymentGateway {
 	/**
 	 * Converting between amount units.
 	 * 
-	 * @param Int $amount - The sending amount to charge in the gateway.
+	 * @param Float $amount - The sending amount to charge in the gateway.
 	 * @return Float - the converted amount.
 	 */
 	abstract protected function convertAmountToSend($amount);

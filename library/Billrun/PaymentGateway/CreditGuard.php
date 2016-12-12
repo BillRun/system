@@ -273,10 +273,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function convertAmountToSend($amount) {
-		$numOfDecimal = strlen(substr(strrchr($amount, "."), 1));
-		if ($numOfDecimal > 2) { 
-			$amount = round($amount, 2);
-		}
+		$amount = round($amount, 2);
 		return $amount * 100;
 	}
 	
