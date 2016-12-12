@@ -16,6 +16,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		validate as baseValidate;
 	}
 	use Billrun_ActionManagers_Subscribers_Servicehandler;
+	use Billrun_Traits_FieldValidator;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -41,6 +42,20 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		return $subscriberQuery;
 	}
 
+	/**
+	 * Return the base query of the action.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return array
+	 * @note '_getBaseQuery' is a function of the Billrun_Traits_FieldValidator trait, 
+	 * its default implementation is empty.
+	 * It's named with an underscore to avoid a clash between another getBaseQuery function.
+	 */
+	protected function _getBaseQuery() {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['type'] = $this->type;
+		return $query;
+	}
+	
 	/**
 	 * Check if the subscriber to create already exists.
 	 * @return boolean - true if the subscriber exists.
@@ -98,7 +113,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		if (!parent::parse($input) || !$this->setQueryRecord($input)) {
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -116,6 +131,9 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			return false;
 		}
 
+		// Validate the fields.
+		$this->enforce($this->fields, $jsonData);
+		
 		$invalidFields = $this->setQueryFields($jsonData);
 
 		// If there were errors.
@@ -187,6 +205,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	}
 
 	protected function validate() {
+		// Validate the input.
 		if (($this->type === 'subscriber') && (!$this->isAccountExists($this->query['aid']))) {
 				return false;
 		}
@@ -209,6 +228,17 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 
 	protected function getSubscriberData() {
 		return $this->query;
+	}
+
+	/**
+	 * Return the collection instance.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return Mongodloid_Collection 
+	 * @note '_getCollection' is an abstract function of the trait Billrun_Traits_FieldValidator.
+	 * It's named with an underscore to avoid a clash between another getCollection function.
+	 */
+	protected function _getCollection() {
+		return Billrun_Factory::db()->subscribersCollection();
 	}
 
 }

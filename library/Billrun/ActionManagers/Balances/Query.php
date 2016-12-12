@@ -30,6 +30,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected $availableBalances = array();
 
+	protected $connection_type;
+	
 	/**
 	 * Query the balances collection to receive data in a range.
 	 */
@@ -90,17 +92,17 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$balance['sid'] = $subscriber['sid'];
 		$balance['from'] = new MongoDate();
 		$balance['to'] = $balance['from'];
-		$balance['charging_type'] = $subscriber['charging_type'];
 
-		if (isset($subscriber['charging_type'])) {
-			$balance['charging_type'] = $subscriber['charging_type'];
+		if (isset($this->connection_type)) {
+			$balance['connection_type'] = $this->connection_type;
 		} else {
-			$balance['charging_type'] = Billrun_Factory::config()->getConfigValue("subscriber.charging_type_default", "prepaid");
+			// Default is postpaid
+			$balance['connection_type'] = Billrun_Factory::config()->getConfigValue("plans.connection_type_default", "postpaid");
 		}
 
 		return $balance;
 	}
-
+	
 	/**
 	 * Execute the action.
 	 * @return data for output.
@@ -240,6 +242,9 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 
 		$availableBalances = array();
 
+		// Get the connection type.
+		$this->connection_type = $plan->getRawData()['connection_type'];
+		
 		$thresholds = $plan->getRawData()['pp_threshold'];
 		foreach ($thresholds as $id => $value) {
 			if ($value == 0) {
