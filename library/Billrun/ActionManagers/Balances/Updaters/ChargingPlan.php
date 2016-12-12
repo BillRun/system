@@ -184,7 +184,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 			$unlimitedBalances = array();
 			foreach ($chargeValue as $chargingByValue) {
-				if (isset($chargingByValue['unlimited']) && $chargingByValue['unlimited']) {
+				if (!empty($chargingByValue['unlimited'])) {
 					$ppName = $chargingPlanRecord['pp_includes_name'];
 					$ppID = $chargingPlanRecord['pp_includes_external_id'];
 					$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
@@ -233,7 +233,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
 		
 		// Get the unlimited indicator from the charging plan record.
-		$ppPair['unlimited'] = isset($chargingPlanRecord['unlimited']) && $chargingPlanRecord['unlimited'];
+		$ppPair['unlimited'] = !empty($chargingPlanRecord['unlimited']);
 		$params = array(
 			'chargingBy' => $chargingBy,
 			'chargingByValue' => $chargingByValue,

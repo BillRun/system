@@ -89,7 +89,7 @@ class Billrun_DataTypes_Wallet {
 
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
-		$this->unlimited = isset($ppPair['unlimited']) && $ppPair['unlimited'];
+		$this->unlimited = !empty($ppPair['unlimited']);
 		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {

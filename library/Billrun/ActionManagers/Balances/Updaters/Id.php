@@ -155,7 +155,7 @@ class Billrun_ActionManagers_Balances_Updaters_Id extends Billrun_ActionManagers
 
 		$ppPair['pp_includes_external_id'] = $this->balancesRecord['pp_includes_external_id'];
 		$ppPair['pp_includes_name'] = $this->balancesRecord['pp_includes_name'];
-		$ppPair['unlimited'] = isset($this->balancesRecord['unlimited']) && $this->balancesRecord['unlimited'];
+		$ppPair['unlimited'] = !empty($this->balancesRecord['unlimited']);
 
 		if (is_array($chargingByValue)) {
 			return $this->getUsagetWallet($ppPair, $valueToUseInQuery);
