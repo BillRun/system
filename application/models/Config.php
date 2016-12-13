@@ -290,8 +290,11 @@ class ConfigModel {
 	protected function loadTemplate() {
 		// Load the config template.
 		// TODO: Move the file path to a constant
-		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
-		return parse_ini_file($templateFileName, 1);
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.json";
+		$string = file_get_contents($templateFileName);
+		Billrun_Factory::log("String: " . print_r($string,1));
+		$json_a = json_decode($string, true);
+		return $json_a;
 	}
 	
 	/**
@@ -375,7 +378,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		
+		Billrun_Factory::log("Tempalte: " . print_r($template,1));
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
