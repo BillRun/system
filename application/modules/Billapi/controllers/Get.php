@@ -11,7 +11,7 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  * Billapi controller for getting BillRun entities
  *
  * @package  Billapi
- * @since    0.5
+ * @since    5.3
  */
 class GetController extends BillapiController {
 
@@ -28,7 +28,6 @@ class GetController extends BillapiController {
 		if (!is_null($this->params['sort'])) {
 			$this->validateSort($this->params['sort']);
 		}
-
 	}
 
 }

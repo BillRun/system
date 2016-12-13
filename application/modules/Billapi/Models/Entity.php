@@ -10,7 +10,7 @@
  * Billapi model for operations on BillRun entities
  *
  * @package  Billapi
- * @since    0.5
+ * @since    5.3
  */
 class Models_Entity {
 
@@ -128,22 +128,29 @@ class Models_Entity {
 		$this->dbUpdate($this->query, $this->update);
 	}
 
+	public function closeandnew() {
+		$this->dbUpdate($this->query, $this->update);
+	}
+
 	/**
 	 * DB update currently limited to update of one record
 	 * @param type $query
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
-		unset($data['_id']);
 		$updateMethod = Billrun_Util::getFieldVal($this->config['update_method'], 'update');
-		if ($updateMethod == 'update') {
-			$update = array(
-				'$set' => $data,
-			);
-			$res = $this->collection->update($query, $update);
-		} else if ($updateMethod == 'close_and_new') {
-			
+		if ($updateMethod == 'closeandnew') {
+			$_id = $data['_id'];
+			$closeAndNewPreUpdateQuery = array('_id' => $_id);
+			$closeAndNewPreUpdateOperation = array('$set' => array('to' => $data['from']));
+			$res = $this->collection->update($closeAndNewPreUpdateQuery, $closeAndNewPreUpdateOperation);
+			// todo: check if update success -> if not break
 		}
+		unset($data['_id']);
+		$update = array(
+			'$set' => $data,
+		);
+		return $this->collection->update($query, $update);
 	}
 
 	/**
@@ -157,7 +164,14 @@ class Models_Entity {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
 		}
-		return $this->runQuery($this->query, $this->sort);
+		$ret = $this->runQuery($this->query, $this->sort);
+		if (isset($this->config['get']['columns_filter_out']) && count($this->config['get']['columns_filter_out'])) {
+			$filter_columns = $this->config['get']['columns_filter_out'];
+			array_walk($ret, function(&$item) use ($filter_columns) {
+				$item = array_diff_key($item, array_flip($filter_columns));
+			});
+		}
+		return $ret;
 	}
 
 	/**
