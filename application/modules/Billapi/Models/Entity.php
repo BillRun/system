@@ -157,7 +157,14 @@ class Models_Entity {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
 		}
-		return $this->runQuery($this->query, $this->sort);
+		$ret = $this->runQuery($this->query, $this->sort);
+		if (isset($this->config['get']['columns_filter_out']) && count($this->config['get']['columns_filter_out'])) {
+			$filter_columns = $this->config['get']['columns_filter_out'];
+			array_walk($ret, function(&$item) use ($filter_columns) {
+				$item = array_diff_key($item, array_flip($filter_columns));
+			});
+		}
+		return $ret;
 	}
 
 	/**
