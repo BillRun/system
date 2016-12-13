@@ -10,7 +10,7 @@
  * Billapi abstract controller for BillRun entities available actions
  *
  * @package  Billapi
- * @since    0.5
+ * @since    5.3
  */
 abstract class BillapiController extends Yaf_Controller_Abstract {
 

@@ -10,7 +10,7 @@
  * Billapi model for operations on BillRun entities
  *
  * @package  Billapi
- * @since    0.5
+ * @since    5.3
  */
 class Models_Entity {
 

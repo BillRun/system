@@ -11,7 +11,7 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  * Billapi controller for updating BillRun entities
  *
  * @package  Billapi
- * @since    0.5
+ * @since    5.3
  */
 class UpdateController extends BillapiController {
 
