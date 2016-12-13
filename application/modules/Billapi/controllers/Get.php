@@ -28,7 +28,6 @@ class GetController extends BillapiController {
 		if (!is_null($this->params['sort'])) {
 			$this->validateSort($this->params['sort']);
 		}
-
 	}
 
 }

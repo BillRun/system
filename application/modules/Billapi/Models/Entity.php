@@ -128,22 +128,29 @@ class Models_Entity {
 		$this->dbUpdate($this->query, $this->update);
 	}
 
+	public function closeandnew() {
+		$this->dbUpdate($this->query, $this->update);
+	}
+
 	/**
 	 * DB update currently limited to update of one record
 	 * @param type $query
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
-		unset($data['_id']);
 		$updateMethod = Billrun_Util::getFieldVal($this->config['update_method'], 'update');
-		if ($updateMethod == 'update') {
-			$update = array(
-				'$set' => $data,
-			);
-			$res = $this->collection->update($query, $update);
-		} else if ($updateMethod == 'close_and_new') {
-			
+		if ($updateMethod == 'closeandnew') {
+			$_id = $data['_id'];
+			$closeAndNewPreUpdateQuery = array('_id' => $_id);
+			$closeAndNewPreUpdateOperation = array('$set' => array('to' => $data['from']));
+			$res = $this->collection->update($closeAndNewPreUpdateQuery, $closeAndNewPreUpdateOperation);
+			// todo: check if update success -> if not break
 		}
+		unset($data['_id']);
+		$update = array(
+			'$set' => $data,
+		);
+		return $this->collection->update($query, $update);
 	}
 
 	/**
