@@ -67,7 +67,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
-			"t" => time()
+			Billrun_Utils_Security::TIMESTAMP_FIELD => time()
 		);
 		$hashResult = hash_hmac("sha512", json_encode($data), $secret);
 		$sendData = array(
