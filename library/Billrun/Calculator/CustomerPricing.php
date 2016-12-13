@@ -194,7 +194,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					}
 
 					// billrun cannot override on api calls
-					if ((!isset($row['billrun']) || $row['source'] != 'api') && !($row['type'] == 'tap3' && $row['usaget'] == 'sms')) {
+					if ((!isset($row['billrun']) || $row['source'] != 'api') && !($row['type'] == 'tap3' && $row['usaget'] == 'sms')) {  //TODO: make more generic the condition tap3 and sms.
 						$pricingData['billrun'] = $row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
 					}
 				}
