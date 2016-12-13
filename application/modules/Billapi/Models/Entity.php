@@ -153,7 +153,11 @@ class Models_Entity {
 	 * @return array the entities found
 	 */
 	public function get() {
-		return $this->query($this->query, $this->sort);
+		if (isset($this->config['active_documents']) && $this->config['active_documents']) {
+			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
+			$this->query = array_merge($add_query, $this->query);
+		}
+		return $this->runQuery($this->query, $this->sort);
 	}
 
 	/**
@@ -161,7 +165,7 @@ class Models_Entity {
 	 * @param array $query
 	 * @return array the result set
 	 */
-	protected function query($query, $sort) {
+	protected function runQuery($query, $sort) {
 		$res = $this->collection->find($query);
 		
 		if ($this->page != -1) {
