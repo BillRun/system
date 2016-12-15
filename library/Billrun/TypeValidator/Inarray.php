@@ -13,7 +13,7 @@
  */
 class Billrun_TypeValidator_Inarray extends Billrun_TypeValidator_Base {
 
-	public function validate($value, $params) {
+	public function validate($value, $params = array()) {
 		return in_array($value, $params);
 	}
 
