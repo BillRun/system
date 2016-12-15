@@ -13,14 +13,12 @@
  * @since    5.0
  */
 class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
-	
-	
+
 	/**
 	 * The instance of the DB collection.
 	 */
 	protected $collection;
-	
-	
+
 	/**
 	 * Construct a new account DB instance.
 	 * @param array $options - Array of initialization parameters.
@@ -29,26 +27,29 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		parent::__construct($options);
 		$this->collection = Billrun_Factory::db()->collection_stepsCollection();
 	}
-	
+
 	public function createCollectionSteps($aid) {
-		$steps = Billrun_Factory::config()->getConfigValue('collection',Array());
-		$create_date =  new MongoDate();
+		$steps = Billrun_Factory::config()->getConfigValue('collection.steps', Array());
+		$create_date = new MongoDate();
+		$newSteps = array();
 		foreach ($steps as $step) {
-			if($step['active']){
+			if ($step['active']) {
 				unset($step['active']);
 				$do_after_days = '+' . intval($step['do_after_days']) . ' days';
 				$trigger_date = new MongoDate(strtotime($do_after_days));
-		
+
 				$step['aid'] = $aid;
 				$step['done'] = false;
 				$step['create_date'] = $create_date;
 				$step['trigger_date'] = $trigger_date;
-				$newEntity = new Mongodloid_Entity($step);
-				$this->collection->insert($newEntity);
+				$newSteps[] = $step;
 			}
 		}
+		if (!empty($newSteps)) {
+			$this->collection->batchInsert($newSteps);
+		}
 	}
-	
+
 	public function removeCollectionSteps($aid) {
 		$query = array(
 			'aid' => $aid,
@@ -56,21 +57,22 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		);
 		$this->collection->remove($query);
 	}
-	
+
 	public function runCollectStep($aids = array()) {
 		$result = array();
 		$steps = $this->getReadySteps($aids);
 		foreach ($steps as $step) {
-			if($this->runStep($step)){
+			if ($this->runStep($step)) {
 				$this->markStepAsCompleted($step);
 				$result['completed'][$step['aid']][] = $step['name'];
 			} else {
 				$result['error'][$step['aid']][] = $step['name'];
 			}
 		}
+		Billrun_Factory::log("Collect Step run result: " . print_r($result, 1), Zend_Log::INFO);
 		return $result;
 	}
-	
+
 	protected function getReadySteps($aids = array()) {
 		$results = array();
 		$query = array(
@@ -79,7 +81,7 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 				'$lte' => new MongoDate(),
 			)
 		);
-		if(!empty($aids)){
+		if (!empty($aids)) {
 			$query['aid']['$in'] = $aids;
 		}
 
@@ -89,24 +91,22 @@ class Billrun_CollectionSteps_Db extends Billrun_CollectionSteps {
 		}
 		return $results;
 	}
-	
+
 	protected function runStep($step) {
-		$task = new Collect_TaskManager($step);
+		$task = new Billrun_CollectionSteps_TaskManager($step);
 		$result = $task->run();
 		return $result;
 	}
-	
+
 	protected function markStepAsCompleted($step) {
-		$id = new MongoId($step['_id']->{'$id'});
 		$update = array('done' => true);
 		try {
-			$this->collection->update(array('_id' => $id), array('$set' => $update), array('upsert' => true));
+			$this->collection->update(array('_id' => $step['_id']), array('$set' => $update));
 		} catch (Exception $exc) {
 			Billrun_Factory::log("Unable to mark collection step as completed, ID: " . $id, Zend_Log::INFO);
 			return FALSE;
 		}
 		return true;
 	}
-
 
 }

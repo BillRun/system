@@ -12,16 +12,16 @@
  * @package  Billrun
  * @since    5.0
  */
-abstract class Billrun_CollectionSteps extends Billrun_Base  {
-	
+abstract class Billrun_CollectionSteps extends Billrun_Base {
+
 	/**
 	 * Type of object
 	 *
 	 * @var string
 	 */
-	static protected $type = 'collection_steps';
-	
-	abstract public function createCollectionSteps($aid);
-	abstract public function removeCollectionSteps($aid); 
+	protected static $type = 'collection_steps';
 
+	abstract public function createCollectionSteps($aid);
+
+	abstract public function removeCollectionSteps($aid);
 }

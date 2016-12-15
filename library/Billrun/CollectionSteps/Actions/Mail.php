@@ -13,39 +13,29 @@
  * @package  Billing
  * @since    5.0
  */
-class Collect_Actions_Mail implements Collect_TaskStrategy {
-	
-	public function run($task){
+class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_TaskStrategy {
+
+	public function run($task) {
 		$subject = $task['content']['subject'];
 		$account = $this->getAccount($task['aid']);
 		$body = $this->updateBodyDynamicData($task, $account);
-		$res = Billrun_Util::sendMail($subject, $body , $account['email'], array(), true);
+		$res = Billrun_Util::sendMail($subject, $body, $account->email, array(), true);
 		return !empty($res);
 	}
-	
+
 	protected function getAccount($aid) {
-		$query = array(
-			'type' => 'account',
-			'aid' => $aid,
-			'to' => array('$gt' =>  new MongoDate()),
-			'from' => array('$lt' => new MongoDate()),
-		);
-		
-		$results = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->limit(1)->current();
-		if ($results->isEmpty()) {
-			return false;
-		}
-		return $results->getRawData();
+		$billrunAaccount = new Billrun_Account_Db();
+		$billrunAaccount->load(array('aid' => $aid));
+		return $billrunAaccount;
 	}
-	
+
 	protected function updateBodyDynamicData($task, $account) {
 		$body = $task['content']['body'];
 		$translations = $this->getTranslations();
-		
 		foreach ($translations as $translation) {
 			switch ($translation) {
 				case "Customer Name":
-					$replace = $account["firstname"] . " " . $account["lastname"];
+					$replace = $account->firstname . " " . $account->lastname;
 					$body = str_replace("[[$translation]]", $replace, $body);
 					break;
 				case "Debt":
@@ -57,11 +47,12 @@ class Collect_Actions_Mail implements Collect_TaskStrategy {
 		}
 		return $body;
 	}
-	
+
 	protected function getTranslations() {
 		return array(
 			"Customer Name",
 			"Debt",
 		);
 	}
+
 }

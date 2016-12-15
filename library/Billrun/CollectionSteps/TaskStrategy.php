@@ -13,7 +13,7 @@
  * @package  Billing
  * @since    5.0
  */
-interface Collect_TaskStrategy{
-	
-    public function run($task);
+interface Billrun_CollectionSteps_TaskStrategy {
+
+	public function run($task);
 }

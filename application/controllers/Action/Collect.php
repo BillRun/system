@@ -26,17 +26,17 @@ class CollectAction extends ApiAction {
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
-			$result = static::collect($aids);	
-			if(RUNNING_FROM_CLI) {
+			$result = static::collect($aids);
+			if (RUNNING_FROM_CLI) {
 				foreach ($result as $colection_state => $aids) {
 					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
 				}
 			} else {
 				$this->getController()->setOutput(array(array(
-					'status' => 1,
-					'desc' => 'success',
-					'details' => $result,
-					'input' => $request->getRequest(),
+						'status' => 1,
+						'desc' => 'success',
+						'details' => $result,
+						'input' => $request->getRequest(),
 				)));
 			}
 		} catch (Exception $e) {

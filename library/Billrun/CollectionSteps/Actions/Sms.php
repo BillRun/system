@@ -13,9 +13,10 @@
  * @package  Billing
  * @since    5.0
  */
-class Collect_Actions_Sms implements Collect_ActionStrategy {
-	
-	public function run($task){
-		error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") ". "\n"." Run CollectSmsAction, Task data"." :\n" . print_r($task, 1) . "\n");
+class Billrun_CollectionSteps_Actions_Sms implements Collect_ActionStrategy {
+
+	public function run($task) {
+		error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") " . "\n" . " Run CollectSmsAction, Task data" . " :\n" . print_r($task, 1) . "\n");
 	}
+
 }
