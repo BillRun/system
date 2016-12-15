@@ -1012,7 +1012,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
 			$tariffItem = $line['service_name'];
 		} else {
-			if ($line['type'] == 'tap3') {
+			if ($line['type'] == 'tap3'|| isset($line['roaming'])) {
 				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
 			} else {
 				$arate = $this->getRowRate($line);
