@@ -249,7 +249,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$calledNumberField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . $row['usaget'] . '.called_number_field', Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.called_number_field', 'called_number'));
 		$countryCodeField = Billrun_Config::getInstance()->getConfigValue('rate_pipeline.' . static::$type . '.country_code_field', 'location_mcc');
 		$countryCode = $row->get($countryCodeField);
-		if ($countryCode === null) {
+		if (!$countryCode && $countryCode != 0) {
 			$countryCode = Billrun_Factory::config()->getConfigValue('rate.default_mcc', 425);
 		}
 		$countryCode = substr($countryCode, 0, 3);
