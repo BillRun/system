@@ -474,7 +474,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function insertRoamingGgsn($lines) {
 		$roamingLines = array();
 		foreach ($lines as $line) {
-			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.)/', $line['sgsn_address'])) {
+			if (!preg_match('/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.131|37\.142\.167)/', $line['sgsn_address'])) {
 				$roamingLines[] = $line;
 			}
 		}
