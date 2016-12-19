@@ -37,7 +37,7 @@ class SettingsAction extends ApiAction {
 		$categoryPermissionsFile = self::PERMISSIONS_PATH;
 
 		$permissions = parse_ini_file($categoryPermissionsFile);
-		$this->enforceCategoryPermissions($category, $data, $permissions);
+		return $this->enforceCategoryPermissions($category, $data, $permissions);
 	}
 	
 	/**
@@ -47,10 +47,12 @@ class SettingsAction extends ApiAction {
 	 * @param array $permissions - The array of permissions
 	 */
 	protected function enforceCategoryPermissions($category, $data, &$permissions) {
-		if(isset($permissions[$category])) {
+		$enforced = false;
+		if(!empty($permissions[$category])) {
 			// Set the permission level to admin
 			$this->permissionLevel = $permissions[$category];
 			$this->allowed();
+			$enforced = true;
 		}
 
 		// Check if the data contains more category keys
@@ -59,6 +61,8 @@ class SettingsAction extends ApiAction {
 				$this->enforceCategoryPermissions($category . '.' . $key, $value, $permissions);
 			}
 		}
+		
+		return $enforced;
 	}
 
 		/**
@@ -80,7 +84,7 @@ class SettingsAction extends ApiAction {
 		} 
 		
 		// Enforce permissions
-		$this->enforcePermissions($category, $data);
+		$enforced = $this->enforcePermissions($category, $data);
 		
 		// Forcing 'ROOT' to be an empty category name
 		if($category === 'ROOT') {
@@ -90,6 +94,16 @@ class SettingsAction extends ApiAction {
 		$action = $request->get('action');
 		$success = true;
 		$output = array();
+		
+		// If permissions were not yet enforced, enforce them now.
+		if(!$enforced) {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+			if($action === 'get') {
+				$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+			}
+			$this->allowed();
+		}
+		
 		if ($action === 'set') {
 			$success = $this->model->updateConfig($category, $data);
 		} else if ($action === 'unset') {
