@@ -32,12 +32,16 @@ class SettingsAction extends ApiAction {
 	 * Enforce permissions on the settings API
 	 * @param string $category - The requested category
 	 * @param array $data - The requested data.
+	 * @param string $action - Read or write.
 	 */
-	protected function enforcePermissions($category, $data) {
+	protected function enforcePermissions($category, $data, $action) {
 		$categoryPermissionsFile = self::PERMISSIONS_PATH;
 
-		$permissions = parse_ini_file($categoryPermissionsFile);
-		return $this->enforceCategoryPermissions($category, $data, $permissions);
+		$permissions = parse_ini_file($categoryPermissionsFile, true);
+		if(!$this->enforceCategoryPermissions($category, $data, $permissions[$action])) {
+			$this->permissionLevel = $action;
+			$this->allowed();
+		}
 	}
 	
 	/**
@@ -83,26 +87,23 @@ class SettingsAction extends ApiAction {
 			return TRUE;
 		} 
 		
+		// TODO: Create action managers for the settings module.
+		$action = $request->get('action');
+		$actionName = "write";
+		if($action === 'get') {
+			$actionName = "read";
+		}
+		
 		// Enforce permissions
-		$enforced = $this->enforcePermissions($category, $data);
+		$this->enforcePermissions($category, $data, $actionName);
 		
 		// Forcing 'ROOT' to be an empty category name
 		if($category === 'ROOT') {
 			$category = "";
 		}
-		// TODO: Create action managers for the settings module.
-		$action = $request->get('action');
+		
 		$success = true;
 		$output = array();
-		
-		// If permissions were not yet enforced, enforce them now.
-		if(!$enforced) {
-			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
-			if($action === 'get') {
-				$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
-			}
-			$this->allowed();
-		}
 		
 		if ($action === 'set') {
 			$success = $this->model->updateConfig($category, $data);
