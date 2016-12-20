@@ -7,10 +7,10 @@
  */
 
 /**
- * Id type translator
+ * Boolean type translator
  *
  * @package  Api
- * @since    5.2
+ * @since    5.3
  */
 class Api_Translator_BooleanModel extends Api_Translator_TypeModel {
 	
