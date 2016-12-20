@@ -76,7 +76,14 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Collection Steps
 	 */
 	protected static $collectionSteps = null;
-
+	
+	/**
+	 * Collection Steps instance
+	 * 
+	 * @var Billrun_Billrun Collection Steps
+	 */
+	protected static $templateTokens = null;
+	
 	/**
 	 * Balance instance
 	 * 
@@ -309,6 +316,20 @@ class Billrun_Factory {
 
 		return self::$collectionSteps;
 	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function templateTokens() {
+		if (!self::$templateTokens) {
+			self::$templateTokens = Billrun_Template_Token_Base::getInstance();
+		}
+
+		return self::$templateTokens;
+	}
+	
 	/**
 	 * method to retrieve a balance instance
 	 * 
