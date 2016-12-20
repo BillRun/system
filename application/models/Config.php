@@ -440,6 +440,11 @@ class ConfigModel {
 			throw new Exception("Category not found " . $category);
 		}
 		$currentConfig = $newConfig;
+		$value = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		if(Billrun_Config::isComplex($value)) {
+			return $this->updateComplex($currentConfig, $category, $data, $value);
+		}
+		
 		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		return $result;
 	}
