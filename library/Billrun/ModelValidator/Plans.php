@@ -21,10 +21,11 @@ class Billrun_ModelValidator_Plans extends Billrun_ModelValidator_Base {
 	 */
 	protected function validateName($data) {
 		if (!isset($data['name'])) {
-			return false;
+			return 'Plan must have a name';
 		}
 		$name = strtolower($data['name']);
-		return !in_array($name, array('base', 'groups'));
+		$invalidPlanNames = array('base', 'groups');
+		return in_array($name, $invalidPlanNames) ? 'Plan name cannot be one of the following: ' . implode(', ', $invalidPlanNames) : true;
 	}
 
 	/**
