@@ -148,9 +148,6 @@ class ConfigModel {
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if (!empty($category) && $valueInCategory === null) {
-			if ($category == 'menu') {
-				return array('main' => array('tmp' => 'tmp'));
-			}
 			$result = $this->handleGetNewCategory($category, $data, $currentConfig);
 			return $result;
 		}
