@@ -48,7 +48,7 @@ class SettingsAction extends ApiAction {
 		}
 		
 		$action = $request->get('action');
-		$this->enforcePermissions($category, $action);
+		$this->enforcePermissions($data, $category, $action);
 		$success = true;
 		$output = array();
 		if ($action === 'set') {
@@ -69,7 +69,7 @@ class SettingsAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ; // this can be override by enforcePermissions method
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN; // this can be override by enforcePermissions method
 	}
 	
 	/**
@@ -78,10 +78,13 @@ class SettingsAction extends ApiAction {
 	 * @param string $category category requested
 	 * @param string $action action required to do (set, unset, get)
 	 */
-	protected function enforcePermissions($category, $action) {
-		$this->permissionLevel = 'read';
+	protected function enforcePermissions($data, $category, $action) {
+		$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		
 		if (empty($action)) {
 			$action = 'get';
+		} else if ($action == 'set' || $action == 'unset') {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 		}
 		$config = Billrun_Factory::config();
 		$config->addConfig(APPLICATION_PATH . "/conf/config/permissions.ini");
