@@ -38,6 +38,12 @@ class SettingsAction extends ApiAction {
 		$categoryPermissionsFile = self::PERMISSIONS_PATH;
 
 		$permissions = parse_ini_file($categoryPermissionsFile, true);
+		if(!isset($permissions[$action])) {
+			// TODO: Error code 3 suppose to mean 'invalid value'
+			$invalidField = new Billrun_DataTypes_InvalidField("action", 3);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+		
 		if(!$this->enforceCategoryPermissions($category, $data, $permissions[$action])) {
 			$this->permissionLevel = $action;
 			$this->allowed();
@@ -88,14 +94,10 @@ class SettingsAction extends ApiAction {
 		} 
 		
 		// TODO: Create action managers for the settings module.
-		$action = $request->get('action');
-		$actionName = "write";
-		if($action === 'get') {
-			$actionName = "read";
-		}
+		$action = $this->getActionValue($request);
 		
 		// Enforce permissions
-		$this->enforcePermissions($category, $data, $actionName);
+		$this->enforcePermissions($category, $data, $action);
 		
 		// Forcing 'ROOT' to be an empty category name
 		if($category === 'ROOT') {
@@ -122,6 +124,24 @@ class SettingsAction extends ApiAction {
 		return TRUE;
 	}
 
+	/**
+	 * Get the action value from the request.
+	 * @param type $request
+	 * @return type
+	 * @throws Billrun_Exceptions_InvalidFields
+	 */
+	protected function getActionValue($request) {
+		$rawAction = $request->get('action');
+		if(!is_string($rawAction)) {
+			// TODO: The error code here (2) suppose to mean 'invalid type'
+			$invalidField = new Billrun_DataTypes_InvalidField("action", 2);
+			throw new Billrun_Exceptions_InvalidFields(array($invalidField));
+		}
+		
+		// Return the last three characters
+		return substr($rawAction, -3);
+	}
+	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
