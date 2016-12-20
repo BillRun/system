@@ -165,7 +165,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['to'] = $recordToSet['to'];
 		
 		// If the prepaid record is shared, then set the sid value to 0.
-		if(isset($prepaidRecord['shared']) && $prepaidRecord['shared']) {
+		if(!empty($prepaidRecord['shared'])) {
 			$defaultBalance['sid'] = 0;
 		} else {
 			$defaultBalance['sid'] = $subscriber['sid'];

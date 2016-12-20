@@ -378,7 +378,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 
 		$defaultBalance['aid'] = $subscriber['aid'];
 		// If the charging plan record is shared, then set the sid to 0.
-		if(isset($chargingByValue['shared']) && $chargingByValue['shared']) {
+		if(!empty($chargingByValue['shared'])) {
 			$defaultBalance['sid'] = 0;
 		} else {
 			$defaultBalance['sid'] = $subscriber['sid'];
