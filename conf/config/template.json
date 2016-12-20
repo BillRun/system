@@ -29,8 +29,5 @@
 			"date"
 		]
 	},
-	"menu" : {
-		"t": "menu",
-		"v": {"main" : { "tmp" : "tmp" }}
-	}
+	"menu" : { "main" : { "tmp" : "tmp" } }
 }
