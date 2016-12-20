@@ -67,7 +67,7 @@ abstract class Api_Translator_TypeModel {
 		// Translate the value.
 		$translated = $this->translateField($input[$fieldName]);
 
-		if (!$translated) {
+		if (!$this->valid($translated)) {
 			$invalidField = new Billrun_DataTypes_InvalidField($fieldName, 3);
 			return $invalidField;
 		}
@@ -164,6 +164,16 @@ abstract class Api_Translator_TypeModel {
 				break;
 		}
 		return $value;
+	}
+	
+	/**
+	 * method to validate the trasnlated value.
+	 * 
+	 * @param mixed $data the data to check
+	 * @return boolean true if valid else false
+	 */
+	protected function valid($data) {
+		return $data !== FALSE; // TODO in case the value of a field is false this will be failed
 	}
 
 }

@@ -86,9 +86,10 @@ class Models_Entity {
 	public function create() {
 		unset($this->update['_id']);
 		if ($this->duplicateCheck($this->update)) {
-			$this->insert($this->update);
+			$status = $this->insert($this->update);
+			return isset($status['ok']) && $status['ok'];
 		} else {
-			throw new Billrun_Exceptions_Api(0, array(), 'Username already exists');
+			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
 		}
 	}
 
@@ -97,7 +98,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert($data) {
-		$this->collection->insert($data);
+		return $this->collection->insert($data, array('w' => 1));
 	}
 
 	/**
@@ -125,10 +126,20 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
-		$this->dbUpdate($this->query, $this->update);
+		$status = $this->dbUpdate($this->query, $this->update);
+		if (!isset($status['nModified']) || !$status['nModified']) {
+			return false;
+		}
+		return true;
 	}
 
 	public function closeandnew() {
+//		$updateMethod = Billrun_Util::getFieldVal($this->config['update_method'], 'update');
+		$_id = $this->update['_id'];
+		$closeAndNewPreUpdateQuery = array('_id' => $_id);
+		$closeAndNewPreUpdateOperation = array('$set' => array('to' => $this->update['from']));
+		$res = $this->collection->update($closeAndNewPreUpdateQuery, $closeAndNewPreUpdateOperation);
+		// todo: check if update success -> if not break
 		$this->dbUpdate($this->query, $this->update);
 	}
 
@@ -138,14 +149,6 @@ class Models_Entity {
 	 * @param type $data
 	 */
 	protected function dbUpdate($query, $data) {
-		$updateMethod = Billrun_Util::getFieldVal($this->config['update_method'], 'update');
-		if ($updateMethod == 'closeandnew') {
-			$_id = $data['_id'];
-			$closeAndNewPreUpdateQuery = array('_id' => $_id);
-			$closeAndNewPreUpdateOperation = array('$set' => array('to' => $data['from']));
-			$res = $this->collection->update($closeAndNewPreUpdateQuery, $closeAndNewPreUpdateOperation);
-			// todo: check if update success -> if not break
-		}
 		unset($data['_id']);
 		$update = array(
 			'$set' => $data,
