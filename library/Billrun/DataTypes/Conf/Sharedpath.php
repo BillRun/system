@@ -11,9 +11,13 @@
 class Billrun_DataTypes_Conf_Sharedpath extends Billrun_DataTypes_Conf_Base {
 	public function __construct($obj) {
 		$path = $obj['v'];
-		$sharedPath = str_replace('/logs/', APPLICATION_PATH . '/logs/' . Billrun_Factory::config()->getTenant() . '/', $path);
-		
-		$this->val = $sharedPath;
+		$tenantPath = str_replace('/logs/', APPLICATION_PATH . '/logs/' . Billrun_Factory::config()->getTenant() . '/', $path);
+		if (!file_exists($tenantPath)) {
+			@mkdir(dirname($tenantPath), 0777, true);
+			@touch($tenantPath);
+			@chmod($tenantPath, 0777);
+		}
+		$this->val = $tenantPath;
 	}
 	
 	public function validate() {
