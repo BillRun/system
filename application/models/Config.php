@@ -294,8 +294,10 @@ class ConfigModel {
 	protected function loadTemplate() {
 		// Load the config template.
 		// TODO: Move the file path to a constant
-		$templateFileName = APPLICATION_PATH . "/conf/config/template.ini";
-		return parse_ini_file($templateFileName, 1);
+		$templateFileName = APPLICATION_PATH . "/conf/config/template.json";
+		$string = file_get_contents($templateFileName);
+		$json_a = json_decode($string, true);
+		return $json_a;
 	}
 	
 	/**
@@ -329,6 +331,19 @@ class ConfigModel {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function _updateConfig(&$currentConfig, $category, $data) {
+		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+
+		if ($valueInCategory === null) {
+			$result = $this->handleSetNewCategory($category, $data, $currentConfig);
+			return $result;
+		}
+
+		// Check if complex object.
+		if (Billrun_Config::isComplex($valueInCategory)) {
+			// TODO: Do we allow setting?
+			return $this->updateComplex($currentConfig, $category, $data, $valueInCategory);
+		}
+		
 		// TODO: if it's possible to receive a non-associative array of associative arrays, we need to also check isMultidimentionalArray
 		if (Billrun_Util::isAssoc($data)) {
 			foreach ($data as $key => $value) {
@@ -338,19 +353,11 @@ class ConfigModel {
 			}
 			return 1;
 		}
-
-		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
-
-		if ($valueInCategory === null) {
-			$result = $this->handleSetNewCategory($category, $data, $currentConfig);
-			return $result;
-		}
-
-		// Check if complex object.
-		if (!Billrun_Config::isComplex($valueInCategory)) {
-			// TODO: Do we allow setting?
-			return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
-		}
+		
+		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
+	}
+	
+	protected function updateComplex(&$currentConfig, $category, $data, $valueInCategory) {
 		// Set the value for the complex object,
 		$valueInCategory['v'] = $data;
 
@@ -379,7 +386,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		
+		Billrun_Factory::log("Tempalte: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;

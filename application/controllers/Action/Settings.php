@@ -15,8 +15,9 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since       4.0
  */
 class SettingsAction extends ApiAction {
+
 	use Billrun_Traits_Api_UserPermissions;
-	
+
 	protected $model;
 
 	/**
@@ -30,7 +31,6 @@ class SettingsAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$this->initializeModel();
 		$category = $request->get('category');
@@ -43,11 +43,12 @@ class SettingsAction extends ApiAction {
 		if (!($category)) {
 			$this->setError('Missing category parameter', $request->getPost());
 			return TRUE;
-		} else if($category === 'ROOT') {
+		} else if ($category === 'ROOT') {
 			$category = "";
 		}
-		// TODO: Create action managers for the settings module.
+		
 		$action = $request->get('action');
+		$this->enforcePermissions($data, $category, $action);
 		$success = true;
 		$output = array();
 		if ($action === 'set') {
@@ -62,13 +63,36 @@ class SettingsAction extends ApiAction {
 				'status' => $success ? 1 : 0,
 				'desc' => $success ? 'success' : 'error',
 				'input' => $request->getPost(),
-				'details' => is_bool($output)? array() : $output,
+				'details' => is_bool($output) ? array() : $output,
 		)));
 		return TRUE;
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN; // this can be override by enforcePermissions method
+	}
+	
+	/**
+	 * method to enforce permissions, if applied by configuration
+	 * 
+	 * @param string $category category requested
+	 * @param string $action action required to do (set, unset, get)
+	 */
+	protected function enforcePermissions($data, $category, $action) {
+		$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		
+		if (empty($action)) {
+			$action = 'get';
+		} else if ($action == 'set' || $action == 'unset') {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+		}
+		$config = Billrun_Factory::config();
+		$config->addConfig(APPLICATION_PATH . "/conf/config/permissions.ini");
+		$configPermissions = $config->getConfigValue('config.permissions');
+		if (isset($configPermissions[$category])) {
+			$this->permissionLevel = $configPermissions[$category];
+		}
+		$this->allowed();
 	}
 
 }
