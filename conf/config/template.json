@@ -29,5 +29,5 @@
 			"date"
 		]
 	},
-	"menu" : []
+	"menu" : { "main" : { "tmp" : "tmp" } }
 }
