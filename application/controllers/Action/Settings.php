@@ -89,8 +89,8 @@ class SettingsAction extends ApiAction {
 		$config = Billrun_Factory::config();
 		$config->addConfig(APPLICATION_PATH . "/conf/config/permissions.ini");
 		$configPermissions = $config->getConfigValue('config.permissions');
-		if (isset($configPermissions[$action][$category])) {
-			$this->permissionLevel = $configPermissions[$action][$category];
+		if (isset($configPermissions[$category])) {
+			$this->permissionLevel = $configPermissions[$category];
 		}
 		$this->allowed();
 	}
