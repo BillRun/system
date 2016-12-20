@@ -14,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * 
  * @since    2.6
  */
-class CollectAction extends ApiAction {
+class  Run_collect_stepAction extends ApiAction {
 
 	public function execute() {
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
@@ -26,10 +26,12 @@ class CollectAction extends ApiAction {
 			if (!is_array($aids) || json_last_error()) {
 				return $this->setError('Illegal account ids', $request->getPost());
 			}
-			$result = static::collect($aids);
-			if (RUNNING_FROM_CLI) {
-				foreach ($result as $colection_state => $aids) {
-					$this->getController()->addOutput("aids " . $colection_state . " : " . implode(", ", $aids));
+			$result = static::runCollectStep($aids);
+			if(RUNNING_FROM_CLI) {
+				foreach ($result as $status => $aids) {
+					foreach ($aids as $aid => $steps) {
+						$this->getController()->addOutput("Collection step run status '" . $status . "', for AID " . $aid . " run steps : " . implode(", ", $steps));
+					}
 				}
 			} else {
 				$this->getController()->setOutput(array(array(
@@ -44,13 +46,9 @@ class CollectAction extends ApiAction {
 		}
 	}
 
-	public static function collect($aids = array()) {
-		$account = Billrun_Factory::account();
-		$markedAsInCollection = $account->getInCollection($aids);
-		$reallyInCollection = Billrun_Bill::getContractorsInCollection($aids);
-		$updateCollectionStateChanged = array('in_collection' => array_diff_key($reallyInCollection, $markedAsInCollection), 'out_of_collection' => array_diff_key($markedAsInCollection, $reallyInCollection));
-		$result = $account->updateCrmInCollection($updateCollectionStateChanged);
-//		$subscriber->markCollectionStepsCompleted($aids);
+	public static function runCollectStep($aids = array()) {
+		$collectionSteps = Billrun_Factory::collectionSteps();
+		$result = $collectionSteps->runCollectStep($aids);
 		return $result;
 	}
 

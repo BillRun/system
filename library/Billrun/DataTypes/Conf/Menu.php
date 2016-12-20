@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
@@ -7,14 +6,12 @@
  */
 
 /**
- * In array type validator.
- *
- * @since 5.1
+ * Wrapper class for a complex menu value object
  */
-class Billrun_TypeValidator_Inarray extends Billrun_TypeValidator_Base {
-
-	public function validate($value, $params = array()) {
-		return in_array($value, $params);
+class Billrun_DataTypes_Conf_Menu extends Billrun_DataTypes_Conf_Base {
+	
+	public function validate() {
+		// TODO: Add validations.
+		return true;
 	}
-
 }
