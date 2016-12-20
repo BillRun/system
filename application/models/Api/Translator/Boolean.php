@@ -34,7 +34,7 @@ class Api_Translator_BooleanModel extends Api_Translator_TypeModel {
 	 * @return boolean true if valid else false
 	 */
 	protected function valid($data) {
-		return !is_null($data); // TODO in case the value of a field is false this will be failed
+		return !is_null($data);
 	}
 
 }

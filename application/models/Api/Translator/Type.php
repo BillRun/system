@@ -173,7 +173,7 @@ abstract class Api_Translator_TypeModel {
 	 * @return boolean true if valid else false
 	 */
 	protected function valid($data) {
-		return $data !== FALSE; // TODO in case the value of a field is false this will be failed
+		return $data !== FALSE;
 	}
 
 }
