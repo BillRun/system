@@ -16,9 +16,9 @@
 class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_TaskStrategy {
 
 	public function run($task) {
-		$subject = $task['content']['subject'];
 		$account = $this->getAccount($task['aid']);
-		$body = $this->updateBodyDynamicData($task, $account);
+		$body = $this->updateDynamicData($task['content']['body'], $account);
+		$subject = $this->updateDynamicData($task['content']['subject'], $account);
 		$res = Billrun_Util::sendMail($subject, $body, $account->email, array(), true);
 		return !empty($res);
 	}
@@ -29,30 +29,9 @@ class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_Ta
 		return $billrunAaccount;
 	}
 
-	protected function updateBodyDynamicData($task, $account) {
-		$body = $task['content']['body'];
-		$translations = $this->getTranslations();
-		foreach ($translations as $translation) {
-			switch ($translation) {
-				case "Customer Name":
-					$replace = $account->firstname . " " . $account->lastname;
-					$body = str_replace("[[$translation]]", $replace, $body);
-					break;
-				case "Debt":
-					$balance = Billrun_Bill::getTotalDueForAccount($task['aid']);
-					$replace = $balance['total'];
-					$body = str_replace("[[$translation]]", $replace, $body);
-					break;
-			}
-		}
-		return $body;
+	protected function updateDynamicData($string, $account) {
+		$params = array('account' => $account);
+		$replaced_string = Billrun_Factory::templateTokens()->replaceTokens($string, $params);
+		return $replaced_string;
 	}
-
-	protected function getTranslations() {
-		return array(
-			"Customer Name",
-			"Debt",
-		);
-	}
-
 }
