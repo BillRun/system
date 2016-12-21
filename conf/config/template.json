@@ -29,5 +29,6 @@
 			"date"
 		]
 	},
-	"menu" : { "main" : { "tmp" : "tmp" } }
+	"menu" : { "main" : { "tmp" : "tmp" } },
+	"template_token":{}
 }

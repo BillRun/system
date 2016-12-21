@@ -16,9 +16,14 @@
 class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_TaskStrategy {
 
 	public function run($task) {
+		$collection = Billrun_Bill::getTotalDueForAccount($task['aid'], false);
 		$account = $this->getAccount($task['aid']);
-		$body = $this->updateDynamicData($task['content']['body'], $account);
-		$subject = $this->updateDynamicData($task['content']['subject'], $account);
+		$params = array(
+			'account' => $account,
+			'collection' => $collection,
+		);
+		$body = $this->updateDynamicData($task['content']['body'], $params);
+		$subject = $this->updateDynamicData($task['content']['subject'], $params);
 		$res = Billrun_Util::sendMail($subject, $body, $account->email, array(), true);
 		return !empty($res);
 	}
@@ -29,8 +34,7 @@ class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_Ta
 		return $billrunAaccount;
 	}
 
-	protected function updateDynamicData($string, $account) {
-		$params = array('account' => $account);
+	protected function updateDynamicData($string, $params) {
 		$replaced_string = Billrun_Factory::templateTokens()->replaceTokens($string, $params);
 		return $replaced_string;
 	}

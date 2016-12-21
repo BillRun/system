@@ -13,28 +13,28 @@
  * @since    5.2
  * @todo Create unit tests for this module
  */
-class Billrun_Template_Token_Tokens_Account extends Billrun_Template_Token_Tokens_Abstract {
+class Billrun_Template_Token_Replacers_Account extends Billrun_Template_Token_Replacers_Abstract {
 	
-	protected $account = null;
-	
-	function __construct($account) {
-       parent::__construct($account);
-       $this->account = $account;
-	}
-   
 	public function replaceTokens($string) {
+		if(is_null($this->data)){
+			return '[]';
+		}
 		switch ($string) {
-			case 'last_name': return $this->account->lastname;
-			case 'first_name': return $this->account->firstname;
-			default: return ''; 
+			case 'last_name':
+				return $this->data->lastname;
+			case 'first_name':
+				return $this->data->firstname;
+			default:
+				return '';
 		}
 	}
-	
-	protected function setAvailableTokens(){
+
+	protected function setAvailableTokens() {
 		$this->availableTokens = array('last_name', 'first_name');
 	}
-	
-	protected function setCategory(){
+
+	protected function setCategory() {
 		$this->category = 'account';
 	}
+
 }
