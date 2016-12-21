@@ -25,14 +25,14 @@ abstract class Billrun_Template_Token_Replacers_Abstract {
 	}
 	
 	/**
-	 * Set class class data
+	 * Set class class data to replace
 	 */
 	public function setData($data = null) {
 		$this->data = $data;
 	}
 
 	/**
-	 * Get available placeholders
+	 * Get available replacer tokens
 	 * @return Array
 	 */
 	public function getAvailableTokens() {
@@ -40,8 +40,7 @@ abstract class Billrun_Template_Token_Replacers_Abstract {
 	}
 
 	/**
-	 * replace placeholder string
-	 * @return String
+	 * Replace placeholder in string
 	 */
 	abstract public function replaceTokens($string);
 

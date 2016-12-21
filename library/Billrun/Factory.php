@@ -321,7 +321,7 @@ class Billrun_Factory {
 	}
 	
 	/**
-	 * method to retrieve the account instance
+	 * method to retrieve the Template Tokens instance
 	 * 
 	 * @return Billrun_Subscriber
 	 */

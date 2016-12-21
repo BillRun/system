@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-class Billrun_Template_Token_Base extends Billrun_Base {
+class Billrun_Template_Token_Base {
 
 	/**
 	 * Base array instances container
@@ -15,14 +15,12 @@ class Billrun_Template_Token_Base extends Billrun_Base {
 	 */
 	static protected $instance = array();
 	protected $replacers = array();
-	protected $conf = '';
-	protected $tokensCategories = '';
 	protected $replacer_class_prefix = 'Billrun_Template_Token_Replacers_';
+	protected $replacer_token_pattern = '/(\[{2}[\w\d]+::[\w\d]+\]{2})/';
 	
 	public function __construct($settings) {
-		$this->conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/TemplateTokens/conf.ini'));
-		$this->tokensCategories = $this->conf->getConfigValue("templateTokens.enabled", array());
-		$this->initTokensReplacers();
+		$tokens_categories = $this->getTokensCategories();
+		$this->initTokensReplacers($tokens_categories);
 	}
 
 	/**
@@ -47,21 +45,12 @@ class Billrun_Template_Token_Base extends Billrun_Base {
 		self::$instance[$stamp] = new $called_class($args);
 		return self::$instance[$stamp];
 	}
-
-	public function getTokensCategories() {
-		return $this->tokensCategories;
-	}
 	
-	protected function initTokensReplacers() {
-		$tokens_categories = $this->getTokensCategories();
-		foreach ($tokens_categories as $category) {
-			if(!isset($this->replacers[$category])){
-				$replacer_class = $this->replacer_class_prefix . ucfirst($category);
-				$this->replacers[$category] = new $replacer_class();
-			}
-		}
-	}
-
+	/**
+	 * Return avalible tokens array by category
+	 * 
+	 * @return Array
+	 */
 	public function getTokens() {
 		$tokens = array();
 		foreach ($this->replacers as $category => $replacer) {
@@ -70,6 +59,13 @@ class Billrun_Template_Token_Base extends Billrun_Base {
 		return $tokens;
 	}
 
+	/**
+	 * Function to replace string tokens
+	 * 
+	 * @param String $string the string with tokens
+	 * @param Array $params data for replaccers by categort
+	 * @return String with replaced tokens
+	 */
 	public function replaceTokens($string, $params) {
 		$string_tokens = $this->parseStringTokens($string);
 		//get all unique tokens
@@ -88,10 +84,27 @@ class Billrun_Template_Token_Base extends Billrun_Base {
 		return $string;
 	}
 
+	protected function getTokensCategories() {
+		$conf = Billrun_Config::getInstance(new Yaf_Config_Ini(APPLICATION_PATH . '/conf/TemplateTokens/conf.ini'));
+		$tokens_categories = $conf->getConfigValue("templateTokens.enabled", array());
+		return $tokens_categories;
+	}
+
+	protected function initTokensReplacers($tokens_categories) {
+		if(!empty($tokens_categories) && is_array($tokens_categories)){
+			foreach ($tokens_categories as $category) {
+				if(!isset($this->replacers[$category])){
+					$replacer_class = $this->replacer_class_prefix . ucfirst($category);
+					$this->replacers[$category] = new $replacer_class();
+				}
+			}
+		}
+	}
+
 	protected function parseStringTokens($string) {
 		$tokens = array();
 		$matches = array();
-		preg_match_all('/(\[{2}[\w\d]+::[\w\d]+\]{2})/', $string, $matches);
+		preg_match_all($this->replacer_token_pattern, $string, $matches);
 		if (!empty($matches[0]) && is_array($matches[0])) {
 			foreach ($matches[0] as $matche) {
 				$trimed_matche = trim($matche, "[]");
