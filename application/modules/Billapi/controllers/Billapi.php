@@ -64,6 +64,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$res = $entityModel->{$this->action}();
 		$this->output->status = 1;
 		$this->output->details = $res;
+		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
 	}
 
 	public function init() {
@@ -81,8 +82,13 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-		
-
+		$pluginStatus = true;
+		Billrun_Factory::dispatcher()->trigger('beforeBillApi', array($this->collection, $this->action, &$request, &$pluginStatus));
+		if ($pluginStatus !== true) {
+			$errorCode = isset($pluginStatus['error']['code']) ? $pluginStatus['error']['code'] : $this->errorBase;
+			$errorMsg = isset($pluginStatus['error']['message']) ? $pluginStatus['error']['message'] : 'Operation was cancelled due to 3rd party plugin';
+			throw new Billrun_Exceptions_Api($errorCode, array(), $errorMsg);
+		}
 	}
 
 	/**
