@@ -141,11 +141,12 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
-		$to = $this->update['from'];
-		$to->sec -= 1;
+		if (!isset($this->update['from'])) {
+			return false;
+		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
-				'to' => $to
+				'to' => new MongoDate($this->update['from']->sec-1)
 			)
 		);
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
@@ -154,7 +155,8 @@ class Models_Entity {
 		}
 
 		unset($this->update['_id']);
-		return $this->insert($this->update);
+		$status = $this->insert($this->update);
+		return isset($status['ok']) && $status['ok'];
 	}
 
 	/**
