@@ -428,7 +428,7 @@ class Billrun_Util {
 	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
 		$mailer = Billrun_Factory::mailer()->setSubject($subject);
 		if($html){
-			$mailer->setBodyHtml($body);
+			$mailer->setBodyHtml($body, "UTF-8");
 		} else {
 			$mailer->setBodyText($body);
 		}

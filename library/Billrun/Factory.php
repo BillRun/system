@@ -230,6 +230,9 @@ class Billrun_Factory {
 				self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
 				return false;
 			}
+		} else {
+			self::$mailer->clearRecipients()->clearReplyTo()
+				->clearSubject();
 		}
 		return self::$mailer;
 	}
