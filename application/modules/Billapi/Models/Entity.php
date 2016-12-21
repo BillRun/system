@@ -133,14 +133,28 @@ class Models_Entity {
 		return true;
 	}
 
+	/**
+	 * method to close the current entity and open a new one (for track changes of entities)
+	 * 
+	 * @return mixed array of insert status, on failure false
+	 * 
+	 * @todo avoid overlapping of entities
+	 */
 	public function closeandnew() {
-//		$updateMethod = Billrun_Util::getFieldVal($this->config['update_method'], 'update');
-		$_id = $this->update['_id'];
-		$closeAndNewPreUpdateQuery = array('_id' => $_id);
-		$closeAndNewPreUpdateOperation = array('$set' => array('to' => $this->update['from']));
-		$res = $this->collection->update($closeAndNewPreUpdateQuery, $closeAndNewPreUpdateOperation);
-		// todo: check if update success -> if not break
-		$this->dbUpdate($this->query, $this->update);
+		$to = $this->update['from'];
+		$to->sec -= 1;
+		$closeAndNewPreUpdateOperation = array(
+			'$set' => array(
+				'to' => $to
+			)
+		);
+		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
+		if (!isset($res['nModified']) || !$res['nModified']) {
+			return false;
+		}
+
+		unset($this->update['_id']);
+		return $this->insert($this->update);
 	}
 
 	/**
