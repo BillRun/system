@@ -8,13 +8,13 @@
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
- * This class holds the api logic for the settings.
+ * This class holds api for saving and retrieving files.
  *
  * @package     Controllers
  * @subpackage  Action
- * @since       4.0
+ * @since       5.3
  */
-class LogoAction extends ApiAction {
+class FilesAction extends ApiAction {
 	use Billrun_Traits_Api_UserPermissions;
 	
 	/**
@@ -52,11 +52,6 @@ class LogoAction extends ApiAction {
 			return TRUE;
 		}
 		
-		if(!isset($query['filename'])) {
-			$invalidField = new Billrun_DataTypes_InvalidField('filename');
-			throw new Billrun_Exceptions_InvalidFields($invalidField);
-		}
-		
 		$metadata = $this->decodeValue('metadata', $request);
 		if (!$metadata) {
 			$metadata = array();
@@ -66,7 +61,7 @@ class LogoAction extends ApiAction {
 		$success = true;
 		$output = array();
 		if ($action === 'save') {
-			$success = $this->create($query['filename'], $metadata);
+			$success = $this->executeSave($query, $metadata);
 		} else if ($action === 'read') {
 			$success = $this->retrieve($query);
 		} else {
@@ -81,8 +76,24 @@ class LogoAction extends ApiAction {
 		)));
 		return TRUE;
 	}
-
-		/**
+	
+	/**
+	 * Execute the save logic, raises an exception if the filename was not provided.
+	 * @param array $query
+	 * @param array $metadata - Can be empty
+	 * @return boolean indication for success.
+	 * @throws Billrun_Exceptions_InvalidFields
+	 */
+	protected function executeSave(array $query, array $metadata) {
+		if(!isset($query['filename'])) {
+			$invalidField = new Billrun_DataTypes_InvalidField('filename');
+			throw new Billrun_Exceptions_InvalidFields($invalidField);
+		}
+		$filename = $query['filename'];
+		return $this->create($filename, $metadata);
+	}
+	
+	/**
 	 * Constuct the internal collection instance 
 	 * @param string $dbName - Database name
 	 * @param string $collName - Collection name
@@ -134,6 +145,9 @@ class LogoAction extends ApiAction {
 			return null;
 		}
 		
+		$this->validateFileSignature($gfsFile);
+		$this->validateFilePermissions($gfsFile);
+		
 		// Return the bytes array
 		$bytes = base64_encode($gfsFile->getBytes());
 		if($bytes === false) {
@@ -143,6 +157,46 @@ class LogoAction extends ApiAction {
 		}
 		
 		return $bytes;
+	}
+	
+	/**
+	 * Validate the file integrity
+	 * Currently the signature is MD5 (Calculated internaly by the mongo).
+	 * @param MongoGridFSFile $gfsFile
+	 */
+	protected function validateFileSignature(MongoGridFSFile $gfsFile) {
+		// Check signature.
+		$fileData = $gfsFile->{'file'};
+		
+		if(!isset($fileData['md5'])) {
+			$md5Field = new Billrun_DataTypes_InvalidField('md5');
+			throw new Billrun_Exceptions_InvalidFields(array($md5Field));
+		}
+		
+		// Validate the signature
+		$md5 = $fileData['md5'];
+		$calculated = md5($gfsFile->getBytes());
+		if(!hash_equals($calculated, $md5)) {
+			// Throw an invalid field exception on the md5
+			$md5Field = new Billrun_DataTypes_InvalidField('md5',-1);
+			throw new Billrun_Exceptions_InvalidFields(array($md5Field));
+		}
+	}
+	
+	/**
+	 * Validate the file permissions
+	 * TODO: What do we do if a file has no permissions?
+	 * @param MongoGridFSFile $gfsFile
+	 */
+	protected function validateFilePermissions(MongoGridFSFile $gfsFile) {
+		// Check permissions.
+		$fileData = $gfsFile->{'file'};
+		
+		// TODO: What if the file doesn't have permissions? Is that an error?
+		if(isset($fileData['permission'])) {
+			$this->permissionLevel = $fileData['permission'];
+			$this->allowed();
+		}
 	}
 	
 	protected function getPermissionLevel() {
