@@ -49,7 +49,7 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $sort = array();
-	
+
 	/**
 	 * Page number for get operations
 	 * @var int
@@ -62,6 +62,27 @@ class Models_Entity {
 	 */
 	protected $size = 10;
 
+	/**
+	 * the entity before the change
+	 * 
+	 * @var array
+	 */
+	protected $before = null;
+
+	/**
+	 * the entity after the change
+	 * 
+	 * @var array
+	 */
+	protected $after = null;
+
+	/**
+	 * the change action applied on the entity
+	 * 
+	 * @var string
+	 */
+	protected $action = 'change';
+
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
@@ -72,9 +93,24 @@ class Models_Entity {
 			}
 		}
 		$page = Billrun_Util::getFieldVal($params['page'], 0);
-		$this->page = Billrun_Util::IsIntegerValue($page)? $page : 0;
+		$this->page = Billrun_Util::IsIntegerValue($page) ? $page : 0;
 		$size = Billrun_Util::getFieldVal($params['size'], 10);
-		$this->size = Billrun_Util::IsIntegerValue($size)? $size : 10;
+		$this->size = Billrun_Util::IsIntegerValue($size) ? $size : 10;
+		if (isset($this->query['_id'])) {
+			$this->before = $this->loadById($this->query['_id']);
+		}
+	}
+
+	/**
+	 * method to load the entity from DB by _id
+	 * 
+	 * @param mixed $id MongoId or id (string) of the entity
+	 * 
+	 * @return array the entity loaded
+	 */
+	protected function loadById($id) {
+		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
+		return $this->collection->query($fetchQuery)->cursor()->current();
 	}
 
 	/**
@@ -84,6 +120,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	public function create() {
+		$this->action = 'create';
 		unset($this->update['_id']);
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
@@ -127,27 +164,30 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		$this->action = 'update';
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
+		$this->trackChanges($this->query['_id']);
 		return true;
 	}
 
 	/**
-	 * method to close the current entity and open a new one (for track changes of entities)
+	 * method to close the current entity and open a new one (for in-advance changes of entities)
 	 * 
 	 * @return mixed array of insert status, on failure false
 	 * 
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		$this->action = 'closeandnew';
 		if (!isset($this->update['from'])) {
 			return false;
 		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec-1)
+				'to' => new MongoDate($this->update['from']->sec - 1)
 			)
 		);
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
@@ -159,46 +199,8 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
-		$this->trackChanges($newId, $oldId, isset($this->update['key']) ? 'key' : 'name');
+		$this->trackChanges($newId, isset($this->update['key']) ? 'key' : 'name');
 		return isset($status['ok']) && $status['ok'];
-	}
-	
-	/**
-	 * method to track changes with audit trail
-	 * 
-	 * @param MongoId $newId the new id; if null take from update array _id field
-	 * @param MongoId $oldId the old id; if null this is new document (insert operation)
-	 * @param string $field the field name that will be used as the key
-	 * 
-	 * @return boolean true on success else false
-	 */
-	protected function trackChanges($newId = null, $oldId = null, $field = 'name') {
-		if (is_null($newId) && isset($this->update['_id'])) {
-			$newId = $this->update['_id'];
-		}
-		
-		try {
-			$user = Billrun_Factory::user();
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => 'change', // TODO: change to insert, close&new, remove, etc
-				'urt' => new MongoDate(),
-				'user' => array(
-					'oid' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				),
-				'collection' => $this->collectionName,
-				'old_oid' => $oldId,
-				'new_oid' => $newId,
-				'key' => isset($this->update[$field]) ? $this->update[$field] : null,
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
 	}
 
 	/**
@@ -242,15 +244,15 @@ class Models_Entity {
 	 */
 	protected function runQuery($query, $sort) {
 		$res = $this->collection->find($query);
-		
+
 		if ($this->page != -1) {
 			$res->skip($this->page * $this->size);
 		}
-		
+
 		if ($this->size != -1) {
 			$res->limit($this->size);
 		}
-		
+
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
@@ -264,11 +266,12 @@ class Models_Entity {
 	 * @return type
 	 */
 	public function delete() {
+		$this->action = 'delete';
 		if (!$this->query || empty($this->query)) { // currently must have some query
 			return;
 		}
 		$this->remove($this->query); // TODO: check return value (success to remove?)
-		$this->trackChanges(null, $this->query['_id'], $this->collectionName == 'rates' ? 'key' : 'name'); // assuming remove by _id
+		$this->trackChanges(null, $this->collectionName == 'rates' ? 'key' : 'name'); // assuming remove by _id
 	}
 
 	/**
@@ -277,6 +280,81 @@ class Models_Entity {
 	 */
 	protected function remove($query) {
 		$this->collection->remove($query);
+	}
+
+	/**
+	 * make entity expired by setting to field with datetime of now
+	 * 
+	 * @return boolean true on success else false
+	 */
+	public function close() {
+		$this->action = 'close';
+		if (!$this->query || empty($this->query)) { // currently must have some query
+			return;
+		}
+
+		if (!isset($this->update['to'])) {
+			$this->update = array(
+				'to' => new MongoDate()
+			);
+		}
+
+		$status = $this->dbUpdate($this->query, $this->update);
+		if (!isset($status['nModified']) || !$status['nModified']) {
+			return false;
+		}
+		$this->trackChanges($this->query['_id'], $this->collectionName == 'rates' ? 'key' : 'name');
+		return true;
+	}
+
+	/**
+	 * method to track changes with audit trail
+	 * 
+	 * @param MongoId $newId the new id; if null take from update array _id field
+	 * @param MongoId $oldId the old id; if null this is new document (insert operation)
+	 * @param string $field the field name that will be used as the key
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function trackChanges($newId = null, $field = 'name') {
+		if (is_null($newId) && isset($this->update['_id'])) {
+			$newId = $this->update['_id'];
+		}
+
+		if ($newId) {
+			$this->after = $this->loadById($newId);
+		}
+
+		try {
+			$user = Billrun_Factory::user();
+			if (!is_null($user)) {
+				$trackUser = array(
+					'_id' => $user->getMongoId()->getMongoID(),
+					'name' => $user->getUsername(),
+				);
+			} else { // in case 3rd party API update with token => there is no user
+				$trackUser = array(
+					'_id' => null,
+					'name' => '_3RD_PARTY_TOKEN_',
+				);
+			}
+			$logEntry = array(
+				'source' => 'audit',
+				'type' => $this->action,
+				'urt' => new MongoDate(),
+				'user' => $trackUser,
+				'collection' => $this->collectionName,
+				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
+				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
+				'key' => isset($this->update[$field]) ? $this->update[$field] : null,
+			);
+			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
+			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
+			return true;
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+		return false;
 	}
 
 }
