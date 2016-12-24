@@ -102,18 +102,6 @@ class Models_Entity {
 	}
 
 	/**
-	 * method to load the entity from DB by _id
-	 * 
-	 * @param mixed $id MongoId or id (string) of the entity
-	 * 
-	 * @return array the entity loaded
-	 */
-	protected function loadById($id) {
-		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
-		return $this->collection->query($fetchQuery)->cursor()->current();
-	}
-
-	/**
 	 * Create a new entity
 	 * @param type $data the entity to create
 	 * @return boolean
@@ -129,33 +117,6 @@ class Models_Entity {
 		} else {
 			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
 		}
-	}
-
-	/**
-	 * Inserts a document to the DB, as is
-	 * @param array $data
-	 */
-	protected function insert($data) {
-		return $this->collection->insert($data, array('w' => 1));
-	}
-
-	/**
-	 * Returns true iff current record does not overlap with existing records in the DB
-	 * @param array $data
-	 * @param array $ignoreIds
-	 * @return boolean
-	 */
-	protected function duplicateCheck($data, $ignoreIds = array()) {
-		$query = array();
-		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
-			$query[$fieldName] = $data[$fieldName];
-		}
-		if ($ignoreIds) {
-			$query['_id'] = array(
-				'$nin' => $ignoreIds,
-			);
-		}
-		return $query ? !$this->collection->query($query)->count() : TRUE;
 	}
 
 	/**
@@ -204,19 +165,6 @@ class Models_Entity {
 	}
 
 	/**
-	 * DB update currently limited to update of one record
-	 * @param type $query
-	 * @param type $data
-	 */
-	protected function dbUpdate($query, $data) {
-		unset($data['_id']);
-		$update = array(
-			'$set' => $data,
-		);
-		return $this->collection->update($query, $update);
-	}
-
-	/**
 	 * Gets an entity by a query
 	 * @param array $query
 	 * @param array $data
@@ -238,28 +186,6 @@ class Models_Entity {
 	}
 
 	/**
-	 * Run a DB query against the current collection
-	 * @param array $query
-	 * @return array the result set
-	 */
-	protected function runQuery($query, $sort) {
-		$res = $this->collection->find($query);
-
-		if ($this->page != -1) {
-			$res->skip($this->page * $this->size);
-		}
-
-		if ($this->size != -1) {
-			$res->limit($this->size);
-		}
-
-		if ($sort) {
-			$res = $res->sort($sort);
-		}
-		return array_values(iterator_to_array($res));
-	}
-
-	/**
 	 * Deletes an entity by a query
 	 * @param array $query
 	 * @param array $update
@@ -272,14 +198,6 @@ class Models_Entity {
 		}
 		$this->remove($this->query); // TODO: check return value (success to remove?)
 		$this->trackChanges(null, $this->collectionName == 'rates' ? 'key' : 'name'); // assuming remove by _id
-	}
-
-	/**
-	 * Performs a delete from the DB by a query
-	 * @param array $query
-	 */
-	protected function remove($query) {
-		$this->collection->remove($query);
 	}
 
 	/**
@@ -305,6 +223,49 @@ class Models_Entity {
 		}
 		$this->trackChanges($this->query['_id'], $this->collectionName == 'rates' ? 'key' : 'name');
 		return true;
+	}
+	
+	/**
+	 * DB update currently limited to update of one record
+	 * @param type $query
+	 * @param type $data
+	 */
+	protected function dbUpdate($query, $data) {
+		unset($data['_id']);
+		$update = array(
+			'$set' => $data,
+		);
+		return $this->collection->update($query, $update);
+	}
+
+	/**
+	 * Run a DB query against the current collection
+	 * @param array $query
+	 * @return array the result set
+	 */
+	protected function runQuery($query, $sort) {
+		$res = $this->collection->find($query);
+
+		if ($this->page != -1) {
+			$res->skip($this->page * $this->size);
+		}
+
+		if ($this->size != -1) {
+			$res->limit($this->size);
+		}
+
+		if ($sort) {
+			$res = $res->sort($sort);
+		}
+		return array_values(iterator_to_array($res));
+	}
+
+	/**
+	 * Performs a delete from the DB by a query
+	 * @param array $query
+	 */
+	protected function remove($query) {
+		$this->collection->remove($query);
 	}
 
 	/**
@@ -355,6 +316,45 @@ class Models_Entity {
 			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
 		}
 		return false;
+	}
+
+	/**
+	 * method to load the entity from DB by _id
+	 * 
+	 * @param mixed $id MongoId or id (string) of the entity
+	 * 
+	 * @return array the entity loaded
+	 */
+	protected function loadById($id) {
+		$fetchQuery = array('_id' => ($id instanceof MongoId) ? $id : new MongoId($id));
+		return $this->collection->query($fetchQuery)->cursor()->current();
+	}
+
+	/**
+	 * Inserts a document to the DB, as is
+	 * @param array $data
+	 */
+	protected function insert($data) {
+		return $this->collection->insert($data, array('w' => 1));
+	}
+
+	/**
+	 * Returns true if current record does not overlap with existing records in the DB
+	 * @param array $data
+	 * @param array $ignoreIds
+	 * @return boolean
+	 */
+	protected function duplicateCheck($data, $ignoreIds = array()) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query[$fieldName] = $data[$fieldName];
+		}
+		if ($ignoreIds) {
+			$query['_id'] = array(
+				'$nin' => $ignoreIds,
+			);
+		}
+		return $query ? !$this->collection->query($query)->count() : TRUE;
 	}
 
 }

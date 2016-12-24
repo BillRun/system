@@ -59,12 +59,17 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
 		$this->params['query'] = $translatedQuery;
 		$this->params['update'] = $translatedUpdate;
-
-		$entityModel = $this->getModel();
-		$res = $entityModel->{$this->action}();
+		$this->params['request'] = $this->getRequest()->getParams();
+		$this->params['settings'] = $this->settings;
+		$res = $this->runOperation();
 		$this->output->status = 1;
 		$this->output->details = $res;
 		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
+	}
+	
+	protected function runOperation() {
+		$entityModel = $this->getModel();
+		return $entityModel->{$this->action}();
 	}
 
 	public function init() {
