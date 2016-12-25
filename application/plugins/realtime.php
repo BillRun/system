@@ -54,6 +54,9 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function getRowCurrentUsagev($row) {
 		try {
+			if ($this->isPrepayChargeRequest($row)) {
+				return 0;
+			}
 			$lines_coll = Billrun_Factory::db()->linesCollection();
 			$query = $this->getRowCurrentUsagevQuery($row);
 			$line = current(iterator_to_array($lines_coll->aggregate($query)));
@@ -82,6 +85,9 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function isRebalanceRequired($row) {
+		if ($this->isPrepayChargeRequest($row)) {
+			return false;
+		}
 		if ($this->isReblanceOnLastRequestOnly($row)) {
 			$rebalanceTypes = array('final_request');
 		} else {
@@ -93,6 +99,10 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function isReblanceOnLastRequestOnly($row) {
 		$config = $this->getConfig($row);
 		return (isset($config['realtime']['rebalance_on_final']) && $config['realtime']['rebalance_on_final']);
+	}
+	
+	protected function isPrepayChargeRequest($row) {
+		return $row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST');
 	}
 
 	/**
