@@ -45,6 +45,11 @@
 		  "from": 1475280000,
 		  "plan_activation": 1475280000,
 		  "to": 1477872000,
+		  "services" : [
+			{
+				"name":"Floopy"
+			}
+		  ],
 		  "sid": 21
 		},
 		{

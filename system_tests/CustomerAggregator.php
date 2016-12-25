@@ -1,6 +1,6 @@
 <?php
 
-$CONFIG_FILE = '/home/tomfeigin/projects/billrun_tests/CustomerAggregator.ini';
+$CONFIG_FILE = '/home/tomfeigin/projects/billrun/system_tests/CustomerAggregator.ini';
 $CONFIGURATION = loadConfigurations();
 
 // connect to mongodb
@@ -94,9 +94,11 @@ function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceCol
 			continue;
 		}
 		
-		$subs = isset($invoice['subs']) ? (count($invoice['subs'])) : 0;
-		if($subs != $jsonData['subs']) {
-			echo($subs . "SUBSCRIBERS LISTED ISNTEAD OF " . $jsonData['subs'] . "!\n");
+		$subs = (!empty($invoice['subs'])) ? (count($invoice['subs'])) : 0;
+		$jsonSubs = (!empty($jsonData['subs'])) ? ($jsonData['subs']) : 0;
+		if($subs != $jsonSubs) {
+			echo($subs . " SUBSCRIBERS LISTED ISNTEAD OF " . $jsonSubs . "!\n");
+
 			continue;
 		}
 		
