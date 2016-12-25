@@ -1,0 +1,59 @@
+  {
+    "collection": "ratesCollection",
+    "data":
+    [
+      {
+        "key" : "CALL-USA","code" : "CALL-USA","description" : "Calls to United States of America","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : "0.5"
+                        }
+                    ]
+                },
+                "groups" : ["GROUPO","AAA","BBB"]
+            }
+        }
+      },
+      {
+        "key" : "CALL-EUROPE","code" : "CALL-EUROPE","description" : "Calls to Europe","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : "0.1"
+                        }
+                    ]
+                }
+            }
+        }
+      },
+      {
+        "key" : "VEG","code" : "VEG","description" : "rate for basic vegtables","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "gr" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : "0.1"
+                        }
+                    ]
+                },
+                "groups" : ["SR4","AAA"]
+            }
+        }
+      }
+    ]
+    }

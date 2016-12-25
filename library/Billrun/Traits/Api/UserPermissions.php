@@ -25,14 +25,34 @@ trait Billrun_Traits_Api_UserPermissions {
 	}
 	
 	/**
+	 * Function used to get the data to validate
+	 * @todo: This is just because the allowed function used to be without any
+	 * parameters, when we will refactor remove this function.
+	 * @return array
+	 */
+	protected function getData() {
+		return $this->getRequest()->getRequest();
+	}
+	
+	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
 	 *
-	 * @param string $permission the permission required to the page
+	 * @param array $input the data to validate.
 	 *
 	 * @return boolean true if have access, else false
 	 *
 	 */
-	protected function allowed() {
+	protected function allowed(array $input = array()) {
+		if(!$input) {
+			$input = $this->getData();
+		}
+		
+		// Try to validate using the new cryptological protected method
+		if(Billrun_Utils_Security::validateData($input)) {
+			return;
+		}
+		
+		// TODO: This should be removed after all api access uses the signature technique
 		if($this->authorizeUser($this->permissionValue())) {
 			return;
 		}

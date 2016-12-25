@@ -42,17 +42,26 @@ class Billrun_Db extends Mongodloid_Db {
 			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
 		}
 	}
-
+	
+	/**
+	 * Get the current MongoDB
+	 * @return MongoDB
+	 */
+	public function getDb() {
+		return $this->_db;
+	}
+	
 	/**
 	 * Method to override the base getInstance
 	 * 
 	 * @return Billrun_Db instance of the Database
 	 */
 	static public function getInstance($config) {
+		$host = isset($config['host']) ? $config['host'] : '';
 		if (isset($config['port'])) {
-			$conn = Billrun_Connection::getInstance($config['host'], $config['port']);
+			$conn = Billrun_Connection::getInstance($host, $config['port']);
 		} else {
-			$conn = Billrun_Connection::getInstance($config['host']);
+			$conn = Billrun_Connection::getInstance($host);
 		}
 
 		if (!isset($config['options'])) {

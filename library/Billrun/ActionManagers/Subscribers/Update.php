@@ -16,6 +16,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	use Billrun_ActionManagers_Subscribers_Validator {
 		validateOverlap as baseValidateOverlap;
 	}
+	use Billrun_Traits_FieldValidator;
 	
 	/**
 	 * Field to hold the data to be written in the DB.
@@ -236,6 +237,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			return false;
 		}
 		
+		// Enforce the update.
+		$this->enforce($this->fields, $jsonData);
 
 		return true;
 	}
@@ -330,4 +333,32 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 		return $subscriberData;
 	}
 
+	/**
+	 * Return the collection instance.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return Mongodloid_Collection 
+	 * @note '_getCollection' is an abstract function of the trait Billrun_Traits_FieldValidator.
+	 * It's named with an underscore to avoid a clash between another getCollection function.
+	 */
+	protected function _getCollection() {
+		return Billrun_Factory::db()->subscribersCollection();
+	}
+	
+	/**
+	 * Return the base query of the action.
+	 * This is used to validate the uniqeness of sensitive input values.
+	 * @return array
+	 * @note '_getBaseQuery' is a function of the Billrun_Traits_FieldValidator trait, 
+	 * its default implementation is empty.
+	 * It's named with an underscore to avoid a clash between another getBaseQuery function.
+	 */
+	protected function _getBaseQuery() {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['type'] = $this->type;
+		return $query;
+	}
+	
+	protected function getBypassList() {
+		return array('mandatory');
+	}
 }

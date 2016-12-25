@@ -66,12 +66,13 @@ class FindAction extends ApiAction {
 		$collection = $request['collection'];
 		try {
 			$db = Billrun_Factory::db()->{$collection . 'Collection'}();
-			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size);
+			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size + 1);
 			
 			// Get timeout
 			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
 			$find->timeout($timeout);
 			$entities = array_values(iterator_to_array($find));
+            $next_page = count($entities) > $size;
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
@@ -83,7 +84,8 @@ class FindAction extends ApiAction {
 				'status' => 1,
 				'desc' => 'success',
 				'input' => $request,
-				'details' => $entities,
+                'next_page' => $next_page,
+				'details' => array_slice($entities, 0, $size),
 			)
 		);
 

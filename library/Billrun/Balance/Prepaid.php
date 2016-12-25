@@ -14,7 +14,7 @@
  */
 class Billrun_Balance_Prepaid extends Billrun_Balance {
 
-	protected $charging_type = 'prepaid';
+	protected $connection_type = 'prepaid';
 
 	/**
 	 * minimum values for balance usage (on prepaid)
@@ -141,24 +141,22 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return array update query array (mongo style)
 	 */
-	protected function BuildBalanceUpdateQuery($pricingData, $row, $volume) {
-		list($query, $update) = parent::BuildBalanceUpdateQuery($pricingData, $row, $volume);
+	public function buildBalanceUpdateQuery(&$pricingData, $row, $volume) {
+		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
 		$cost = $pricingData[$this->pricingField];
 		if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.usagev'))) {
 			if ($cost > 0) { // If it's a free of charge, no need to reduce usagev
-				$update['$set']['balance.totals.' . $balance_totals_key . '.usagev'] = $currentUsage + $volume;
+				$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 			}
+		} else if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.cost'))) {
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
 		} else {
-			if (!is_null($this->get('balance.totals.' . $balance_totals_key . '.cost'))) {
-				$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $cost;
-			} else {
-				$update['$inc']['balance.cost'] = $cost;
-			}
+			$update['$inc']['balance.cost'] = $cost;
 		}
 		$pricingData['usagesb'] = floatval($currentUsage);
-
+		return array($query, $update);
 	}
 	
 	/**

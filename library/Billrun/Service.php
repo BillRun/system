@@ -23,6 +23,7 @@ class Billrun_Service {
 	protected $data = null;
 	protected $groupSelected = null;
 	protected $groups = null;
+	protected $strongestGroup = null;
 
 	/**
 	 * constructor
@@ -171,53 +172,37 @@ class Billrun_Service {
 	 * 
 	 * @param array $subscriberBalance subscriber balance
 	 * @param array $rate the rate to check the balance
-	 * @param string $usageType the 
+	 * @param string $usageType the usage type
+	 * @param string $staticGroup check specifically on group without calculate the strongest group of the plan
+	 * 
 	 * @return int usage left in the group
 	 */
 	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null) {
 		if (is_null($staticGroup)) {
-			$limit = 10; // protect infinit loop
-			do {
-				$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
-				// group not found
-				if ($groupSelected === FALSE) {
-					$rateUsageIncluded = 0;
-					// @todo: add more logic instead of fallback to first
-					$this->setEntityGroup($this->setNextStrongestGroup($rate, $usageType, true));
-					break; // do-while
-				}
-				// not group included in the specific usage try to take iterate next group
-				if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-					continue;
-				}
-				$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-				if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-					// on some cases we have limits to check through plugin
-					$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-					Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
-					if ($rateUsageIncluded === FALSE) {
-						$this->unsetGroup($this->getEntityGroup());
-					}
-				}
-			}
-			// @todo: protect max 10 loops
-			while ($groupSelected === FALSE && is_null($staticGroup) && $limit--);
+			$rateUsageIncluded = 0; // pass by reference
+			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
-			$groupSelected = $staticGroup;
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+			if (!isset($this->data['include']['groups'][$staticGroup][$usageType])) {
 				return 0;
-			} else {
-				$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-				if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
-					// on some cases we have limits to check through plugin
-					$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-					Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
-					if ($rateUsageIncluded === FALSE) {
-						return 0;
-					}
+			}
+
+			if (isset($this->data['include']['groups'][$staticGroup]['limits'])) {
+				// on some cases we have limits to check through plugin
+				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
+				if ($groupSelected === FALSE) {
+					return 0;
 				}
 			}
+			
+			$groupSelected = $staticGroup;
 		}
+		
+		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+			return 0;
+		}
+
+		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
@@ -231,7 +216,64 @@ class Billrun_Service {
 		$usageLeft = $rateUsageIncluded - $subscriberSpent;
 		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
-	
+
+	/**
+	 * method to calculate the strongest group of the service
+	 * 
+	 * @param array $rate the rate to check the balance
+	 * @param string $usageType the usage type
+	 * @param int $rateUsageIncluded the usage included in the group (reference)
+	 * 
+	 * @return mixed string if found strongest group else false
+	 */
+	protected function getStrongestGroup($rate, $usageType) {
+		if (!is_null($this->strongestGroup)) {
+			return $this->strongestGroup;
+		}
+		$limit = 10; // protect infinit loop
+		do {
+			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
+			// group not found
+			if ($groupSelected === FALSE) {
+//				$this->setEntityGroup($this->setNextStrongestGroup($rate, $usageType, true)); // removed, because it's run only one time per row
+				break; // do-while
+			}
+			// not group included in the specific usage try to take iterate next group
+			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+				continue;
+			}
+			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
+				// on some cases we have limits to check through plugin
+				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$groupSelected, $limits, $this, $usageType, $rate));
+				if ($groupSelected === FALSE) {
+					$this->unsetGroup($this->getEntityGroup());
+				}
+			}
+		}
+		while ($groupSelected === FALSE && $limit--);
+		$this->strongestGroup = $groupSelected;
+		return $this->strongestGroup;
+	}
+
+	/**
+	 * method to check if group is shared or not
+	 * 
+	 * @param array $rate the rate to intersect
+	 * @param string $usageType the usage type to check
+	 * @param string $group check specific group, if null check the strongest group available
+	 * 
+	 * @return boolean true if group is account shared else false
+	 * @since 5.3
+	 */
+	public function isGroupAccountShared($rate, $usageType, $group = null) {
+		if (is_null($group)) {
+			$rateUsageIncluded = 0;
+			$group = $this->getStrongestGroup($rate, $usageType, $rateUsageIncluded);
+		}
+		return isset($this->data['include']['groups'][$group]['account_shared']) && $this->data['include']['groups'][$group]['account_shared'];
+	}
+
 	public function getGroupVolume($usageType, $group = null) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();

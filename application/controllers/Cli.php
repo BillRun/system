@@ -52,6 +52,7 @@ class CliController extends Yaf_Controller_Abstract {
 				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
 				'cycle' => 'aggregate lines in billing_cycle',
+				'charge' => 'pay payments through payment gateway',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
@@ -66,6 +67,8 @@ class CliController extends Yaf_Controller_Abstract {
 				'tenant-s' => 'Load configuration for a specific tenant',
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 				'clearcall' => 'Finds and inform about open calls without balance',
+				'collect' => 'Change collection state for accounts',
+				'run_collect_step' => 'Run action for accounts in collection'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

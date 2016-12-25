@@ -35,7 +35,8 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			$planNames[] = $p['name'];
 		}
 		$this->getView()->assign('account', $account);
-	        $this->getView()->assign('config', $config['subscribers']['account']['fields']);
+	        $this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
+	        $this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
 	        $this->getView()->assign('payment_gateways', $config['payment_gateways']);
 		$this->getView()->assign('plans', $planNames);
 		$this->getView()->assign('plan', $selectedPlan);
@@ -67,7 +68,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
-			"t" => time()
+			Billrun_Utils_Security::TIMESTAMP_FIELD => time()
 		);
 		$hashResult = hash_hmac("sha512", json_encode($data), $secret);
 		$sendData = array(

@@ -39,7 +39,7 @@ abstract class Billrun_Bill {
 	protected $optionalFields = array();
 
 	const precision = 0.00001;
-
+	
 	/**
 	 * 
 	 * @param type $options
@@ -351,7 +351,7 @@ abstract class Billrun_Bill {
 		return isset($this->data['total_paid']) ? $this->data['total_paid'] : 0;
 	}
 
-	protected function recalculatePaymentFields() {
+	protected function recalculatePaymentFields($billId = null, $status = null) {
 		if ($this->getDue() > 0) {
 			$amount = 0;
 			if (isset($this->data['paid_by']['inv'])) {
@@ -362,7 +362,12 @@ abstract class Billrun_Bill {
 			}
 			$this->data['total_paid'] = $amount;
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
-			$this->data['paid'] = $this->isPaid();
+			if (is_null($status)){
+				$this->data['paid'] = $this->isPaid();
+			} else {
+				$this->data['paid'] = $this->calcPaidStatus($billId, $status);
+			}
+				
 		}
 		return $this;
 	}
@@ -381,11 +386,12 @@ abstract class Billrun_Bill {
 		throw new Exception('Unknown bill type');
 	}
 
-	public function attachPayingBill($billType, $billId, $amount) {
+	public function attachPayingBill($billType, $billId, $amount, $status = null) {
 		if ($amount) {
 			$paidBy = $this->getPaidByBills();
-			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;
-			$this->updatePaidBy($paidBy);
+			$paidBy[$billType][$billId] = (isset($paidBy[$billType][$billId]) ? $paidBy[$billType][$billId] : 0) + $amount;		
+			$this->addToWaitingPayments($billId);
+			$this->updatePaidBy($paidBy, $billId, $status);
 		}
 		return $this;
 	}
@@ -397,10 +403,10 @@ abstract class Billrun_Bill {
 		return $this;
 	}
 
-	protected function updatePaidBy($paidBy) {
+	protected function updatePaidBy($paidBy, $billId = null, $status = null) {
 		if ($this->getDue() > 0) {
 			$this->data['paid_by'] = $paidBy;
-			$this->recalculatePaymentFields();
+			$this->recalculatePaymentFields($billId, $status);
 		}
 	}
 
@@ -434,8 +440,8 @@ abstract class Billrun_Bill {
 	}
 
 	public static function getContractorsInCollection($aids = array()) {
-		$subscriber = Billrun_Factory::subscriber();
-		$exempted = $subscriber->getExcludedFromCollection($aids);
+		$account = Billrun_Factory::account();
+		$exempted = $account->getExcludedFromCollection($aids);
 		$query = array(
 			'$or' => array(
 				array(
@@ -496,5 +502,152 @@ abstract class Billrun_Bill {
 	public function isPaid() {
 		return $this->getDue() <= ($this->getPaidAmount() + static::precision);
 	}
+	
+	public static function pay($method, $paymentsArr, $options = array()) {
+		$involvedAccounts = $payments = array();
+		if (in_array($method, array('cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
+			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
+			foreach ($paymentsArr as $rawPayment) {
+				$aid = intval($rawPayment['aid']);
+				$dir = Billrun_Util::getFieldVal($rawPayment['dir'], null);
+				if ($dir == 'fc' || is_null($dir)) { // attach invoices to payments and vice versa
+					if (!empty($rawPayment['pays']['inv'])) {
+						$paidInvoices = $rawPayment['pays']['inv']; // currently it is only possible to specifically pay invoices only and not payments
+						$invoices = Billrun_Bill_Invoice::getInvoices(array('aid' => $aid, 'invoice_id' => array('$in' => Billrun_Util::verify_array(array_keys($paidInvoices), 'int'))));
+						if (count($invoices) != count($paidInvoices)) {
+							throw new Exception('Unknown invoices for account ' . $aid);
+						}
+						if (($rawPayment['amount'] - array_sum($paidInvoices)) <= -Billrun_Bill::precision) {
+							throw new Exception($aid . ': Total to pay is less than the subtotals');
+						}
+						foreach ($invoices as $invoice) {
+							$invoiceObj = Billrun_Bill_Invoice::getInstanceByData($invoice);
+							if ($invoiceObj->isPaid()) {
+								throw new Exception('Invoice ' . $invoiceObj->getId() . ' already paid');
+							}
+							if (!is_numeric($rawPayment['pays']['inv'][$invoiceObj->getId()])) {
+								throw new Exception('Illegal amount ' . $rawPayment['pays']['inv'][$invoiceObj->getId()] . ' for invoice ' . $invoiceObj->getId());
+							} else {
+								$invoiceAmountToPay = floatval($paidInvoices[$invoiceObj->getId()]);
+							}
+							if ((($leftToPay = $invoiceObj->getLeftToPay()) < $invoiceAmountToPay) && (number_format($leftToPay, 2) != number_format($invoiceAmountToPay, 2))) {
+								throw new Exception('Invoice ' . $invoiceObj->getId() . ' cannot be overpaid');
+							}
+							$updateBills['inv'][$invoiceObj->getId()] = $invoiceObj;
+						}
+					} else {
+						$leftToSpare = floatval($rawPayment['amount']);
+						$unpaidBills = Billrun_Bill::getUnpaidBills(array('aid' => $aid));
+						foreach ($unpaidBills as $rawUnpaidBill) {
+							$unpaidBill = Billrun_Bill::getInstanceByData($rawUnpaidBill);
+							$invoiceAmountToPay = min($unpaidBill->getLeftToPay(), $leftToSpare);
+							if ($invoiceAmountToPay) {
+								$billType = $unpaidBill->getType();
+								$billId = $unpaidBill->getId();
+								$leftToSpare -= $rawPayment['pays'][$billType][$billId] = $invoiceAmountToPay;
+								$updateBills[$billType][$billId] = $unpaidBill;
+							}
+						}
+					}
+				}
+				$involvedAccounts[] = $aid;
+				$payments[] = new $className($rawPayment);
+			}
+			$res = Billrun_Bill_Payment::savePayments($payments);
+			if ($res && isset($res['ok']) && $res['ok']) {
+				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
+					foreach ($payments as $payment) {
+						$gatewayDetails = $payment->getPaymentGatewayDetails();
+						$gatewayName = $gatewayDetails['name'];
+						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						try {
+							$paymentStatus = $gateway->pay($gatewayDetails);
+						} catch (Exception $e) {
+							$payment->setGatewayChargeFailure($e->getMessage());
+							continue;
+						}
+						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
+						$txId = $gateway->getTransactionId();
+						$payment->updateDetailsForPaymentGateway($gatewayName, $txId);
+						$paymentSuccess[] = $payment;
+					}
+				} else {
+					$paymentSuccess = $payments;
+				}
+				foreach ($paymentSuccess as $payment) {
+						if ($payment->getDir() == 'fc') {
+							foreach ($payment->getPaidBills() as $billType => $bills) {
+								foreach ($bills as $billId => $amountPaid) {
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, $responseFromGateway['stage'])->save();
+								}
+							}
+						} else {
+							Billrun_Bill::payUnpaidBillsByOverPayingBills($payment->getAccountNo());
+						}
+					}
+				if (!isset($options['collect']) || $options['collect']) {
+					$involvedAccounts = array_unique($involvedAccounts);
+//					CollectAction::collect($involvedAccounts);
+				}
+			} else {
+				throw new Exception('Error encountered while saving the payments');
+			}
+		} else {
+			throw new Exception('Unknown payment method');
+		}
+		if (isset($options['payment_gateway'])){
+			return array('payment' => $payments, 'response' => $responseFromGateway);
+		} else { 
+			return $payments;
+		}		
+	}
+
+	protected function calcPaidStatus($billId = null, $status = null) {
+		if (is_null($billId) || is_null($status)){
+			return;
+		}
+		switch ($status) {
+			case 'Rejected':
+				$result = '0';
+				$this->removeFromWaitingPayments($billId);
+				break;
+
+			case 'Completed':
+				$this->removeFromWaitingPayments($billId);
+				$pending = $this->data['waiting_payments'];
+				if (count($pending)) { 
+					$result = '2';
+				}
+				else {
+					$result = '1';
+				}
+				break;
+
+			case 'Pending':
+				$result = '2';
+				break;
+			default:
+				$result = '0';
+				break;
+		}
+		
+		return $result;
+	}
+	
+	protected function addToWaitingPayments($billId) {
+		$waiting_payments = isset($this->data['waiting_payments']) ? $this->data['waiting_payments'] : array();
+		array_push($waiting_payments, $billId);
+		$this->data['waiting_payments'] = $waiting_payments;
+	}
+	
+	protected function removeFromWaitingPayments($billId) {
+		$pending = $this->data['waiting_payments'];
+		$key = array_search($billId, $pending);
+		if($key !== false) {
+			unset($pending[$key]);
+		}
+		$this->data['waiting_payments'] = $pending;
+	}
+
 
 }

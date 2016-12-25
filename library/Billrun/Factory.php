@@ -62,6 +62,20 @@ class Billrun_Factory {
 	 * @var Billrun_Billrun Subscriber
 	 */
 	protected static $subscriber = null;
+	
+	/**
+	 * Account instance
+	 * 
+	 * @var Billrun_Billrun Account
+	 */
+	protected static $account = null;
+	
+	/**
+	 * Collection Steps instance
+	 * 
+	 * @var Billrun_Billrun Collection Steps
+	 */
+	protected static $collectionSteps = null;
 
 	/**
 	 * Balance instance
@@ -267,7 +281,34 @@ class Billrun_Factory {
 
 		return self::$subscriber;
 	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function account() {
+		if (!self::$account) {
+			$settings = self::config()->getConfigValue('account', array());
+			self::$account = Billrun_Account::getInstance($settings);
+		}
 
+		return self::$account;
+	}
+	
+	/**
+	 * method to retrieve the account instance
+	 * 
+	 * @return Billrun_Subscriber
+	 */
+	static public function collectionSteps() {
+		if (!self::$collectionSteps) {
+			$settings = self::config()->getConfigValue('collectionSteps', array());
+			self::$collectionSteps = Billrun_CollectionSteps::getInstance($settings);
+		}
+
+		return self::$collectionSteps;
+	}
 	/**
 	 * method to retrieve a balance instance
 	 * 
@@ -348,6 +389,12 @@ class Billrun_Factory {
 		return self::$users[$stamp];
 	}
 
+	protected static function setSessionTimeout($defaultTimeout) {
+		$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', $defaultTimeout);
+		ini_set('session.gc_maxlifetime', $session_timeout);
+		session_set_cookie_params($session_timeout);
+	}
+
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			Billrun_Util::setHttpSessionTimeout();
@@ -375,6 +422,21 @@ class Billrun_Factory {
 		}
 
 		return self::$importer[$stamp];
+	}
+
+	/**
+	 * method to retrieve a payment gateway by name
+	 * 
+	 * @return Billrun_PaymentGateway
+	 */
+	public static function paymentGateway($name) {
+		try {
+			$gateway = Billrun_PaymentGateway::getInstance($name);
+		} catch (Exception $e) {
+			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+			return FALSE;
+		}
+		return $gateway;
 	}
 
 }
