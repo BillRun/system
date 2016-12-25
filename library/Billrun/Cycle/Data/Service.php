@@ -29,6 +29,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$planValue = $flatLine['plan'];
 		unset($flatLine['plan']);
 		$flatLine['service'] = $planValue;
+		$flatLine['name'] = $planValue;
 		$flatLine['type'] = 'service';
 		return $flatLine;
 	}
