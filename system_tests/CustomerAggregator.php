@@ -85,7 +85,7 @@ function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceCol
 		
 		aggregate($config);
 		
-		generate($config, $testName);
+//		generate($config, $testName);
 
 		// Get the invoice data
 		$invoice = $invoiceColl->find()->getNext();
