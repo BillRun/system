@@ -205,6 +205,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 */
 	protected function getRowRate($row) {
 		if(!isset($row['arate'])) {
+			if(!empty($row['name'])) {
+				return array('key' => $row['name']);
+			}
 			return null;
 		}
 		
