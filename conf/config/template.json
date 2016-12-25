@@ -1,10 +1,10 @@
 {
 	"tenant" : {
-		"name" : 1,
-		"address" : 1,
-		"phone" : 1,
-		"website" : 1,
-		"email" : 1
+		"name" : "",
+		"address" : "",
+		"phone" : "",
+		"website" : "",
+		"email" : ""
 	},
 	"collection" : {
 	},
