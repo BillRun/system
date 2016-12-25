@@ -183,7 +183,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	public function loadSubscriberBalance() {
 		// we moved the init of plan_ref to customer calc, we leave it here only for verification and avoid b/c issues
 		if (!isset($this->row['plan_ref'])) {
-			$plan = Billrun_Factory::plan(array('name' => $this->plan, 'time' => $this->urt->sec, /* 'disableCache' => true */));
+			$plan = Billrun_Factory::plan(array('name' => $this->plan->getName(), 'time' => $this->urt->sec, /* 'disableCache' => true */));
 			$plan_ref = $plan->createRef();
 			if (is_null($plan_ref)) {
 				Billrun_Factory::log('No plan found for subscriber ' . $this->sid, Zend_Log::ALERT);
