@@ -938,6 +938,10 @@ class ConfigModel {
 			throw new Exception('Realtime settings is not an array');
 		}
 		
+		if (isset($realtimeSettings['postpay_charge']) && $realtimeSettings['postpay_charge']) {
+			return $realtimeSettings;
+		}
+		
 		$mandatoryFields = Billrun_Factory::config()->getConfigValue('configuration.realtime.mandatory_fields', array());
 		$missingFields = array();
 		foreach ($mandatoryFields as $mandatoryField) {
