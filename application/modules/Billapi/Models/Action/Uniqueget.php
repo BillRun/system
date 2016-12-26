@@ -62,18 +62,28 @@ class Models_Action_Uniqueget extends Models_Action {
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
 		$ids = array_column($aggregatedResults, 'id');
-		$ret = $this->collectionHandler->find(array('_id' => array('$in' => $ids)));
 
+		$find = (array) json_decode($this->request['query'], true);
+		$find['_id'] = array('$in' => $ids);
+		
+		if (isset($this->request['project'])) {
+			$project = (array) json_decode($this->request['project'], true);
+		} else {
+			$project = array();
+		}
+		
+		$ret = $this->collectionHandler->find($find, $project);
+		
 		if (isset($this->request['page']) && $this->request['page'] != -1) {
-			$res->skip($this->page * $this->size);
+			$res->skip((int) $this->page * (int) $this->size);
 		}
 
 		if (isset($this->request['size']) && $this->request['size'] != -1) {
-			$res->limit($this->size);
+			$res->limit((int) $this->size);
 		}
 
 		if ($sort) {
-			$res = $res->sort($sort);
+			$res = $res->sort((array) $sort);
 		}
 		
 		return array_values(iterator_to_array($ret));;
