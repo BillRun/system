@@ -303,7 +303,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 //		$call_offset = isset($lineToRebalance['call_offset']) ? $lineToRebalance['call_offset'] : 0;
 //		$rebalance_offset = $call_offset + $rebalanceUsagev;
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		$rebalanceCharges = Billrun_Rates_Util::getCharges($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev);
+		$rebalanceCharges = Billrun_Rates_Util::getCharges($rate, $lineToRebalance['usaget'], (-1) * $rebalanceUsagev, $lineToRebalance['plan'], $realUsagev, $lineToRebalance['urt']->sec);
 		$rebalanceCost = $rebalanceCharges['total'];
 		if (isset($lineToRebalance['over_max_currency'])) {
 			$rebalanceCost -= $lineToRebalance['over_max_currency'];
