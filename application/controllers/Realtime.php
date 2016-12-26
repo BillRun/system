@@ -140,7 +140,7 @@ class RealtimeController extends ApiController {
 	protected function getSessionId() {
 		$sessionIdFields = $this->config['realtime']['session_id_fields'];
 		if (!$sessionIdFields) {
-			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : null);
+			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : Billrun_Util::generateRandomNum());
 		}
 		$sessionIdArr = array_intersect_key($this->event['uf'], array_flip($sessionIdFields));
 		return Billrun_Util::generateArrayStamp($sessionIdArr);
