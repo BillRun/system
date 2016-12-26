@@ -8,7 +8,7 @@
 	},
 	"collection" : {
 		"steps": [],
-		"min_debt": 60.005
+		"min_debt": 10
 	},
 	"invoice_export" : {
 		"export"  : "files/invoices/",
