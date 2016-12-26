@@ -189,7 +189,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				}
 				$this->setStamp($file->getID());
 				$this->setFileStamp($file);
-				$this->loadFile($file->get('path'), $file->get('retrieved_from'));
+				if (!$this->loadFile($file->get('path'), $file->get('retrieved_from'))) {
+					continue;
+				}
 				$processedLinesCount = $this->process();
 				if (FALSE !== $processedLinesCount) {
 					$linesCount += $processedLinesCount;
@@ -373,7 +375,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 * 
 	 * @param string $file_path
 	 * 
-	 * @return void
+	 * @return boolean
 	 */
 	public function loadFile($file_path, $retrivedHost = '') {
 		Billrun_Factory::dispatcher()->trigger('processorBeforeFileLoad', array(&$file_path, $this));
@@ -385,8 +387,10 @@ abstract class Billrun_Processor extends Billrun_Base {
 			Billrun_Factory::log("Billrun Processor load the file: " . $file_path, Zend_Log::INFO);
 		} else {
 			Billrun_Factory::log("Billrun_Processor->loadFile: cannot load the file: " . $file_path, Zend_Log::ERR);
+			return FALSE;
 		}
 		Billrun_Factory::dispatcher()->trigger('processorAfterFileLoad', array(&$file_path));
+		return TRUE;
 	}
 
 	/**
