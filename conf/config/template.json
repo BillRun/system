@@ -7,6 +7,8 @@
 		"email" : ""
 	},
 	"collection" : {
+		"steps": [],
+		"min_debt": 10
 	},
 	"invoice_export" : {
 		"export"  : "files/invoices/",

@@ -461,7 +461,7 @@ abstract class Billrun_Bill {
 		if ($exempted) {
 			$query['aid']['$nin'] = array_keys($exempted);
 		}
-		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 60.005));
+		$minBalance = floatval(Billrun_Factory::config()->getConfigValue('collection.min_debt', 10));
 		return static::getTotalDue($query, $minBalance, TRUE);
 	}
 
