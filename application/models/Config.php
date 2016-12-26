@@ -429,7 +429,11 @@ class ConfigModel {
 			throw new Exception("Category not found " . $category);
 		}
 		$currentConfig = $newConfig;
+		
 		$result = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		if(Billrun_Config::isComplex($result)) {
+			return Billrun_Config::getComplexValue($result);
+		}
 		return $result;
 	}
 	
@@ -440,6 +444,11 @@ class ConfigModel {
 			throw new Exception("Category not found " . $category);
 		}
 		$currentConfig = $newConfig;
+		$value = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
+		if(Billrun_Config::isComplex($value)) {
+			return $this->updateComplex($currentConfig, $category, $data, $value);
+		}
+		
 		$result = Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 		return $result;
 	}
@@ -940,6 +949,10 @@ class ConfigModel {
 	protected function validateRealtimeConfiguration($realtimeSettings) {
 		if (!is_array($realtimeSettings)) {
 			throw new Exception('Realtime settings is not an array');
+		}
+		
+		if (isset($realtimeSettings['postpay_charge']) && $realtimeSettings['postpay_charge']) {
+			return $realtimeSettings;
 		}
 		
 		$mandatoryFields = Billrun_Factory::config()->getConfigValue('configuration.realtime.mandatory_fields', array());
