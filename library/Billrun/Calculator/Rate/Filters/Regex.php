@@ -17,7 +17,7 @@ class Billrun_Calculator_Rate_Filters_Regex extends Billrun_Calculator_Rate_Filt
 	protected function updateMatchQuery(&$match, $row) {
 		$match = array_merge($match, 
 			array(
-				$this->params['rate_key'] => array('$regex' => new MongoRegex('/' . $row[$this->params['line_key']] . '/i'))
+				$this->params['rate_key'] => array('$regex' => new MongoRegex('/' . $row['uf'][$this->params['line_key']] . '/i'))
 			)
 		);
 	}

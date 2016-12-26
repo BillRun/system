@@ -67,12 +67,12 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 
 	public function getBillRunLine($rawLine) {
-		$row = $this->filterFields($rawLine);
-		$datetime = Billrun_Processor_Util::getRowDateTime($row, $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
+		$row['uf'] = $this->filterFields($rawLine);
+		$datetime = Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
 
 		$row['urt'] = new MongoDate($datetime->format('U'));
-		$row['usaget'] = $this->getLineUsageType($row);
-		$row['usagev'] = $this->getLineUsageVolume($row);
+		$row['usaget'] = $this->getLineUsageType($row['uf']);
+		$row['usagev'] = $this->getLineUsageVolume($row['uf']);
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
@@ -129,13 +129,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $trailer;
 	}
 
-	protected function getLineUsageType($row) {
+	protected function getLineUsageType($userFields) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
 				if (!isset($usagetMapping['pattern'],$usagetMapping['src_field'])) {
 					return $usagetMapping['usaget'];
 				}
-				if (isset($row[$usagetMapping['src_field']]) && preg_match($usagetMapping['pattern'], $row[$usagetMapping['src_field']])) {
+				if (isset($userFields[$usagetMapping['src_field']]) && preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
 					return $usagetMapping['usaget'];
 				}
 			}
@@ -143,10 +143,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $this->defaultUsaget;
 	}
 
-	protected function getLineUsageVolume($row) {
+	protected function getLineUsageVolume($userFields) {
 		if (!empty($this->usagevField)) {
-			if (isset($row[$this->usagevField]) && is_numeric($row[$this->usagevField])) {
-				return intval($row[$this->usagevField]);
+			if (isset($userFields[$this->usagevField]) && is_numeric($userFields[$this->usagevField])) {
+				return intval($userFields[$this->usagevField]);
 			}
 			Billrun_Factory::log('Usage volume is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
 		}
