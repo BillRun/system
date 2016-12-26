@@ -88,7 +88,7 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $completionCodes;
-	
+
 	/**
 	 * html form for redirection to the payment gateway for filling details.
 	 * @var string
@@ -222,6 +222,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract public function isCustomerBasedCharge();
+
 	/**
 	 * Checks against the chosen payment gateway if the credentials passed are correct.
 	 * 
@@ -251,8 +252,16 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract public function hasPendingStatus();
-	
+
 	/**
+	 * Converting between amount units.
+	 * 
+	 * @param Float $amount - The sending amount to charge in the gateway.
+	 * @return Float - the converted amount.
+	 */
+	abstract protected function convertAmountToSend($amount);
+
+/**
 	 * True if need to call http_build_query before sending the request. 
 	 * 
 	 */
@@ -269,7 +278,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-
+		
 	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 

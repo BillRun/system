@@ -425,10 +425,13 @@ class Billrun_Util {
 		return FALSE;
 	}
 
-	public static function sendMail($subject, $body, $recipients, $attachments = array()) {
-		$mailer = Billrun_Factory::mailer()->
-			setSubject($subject)->
-			setBodyText($body);
+	public static function sendMail($subject, $body, $recipients, $attachments = array(), $html = false) {
+		$mailer = Billrun_Factory::mailer()->setSubject($subject);
+		if($html){
+			$mailer->setBodyHtml($body);
+		} else {
+			$mailer->setBodyText($body);
+		}
 		//add attachments
 		foreach ($attachments as $attachment) {
 			$mailer->addAttachment($attachment);
@@ -1379,12 +1382,21 @@ class Billrun_Util {
 	}
 	
 	public static function isValidCustomLineKey($jsonKey) {
-		$protectedKeys = static::getBillRunProtectedLineKeys();
-		return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+		if (strpos($jsonKey, '.') === FALSE) {
+			$protectedKeys = static::getBillRunProtectedLineKeys();
+			return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+		}
+		
+		foreach (explode('.', $jsonKey) as $key) {
+			if (!self::isValidCustomLineKey($key)) {
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	public static function getBillRunProtectedLineKeys() {
-		return array('_id', 'aid', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'charging_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'sid', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
+		return array('_id', 'aid', 'apr', 'aprice', 'arate', 'billrun', 'billrun_pretend', 'call_offset', 'connection_type', 'file', 'log_stamp', 'plan', 'plan_ref', 'process_time', 'row_number', 'sid', 'source', 'stamp', 'type', 'urt', 'usaget', 'usagev');
 	}
 
 	public static function isValidRegex($regex) {
@@ -1392,7 +1404,7 @@ class Billrun_Util {
 	}
 
 	public static function getCompanyName() {
-		return Billrun_Factory::config()->getConfigValue('company_name', '');
+		return Billrun_Factory::config()->getConfigValue('tenant.name', '');
 	}
 	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
@@ -1418,12 +1430,18 @@ class Billrun_Util {
 	
 	public static function setHttpSessionTimeout($timeout = null) {
 		if (!is_null($timeout)) {
-			$session_timeout = $timeout;
+			$sessionTimeout = $timeout;
 		} else {
-			$session_timeout = Billrun_Factory::config()->getConfigValue('admin.session.timeout', 3600);
+			$sessionTimeout = Billrun_Factory::config()->getConfigValue('session.timeout', 3600);
 		}
-		ini_set('session.gc_maxlifetime', $session_timeout);
-		session_set_cookie_params($session_timeout);
+		
+		ini_set('session.gc_maxlifetime', $sessionTimeout);
+		ini_set("session.cookie_lifetime", $sessionTimeout);
+        
+		$cookieParams = session_get_cookie_params();
+		session_set_cookie_params(
+			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
+		);
 	}
 
 }

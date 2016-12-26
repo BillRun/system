@@ -127,6 +127,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function buildPaymentRequset($gatewayDetails) {
 		$credentials = $this->getGatewayCredentials();
+		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 
 		return $post_array = array(
 			'USER' => $credentials['username'],
@@ -210,6 +211,10 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
 	
+	protected function convertAmountToSend($amount) {
+		return $amount;
+	}
+
 	protected function isNeedAdjustingRequest() {
 		return true;
 	}
@@ -225,5 +230,5 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	public function isCustomerBasedCharge() {
 		return false;
 	}
-
+	
 }

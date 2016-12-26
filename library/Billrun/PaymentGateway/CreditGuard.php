@@ -16,7 +16,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $conf;
 	protected $billrunName = "CreditGuard";
 	protected $subscribers;
-	protected $rejectionCodes = "/!(000)/";
 	protected $pendingCodes = "/$^/";
 	protected $completionCodes = "/^000$/";
 
@@ -205,6 +204,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPaymentRequset($gatewayDetails) {
 		$credentials = $this->getGatewayCredentials();
+		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -222,7 +222,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
-										<currency>Usd</currency>
+										<currency>' . $gatewayDetails['currency'] . '</currency>
 										<transactionCode>Phone</transactionCode>
 										<transactionType>Debit</transactionType>
 										<total>' . $gatewayDetails['amount'] . '</total>
@@ -268,6 +268,15 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		);
 	}
 	
+	protected function isRejected($status) {
+		return (!$this->isCompleted($status) && !$this->isPending($status));
+	}
+	
+	protected function convertAmountToSend($amount) {
+		$amount = round($amount, 2);
+		return $amount * 100;
+	}
+
 	protected function isNeedAdjustingRequest(){
 		return true;
 	}
@@ -283,4 +292,5 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function isCustomerBasedCharge() {
 		return false;
 	}
+
 }
