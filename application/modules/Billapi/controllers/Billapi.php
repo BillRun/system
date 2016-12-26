@@ -59,7 +59,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
 		$this->params['query'] = $translatedQuery;
 		$this->params['update'] = $translatedUpdate;
-		$this->params['request'] = $this->getRequest()->getParams();
+		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
 		$this->params['settings'] = $this->settings;
 		$res = $this->runOperation();
 		$this->output->status = 1;

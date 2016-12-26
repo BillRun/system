@@ -35,16 +35,28 @@ class Models_Action_Uniqueget extends Models_Action {
 					'$min' => '$from'
 				),
 				'to' => array(
-					'$min' => '$to'
+					'$max' => '$to'
 				),
 				'id' => array(
 					'$first' => '$_id'
 				)
 			),
 		);
-		$match = array(
-			'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
-		);
+		
+		if (!isset($this->request['history']) || !$this->request['history']) {
+			$match = array(
+				'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
+			);
+		} else {
+			// this is workaround, because aggregate cannot receive only 1 argument
+			$match = array(
+				'$match' => array(
+					'from' => array(
+						'$gte' => new MongoDate(strtotime('1970-01-01 00:00:00')),
+					)
+				),
+			);
+		}
 		$res = $this->collectionHandler->aggregate($match, $group);
 
 		$res->setRawReturn(true);
