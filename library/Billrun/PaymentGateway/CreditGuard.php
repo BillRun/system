@@ -267,5 +267,20 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 					   </ashrait>'
 		);
 	}
-
+	
+	protected function isNeedAdjustingRequest(){
+		return true;
+	}
+	
+	protected function isUrlRedirect() {
+		return true;
+	}
+	
+	protected function isHtmlRedirect() {
+		return false;
+	}
+	
+	public function isCustomerBasedCharge() {
+		return false;
+	}
 }

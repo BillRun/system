@@ -210,4 +210,20 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		return (!$this->isCompleted($status) && !$this->isPending($status));
 	}
 	
+	protected function isNeedAdjustingRequest() {
+		return true;
+	}
+	
+	protected function isUrlRedirect() {
+		return true;
+	}
+	
+	protected function isHtmlRedirect() {
+		return false;
+	}
+	
+	public function isCustomerBasedCharge() {
+		return false;
+	}
+
 }

@@ -88,6 +88,12 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $completionCodes;
+	
+	/**
+	 * html form for redirection to the payment gateway for filling details.
+	 * @var string
+	 */
+	protected $htmlForm;
 
 	private function __construct() {
 
@@ -150,7 +156,13 @@ abstract class Billrun_PaymentGateway {
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
-		$this->forceRedirect($this->redirectUrl);
+		if ($this->isUrlRedirect()){
+			$this->forceRedirect($this->redirectUrl);
+		} else if ($this->isHtmlRedirect()){
+			$doc = new DOMDocument();
+			$doc->loadHTML($this->htmlForm);
+			echo $doc->saveHTML();
+		}
 	}
 
 	/**
@@ -205,7 +217,11 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function buildSetQuery();
 
-
+	/**
+	 * True if the charge is customer based and not by token.
+	 * 
+	 */
+	abstract public function isCustomerBasedCharge();
 	/**
 	 * Checks against the chosen payment gateway if the credentials passed are correct.
 	 * 
@@ -235,6 +251,24 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract public function hasPendingStatus();
+	
+	/**
+	 * True if need to call http_build_query before sending the request. 
+	 * 
+	 */
+	abstract protected function isNeedAdjustingRequest();
+	
+	/**
+	 * True if the redirection to the payment gateway hosted page is with a given url. 
+	 * 
+	 */
+	abstract protected function isUrlRedirect();
+		
+	/**
+	 * True if the redirection to the payment gateway hosted page is through printing html form.
+	 * 
+	 */
+	abstract protected function isHtmlRedirect();
 
 	/**
 	 * Redirect to the payment gateway page of card details.
@@ -248,7 +282,11 @@ abstract class Billrun_PaymentGateway {
 		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
 		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
-		$postString = http_build_query($postArray);
+		if ($this->isNeedAdjustingRequest()){
+			$postString = http_build_query($postArray);
+		} else {
+			$postString = $postArray;
+		}
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
@@ -262,7 +300,11 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function saveTransactionDetails($txId) {
 		$postArray = $this->buildTransactionPost($txId);
-		$postString = http_build_query($postArray);
+		if ($this->isNeedAdjustingRequest()){
+			$postString = http_build_query($postArray);
+		} else {
+			$postString = $postArray;
+		}
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
@@ -486,7 +528,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param String $status - status of the payment that returned from the payment gateway
 	 * @return Boolean - true if the status means pending payment
 	 */
-	protected function isPending($status) {
+	public function isPending($status) {
 		return preg_match($this->pendingCodes, $status);
 	}
 	

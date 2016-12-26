@@ -145,11 +145,18 @@ class PaymentGatewaysController extends ApiController {
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$transactionName = $paymentGateway->getTransactionIdName();
-		$transactionId = $request->get($transactionName);
-		if (is_null($transactionId)) {
-			return $this->setError("Operation Failed. Try Again...", $request);
+		if ($transactionName) {
+			$transactionId = $request->get($transactionName);
+			if (is_null($transactionId)) {
+				return $this->setError("Operation Failed. Try Again...", $request);
+			}
+		} else if ($paymentGateway->isCustomerBasedCharge()){
+			$customer = $request->get('customer');
+			if (is_null($customer)) {
+				return $this->setError("Operation Failed. Try Again...", $request);
+			}
+			$transactionId = $customer;
 		}
-
 		$paymentGateway->saveTransactionDetails($transactionId);
 	}
 
