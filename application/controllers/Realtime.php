@@ -52,7 +52,7 @@ class RealtimeController extends ApiController {
 			$requestBody = file_get_contents("PHP://input");
 		}
 
-		$this->event = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+		$this->event['uf'] = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
 
 	/**
@@ -62,6 +62,8 @@ class RealtimeController extends ApiController {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
 		$this->event['request_type'] = $this->getRequestType();
+		$this->event['request_num'] = $this->getRequestNum();
+		$this->event['session_id'] = $this->getSessionId();
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
@@ -111,7 +113,37 @@ class RealtimeController extends ApiController {
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
 		}
 		$requestTypeField = $this->config['realtime']['request_type_field'];
-		return $this->event[$requestTypeField];
+		if (!$requestTypeField) {
+			return (isset($this->event['uf']['request_type']) ? $this->event['uf']['request_type'] : null);
+		}
+		return $this->event['uf'][$requestTypeField];
+	}
+	
+	/**
+	 * Gets the request num from the request
+	 * 
+	 * @return string request num
+	 */
+	protected function getRequestNum() {
+		$requestNumField = $this->config['realtime']['request_num_field'];
+		if (!$requestNumField) {
+			return (isset($this->event['uf']['request_num']) ? $this->event['uf']['request_num'] : null);
+		}
+		return $this->event['uf'][$requestNumField];
+	}
+
+	/**
+	 * Gets the request session id from the request
+	 * 
+	 * @return string session id
+	 */
+	protected function getSessionId() {
+		$sessionIdFields = $this->config['realtime']['session_id_fields'];
+		if (!$sessionIdFields) {
+			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : null);
+		}
+		$sessionIdArr = array_intersect_key($this->event['uf'], array_flip($sessionIdFields));
+		return Billrun_Util::generateArrayStamp($sessionIdArr);
 	}
 
 	/**
@@ -168,7 +200,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function isPretend($event) {
 		$pretendField = $this->config['realtime']['pretend_field'];
-		return (isset($event[$pretendField]) && $event[$pretendField]);
+		return (isset($event['uf'][$pretendField]) && $event['uf'][$pretendField]);
 	}
 
 }
