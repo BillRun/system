@@ -22,7 +22,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$this->initMinBalanceValues();
 		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
 			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
-			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
+			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey($this->usaget), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
 		} else {
 			$this->row['usagev'] = 0;
 		}
