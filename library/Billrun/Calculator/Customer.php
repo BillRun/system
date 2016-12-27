@@ -246,7 +246,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber = Billrun_Factory::subscriber();
 		$availableFileds = array_keys($subscriber->getAvailableFields());
 		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
-		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang'));
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'));
 	}
 
 	/**
