@@ -4,7 +4,8 @@
 		"address" : "",
 		"phone" : "",
 		"website" : "",
-		"email" : ""
+		"email" : "",
+		"logo": ""
 	},
 	"collection" : {
 		"steps": [],
