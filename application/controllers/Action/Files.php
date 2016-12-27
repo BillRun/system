@@ -43,9 +43,13 @@ class FilesAction extends ApiAction {
 	 * The logic to be executed when this API plugin is called.
 	 */
 	public function execute() {
+		$request = $this->getRequest();
+		$action = $request->get('action');
+		if ($action == 'read') {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		}
 		$this->allowed();
 		$this->constructCollection();
-		$request = $this->getRequest();
 		$query = $this->decodeValue('query', $request);
 		if (!$query) {
 			$this->setError('Illegal data', $request->getPost());
@@ -57,7 +61,6 @@ class FilesAction extends ApiAction {
 			$metadata = array();
 		}
 		
-		$action = $request->get('action');
 		$success = true;
 		$output = array();
 		if ($action === 'save') {
