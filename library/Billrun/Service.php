@@ -95,9 +95,13 @@ class Billrun_Service {
 	 * @since 2.6
 	 */
 	public function getRateGroups($rate, $usageType) {
+		$name = $this->getName();
+		if (isset($this->data['include']['groups'][$name]['rates'])) {
+			return in_array($rate['key'], $this->data['include']['groups'][$name]['rates']);
+		}
 		if (isset($rate['rates'][$usageType]['groups'])) {
 			$groups = $rate['rates'][$usageType]['groups'];
-		} else if (($name = $this->getName()) && isset($rate['rates'][$usageType]['groups'][$name])) {
+		} else if (isset($rate['rates'][$usageType]['groups'][$name])) {
 			$groups = $rate['rates'][$usageType]['groups'][$name];
 		} else {
 			return array();

@@ -17,21 +17,21 @@ class Billrun_Processor_Util {
 	/**
 	 * Gets the datetime from the givven row
 	 * 
-	 * @param type $row
+	 * @param type $userFields
 	 * @param string $dateField
 	 * @param string $dateFormat - optional, if not received use PHP default
 	 * @param string $timeField - optional, if not received gets time from date field
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($row, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
-		if (!isset($row[$dateField])) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
+		if (!isset($userFields[$dateField])) {
 			return null;
 		}
-		$dateValue = $row[$dateField];
+		$dateValue = $userFields[$dateField];
 		$withTimeField = false;
-		if (!empty($timeField) && isset($row[$timeField])) {
-			$dateValue .= ' ' . $row[$timeField];
+		if (!empty($timeField) && isset($userFields[$timeField])) {
+			$dateValue .= ' ' . $userFields[$timeField];
 			$withTimeField = true;
 		}
 		if (!empty($dateFormat)) {
