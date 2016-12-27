@@ -122,6 +122,10 @@ class ConfigModel {
  				return $exportGenSettings;
  			}
  			throw new Exception('Unknown export_generator ' . $data['name']);
+		} else if ($category == 'template_token'){
+			$tokens = Billrun_Factory::templateTokens()->getTokens();
+			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
+			return $tokens;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);

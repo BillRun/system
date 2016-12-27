@@ -35,5 +35,6 @@
 	"menu" : {
 		"t" : "menu",
 		"v" : { "main" : { "tmp" : "tmp" } }
-	}
+	},
+	"template_token":{}
 }
