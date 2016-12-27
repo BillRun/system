@@ -214,5 +214,21 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	protected function convertAmountToSend($amount) {
 		return $amount;
 	}
+
+	protected function isNeedAdjustingRequest() {
+		return true;
+	}
+	
+	protected function isUrlRedirect() {
+		return true;
+	}
+	
+	protected function isHtmlRedirect() {
+		return false;
+	}
+	
+	public function isCustomerBasedCharge() {
+		return false;
+	}
 	
 }
