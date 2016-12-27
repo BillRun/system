@@ -148,10 +148,10 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getRealUsagev($row) {
 		$config = $this->getConfig($row);
-		if (!isset($row[$config['realtime']['used_usagev_field']])) {
+		if (!isset($row['uf'][$config['realtime']['used_usagev_field']])) {
 			return 0;
 		}
-		return $row[$config['realtime']['used_usagev_field']];
+		return $row['uf'][$config['realtime']['used_usagev_field']];
 	}
 	
 	/**
@@ -183,8 +183,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	protected function getRebalanceQuery($lineToRebalance) {
-		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($lineToRebalance['type'])['realtime']['session_id_fields'];
-		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
+		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		return array(
 			array(
@@ -197,6 +196,13 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 				)
 			)
 		);
+	}
+	
+	protected function getSessionIdQuery ($row) {
+		if (isset($row['session_id'])) {
+			return array('session_id' => $row['session_id']);
+		}
+		return array();
 	}
 	
 	protected function getRebalancePricingData($lineToRebalance, $realUsagev) {
@@ -303,8 +309,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
 
 		// Update line in Lines collection will be done by Unify calculator
-		$sessionIdFields = Billrun_Factory::config()->getFileTypeSettings($originalRow['type'])['realtime']['session_id_fields'];
-		$sessionQuery = array_intersect_key($lineToRebalance->getRawData(), array_flip($sessionIdFields));
+		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		$lines_coll = Billrun_Factory::db()->linesCollection();
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
