@@ -17,7 +17,7 @@ class Billrun_Helpers_QueueCalculators {
 	protected static $queue_calculators = array();
 	protected static $tx_saved_rows = array();
 
-	public static function runQueueCalculators(Billrun_Processor $processor, $data, $realtime, $options = array()) {
+	public static function runQueueCalculators(Billrun_Processor $processor, &$data, $realtime, $options = array()) {
 		$unifyCalc = null;
 		self::$queue_calculators = self::getQueueCalculators($realtime);
 		$calc_name_in_queue = array_merge(array(false), self::$queue_calculators);
