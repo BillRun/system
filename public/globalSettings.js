@@ -15,4 +15,6 @@ var globalSetting = {
   serviceCycleUnlimitedValue: 999999999,
   productUnlimitedValue: 999999999,
   keyUppercaseRegex: /^[A-Z0-9_]*$/,
+  defaultLogo: 'billRun-cloud-logo.png',
+  billrunLogo: 'billRun-logo.png',
 };
