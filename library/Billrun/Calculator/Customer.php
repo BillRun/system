@@ -246,7 +246,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber = Billrun_Factory::subscriber();
 		$availableFileds = array_keys($subscriber->getAvailableFields());
 		$customerExtraData = array_keys($subscriber->getCustomerExtraData());
-		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang'));
+		return array_merge($availableFileds, $customerExtraData, array('subscriber_lang', 'plan_ref'));
 	}
 
 	/**
@@ -324,14 +324,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 			$key = $translationRules['src_key'];
-			if (isset($row[$key])) {
+			if (isset($row['uf'][$key])) {
 				if (isset($translationRules['clear_regex'])) {
-					$params[$translationRules['target_key']] = preg_replace($translationRules['clear_regex'], '', $row[$key]);
+					$params[$translationRules['target_key']] = preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]);
 				} else {
 					if ($translationRules['target_key'] === 'msisdn') {
-						$params[$translationRules['target_key']] = Billrun_Util::msisdn($row[$key]);
+						$params[$translationRules['target_key']] = Billrun_Util::msisdn($row['uf'][$key]);
 					} else {
-						$params[$translationRules['target_key']] = $row[$key];
+						$params[$translationRules['target_key']] = $row['uf'][$key];
 					}
 				}
 				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . $params[$translationRules['target_key']], Zend_Log::DEBUG);

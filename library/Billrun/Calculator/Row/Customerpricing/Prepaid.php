@@ -21,8 +21,8 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
 		$this->initMinBalanceValues();
 		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset());
-			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey(sagesage_type), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
+			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
+			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey($this->usaget), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
 		} else {
 			$this->row['usagev'] = 0;
 		}
@@ -41,9 +41,9 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			if (isset($this->row['api_name']) && in_array($this->row['api_name'], array('start_call', 'release_call'))) {
 				$granted_volume = 0;
 			} else {
-				$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($this->rate, $this->row['usaget'], $this->plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume);
+				$granted_volume = Billrun_Rates_Util::getPrepaidGrantedVolumeByRate($this->rate, $this->row['usaget'], $this->plan->getName(), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
 			}
-			$charges = Billrun_Rates_Util::getChargesByRate($this->rate, $this->row['usaget'], $granted_volume, $this->plan->getName(), $this->getCallOffset());
+			$charges = Billrun_Rates_Util::getChargesByRate($this->rate, $this->row['usaget'], $granted_volume, $this->plan->getName(), $this->getCallOffset(), $this->row['urt']->sec);
 			$granted_cost = $charges['total'];
 			return array(
 				$this->pricingField => $granted_cost,

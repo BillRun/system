@@ -4,9 +4,12 @@
 		"address" : "",
 		"phone" : "",
 		"website" : "",
-		"email" : ""
+		"email" : "",
+		"logo": ""
 	},
 	"collection" : {
+		"steps": [],
+		"min_debt": 10
 	},
 	"invoice_export" : {
 		"export"  : "files/invoices/",
@@ -32,5 +35,6 @@
 	"menu" : {
 		"t" : "menu",
 		"v" : { "main" : { "tmp" : "tmp" } }
-	}
+	},
+	"template_token":{}
 }

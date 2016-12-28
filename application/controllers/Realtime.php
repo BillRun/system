@@ -1,4 +1,6 @@
-<?php /**
+<?php
+
+/**
  * @package         Billing
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
@@ -13,10 +15,12 @@
  */
 class RealtimeController extends ApiController {
 
+	use Billrun_Traits_Api_UserPermissions;
+
 	protected $config = null;
 	protected $event = null;
 	protected $file_type = null;
-	
+
 	public function indexAction() {
 		$this->execute();
 	}
@@ -25,6 +29,7 @@ class RealtimeController extends ApiController {
 	 * method to execute real-time event
 	 */
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log("Execute realtime event", Zend_Log::INFO);
 		$this->setDataFromRequest();
 		$this->setEventData();
@@ -52,7 +57,7 @@ class RealtimeController extends ApiController {
 			$requestBody = file_get_contents("PHP://input");
 		}
 
-		$this->event = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+		$this->event['uf'] = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
 	}
 
 	/**
@@ -62,11 +67,13 @@ class RealtimeController extends ApiController {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
 		$this->event['request_type'] = $this->getRequestType();
+		$this->event['request_num'] = $this->getRequestNum();
+		$this->event['session_id'] = $this->getSessionId();
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
-		
+
 		if (isset($this->event['time_date'])) {
 			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
 		} else {
@@ -75,7 +82,6 @@ class RealtimeController extends ApiController {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
-
 	}
 
 	protected function getDataRecordType($usaget, $data) {
@@ -100,15 +106,48 @@ class RealtimeController extends ApiController {
 	protected function getEventType() {
 		return $this->config['file_type'];
 	}
-	
+
 	/**
 	 * Gets the request type from the request
 	 * 
 	 * @return string request type
 	 */
 	protected function getRequestType() {
+		if (isset($this->config['realtime']['postpay_charge']) && $this->config['realtime']['postpay_charge']) {
+			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
+		}
 		$requestTypeField = $this->config['realtime']['request_type_field'];
-		return $this->event[$requestTypeField];
+		if (!$requestTypeField) {
+			return (isset($this->event['uf']['request_type']) ? $this->event['uf']['request_type'] : null);
+		}
+		return $this->event['uf'][$requestTypeField];
+	}
+	
+	/**
+	 * Gets the request num from the request
+	 * 
+	 * @return string request num
+	 */
+	protected function getRequestNum() {
+		$requestNumField = $this->config['realtime']['request_num_field'];
+		if (!$requestNumField) {
+			return (isset($this->event['uf']['request_num']) ? $this->event['uf']['request_num'] : null);
+		}
+		return $this->event['uf'][$requestNumField];
+	}
+
+	/**
+	 * Gets the request session id from the request
+	 * 
+	 * @return string session id
+	 */
+	protected function getSessionId() {
+		$sessionIdFields = $this->config['realtime']['session_id_fields'];
+		if (!$sessionIdFields) {
+			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : Billrun_Util::generateRandomNum());
+		}
+		$sessionIdArr = array_intersect_key($this->event['uf'], array_flip($sessionIdFields));
+		return Billrun_Util::generateArrayStamp($sessionIdArr);
 	}
 
 	/**
@@ -120,10 +159,12 @@ class RealtimeController extends ApiController {
 		$options = $this->config['processor'];
 		$options['parser'] = 'none';
 		$processor = Billrun_Processor::getInstance($options);
-		$processor->addDataRow($this->event);
-		$processor->process($this->config);
-		$data = $processor->getData()['data'];
-		return current($processor->getAllLines());
+		if ($processor) {
+			$processor->addDataRow($this->event);
+			$processor->process($this->config);
+			$data = $processor->getData()['data'];
+			return current($processor->getAllLines());
+		}
 	}
 
 	/**
@@ -134,7 +175,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function respond($data) {
 		$encoder = Billrun_Encoder_Manager::getEncoder(array(
-			'encoder' => $this->config['response']['encode']
+				'encoder' => $this->config['response']['encode']
 		));
 		if (!$encoder) {
 			Billrun_Factory::log('Cannot get encoder', Zend_Log::ALERT);
@@ -165,7 +206,11 @@ class RealtimeController extends ApiController {
 	 */
 	protected function isPretend($event) {
 		$pretendField = $this->config['realtime']['pretend_field'];
-		return (isset($event[$pretendField]) && $event[$pretendField]);
+		return (isset($event['uf'][$pretendField]) && $event['uf'][$pretendField]);
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

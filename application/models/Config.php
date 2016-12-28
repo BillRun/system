@@ -122,6 +122,10 @@ class ConfigModel {
  				return $exportGenSettings;
  			}
  			throw new Exception('Unknown export_generator ' . $data['name']);
+		} else if ($category == 'template_token'){
+			$tokens = Billrun_Factory::templateTokens()->getTokens();
+			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
+			return $tokens;
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -670,6 +674,9 @@ class ConfigModel {
 			if (isset($fileSettings['realtime'])) {
 				$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
 			}
+			if (isset($fileSettings['response'])) {
+				$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
+			}
 		}
 		$this->setFileTypeSettings($config, $updatedFileSettings);
 		return $this->checkForConflics($config, $fileType);
@@ -828,7 +835,12 @@ class ConfigModel {
 	}
 
 	protected function validateProcessorConfiguration($processorSettings) {
-		$processorSettings['type'] = 'Usage';
+		if (empty($processorSettings['type'])) {
+			$processorSettings['type'] = 'Usage';
+		}
+		if (!in_array($processorSettings['type'], array('Usage', 'Realtime'))) {
+			throw new Exception('Invalid processor type');
+		}
 		if (isset($processorSettings['date_format'])) {
 			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
 				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
@@ -947,6 +959,10 @@ class ConfigModel {
 			throw new Exception('Realtime settings is not an array');
 		}
 		
+		if (isset($realtimeSettings['postpay_charge']) && $realtimeSettings['postpay_charge']) {
+			return $realtimeSettings;
+		}
+		
 		$mandatoryFields = Billrun_Factory::config()->getConfigValue('configuration.realtime.mandatory_fields', array());
 		$missingFields = array();
 		foreach ($mandatoryFields as $mandatoryField) {
@@ -959,6 +975,28 @@ class ConfigModel {
 		}
 		
 		return $realtimeSettings;
+	}
+	
+	protected function validateResponseConfiguration($responseSettings) {
+		if (!is_array($responseSettings)) {
+			throw new Exception('Response settings is not an array');
+		}
+		
+		if (!isset($responseSettings['encode']) || !in_array($responseSettings['encode'], array('json'))) {
+			throw new Exception('Invalid response encode type');
+		}
+
+		if (!isset($responseSettings['fields'])) {
+			throw new Exception('Missing response fields');
+		}
+		
+		foreach ($responseSettings['fields'] as $responseField) {
+			if (empty($responseField['response_field_name']) || empty($responseField['row_field_name'])) {
+				throw new Exception('Invalid response fields structure');
+			}
+		}
+		
+		return $responseSettings;
 	}
 
 	public function save($items) {

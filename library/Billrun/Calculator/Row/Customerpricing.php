@@ -104,7 +104,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$volume = isset($this->row['usagev']) ? $this->row['usagev'] : null;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset());
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 			$pricingData = array($this->pricingField => $charges['total']);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -181,10 +181,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return boolean
 	 */
 	public function loadSubscriberBalance() {
+		if (!is_object($this->plan)) {
+			$this->plan = Billrun_Factory::plan(array('name' => $this->plan, 'time' => $this->urt->sec, /* 'disableCache' => true */));
+		}
 		// we moved the init of plan_ref to customer calc, we leave it here only for verification and avoid b/c issues
 		if (!isset($this->row['plan_ref'])) {
-			$plan = Billrun_Factory::plan(array('name' => $this->plan, 'time' => $this->urt->sec, /* 'disableCache' => true */));
-			$plan_ref = $plan->createRef();
+			$plan_ref = $this->plan->createRef();
 			if (is_null($plan_ref)) {
 				Billrun_Factory::log('No plan found for subscriber ' . $this->sid, Zend_Log::ALERT);
 				$this->usagev = 0;
@@ -217,7 +219,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
-			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getCallOffset());
+			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getCallOffset(), $this->urt->sec);
 		}
 	}
 
@@ -249,13 +251,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return mixed on success update return pricing data array, else false
 	 * 
 	 */
-	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {		
+	public function updateBalanceByRow($row, $rate, $plan, $usage_type, $volume) {
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $plan, $row);
 		if (isset($row['billrun_pretend']) && $row['billrun_pretend']) {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
 		}
-		
+
 		if (!isset($pricingData['arategroups'])) {
 			if (($crashedPricingData = $this->getTx($row['stamp'], $this->balance)) !== FALSE) {
 				return $crashedPricingData;
@@ -285,14 +287,14 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				Billrun_Factory::log("No balance reference on pricing data", Zend_Log::ERR);
 				continue;
 			}
-			
+
 			foreach ($balanceData as &$data) {
 				unset($data['balance']);
 			}
-			
+
 			$balancePricingData = $pricingData;
 			$balancePricingData['arategroups'] = $balanceData;
-			
+
 			$balance_id = $balance->getId();
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			list($query, $update) = $balance->buildBalanceUpdateQuery($balancePricingData, $row, $volume);
@@ -306,7 +308,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::log("Line with stamp " . $row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
 		}
-		
+
 		return $pricingData;
 	}
 
@@ -393,7 +395,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 
-		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), 0); // TODO: handle call offset (set 0 for now)
+		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, $this));
 
 		$ret[$this->pricingField] = $charges['total'];
@@ -457,7 +459,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			if ($volumeRequired <= 0) {
 				break;
 			}
-			
+
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				// pre-check if need to switch to other balance with the new service
