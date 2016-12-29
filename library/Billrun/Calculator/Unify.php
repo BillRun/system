@@ -42,7 +42,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 					'required' => array(
 						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
 						'match' => array(
-							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167)/',
+							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.|80\.246\.131|80\.246\.132|37\.142\.167| 91\.135\.96\.|91\.135\.99\.(19[2-9]|2))/',
 						),
 					),
 					'date_seperation' => 'Ymd',
