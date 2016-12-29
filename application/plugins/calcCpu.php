@@ -24,12 +24,6 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	/**
 	 *
-	 * @var array rows that inserted a transaction to balances
-	 */
-	protected $tx_saved_rows = array();
-
-	/**
-	 *
 	 * @var int active child processes counter
 	 */
 	protected $childProcesses = 0;
@@ -38,13 +32,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * calculators queue container
 	 * @var type 
 	 */
-	protected $queue_calculators = array();
-
-	/**
-	 *
-	 * @var Billrun_Calculator_Unify
-	 */
-	protected $unifyCalc;
+	protected $queueCalculators = null;
 
 	public function beforeProcessorStore($processor, $realtime = false) {
 		Billrun_Factory::log('Plugin ' . $this->name . ' triggered', Zend_Log::INFO);
@@ -62,8 +50,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($realtime) {
 			$this->reuseExistingFields($data, $options);
 		}
-		list($success, $this->unifyCalc, $this->tx_saved_rows) = Billrun_Helpers_QueueCalculators::runQueueCalculators($processor, $data, $realtime, $options);
-		if (!$success) {
+		$this->queueCalculators = new Billrun_Helpers_QueueCalculators();
+		if (!$this->queueCalculators->run($processor, $data, $realtime, $options)) {
 			return false;
 		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
@@ -71,12 +59,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function afterProcessorStore($processor) {
 		Billrun_Factory::log('Plugin ' . $this->name . ' triggered after processor store', Zend_Log::INFO);
-		foreach ($this->tx_saved_rows as $row) {
-			Billrun_Balances_Util::removeTx($row);
-		}
-		if (isset($this->unifyCalc)) {
-			$this->unifyCalc->releaseAllLines();
-		}
+		if ($this->queueCalculators) {
+			$this->queueCalculators->release();
+		}	
 	}
 
 	protected function removeDuplicates(Billrun_Processor $processor) {
