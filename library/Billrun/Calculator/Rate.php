@@ -71,6 +71,9 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		if (isset($options['realtime'])) {
 			$this->overrideRate = !boolval($options['realtime']);
 		}
+		if (isset($options['credit']) && boolval($options['credit'])) {
+			$this->overrideRate = true;
+		}
 		if (isset($options['calculator']['override_rate'])) {
 			$this->overrideRate = boolval($options['calculator']['override_rate']);
 		}

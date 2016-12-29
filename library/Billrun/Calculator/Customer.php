@@ -341,6 +341,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
 			}
 		}
+		if (empty($params) && $row['type'] === 'credit' && isset($row['sid'])) {
+			$params = array(
+				'sid' => $row['sid'],
+				'aid' => $row['aid'],
+			);
+		}
 		return $params;
 	}
 

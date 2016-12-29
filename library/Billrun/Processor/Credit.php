@@ -12,9 +12,11 @@
  * @package  Billing
  * @since    2.0
  */
-class Billrun_Processor_Credit extends Billrun_Processor_Json {
+class Billrun_Processor_Credit extends Billrun_Processor {
 
-	static protected $type = 'crefdit';
+	static protected $type = 'credit';
+	
+	protected $queueCalculators = null;
 
 	/**
 	 * override abstract method
@@ -25,7 +27,7 @@ class Billrun_Processor_Credit extends Billrun_Processor_Json {
 		reset($this->data['data']);
 		$rowKey = key($this->data['data']);
 		$row = &$this->data['data'][$rowKey];
-		$row['usaget'] = 'credit';
+		$row['type'] = 'credit';
 		if (!isset($row['urt'])) {
 			$row['urt'] = new MongoDate();
 		}
@@ -44,9 +46,10 @@ class Billrun_Processor_Credit extends Billrun_Processor_Json {
 		$options = array(
 			'autoload' => 0,
 			'realtime' => true,
+			'credit' => true,
 		);
-		list($success, $unifyCalc, $tx_saved_rows) = Billrun_Helpers_QueueCalculators::runQueueCalculators($this, $data, true, $options);
-		if (!$success) {
+		$this->queueCalculators = new Billrun_Helpers_QueueCalculators($options);
+		if (!$this->queueCalculators->run($this, $data)) {
 			Billrun_Factory::log("Billrun_Processor: error occured while running queue calculators.", Zend_Log::ERR);
 			return FALSE;
 		}
@@ -55,17 +58,14 @@ class Billrun_Processor_Credit extends Billrun_Processor_Json {
 			Billrun_Factory::log("Billrun_Processor: cannot store the parser lines " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
-		$this->afterProcessorStore($unifyCalc, $tx_saved_rows);
+		$this->afterProcessorStore();
 		return count($this->data['data']);
 	}
 	
-	public function afterProcessorStore($unifyCalc, $tx_saved_rows) {
-		foreach ($tx_saved_rows as $row) {
-			Billrun_Balances_Util::removeTx($row);
-		}
-		if (isset($unifyCalc)) {
-			$unifyCalc->releaseAllLines();
-		}
+	public function afterProcessorStore() {
+		if ($this->queueCalculators) {
+			$this->queueCalculators->release();
+		}	
 	}
 
 	protected function processLines() {

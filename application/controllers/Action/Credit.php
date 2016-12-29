@@ -18,6 +18,8 @@ class CreditAction extends ApiAction {
 	
 	protected $request = null;
 	protected $event = null;
+	protected $status = true;
+	protected $desc = 'success';
 	
 	/**
 	 * method to execute the refund
@@ -34,11 +36,10 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function setEventData() {
-		$this->event = $this->parseRow($this->request);
+		$this->event = $this->parse($this->request);
 		$this->event['source'] = 'credit';
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
 	}
 	
 	/**
@@ -48,31 +49,64 @@ class CreditAction extends ApiAction {
 	 */
 	protected function process() {
 		Billrun_Factory::log("Process of credit starting", Zend_Log::INFO);
-		$options['parser'] = 'none';
+		$options = array(
+			'type' => 'Credit',
+			'parser' => 'none',
+		);
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
-		$processor->process();
+		if ($processor->process() === false) {
+			$this->status = false;
+			$this->desc = 'Processor error';
+		}
 		Billrun_Factory::log("Process of credit ended", Zend_Log::INFO);
-//		$data = $processor->getData()['data'];
 //		return current($processor->getAllLines());
 	}
 	
-	protected function parseRow($credit_row) {
-		$ret = Billrun_Util::parseCreditRow($credit_row);
-		if (!$ret || (isset($ret['status']) && $ret['status'] == 0)) {
-			$error_message = isset($ret['desc']) ? $ret['desc'] : 'Error with credit row';
-			return $this->setError($error_message, $credit_row);
-		}
+	protected function parse($credit_row) {
+		$ret = $this->validateFields($credit_row);
 		return $ret;
 	}
 	
-	protected function validateMandatoryFields() {
-		$mandatoryFields = array();
+	protected function validateFields($credit_row) {
+		$mandatoryFields = array('sid', 'aid', 'rate', 'time');
+		$additionalFields = array('aprice', 'usagev', 'usaget');
+		$ret = array();
 		$missingFields = array();
 		
-		foreach ($mandatoryFields as $mandatoryField) {
-			
+		// credit row must have aprice or usagev+usaget, but not all 3
+		if (((!isset($credit_row['aprice'])) &&
+			(!isset($credit_row['usagev']) || !isset($credit_row['usaget']))) ||
+			(isset($credit_row['aprice']) && isset($credit_row['usagev']) && isset($credit_row['usaget']))) {
+			return $this->setError('Invalid pricing fields', $credit_row);
 		}
+		
+		foreach ($mandatoryFields as $mandatoryField) {
+			if (is_array($mandatoryField)) {
+				foreach ($mandatoryField as $mandatoryFieldFromFew) {
+					if (isset($credit_row[$mandatoryFieldFromFew])) {
+						$ret[$mandatoryFieldFromFew] = $credit_row[$mandatoryFieldFromFew];
+						continue 2;
+					}
+				}
+				$missingFields[] = 'one of: (' . implode(', ', $mandatoryField) . ')';
+			} else if (!isset($credit_row[$mandatoryField])) {
+				$missingFields[] = $mandatoryField;
+			}
+			$ret[$mandatoryField] = $credit_row[$mandatoryField];
+		}
+		
+		if (!empty($missingFields)) {
+			return $this->setError('Following field/s are missing: ' . implode(', ', $missingFields), $credit_row);
+		}
+		
+		foreach ($additionalFields as $additionalField) {
+			if (isset($credit_row[$additionalField])) {
+				$ret[$additionalField] = $credit_row[$additionalField];
+			}
+		}
+		
+		return $ret;
 	}
 	
 	protected function proccess() {
@@ -82,8 +116,8 @@ class CreditAction extends ApiAction {
 	protected function response() {
 		$this->getController()->setOutput(array(
 			array(
-				'status' => 1,
-				'desc' => 'success',
+				'status' => $this->status,
+				'desc' => $this->desc,
 				'stamp' => $this->event['stamp'],
 				'input' => $this->request,
 			)
