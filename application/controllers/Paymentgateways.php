@@ -66,7 +66,6 @@ class PaymentGatewaysController extends ApiController {
 		} else {
 			$data = $requestData;
 			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
-			unset($data[Billrun_Utils_Security::TIMESTAMP_FIELD]);
 		}
 
 		if (!isset($data['aid']) || is_null(($aid = $data['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
