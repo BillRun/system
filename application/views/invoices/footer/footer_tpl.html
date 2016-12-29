@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<link media="all" rel="stylesheet" href="all.css">
-	<meta charset="utf-8">
-	<script>function subst() {
-		var vars={};
-		var x=window.location.search.substring(1).split('&');
-		for (var i in x) {var z=x[i].split('=',2);vars[z[0]] = unescape(z[1]);}
-		var x=['frompage','topage','page','webpage','section','subsection','subsubsection'];
-		for (var i in x) {
-		  var y = document.getElementsByClassName(x[i]);
-		  for (var j=0; j<y.length; ++j) y[j].textContent = vars[x[i]];
-		}
-	  }
-	</script>
-</head>
-	<body style="border:0; margin: 0;height:100px;position:relative;width:100%;" onload="subst()">
+	<head>
+		<meta charset="utf-8">
+		<link media="all" rel="stylesheet" href="[[invoiceTemplateStyle]]">
+		<link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,400,700|Roboto:100,300,700" rel="stylesheet">
+	</head>
+	<body>
+		<div class="footer">
+			<div class="shell">
+				<div class="section">[[invoiceFooterTemplate]]</div>
+			</div>
+		</div>
+	</body>
 
-		<footer id="footer" >
-            <div id="footer-pager" class="pager"><span class="paging"> Page <span class="page"  ></span> from <span class="topage" ></span> </span></div>
-			<div></div>
-			<div>[[invoiceFooterTemplate]]</div>
-		</footer>
-
-</body>
 </html>

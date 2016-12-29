@@ -35,6 +35,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return is_array($acts) ? $acts : explode(',',$acts); });
 		
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
+		//TODO: use tenant LOGO
+		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/theme/logo.png" );
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
@@ -52,6 +54,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
+		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
+
 	}
 	
 	/**
@@ -60,7 +64,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	public function prepereView($params = FALSE) {
 		$this->view = new Billrun_View_Invoice($this->view_path);
-		$this->view->assign('css_path',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme'));
+		$this->view->assign('css_path',  $this->css_path);
 		$this->view->assign('decimal_mark',  Billrun_Factory::config()->getConfigValue(self::$type . '.decimal_mark', '.'));
 		$this->view->assign('thousands_separator',  Billrun_Factory::config()->getConfigValue(self::$type . '.thousands_separator', ','));
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
@@ -142,9 +146,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$headerContent = file_get_contents($this->header_path);
 		$headerContent = str_replace("[[invoiceHeaderTemplate]]", $this->getInvoiceHeaderContent(), $headerContent);		
+		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);		
 		
 		$footerContent = file_get_contents($this->footer_path);
 		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
+		$footerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $footerContent);
 
 		foreach ($translations as $translation) {
 			switch ($translation) {
@@ -172,10 +178,45 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getInvoiceHeaderContent() {
+		//TODO : in future header should came from config
+		return "
+			<div class='table'>
+				<table>
+					<tbody>
+					<tr>
+						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>" . $this->getCompanyName() . "</div></td>
+						<td><div class='paging'>page <span class='page'></span> of <span class='topage'></span></div></td>
+					</tr>
+					</tbody>
+				</table>
+			</div>";
 		return Billrun_Factory::config()->getConfigValue(self::$type . '.header', '');
 	}
 	
 	protected function getInvoiceFooterContent() {
+		//TODO : in future footer should came from config
+		return "
+			<div class='table'>
+			  <table>
+				<tbody><tr>
+					<td>
+					  <ul class='list-contacts'>
+						<li><i class='fa fa-map-marker' aria-hidden='true'></i> 36 north Ave. Manhattan, NY</li>
+
+						<li><i class='fa fa-phone' aria-hidden='true'></i> +1-899-1234433</li>
+
+						<li><i class='fa fa-globe' aria-hidden='true'></i> www.companyname.com</li>
+
+						<li><i class='fa fa-at' aria-hidden='true'></i> support@companyname.com</li>
+					  </ul>
+					</td>
+					<td>
+					  <p class='credentials'> <span class='text'>powered by</span> <img src='css/images/footer-logo.png' alt=''></p>
+					</td>
+				  </tr>
+				</tbody>
+			  </table>
+			</div>";
 		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
 	}
 	
