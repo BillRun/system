@@ -27,10 +27,19 @@ class Billrun_Helpers_QueueCalculators {
 	 * @var Billrun_Calculator_Unify
 	 */
 	protected $unifyCalc;
+	
+	protected $options = array();
+	
+	protected $realtime = false;
+	
+	public function __construct($options) {
+		$this->options = $options;
+		$this->realtime = (isset($this->options['realtime']) ? $this->options['realtime'] : false);
+	}
 
-	public function run(Billrun_Processor $processor, &$data, $realtime, $options = array()) {
+	public function run(Billrun_Processor $processor, &$data) {
 		$this->unifyCalc = null;
-		$this->queue_calculators = $this->getQueueCalculators($realtime);
+		$this->queue_calculators = $this->getQueueCalculators();
 		$calc_name_in_queue = array_merge(array(false), $this->queue_calculators);
 		$last_calc = array_pop($calc_name_in_queue);
 		$index = 0;
@@ -42,11 +51,11 @@ class Billrun_Helpers_QueueCalculators {
 				continue;
 			}
 			$queue_data = $processor->getQueueData();
-			$calc = Billrun_Calculator::getInstance(array_merge($options, $calc_options));
+			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
 			$calc->prepareData($data['data']);
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
-					$line['realtime'] = $realtime;
+					$line['realtime'] = $this->realtime;
 					$entity = new Mongodloid_Entity($line);
 					if ($calc->isLineLegitimate($entity)) {
 						if ($calc->updateRow($entity) !== FALSE) {
@@ -68,7 +77,7 @@ class Billrun_Helpers_QueueCalculators {
 					$line = $entity->getRawData();
 				}
 
-				if ($realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
+				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
 					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
 					$this->unifyCalc($processor, $data);
 					return false;
@@ -79,9 +88,9 @@ class Billrun_Helpers_QueueCalculators {
 		return true;
 	}
 	
-	protected function getQueueCalculators($realtime) {
+	protected function getQueueCalculators() {
 		$queue_calcs = Billrun_Factory::config()->getConfigValue("queue.calculators", array());
-		if ($realtime && !array_search('unify', $queue_calcs)) { // realtime must run a unify calculator
+		if ($this->realtime && !array_search('unify', $queue_calcs)) { // realtime must run a unify calculator
 			$queue_calcs[] = 'unify';
 		}
 		return $queue_calcs;

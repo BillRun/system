@@ -50,8 +50,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($realtime) {
 			$this->reuseExistingFields($data, $options);
 		}
-		$this->queueCalculators = new Billrun_Helpers_QueueCalculators();
-		if (!$this->queueCalculators->run($processor, $data, $realtime, $options)) {
+		$this->queueCalculators = new Billrun_Helpers_QueueCalculators($options);
+		if (!$this->queueCalculators->run($processor, $data)) {
 			return false;
 		}
 		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
