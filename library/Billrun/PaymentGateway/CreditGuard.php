@@ -276,5 +276,21 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$amount = round($amount, 2);
 		return $amount * 100;
 	}
+
+	protected function isNeedAdjustingRequest(){
+		return true;
+	}
 	
+	protected function isUrlRedirect() {
+		return true;
+	}
+	
+	protected function isHtmlRedirect() {
+		return false;
+	}
+	
+	public function isCustomerBasedCharge() {
+		return false;
+	}
+
 }

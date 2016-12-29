@@ -4,7 +4,8 @@
 		"address" : "",
 		"phone" : "",
 		"website" : "",
-		"email" : ""
+		"email" : "",
+		"logo": ""
 	},
 	"collection" : {
 		"steps": [],
@@ -34,5 +35,6 @@
 	"menu" : {
 		"t" : "menu",
 		"v" : { "main" : { "tmp" : "tmp" } }
-	}
+	},
+	"template_token":{}
 }

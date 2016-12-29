@@ -61,9 +61,11 @@ class PaymentGatewaysController extends ApiController {
 		$request = $this->getRequest();
 		// Validate the data.
 		$requestData = json_decode($request->get('data'), true);
-		$data = Billrun_Utils_Security::validateData($requestData);
-		if ($data === null) {
+		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $request);
+		} else {
+			$data = $requestData;
+			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
 		}
 
 		if (!isset($data['aid']) || is_null(($aid = $data['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {
@@ -145,11 +147,18 @@ class PaymentGatewaysController extends ApiController {
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$transactionName = $paymentGateway->getTransactionIdName();
-		$transactionId = $request->get($transactionName);
-		if (is_null($transactionId)) {
-			return $this->setError("Operation Failed. Try Again...", $request);
+		if ($transactionName) {
+			$transactionId = $request->get($transactionName);
+			if (is_null($transactionId)) {
+				return $this->setError("Operation Failed. Try Again...", $request);
+			}
+		} else if ($paymentGateway->isCustomerBasedCharge()){
+			$customer = $request->get('customer');
+			if (is_null($customer)) {
+				return $this->setError("Operation Failed. Try Again...", $request);
+			}
+			$transactionId = $customer;
 		}
-
 		$paymentGateway->saveTransactionDetails($transactionId);
 	}
 

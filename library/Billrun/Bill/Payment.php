@@ -522,7 +522,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			$txId = $payment->getPaymentGatewayTransactionId();
 			$status = $paymentGateway->verifyPending($txId);
-			if ($status == 'Pending') { // Payment is still pending
+			if ($paymentGateway->isPending($status)) { // Payment is still pending
 				$payment->updateLastPendingCheck();
 				continue;
 			}

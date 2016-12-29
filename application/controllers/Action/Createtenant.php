@@ -35,6 +35,13 @@ class CreatetenantAction extends ApiAction {
 
 		$this->init();
 
+		// Check if tenant already exists
+		if (file_exists(Billrun_Config::getMultitenantConfigPath() . $this->tenant . '.ini')) {
+			$this->desc = 'Cannot create tenant.';
+			Billrun_Factory::log('Create Tenant - tenant already exists', Zend_Log::INFO);
+			return false;
+		}
+		
 		if (!$this->createUserInBillrun() ||
 			!$this->generateDbUsernameAndPassword() ||
 			!$this->createConfigFile() ||
