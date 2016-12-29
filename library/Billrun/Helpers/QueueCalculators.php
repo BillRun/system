@@ -9,7 +9,7 @@
 /**
  * Helper class for queue calculators
  *
- * @package  Util
+ * @package  Helpers
  * @since    5.3
  */
 class Billrun_Helpers_QueueCalculators {
