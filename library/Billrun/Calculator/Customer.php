@@ -166,6 +166,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			return false;
 		}
 		
+		$connection_type = $plan->get('connection_type') ? $plan->get('connection_type') : 'postpaid';
+		if ($row['type'] === 'credit' && $connection_type !== 'postpaid') {
+			Billrun_Factory::log('Credit can only be applied on postpaid customers ' . $row->get('stamp'), Zend_Log::ERR);
+			return false;
+		}
+		
 		foreach ($plan->getFieldsForLine() as $lineKey => $planKey) {
 			if (!empty($planField = $plan->get($planKey))) {
 				$row[$lineKey] = $planField;
