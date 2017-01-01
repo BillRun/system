@@ -36,7 +36,7 @@ class PaymentGatewaysController extends ApiController {
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
-				break;
+				continue;
 			}
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
