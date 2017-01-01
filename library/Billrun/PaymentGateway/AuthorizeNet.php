@@ -13,12 +13,11 @@
  */
 class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
-	protected $conf;
 	protected $billrunName = "AuthorizeNet";
-	protected $pendingCodes = "/4/";
+	protected $pendingCodes = "/^4$/";
 	protected $customerId;
-	protected $completionCodes = "/1/";
-	protected $rejectionCodes = "/2|3/";
+	protected $completionCodes = "/^1$/";
+	protected $rejectionCodes = "/^2$|^3$/";
 	protected $actionUrl;
 
 	protected function __construct() {
