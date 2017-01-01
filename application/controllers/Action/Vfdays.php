@@ -159,7 +159,10 @@ class VfdaysAction extends Action_Base {
 			$match = array(
 				'$match' => array(
 					'sid' => $sid,
-					'type' => 'tap3',
+					'$or' => array(
+						array('type' => 'tap3'),
+						array('type' => 'smsc'),
+					),
 					'plan' => array('$in' => $this->plans),
 					'arategroup' => "VF",
 					'billrun' => array(

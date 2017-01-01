@@ -107,7 +107,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
-				'type' => 'tap3',
+				'$or' => array(
+					array('type' => 'tap3'),
+					array('type' => 'smsc'),
+				),
 				'plan' => $plan->getData()->get('name'),
 				'arategroup' => $groupSelected,
 				'in_group' => array(
