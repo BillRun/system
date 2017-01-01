@@ -10,19 +10,45 @@
  * This class represents a service to be used by a subscriber.
  */
 class Billrun_DataTypes_Subscriberservice {
-	protected $name = null;
-//	protected $from = null;
-//	protected $to = null;
 	
-	public function __construct(array $options) {
-//		if(!isset($options['from'], $options['to'], $options['name'])) {
-		if(!isset($options['name'])) {
+	/**
+	 * The name of the service
+	 * @var string 
+	 */
+	protected $name = null;
+	
+	/**
+	 * The price of the service
+	 * @var float
+	 */
+	protected $price = null;
+	
+	/**
+	 * Create a new instance of the Subscriberservice class
+	 * @param string $name - The name of the service.
+	 */
+	public function __construct($name) {
+		if(!is_string($name)) {
 			return;
 		}
 		
-//		$this->to = $options['to'];
-//		$this->from = $options['from'];
-		$this->name = $options['name'];
+		$this->name = $name;
+		
+		// Get the price from the DB
+		$servicesColl = Billrun_Factory::db()->servicesCollection();
+		$serviceQuery['name'] = $this->name;
+		$service = $servicesColl->query($serviceQuery, array("price" => 1))->cursor()->current();
+		if($service->isEmpty() || !isset($service['price'])) {
+			// Signal invalid
+			$this->name = null;
+			return;
+		}
+		
+		$this->price = $service['price'];
+	}
+	
+	public function getName() {
+		return $this->name;
 	}
 	
 	/**
@@ -30,39 +56,13 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return true if valid.
 	 */
 	public function isValid() {
-//		if(empty($this->name) || !is_string($this->name) || empty($this->from) || empty($this->to)) {
-		if(empty($this->name) || !is_string($this->name)) {
+		if(empty($this->name) || !is_string($this->name) || 
+		  (!is_float($this->price)) && !Billrun_Util::IsIntegerValue($this->price)) {
+			Billrun_Factory::log("Invalid parameters in subscriber service. name: " . print_r($this->name,1) . " price: " . print_r($this->price,1));
 			return false;
 		}
-		
-		// Validate
-//		if($this->validateDates()) {
-//			return false;
-//		}
 		
 		return $this->checkDB();
-	}
-	
-	protected function validateDates() {
-		// Get the date strings.
-		$from = strtotime($this->from);
-		$to = strtotime($this->to);
-		
-		// Validate
-		if(!$from || !$to) {
-			return false;
-		}
-		
-		// Validate the dates.
-		if($from > $to) {
-			return false;
-		}
-		
-		// Translate the internal values
-		$this->from = $from;
-		$this->to = $to;
-		
-		return true;
 	}
 	
 	/**
@@ -89,7 +89,15 @@ class Billrun_DataTypes_Subscriberservice {
 	 * @return array
 	 */
 	public function getService() {
-		return $this->name;
-//		return array('name' => $this->name, 'from' => $this->from, 'to' => $this->to);
+		$serviceData = array('name' => $this->name, "price" => $this->price);
+		return $serviceData;
+	}
+	
+	/**
+	 * Get the price of the service relative to the current billing cycle
+	 * @return float - Price of the service relative to the current billing cycle.
+	 */
+	public function getPrice() {
+		return $this->price;
 	}
 }

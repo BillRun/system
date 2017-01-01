@@ -64,6 +64,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected function getFlatLine() {
 		$flatEntry = array(
 			'plan' => $this->plan,
+			'name' => $this->plan,
 			'process_time' => new MongoDate(),
 			'usagev' => 1
 		);

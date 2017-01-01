@@ -121,6 +121,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$constructed += $filtered[$filterKey]; 
 			} else {
 				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
+			}
+			
+			if(!isset($constructed['plans'])) {
+				Billrun_Factory::log("Overriding plans: " . print_r($filtered,1));				
 				$constructed['plans'] = array();
 			}
 			
@@ -219,9 +223,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	/**
 	 * Build the aggregator plan data array
 	 * @param array $plans
+	 * @param $endTime
 	 * @return array
 	 */
-	protected function buildPlansSubAggregator(array $plans) {
+	protected function buildPlansSubAggregator(array $plans, $endTime) {
 		$name = null;
 		$from = null;
 		$to = null;
@@ -254,6 +259,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		// Add the last value.
 		$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
+		
+		if($to > $endTime) {
+			$to = $endTime;
+			Billrun_Factory::log("Taking the end time! " . $endTime);
+		}
 		$aggregatorData["$to"]['plans'][] = $toAdd;
 			
 		return $aggregatorData;
@@ -283,12 +293,19 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			if(isset($subscriber['services'])) {
 				$currServices = $subscriber['services'];
 			}
-				
+
 			// Check the differences in the services.
-			$removed  = array_diff($services, $currServices);
-			$added = array_diff($currServices, $services);
+			$rawRemoved  = array_diff($services, $currServices);
+			$rawAdded = array_diff($currServices, $services);
 			
 			$services = $currServices;
+			
+			// Translate the added and removed.
+			$func = function($v){
+					return array('name' => $v);
+				};
+			$added = array_map($func, $rawAdded);
+			$removed = array_map($func, $rawRemoved);
 			
 			// Add the services to the services data
 			foreach ($added as $addedService) {
@@ -320,7 +337,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$servicesAggregatorData["$sto"][] = $lastService;
 		}
 		
-		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans);
+		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);
 		
 		// Merge the results
 		foreach ($servicesAggregatorData as $key => $value) {
