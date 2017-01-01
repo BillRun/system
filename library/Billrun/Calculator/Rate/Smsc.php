@@ -79,10 +79,11 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 
 	protected function getLineRate($row, $usage_type) {
 		$possible_rates = array();
+		$possible_ac_rates = array();
 		$line_time = $row['urt'];
 		if (isset($row['roaming'])) {
 			if ($this->shouldLineBeRated($row)) {
-				$matchedRate = false;
+				$matchedRate = false; 
 				$calling_msc = Billrun_Util::cleanLeadingZeros($row['calling_msc']);
 				$calling_msc_prefixes = Billrun_Util::getPrefixes($calling_msc);
 				$called_number = $this->extractNumber($row);
@@ -93,7 +94,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 							if (!isset($rate['kt_prefixes'])) {
 								continue;
 							}
-							if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
+							if (isset($rate['rates'][$usage_type])) {
 								if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
 									$possible_rates[] = $rate;
 								}
@@ -101,17 +102,19 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 						}
 					}
 				}
-				foreach ($called_number_prefixes as $prefix) {
+				foreach ($called_number_prefixes as $prefix) {		// VF_Rates + AC_OTA	
 					foreach ($possible_rates as $rate) {
-						if (in_array($prefix, $rate['params']['prefix'])) {
+						if (isset($rate['params']['prefix']) && in_array($prefix, $rate['params']['prefix'])) {
 							$matchedRate = $rate;
 							break 2;
 						}
-						if (preg_match('/^AC/', $rate['key'])) {
-							$matchedRate = $rate;
-							break 2;
+						if (!isset($rate['params']['prefix']) && (preg_match('/^AC/', $rate['key']))){
+							$possible_ac_rates[] = $rate;
 						}
 					}
+				}
+				if (!$matchedRate && $possible_ac_rates){
+					$matchedRate = current($possible_ac_rates);
 				}
 				return $matchedRate;
 			} else {
@@ -121,5 +124,5 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 			return parent::getLineRate($row, $usage_type);
 		}
 	}
-
+	
 }
