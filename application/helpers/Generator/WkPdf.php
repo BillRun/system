@@ -56,6 +56,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
 		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
+		$this->font_awesome_css_path = APPLICATION_PATH . '/public/css/font-awesome.css';
 
 	}
 	
@@ -73,7 +74,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
-		$this->view->assign('font_awesome_css_path', APPLICATION_PATH . '/public/css/font-awesome.css');
+		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 	}
 	
 	/*
@@ -153,6 +154,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$footerContent = file_get_contents($this->footer_path);
 		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $footerContent);
+		$footerContent = str_replace("[[invoiceTemplateFontAwesomeStyle]]", $this->font_awesome_css_path, $footerContent);
 
 		foreach ($translations as $translation) {
 			switch ($translation) {
@@ -214,7 +216,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//TODO : in future footer should came from config
 		return "
 			<div class='table'>
-			  <table style='font-size:17px;'>
+			  <table style='font-size:16px;'>
 				<tbody><tr>
 					<td>
 					  <ul class='list-contacts'>
