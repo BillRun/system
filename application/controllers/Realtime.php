@@ -74,13 +74,6 @@ class RealtimeController extends ApiController {
 		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 
-		if (isset($this->event['time_date'])) {
-			$this->event['urt'] = new MongoDate(strtotime($this->event['time_date']));
-		} else {
-			// we are on real time -> the time is now
-			$this->event['urt'] = new MongoDate();
-		}
-
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
 	}
 
