@@ -3,6 +3,7 @@
 		"to","from","plan_activation" 
 	],
 	"test": "One subscriber",
+	"subs" : 1,
 	"data": [
 		{
 		  "firstname": "Mister",

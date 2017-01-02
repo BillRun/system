@@ -36,7 +36,7 @@ class PaymentGatewaysController extends ApiController {
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
-				break;
+				continue;
 			}
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
@@ -61,9 +61,11 @@ class PaymentGatewaysController extends ApiController {
 		$request = $this->getRequest();
 		// Validate the data.
 		$requestData = json_decode($request->get('data'), true);
-		$data = Billrun_Utils_Security::validateData($requestData);
-		if ($data === null) {
+		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $request);
+		} else {
+			$data = $requestData;
+			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
 		}
 
 		if (!isset($data['aid']) || is_null(($aid = $data['aid'])) || !Billrun_Util::IsIntegerValue($aid)) {

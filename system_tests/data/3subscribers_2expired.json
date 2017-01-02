@@ -3,6 +3,7 @@
 		"to","from","plan_activation" 
 	],
 	"test": "Three subscribers two expired",
+	"subs" : 1,
 	"data": [
 		{
 		  "firstname": "A",
