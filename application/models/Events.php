@@ -75,7 +75,7 @@ class EventsModel extends TableModel {
 			),
 			'sid' => array(
 				'key' => 'sid',
-				'db_key' => array('sid', 'returned_value.subscriber_id'),
+				'db_key' => array('subscriber_id', 'returned_value.subscriber_id'),
 				'input_type' => 'number',
 				'comparison' => 'equals',
 				'display' => 'Subscriber id',
