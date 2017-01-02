@@ -73,6 +73,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
+		$this->view->assign('font_awesome_css_path', APPLICATION_PATH . '/public/css/font-awesome.css');
 	}
 	
 	/*
@@ -221,9 +222,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 						<li><i class='fa fa-phone' aria-hidden='true'></i> " .  $this->getCompanyPhone() . "</li>
 
-						<li><i class='fa fa-globe' aria-hidden='true'></i> " . $this->getCompanyWebsite() . "</li>
+						<li><a href='" . $this->getCompanyWebsite() . "'><i class='fa fa-globe' aria-hidden='true'></i> " . $this->getCompanyWebsite() . "</a></li>
 
-						<li><i class='fa fa-at' aria-hidden='true'></i> " . $this->getCompanyEmail() . "</li>
+						<li><a href='mailto:" . $this->getCompanyEmail() . "'><i class='fa fa-at' aria-hidden='true'></i> " . $this->getCompanyEmail() . "</a></li>
 					  </ul>
 					</td>
 					<td>

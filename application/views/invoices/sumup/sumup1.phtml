@@ -58,7 +58,7 @@
 			<tr>
 				<td></td>
 
-				<td><?php echo $data->get('attributes')['email']; ?></td>
+				<td><?php echo !empty($data->get('attributes')['email']) ? $data->get('attributes')['email'] : ''; ?></td>
 			</tr>
 		</tbody></table>
 </section>
