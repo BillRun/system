@@ -178,6 +178,17 @@ class Billrun_Util {
 	public static function startsWith($haystack, $needle) {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToReadable($billrunKey) {
+		return date('F Y', strtotime($billrunKey . '01'));
+	}
 
 	/**
 	 * convert corrency.  
@@ -1405,6 +1416,19 @@ class Billrun_Util {
 
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('tenant.name', '');
+	}
+
+	public static function getCompanyAddress() {
+		return Billrun_Factory::config()->getConfigValue('tenant.address', '');
+	}
+	public static function getCompanyPhone() {
+		return Billrun_Factory::config()->getConfigValue('tenant.phone', '');
+	}
+	public static function getCompanyWebsite() {
+		return Billrun_Factory::config()->getConfigValue('tenant.website', '');
+	}
+	public static function getCompanyEmail() {
+		return Billrun_Factory::config()->getConfigValue('tenant.email', '');
 	}
 	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {

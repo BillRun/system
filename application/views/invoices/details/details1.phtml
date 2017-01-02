@@ -1,159 +1,112 @@
-<div class="container">
-	<div class="section section-invoice-head">
-		<div class="table">
-			<table>
-				<tbody><tr>
-						<td class="page-title"><h3 class="inline">INVOICE</h3></td>
-						<td>
-							<span class="label">Customer</span>
-							<h3 class="inline">David Morison</h3>
-						</td>
-						<td>
-							<span class="label">Invoice#</span>
-							<span>100183</span>
-						</td>
-						<td>
-							<span class="label">Period</span>
-							<h3 class="inline">October 2016</h3>
-						</td>
-					</tr>
-				</tbody></table>
-		</div><!-- /.table -->
-	</div><!-- /.section .section-invoice-head -->
-
-	<div class="section section-invoice-base">
-		<h2>Subscription#1:</h2>
-		<h1>David Morison</h1>
-		<p class="label">Description of subscription if available</p>
-	</div><!-- /.section .section-invoice-base -->
-
-	<div class="section section-invoice-details">
-		<div class="section-head">
-			<h2 class="section-title">Usage details</h2><!-- /.section-title -->
-		</div><!-- /.section-head -->
-
-		<div class="section-body">
-			<div class="table table-default table-default-primary">
+<?php foreach ($data->get('subs') as $index => $sub) { ?>
+	<div class="break"></div>
+	<div class="container">
+		<div class="section section-invoice-head">
+			<div class="table">
 				<table>
-					<thead>
-						<tr>
-							<th>Description</th>
-							<th>Amount</th>
+					<tbody><tr>
+							<td class="page-title"><h3 class="inline">INVOICE</h3></td>
+							<td>
+								<span class="label">Customer</span>
+								<h3 class="inline"><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h3>
+							</td>
+							<td>
+								<span class="label">Invoice#</span>
+								<span><?php echo $data->get('invoice_id'); ?></span>
+							</td>
+							<td>
+								<span class="label">Period</span>
+								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></h3>
+							</td>
 						</tr>
-					</thead>
+					</tbody></table>
+			</div><!-- /.table -->
+		</div><!-- /.section .section-invoice-head -->
 
-					<tbody>
-						<tr>
-							<td>Premium plan</td>
-							<td>$ 10.00</td>
-						</tr>
-						<tr>
-							<td>Services</td>
-							<td>$ 6.24</td>
-						</tr>
-						<tr class="last">
-							<td>Extras</td>
-							<td>$ 0.00</td>
-						</tr>
-						<tr class="total">
-							<td>TOTAL</td>
-							<td><strong>$ 16.24</strong></td>
-						</tr>
-						<tr class="total">
-							<td>VAT (17%)</td>
-							<td>$ 2.76</td>
-						</tr>
-					</tbody>
+		<div class="section section-invoice-base">
+		<h2>Subscription#<?php echo ($index + 1); ?>:</h2>
+		<h1><?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h1>
+		<p class="label"><?php echo (!empty($sub['desc']) ? $sub['desc'] : ''); ?></p>
+		</div><!-- /.section .section-invoice-base -->
 
-					<tfoot>
-						<tr class="grand-total">
-							<td>GRAND TOTAL</td>
-							<td>$ 19.00</td>
-						</tr>
-					</tfoot>
-				</table>
-			</div><!-- /.table table-default table-default-primary -->
-		</div><!-- /.section-body -->
-	</div><!-- /.section section-invoice-total -->
+		<div class="section section-invoice-details">
+			<div class="section-head">
+				<h2 class="section-title">Usage details</h2><!-- /.section-title -->
+			</div><!-- /.section-head -->
 
-	<div class="section section-invoice-details">
-		<div class="section-head">
-			<h2 class="section-title">Usage details</h2><!-- /.section-title -->
-		</div><!-- /.section-head -->
+			<div class="section-body">
+				<div class="table table-default table-default-primary">
+					<table>
+						<thead>
+							<tr>
+								<th>Description</th>
+								<th>Amount</th>
+							</tr>
+						</thead>
 
-		<div class="section-body">
-			<div class="table table-default">
-				<table>
-					<thead>
-						<tr>
-							<th>Date &amp; Time</th>
-							<th>Type</th>
-							<th>Rate</th>
-							<th>Volume</th>
-							<th>Amount</th>
-						</tr>
-					</thead>
+						<tbody>
+						<?php foreach ($details_keys as $title => $key) { ?>
+							<?php if (empty($sub['totals'][$key])) { continue; } ?>
+							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
+								<td><?php echo ucfirst($title); ?></td>
+								<td><?php echo '$' . number_format($sub['totals'][$key]['after_vat'], 2); ?></td>
+							</tr>
+						<?php } ?>
+							<tr class="total">
+								<td>TOTAL</td>
+								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
+							</tr>
+							<tr class="total">
+								<td>VAT (17%)</td>
+								<td><?php echo '$' . number_format($sub['totals']['after_vat'] - $sub['totals']['before_vat'], 2); ?></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr class="grand-total">
+								<td>GRAND TOTAL</td>
+								<td><?php echo '$' . number_format($sub['totals']['after_vat'], 2); ?></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div><!-- /.table table-default table-default-primary -->
+			</div><!-- /.section-body -->
+		</div><!-- /.section section-invoice-total -->
 
-					<tbody>
-						<tr>
-							<td>01/10/2016 08:34</td>
-							<td>Service</td>
-							<td>Service description &amp; rate</td>
-							<td>480 min</td>
-							<td>$ 10.00</td>
-						</tr>
-						<tr>
-							<td>01/10/2016 10:05</td>
-							<td>Service</td>
-							<td>Service description &amp; rate</td>
-							<td>-</td>
-							<td>$ 6.24</td>
-						</tr>
-						<tr>
-							<td>02/10/2016 00:00</td>
-							<td>Plan</td>
-							<td>Plan description &amp; rate</td>
-							<td>-</td>
-							<td>$ 10.00</td>
-						</tr>
-						<tr>
-							<td>03/10/2016 12:15</td>
-							<td>Product</td>
-							<td>Product description &amp; rate</td>
-							<td>500 SMS</td>
-							<td>$ 3.50</td>
-						</tr>
-						<tr>
-							<td>05/10/2016 08:34</td>
-							<td>Service</td>
-							<td>Service description &amp; rate</td>
-							<td>30 min</td>
-							<td>$ 10.00</td>
-						</tr>
-						<tr>
-							<td>05/10/2016 10:05</td>
-							<td>Service</td>
-							<td>Service description &amp; rate</td>
-							<td>-</td>
-							<td>$ 6.24</td>
-						</tr>
-						<tr>
-							<td>06/10/2016 00:00</td>
-							<td>Plan</td>
-							<td>Plan description &amp; rate</td>
-							<td>-</td>
-							<td>$ 10.00</td>
-						</tr>
-						<tr>
-							<td>06/10/2016 12:15</td>
-							<td>Product</td>
-							<td>Product description &amp; rate</td>
-							<td>200 SMS</td>
-							<td>$ 3.50</td>
-						</tr>
-					</tbody>
-				</table>
-			</div><!-- /.table table-default -->
-		</div><!-- /.section-body -->
-	</div><!-- /.section section-invoice-details -->
-</div>
+		<div class="break"></div>
+		<div class="section section-invoice-details">
+			<div class="section-head">
+				<h2 class="section-title">Usage details</h2><!-- /.section-title -->
+			</div><!-- /.section-head -->
+
+			<div class="section-body">
+				<div class="table table-default">
+					<table>
+						<thead>
+							<tr>
+								<th>Date &amp; Time</th>
+								<th>Type</th>
+								<th>Rate</th>
+								<th>Volume</th>
+								<th>Amount</th>
+							</tr>
+						</thead>
+
+						<tbody>
+							<?php if (!empty($this->lines[$sub['sid']])) { ?>
+								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
+									<tr>
+										<td><?php echo date($date_format, $line['urt']->sec); ?></td>
+										<td><?php echo $line['type']; ?></td>
+										<td><?php echo $line['arate_key']; ?></td>
+										<td><?php echo number_format($line['usagev'], 2); ?></td>
+										<td><?php echo number_format($line['aprice'], 2); ?></td>
+									</tr>
+								<?php } ?>
+							<?php } ?>
+						</tbody>
+					</table>
+				</div><!-- /.table table-default -->
+			</div><!-- /.section-body -->
+		</div>
+	</div>
+<?php } ?>

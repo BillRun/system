@@ -37,6 +37,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 		//TODO: use tenant LOGO
 		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/theme/logo.png" );
+		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
@@ -70,8 +71,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
 		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
-		$this->view->assign('lines_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.lines_template', ''));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
+		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
 	}
 	
 	/*
@@ -129,7 +130,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$this->updateHtmlDynamicData($account);
 			
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
-			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
 	}
 	
@@ -172,6 +173,21 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		return Billrun_Util::getCompanyName();
 	}
 	
+	protected function getCompanyAddress() {
+		return Billrun_Util::getCompanyAddress();
+	}
+	protected function getCompanyWebsite() {
+		return Billrun_Util::getCompanyWebsite();
+	}
+	
+	protected function getCompanyPhone() {
+		return Billrun_Util::getCompanyPhone();
+	}
+	
+	protected function getCompanyEmail() {
+		return Billrun_Util::getCompanyEmail();
+	}
+	
 	protected function getHeaderDate() {
 		$date_seperator = Billrun_Factory::config()->getConfigValue(self::$type . '.date_seperator', '/');
 		return date('d' . $date_seperator . 'm' . $date_seperator . 'Y');
@@ -184,7 +200,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				<table>
 					<tbody>
 					<tr>
-						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>" . $this->getCompanyName() . "</div></td>
+						<td><img src='" . $this->logo_path . "' alt='' style='width:100px;object-fit:contain;'>&nbsp;&nbsp;" . $this->getCompanyName() . "</div></td>
 						<td><div class='paging'>page <span class='page'></span> of <span class='topage'></span></div></td>
 					</tr>
 					</tbody>
@@ -197,21 +213,21 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		//TODO : in future footer should came from config
 		return "
 			<div class='table'>
-			  <table>
+			  <table style='font-size:17px;'>
 				<tbody><tr>
 					<td>
 					  <ul class='list-contacts'>
-						<li><i class='fa fa-map-marker' aria-hidden='true'></i> 36 north Ave. Manhattan, NY</li>
+						<li><i class='fa fa-map-marker' aria-hidden='true'></i> " .  $this->getCompanyAddress() . "</li>
 
-						<li><i class='fa fa-phone' aria-hidden='true'></i> +1-899-1234433</li>
+						<li><i class='fa fa-phone' aria-hidden='true'></i> " .  $this->getCompanyPhone() . "</li>
 
-						<li><i class='fa fa-globe' aria-hidden='true'></i> www.companyname.com</li>
+						<li><i class='fa fa-globe' aria-hidden='true'></i> " . $this->getCompanyWebsite() . "</li>
 
-						<li><i class='fa fa-at' aria-hidden='true'></i> support@companyname.com</li>
+						<li><i class='fa fa-at' aria-hidden='true'></i> " . $this->getCompanyEmail() . "</li>
 					  </ul>
 					</td>
 					<td>
-					  <p class='credentials'> <span class='text'>powered by</span> <img src='css/images/footer-logo.png' alt=''></p>
+					  <p class='credentials'> <span class='text'>powered by</span> <img style='width:125px;object-fit:contain;' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
 					</td>
 				  </tr>
 				</tbody>

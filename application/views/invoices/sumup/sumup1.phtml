@@ -11,19 +11,19 @@
 						<tbody><tr>
 								<td>Period</td>
 
-								<td><strong>October 216</strong></td>
+								<td><strong><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></strong></td>
 							</tr>
 
 							<tr>
 								<td>Invoice#</td>
 
-								<td>100183</td>
+								<td><?php echo $data->get('invoice_id'); ?></td>
 							</tr>
 
 							<tr>
-								<td>Print Dte</td>
+								<td>Print Date</td>
 
-								<td>13/11/2016</td>
+								<td><?php echo date('d/m/Y'); ?></td>
 							</tr>
 						</tbody></table>
 				</td>
@@ -39,12 +39,12 @@
 				</td>
 
 				<td>
-					<h2>David Morison</h2>
+					<h2><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h2>
 
 					<span class="text">
 						<small>Account</small>
 
-						<span class="text">1244567</span>
+						<span class="text"><?php echo $data->get('aid'); ?></span>
 					</span>
 				</td>
 			</tr>
@@ -52,13 +52,13 @@
 			<tr>
 				<td></td>
 
-				<td>3455 Mount Zion St. New Jerssy</td>
+				<td><?php echo $data->get('attributes')['address']; ?></td>
 			</tr>
 
 			<tr>
 				<td></td>
 
-				<td>david.morison@gmail.com</td>
+				<td><?php echo $data->get('attributes')['email']; ?></td>
 			</tr>
 		</tbody></table>
 </section>
@@ -78,32 +78,28 @@
 				</thead>
 
 				<tbody>
-					<tr>
-						<td>Premium plan</td>
-						<td>$ 30.00</td>
-					</tr>
-					<tr>
-						<td>Services</td>
-						<td>$ 6.24</td>
-					</tr>
-					<tr class="last">
-						<td>Extras</td>
-						<td>$ 0.00</td>
-					</tr>
+					<?php foreach ($details_keys as $title => $key) { ?>
+						<?php if (empty($data->get('totals')[$key])) { continue; } ?>
+						<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
+							<td><?php echo ucfirst($title); ?></td>
+							<td><?php echo '$' . number_format($data->get('totals')[$key]['after_vat'], 2); ?></td>
+						</tr>
+					<?php } ?>
+					
 					<tr class="total">
 						<td>TOTAL</td>
-						<td><strong>$ 36.24</strong></td>
+						<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
 					</tr>
 					<tr class="total">
 						<td>VAT (17%)</td>
-						<td>$ 6.16</td>
+						<td><?php echo '$' . number_format($data->get('totals')['after_vat'] - $data->get('totals')['before_vat'], 2); ?></td>
 					</tr>
 				</tbody>
 
 				<tfoot>
 					<tr class="grand-total">
 						<td>GRAND TOTAL</td>
-						<td>$ 42.00</td>
+						<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
 					</tr>
 				</tfoot>
 			</table>

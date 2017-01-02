@@ -17,13 +17,16 @@
 </head>
 </head>
 <body>
+	<div class="wrapper">
+		<div class="shell">
+			<div class="container">
 <?php
 		print $this->render($this->sumup_template);
-		print '<div class="break"></div>';
 		print $this->render($this->details_template);
-		print '<div class="break"></div>';
-		print $this->render($this->lines_template);
 ?>
+			</div>
+		</div>
+	</div>
 </body>
 </html>
 
