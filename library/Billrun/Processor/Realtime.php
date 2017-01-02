@@ -36,6 +36,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$row['usagev'] = $this->getLineVolume($row, $config);
+		$row['process_time'] = date(self::base_datetimeformat);
 		if (!isset($row['urt'])) {
 			$row['urt'] = new MongoDate();
 		}
