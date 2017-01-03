@@ -108,7 +108,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	public function updateRow($rawRow) {
 		$newRow = $rawRow instanceof Mongodloid_Entity ? $rawRow->getRawData() : $rawRow;
 		// we aligned the urt to one main timestamp to avoid DST issues; effect only unified data
-		$newRow['urt'] = new MongoDate(strtotime(date('Ymd 12:00:00', $newRow['urt']->sec)));
+		$newRow['urt'] = $newRow['urt'];
 		$updatedRowStamp = $this->getLineUnifiedLineStamp($newRow);
 
 		$rawRow['u_s'] = $updatedRowStamp;
