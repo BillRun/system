@@ -780,7 +780,11 @@ class ConfigModel {
 			if ($uniqueFields != array_unique($uniqueFields)) {
 				throw new Exception('Cannot use same field for different configurations');
 			}
-			if ($diff = array_diff($useFromStructure, $customFields)) {
+			$billrunFields = array('type', 'usaget');
+			$customFields = array_merge($customFields, array_map(function($field) {
+				return 'uf.' . $field;
+			}, $customFields));
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
 			}
 		}
