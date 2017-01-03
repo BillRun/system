@@ -80,7 +80,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 	}
 
-	protected function buildTransactionPost($txId) {
+	protected function buildTransactionPost($txId, $additionalParams) {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
@@ -313,6 +313,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	public function isCustomerBasedCharge() {
+		return true;
+	}
+	
+	protected function needRequestForToken() {
 		return true;
 	}
 

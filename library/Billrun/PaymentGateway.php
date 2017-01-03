@@ -150,8 +150,17 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $accountQuery['tennant_return_url'])));
-		$this->getToken($aid, $accountQuery['tennant_return_url'], $request);
+		$tennant_return_url = $accountQuery['tennant_return_url'];
+		unset($accountQuery['tennant_return_url']);
+		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $tennant_return_url)));
+		$okPage = $this->getOkPage($request);
+		if ($this->needRequestForToken()){
+			$response = $this->getToken($aid, $accountQuery['tennant_return_url'], $okPage);
+		} else {
+			$updateOkPage = $this->adjustOkPage($okPage);
+			$response = $updateOkPage;
+		}
+		$this->updateRedirectUrl($response);
 		$this->updateSessionTransactionId();
 
 		// Signal starting process.
@@ -163,6 +172,26 @@ abstract class Billrun_PaymentGateway {
 			$doc->loadHTML($this->htmlForm);
 			echo $doc->saveHTML();
 		}
+	}
+	
+	 /**
+	  * True if there's a need to request token from the payment gateway. 
+	  * 
+	  */
+	abstract protected function needRequestForToken();
+
+	 /* returns the OkPage.
+	 * 
+	 * @param $request - the request that got from whtn the customer filed his personal details.
+	 * 
+	 */
+	protected function getOkPage($request) {
+		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
+		$pageRoot = $request->getServer()['HTTP_HOST'];
+		$protocol = empty($request->getServer()['HTTPS']) ? 'http' : 'https';
+		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+
+		return $okPage;
 	}
 
 	/**
@@ -192,9 +221,10 @@ abstract class Billrun_PaymentGateway {
 	 *  Build request to Query for getting transaction details.
 	 * 
 	 * @param string $txId - String that represents the transaction.
+	 * @param Array $additionalParams - additional parameters that's needed for integration. 
 	 * @return array - represents the request
 	 */
-	abstract protected function buildTransactionPost($txId);
+	abstract protected function buildTransactionPost($txId, $additionalParams);
 
 	/**
 	 * Get the name of the parameter that the payment gateway returns to represent billing agreement id.
@@ -278,18 +308,17 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-		
+	
 	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
 	 * @param $returnUrl - The page to redirect the client after success of the whole process.
+	 * @param $okPage - the page to return after the customer filed payment details.
+	 * 
+	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $request) {
-		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
-		$pageRoot = $request->getServer()['HTTP_HOST'];
-		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
-		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+	protected function getToken($aid, $returnUrl, $okPage) {
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
@@ -299,7 +328,8 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
-		$this->updateRedirectUrl($result);	
+
+		return $result;
 	}
 
 	/**
@@ -307,14 +337,14 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @param $txId - String that represents the transaction.
 	 */
-	public function saveTransactionDetails($txId) {
-		$postArray = $this->buildTransactionPost($txId);
+	public function saveTransactionDetails($txId, $additionalParams) {
+		$postArray = $this->buildTransactionPost($txId, $additionalParams);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
 		} else {
 			$postString = $postArray;
 		}
-		if (function_exists("curl_init")) {
+		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if ($this->getResponseDetails($result) === FALSE) {
@@ -554,5 +584,16 @@ abstract class Billrun_PaymentGateway {
 	public function getTransactionId(){
 		return $this->transactionId;
 	}
- 
+	
+	/**
+	 * adding params that the payment gateway needs for further integraion.
+	 * 
+	 */
+	public function addAdditionalParameters() {
+		return array();
+	}
+	
+	protected function isTransactionDetailsNeeded() {
+		return true;
+	}
 }

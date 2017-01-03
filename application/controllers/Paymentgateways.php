@@ -159,7 +159,8 @@ class PaymentGatewaysController extends ApiController {
 			}
 			$transactionId = $customer;
 		}
-		$paymentGateway->saveTransactionDetails($transactionId);
+		$additionalParams = $paymentGateway->addAdditionalParameters($request);
+		$paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
 	}
 
 	/**

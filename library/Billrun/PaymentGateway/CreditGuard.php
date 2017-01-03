@@ -117,7 +117,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 	}
 
-	protected function buildTransactionPost($txId) {
+	protected function buildTransactionPost($txId, $additionalParams) {
 		$params = $this->getGatewayCredentials();
 		$params['txId'] = $txId;
 		$params['tid'] = $params['terminal_id'];
@@ -292,5 +292,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function isCustomerBasedCharge() {
 		return false;
 	}
-
+	
+	protected function needRequestForToken() {
+		return true;
+	}
 }
