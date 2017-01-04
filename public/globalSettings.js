@@ -20,4 +20,5 @@ var globalSetting = {
   billrunLogo: 'billRun-logo.png',
   queue_calculators: ['customer', 'rate', 'pricing'],
   mail_support: 'cloud_support@billrun.com',
+  logoMaxSize: 2,
 };
