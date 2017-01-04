@@ -456,7 +456,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers());
 		$involvedAccounts = array();
-		$options = array('collect' => FALSE, 'payment_gateway' => TRUE);
+		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
 			return $ele['aid'];
 		}, $customers);
