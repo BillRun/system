@@ -393,7 +393,10 @@ class Generator_Golancsv extends Billrun_Generator {
 	}
 	
 	protected function getSubscriberTotalChargeRefundNoVat($subscriber) {
-		return isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0;
+		$refund = isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0;
+		$charge = isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0;
+			
+		return $refund + $charge;
 	}
 
 	protected function getVatableFlat($subscriber) {
