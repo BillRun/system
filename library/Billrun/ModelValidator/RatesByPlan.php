@@ -36,7 +36,7 @@ class Billrun_ModelValidator_RatesByPlan extends Billrun_ModelValidator_Base {
 			$typeFields = array(
 				'interval' => 'integer',
 				'from' => 'integer',
-				'to' => 'integer',
+//				'to' => 'integer', // TODO validate integer or "UNLIMITED"
 				'price' => 'float',
 			);
 			$validateTypes = $this->validateTypes($interval, $typeFields);
