@@ -51,7 +51,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected function getPriceByOffset($startOffset) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
+			if ($tariff['from'] <= $startOffset && ($tariff['to'] == 'UNLIMITED'? PHP_INT_MAX : $tariff['to']) > $startOffset) {
 				return $tariff['price'];
 			}
 		}
