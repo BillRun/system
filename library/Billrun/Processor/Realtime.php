@@ -17,6 +17,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 	static protected $type = 'realtime';
 	
 	public function __construct($options) {
+		parent::__construct($options);
 		if (!empty($options['default_usaget'])) {
 			$this->defaultUsaget = $options['default_usaget'];
 		}
@@ -37,7 +38,8 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$row['usagev'] = $this->getLineVolume($row, $config);
 		$row['process_time'] = date(self::base_datetimeformat);
-		if (!isset($row['urt'])) {
+		$row['urt'] = $this->getRowDateTime($row);
+		if (!$row['urt']) {
 			$row['urt'] = new MongoDate();
 		}
 
