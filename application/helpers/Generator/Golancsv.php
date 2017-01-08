@@ -93,6 +93,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
 			'OutsidePackageNoVatTap3',
+			'TotalChargeRefundNoVat',
 			'TotalVat',
 			'TotalCharge',
 			'CountActiveCli',
@@ -112,6 +113,7 @@ class Generator_Golancsv extends Billrun_Generator {
 			'ManualCorrectionCredit',
 			'ManualCorrectionCharge',
 			'OutsidePackageNoVatTap3',
+			'TotalChargeRefundNoVat',
 			'TotalVat',
 			'TotalCharge',
 			'isAccountActive',
@@ -215,13 +217,15 @@ class Generator_Golancsv extends Billrun_Generator {
 			$acc_row['TotalChargeVatRounded'] = round($this->getAccountTotalChargeVat($account), 2);
 			$acc_row['billrun_key'] = $this->stamp;
 			$acc_row['InvoiceNumber'] = $account['invoice_id'];
-			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = $acc_row['kosherCount'] = 0;
+			$acc_row['TotalCharge'] = $acc_row['TotalVat'] = $acc_row['OutsidePackageNoVatTap3'] = $acc_row['ManualCorrection'] = $acc_row['ManualCorrectionCharge'] = $acc_row['ManualCorrectionCredit'] = $acc_row['TotalExtraOverPackage'] = $acc_row['TotalExtraOutOfPackage'] = $acc_row['TotalFlat'] = $acc_row['kosherCount'] = $acc_row['TotalChargeRefundNoVat'] = 0;
 			$acc_row['CountActiveCli'] = 0;
 			foreach ($account['subs'] as $subscriber) {
 				$sub_row['billrun_key'] = $this->stamp;
 				$acc_row['AccountNumber'] = $sub_row['AccountNumber'] = $account['aid'];
 				$sub_row['subscriber_id'] = $subscriber['sid'];
 				$sub_row['TotalChargeVat'] = $this->getSubscriberTotalChargeVat($subscriber);
+				$sub_row['TotalChargeRefundNoVat'] = $this->getSubscriberTotalChargeRefundNoVat($subscriber);
+				$acc_row['TotalChargeRefundNoVat'] += $sub_row['TotalChargeRefundNoVat'];
 				$acc_row['XmlIndicator'] = $sub_row['XmlIndicator'] = $this->getXmlIndicator($account);
 				$acc_row['TotalFlat'] += $sub_row['TotalFlat'] = $this->getTotalFlat($subscriber);
 				$acc_row['TotalExtraOverPackage'] += $sub_row['TotalExtraOverPackage'] = $this->getTotalExtraOverPackage($subscriber);
@@ -383,9 +387,16 @@ class Generator_Golancsv extends Billrun_Generator {
 	protected function getAccountTotalChargeVat($account) {
 		return isset($account['totals']['after_vat']) ? $account['totals']['after_vat'] : 0;
 	}
-
+	
 	protected function getSubscriberTotalChargeVat($subscriber) {
 		return isset($subscriber['totals']['after_vat']) ? $subscriber['totals']['after_vat'] : 0;
+	}
+	
+	protected function getSubscriberTotalChargeRefundNoVat($subscriber) {
+		$refund = isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0;
+		$charge = isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0;
+			
+		return $refund + $charge;
 	}
 
 	protected function getVatableFlat($subscriber) {
