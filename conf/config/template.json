@@ -36,5 +36,6 @@
 		"t" : "menu",
 		"v" : { "main" : { "tmp" : "tmp" } }
 	},
-	"template_token":{}
+	"template_token":{},
+	"payment_gateways":[]
 }
