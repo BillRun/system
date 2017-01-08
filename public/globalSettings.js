@@ -16,5 +16,9 @@ var globalSetting = {
   productUnlimitedValue: 999999999,
   keyUppercaseRegex: /^[A-Z0-9_]*$/,
   defaultLogo: 'billRun-cloud-logo.png',
+  billrunCloudLogo: 'billRun-cloud-logo.png',
   billrunLogo: 'billRun-logo.png',
+  queue_calculators: ['customer', 'rate', 'pricing'],
+  mail_support: 'cloud_support@billrun.com',
+  logoMaxSize: 2,
 };

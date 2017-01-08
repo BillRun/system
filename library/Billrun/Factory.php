@@ -215,16 +215,22 @@ class Billrun_Factory {
 	/**
 	 * method to retrieve the a mailer instance
 	 * 
-	 * @return Billrun_Db
+	 * @return Zend_Mail
 	 */
 	static public function mailer() {
 		if (!isset(self::$mailer)) {
 			try {
 				self::$mailer = new Zend_Mail();
-				//TODO set common configuration.
-				$fromName = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply');
-				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.name', 'Billrun');
-				self::$mailer->setFrom($fromName, $fromAddress);
+				$mailerTransport = Billrun_Factory::config()->getConfigValue('mailer.transport');
+				if (!empty($mailerTransport)) {
+					$className = 'Zend_Mail_Transport_' . ucfirst($mailerTransport['type']);
+					$transport = new $className($mailerTransport['host'], $mailerTransport);
+					Zend_Mail::setDefaultTransport($transport);
+				}
+
+				$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run'));
+				$fromName = Billrun_Factory::config()->getConfigValue('tenant.name', Billrun_Factory::config()->getConfigValue('mailer.from.name', 'BillRun'));
+				self::$mailer->setFrom($fromAddress, $fromName);
 				//$mail->setDefaultTransport($transport);
 			} catch (Exception $e) {
 				self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
