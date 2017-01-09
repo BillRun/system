@@ -104,7 +104,7 @@ class ConfigModel {
  				return 0;
  			}
  			if (empty($data['name'])) {
- 				return $currentConfig['payment_gateways'];
+ 				return $this->_getFromConfig($currentConfig, $category, $data);
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
  				return $pgSettings;

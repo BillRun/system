@@ -43,7 +43,7 @@ class Billrun_ModelValidator_Plans extends Billrun_ModelValidator_Base {
 			$typeFields = array(
 				'price' => 'float',
 				'from' => 'integer',
-				'to' => 'integer',
+//				'to' => 'integer', // TODO validate integer or "UNLIMITED"
 			);
 			$validateTypes = $this->validateTypes($price, $typeFields);
 			if ($validateTypes !== true) {
