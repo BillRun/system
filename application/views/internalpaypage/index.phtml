@@ -43,7 +43,7 @@
 						  <div class="panel-body">
 						    <?php
 						    foreach ($subscriber_config as $c) {
-						    if (!isset($c['display']) || $c['display'] === false || $c['field_name'] === 'plan')
+						    if ((empty($c['display']) && empty($c['mandatory'])) || $c['field_name'] === 'plan' || (isset($c['editable']) && !$c['editable']))
 						    continue;
 						    echo "<div class='form-group'>";
 						    echo "<div class='col-md-3'>"
