@@ -206,6 +206,7 @@ class ConfigModel {
 			} else {
 				$fileSettings = $data;
 			}
+			$fileSettings['enabled'] = isset($data['enabled']) ? $data['enabled'] : true;
 			$this->setFileTypeSettings($updatedData, $fileSettings);
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);	
 		} else if ($category === 'payment_gateways') {
@@ -653,6 +654,7 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
+		$updatedFileSettings['enabled'] = $fileSettings['enabled'];
 		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
 			$updatedFileSettings['type'] = $fileSettings['type'];
 		}
