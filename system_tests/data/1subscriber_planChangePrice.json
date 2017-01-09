@@ -3,6 +3,7 @@
 		"to","from","plan_activation" 
 	],
 	"test": "Plan changes price",
+	"subs" : 1,
 	"data": [
 		{
 		  "firstname": "Charicenge",

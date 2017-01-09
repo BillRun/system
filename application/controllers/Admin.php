@@ -618,7 +618,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!AdminController::authorized('write')) {
 			return $this->responseNoPermissionsError("Permission denied, make sure you have write permission");
 		}
-		$data = $this->getRequest()->get('data');
+		$data = json_decode($this->getRequest()->get('data'), JSON_OBJECT_AS_ARRAY);
 		$data['external_id'] = intval($data['external_id']);
 		$data['to'] = new MongoDate(strtotime('+100 years'));
 		$data['from'] = new MongoDate(strtotime($data['from']));

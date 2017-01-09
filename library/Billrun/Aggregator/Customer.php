@@ -116,6 +116,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected $acounts;
 	
+	/**
+	 * If true then we can load the data.
+	 * @var boolean
+	 */
+	protected $canLoad = false;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -198,12 +204,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	
 	protected function beforeLoad() {
 		Billrun_Factory::log("Loading page " . $this->page . " of size " . $this->size, Zend_Log::INFO);
+		$this->canLoad = true;
 	}
 	
 	/**
 	 * load the data to aggregate
 	 */
 	public function load() {
+		if(!$this->canLoad) {
+			return;
+		}
+		$this->canLoad = false;
 		$billrunKey = $this->getStamp();
 		$cycle = new Billrun_DataTypes_CycleTime($billrunKey);
 		$rawResults = $this->loadRawData($cycle);
