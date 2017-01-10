@@ -21,7 +21,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $count_days;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if ($row['type'] == 'tap3' || isset($row['roaming'])) {
+		if (($row['type'] == 'tap3' && $row['usaget'] != 'sms') || isset($row['roaming'])) {
 			if (isset($row['urt'])) {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
