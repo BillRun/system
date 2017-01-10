@@ -96,25 +96,34 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 							}
 							if (isset($rate['rates'][$usage_type])) {
 								if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-									$possible_rates[] = $rate;
+									if (isset($rate['params']['fullEqual'])) {
+										$fullEqual_rates[] = $rate;
+									} else {
+										$possible_rates[] = $rate;
+									}
 								}
 							}
 						}
 					}
 				}
-				foreach ($called_number_prefixes as $prefix) {		// VF_Rates + AC_OTA	
-					foreach ($possible_rates as $rate) {
-						if (isset($rate['params']['prefix']) && in_array($prefix, $rate['params']['prefix'])) {
-							$matchedRate = $rate;
-							break 2;
-						}
-						if (empty($rate['params']['prefix']) && (preg_match('/^AC/', $rate['key']))){
-							$possible_ac_rates[] = $rate;
-						}
+				foreach ($fullEqual_rates as $fe_rate) {
+					if (in_array($called_number, $fe_rate['params']['prefix'])) {
+						$matchedRate = $rate;
 					}
 				}
-				if (!$matchedRate && $possible_ac_rates){
-					$matchedRate = current($possible_ac_rates);
+				if (!$matchedRate) {
+					foreach ($called_number_prefixes as $prefix) {
+						foreach ($possible_rates as $rate) {
+							if (in_array($prefix, $rate['params']['prefix'])) {
+								$matchedRate = $rate;
+								break 2;
+							}
+							if (empty($rate['params']['prefix']) && (preg_match('/^AC/', $rate['key']))){
+								$matchedRate = $rate;
+								break 2;
+							}
+						}
+					}
 				}
 				return $matchedRate;
 			} else {
