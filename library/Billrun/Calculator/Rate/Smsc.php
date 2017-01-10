@@ -108,7 +108,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 							$matchedRate = $rate;
 							break 2;
 						}
-						if (!isset($rate['params']['prefix']) && (preg_match('/^AC/', $rate['key']))){
+						if (empty($rate['params']['prefix']) && (preg_match('/^AC/', $rate['key']))){
 							$possible_ac_rates[] = $rate;
 						}
 					}
