@@ -1,49 +1,112 @@
-<div id="wrapper">
-	<main role="main" id="main">
-		<div class="wrap">
-			<div class="details-wrapper">
-				<?php foreach ($data->get('subs') as $sub) { ?>
-					<h2 class="details-subscriber-header">Subscriber <?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h2>
-					<br/>
-					<?php foreach ($details_keys as $title => $key) { ?>
-						<?php if (!empty($sub['breakdown'][$key])) { ?>
-							<h4 class="details-subscriber-header"><?php echo strtoupper($title) ?></h4>
-							<table class="subscriber-details subscriber-details-<?php echo $title ?>">
-								<thead>
-									<tr>
-										<th>Name</th>
-										<th>Volume</th>
-										<th>Cost</th>
-										<th></th>
-										<th></th>
-									</tr>
-								</thead>
-								<tbody>
-									<?php foreach ($sub['breakdown'][$key] as $breakdown) { ?>
-										<tr>
-											<td><?php echo $breakdown['name']; ?></td>
-											<td><?php echo number_format($breakdown['count'], 2); ?></td>
-											<td><?php echo number_format($breakdown['cost'], 2); ?></td>
-											<td></td>
-											<td></td>
-										</tr>
-									<?php } ?>
-										<tr class="table-holder"></tr>
-										<tr class="subscriber-details-sum">
-											<td>Total</td>
-											<td></td>
-											<td></td>
-											<td><?php echo number_format($sub['totals'][$key]['before_vat'], 2) ?></td>
-											<td><?php echo number_format($sub['totals'][$key]['after_vat'], 2) ?></td>
-										</tr>
-								</tbody>
-							</table>
-							<br/>
+<?php foreach ($data->get('subs') as $index => $sub) { ?>
+	<div class="break"></div>
+	<div class="container">
+		<div class="section section-invoice-head">
+			<div class="table">
+				<table>
+					<tbody><tr>
+							<td class="page-title"><h3 class="inline">INVOICE</h3></td>
+							<td>
+								<span class="label">Customer</span>
+								<h3 class="inline"><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h3>
+							</td>
+							<td>
+								<span class="label">Invoice#</span>
+								<span><?php echo $data->get('invoice_id'); ?></span>
+							</td>
+							<td>
+								<span class="label">Period</span>
+								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></h3>
+							</td>
+						</tr>
+					</tbody></table>
+			</div><!-- /.table -->
+		</div><!-- /.section .section-invoice-head -->
+
+		<div class="section section-invoice-base">
+		<h2>Subscription#<?php echo ($index + 1); ?>:</h2>
+		<h1><?php echo $sub['firstname'] . ' ' . $sub['lastname']; ?></h1>
+		<p class="label"><?php echo (!empty($sub['desc']) ? $sub['desc'] : ''); ?></p>
+		</div><!-- /.section .section-invoice-base -->
+
+		<div class="section section-invoice-details">
+			<div class="section-head">
+				<h2 class="section-title">Usage summary</h2><!-- /.section-title -->
+			</div><!-- /.section-head -->
+
+			<div class="section-body">
+				<div class="table table-default table-default-primary">
+					<table>
+						<thead>
+							<tr>
+								<th>Description</th>
+								<th>Amount</th>
+							</tr>
+						</thead>
+
+						<tbody>
+						<?php foreach ($details_keys as $title => $key) { ?>
+							<?php if (empty($sub['totals'][$key])) { continue; } ?>
+							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
+								<td><?php echo ucfirst($title); ?></td>
+								<td><?php echo '$' . number_format($sub['totals'][$key]['after_vat'], 2); ?></td>
+							</tr>
 						<?php } ?>
-					<?php } ?>
-					<br/>
-				<?php } ?>
-			</div>
+							<tr class="total">
+								<td>TOTAL</td>
+								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
+							</tr>
+							<tr class="total">
+								<td>VAT (17%)</td>
+								<td><?php echo '$' . number_format($sub['totals']['after_vat'] - $sub['totals']['before_vat'], 2); ?></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr class="grand-total">
+								<td>GRAND TOTAL</td>
+								<td><?php echo '$' . number_format($sub['totals']['after_vat'], 2); ?></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div><!-- /.table table-default table-default-primary -->
+			</div><!-- /.section-body -->
+		</div><!-- /.section section-invoice-total -->
+
+		<div class="break"></div>
+		<div class="section section-invoice-details">
+			<div class="section-head">
+				<h2 class="section-title">Usage details</h2><!-- /.section-title -->
+			</div><!-- /.section-head -->
+
+			<div class="section-body">
+				<div class="table table-default">
+					<table>
+						<thead>
+							<tr>
+								<th>Date &amp; Time</th>
+								<th>Type</th>
+								<th>Rate</th>
+								<th>Volume</th>
+								<th>Amount</th>
+							</tr>
+						</thead>
+
+						<tbody>
+							<?php if (!empty($this->lines[$sub['sid']])) { ?>
+								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
+									<tr>
+										<td><?php echo date($date_format, $line['urt']->sec); ?></td>
+										<td><?php echo $line['type']; ?></td>
+										<td><?php echo $line['arate_key']; ?></td>
+										<td><?php echo number_format($line['usagev'], 2); ?></td>
+										<td><?php echo number_format($line['aprice'], 2); ?></td>
+									</tr>
+								<?php } ?>
+							<?php } ?>
+						</tbody>
+					</table>
+				</div><!-- /.table table-default -->
+			</div><!-- /.section-body -->
 		</div>
-	</main>
-</div>
+	</div>
+<?php } ?>
