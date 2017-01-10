@@ -308,9 +308,9 @@ class ggsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Pl
 			'translate' => array(
 				'$project' => array(
 					'_id' => 0,
-					'download' => array('$multiply' => array('$download', 0.001)),
-					'upload' => array('$multiply' => array('$upload', 0.001)),
-					'usagev' => array('$multiply' => array('$usagev', 0.001)),
+					'download' => array('$multiply' => array('$download', 0.0009765625)),
+					'upload' => array('$multiply' => array('$upload', 0.0009765625)),
+					'usagev' => array('$multiply' => array('$usagev', 0.0009765625)),
 					'duration' => 1,
 					'aprice' => 1,
 					'imsi' => '$_id.imsi',
