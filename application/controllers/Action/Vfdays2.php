@@ -22,7 +22,7 @@ class Vfdays2Action extends Action_Base {
 	 * on vadofone
 	 */
 	public function execute() {
-		Billrun_Factory::log()->log("Execute ird days API call", Zend_Log::INFO);
+		Billrun_Factory::log()->log("Execute vfdays2 API call", Zend_Log::INFO);
 		$request = $this->getRequest();
 		$min_days = intval($request->get("min_days"));
 		if (empty($min_days)) {
@@ -44,6 +44,7 @@ class Vfdays2Action extends Action_Base {
 				'input' => $request->getRequest(),
 				'details' => $max_list,
 		)));
+		Billrun_Factory::log()->log("Done vfdays2 API call", Zend_Log::INFO);
 	}
 
 	protected function count_days_by_lines($min_days = 35, $datetime = null, $offset_days = 1) {
