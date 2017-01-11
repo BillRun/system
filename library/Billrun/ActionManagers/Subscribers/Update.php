@@ -256,7 +256,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			$this->reportError(42, Zend_Log::NOTICE);
 		}
 		
-		$id = $input['_id']['$id'];
+		$id = isset($input['_id']['$id'])? $input['_id']['$id'] : $input['_id'];
 		try {
 			$mongoID = new MongoId($id);
 			
