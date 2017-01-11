@@ -18,7 +18,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since       5.2
  */
 class PaymentGatewaysController extends ApiController {
-
+	use Billrun_Traits_Api_PageRedirect;
+	
 	public function init() {
 		parent::init();
 	}
@@ -42,11 +43,12 @@ class PaymentGatewaysController extends ApiController {
 			$setting['params'] = $fields;
 			$settings[] = $setting;
 		}
-		$this->setOutput(array(
+		$output = array (
 			'status' => !empty($settings) ? 1 : 0,
 			'desc' => !empty($settings) ? 'success' : 'error',
 			'details' => empty($settings) ? array() : $settings,
-		));
+		);
+		$this->setOutput(array($output));
 	}
 
 	protected function render($tpl, array $parameters = array()) {
@@ -98,7 +100,14 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery = $this->getAccountQuery($aid);
 		$accountQuery['tennant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		if ($result['content_type'] == 'url') {
+			$this->getView()->output = $result['content'];
+			$this->getView()->outputMethod = 'header';
+		} else if ($result['content_type'] == 'html') {
+			$this->setOutput(array($result['content'], TRUE));
+		}
+		
 	}
 
 	/**
@@ -160,7 +169,9 @@ class PaymentGatewaysController extends ApiController {
 			$transactionId = $customer;
 		}
 		$additionalParams = $paymentGateway->addAdditionalParameters($request);
-		$paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		$this->getView()->outputMethod = 'header';
+		$this->getView()->output = "Location: " . $returnUrl;
 	}
 
 	/**
@@ -178,7 +189,8 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	public function successAction() {
-		print_r("SUCCESS");
+		$this->getView()->outputMethod = 'print_r';
+		$this->setOutput(array("SUCCESS", TRUE));
 	}
 
 	

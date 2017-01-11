@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-
 /**
  * This class represents a payment gateway
  *
@@ -15,17 +14,10 @@
 class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	protected $billrunName = "Stripe";
-	protected $pendingCodes = "//";
-	protected $completionCodes = "//";
+	protected $pendingCodes = "/^pending$/";
+	protected $completionCodes = "/^succeeded$/";
+	protected $rejectionCodes = "/^failed$/";
 	protected $billrunToken;
-
-	protected function __construct() {
-		if (Billrun_Factory::config()->isProd()) {
-			$this->EndpointUrl = "";
-		} else { // test/dev environment
-			$this->EndpointUrl = "";
-		}
-	}
 
 	public function updateSessionTransactionId() {
 		$this->transactionId = $this->billrunToken;
@@ -45,7 +37,8 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		$customer_id = $customer->id;
 		$this->saveDetails['customer_id'] = $customer_id;
 		$this->saveDetails['token'] = $additionalParams['token'];
-		
+		$this->saveDetails['email'] = $additionalParams['email'];
+
 		return array();
 	}
 
@@ -62,6 +55,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 			'payment_gateway' => array(
 				'name' => $this->billrunName,
 				'customer_id' => $this->saveDetails['customer_id'],
+				'stripe_email' => $this->saveDetails['email'],
 				'token' => $this->saveDetails['token'],
 				'transaction_exhausted' => true,
 				'generate_token_time' => new MongoDate(time())
@@ -69,38 +63,41 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		);
 	}
 
-	public function pay($gatewayDetails) { 
-		
+	public function pay($gatewayDetails) {
+		$credentials = $this->getGatewayCredentials();
+		$this->setApiKey($credentials['secret_key']);
+		$gatewayDetails['amount'] = $this->convertAmountToSend($gatewayDetails['amount']);
+		$result = \Stripe\Charge::create(array(
+				"amount" => $gatewayDetails['amount'],
+				"currency" => $gatewayDetails['currency'],
+				"customer" => $gatewayDetails['customer_id'],
+		));
+		$status = $this->payResponse($result);
+
+		return $status;
 	}
 
 	protected function payResponse($result) {
-		
-	}
+		if (isset($result['id'])) {
+			$this->transactionId = $result['id'];
+		}
 
-	protected function buildPaymentRequset($gatewayDetails) {
-		
+		return $result['status'];
 	}
 
 	public function authenticateCredentials($params) {
+		$this->validatingSecretKey($params['secret_key']);
+		$this->validatingPublishableKey($params['publishable_key']);
 		
+		return true;
 	}
 
 	public function verifyPending($txId) {
-		
+
 	}
 
 	public function hasPendingStatus() {
-		
-	}
-
-	/**
-	 * Inquire Transaction by transaction Id to check status of a payment.
-	 * 
-	 * @param string $txId - String that represents the transaction.
-	 * @return array - array of the response from PayPal
-	 */
-	protected function getCheckoutDetails($txId) {
-		
+		return false;
 	}
 
 	public function getDefaultParameters() {
@@ -108,12 +105,9 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		return $this->rearrangeParametres($params);
 	}
 
-	protected function isRejected($status) {
-		
-	}
-
 	protected function convertAmountToSend($amount) {
-		
+		$amount = round($amount, 2);
+		return $amount * 100;
 	}
 
 	protected function isNeedAdjustingRequest() {
@@ -139,19 +133,33 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected function buildFormForPopUp($okPage, $publishable_key) {
 		return "<!DOCTYPE html>
 					<html>
-						<body>
+						<body onload='wait()'>
+							<style>
+								body *:not(.myForm) {
+									 display: none;
+								}
+							</style>
 							<form id='myForm' action='$okPage' method='POST'>
 								<script
 								  src='https://checkout.stripe.com/checkout.js' class='stripe-button'
 								  data-key='$publishable_key'
-								  data-amount='999'
-								  data-name='Demo Site'
-								  data-description='Widget'
+								  data-name='Billrun'
+								  data-description='Cloud'
 								  data-image='https://stripe.com/img/documentation/checkout/marketplace.png'
 								  data-locale='auto'>
 								</script>
+								<script type='text/javascript'>
+									function wait() {
+										setTimeout(click, 1000);
+									}				
+									function click() {
+										document.getElementsByTagName('button')[0].click();
+										document.getElementsById('myForm').submit();
+									}
+
+								</script>
 							 </form>
-						</body>
+							</body>
 					</html>";
 	}
 
@@ -163,7 +171,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	protected function createCustomer($additionalParams) {
 		$credentials = $this->getGatewayCredentials();
-		\Stripe\Stripe::setApiKey($credentials['secret_key']);
+		$this->setApiKey($credentials['secret_key']);
 		$customer = \Stripe\Customer::create(array(
 				'card' => $additionalParams['token'],
 				'email' => $additionalParams['email']
@@ -172,16 +180,43 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 		return $customer;
 	}
-	
+
 	public function addAdditionalParameters($request) {
 		$token = $request->get('stripeToken');
 		$email = $request->get('stripeEmail');
-		
+
 		return array('token' => $token, 'email' => $email);
 	}
-	
+
 	protected function isTransactionDetailsNeeded() {
 		return false;
+	}
+
+	protected function setApiKey($secretKey) {
+		\Stripe\Stripe::setApiKey($secretKey);
+	}
+	
+	protected function validatingPublishableKey($publishableKey) {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, "https://api.stripe.com/v1/tokens");
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, "card[number]=''&card[exp_month]=''&card[exp_year]=''&card[cvc]=''");
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_USERPWD, $publishableKey . ":");
+		$response = json_decode(curl_exec($ch), true);
+		curl_close($ch);
+
+		$errorMessage = isset($response["error"]["message"]) ? $response["error"]["message"] : '';
+		if (!empty($errorMessage)) {
+			if (substr($errorMessage, 0, 24) == 'Invalid API Key provided') {
+				throw new Exception($errorMessage);
+			}
+		}
+	}
+	
+	protected function validatingSecretKey($secretKey) {
+		$this->setApiKey($secretKey);
+		\Stripe\Balance::retrieve(); // calling function from Stripe API to check if connection succeeded
 	}
 
 }

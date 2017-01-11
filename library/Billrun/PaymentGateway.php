@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    5.2
  */
 abstract class Billrun_PaymentGateway {
-
+	
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -166,11 +166,9 @@ abstract class Billrun_PaymentGateway {
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
-			$this->forceRedirect($this->redirectUrl);
+			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
-			$doc = new DOMDocument();
-			$doc->loadHTML($this->htmlForm);
-			echo $doc->saveHTML();
+			return array('content'=> $this->htmlForm, 'content_type' => 'html');
 		}
 	}
 	
@@ -309,7 +307,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function isHtmlRedirect();
 	
-	/**
+		/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -356,7 +354,7 @@ abstract class Billrun_PaymentGateway {
 		if (!$this->validatePaymentProcess($txId)) {
 			throw new Exception("Too much time passed");
 		}
-		$this->saveAndRedirect();
+		return $this->saveAndRedirect();
 	}
 
 	protected function saveAndRedirect() {
@@ -366,14 +364,10 @@ abstract class Billrun_PaymentGateway {
 		$query['type'] = "account";
 		$setQuery = $this->buildSetQuery();       
 		$this->subscribers->update($query, array('$set' => $setQuery));
+		$account = $this->subscribers->query($query)->cursor()->current();
+		$returnUrl = $account['tennant_return_url'];
 
-		if (isset($this->saveDetails['return_url'])) {
-			$returnUrl = (string) $this->saveDetails['return_url'];
-		} else {
-			$account = $this->subscribers->query($query)->cursor()->current();
-			$returnUrl = $account['tennant_return_url'];
-		}
-		$this->forceRedirect($returnUrl);
+		return $returnUrl;
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -596,4 +590,5 @@ abstract class Billrun_PaymentGateway {
 	protected function isTransactionDetailsNeeded() {
 		return true;
 	}
+	
 }

@@ -5,4 +5,4 @@
  * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-echo json_encode($this->output, JSON_FORCE_OBJECT);
+echo call_user_func_array($this->outputMethod, (array) $this->output);

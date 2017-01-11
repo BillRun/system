@@ -100,7 +100,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function getResponseDetails($result) {
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = simplexml_load_string($result);
+			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
@@ -137,7 +137,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function payResponse($result) {
-		$xmlObj = simplexml_load_string($result);
+		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
 		if (($resultCode != 'Ok')) {
 			$errorMessage = (string) $xmlObj->messages->message->text;
