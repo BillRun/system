@@ -30,14 +30,18 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 	 */
 	protected function getSubscriberQuery() {
 		$subscriberQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(), array('type' => $this->type));
+		//TODO: Create a 'fields collection', this will help us prevent explicit loops.
 		foreach ($this->fields as $field) {
 			$fieldName = $field['field_name'];
-			if (isset($field['unique']) && $field['unique']) {
-				if (is_array($this->query[$fieldName])) {
-					$subscriberQuery['$or'][][$fieldName] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$fieldName]));
-				}
-				$subscriberQuery['$or'][][$fieldName] = $this->query[$fieldName];
+			// If the field is not unique, or was not supplied in the query at all,
+			// skip it.
+			if (empty($field['unique']) || empty($this->query[$fieldName])) {
+				continue;
 			}
+			if (is_array($this->query[$fieldName])) {
+				$subscriberQuery['$or'][][$fieldName] = array('$in' => Billrun_Util::array_remove_compound_elements($this->query[$fieldName]));
+			}
+			$subscriberQuery['$or'][][$fieldName] = $this->query[$fieldName];
 		}
 		return $subscriberQuery;
 	}
@@ -65,7 +69,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 		$subscriberQuery = $this->getSubscriberQuery();
 
 		$subscribers = $this->collection->query($subscriberQuery);
-
+		
 		// TODO: Use the subscriber class.
 		if ($subscribers->count() > 0) {
 			$errorCode = 0;
