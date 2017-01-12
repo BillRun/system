@@ -42,7 +42,7 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			if (!$oldEntity = $this->getOldEntity()) {
 				return false;
 			}
-			$newEntity = $this->updateEntity($this->oldEntity);
+			$newEntity = $this->updateEntity($this->oldEntity); // saves the new entity
 				
 			// Check if changed plans.
 			if($newEntity['plan'] !== $this->oldEntity['plan']) {
