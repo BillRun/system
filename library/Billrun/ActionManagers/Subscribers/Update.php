@@ -312,15 +312,8 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 			}
 			if (!isset($updateData[$fieldName])) {
 				continue;
-			}
-			
-			$toSet = $updateData[$fieldName];
-			
-			if(empty($toSet)) {
-				continue;
-			}
-			
-			$this->update[$fieldName] = $toSet;
+			}			
+			$this->update[$fieldName] = $updateData[$fieldName];
 		}
 		
 		return true;
@@ -355,6 +348,9 @@ class Billrun_ActionManagers_Subscribers_Update extends Billrun_ActionManagers_S
 	protected function _getBaseQuery() {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['type'] = $this->type;
+		$query['_id'] = array(
+			'$ne' => $this->query['_id'],
+		);
 		return $query;
 	}
 	
