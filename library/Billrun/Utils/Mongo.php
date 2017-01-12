@@ -330,10 +330,10 @@ class Billrun_Utils_Mongo {
 		$ret['$or'] = array(
 				array('from' => array(
 					'$gte' => $from_date,
-					'$lte' => $to_date,
+					'$lt' => $to_date,
 				)),
 				array('to' => array(
-					'$gte' => $from_date,
+					'$gt' => $from_date,
 					'$lte' => $to_date,
 				))
 			);

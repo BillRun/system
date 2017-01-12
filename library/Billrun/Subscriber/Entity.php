@@ -22,11 +22,12 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 	}
 	
 	protected function getSubscriberServices($services, $oldServices) {
+		return $services; // temporary fix until we separate services deactivation dates
 		if(!is_array($services)) {
 			return array();
 		}
-		
-		$serviceTime = strtotime("midnight");
+
+		$serviceTime = strtotime('tomorrow midnight');
 		$subscriberServices = array();
 
 		// Get the diff
@@ -54,7 +55,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 		$names = array();
 		
 		foreach ($array as $k => $v) {
-			if($k != "name") {
+			if($k !== "name") {
 				continue;
 			}
 			
