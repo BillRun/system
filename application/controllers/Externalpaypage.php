@@ -35,11 +35,14 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			$planNames[] = $p['name'];
 		}
 		$this->getView()->assign('account', $account);
-	        $this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
-	        $this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
-	        $this->getView()->assign('payment_gateways', $config['payment_gateways']);
+		$this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
+		$this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
+		if(empty($account['payment_gateway'])){
+			$this->getView()->assign('payment_gateways', $config['payment_gateways']);
+		}
 		$this->getView()->assign('plans', $planNames);
 		$this->getView()->assign('plan', $selectedPlan);
+		$this->getView()->assign('return_url', $request['return_url']);
 		return $view->render();
 	}
 

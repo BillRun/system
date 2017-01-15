@@ -81,51 +81,54 @@
 								</div>
 							</div>
 						</div>
-						<div class="panel panel-primary">
-							        <div class="panel-heading">
-								<h4>Payment Gateway</h4>
-        							</div>
-	        						<div class="panel-body">
-		                					  <div class="row">
-				                        			    <div class="col-md-12">
-							                                    <label for="payment_gateway">Payment Gateway</label>
-										    </div>
-									  </div>
-									  <div class="row">
-									    <?php
-										$accountOn = (isset($account['payment_gateway']['name']) && $account['payment_gateway']['name']);
-										foreach ($payment_gateways as $pg) {
-											if($accountOn && $account['payment_gateway']['name'] != $pg['name']) {
-												continue;
+						<?php if(!empty($payment_gateways)) : ?>
+							<div class="panel panel-primary">
+										<div class="panel-heading">
+									<h4>Payment Gateway</h4>
+										</div>
+										<div class="panel-body">
+												  <div class="row">
+															<div class="col-md-12">
+																	<label for="payment_gateway">Payment Gateway</label>
+												</div>
+										  </div>
+										  <div class="row">
+											<?php
+											$accountOn = (isset($account['payment_gateway']['name']) && $account['payment_gateway']['name']);
+											foreach ($payment_gateways as $pg) {
+												if($accountOn && $account['payment_gateway']['name'] != $pg['name']) {
+													continue;
+												}
+												echo "<div class='col-md-3'>";
+												echo "<div class='radio'>";
+												echo "<label>";
+												if($accountOn) {
+													echo "<input type='radio' name='payment_gateway' checked value='" . $pg['name'] . "'>";												
+												} else {
+													echo "<input type='radio' name='payment_gateway' value='" . $pg['name'] . "'>";
+												}
+												if (!empty($pg['image_url'])) {
+													echo "<img src='" . $pg['image_url'] . "' />";
+												} else {
+													echo $pg['name'];
+												}
+												echo "</label>";
+												echo "</div>";
+												echo "</div>";
+												if($accountOn) {
+													break;
+												}
 											}
-											echo "<div class='col-md-3'>";
-											echo "<div class='radio'>";
-											echo "<label>";
-											if($accountOn) {
-												echo "<input type='radio' name='payment_gateway' checked value='" . $pg['name'] . "'>";												
-											} else {
-												echo "<input type='radio' name='payment_gateway' value='" . $pg['name'] . "'>";
-											}
-											if (!empty($pg['image_url'])) {
-												echo "<img src='" . $pg['image_url'] . "' />";
-											} else {
-												echo $pg['name'];
-											}
-											echo "</label>";
-											echo "</div>";
-											echo "</div>";
-											if($accountOn) {
-												break;
-											}
-										}
-									       ?>
-									  </div>
-								</div>
-						</div>
+											   ?>
+										  </div>
+									</div>
+							</div>
+						<?php endif; ?>
 						<div class="pull-left">
 							<button id="submitbtn" class="btn btn-primary" type="submit" onclick="onSubmit()">Submit</button>
 							<button id="cancelbtn" class="btn btn-default" type="button" onclick="window.history.back();">Cancel</button>
 						</div>
+						<input type="hidden" name="return_url" id="aid" value="<?php echo $return_url; ?>" />
 					</form>
 				</div>
 			</div>

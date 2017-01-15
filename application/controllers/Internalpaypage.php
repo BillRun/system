@@ -45,6 +45,13 @@ class InternalPaypageController extends ExternalPaypageController {
 			/* TODO: HANDLE ERROR! */
 			return false;
 		}
+		
+		//payment_gateway already exist, redirect to return url
+		if(empty($request['payment_gateway'])){
+			header("Location: " . $request['return_url']);
+			return false;
+		}
+		
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $res['details']['aid'],
