@@ -314,6 +314,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				Billrun_Billrun::clearPreLoadedLines(array($accid));
 			}
 		}
+		if (!$this->recreate_invoices){
+			$this->billing_cycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('end_time' => new MongoDate())));
+		}
 		if ($billruns_count == count($this->data)) {
 			$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 			$end_msg .="Processed " . ($billruns_count - $skipped_billruns_count) . " accounts, Skipped over {$skipped_billruns_count} accounts, out of a total of {$billruns_count} accounts";
@@ -322,9 +325,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 
 		// @TODO trigger after aggregate
-		if (!$this->recreate_invoices){
-			$this->billing_cycle->update(array('billrun_key' => $billrun_key, 'page_number' => $this->page, 'page_size' => $this->size), array('$set' => array('end_time' => new MongoDate())));
-		}
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($this->data, &$this));
 		return $this->successfulAccounts;
 	}
