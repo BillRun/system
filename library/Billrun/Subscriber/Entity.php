@@ -12,7 +12,7 @@ class Billrun_Subscriber_Entity extends Mongodloid_Entity {
 			$values['plan_activation'] = new MongoDate();
 		}
 		
-		$valuesServices = Billrun_Util::getFieldVal($values['services'], array());
+		$valuesServices = empty($values['services'])? array() : $values['services'];
 		$subscriberServices = $this->getSubscriberServices($valuesServices, $services);
 		if($subscriberServices) {
 			$values['services'] = $subscriberServices;
