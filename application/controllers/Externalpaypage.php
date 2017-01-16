@@ -20,6 +20,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 	public function indexAction() {
 		$view = new Yaf_View_Simple(Billrun_Factory::config()->getConfigValue('application.directory') . '/views/paypage');
 		$request = $this->getRequest()->getRequest();
+		$action = $this->getRequest()->get('action', 'create');
 		$query = array(
 			'type' => 'account',
 			'aid' => intval($request['aid'])
@@ -37,12 +38,11 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		$this->getView()->assign('account', $account);
 		$this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
 		$this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
-		if(empty($account['payment_gateway'])){
-			$this->getView()->assign('payment_gateways', $config['payment_gateways']);
-		}
+		$this->getView()->assign('payment_gateways', $config['payment_gateways']);
 		$this->getView()->assign('plans', $planNames);
 		$this->getView()->assign('plan', $selectedPlan);
 		$this->getView()->assign('return_url', $request['return_url']);
+		$this->getView()->assign('action', $action);
 		return $view->render();
 	}
 
