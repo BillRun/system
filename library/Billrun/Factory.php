@@ -200,7 +200,7 @@ class Billrun_Factory {
 			if (!self::$cache) {
 				$args = self::config()->getConfigValue('cache', array());
 				if (isset($args[2]['cache_id_prefix'])) {
-					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant();
+					$args[2]['cache_id_prefix'] .= '_' . Billrun_Factory::config()->getTenant() . '_';
 				}
 				if (empty($args)) {
 					return false;
