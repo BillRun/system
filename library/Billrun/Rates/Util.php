@@ -312,5 +312,22 @@ class Billrun_Rates_Util {
 		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 0), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
 	}
 
+	/**
+	 * method to get currency symbol by the currency code (eur, gbp, usd, ils, etc)
+	 * 
+	 * @param string $currency the currency to retrieve
+	 * 
+	 * @return mixed on success return the symbol else false
+	 */
+	public static function getCurrencySymbol($currency) {
+		try {
+			$c = new Zend_Currency($currency);
+			return $c->getSymbol();
+		} catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::WARN);
+		}
+		return false;
+	}
+
 
 }

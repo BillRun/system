@@ -1,4 +1,3 @@
-<?php error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") " . "\n" . "action" . " :\n" . print_r($action, 1) . "\n");?>
 <html>
 	<head>
 		<link rel="stylesheet" href="css/bootstrap.min.css">
@@ -73,7 +72,7 @@
 											echo"<select name='plan' id='plan' class='form-control'" . ($plan ? "readonly value='$plan'" : "") . ">";
 											?>
 											<?php
-											foreach ($plans as $p) {
+											foreach ($planNames as $p) {
 												echo "<option value='" . $p . "' " . ($plan == $p ? "selected" : "") . ">";
 														echo $p;
 												echo "</option>";
