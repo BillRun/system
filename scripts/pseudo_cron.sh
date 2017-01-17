@@ -35,6 +35,9 @@ do
 	if [ "$CLIENTS" != "$f" ]; then # non-empty folder check
 		TEMP=$(basename $f)
 		TENANT=${TEMP%.*}
+		if [ "$TENANT" == "base" ]; then
+			continue
+		fi
 
 		flock -n $LOCKS"/pseudo_cron_"$TENANT"_receive_all.lock" -c "php $INDEX --env $ENV --tenant $TENANT --receive --type all" &
 		echo "Invoked receiving for "$TENANT" file"
