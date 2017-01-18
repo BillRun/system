@@ -65,7 +65,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		$this->redirectUrl = $this->conf['redirect_url'] . $resultArray['TOKEN'];
 	}
 
-	protected function buildTransactionPost($txId) {
+	protected function buildTransactionPost($txId, $additionalParams) {
 		$credentials = $this->getGatewayCredentials();
 		$this->conf['redirect_url'] = "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token=";
 
@@ -231,4 +231,8 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		return false;
 	}
 	
+	protected function needRequestForToken() {
+		return true;
+	}
+
 }
