@@ -104,7 +104,7 @@ class ConfigModel {
  				return 0;
  			}
  			if (empty($data['name'])) {
- 				return $currentConfig['payment_gateways'];
+ 				return $this->_getFromConfig($currentConfig, $category, $data);
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
  				return $pgSettings;
@@ -780,7 +780,11 @@ class ConfigModel {
 			if ($uniqueFields != array_unique($uniqueFields)) {
 				throw new Exception('Cannot use same field for different configurations');
 			}
-			if ($diff = array_diff($useFromStructure, $customFields)) {
+			$billrunFields = array('type', 'usaget');
+			$customFields = array_merge($customFields, array_map(function($field) {
+				return 'uf.' . $field;
+			}, $customFields));
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
 			}
 		}

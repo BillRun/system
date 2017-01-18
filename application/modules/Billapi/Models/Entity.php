@@ -160,7 +160,7 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
-		$this->trackChanges($newId, isset($this->update['key']) ? 'key' : 'name');
+		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
 
@@ -197,7 +197,7 @@ class Models_Entity {
 			return;
 		}
 		$this->remove($this->query); // TODO: check return value (success to remove?)
-		$this->trackChanges(null, $this->collectionName == 'rates' ? 'key' : 'name'); // assuming remove by _id
+		$this->trackChanges(null); // assuming remove by _id
 	}
 
 	/**
@@ -221,7 +221,7 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id'], $this->collectionName == 'rates' ? 'key' : 'name');
+		$this->trackChanges($this->query['_id']);
 		return true;
 	}
 	
@@ -273,11 +273,11 @@ class Models_Entity {
 	 * 
 	 * @param MongoId $newId the new id; if null take from update array _id field
 	 * @param MongoId $oldId the old id; if null this is new document (insert operation)
-	 * @param string $field the field name that will be used as the key
 	 * 
 	 * @return boolean true on success else false
 	 */
-	protected function trackChanges($newId = null, $field = 'name') {
+	protected function trackChanges($newId = null) {
+		$field = $this->getKeyField();
 		if (is_null($newId) && isset($this->update['_id'])) {
 			$newId = $this->update['_id'];
 		}
@@ -355,6 +355,22 @@ class Models_Entity {
 			);
 		}
 		return $query ? !$this->collection->query($query)->count() : TRUE;
+	}
+	
+	/**
+	 * Return the key field by collection
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		switch ($this->collectionName) {
+			case 'users':
+				return 'username';
+			case 'rates':
+				return 'key';
+			default:
+				return 'name';
+		}
 	}
 
 }

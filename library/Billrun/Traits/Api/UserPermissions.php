@@ -75,7 +75,7 @@ trait Billrun_Traits_Api_UserPermissions {
 	protected function authorizeUser($permission) {
 		$user = Billrun_Factory::user();
 		if (!$user || !$user->valid()) {
-			Billrun_Factory::log("Falied to get billrun user", Zend_Log::ERR);
+			Billrun_Factory::log("Failed to get billrun user", Zend_Log::ERR);
 			return false;
 		}
 

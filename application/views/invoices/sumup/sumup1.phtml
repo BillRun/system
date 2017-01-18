@@ -1,92 +1,108 @@
-<div id="wrapper">
-	<main role="main" id="main">
-		<div class="wrap">
-			<div class="info-holder">
-				<table class="contact-info">
-					<tr>
-						<td class="info-label">Account ID : </td>
-						<td class="info-data"><?php echo $data->get('aid') ?></td>
-					</tr>
-					<tr>
-						<td class="info-label">First Name : </td>
-						<td class="info-data"><?php echo $data->get('attributes')['firstname'] ?></td>
-					</tr>
-					<tr>
-						<td class="info-label">Last Name : </td>
-						<td class="info-data"><?php echo $data->get('attributes')['lastname'] ?></td>
-					</tr>
-					<tr>
-						<td class="info-label">Address : </td>
-						<td class="info-data"><?php echo $data->get('attributes')['address'] ?></td>
-					</tr>
-					<tr>
-						<td class="info-label">Invoice Date : </td>
-						<td class="info-data"><?php print(date("d/m/Y", $this->data['creation_time']->sec)); ?></td>
-					</tr>
-				</table>
-				<table class="invoice-info">
-					<tr>
-						<td class="info-label">Invoice ID : </td>
-						<td class="info-data"><?php echo $data->get('invoice_id') ?></td>
-					</tr>
-					<tr>
-						<td class="info-label">Invoice For : </td>
-						<td class="info-data"><?php print(substr($this->data['billrun_key'], 4, 2) . '/' . substr($this->data['billrun_key'], 0, 4)); ?></td>
-					</tr>
-				</table>
-				<table class="payment-info">
-					<tr>
-						<td class="info-label">Payment Details : </td>
-						<td class="info-data"><?php echo $data->get('attributes')['payment_details'] ?></td>
-					</tr>
-				</table>
-			</div>
-			<br/>
-			<div class="account-sum">
-				<h2><u>Account Summarize</u></h2>
-				<table class="sumup-invoice">
-					<thead>
-						<tr>
-							<th>Type</th>
-							<th>Price</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td class="sumup-title">Flat</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.flat.before_vat'), 2) ?></td>
-						</tr>
-						<tr>
-							<td class="sumup-title">Services</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.service.before_vat'), 2) ?></td>
-						</tr>
-						<tr>
-							<td class="sumup-title">Extras</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.usage.before_vat'), 2) ?></td>
-						</tr>
-						<tr class="table-holder"></tr>
-						<tr class="total-price">
-							<td class="sumup-title">Total</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.before_vat'), 2) ?></td>
-						</tr>
-						<tr class="total-price">
-							<td class="sumup-title">VAT Rate</td>
-							<td class="sumup-data"><?php echo number_format($data->get('vat') * 100, 2) ?>%</td>
-						</tr>
-						<tr class="total-price">
-							<td class="sumup-title">VAT</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.after_vat') - $data->get('totals.before_vat'), 2) ?></td>
-						</tr>
-						<tr class="total-price">
-							<td class="sumup-title">Total + VAT</td>
-							<td class="sumup-data"><?php echo number_format($data->get('totals.after_vat'), 2) ?></td>
-						</tr>
-					</tbody>
-				</table>
-				<br/><br/><br/>
-				<h3><span class="total-payment-title">Total payment: </span><span class="total-payment"><?php echo number_format($data->get('totals.after_vat'), 2) ?> <?php echo $this->currency ?></span></h3>
-			</div>
+<div class="section section-invoice-head">
+	<table class="table-header">
+		<tbody>
+			<tr>
+				<td>
+					<h1>INVOICE</h1>
+				</td>
 
-		</div>
-	</main>
+				<td>
+					<table class="table-inline">
+						<tbody><tr>
+								<td>Period</td>
+
+								<td><strong><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></strong></td>
+							</tr>
+
+							<tr>
+								<td>Invoice#</td>
+
+								<td><?php echo $data->get('invoice_id'); ?></td>
+							</tr>
+
+							<tr>
+								<td>Print Date</td>
+
+								<td><?php echo date('d/m/Y'); ?></td>
+							</tr>
+						</tbody></table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<section class="section-info">
+	<table class="table-info">
+		<tbody><tr>
+				<td>
+					<small>to</small>
+				</td>
+
+				<td>
+					<h2><?php echo $data->get('attributes')['firstname'] . ' ' . $data->get('attributes')['lastname']; ?></h2>
+
+					<span class="text">
+						<small>Account</small>
+
+						<span class="text"><?php echo $data->get('aid'); ?></span>
+					</span>
+				</td>
+			</tr>
+
+			<tr>
+				<td></td>
+
+				<td><?php echo $data->get('attributes')['address']; ?></td>
+			</tr>
+
+			<tr>
+				<td></td>
+
+				<td><?php echo !empty($data->get('attributes')['email']) ? $data->get('attributes')['email'] : ''; ?></td>
+			</tr>
+		</tbody></table>
+</section>
+<div class="section section-invoice-details">
+	<div class="section-head">
+		<h2 class="section-title section-title-alt">Invoice summary</h2><!-- /.section-title -->
+	</div><!-- /.section-head -->
+
+	<div class="section-body">
+		<div class="table table-default table-default-primary">
+			<table>
+				<thead>
+					<tr>
+						<th>Description</th>
+						<th>Amount</th>
+					</tr>
+				</thead>
+
+				<tbody>
+					<?php foreach ($details_keys as $title => $key) { ?>
+						<?php if (empty($data->get('totals')[$key])) { continue; } ?>
+						<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
+							<td><?php echo ucfirst($title); ?></td>
+							<td><?php echo '$' . number_format($data->get('totals')[$key]['after_vat'], 2); ?></td>
+						</tr>
+					<?php } ?>
+					
+					<tr class="total">
+						<td>TOTAL</td>
+						<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
+					</tr>
+					<tr class="total">
+						<td>VAT (17%)</td>
+						<td><?php echo '$' . number_format($data->get('totals')['after_vat'] - $data->get('totals')['before_vat'], 2); ?></td>
+					</tr>
+				</tbody>
+
+				<tfoot>
+					<tr class="grand-total">
+						<td>GRAND TOTAL</td>
+						<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
+					</tr>
+				</tfoot>
+			</table>
+		</div><!-- /.table table-default table-default-primary -->
+	</div><!-- /.section-body -->
 </div>

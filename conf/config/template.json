@@ -22,7 +22,6 @@
 		"footer"  : "<p>Demo Footer, date [[date]]</p>",
 		"sumup_template"  : "/application/views/invoices/sumup/sumup1.phtml",
 		"details_template" : "/application/views/invoices/details/details1.phtml",
-		"lines_template" : "/application/views/invoices/lines/lines1.phtml",
 		"decimal_mark" : ".",
 		"thousands_separator":",",
 		"date_separator" : "/",
@@ -36,5 +35,6 @@
 		"t" : "menu",
 		"v" : { "main" : { "tmp" : "tmp" } }
 	},
-	"template_token":{}
+	"template_token":{},
+	"payment_gateways":[]
 }

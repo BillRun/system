@@ -11,10 +11,14 @@ var globalSetting = {
     maxItems: 100
   },
   statusMessageDisplayTimeout: 5000,
-  planCycleUnlimitedValue: 999999999,
-  serviceCycleUnlimitedValue: 999999999,
-  productUnlimitedValue: 999999999,
+  planCycleUnlimitedValue: 'UNLIMITED',
+  serviceCycleUnlimitedValue: 'UNLIMITED',
+  productUnlimitedValue: 'UNLIMITED',
   keyUppercaseRegex: /^[A-Z0-9_]*$/,
   defaultLogo: 'billRun-cloud-logo.png',
+  billrunCloudLogo: 'billRun-cloud-logo.png',
   billrunLogo: 'billRun-logo.png',
+  queue_calculators: ['customer', 'rate', 'pricing'],
+  mail_support: 'cloud_support@billrun.com',
+  logoMaxSize: 2,
 };

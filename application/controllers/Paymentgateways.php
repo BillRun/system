@@ -37,7 +37,7 @@ class PaymentGatewaysController extends ApiController {
 			if (is_null($paymentGateway)) {
 				$setting['supported'] = false;
 				$settings[] = $setting;
-				break;
+				continue;
 			}
 			$fields = $paymentGateway->getDefaultParameters();
 			$setting['params'] = $fields;
@@ -86,7 +86,8 @@ class PaymentGatewaysController extends ApiController {
 
 		$name = $data['name'];
 		$aid = $data['aid'];
-		$this->validatePaymentGateway($name, $aid);
+		// TODO : Check with Idan why we need this validation : new PG name == account PG name
+		//$this->validatePaymentGateway($name, $aid);
 
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
@@ -99,6 +100,7 @@ class PaymentGatewaysController extends ApiController {
 		
 		$accountQuery = $this->getAccountQuery($aid);
 		$accountQuery['tennant_return_url'] = $returnUrl;
+<<<<<<< HEAD
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
 		if ($result['content_type'] == 'url') {
@@ -108,6 +110,10 @@ class PaymentGatewaysController extends ApiController {
 			$this->setOutput(array($result['content'], TRUE));
 		}
 		
+=======
+		$paymentGateway = Billrun_Factory::paymentGateway($name);
+		$paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+>>>>>>> version_53
 	}
 
 	/**
