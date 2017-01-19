@@ -13,6 +13,8 @@
  * @since    5.1
  */
 class Billrun_Rates_Util {
+	
+	protected $currencyList;
 
 	/**
 	 * Get a rate by reference
@@ -321,8 +323,12 @@ class Billrun_Rates_Util {
 	 */
 	public static function getCurrencySymbol($currency) {
 		try {
-			$c = new Zend_Currency($currency);
-			return $c->getSymbol();
+			if (empty(self::$currencyList)) {
+				self::$currencyList = Zend_Locale::getTranslationList('currencysymbol');
+			}
+			if (isset(self::$currencyList[$currency])) {
+				return self::$currencyList[$currency];
+			}
 		} catch (Exception $ex) {
 			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::WARN);
 		}
