@@ -19,9 +19,9 @@
 													<i class="material-icons">check_box</i>
 												</span>
 
-												<h5><?php echo htmlspecialchars($service['name']); ?></h5>
+												<h5 title="<?php echo htmlspecialchars($service['name']); ?>"><?php echo htmlspecialchars($service['name']); ?></h5>
 
-												<p><?php echo htmlspecialchars($service['description']); ?></p>
+												<p title="<?php echo htmlspecialchars($service['description']); ?>"><?php echo htmlspecialchars($service['description']); ?></p>
 
 												<h2><?php echo htmlspecialchars($currency_symbol . $service['price'][0]['price']); ?> <sub><?php echo $service['price'][0]['to'] == 'UNLIMITED' ? '': $service['price'][0]['to'] . ' months'; ?></sub></h2>
 											</label>
