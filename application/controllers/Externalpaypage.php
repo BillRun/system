@@ -26,26 +26,55 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 			'aid' => intval($request['aid'])
 		);
 		$query = array_merge($query, Billrun_Utils_Mongo::getDateBoundQuery());
-		$selectedPlan = $request['plan'];
+		if (isset($request['plan'])) {
+			$selectedPlan = Billrun_Util::filter_var($request['plan'], FILTER_SANITIZE_STRING);
+		} else {
+			$selectedPlan = "";
+		}
 		$account = Billrun_Factory::db()->subscribersCollection()->query($query)->cursor()->current()->getRawData();
-		$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->current()->getRawData();
-		$plans = Billrun_Factory::db()->plansCollection()->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();
-		$planNames = array();
-		foreach ($plans as $plan) {
-			$p = $plan->getRawData();
-			$planNames[] = $p['name'];
+		$config = Billrun_Factory::db()->configCollection()->query()->cursor()->sort(array('_id' => -1))->limit(1)->current()->getRawData();
+		$plans = $this->getEntityActiveRows('plan');
+		$services = $this->getEntityActiveRows('service');
+		$planNames = $this->getEntityActiveRows('plan', 'name');
+		$serviceNames = $this->getEntityActiveRows('service', 'name');
+		if (isset($config['tenant']['logo'])) {
+			$logoFileName = $config['tenant']['logo'];
+		} else {
+			$logoFileName = '';
+		}
+		$imageQuery = array(
+			'filename' => $logoFileName,
+		);
+		$gfsFile = Billrun_Factory::db()->getDb()->getGridFS()->findOne($imageQuery);
+		if (!empty($gfsFile)) {
+			$imageEncode = base64_encode($gfsFile->getBytes());
+		} else {
+			$imageEncode = '/img/web-logo.png';
 		}
 		$this->getView()->assign('account', $account);
+		$this->getView()->assign('tenant', $config['tenant']);
+		$this->getView()->assign('company_image', $imageEncode);
 		$this->getView()->assign('account_config', $config['subscribers']['account']['fields']);
 		$this->getView()->assign('subscriber_config', $config['subscribers']['subscriber']['fields']);
 		$this->getView()->assign('payment_gateways', $config['payment_gateways']);
-		$this->getView()->assign('plans', $planNames);
+		$this->getView()->assign('planNames', $planNames);
+		$this->getView()->assign('serviceNames', $serviceNames);
+		$this->getView()->assign('plans', $plans);
+		$this->getView()->assign('services', $services);
 		$this->getView()->assign('plan', $selectedPlan);
 		$this->getView()->assign('return_url', $request['return_url']);
 		$this->getView()->assign('action', $action);
-		return $view->render();
+		$this->getView()->assign('currency_symbol', Billrun_Rates_Util::getCurrencySymbol($config['pricing']['currency']));
+//		return $view->render();
 	}
-
+	
+	protected function render($tpl, array $parameters = array()) {
+		// this trick for forward compatibility
+		if ($this->getRequest()->get('tpl') == 'index2') {
+			return parent::render('index2', $parameters);
+		}
+		return parent::render($tpl, $parameters);
+	}
 	public function createAction() {
 		$request = $this->getRequest()->getRequest();
 		$create = new Billrun_ActionManagers_Subscribers_Create();
@@ -81,6 +110,23 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 
 		header("Location: /creditguard/creditguard?signature=".$hashResult."&data=".json_encode($data));
 		return false;
+	}
+	
+	protected function getEntityActiveRows($entityName, $field = null) {
+//		$data = Billrun_Factory::db()->plansCollection()->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();
+		$collection = Billrun_Factory::db()->{$entityName . 'sCollection'}();
+		$data = $collection->query(Billrun_Utils_Mongo::getDateBoundQuery())->cursor();;
+
+		$ret = array();
+		foreach ($data as $row) {
+			if (!is_null($field)) {
+				$ret[] = $row->getRawData()[$field];
+			} else {
+				$ret[] = $row->getRawData();
+			}
+		}
+		return $ret;
+
 	}
 
 }
