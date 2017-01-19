@@ -150,12 +150,12 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$tennant_return_url = $accountQuery['tennant_return_url'];
+		$tennantReturnUrl = $accountQuery['tennant_return_url'];
 		unset($accountQuery['tennant_return_url']);
-		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $tennant_return_url)));
+		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $tennantReturnUrl)));
 		$okPage = $this->getOkPage($request);
 		if ($this->needRequestForToken()){
-			$response = $this->getToken($aid, $accountQuery['tennant_return_url'], $okPage);
+			$response = $this->getToken($aid, $tennantReturnUrl, $okPage);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
 			$response = $updateOkPage;
