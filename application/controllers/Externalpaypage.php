@@ -47,7 +47,7 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		);
 		$gfsFile = Billrun_Factory::db()->getDb()->getGridFS()->findOne($imageQuery);
 		if (!empty($gfsFile)) {
-			$imageEncode = base64_encode($gfsFile->getBytes());
+			$imageEncode = 'data:image/' . pathinfo($logoFileName, PATHINFO_EXTENSION) . ';base64,' . base64_encode($gfsFile->getBytes());
 		} else {
 			$imageEncode = '/img/web-logo.png';
 		}
