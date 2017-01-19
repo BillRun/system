@@ -14,7 +14,7 @@
  */
 class Billrun_Rates_Util {
 	
-	protected $currencyList;
+	protected static $currencyList;
 
 	/**
 	 * Get a rate by reference
