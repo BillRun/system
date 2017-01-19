@@ -260,7 +260,7 @@ blockquote:last-child { margin-bottom: 0; }
 	Header
 \* ------------------------------------------------------------ */
 .header { padding: 11px 0 2px 0; }
-.header .header-aside { display:block; overflow: hidden; font-size:11px; text-align:right; padding-top:15px; }
+.header .header-aside { display:block; overflow: hidden; font-size:11px; text-align:right; padding-top:10px; }
 /* ------------------------------------------------------------ *\
 	Main
 \* ------------------------------------------------------------ */
