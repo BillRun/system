@@ -6,7 +6,7 @@
 		$('.scrollable').mCustomScrollbar();
 
 		var planContent;
-		var $popupTrigger = $('<a href="#" class="popup-trigger popup-trigger-absolute"></a>');
+		var $popupTrigger = $('<a href="#" class="popup-trigger popup-trigger-absolute"><i class="material-icons">keyboard_arrow_down</i></a>');
 
 		$('.radio-plan input').on('change', function() {
 			var $this = $(this);
@@ -23,6 +23,9 @@
 
 			$('form-plans').trigger("reset");
 		});
+		$('.form-btn-reset').on('click', function(event) {
+			$('.popup-trigger-close').trigger('click');
+		});
 	});
 
 	$doc.on('click', '.popup-trigger', function(event) {
@@ -31,6 +34,8 @@
 		$('.popup').toggleClass('open');
 
 		$('.form-plans form').trigger('reset');
+		var _currentPlanVal = $('.plan-current input').val();
+		$('.radio-plan input[value="' + _currentPlanVal + '"]').trigger('click');
 	});
 
 })(jQuery, window, document);
