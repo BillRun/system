@@ -117,7 +117,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 	}
 
-	protected function buildTransactionPost($txId) {
+	protected function buildTransactionPost($txId, $additionalParams) {
 		$params = $this->getGatewayCredentials();
 		$params['txId'] = $txId;
 		$params['tid'] = $params['terminal_id'];
@@ -142,7 +142,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_token'] = (string) $xmlObj->response->inquireTransactions->row->cardId;
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
-			$this->saveDetails['return_url'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 
 			return true;
@@ -292,5 +291,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function isCustomerBasedCharge() {
 		return false;
 	}
-
+	
+	protected function needRequestForToken() {
+		return true;
+	}
 }

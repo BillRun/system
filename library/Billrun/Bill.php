@@ -556,6 +556,7 @@ abstract class Billrun_Bill {
 			$res = Billrun_Bill_Payment::savePayments($payments);
 			if ($res && isset($res['ok']) && $res['ok']) {
 				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
+					$paymentSuccess = array();
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
@@ -564,6 +565,8 @@ abstract class Billrun_Bill {
 							$paymentStatus = $gateway->pay($gatewayDetails);
 						} catch (Exception $e) {
 							$payment->setGatewayChargeFailure($e->getMessage());
+							$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
+							Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
 							continue;
 						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
