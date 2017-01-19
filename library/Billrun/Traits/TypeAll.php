@@ -43,6 +43,7 @@ trait Billrun_Traits_TypeAll {
 			}
 				
 			$tempCmd = $cmd . " " . $type;
+			Billrun_Factory::log('TypeAll invokes command: ' . $tempCmd, Zend_Log::DEBUG);
 			Billrun_Util::forkProcessCli($tempCmd);
 			
 			// TODO: UNCOMMENT THIS TO USE FORK INSTEAD OF SYSTEM CALL
