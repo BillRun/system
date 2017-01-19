@@ -260,7 +260,7 @@ blockquote:last-child { margin-bottom: 0; }
 	Header
 \* ------------------------------------------------------------ */
 .header { padding: 11px 0 2px 0; }
-.header .header-aside { display:block; overflow: hidden; font-size:11px; text-align:right; padding-top:15px; }
+.header .header-aside { display:block; overflow: hidden; font-size:11px; text-align:right; padding-top:10px; }
 /* ------------------------------------------------------------ *\
 	Main
 \* ------------------------------------------------------------ */
@@ -347,10 +347,10 @@ input:-webkit-autofill { -webkit-text-fill-color: inherit; -webkit-box-shadow: 0
 .checkbox label { display:block; padding: 6px 6px; position: relative; }
 .checkbox label > * { position: relative; z-index: 1; }
 .checkbox label input { position: absolute; top:-100px; left:-100px; }
-.checkbox h5 { position: relative; z-index: 1; color: #0d72b9; margin: 0 0 2px 0; line-height:1; width: 152px;}
+.checkbox h5 { position: relative; z-index: 1; color: #0d72b9; margin: 0 0 2px 0; line-height:1; width: 152px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
 .checkbox h2 { color: #0d72b9; line-height:1; position: relative; z-index: 1; margin: 0; }
 .checkbox h2 sub { color: #404041; font-size:13px; display: inline-block; vertical-align: bottom; position: relative; top:-3px; }
-.checkbox p { margin: 0 0 7px 0; font-weight:300; letter-spacing: -0.05em; }
+.checkbox p { margin: 0 0 7px 0; font-weight:300; letter-spacing: -0.05em; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
 .checkbox .material-icons { position: relative; z-index: 1; }
 .checkbox .material-icons:first-child { display: inline-block; }
 .checkbox .material-icons:nth-child(2) { display:none; }
@@ -426,7 +426,7 @@ input:-webkit-autofill { -webkit-text-fill-color: inherit; -webkit-box-shadow: 0
 	List Checkboxes
 \* ------------------------------------------------------------ */
 .list-checkboxes { font-size:0; }
-.list-checkboxes > li { display: inline-block; vertical-align: top; padding-right:8px; }
+.list-checkboxes > li { display: inline-block; vertical-align: top; padding-right:8px; margin-bottom: 10px;}
 @media (max-width: 1023px) {
 	.list-checkboxes > li { padding-bottom:8px; }
 }

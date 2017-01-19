@@ -100,7 +100,7 @@
 											<div class='col-md-3'>
 												<div class='radio'>
 													<label>
-														<input type='radio' name='payment_gateway' value='<?php echo $pg['name'] ?>' <?php echo ($account['payment_gateway']['name'] === $pg['name']) ? 'checked' : '' ?> />
+														<input type='radio' name='payment_gateway' value='<?php echo htmlspecialchars($pg['name']); ?>' <?php echo ($account['payment_gateway']['name'] === $pg['name']) ? 'checked' : '' ?> />
 														<?php if (!empty($pg['image_url'])) : ?>
 															<img src='<?php echo $pg['image_url'] ?>' />
 														<?php else : ?>
@@ -119,7 +119,7 @@
 							<button id="cancelbtn" class="btn btn-default" type="button" onclick="window.history.back();">Cancel</button>
 						</div>
 						<input type="hidden" name="return_url" id="aid" value="<?php echo $return_url; ?>" />
-						<input type="hidden" name="action" value="<?php echo $action; ?>" />
+						<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
 					</form>
 				</div>
 			</div>
