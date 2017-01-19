@@ -426,7 +426,7 @@ input:-webkit-autofill { -webkit-text-fill-color: inherit; -webkit-box-shadow: 0
 	List Checkboxes
 \* ------------------------------------------------------------ */
 .list-checkboxes { font-size:0; }
-.list-checkboxes > li { display: inline-block; vertical-align: top; padding-right:8px; }
+.list-checkboxes > li { display: inline-block; vertical-align: top; padding-right:8px; margin-bottom: 10px;}
 @media (max-width: 1023px) {
 	.list-checkboxes > li { padding-bottom:8px; }
 }
