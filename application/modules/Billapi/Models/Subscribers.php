@@ -14,9 +14,9 @@
  */
 class Models_Subscribers extends Models_Entity {
 
-	public function create() {
+	protected function init($params) {
+		parent::init($params);
 		$this->update['type'] = 'subscriber';
-		return parent::create();
 	}
 
 }
