@@ -12,15 +12,15 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Subscribers extends Models_Entity {
+class Models_Accounts extends Models_Entity {
 
 	protected function init($params) {
 		parent::init($params);
-		$this->update['type'] = 'subscriber';
+		$this->update['type'] = 'account';
 	}
-
+	
 	public function get() {
-		$this->query['type'] = 'subscriber';
+		$this->query['type'] = 'account';
 		return parent::get();
 	}
 
