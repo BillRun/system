@@ -57,14 +57,30 @@ class Models_Action_Uniqueget extends Models_Action {
 				),
 			);
 		}
-		$res = $this->collectionHandler->aggregate($match, $group);
+		
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'id' => 1,
+			),
+		);
+		
+		$find = (array) json_decode($query, true);
+		$this->convertRegexQuery($find);
+		if (!empty($find)) {
+			$match['$match'] = array_merge($match['$match'], $find);
+		}
+		$res = $this->collectionHandler->aggregate($match, $group, $project);
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
 		$ids = array_column($aggregatedResults, 'id');
 
-		$find = (array) json_decode($this->request['query'], true);
-		$find['_id'] = array('$in' => $ids);
+		$filter = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
 		
 		if (isset($this->request['project'])) {
 			$project = (array) json_decode($this->request['project'], true);
@@ -72,7 +88,7 @@ class Models_Action_Uniqueget extends Models_Action {
 			$project = array();
 		}
 		
-		$ret = $this->collectionHandler->find($find, $project);
+		$ret = $this->collectionHandler->find($filter, $project);
 		
 		if (isset($this->request['page']) && $this->request['page'] != -1) {
 			$res->skip((int) $this->page * (int) $this->size);
@@ -87,6 +103,18 @@ class Models_Action_Uniqueget extends Models_Action {
 		}
 		
 		return array_values(iterator_to_array($ret));;
+	}
+	
+	/**
+	 * Convert request query - regex string to php native MongoRegex 
+	 * @param array $query the query to convert
+	 */
+	protected function convertRegexQuery(&$query) {
+		foreach ($query as $k => &$v) {
+			if (isset($v['$regex'])) {
+				$v['$regex'] = new MongoRegex($v['$regex']);
+			}
+		}
 	}
 
 }
