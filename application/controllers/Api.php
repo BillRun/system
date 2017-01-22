@@ -249,5 +249,9 @@ class ApiController extends Yaf_Controller_Abstract {
 
 		return false;
 	}
+	
+	public function localeAction() {
+		$this->forward('Locale', 'index');
+	}
 
 }
