@@ -82,12 +82,26 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $action = 'change';
+	
+	/**
+	 * the change action applied on the entity
+	 * 
+	 * @var string
+	 */
+	protected $availableOperations = array('query', 'update', 'sort');
 
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
-		foreach (array('query', 'update', 'sort') as $operation) {
+		if (isset($params['request']['action'])) {
+			$this->action = $params['request']['action'];
+		}
+		$this->init($params);
+	}
+	
+	protected function init($params) {
+		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
 			}
@@ -99,6 +113,33 @@ class Models_Entity {
 		if (isset($this->query['_id'])) {
 			$this->before = $this->loadById($this->query['_id']);
 		}
+		if (isset($this->config[$this->action]['custom_fields'])) {
+			$this->addCustomFields($this->config[$this->action]['custom_fields']);
+		}
+	}
+		
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function addCustomFields($fields) {
+//		$ad = $this->getCustomFields();
+//		$additionalFields = array_column($this->getCustomFields(), 'field_name');
+//		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+//		$customFields = array_diff($additionalFields, $defaultFields);
+//		print_R($customFields);die;
+//		foreach ($additionalFields as $field) {
+//			if (isset($this->update[]))
+//		}
+	}
+	
+	protected function getCustomFields() {
+		$type = preg_replace("/s\b/", "", $this->collectionName);
+		return array_merge(
+			Billrun_Factory::config()->getConfigValue("subscribers." . $type . ".fields", array()),
+			Billrun_Factory::config()->getConfigValue("subscribers.fields", array())
+		);
 	}
 
 	/**
