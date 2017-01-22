@@ -63,6 +63,9 @@ class PaymentGatewaysController extends ApiController {
 		$request = $this->getRequest();
 		// Validate the data.
 		$requestData = json_decode($request->get('data'), true);
+		if (isset($requestData['return_url'])) {
+			$requestData['return_url'] = urlencode($requestData['return_url']);
+		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $request);
 		} else {
@@ -97,7 +100,7 @@ class PaymentGatewaysController extends ApiController {
 		}
 		
 		$accountQuery = $this->getAccountQuery($aid);
-		$accountQuery['tenant_return_url'] = $returnUrl;
+		$accountQuery['tenant_return_url'] = urlencode($returnUrl);
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
 		if ($result['content_type'] == 'url') {
