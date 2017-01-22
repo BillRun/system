@@ -97,7 +97,7 @@ class PaymentGatewaysController extends ApiController {
 		}
 		
 		$accountQuery = $this->getAccountQuery($aid);
-		$accountQuery['tennant_return_url'] = $returnUrl;
+		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
 		if ($result['content_type'] == 'url') {
