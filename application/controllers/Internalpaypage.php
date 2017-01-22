@@ -63,7 +63,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			"aid" => $request['aid'],
 			"name" => $request['payment_gateway'],
 			"type" => $type,
-			"return_url" => $request['return_url'],
+			"return_url" => urlencode($request['return_url']),
 		);
 		$signed = Billrun_Utils_Security::addSignature($data, $secret);
 		$sendData = array(
