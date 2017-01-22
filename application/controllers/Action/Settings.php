@@ -55,6 +55,8 @@ class SettingsAction extends ApiAction {
 			$success = $this->model->updateConfig($category, $data);
 		} else if ($action === 'unset') {
 			$success = $this->model->unsetFromConfig($category, $data);
+		} else if ($action === 'validate') {
+			$success = $this->model->validateConfig($category, $data);
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}
