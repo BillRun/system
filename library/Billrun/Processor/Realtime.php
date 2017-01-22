@@ -106,5 +106,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function processLines() {
 	}
+	
+	public function process_files() {
+		return 0;
+	}
 
 }

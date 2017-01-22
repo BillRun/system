@@ -937,7 +937,7 @@ class ConfigModel {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
 				if (filter_var($connection['host'], FILTER_VALIDATE_IP) === FALSE) {
-					throw new Exception($connection['host'] . ' is not a valid IP addresss');
+					throw new Exception($connection['host'] . ' is not a valid IP address');
 				}
 				$connection['passive'] = $connection['passive'] ? 1 : 0;
 				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;
