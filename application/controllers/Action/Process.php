@@ -44,9 +44,6 @@ class ProcessAction extends Action_Base {
 	}
 	
 	protected function loadProcessor($options) {
-		$this->_controller->addOutput("Parser selected: " . $options['type']); 
-		//$options['parser'] = Billrun_Parser::getInstance(array('type' => $options['parser']));
-
 		$this->_controller->addOutput("Loading processor");
 		$processor = Billrun_Processor::getInstance($options);
 

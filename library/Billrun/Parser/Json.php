@@ -7,10 +7,16 @@
  */
 
 /**
- * Int type translator
- * Point to Integer translator
+ * Billing parser class for JSON
  *
- * @package  Api
+ * @package  Billing
  * @since    5.3
+ * @todo implement class
  */
-class Api_Translator_IntModel extends Api_Translator_IntegerModel {}
+class Billrun_Parser_Json extends Billrun_Parser {
+
+	public function parse($fp) {
+		
+	}
+
+}
