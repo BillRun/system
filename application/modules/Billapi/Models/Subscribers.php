@@ -24,4 +24,15 @@ class Models_Subscribers extends Models_Entity {
 		return parent::get();
 	}
 
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function getCustomFields() {
+		$customFields = parent::getCustomFields();
+		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
+		return array_merge($accountFields, $customFields);
+	}
+
 }

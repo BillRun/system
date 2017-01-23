@@ -206,10 +206,7 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		$type = preg_replace("/s\b/", "", $this->collectionName);
-		return array_merge(
-			Billrun_Factory::config()->getConfigValue("subscribers." . $type . ".fields", array()), Billrun_Factory::config()->getConfigValue("subscribers.fields", array())
-		);
+		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
 	}
 
 	/**

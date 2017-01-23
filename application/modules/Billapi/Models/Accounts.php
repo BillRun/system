@@ -18,10 +18,21 @@ class Models_Accounts extends Models_Entity {
 		parent::init($params);
 		$this->update['type'] = 'account';
 	}
-	
+
 	public function get() {
 		$this->query['type'] = 'account';
 		return parent::get();
+	}
+
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function getCustomFields() {
+		$customFields = parent::getCustomFields();
+		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".account.fields", array());
+		return array_merge($accountFields, $customFields);
 	}
 
 }
