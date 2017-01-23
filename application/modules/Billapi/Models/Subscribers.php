@@ -17,6 +17,14 @@ class Models_Subscribers extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'subscriber';
+
+		// TODO: move to translators?
+		if (isset($this->before['plan_activation']) && isset($this->update['plan']) &&
+			isset($this->before['plan']) && $this->before['plan'] != $this->update['plan']) {
+			$this->update['plan_activation'] = new MongoDate();
+		} else if (empty($this->before)) { // this is new subscriber
+			$this->update['plan_activation'] = new MongoDate();
+		}
 	}
 
 	public function get() {
