@@ -83,11 +83,30 @@ class Models_Entity {
 	 */
 	protected $action = 'change';
 
+	/**
+	 * the change action applied on the entity
+	 * 
+	 * @var string
+	 */
+	protected $availableOperations = array('query', 'update', 'sort');
+
 	public function __construct($params) {
 		$this->collectionName = $params['collection'];
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
-		foreach (array('query', 'update', 'sort') as $operation) {
+		if (isset($params['request']['action'])) {
+			$this->action = $params['request']['action'];
+		}
+		$this->init($params);
+	}
+
+	protected function init($params) {
+		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
+		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
+		$this->query = $translatedQuery;
+		$this->update = $translatedUpdate;
+		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
 			}
@@ -99,6 +118,95 @@ class Models_Entity {
 		if (isset($this->query['_id'])) {
 			$this->before = $this->loadById($this->query['_id']);
 		}
+		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
+			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
+		}
+	}
+
+	/**
+	 * Returns the translated (validated) request
+	 * @param array $query the query parameter
+	 * @param array $data the update parameter
+	 * 
+	 * @return array
+	 * 
+	 * @throws Billrun_Exceptions_Api
+	 * @throws Billrun_Exceptions_InvalidFields
+	 */
+	protected function validateRequest($query, $data) {
+		$options = array();
+		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
+			$options['fields'] = array();
+			$translated[$type] = array();
+			foreach (Billrun_Util::getFieldVal($this->config[$this->action][$type], array()) as $param) {
+				$name = $param['name'];
+				$isGenerated = (isset($param['generated']) && $param['generated']);
+				if (!isset($params[$name])) {
+					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
+						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
+					}
+					if (!$isGenerated) {
+						continue;
+					}
+				}
+				$options['fields'][] = array(
+					'name' => $name,
+					'type' => $param['type'],
+					'preConversions' => isset($param['pre_conversion']) ? $param['pre_conversion'] : [],
+					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
+					'options' => [],
+				);
+				$knownParams[$name] = $params[$name];
+				unset($params[$name]);
+			}
+			if ($options['fields']) {
+				$translatorModel = new Api_TranslatorModel($options);
+				$ret = $translatorModel->translate($knownParams);
+				$translated[$type] = $ret['data'];
+//				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
+				if (!$ret['success']) {
+					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
+				}
+			}
+			if (!Billrun_Util::getFieldVal($this->config[$this->action]['restrict_query'], 1) && $params) {
+				$translated[$type] = array_merge($translated[$type], $params);
+			}
+		}
+		$this->verifyTranslated($translated);
+		return array($translated['query_parameters'], $translated['update_parameters']);
+	}
+
+	/**
+	 * Verify the translated query & update
+	 * @param array $translated
+	 */
+	protected function verifyTranslated($translated) {
+		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
+			throw new Billrun_Exceptions_Api($this->errorBase + 2, array(), 'No query/update was found or entity not supported');
+		}
+	}
+
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function addCustomFields($fields, $originalUpdate) {
+//		$ad = $this->getCustomFields();
+		$additionalFields = array_column($this->getCustomFields(), 'field_name');
+		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		$customFields = array_diff($additionalFields, $defaultFields);
+//		print_R($customFields);
+		foreach ($customFields as $field) {
+			if (isset($originalUpdate[$field])) {
+				$this->update[$field] = $originalUpdate[$field];
+			}
+		}
+//		print_R($this->update);die;
+	}
+
+	protected function getCustomFields() {
+		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
 	}
 
 	/**
@@ -224,7 +332,7 @@ class Models_Entity {
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
-	
+
 	/**
 	 * DB update currently limited to update of one record
 	 * @param type $query
@@ -356,7 +464,7 @@ class Models_Entity {
 		}
 		return $query ? !$this->collection->query($query)->count() : TRUE;
 	}
-	
+
 	/**
 	 * Return the key field by collection
 	 * 

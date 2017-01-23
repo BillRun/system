@@ -52,26 +52,6 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 */
 	protected $settings = array();
 
-	public function indexAction() {
-		$request = $this->getRequest();
-		$query = json_decode($request->get('query'), TRUE);
-		$update = json_decode($request->get('update'), TRUE);
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		$this->params['query'] = $translatedQuery;
-		$this->params['update'] = $translatedUpdate;
-		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
-		$this->params['settings'] = $this->settings;
-		$res = $this->runOperation();
-		$this->output->status = 1;
-		$this->output->details = $res;
-		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
-	}
-	
-	protected function runOperation() {
-		$entityModel = $this->getModel();
-		return $entityModel->{$this->action}();
-	}
-
 	public function init() {
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
@@ -94,6 +74,29 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$errorMsg = isset($pluginStatus['error']['message']) ? $pluginStatus['error']['message'] : 'Operation was cancelled due to 3rd party plugin';
 			throw new Billrun_Exceptions_Api($errorCode, array(), $errorMsg);
 		}
+	}
+
+	public function indexAction() {
+		$request = $this->getRequest();
+
+		// Moved to entity model
+//		$query = json_decode($request->get('query'), TRUE);
+//		$update = json_decode($request->get('update'), TRUE);
+//		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
+//		$this->params['query'] = $translatedQuery;
+//		$this->params['update'] = $translatedUpdate;
+		
+		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
+		$this->params['settings'] = $this->settings;
+		$res = $this->runOperation();
+		$this->output->status = 1;
+		$this->output->details = $res;
+		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
+	}
+	
+	protected function runOperation() {
+		$entityModel = $this->getModel();
+		return $entityModel->{$this->action}();
 	}
 
 	/**
@@ -128,6 +131,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * 
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
+	 * @deprecated since version 5.3 moved to Entity model
 	 */
 	protected function validateRequest($query, $data) {
 		$options = array();
@@ -136,11 +140,14 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$translated[$type] = array();
 			foreach (Billrun_Util::getFieldVal($this->settings[$type], array()) as $param) {
 				$name = $param['name'];
+				$isGenerated = (isset($param['generated']) && $param['generated']);
 				if (!isset($params[$name])) {
-					if (isset($param['mandatory']) && $param['mandatory']) {
+					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
 						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
 					}
-					continue;
+					if (!$isGenerated) {
+						continue;
+					}
 				}
 				$options['fields'][] = array(
 					'name' => $name,
@@ -198,6 +205,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	/**
 	 * Verify the translated query & update
 	 * @param array $translated
+	 * @deprecated since version 5.3 moved to entity model
 	 */
 	protected function verifyTranslated($translated) {
 		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
