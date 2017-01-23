@@ -42,7 +42,7 @@ class Models_Action_Uniqueget extends Models_Action {
 				)
 			),
 		);
-		
+
 		if (!isset($this->request['history']) || !$this->request['history']) {
 			$match = array(
 				'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
@@ -57,16 +57,15 @@ class Models_Action_Uniqueget extends Models_Action {
 				),
 			);
 		}
-		
+
 		$project = array(
 			'$project' => array(
 				'_id' => 0,
 				'id' => 1,
 			),
 		);
-		
+
 		$find = (array) json_decode($query, true);
-		$this->convertRegexQuery($find);
 		if (!empty($find)) {
 			$match['$match'] = array_merge($match['$match'], $find);
 		}
@@ -81,15 +80,15 @@ class Models_Action_Uniqueget extends Models_Action {
 				'$in' => $ids
 			),
 		);
-		
+
 		if (isset($this->request['project'])) {
 			$project = (array) json_decode($this->request['project'], true);
 		} else {
 			$project = array();
 		}
-		
+
 		$ret = $this->collectionHandler->find($filter, $project);
-		
+
 		if (isset($this->request['page']) && $this->request['page'] != -1) {
 			$res->skip((int) $this->page * (int) $this->size);
 		}
@@ -101,20 +100,8 @@ class Models_Action_Uniqueget extends Models_Action {
 		if ($sort) {
 			$res = $res->sort((array) $sort);
 		}
-		
-		return array_values(iterator_to_array($ret));;
-	}
-	
-	/**
-	 * Convert request query - regex string to php native MongoRegex 
-	 * @param array $query the query to convert
-	 */
-	protected function convertRegexQuery(&$query) {
-		foreach ($query as $k => &$v) {
-			if (isset($v['$regex'])) {
-				$v['$regex'] = new MongoRegex($v['$regex']);
-			}
-		}
+
+		return array_values(iterator_to_array($ret));
 	}
 
 }
