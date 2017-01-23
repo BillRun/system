@@ -56,8 +56,14 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			$entry = $this->getFlatLine();
 			$entry['aprice'] = $value;
 			$entry['charge_op'] = $key;
+			$entry['stamp'] = $this->generateLineStamp($entry);
+			if(!empty($entry['vatable'])) {
+				$taxCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('tax.calculator'));
+				$entry = $taxCalc->updateRow($entry);
+			}
 			$entries[] = $entry;
 		}
+		
 		return $entries;
 	}
 	
@@ -69,12 +75,15 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			'usagev' => 1
 		);
 		
-		if(isset($this->vatable)) {
-			$flatEntry['vatable'] = $this->vatable;
+		if($this->vatable !== FALSE ) {
+			$flatEntry['vatable'] = TRUE;
 		}
-		$merged = array_merge($flatEntry, $this->stumpLine);
-		$stamp = md5($merged['aid'] . '_' . $merged['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
-		$merged['stamp'] = $stamp;
+		
+		$merged = array_merge($flatEntry, $this->stumpLine);		
 		return $merged;
+	}
+	
+	protected function generateLineStamp($line) {
+		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
 	}
 }

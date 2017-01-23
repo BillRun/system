@@ -22,7 +22,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-		$current = $row->getRawData();
+		$current = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
 		if( $problemField = $this->isLineDataComplete($current) ) {
 			Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
 			return FALSE;
@@ -30,7 +30,11 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		
 		$subscriber = (new Billrun_Subscriber_Db())->load(array('sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
 		$newData = $this->updateRowTaxInforamtion($current, $subscriber);
-		$row->setRawData($newData);
+		if($row instanceof Mongodloid_Entity ) {
+			$row->setRawData($newData);
+		} else {
+			$row = $newData;
+		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;;
@@ -59,7 +63,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	protected function isLineLegitimate($line) {
-		return true|| !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]); //in general all rated lines are taxable
+		//Line is legitimate if it has rated usage
+		return !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]); //in general all rated lines are taxable
 	}	
 	
 	protected function isLineDataComplete($line) {

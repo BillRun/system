@@ -29,9 +29,11 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	}
 	
 	protected function updateRowTaxInforamtion($line, $subscriber) {
-		$singleData = $this->constructRequestData( $this->config['input_mapping'],array( 'row'=> $line,
-																						'subscriber'=> $subscriber,
-																						'config'=>$this->config) );
+		$availableData = array( 'row'=> $line,
+								'subscriber'=> $subscriber,
+								'config'=>$this->config);
+		$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
+		$singleData = $this->translateDataForTax($singleData, $availableData);
 		$data = $this->constructRequestData($this->config['request'],array('data'=> array($singleData), 'config'=>$this->config));
 		$line['tax_data'] = $this->queryAPIforTaxes($data);
 		return $line;
@@ -90,7 +92,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$data = (array) $data;
 		foreach($data['tax_data'] as $tax_data) {
 			$tax_data = (array) $tax_data;
-			if($tax_data['passflag'] == 1) {
+			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_rate'] += $tax_data['taxrate'];
 			}			
@@ -102,6 +104,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		return $retTaxData;
 	}
+	
+	protected function translateDataForTax($apiInputData, $availableData) {
+		$apiInputData['record_type'] = $availableData['row']['type'] == 'flat' ? 'S' : 'C';
+		return $apiInputData;
+	}
 
 }
-
