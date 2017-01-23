@@ -156,7 +156,11 @@ class Models_Entity {
 					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
 					'options' => [],
 				);
-				$knownParams[$name] = $params[$name];
+				if (!$isGenerated) {
+					$knownParams[$name] = $params[$name];
+				} else { // on generate field the value will be automatically generate
+					$knownParams[$name] = null;
+				}
 				unset($params[$name]);
 			}
 			if ($options['fields']) {
