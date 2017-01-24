@@ -49,7 +49,6 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		
 		$client = Billrun_Factory::remoteClient($this->config['apiUrl']);
 		$response = $client->{$this->config['tax_method']}($data);
-
 		foreach(@$this->config['transforms']['response'] as $transfom) {
 			$response = method_exists($this,$transfom) 
 							? $this->{$transfom}($response) 
@@ -107,6 +106,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
 		$apiInputData['record_type'] = $availableData['row']['type'] == 'flat' ? 'S' : 'C';
+		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
+		$apiInputData['productcode'] = $availableData['row']['type'] == 'flat' ? 'V001' : 'V001';
+		$apiInputData['servicecode'] = $availableData['row']['type'] == 'flat' ? '012' : '007';
+		$apiInputData['minutes'] = $availableData['row']['type'] == 'flat' ? '': round($availableData['row']['usagev']/60);
 		return $apiInputData;
 	}
 
