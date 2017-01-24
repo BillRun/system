@@ -56,10 +56,7 @@
 								<td>TOTAL</td>
 								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
-							<tr class="total">
-								<td>VAT (17%)</td>
-								<td><?php echo '$' . number_format($sub['totals']['after_vat'] - $sub['totals']['before_vat'], 2); ?></td>
-							</tr>
+							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
 						</tbody>
 						<tfoot>
 							<tr class="grand-total">
@@ -97,7 +94,7 @@
 									<tr>
 										<td><?php echo date($date_format, $line['urt']->sec); ?></td>
 										<td><?php echo $line['type']; ?></td>
-										<td><?php echo $line['arate_key']; ?></td>
+										<td><?php echo $line['type'] == 'flat' ? $line['plan'] :  $line['arate_key']; ?></td>
 										<td><?php echo number_format($line['usagev'], 2); ?></td>
 										<td><?php echo number_format($line['aprice'], 2); ?></td>
 									</tr>
