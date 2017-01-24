@@ -252,7 +252,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 					if( $tax['pass_to_customer'] == 1 
 						||
 						Billrun_Factory::config()->getConfigValue('tax.config.apply_optional',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
-						$this->data['totals']['taxes'][$tax['description']] = $tax['amount'];
+						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
+						$this->data['totals']['taxes'][$tax['description']] = $prevAmount +  $tax['amount'];
 					}
 				}
 			}
