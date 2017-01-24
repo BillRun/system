@@ -26,7 +26,8 @@
 
 <div class="form">
 	<form action="/internalpaypage/create" method="post">
-		<input type="hidden" name="return_url" id="aid" value="<?php echo $return_url; ?>" />
+		<input type="hidden" name="aid" value="<?php echo htmlspecialchars($account['aid']);?>" />
+		<input type="hidden" name="return_url" value="<?php echo $return_url; ?>" />
 		<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
 		<div class="form-head">
 			<div class="shell">
