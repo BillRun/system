@@ -451,6 +451,10 @@ class Billrun_Plan extends Billrun_Service {
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
 
+	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
+		return static::calcFractionOfMonth($billrunKey, date(Billrun_Base::base_datetimeformat, $start_date), date(Billrun_Base::base_datetimeformat, $end_date) );
+	}
+	
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {
 		$billing_start_date = Billrun_Billingcycle::getStartTime($billrunKey);
 		$billing_end_date = Billrun_Billingcycle::getEndTime($billrunKey);
