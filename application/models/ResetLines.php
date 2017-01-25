@@ -52,11 +52,12 @@ class ResetLinesModel {
 		$ret = true;
 		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
 		if (!empty($this->sids) && !empty($this->billrun_key)) {
-			$query = array(
-				'billrun_month' => $this->billrun_key,
-				'sid' => array(
+			$startTime = Billrun_Billingcycle::getStartTime($this->billrun_key);
+			$endTime = Billrun_Billingcycle::getEndTime($this->billrun_key);
+			$query = array_merge(
+				Billrun_Utils_Mongo::getOverlappingWithRange('from', $startTime, 'to', $endTime), array('sid' => array(
 					'$in' => $sids,
-				),
+				))
 			);
 			$ret = $balances_coll->remove($query); // ok ==1 && n>0
 		}
@@ -162,7 +163,7 @@ class ResetLinesModel {
 	 * @param array $line - Input line from the collection.
 	 * @param array $advancedProperties - Advanced config properties.
 	 */
-	protected function buildQueueLine($queue_line, $line, $advancedProperties) {
+	protected function buildQueueLine(&$queue_line, $line, $advancedProperties) {
 		$queue_line['stamp'] = $line['stamp'];
 		$queue_line['type'] = $line['type'];
 		$queue_line['urt'] = $line['urt'];
@@ -186,7 +187,10 @@ class ResetLinesModel {
 				'apr' => 1,
 				'aprice' => 1,
 				'arate' => 1,
+				'arate_key' => 1,
 				'arategroups' => 1,
+				'firstname' => 1,
+				'lastname' => 1,
 				'billrun' => 1,
 				'in_arate' => 1,
 				'in_group' => 1,
@@ -196,8 +200,12 @@ class ResetLinesModel {
 				'over_group' => 1,
 				'over_plan' => 1,
 				'plan' => 1,
+				'plan_ref' => 1,
+				'services' => 1,
+				'connection_type' => 1,
 				'usagesb' => 1,
-				'usagev' => 1,
+//				'usagev' => 1,
+				'balance_ref' => 1,
 			),
 			'$set' => array(
 				'rebalance' => new MongoDate(),

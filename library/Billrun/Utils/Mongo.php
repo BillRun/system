@@ -353,4 +353,36 @@ class Billrun_Utils_Mongo {
 		}
 		return $id;
 	}
+	
+	/**
+	 * Get objects that overlap with the supplied time range
+	 * @param string $fromFieldName
+	 * @param int $from
+	 * @param string $toFieldName
+	 * @param int $to
+	 * @return array The resulted query
+	 */
+	public static function getOverlappingWithRange($fromFieldName, $from, $toFieldName, $to) {
+		$fromTime = new MongoDate($from);
+		$toTime = new MongoDate($to);
+		$res = [
+			'$or' => [
+				[
+					$fromFieldName => [
+						'$gte' => $fromTime,
+						'$lt' => $toTime,
+					]
+				],
+				[
+					$fromFieldName => [
+						'$lt' => $fromTime,
+					],
+					$toFieldName => [
+						'$gt' => $fromTime,
+					],
+				],
+			]
+		];
+		return $res;
+	}
 }
