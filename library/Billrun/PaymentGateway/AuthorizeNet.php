@@ -23,7 +23,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api2.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https:/secure.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://secure.authorize.net/profile/addPayment';
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';

@@ -1,135 +1,101 @@
-<html>
-	<head>
-		<link rel="stylesheet" href="css/bootstrap.min.css">
-		<link rel="stylesheet" href="css/main.css">
-	</head>
+<?php
+//print "<pre>";print_R($this);
+?><!DOCTYPE html>
+<html lang="en">
+<?php $this->display('internalpaypage/html_head.phtml', $this->_tpl_vars); ?>
 	<body>
-		<div class="topbar" style="box-sizing: border-box; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); height: 70px; padding: 0px 24px; display: flex; justify-content: space-between; background-color: rgb(33, 33, 33);">
-			<div style="position: relative; display: flex; justify-content: space-between;">
-				<img src="img/billrun-logo-tm.png" />
-			</div>
-		</div>
-		<div className="container-fluid main-content">
-			<div className="contents">
-				<div class="container">
-					<h3>Company Name</h3>
-					<form id="planform" class="form-horizontal" action="/internalpaypage/create">
-						<div class="panel panel-primary">
-							<div class="panel-heading">
-								<h4>Account Information</h4>
-							</div>
-							<div class="panel-body">
+<div class="wrapper">
+	<header class="header">
+		<div class="shell">
+			<a href="#" class="logo">
+				<span class="logo-icon">
+					<img src="<?php echo $company_image; ?>" alt="<?php echo htmlspecialchars($tenant['name']); ?>" />
+				</span>
+
+				<span class="text"><?php echo htmlspecialchars($tenant['name']);?></span>
+			</a>
+
+			<div class="header-aside">
+				<span class="text">powered by</span>
+
+				<a href="#" class="logo-billrun"></a>
+			</div><!-- /.header-aside -->
+		</div><!-- /.shell -->
+	</header><!-- /.header -->
+
+
+<div class="form">
+	<form action="/internalpaypage/create" method="post">
+		<input type="hidden" name="aid" value="<?php echo htmlspecialchars($account['aid']);?>" />
+		<input type="hidden" name="return_url" value="<?php echo $return_url; ?>" />
+		<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
+		<div class="form-head">
+			<div class="shell">
+				<h2 class="form-title">ADD SUBSCRIPTION</h2><!-- /.form-title -->
+			</div><!-- /.shell -->
+		</div><!-- /.form-head -->
+		<div class="form-body">
 								<?php
-								foreach ($account_config as $c) {
-									if ($c['display'] === false)
-										continue;
-									echo "<div class='form-group'>";
-									echo "<div class='col-md-3'>"
-									. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
-									. "<input class='form-control' type='text' " . (!empty($account) ? 'readonly' : '') . " "
-										. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
-										. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
-									. "</div>";
-									echo "</div>";
-								}
-								?>
-								<input type="hidden" name="aid" id="aid" value="<?php echo $account['aid']; ?>" />
-							</div>
-						</div>
-						
-						<?php if ($action !== 'updatePaymentGateway') : ?>
-							<div class="panel panel-primary">
-							  <div class="panel-heading">
-								<h4>Subscription Information</h4>
-							  </div>
-							  <div class="panel-body">
-								<?php
-								foreach ($subscriber_config as $c) {
-								if ((empty($c['display']) && empty($c['mandatory'])) || $c['field_name'] === 'plan' || (isset($c['editable']) && !$c['editable']))
-								continue;
-								echo "<div class='form-group'>";
-								echo "<div class='col-md-3'>"
-								. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
-								. "<input class='form-control' type='text' name='" . $c['field_name'] . "' "
-								. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
-								. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
-								. "</div>";
-								echo "</div>";
-								}
-								?>
-								<input type="hidden" name="aid" id="aid" value="<?php echo $account['aid']; ?>" />
-							  </div>
-							</div>
-							<div class="panel panel-primary">
-								<div class="panel-heading">
-									<h4>Plan Information</h4>
-								</div>
-								<div class="panel-body">
-									<div class="row">
-										<div class="col-md-3">
-											<label for="plan">Plan</label>
-											<?php
-											echo"<select name='plan' id='plan' class='form-control'" . ($plan ? "readonly value='$plan'" : "") . ">";
-											?>
-											<?php
-											foreach ($planNames as $p) {
-												echo "<option value='" . $p . "' " . ($plan == $p ? "selected" : "") . ">";
-														echo $p;
-												echo "</option>";
-											}
-											?>
-											</select>
-										</div>
-									</div>
-								</div>
-							</div>
-						<?php endif; ?>
-						<?php if (empty($account['payment_gateway']) || $action === 'updatePaymentGateway') : ?>
-							<div class="panel panel-primary">
-								<div class="panel-heading">
-									<h4>Payment Gateway</h4>
-								</div>
-								<div class="panel-body">
-									<div class="row">
-										<div class="col-md-12">
-											<label for="payment_gateway">Payment Gateway</label>
-										</div>
-									</div>
-									<div class="row">
-										<?php foreach ($payment_gateways as $pg) : ?>
-											<div class='col-md-3'>
-												<div class='radio'>
-													<label>
-														<input type='radio' name='payment_gateway' value='<?php echo htmlspecialchars($pg['name']); ?>' <?php echo ($account['payment_gateway']['name'] === $pg['name']) ? 'checked' : '' ?> />
-														<?php if (!empty($pg['image_url'])) : ?>
-															<img src='<?php echo $pg['image_url'] ?>' />
-														<?php else : ?>
-															<span><?php echo $pg['name']?></span>
-														<?php endif; ?>
-													</label>
-												</div>
-											</div>
-										<?php endforeach; ?>
-									</div>
-								</div>
-							</div>
-						<?php endif; ?>
-						<div class="pull-left">
-							<button id="submitbtn" class="btn btn-primary" type="submit" onclick="onSubmit()">Submit</button>
-							<button id="cancelbtn" class="btn btn-default" type="button" onclick="window.history.back();">Cancel</button>
-						</div>
-						<input type="hidden" name="return_url" id="aid" value="<?php echo $return_url; ?>" />
-						<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
-					</form>
-				</div>
-			</div>
-		</div>
-		<script>
-			function onSubmit() {
-				document.getElementById('submitbtn').disabled = true;
-				document.getElementById('cancelbtn').disabled = true;
-				document.getElementById('planform').submit();
-			}
-		</script>
+			$this->display('internalpaypage/account_details.phtml', $this->_tpl_vars);
+			if ($action !== 'updatePaymentGateway') :
+				$this->display('internalpaypage/subscriber_details.phtml', $this->_tpl_vars);?>
+			<div class="form-section form-section-services">
+				<div class="shell">
+					<h5 class="form-subtitle">Select subscription plan and services</h5><!-- /.form-subtitle -->
+
+					<div class="form-section-content">
+						    <?php
+				$this->display('internalpaypage/plan_default.phtml', $this->_tpl_vars); 
+				$this->display('internalpaypage/services_selection.phtml', $this->_tpl_vars); 
+						    ?>
+						  </div>
+				</div><!-- /.shell -->
+			</div><!-- /.form-section -->
+										<?php
+			endif;
+				//print $this->render('internalpaypage/total_charge.phtml', $this->_tpl_vars); 
+				if (empty($account['payment_gateway']) || $action === 'updatePaymentGateway') :
+					print $this->render('internalpaypage/payment_details.phtml', $this->_tpl_vars); 
+				endif;
+										?>
+		</div><!-- /.form-body -->
+		<div class="form-actions">
+			<div class="shell">
+				<button type="submit" class="form-btn form-btn-submit" onclick="onSubmit()">Subscribe</button>
+				<button type="reset" class="form-btn form-btn-reset" onclick="window.history.back();">Cancel</button>
+			</div><!-- /.shell -->
+		</div><!-- /.form-actions -->
+	</form>
+</div><!-- /.form -->
+
+	<footer class="footer">
+		<div class="shell">
+			<div class="copyright">
+				Powered by <a href="http://billrun.com">BillRun</a>
+			</div><!-- /.copyright -->
+
+			<nav class="nav-footer">
+				<ul>
+<!--					<li>
+						<a href="#">Terms</a>
+					</li>
+
+					<li>
+						<a href="#">Privacy</a>
+					</li>
+
+					<li>
+						<a href="http://billrun.com">Contact Us</a>
+					</li> -->
+				</ul>
+			</nav><!-- /.nav-footer -->
+		</div><!-- /.shell -->
+	</footer><!-- /.footer -->
+</div><!-- /.wrapper -->
+										<?php
+if ($action !== 'updatePaymentGateway') :
+	$this->display('internalpaypage/plans_popup.phtml', $this->_tpl_vars); 
+endif;
+										?>
 	</body>
 </html>

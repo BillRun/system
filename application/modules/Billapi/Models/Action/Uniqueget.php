@@ -42,7 +42,7 @@ class Models_Action_Uniqueget extends Models_Action {
 				)
 			),
 		);
-		
+
 		if (!isset($this->request['history']) || !$this->request['history']) {
 			$match = array(
 				'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
@@ -57,23 +57,38 @@ class Models_Action_Uniqueget extends Models_Action {
 				),
 			);
 		}
-		$res = $this->collectionHandler->aggregate($match, $group);
+
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'id' => 1,
+			),
+		);
+
+		$find = (array) json_decode($query, true);
+		if (!empty($find)) {
+			$match['$match'] = array_merge($match['$match'], $find);
+		}
+		$res = $this->collectionHandler->aggregate($match, $group, $project);
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
 		$ids = array_column($aggregatedResults, 'id');
 
-		$find = (array) json_decode($this->request['query'], true);
-		$find['_id'] = array('$in' => $ids);
-		
+		$filter = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
+
 		if (isset($this->request['project'])) {
 			$project = (array) json_decode($this->request['project'], true);
 		} else {
 			$project = array();
 		}
-		
-		$ret = $this->collectionHandler->find($find, $project);
-		
+
+		$ret = $this->collectionHandler->find($filter, $project);
+
 		if (isset($this->request['page']) && $this->request['page'] != -1) {
 			$res->skip((int) $this->page * (int) $this->size);
 		}
@@ -85,8 +100,8 @@ class Models_Action_Uniqueget extends Models_Action {
 		if ($sort) {
 			$res = $res->sort((array) $sort);
 		}
-		
-		return array_values(iterator_to_array($ret));;
+
+		return array_values(iterator_to_array($ret));
 	}
 
 }

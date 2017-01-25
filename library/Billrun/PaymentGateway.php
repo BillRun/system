@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    5.2
  */
 abstract class Billrun_PaymentGateway {
-	
+
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -150,12 +150,12 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$tennant_return_url = $accountQuery['tennant_return_url'];
-		unset($accountQuery['tennant_return_url']);
-		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $tennant_return_url)));
+		$tenantReturnUrl = $accountQuery['tenant_return_url'];
+		unset($accountQuery['tenant_return_url']);
+		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
 		$okPage = $this->getOkPage($request);
 		if ($this->needRequestForToken()){
-			$response = $this->getToken($aid, $accountQuery['tennant_return_url'], $okPage);
+			$response = $this->getToken($aid, $tenantReturnUrl, $okPage);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
 			$response = $updateOkPage;
@@ -306,8 +306,8 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-	
-		/**
+		
+	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -365,7 +365,7 @@ abstract class Billrun_PaymentGateway {
 		$setQuery = $this->buildSetQuery();       
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		$account = $this->subscribers->query($query)->cursor()->current();
-		$returnUrl = $account['tennant_return_url'];
+		$returnUrl = $account['tenant_return_url'];
 
 		return $returnUrl;
 	}
@@ -590,5 +590,5 @@ abstract class Billrun_PaymentGateway {
 	protected function isTransactionDetailsNeeded() {
 		return true;
 	}
-	
+ 
 }

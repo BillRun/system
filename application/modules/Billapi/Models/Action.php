@@ -78,8 +78,13 @@ abstract class Models_Action {
 	 */
 	public static function getInstance($params) {
 		if (is_null(self::$instance)) {
-			$class = 'Models_Action_' . ucfirst($params['request']['action']);
-			self::$instance = new $class($params);
+			$class = 'Models_Action_' . ucfirst($params['request']['action']) . '_' . ucfirst($params['request']['collection']);
+			if (@class_exists($class, true)) {
+				self::$instance = new $class($params);
+			} else {
+				$class = 'Models_Action_' . ucfirst($params['request']['action']);
+				self::$instance = new $class($params);
+			}
 		}
 		return self::$instance;
 	}

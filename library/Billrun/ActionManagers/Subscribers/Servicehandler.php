@@ -17,6 +17,10 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 	 * @return array The array of services to set.
 	 */
 	protected function getSubscriberServices($services) {
+		if (is_string($services)) {
+			// let's check if this is json
+			$services = @json_decode($services);
+		}
 		if(empty($services) || !is_array($services)) {
 			return array();
 		}
@@ -28,8 +32,10 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 		foreach ($services as $current) {
 			// Check that it has the name
 			if(!isset($current['name'])) {
-				Billrun_Factory::log("Invalid service: " . print_r($current,1));
+				$proccessedServices[] = $current;
 				continue;
+//				Billrun_Factory::log("Invalid service: " . print_r($current,1));
+//				continue;
 			}
 			
 			$serviceAggregateOptions['name'] = $current['name'];

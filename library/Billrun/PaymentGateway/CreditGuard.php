@@ -80,7 +80,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <clientIP/>
 										  <customerData>
 										   <userData1>' . $this->conf['aid'] . '</userData1>
-										   <userData2>' . $this->conf['return_url'] . '</userData2>
+										   <userData2/>
 										   <userData3/>
 										   <userData4/>
 										   <userData5/>
