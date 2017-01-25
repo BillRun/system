@@ -22,7 +22,9 @@
 			<div class="container">
 <?php
 		print $this->render($this->sumup_template);
-		print $this->render($this->details_template);
+		if($render_subscription_details) {
+			print $this->render($this->details_template);
+		}
 ?>
 			</div>
 		</div>
