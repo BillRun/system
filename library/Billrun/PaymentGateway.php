@@ -15,7 +15,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    5.2
  */
 abstract class Billrun_PaymentGateway {
-
+	
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -306,8 +306,8 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-		
-	/**
+	
+		/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -590,5 +590,5 @@ abstract class Billrun_PaymentGateway {
 	protected function isTransactionDetailsNeeded() {
 		return true;
 	}
- 
+	
 }

@@ -3,7 +3,7 @@
 ?><!DOCTYPE html>
 <html lang="en">
 <?php $this->display('internalpaypage/html_head.phtml', $this->_tpl_vars); ?>
-	<body>
+<body>
 <div class="wrapper">
 	<header class="header">
 		<div class="shell">
@@ -35,7 +35,7 @@
 			</div><!-- /.shell -->
 		</div><!-- /.form-head -->
 		<div class="form-body">
-								<?php
+			<?php
 			$this->display('internalpaypage/account_details.phtml', $this->_tpl_vars);
 			if ($action !== 'updatePaymentGateway') :
 				$this->display('internalpaypage/subscriber_details.phtml', $this->_tpl_vars);?>
@@ -44,20 +44,20 @@
 					<h5 class="form-subtitle">Select subscription plan and services</h5><!-- /.form-subtitle -->
 
 					<div class="form-section-content">
-						    <?php
+				<?php 
 				$this->display('internalpaypage/plan_default.phtml', $this->_tpl_vars); 
 				$this->display('internalpaypage/services_selection.phtml', $this->_tpl_vars); 
-						    ?>
-						  </div>
+				?>
+					</div>
 				</div><!-- /.shell -->
 			</div><!-- /.form-section -->
-										<?php
+			<?php 
 			endif;
 				//print $this->render('internalpaypage/total_charge.phtml', $this->_tpl_vars); 
 				if (empty($account['payment_gateway']) || $action === 'updatePaymentGateway') :
 					print $this->render('internalpaypage/payment_details.phtml', $this->_tpl_vars); 
 				endif;
-										?>
+			?>
 		</div><!-- /.form-body -->
 		<div class="form-actions">
 			<div class="shell">
@@ -92,10 +92,10 @@
 		</div><!-- /.shell -->
 	</footer><!-- /.footer -->
 </div><!-- /.wrapper -->
-										<?php
+<?php 
 if ($action !== 'updatePaymentGateway') :
 	$this->display('internalpaypage/plans_popup.phtml', $this->_tpl_vars); 
 endif;
-										?>
-	</body>
+?>
+</body>
 </html>

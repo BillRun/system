@@ -468,22 +468,6 @@ class Models_Entity {
 		}
 		return $query ? !$this->collection->query($query)->count() : TRUE;
 	}
-	
-	/**
-	 * Return the key field by collection
-	 * 
-	 * @return String
-	 */
-	protected function getKeyField() {
-		switch ($this->collectionName) {
-			case 'users':
-				return 'username';
-			case 'rates':
-				return 'key';
-			default:
-				return 'name';
-		}
-	}
 
 	/**
 	 * Return the key field by collection
