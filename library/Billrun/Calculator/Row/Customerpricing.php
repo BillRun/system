@@ -72,6 +72,24 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected $plan;
 
+	/**
+	 * End time of the active billrun (unix timestamp)
+	 * @var int
+	 */
+	protected $activeBillrunEndTime;
+
+	/**
+	 * Minimum possible billrun key for newly calculated lines
+	 * @var string 
+	 */
+	protected $activeBillrun;
+
+	/**
+	 * Second minimum possible billrun key for newly calculated lines
+	 * @var string
+	 */
+	protected $nextActiveBillrun;
+
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		$planSettings = array(
@@ -83,6 +101,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
+		$this->activeBillrunEndTime = $this->calculator->getActiveBillrunEndTime(); // todo remove this coupling
+		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
+		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
 	}
 
 	/**
@@ -118,7 +139,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 
-		$pricingData['billrun'] = $this->row['urt']->sec <= $this->active_billrun_end_time ? $this->active_billrun : $this->next_active_billrun;
+		$pricingData['billrun'] = $this->row['urt']->sec <= $this->activeBillrunEndTime ? $this->activeBillrun : $this->nextActiveBillrun;
 
 		return $pricingData;
 	}

@@ -322,5 +322,15 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public static function getPrecision() {
 		return static::$precision;
 	}
+	
+	public function getActiveBillrunEndTime() {
+		return $this->active_billrun_end_time;
+	}
+	public function getActiveBillrun() {
+		return $this->active_billrun;
+	}
+	public function getNextActiveBillrun() {
+		return $this->next_active_billrun;
+	}
 
 }
