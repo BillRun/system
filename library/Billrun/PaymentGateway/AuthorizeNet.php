@@ -35,7 +35,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$customerProfileId = $this->createCustomer($aid);
+		$customerProfileId = $this->checkIfCustomerExists($aid);
+		if (empty($customerProfileId)) {
+			$customerProfileId = $this->createCustomer($aid);
+		}
 		$this->customerId = $customerProfileId;
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
@@ -116,7 +119,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway' => array(
+			'payment_gateway.active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],
@@ -317,6 +320,66 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	
 	protected function needRequestForToken() {
 		return true;
+	}
+
+	public function isUpdatePgChangesNeeded() {
+		return true;
+	}
+	
+	public function deleteAccountInPg($pgAccountDetails) {
+		$credentials = $this->getGatewayCredentials();
+		$apiLoginId = $credentials['login_id'];
+		$transactionKey = $credentials['transaction_key'];
+		$profile_id = $pgAccountDetails['profile_id'];
+		$payment_id = $pgAccountDetails['payment_id'];
+		$deleteAccountRequest = "<deleteCustomerPaymentProfileRequest xmlns= 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
+								<merchantAuthentication>
+									<name>$apiLoginId</name>
+									<transactionKey>$transactionKey</transactionKey>
+								</merchantAuthentication>
+								<customerProfileId>$profile_id</customerProfileId>
+							    <customerPaymentProfileId>$payment_id</customerPaymentProfileId>
+							</deleteCustomerPaymentProfileRequest>";
+
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $deleteAccountRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (function_exists("simplexml_load_string")) {
+			$xmlObj = @simplexml_load_string($result);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if (($resultCode != 'Ok')) {
+				$errorMessage = (string) $xmlObj->messages->message->text;
+				throw new Exception($errorMessage);
+			} else {
+				$message = (string) $xmlObj->messages->message->text;
+				if ($message != 'Successful.') {
+					throw new Exception($message);
+				}
+			}
+		} else {
+			die("simplexml_load_string function is not support, upgrade PHP version!");
+		}
+	}
+	
+	public function getNeededParamsAccountUpdate($account) {
+		return array('profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
+	}
+	
+	protected function checkIfCustomerExists ($aid) {
+		$customerProfileId = '';
+		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountQuery['type'] = 'account';
+		$accountQuery['aid'] = $aid;
+		$subscribers = Billrun_Factory::db()->subscribersCollection();
+		$account = $subscribers->query($accountQuery)->cursor()->current();
+		$formerGateways = $account['payment_gateway.former'];
+		foreach ($formerGateways as $gateway) {
+			if ($gateway['name'] == 'AuthorizeNet') {
+				$customerProfileId = $gateway['params']['profile_id'];
+			}
+		}
+		
+		return $customerProfileId;
 	}
 
 }

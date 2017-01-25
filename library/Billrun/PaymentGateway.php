@@ -591,4 +591,12 @@ abstract class Billrun_PaymentGateway {
 		return true;
 	}
 	
+	public function isUpdatePgChangesNeeded() {
+		return false;
+	}
+	
+	protected function checkIfCustomerExists () {
+		return false;
+	}
+	
 }
