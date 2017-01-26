@@ -28,8 +28,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		//TODO  query the API  with lines
 	}
 	
-	protected function updateRowTaxInforamtion($line, $subscriber) {
+	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
 		$availableData = array( 'row'=> $line,
+								'account'=>$account,
 								'subscriber'=> $subscriber,
 								'config'=>$this->config);
 		$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );

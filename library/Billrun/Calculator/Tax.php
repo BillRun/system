@@ -30,7 +30,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		
 		$subscriber = new Billrun_Subscriber_Db();
 		$subscriber->load(array('sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
-		$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData());
+		$account = new Billrun_Account_Db();
+		$account->load(array('aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
+		$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData(),$account->getCustomerData());
 		if($row instanceof Mongodloid_Entity ) {
 			$row->setRawData($newData);
 		} else {
@@ -79,5 +81,5 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $subscriber  the subscriber that is associated with the line
 	 * @return array updated line/row with the tax data
 	 */
-	abstract protected function updateRowTaxInforamtion($line,$subscriber);
+	abstract protected function updateRowTaxInforamtion($line, $subscriber, $account);
 }
