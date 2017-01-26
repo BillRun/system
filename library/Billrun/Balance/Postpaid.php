@@ -40,23 +40,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
 		$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-		$plan_ref = $plan->createRef();
-		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan_ref);
-	}
-
-	/**
-	 * Create a new subscriber in a given month and load it (if none exists).
-	 * @param type $billrun_month
-	 * @param type $sid
-	 * @param type $plan
-	 * @param type $aid
-	 * @return boolean
-	 * @deprecated since version 4.0
-	 */
-	public function create($billrunKey, $subscriber, $plan_ref) {
-		$ret = $this->createBasicBalance($subscriber->aid, $subscriber->sid, $billrunKey, $plan_ref);
-		$this->load($subscriber->sid, $billrunKey);
-		return $ret;
+		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan);
 	}
 
 	/**
@@ -65,15 +49,15 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $subscriber_id the subscriber ID.
 	 * @param type $from billrun start date
 	 * @param type $to billrun end date
-	 * @param type $plan_ref the subscriber plan.
+	 * @param Billrun_Plan $plan the subscriber plan.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan_ref) {
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan) {
 		$query = array(
 			'sid' => $sid,
 		);
 		$update = array(
-			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref),
+			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan),
 		);
 		$options = array(
 			'upsert' => true,
@@ -91,20 +75,24 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	}
 
 	/**
-	 * get a new subscriber array to be place in the DB.
-	 * @param type $billrun_month
-	 * @param type $aid
-	 * @param type $sid
-	 * @param type $current_plan
-	 * @return type
+	 * Get a new balance array to be placed in the DB.
+	 * @param int $from
+	 * @param int $to
+	 * @param int $aid
+	 * @param int $sid
+	 * @param Billrun_Plan $current_plan
+	 * @return array
 	 */
-	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan_ref) {
+	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan) {
+		$planRef = $plan->createRef();
+		$connectionType = $plan->get('connection_type');
 		return array(
 			'from' => new MongoDate($from),
 			'to' => new MongoDate($to),
 			'aid' => $aid,
 			'sid' => $sid,
-			'current_plan' => $plan_ref,
+			'current_plan' => $planRef,
+			'connection_type' => $connectionType,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
 		);
