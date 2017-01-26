@@ -227,11 +227,11 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 		return false;
 	}
 	
-	public function isCustomerBasedCharge() {
-		return false;
+	protected function needRequestForToken() {
+		return true;
 	}
 	
-	protected function needRequestForToken() {
+	public function handleOkPageData($txId) {
 		return true;
 	}
 

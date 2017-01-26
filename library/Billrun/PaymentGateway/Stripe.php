@@ -122,10 +122,6 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		return true;
 	}
 
-	public function isCustomerBasedCharge() {
-		return false;
-	}
-
 	protected function needRequestForToken() {
 		return false;
 	}
@@ -219,4 +215,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		\Stripe\Balance::retrieve(); // calling function from Stripe API to check if connection succeeded
 	}
 
+	public function handleOkPageData($txId) {
+		return true;
+	}
 }

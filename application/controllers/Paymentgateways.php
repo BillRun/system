@@ -157,20 +157,17 @@ class PaymentGatewaysController extends ApiController {
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$transactionName = $paymentGateway->getTransactionIdName();
-		if ($transactionName) {
-			$transactionId = $request->get($transactionName);
-			if (is_null($transactionId)) {
-				return $this->setError("Operation Failed. Try Again...", $request);
-			}
-		} else if ($paymentGateway->isCustomerBasedCharge()){
-			$customer = $request->get('customer');
-			if (is_null($customer)) {
-				return $this->setError("Operation Failed. Try Again...", $request);
-			}
-			$transactionId = $customer;
+		$transactionId = $request->get($transactionName);
+		if (is_null($transactionId)) {
+			return $this->setError("Operation Failed. Try Again...", $request);
 		}
-		$additionalParams = $paymentGateway->addAdditionalParameters($request);
-		$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		$handleResponse = $paymentGateway->handleOkPageData($transactionId);
+		if ($handleResponse !== true) {
+			$returnUrl = $handleResponse;
+		} else {
+			$additionalParams = $paymentGateway->addAdditionalParameters($request);
+			$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		}
 		$this->getView()->outputMethod = 'header';
 		$this->getView()->output = "Location: " . $returnUrl;
 	}
