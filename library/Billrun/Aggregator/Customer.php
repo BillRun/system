@@ -601,8 +601,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
 						'plan_deactivation' => '$plan_deactivation',
-						'firstname' => '$firstname',
-						'lastname' => '$lastname',
+						'first_name' => array('$ifNull'=> array('$firstname','$first_name')),
+						'last_name' => array('$ifNull'=> array('$lastname','$last_name')),
 						'address' => '$address',
 						'services' => '$services'
 					),
@@ -627,8 +627,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
 					'plan' => '$sub_plans.plan',
-					'first_name' => '$sub_plans.firstname',
-					'last_name' => '$sub_plans.lastname',
+					'first_name' => '$sub_plans.first_name',
+					'last_name' => '$sub_plans.last_name',
 					'type' => '$sub_plans.type',
 					'address' => '$sub_plans.address',
 					'services' => '$sub_plans.services'
