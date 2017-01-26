@@ -86,6 +86,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan) {
 		$planRef = $plan->createRef();
 		$connectionType = $plan->get('connection_type');
+		$planDescription = $plan->get('description');
 		return array(
 			'from' => new MongoDate($from),
 			'to' => new MongoDate($to),
@@ -93,6 +94,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'sid' => $sid,
 			'current_plan' => $planRef,
 			'connection_type' => $connectionType,
+			'plan_description' => $planDescription,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
 		);
