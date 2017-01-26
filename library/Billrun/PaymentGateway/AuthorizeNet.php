@@ -324,6 +324,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	public function deleteAccountInPg($pgAccountDetails) {
+		if (empty($pgAccountDetails['payment_id'])) {
+			return;
+		}
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
@@ -342,7 +345,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $deleteAccountRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = @simplexml_load_string($result);
+			$xmlObj = simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
@@ -359,7 +362,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	public function getNeededParamsAccountUpdate($account) {
-		return array('profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
+		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
 	}
 	
 	protected function checkIfCustomerExists ($aid) {
@@ -372,7 +375,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$formerGateways = $account['payment_gateway.former'];
 		foreach ($formerGateways as $gateway) {
 			if ($gateway['name'] == 'AuthorizeNet') {
-				$customerProfileId = $gateway['params']['profile_id'];
+				$customerProfileId = $gateway['params']['customer_profile_id'];
 			}
 		}
 		
@@ -430,7 +433,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			}
 			$currentPg = array(
 				'name' => 'AuthorizeNet',
-				'params' => array('profile_id' => $txId)
+				'params' => array('customer_profile_id' => $txId)
 			);
 			$previousPg[$index] = $currentPg;
 			$setValues['payment_gateway']['former'] = $previousPg;

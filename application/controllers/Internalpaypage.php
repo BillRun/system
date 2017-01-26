@@ -60,7 +60,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			$index = 0;
 			$account = new Billrun_Account_Db();
 			$account->load(array('aid' => $request['aid']));
-			$accountPg = $account->__get('payment_gateway');		
+			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
 			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
 			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
@@ -79,7 +79,7 @@ class InternalPaypageController extends ExternalPaypageController {
 					}
 					
 				}
-				$pgAccountDetails = isset($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams);		
+				$pgAccountDetails = !empty($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams['params']);		
 				$pgParams = array('name' => $prevPgName, 'pgAccountDetails' => $pgAccountDetails);
 				$currentPg = array(
 					'name' => $pgParams['name'],
