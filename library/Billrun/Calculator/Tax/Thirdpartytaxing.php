@@ -106,7 +106,13 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$isRowFlat =  in_array($availableData['row']['type'],array('flat','service'));
+		$isRowFlat = in_array($availableData['row']['type'],array('flat','service'));
+		//switch destination and origin for incoming calls
+		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
+			$apiInputData['bill_num'] = $apiInputData['term_num'];
+			$apiInputData['term_num'] = $apiInputData['orig_num'];
+			$apiInputData['orig_num'] = $apiInputData['bill_num'];
+		}
 		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
 		$apiInputData['productcode'] = $isRowFlat ? 'V001' : 'V001';
