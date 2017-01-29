@@ -144,12 +144,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			chmod( $pdf,$this->filePermissions );
 	}
 	
-	protected function accountSpecificViewParams($params) {
-		if(isset($params['usage_details'])) {
-			$this->view->assign('render_usage_details',$params['usage_details']);
+	protected function accountSpecificViewParams($billrunData) {
+		if(isset($billrunData['attributes']['invoice_details']['usage_details'])) {
+			$this->view->assign('render_usage_details',$billrunData['attributes']['invoice_details']['usage_details']);
 		}
-		if(isset($params['subscription_details'])) {
-			$this->view->assign('render_subscription_details',$params['usage_details']);
+		if(isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
+			$this->view->assign('render_subscription_details',$billrunData['attributes']['invoice_details']['subscription_details']);
 		}
 	}
 	

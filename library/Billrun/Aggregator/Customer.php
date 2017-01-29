@@ -666,7 +666,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'passthrough' => $addedPassthroughFields['project']
 			)
 		);
-		Billrun_Factory::log(json_encode($pipelines));
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines, $coll);
 	}
