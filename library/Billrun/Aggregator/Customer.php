@@ -616,7 +616,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 				'card_token' => array(
 					'$first' => '$card_token'
-				),				
+				),
 			)),
 		);
 		$pipelines[] = array(
@@ -651,7 +651,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				),
 				'card_token' => array(
 					'$first' => '$card_token'
-				),			
+				),
 			)),
 		);
 		
