@@ -246,8 +246,19 @@ class Billrun_Cycle_Subscriber_Invoice {
 
 		$priceAfterVat = $pricingData['aprice'];
 		if ($vatable) {
-			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey);
-		} 
+			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
+			if(!empty($row['tax_data']['taxes'])) {
+				foreach ($row['tax_data']['taxes'] as $tax) {
+					if( $tax['pass_to_customer'] == 1 
+						||
+						Billrun_Factory::config()->getConfigValue('tax.config.apply_optional',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
+						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
+						$this->data['totals']['taxes'][$tax['description']] = $prevAmount +  $tax['amount'];
+					}
+				}
+			}
+		}
+		
 		
 		$this->data['totals']['before_vat'] = Billrun_Util::getFieldVal($this->data['totals']['before_vat'], 0) + $pricingData['aprice'];
 		$this->data['totals']['after_vat'] = Billrun_Util::getFieldVal($this->data['totals']['after_vat'], 0) + $priceAfterVat;
@@ -277,11 +288,16 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * Add the line vatable data to the totals
 	 * @return integer Price after vat.
 	 */
-	protected function addLineVatableData($pricingData, $breakdownKey) {
-		$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
-		$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
-		$vat = Billrun_Rates_Util::getVat();
-		return $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+	protected function addLineVatableData($pricingData, $breakdownKey,$taxData = array()) {
+		if(!empty($taxData['total_rate']) ||  empty($taxData)) {
+			$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
+			$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
+			$vat = empty($taxData) ?  Billrun_Rates_Util::getVat() : $taxData['total_rate'];
+			return $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+		}
+		//else 
+		return $pricingData['aprice'];
+				
 	}
 	
 	/**
@@ -303,6 +319,12 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['before_vat'], 0);
 		$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['after_vat'], 0);
 		$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['vatable'], 0);
+		if(!empty($this->data['totals']['taxes'])) {
+			foreach($this->data['totals']['taxes'] as $key => $taxAmount) {
+				$newTotals['taxes'][$key] = Billrun_Util::getFieldVal($newTotals['taxes'][$key], 0);
+				$newTotals['taxes'][$key] += $taxAmount; 
+			}
+		}
 		return $newTotals;
 	}
 	
@@ -367,7 +389,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 		} else {
 			$rate = $this->getRowRate($line);
-			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+			$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) || isset($line['tax_data']);
 			$this->updateInvoice(array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 		} 
 		
@@ -395,7 +417,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return boolean true if successful.
 	 */
 	protected function processFlatLine($line) {
-		$vatable = isset($line['vatable']);
+		$vatable = empty($line['vatable']);
 		$this->updateInvoice(array(), array('aprice' => $line['aprice']), $line, !$vatable);
 		return true;
 	}

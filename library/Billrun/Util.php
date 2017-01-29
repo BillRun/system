@@ -1467,5 +1467,17 @@ class Billrun_Util {
 			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
 		);
 	}
+	
+	public static function isValidIP($subject) {
+		return preg_match('/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', strval($subject));
+	}
+	
+	public static function isValidHostName($subject) {
+		return preg_match('/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/', strval($subject));
+	}
+
+	public static function isValidIPOrHost($subject) {
+		return self::isValidIP($subject) || self::isValidHostName($subject);
+	}
 
 }

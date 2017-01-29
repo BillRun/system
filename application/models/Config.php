@@ -920,8 +920,8 @@ class ConfigModel {
 				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
-				if (filter_var($connection['host'], FILTER_VALIDATE_IP) === FALSE) {
-					throw new Exception($connection['host'] . ' is not a valid IP address');
+				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
+					throw new Exception($connection['host'] . ' is not a valid host');
 				}
 				$connection['passive'] = $connection['passive'] ? 1 : 0;
 				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;

@@ -19,8 +19,9 @@ class Billrun_Cycle_Service extends Billrun_Cycle_Plan {
 	}
 	
 	public function aggregate($planData = array()) {
-		$planData['charges'] = $this->charger->charge($planData, $planData['cycle']);
 		
+		// Get the charge based on the cycle.
+		$planData['charges'] = $this->charger->charge($planData, $planData['cycle']);
 		$result = $this->getLine($planData);
 		
 		return $result;
