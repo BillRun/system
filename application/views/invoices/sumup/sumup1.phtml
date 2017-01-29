@@ -90,10 +90,7 @@
 						<td>TOTAL</td>
 						<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
 					</tr>
-					<tr class="total">
-						<td>VAT (17%)</td>
-						<td><?php echo '$' . number_format($data->get('totals')['after_vat'] - $data->get('totals')['before_vat'], 2); ?></td>
-					</tr>
+					<?php echo $this->render($this->tax_template,array('data' => $data->get('totals')))	?>
 				</tbody>
 
 				<tfoot>
