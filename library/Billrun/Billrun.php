@@ -1035,7 +1035,7 @@ class Billrun_Billrun {
 					? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0) 
 					: ( (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) ? self::getVATByBillrunKey($this->billrun_key): 0 ) ;
 		if($row['tax_data']) {
-			$vat = $row['tax_data']['rate'];
+			$vat = $row['tax_data']['total_tax'];
 		}
 		
 		return $vat;

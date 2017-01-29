@@ -21,9 +21,9 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 		
 		$line['tax_data'] = array(
 								'total_amount'=> $line['aprice'] * $this->tax,
-								'total_rate' => $this->tax,
+								'total_tax' => $this->tax,
 								'taxes' =>  array(
-										array('rate'=> $this->tax, 'amount' => $line['aprice'] * $this->tax, 'description' => "Vat" , 'pass_to_customer'=> 1 )
+										array('tax'=> $this->tax, 'amount' => $line['aprice'] * $this->tax, 'description' => "Vat" , 'pass_to_customer'=> 1 )
 									)
 								);
 		return $line;

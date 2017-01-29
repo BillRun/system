@@ -139,6 +139,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
 			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
 			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
+			//TODO remove this (ggsn) when there's time 2017-01-29
 			if ($row['type'] == 'ggsn') {
 				// TODO: What is this magic number 06? There should just be a ggsn row class
 				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
@@ -250,7 +251,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
 					if( $tax['pass_to_customer'] == 1 
-						||
+						 ||
 						Billrun_Factory::config()->getConfigValue('tax.config.apply_optional',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
 						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
 						$this->data['totals']['taxes'][$tax['description']] = $prevAmount +  $tax['amount'];
@@ -289,11 +290,18 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return integer Price after vat.
 	 */
 	protected function addLineVatableData($pricingData, $breakdownKey,$taxData = array()) {
-		if(!empty($taxData['total_rate']) ||  empty($taxData)) {
+		if(!empty($taxData['total_amount']) || empty($taxData)) {
 			$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
 			$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
-			$vat = empty($taxData) ?  Billrun_Rates_Util::getVat() : $taxData['total_rate'];
-			return $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			$vat = empty($taxData) ? Billrun_Rates_Util::getVat() : $taxData['total_tax'];			
+			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			//Add flat taxes (nonprecentage taxes)
+			foreach(Billrun_Util::getFieldVal($taxData['taxes'], array()) as $tax) {
+				if($tax['tax'] === 0 && $tax['amount'] !== 0) {
+					$newPrice += $tax['amount'];
+				}
+			}
+			return $newPrice;
 		}
 		//else 
 		return $pricingData['aprice'];
