@@ -294,7 +294,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @return boolean
 	 */
 	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
-		if ($tariff['from'] > $tariff['to']) {
+		if ($tariff['from'] > $tariff['to'] && !static::isValueUnlimited($tariff['to']) ) {
 			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
 			return false;
 		}
