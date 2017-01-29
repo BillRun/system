@@ -58,7 +58,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			$entry['charge_op'] = $key;
 			$entry['stamp'] = $this->generateLineStamp($entry);
 			if(!empty($entry['vatable'])) {
-				$taxCalc = Billrun_Calculator::getInstance(Billrun_Factory::config()->getConfigValue('tax.calculator'));
+				$taxCalc = Billrun_Calculator::getInstance(array_merge(Billrun_Factory::config()->getConfigValue('tax.calculator'),array('autoload' => false)));
 				$entry = $taxCalc->updateRow($entry);
 			}
 			$entries[] = $entry;
