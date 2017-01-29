@@ -304,7 +304,7 @@ class Billrun_Plan extends Billrun_Service {
 			return false;
 		}
 
-		if ($startOffset > $tariff['to']) {
+		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
 			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.");
 			return false;
 		}
@@ -334,7 +334,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($tariff['from'] > $startOffset) {
 			$startPricing = $tariff['from'];
 		}
-		if ($tariff['to'] < $endOffset) {
+		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
 		}
 
@@ -383,12 +383,16 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->plan_ref;
 	}
 
+	public function isValueUnlimited($value) {
+		return $value == 'UNLIMITED';
+	}
+	
 	public function isUnlimited($usage_type) {
-		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == "UNLIMITED";
+		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == 'UNLIMITED';
 	}
 
 	public function isUnlimitedRate($rate, $usageType) {
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == 'UNLIMITED');
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
