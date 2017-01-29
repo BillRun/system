@@ -304,6 +304,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public function markRejected() {
 		$this->data['rejected'] = true;
+		$this->data['waiting_for_confirmation'] = false;
 		$this->detachPaidBills();
 		$this->save();
 	}
@@ -398,7 +399,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * Sets to true if the payment not yet approved.
 	 * 
 	 */
-	public function setConfirmationStatus(boolean $status) {
+	public function setConfirmationStatus($status) {
 		$this->data['waiting_for_confirmation'] = $status;
 	}
 
@@ -504,6 +505,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (!$payment->isRejected()) {
 				Billrun_Factory::log('Rejecting transaction  ' . $payment->getId(), Zend_Log::DEBUG);
 				$rejection = $payment->getRejectionPayment($response['status']);
+				$rejection->setConfirmationStatus(false);
 				$rejection->save();
 				$payment->markRejected();
 			} else {
