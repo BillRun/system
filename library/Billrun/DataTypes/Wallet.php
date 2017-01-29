@@ -75,6 +75,12 @@ class Billrun_DataTypes_Wallet {
 	protected $unlimited = null;
 	
 	/**
+	 * Boolean indicator for is the wallet shared between subscriptions
+	 * @var boolean
+	 */
+	protected $shared = null;
+	
+	/**
 	 * Create a new instance of the wallet type.
 	 * @param array $chargingBy
 	 * @param array $chargingByValue
@@ -90,6 +96,7 @@ class Billrun_DataTypes_Wallet {
 		$this->ppID = (int) $ppPair['pp_includes_external_id'];
 		$this->ppName = $ppPair['pp_includes_name'];
 		$this->unlimited = !empty($ppPair['unlimited']);
+		$this->shared = !empty($ppPair['shared']);
 		
 		// The wallet does not handle the period.
 		if (isset($chargingByValue['period'])) {
@@ -244,6 +251,14 @@ class Billrun_DataTypes_Wallet {
 	}
 
 	/**
+	 * Get the shared boolean indication
+	 * @return boolean
+	 */
+	public function isShared() {
+		return $this->shared;
+	}
+	
+	/**
 	 * Get the partial balance record from the wallet values.
 	 * @param boolean $convertToPHP - If true, convert dot array to php style array.
 	 * true by deafult.
@@ -257,6 +272,12 @@ class Billrun_DataTypes_Wallet {
 		$partialBalance['pp_includes_external_id'] = $this->getPPID();
 		$partialBalance['priority'] = $this->getPriority();
 		$partialBalance['unlimited'] = $this->unlimited;
+		$partialBalance['shared'] = $this->shared;
+		
+		// If the balance is shared, set the sid to 0
+		if($this->shared) {
+			$partialBalance['sid'] = 0;
+		}
 		$partialBalance[$this->getFieldName()] = $this->getValue();
 
 		if($convertToPHP) {
