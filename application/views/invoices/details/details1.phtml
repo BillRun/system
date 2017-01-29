@@ -53,7 +53,7 @@
 							</tr>
 						<?php } ?>
 							<tr class="total">
-								<td>TOTAL</td>
+								<td>SUBTOTAL</td>
 								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
 							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
