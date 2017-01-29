@@ -91,14 +91,12 @@
 						<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
 					</tr>
 					<?php echo $this->render($this->tax_template,array('data' => $data->get('totals')))	?>
-				</tbody>
 
-				<tfoot>
 					<tr class="grand-total">
 						<td>GRAND TOTAL</td>
 						<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
 					</tr>
-				</tfoot>
+				</tbody>
 			</table>
 		</div><!-- /.table table-default table-default-primary -->
 	</div><!-- /.section-body -->
