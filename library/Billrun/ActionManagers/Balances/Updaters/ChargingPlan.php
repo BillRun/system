@@ -130,9 +130,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		// Check if we have core balance.
-		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
-		if ($coreBalance !== null) {
-			if (!$this->handleCoreBalance($subscriber['plan'], $coreBalance, $updateQuery)) {
+		$coreBalances = $this->getUnlimitedBalances($balancesArray, $chargingPlanRecord);
+		foreach ($coreBalances as $balance) {
+			if (!$this->handleUnlimitedBalance($subscriber['plan'], $balance, $updateQuery)) {
 				return false;
 			}
 		}
@@ -170,24 +170,32 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		return $balancesToReturn;
 	}
 
-	protected function getCoreBalance($balancesArray, $chargingPlanRecord) {
+	/**
+	 * Get a list of unlimited balances.
+	 * @param type $balancesArray
+	 * @param type $chargingPlanRecord
+	 * @return \Billrun_DataTypes_Wallet
+	 */
+	protected function getUnlimitedBalances($balancesArray, $chargingPlanRecord) {
 		foreach ($balancesArray as $chargeKey => $chargeValue) {
 			if (Billrun_Util::isAssoc($chargeValue)) {
 				$chargeValue = array($chargeValue);
 			}
 
+			$unlimitedBalances = array();
 			foreach ($chargeValue as $chargingByValue) {
-				if ($chargingByValue['pp_includes_external_id'] == '1') {
+				if (!empty($chargingByValue['unlimited'])) {
 					$ppName = $chargingPlanRecord['pp_includes_name'];
 					$ppID = $chargingPlanRecord['pp_includes_external_id'];
 					$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+					$ppPair['unlimited'] = true;
 					$wallet = new Billrun_DataTypes_Wallet($chargeKey, $chargingByValue, $ppPair);
-					return $wallet;
+					$unlimitedBalances[] = $wallet;
 				}
 			}
 		}
 
-		return null;
+		return $unlimitedBalances;
 	}
 
 	/**
@@ -199,10 +207,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @return boolean true if get to max value, else false
 	 */
-	protected function handleCoreBalance($planName, $wallet, $query) {
+	protected function handleUnlimitedBalance($planName, $wallet, $query) {
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $wallet->getPPID();
-		return parent::handleCoreBalance($planName, $wallet, $query);
+		return parent::handleUnlimitedBalance($planName, $wallet, $query);
 	}
 
 	/**
@@ -223,6 +231,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+		
+		// Get the unlimited indicator from the charging plan record.
+		$ppPair['unlimited'] = !empty($chargingPlanRecord['unlimited']);
 		$params = array(
 			'chargingBy' => $chargingBy,
 			'chargingByValue' => $chargingByValue,
