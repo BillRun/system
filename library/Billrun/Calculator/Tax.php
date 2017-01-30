@@ -33,6 +33,12 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		$account = new Billrun_Account_Db();
 		$account->load(array('aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
 		$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData(),$account->getCustomerData());
+		
+		//If we could not find the taxing information.
+		if($newData == FALSE) {
+			return FALSE;
+		}
+		
 		if($row instanceof Mongodloid_Entity ) {
 			$row->setRawData($newData);
 		} else {
