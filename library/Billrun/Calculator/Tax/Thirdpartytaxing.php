@@ -88,15 +88,15 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function translateTaxData($data) {
 		//TODO  generalize this
-		$retTaxData= ['total_amount'=> 0,'total_rate'=> 0,'taxes'=>[]];
+		$retTaxData= ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 		$data = (array) $data;
 		foreach($data['tax_data'] as $tax_data) {
 			$tax_data = (array) $tax_data;
 			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
-				$retTaxData['total_rate'] += $tax_data['taxrate'];
+				$retTaxData['total_tax'] += $tax_data['taxrate'];
 			}			
-			$retTaxData['taxes'][] = array( 'rate'=> $tax_data['taxrate'],
+			$retTaxData['taxes'][] = array( 'tax'=> $tax_data['taxrate'],
 											'amount' => $tax_data['taxamount'] ,
 											'type' => $tax_data['taxtype'],
 											'description' => $tax_data['descript'],
@@ -106,11 +106,18 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$apiInputData['record_type'] = $availableData['row']['type'] == 'flat' ? 'S' : 'C';
+		$isRowFlat = in_array($availableData['row']['type'],array('flat','service'));
+		//switch destination and origin for incoming calls
+		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
+			$apiInputData['bill_num'] = $apiInputData['term_num'];
+			$apiInputData['term_num'] = $apiInputData['orig_num'];
+			$apiInputData['orig_num'] = $apiInputData['bill_num'];
+		}
+		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
-		$apiInputData['productcode'] = $availableData['row']['type'] == 'flat' ? 'V001' : 'V001';
-		$apiInputData['servicecode'] = $availableData['row']['type'] == 'flat' ? '012' : '007';
-		$apiInputData['minutes'] = $availableData['row']['type'] == 'flat' ? '': round($availableData['row']['usagev']/60);
+		$apiInputData['productcode'] = $isRowFlat ? 'V001' : 'V001';
+		$apiInputData['servicecode'] = $isRowFlat ? '012' : '007';
+		$apiInputData['minutes'] = $isRowFlat ? '': round($availableData['row']['usagev']/60);
 		return $apiInputData;
 	}
 
