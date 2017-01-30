@@ -420,14 +420,21 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
 			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
 		}
-		
-		return array(
+		//Add basic account data
+		$accountData = array(
 			'firstname' => $firstname,
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
 			'payment_details' => $paymentDetails
 		);
+		
+		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
+			if(isset($subscriberPlan['passthrough'][$subscriberField])) {
+				$accountData[$invoiceField] = $subscriberPlan['passthrough'][$subscriberField];
+			}
+		}
+		return  $accountData;
 	}
 	
 	protected function handleInvoices($data) {
@@ -586,9 +593,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if ($aid) {
 			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
 		}
-		
+		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
-			'$group' => array(
+			'$group' => array_merge($addedPassthroughFields['group'],array(
 				'_id' => array(
 					'aid' => '$aid',
 				),
@@ -610,7 +617,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'card_token' => array(
 					'$first' => '$card_token'
 				),
-			),
+			)),
 		);
 		$pipelines[] = array(
 			'$skip' => $page * $size,
@@ -622,7 +629,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'$unwind' => '$sub_plans',
 		);
 		$pipelines[] = array(
-			'$group' => array(
+			'$group' => array_merge($addedPassthroughFields['second_group'], array(
 				'_id' => array(
 					'aid' => '$_id.aid',
 					'sid' => '$sub_plans.sid',
@@ -645,7 +652,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'card_token' => array(
 					'$first' => '$card_token'
 				),
-			),
+			)),
 		);
 		
 		$pipelines[] = $this->getSortPipeline();
@@ -656,14 +663,25 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'id' => '$_id',
 				'plan_dates' => 1,
 				'card_token' => 1,
+				'passthrough' => $addedPassthroughFields['project']
 			)
 		);
-		
-	
 		$coll = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines, $coll);
 	}
 	
+	protected function getAddedPassthroughValuesQuery() {
+		$passthroughFields = Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array());
+		$group = array();
+		$group2 = array();
+		$project = array();
+		foreach($passthroughFields as $subscriberField) {
+			$group[$subscriberField] = array('$addToSet' => '$'.$subscriberField);
+			$group2[$subscriberField] = array('$first' => '$'.$subscriberField);
+			$project[$subscriberField] = array('$arrayElemAt' => array('$'.$subscriberField ,0));
+		}
+		return array('group'=> $group, 'project' => $project ,'second_group'=> $group2);
+	}
 	
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
 		$cursor = $collection->aggregate($pipelines);

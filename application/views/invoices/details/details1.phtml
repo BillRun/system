@@ -53,22 +53,21 @@
 							</tr>
 						<?php } ?>
 							<tr class="total">
-								<td>TOTAL</td>
+								<td>SUBTOTAL</td>
 								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
 							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
-						</tbody>
-						<tfoot>
+
 							<tr class="grand-total">
 								<td>GRAND TOTAL</td>
 								<td><?php echo '$' . number_format($sub['totals']['after_vat'], 2); ?></td>
 							</tr>
-						</tfoot>
+						</tbody>
 					</table>
 				</div><!-- /.table table-default table-default-primary -->
 			</div><!-- /.section-body -->
 		</div><!-- /.section section-invoice-total -->
-
+	<?php if($render_usage_details) { ?>
 		<div class="break"></div>
 		<div class="section section-invoice-details">
 			<div class="section-head">
@@ -105,5 +104,6 @@
 				</div><!-- /.table table-default -->
 			</div><!-- /.section-body -->
 		</div>
+	<?php } ?>
 	</div>
 <?php } ?>
