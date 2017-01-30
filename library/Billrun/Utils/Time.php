@@ -23,7 +23,7 @@ class Billrun_Utils_Time {
 	 * @param type $seconds - How many seconds to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function secondsToMilli($seconds) {
+	public static function secondsToMilli($seconds) {
 		return $seconds * 1000;
 	}
 
@@ -32,7 +32,7 @@ class Billrun_Utils_Time {
 	 * @param type $minutes - How many seconds to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function minutesToMilli($minutes) {
+	public static function minutesToMilli($minutes) {
 		return static::minutesToSeconds($minutes) * 1000;
 	}
 
@@ -41,7 +41,7 @@ class Billrun_Utils_Time {
 	 * @param type $minutes - How many seconds to calculate.
 	 * @return type Int - number of seconds
 	 */
-	static public function minutesToSeconds($minutes) {
+	public static function minutesToSeconds($minutes) {
 		return $minutes * self::SECONDS_IN_MINUTE;
 	}
 
@@ -50,7 +50,7 @@ class Billrun_Utils_Time {
 	 * @param type $hours - How many hours to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function hoursToMilli($hours) {
+	public static function hoursToMilli($hours) {
 		return static::hoursToSeconds($hours) * 1000;
 	}
 
@@ -59,7 +59,7 @@ class Billrun_Utils_Time {
 	 * @param type $hours - How many hours to calculate.
 	 * @return type Int - number of seconds
 	 */
-	static public function hoursToSeconds($hours) {
+	public static function hoursToSeconds($hours) {
 		return $hours * self::SECONDS_IN_HOUR;
 	}
 
@@ -68,7 +68,7 @@ class Billrun_Utils_Time {
 	 * @param type $days - How many days to calculate.
 	 * @return type Int - number of seconds
 	 */
-	static public function daysToSeconds($days) {
+	public static function daysToSeconds($days) {
 		return $days * 24 * self::SECONDS_IN_HOUR;
 	}
 
@@ -77,7 +77,7 @@ class Billrun_Utils_Time {
 	 * @param type $days - How many days to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function daysToMilli($days) {
+	public static function daysToMilli($days) {
 		return static::daysToSeconds($days) * 1000;
 	}
 
@@ -86,7 +86,7 @@ class Billrun_Utils_Time {
 	 * @param type $weeks - How many weeks to calculate.
 	 * @return type Int - number of seconds
 	 */
-	static public function weeksToSeconds($weeks) {
+	public static function weeksToSeconds($weeks) {
 		return $weeks * 24 * 7 * self::SECONDS_IN_HOUR;
 	}
 
@@ -95,7 +95,7 @@ class Billrun_Utils_Time {
 	 * @param type $weeks - How many weeks to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function weeksToMilli($weeks) {
+	public static function weeksToMilli($weeks) {
 		return static::weeksToSeconds($weeks) * 1000;
 	}
 
@@ -104,7 +104,7 @@ class Billrun_Utils_Time {
 	 * @param type $months - How many months to calculate.
 	 * @return type Int - number of seconds
 	 */
-	static public function monthsToSeconds($months) {
+	public static function monthsToSeconds($months) {
 		return $months * 30 * 24 * 7 * self::SECONDS_IN_HOUR;
 	}
 
@@ -113,7 +113,7 @@ class Billrun_Utils_Time {
 	 * @param type $months - How many seconds to calculate.
 	 * @return type Int - number of milliseconds
 	 */
-	static public function monthsToMilli($months) {
+	public static function monthsToMilli($months) {
 		return static::monthsToSeconds($months) * 1000;
 	}
 
