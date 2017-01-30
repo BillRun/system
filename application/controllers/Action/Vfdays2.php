@@ -196,7 +196,7 @@ class Vfdays2Action extends Action_Base {
 
 		$match3 = array(
 			'$match' => array(
-				'isr_time' => array(
+				'urt' => array(
 					'$gte' => $start_time,
 					'$lte' => $end_time,
 				),
