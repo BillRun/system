@@ -367,12 +367,14 @@ class Billrun_Utils_Mongo {
 		$toTime = new MongoDate($to);
 		$res = [
 			'$or' => [
+				// Starts during range
 				[
 					$fromFieldName => [
 						'$gte' => $fromTime,
 						'$lt' => $toTime,
 					]
 				],
+				// Starts before range and ends after range start
 				[
 					$fromFieldName => [
 						'$lt' => $fromTime,
@@ -381,7 +383,7 @@ class Billrun_Utils_Mongo {
 						'$gt' => $fromTime,
 					],
 				],
-			]
+			],
 		];
 		return $res;
 	}

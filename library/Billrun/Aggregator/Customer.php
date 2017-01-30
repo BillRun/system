@@ -601,8 +601,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 						'to' => '$to',
 						'plan_activation' => '$plan_activation',
 						'plan_deactivation' => '$plan_deactivation',
-						'first_name' => array('$ifNull'=> array('$firstname','$first_name')),
-						'last_name' => array('$ifNull'=> array('$lastname','$last_name')),
+						'first_name' => '$firstname',
+						'last_name' => '$lastname',
 						'address' => '$address',
 						'services' => '$services'
 					),
@@ -685,7 +685,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'$match' => array(
 				'$or' => array(
 					array_merge( // Account records
-						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start(), $mongoCycle->to())
+						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
 					),
 					array(// Subscriber records
 						'type' => 'subscriber',
@@ -693,7 +693,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 							'$exists' => 1
 						),
 						'$or' => array(
-							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start(), $mongoCycle->to()),
+							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
 							array(// searches for a next plan. used for plans paid upfront
 								'from' => array(
 									'$lte' => $mongoCycle->end(),
