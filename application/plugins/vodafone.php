@@ -148,7 +148,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		$match2 = array(
 			'$match' => array(
-				'isr_time' => array(
+				'urt' => array(
 					'$gte' => $start_of_year,
 					'$lte' => $end_of_year,
 				),
