@@ -357,12 +357,12 @@ class Billrun_Utils_Mongo {
 	/**
 	 * Get objects that overlap with the supplied time range
 	 * @param string $fromFieldName
-	 * @param int $from
 	 * @param string $toFieldName
+	 * @param int $from
 	 * @param int $to
 	 * @return array The resulted query
 	 */
-	public static function getOverlappingWithRange($fromFieldName, $from, $toFieldName, $to) {
+	public static function getOverlappingWithRange($fromFieldName, $toFieldName, $from, $to) {
 		$fromTime = new MongoDate($from);
 		$toTime = new MongoDate($to);
 		$res = [

@@ -55,7 +55,7 @@ class ResetLinesModel {
 			$startTime = Billrun_Billingcycle::getStartTime($this->billrun_key);
 			$endTime = Billrun_Billingcycle::getEndTime($this->billrun_key);
 			$query = array_merge(
-				Billrun_Utils_Mongo::getOverlappingWithRange('from', $startTime, 'to', $endTime), array('sid' => array(
+				Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime), array('sid' => array(
 					'$in' => $sids,
 				))
 			);

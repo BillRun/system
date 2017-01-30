@@ -684,42 +684,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$match = array(
 			'$match' => array(
 				'$or' => array(
-					array( // Account records
-						'type' => 'account',
-						'from' => array(
-							'$lte' => $mongoCycle->end(),
-						),
-						'to' => array(
-							'$gte' => $mongoCycle->start(),
-						),
+					array_merge( // Account records
+						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start(), $mongoCycle->to())
 					),
-					array( // Subscriber records
+					array(// Subscriber records
 						'type' => 'subscriber',
 						'plan' => array(
 							'$exists' => 1
 						),
 						'$or' => array(
-							array(
-								'from' => array(// plan started during billing cycle
-									'$gte' => $mongoCycle->start(),
-									'$lt' => $mongoCycle->end(),
-								),
-							),
-							array(
-								'to' => array(// plan ended during billing cycle
-									'$gte' => $mongoCycle->start(),
-									'$lt' => $mongoCycle->end(),
-								),
-							),
-							array(// plan started before billing cycle and ends after
-								'from' => array(
-									'$lt' => $mongoCycle->start()
-								),
-								'to' => array(
-									'$gte' => $mongoCycle->end(),
-								),
-							),
-							array(// searches for a next plan. used for prepaid plans
+							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start(), $mongoCycle->to()),
+							array(// searches for a next plan. used for plans paid upfront
 								'from' => array(
 									'$lte' => $mongoCycle->end(),
 								),
@@ -732,14 +707,15 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				)
 			)
 		);
-		
+
+
 		// If the accounts should not be overriden, filter the existing ones before.
-		if(!$this->overrideAccountIds) {
+		if (!$this->overrideAccountIds) {
 			// Get the aid exclusion query
 			$exclusionQuery = $this->billrun->existingAccountsQuery();
 			$match['$match']['aid'] = $exclusionQuery;
 		}
-		
+
 		return $match;
 	}
 	
