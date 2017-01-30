@@ -212,19 +212,9 @@ class VfdaysAction extends Action_Base {
 						'month_key' => array(
 							'$month' => array('$isr_time'),
 						),
-						'year_key' => array(
-							'$year' => array('$isr_time'),
-						),
 					),
 				),
 			);
-			
-			$match3 = array(
-				'$match' => array(
-					'_id.year_key' => intval($year),
-				),
-			);
-				
 			$group2 = array(
 				'$group' => array(
 					'_id' => 'null',
@@ -234,7 +224,7 @@ class VfdaysAction extends Action_Base {
 				),
 			);
 			$billing_connection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('billing.db'))->linesCollection();
-			$results = $billing_connection->aggregate($match, $project, $match2, $group, $match3, $group2);
+			$results = $billing_connection->aggregate($match, $project, $match2, $group, $group2);
 		} catch (Exception $ex) {
 			Billrun_Factory::log('Error to fetch to billing from fraud system. ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::ERR);
 			Billrun_Factory::log('We will skip the billing fetch for this call.', Zend_Log::WARN);
