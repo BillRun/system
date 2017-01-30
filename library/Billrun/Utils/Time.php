@@ -16,6 +16,7 @@ class Billrun_Utils_Time {
 	const SECONDS_IN_HOUR = 3600;
 	const MILLISEC_IN_MINUTE = 60000;
 	const MILLISEC_IN_HOUR = 3600000;
+	const MILLISEC_IN_SECOND = 1000;
 	const UNLIMITED_DATE = "30 December 2099";
 	
 	/**
@@ -24,7 +25,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function secondsToMilli($seconds) {
-		return $seconds * 1000;
+		return $seconds * self::MILLISEC_IN_SECOND;
 	}
 
 	/**
@@ -33,7 +34,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function minutesToMilli($minutes) {
-		return static::minutesToSeconds($minutes) * 1000;
+		return static::minutesToSeconds($minutes) * self::MILLISEC_IN_SECOND;
 	}
 
 	/**
@@ -51,7 +52,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function hoursToMilli($hours) {
-		return static::hoursToSeconds($hours) * 1000;
+		return static::hoursToSeconds($hours) * self::MILLISEC_IN_SECOND;
 	}
 
 	/**
@@ -78,7 +79,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function daysToMilli($days) {
-		return static::daysToSeconds($days) * 1000;
+		return static::daysToSeconds($days) * self::MILLISEC_IN_SECOND;
 	}
 
 	/**
@@ -96,7 +97,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function weeksToMilli($weeks) {
-		return static::weeksToSeconds($weeks) * 1000;
+		return static::weeksToSeconds($weeks) * self::MILLISEC_IN_SECOND;
 	}
 
 	/**
@@ -114,7 +115,7 @@ class Billrun_Utils_Time {
 	 * @return type Int - number of milliseconds
 	 */
 	public static function monthsToMilli($months) {
-		return static::monthsToSeconds($months) * 1000;
+		return static::monthsToSeconds($months) * self::MILLISEC_IN_SECOND;
 	}
 
 }
