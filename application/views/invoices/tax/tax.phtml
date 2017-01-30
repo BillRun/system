@@ -4,6 +4,7 @@
 </tr>
 <?php if(!empty($data['taxes'])) {	?>
 	<?php foreach($data['taxes'] as $key => $taxAmount) { ?>
+	<?php if($taxAmount == 0 ) { continue; } ?>
 		<tr class="total">
 			<td><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' .ucfirst(strtolower($key)) ?> </td>
 				<td><?php echo '$' . number_format($taxAmount,2) ?></td>

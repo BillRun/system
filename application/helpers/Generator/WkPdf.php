@@ -20,6 +20,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $filePermissions =  0666; 
 	protected $invoice_threshold= 0.005;
 	
+	protected $render_usage_details= FALSE;
+	protected $render_subscription_details= TRUE;
 	/**
 	 *
 	 * @var Mongodloid_Cursor
@@ -57,7 +59,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
 		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
 		$this->font_awesome_css_path = APPLICATION_PATH . '/public/css/font-awesome.css';
-
+		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',FALSE));
+		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',TRUE));
 	}
 	
 	/**
@@ -76,6 +79,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
+		$this->view->assign('render_usage_details', $this->render_usage_details);
+		$this->view->assign('render_subscription_details', $this->render_subscription_details);
 	}
 	
 	/*
@@ -126,7 +131,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$pdf_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".pdf";
 			$html = $this->paths['html'].$file_name;
 			$pdf = $this->paths['pdf'].$pdf_name;
-					
+			
+			$this->accountSpecificViewParams($account);
+			
 			file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
 			chmod( $html, $this->filePermissions );
 			
@@ -135,6 +142,15 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
 			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
+	}
+	
+	protected function accountSpecificViewParams($billrunData) {
+		if(isset($billrunData['attributes']['invoice_details']['usage_details'])) {
+			$this->view->assign('render_usage_details',$billrunData['attributes']['invoice_details']['usage_details']);
+		}
+		if(isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
+			$this->view->assign('render_subscription_details',$billrunData['attributes']['invoice_details']['subscription_details']);
+		}
 	}
 	
 	protected function getDetailsKeys() {

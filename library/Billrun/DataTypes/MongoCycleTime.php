@@ -16,13 +16,13 @@ class Billrun_DataTypes_MongoCycleTime {
 	
 	/**
 	 * Cycle start time
-	 * @var int
+	 * @var MongoDate
 	 */
 	private $start;
 	
 	/**
 	 * Cycle end time
-	 * @var int 
+	 * @var MongoDate 
 	 */
 	private $end;
 	
@@ -44,7 +44,7 @@ class Billrun_DataTypes_MongoCycleTime {
 
 	/**
 	 * Get the cycle start date
-	 * @return int
+	 * @return MongoDate
 	 */
 	public function start() {
 		return $this->start;
@@ -52,7 +52,7 @@ class Billrun_DataTypes_MongoCycleTime {
 	
 	/**
 	 * Get the cycle end date
-	 * @return int
+	 * @return MongoDate
 	 */
 	public function end() {
 		return $this->end;
