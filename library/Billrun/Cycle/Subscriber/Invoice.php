@@ -297,7 +297,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
 			//Add flat taxes (nonprecentage taxes)
 			foreach(Billrun_Util::getFieldVal($taxData['taxes'], array()) as $tax) {
-				if($tax['tax'] === 0 && $tax['amount'] !== 0) {
+				if($tax['tax'] == 0 && $tax['amount'] != 0) {
 					$newPrice += $tax['amount'];
 				}
 			}

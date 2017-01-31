@@ -59,8 +59,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
 		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
 		$this->font_awesome_css_path = APPLICATION_PATH . '/public/css/font-awesome.css';
-		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',FALSE));
-		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',TRUE));
+		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_usage_details',FALSE));
+		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details',TRUE));
 	}
 	
 	/**
