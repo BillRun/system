@@ -93,7 +93,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			}
 			
 			$constructed = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);
-			$aggregatableRecords = array_merge($aggregatableRecords, $constructed);
+			$aggregatableRecords[] =  $constructed;
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -110,7 +110,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
 	protected function constructForSid($sorted, $filtered, &$plans, &$services, &$rates, $cycle, $invoiceData) {		
-		$aggregateable = array();
+		$aggregateable = $sorted[0];
+		$aggregateable['plans']=array();
+		$aggregateable['services']=array();
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($rates, $invoiceData);
 		foreach ($sorted as $sub) {
 			$constructed = $sub;
@@ -127,18 +129,19 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				Billrun_Factory::log("Overriding plans: " . print_r($filtered,1));				
 				$constructed['plans'] = array();
 			}
-			
-			$constructed['invoice'] = &$invoice;
-			$constructed['mongo_plans'] = &$plans;
-			$constructed['mongo_services'] = &$services;
-			$constructed['mongo_rates'] = &$rates;
-			$constructed['cycle'] = &$cycle;
-			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
-			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
-
-			$aggregateable[] = $cycleSub;
+			$aggregateable['plans'] = array_merge($aggregateable['plans'],$constructed['plans']);
+			$aggregateable['services'] = array_merge($aggregateable['services'],!empty($constructed['services']) ? $constructed['services'] : array() );
 		}
-		return $aggregateable;
+		
+		$aggregateable['invoice'] = &$invoice;
+		$aggregateable['mongo_plans'] = &$plans;
+		$aggregateable['mongo_services'] = &$services;
+		$aggregateable['mongo_rates'] = &$rates;
+		$aggregateable['cycle'] = &$cycle;
+		$aggregateable['line_stump'] = $this->getLineStump($sub, $cycle);
+		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable);
+
+		return $cycleSub;
 	}
 	
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
