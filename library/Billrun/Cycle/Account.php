@@ -92,8 +92,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				Billrun_Factory::log("SID " . $sid . " not in filtered!");
 			}
 			
-			$constructed = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);
-			$aggregatableRecords[] =  $constructed;
+			$aggregatableRecords[] = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);;
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -110,28 +109,20 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
 	protected function constructForSid($sorted, $filtered, &$plans, &$services, &$rates, $cycle, $invoiceData) {		
-		$aggregateable = $sorted[0];
-		$aggregateable['plans']=array();
-		$aggregateable['services']=array();
+		$aggregateable = reset($sorted);
+		$changes = array(	'plans'=>array(),
+							'services'=> array() );
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($rates, $invoiceData);
 		foreach ($sorted as $sub) {
-			$constructed = $sub;
-			unset($constructed['plans']);
-			unset($constructed['services']);
 			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
-				$constructed += $filtered[$filterKey]; 
+				$changes = array_merge($changes, $filtered[$filterKey]); 
 			} else {
 				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
 			}
-			
-			if(!isset($constructed['plans'])) {
-				Billrun_Factory::log("Overriding plans: " . print_r($filtered,1));				
-				$constructed['plans'] = array();
-			}
-			$aggregateable['plans'] = array_merge($aggregateable['plans'],$constructed['plans']);
-			$aggregateable['services'] = array_merge($aggregateable['services'],!empty($constructed['services']) ? $constructed['services'] : array() );
 		}
+		$aggregateable['plans'] = $changes['plans'];
+		$aggregateable['services'] = $changes['services'];
 		
 		$aggregateable['invoice'] = &$invoice;
 		$aggregateable['mongo_plans'] = &$plans;
@@ -176,7 +167,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$sid = $subscriber['sid'];
 			$sorted[$sid][] = $this->handleSubscriberDates($subscriber, $endTime);
 		}
-		
+		//sort each of the subscriber histort from past to present
+		foreach($sorted as  $sid => &$subHistory) {			
+			usort($subHistory, function($a, $b){ return $a['sto'] - $b['sto'];});
+		}
 		return $sorted;
 	}
 	
@@ -234,7 +228,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$from = null;
 		$to = null;
 		$aggregatorData = array();
-		
+		//sort plans history by date
+		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
 		// Go through the plans
 		foreach ($plans as $subPlan) {
 			// First iteration.
@@ -289,7 +284,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$sto = $subscriber['sto'];
 			
 			// Get the plans
-			$subscriberPlans[]= $subscriber['plans'][0];
+			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
 			
 			// Get the services.
 			$currServices = array();
