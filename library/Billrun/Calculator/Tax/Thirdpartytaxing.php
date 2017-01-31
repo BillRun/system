@@ -26,18 +26,44 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	public function prepareData($lines) {
 		//TODO  query the API  with lines
+		$queryData = array();
+		foreach($lines as $line) {
+			$subscriber = new Billrun_Subscriber_Db();
+			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
+			
+			$availableData = array( 'row'=> $line,
+									'account'=>$account->getCustomerData(),
+									'subscriber'=> $subscriber->getSubscriberData(),
+									'config'=>$this->config);
+			$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
+			$singleData = $this->translateDataForTax($singleData, $availableData);
+			$queryData[] = $singleData;
+		}
+		$data = $this->constructRequestData($this->config['request'],array('data'=> $queryData, 'config'=>$this->config));
+		$this->taxDataResults = $this->queryAPIforTaxes($data);
 	}
 	
 	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
-		$availableData = array( 'row'=> $line,
-								'account'=>$account,
-								'subscriber'=> $subscriber,
-								'config'=>$this->config);
-		$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
-		$singleData = $this->translateDataForTax($singleData, $availableData);
-		$data = $this->constructRequestData($this->config['request'],array('data'=> array($singleData), 'config'=>$this->config));
-		$line['tax_data'] = $this->queryAPIforTaxes($data);
-		return $line;
+		if(isset($this->taxDataResults[$line['stamp']])) {
+			$line['tax_data'] = $this->taxDataResults[$line['stamp']];
+		} else {
+			$availableData = array( 'row'=> $line,
+									'account'=>$account,
+									'subscriber'=> $subscriber,
+									'config'=>$this->config);
+			$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
+			$singleData = $this->translateDataForTax($singleData, $availableData);
+			$data = $this->constructRequestData($this->config['request'],array('data'=> array($singleData), 'config'=>$this->config));
+			$taxResults = $this->queryAPIforTaxes($data);
+			if(isset($taxResults[$line['stamp']])) {
+				$line['tax_data'] = $taxResults[$line['stamp']];
+			} else {
+				return FALSE;
+			}
+		}
+			return $line;
 	}
 	
 	protected function queryAPIforTaxes($data) {
@@ -88,9 +114,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function translateTaxData($data) {
 		//TODO  generalize this
-		$retTaxData= ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
+		$retLinesTaxesData = array();
 		$data = (array) $data;
 		foreach($data['tax_data'] as $tax_data) {
+			$retTaxData= ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 			$tax_data = (array) $tax_data;
 			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
@@ -101,8 +128,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 											'type' => $tax_data['taxtype'],
 											'description' => $tax_data['descript'],
 											'pass_to_customer' => $tax_data['passflag']);
+			$retLinesTaxesData[$tax_data['unique_id']]= $retTaxData;
 		}
-		return $retTaxData;
+		return $retLinesTaxesData;
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {

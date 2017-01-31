@@ -82,7 +82,7 @@
 						<?php if (empty($data->get('totals')[$key])) { continue; } ?>
 						<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
 							<td><?php echo ucfirst($title); ?></td>
-							<td><?php echo '$' . number_format($data->get('totals')[$key]['after_vat'], 2); ?></td>
+							<td><?php echo '$' . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
 						</tr>
 					<?php } ?>
 					

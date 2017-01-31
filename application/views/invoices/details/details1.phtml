@@ -49,7 +49,7 @@
 							<?php if (empty($sub['totals'][$key])) { continue; } ?>
 							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
 								<td><?php echo ucfirst($title); ?></td>
-								<td><?php echo '$' . number_format($sub['totals'][$key]['after_vat'], 2); ?></td>
+								<td><?php echo '$' . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
 							</tr>
 						<?php } ?>
 							<tr class="total">

@@ -237,7 +237,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			// First iteration.
 			if($name === null) {
 				$name = $subPlan['plan'];
-				$from = $subPlan['from']->sec;
+				$from = $subPlan['plan_activation']->sec;
 				$to = $subPlan['to']->sec;
 				continue;
 			}
@@ -254,7 +254,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Update all the details.
 			$name = $subPlan['plan'];
-			$from = $subPlan['from']->sec;
+			$from = $subPlan['plan_activation']->sec;
 			$to = $subPlan['to']->sec;
 		}
 		// Add the last value.
