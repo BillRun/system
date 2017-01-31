@@ -663,7 +663,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'id' => '$_id',
 				'plan_dates' => 1,
 				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project']
+				'passthrough' => $addedPassthroughFields['project'],
 			)
 		);
 		$coll = Billrun_Factory::db()->subscribersCollection();
@@ -674,11 +674,14 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$passthroughFields = Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array());
 		$group = array();
 		$group2 = array();
-		$project = array();
-		foreach($passthroughFields as $subscriberField) {
-			$group[$subscriberField] = array('$addToSet' => '$'.$subscriberField);
-			$group2[$subscriberField] = array('$first' => '$'.$subscriberField);
-			$project[$subscriberField] = array('$arrayElemAt' => array('$'.$subscriberField ,0));
+			$project = array();
+			foreach($passthroughFields as $subscriberField) {
+				$group[$subscriberField] = array('$addToSet' => '$'.$subscriberField);
+				$group2[$subscriberField] = array('$first' => '$'.$subscriberField);
+				$project[$subscriberField] = array('$arrayElemAt' => array('$'.$subscriberField ,0));
+			}
+		if (!$project) {
+			$project = 1;
 		}
 		return array('group'=> $group, 'project' => $project ,'second_group'=> $group2);
 	}
