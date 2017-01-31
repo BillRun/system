@@ -117,8 +117,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$retLinesTaxesData = array();
 		$data = (array) $data;
 		foreach($data['tax_data'] as $tax_data) {
-			$retTaxData= ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 			$tax_data = (array) $tax_data;
+			$retTaxData=  isset($retLinesTaxesData[$tax_data['unique_id']]) ? $retLinesTaxesData[$tax_data['unique_id']] : ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
+			
 			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_tax'] += $tax_data['taxrate'];
@@ -126,10 +127,12 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$retTaxData['taxes'][] = array( 'tax'=> $tax_data['taxrate'],
 											'amount' => $tax_data['taxamount'] ,
 											'type' => $tax_data['taxtype'],
-											'description' => $tax_data['descript'],
+											'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
 											'pass_to_customer' => $tax_data['passflag']);
+			
 			$retLinesTaxesData[$tax_data['unique_id']]= $retTaxData;
 		}
+		
 		return $retLinesTaxesData;
 	}
 	
