@@ -187,7 +187,8 @@ class Billrun_Util {
 	 * @return type
 	 */
 	public static function billrunKeyToReadable($billrunKey) {
-		return date('F Y', strtotime($billrunKey . '01'));
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date('F Y', $cycleData->start());
 	}
 
 	/**
