@@ -53,7 +53,7 @@ class Models_Action_Get extends Models_Action {
 		}
 
 		if (isset($this->request['sort'])) {
-			$this->sort = (array) $this->request['sort'];
+			$this->sort = (array) json_decode($this->request['sort'], true);
 		}
 
 		return $this->runQuery();
