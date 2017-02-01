@@ -91,6 +91,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$res = $this->runOperation();
 		$this->output->status = 1;
 		$this->output->details = $res;
+		$this->getResponse()->setHeader('Content-Type', 'application/json');
 		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
 	}
 	
