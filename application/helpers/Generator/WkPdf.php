@@ -79,8 +79,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
-		$this->view->assign('render_usage_details', $this->render_usage_details);
-		$this->view->assign('render_subscription_details', $this->render_subscription_details);
 	}
 	
 	/*
@@ -145,6 +143,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function accountSpecificViewParams($billrunData) {
+		$this->view->assign('render_usage_details', $this->render_usage_details);
+		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+
 		if(isset($billrunData['attributes']['invoice_details']['usage_details'])) {
 			$this->view->assign('render_usage_details',$billrunData['attributes']['invoice_details']['usage_details']);
 		}
