@@ -77,7 +77,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}	
 	
 	protected function isLineDataComplete($line) {
-		$missingFields = array_diff( array('sid'), array_keys($line) );
+		$missingFields = array_diff( array('aid'), array_keys($line) );
 		return empty($missingFields) ? FALSE : $missingFields;
 	}
 
