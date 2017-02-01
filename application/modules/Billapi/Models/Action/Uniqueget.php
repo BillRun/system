@@ -13,89 +13,23 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Uniqueget extends Models_Action {
+class Models_Action_Uniqueget extends Models_Action_Get {
 
-	/**
-	 * the size of page
-	 * @var int
-	 */
-	protected $size = 0;
-
-	/**
-	 * the page index
-	 * @var int
-	 */
-	protected $page = 0;
-
-	/**
-	 * next page flag
-	 * @var boolean
-	 */
-	protected $nextPage = false;
-
-	public function execute() {
-		if (empty($this->request['query'])) {
-			$this->request['query'] = array();
-		}
-
-		if (isset($this->request['page']) && is_numeric($this->request['page'])) {
-			$this->page = (int) $this->request['page'];
-		}
-
-		if (isset($this->request['size']) && is_numeric($this->request['size'])) {
-			$this->size = (int) $this->request['size'];
-		}
-
-		if (isset($this->request['next_page']) && is_numeric($this->request['next_page'])) {
-			$this->nextPage = (bool) $this->request['next_page'];
-		}
-
-		return $this->runQuery($this->request['query']);
-	}
-
-	/**
-	 * Run a DB query against the current collection
-	 * @param array $query pre-defined query to match
-	 * @return array the result set
-	 */
-	protected function runQuery($query, $sort = null) {
-		$ids = $this->getUniqueIds($query);
-
-		$filter = array(
+	protected function runQuery() {
+		$ids = $this->getUniqueIds();
+		$this->query = array(
 			'_id' => array(
 				'$in' => $ids
 			),
 		);
-
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
-		} else {
-			$project = array();
-		}
-
-		$ret = $this->collectionHandler->find($filter, $project);
-
-		if ($this->size != 0) {
-			$ret->limit($this->size + ($this->nextPage ? 1 : 0));
-		}
-
-		if ($this->page != 0) {
-			$ret->skip($this->page * $this->size);
-		}
-
-		if ($sort) {
-			$ret->sort((array) $sort);
-		}
-
-		return array_values(iterator_to_array($ret));
+		return parent::runQuery();
 	}
 
 	/**
 	 * method to aggregate and get uniqueness 
-	 * @param array $query pre-defined query to match
 	 * @return array of mongo ids
 	 */
-	protected function getUniqueIds($query) {
+	protected function getUniqueIds() {
 		$group = array(
 			'$group' => array(
 				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
@@ -133,9 +67,8 @@ class Models_Action_Uniqueget extends Models_Action {
 			),
 		);
 
-		$find = (array) json_decode($query, true);
-		if (!empty($find)) {
-			$match['$match'] = array_merge($match['$match'], $find);
+		if (!empty($this->query)) {
+			$match['$match'] = array_merge($match['$match'], $this->query);
 		}
 		$res = $this->collectionHandler->aggregate($match, $group, $project);
 
