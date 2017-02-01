@@ -27,6 +27,12 @@ class Models_Action_Uniqueget extends Models_Action {
 	 */
 	protected $page = 0;
 
+	/**
+	 * next page flag
+	 * @var boolean
+	 */
+	protected $nextPage = false;
+
 	public function execute() {
 		if (empty($this->request['query'])) {
 			$this->request['query'] = array();
@@ -38,6 +44,10 @@ class Models_Action_Uniqueget extends Models_Action {
 
 		if (isset($this->request['size']) && is_numeric($this->request['size'])) {
 			$this->size = (int) $this->request['size'];
+		}
+
+		if (isset($this->request['next_page']) && is_numeric($this->request['next_page'])) {
+			$this->nextPage = (bool) $this->request['next_page'];
 		}
 
 		return $this->runQuery($this->request['query']);
@@ -66,7 +76,7 @@ class Models_Action_Uniqueget extends Models_Action {
 		$ret = $this->collectionHandler->find($filter, $project);
 
 		if ($this->size != 0) {
-			$ret->limit($this->size);
+			$ret->limit($this->size + ($this->nextPage ? 1 : 0));
 		}
 
 		if ($this->page != 0) {
