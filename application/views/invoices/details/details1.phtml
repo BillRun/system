@@ -93,7 +93,7 @@
 									<tr>
 										<td><?php echo date($date_format, $line['urt']->sec); ?></td>
 										<td><?php echo $line['type']; ?></td>
-										<td><?php echo $line['type'] == 'flat' ? $line['plan'] :  $line['arate_key']; ?></td>
+										<td><?php echo $this->getLineUsageName($line); ?></td>
 										<td><?php echo number_format($line['usagev'], 2); ?></td>
 										<td><?php echo number_format($line['aprice'], 2); ?></td>
 									</tr>

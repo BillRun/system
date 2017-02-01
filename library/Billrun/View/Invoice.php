@@ -34,4 +34,15 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			array_push($this->lines[$sid], $line);
 		}
 	}
+	
+	public function getLineUsageName($line) {
+		$usageName = '';
+		$typeMapping = array('flat' => 'name', 'service' => 'name');
+		if(in_array($line['type'],array_keys($typeMapping))) {
+			$usageName = $line[$typeMapping[$line['type']]];
+		} else {
+			$usageName = $line['arate_key'];
+		}
+		return ucfirst(strtolower(preg_replace('/_/', ' ', $usageName)));
+	}
 }
