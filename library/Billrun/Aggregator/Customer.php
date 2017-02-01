@@ -663,7 +663,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				'id' => '$_id',
 				'plan_dates' => 1,
 				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project']
+				'passthrough' => $addedPassthroughFields['project'],
 			)
 		);
 		$coll = Billrun_Factory::db()->subscribersCollection();
@@ -671,18 +671,21 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	protected function getAddedPassthroughValuesQuery() {
-		$passthroughFields = Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array());
+		$passthroughFields = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array());
 		$group = array();
 		$group2 = array();
 		$project = array();
-		foreach($passthroughFields as $subscriberField) {
-			$group[$subscriberField] = array('$addToSet' => '$'.$subscriberField);
-			$group2[$subscriberField] = array('$first' => '$'.$subscriberField);
-			$project[$subscriberField] = array('$arrayElemAt' => array('$'.$subscriberField ,0));
+		foreach ($passthroughFields as $subscriberField) {
+			$group[$subscriberField] = array('$addToSet' => '$' . $subscriberField);
+			$group2[$subscriberField] = array('$first' => '$' . $subscriberField);
+			$project[$subscriberField] = array('$arrayElemAt' => array('$' . $subscriberField, 0));
 		}
-		return array('group'=> $group, 'project' => $project ,'second_group'=> $group2);
+		if (!$project) {
+			$project = 1;
+		}
+		return array('group' => $group, 'project' => $project, 'second_group' => $group2);
 	}
-	
+
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
 		$cursor = $collection->aggregate($pipelines);
 		$results = iterator_to_array($cursor);
