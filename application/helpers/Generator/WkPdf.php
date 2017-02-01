@@ -38,7 +38,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 		//TODO: use tenant LOGO
-		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/theme/logo.png" );
+		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
