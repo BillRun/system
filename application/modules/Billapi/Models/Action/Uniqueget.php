@@ -15,10 +15,31 @@
  */
 class Models_Action_Uniqueget extends Models_Action {
 
+	/**
+	 * the size of page
+	 * @var int
+	 */
+	protected $size = 0;
+
+	/**
+	 * the page index
+	 * @var int
+	 */
+	protected $page = 0;
+
 	public function execute() {
 		if (empty($this->request['query'])) {
 			$this->request['query'] = array();
 		}
+
+		if (isset($this->request['page']) && is_numeric($this->request['page'])) {
+			$this->page = (int) $this->request['page'];
+		}
+
+		if (isset($this->request['size']) && is_numeric($this->request['size'])) {
+			$this->size = (int) $this->request['size'];
+		}
+
 		return $this->runQuery($this->request['query']);
 	}
 
@@ -89,16 +110,16 @@ class Models_Action_Uniqueget extends Models_Action {
 
 		$ret = $this->collectionHandler->find($filter, $project);
 
-		if (isset($this->request['page']) && $this->request['page'] != -1) {
-			$res->skip((int) $this->page * (int) $this->size);
+		if ($this->size != 0) {
+			$ret->limit($this->size);
 		}
 
-		if (isset($this->request['size']) && $this->request['size'] != -1) {
-			$res->limit((int) $this->size);
+		if ($this->page != 0) {
+			$ret->skip($this->page * $this->size);
 		}
 
 		if ($sort) {
-			$res = $res->sort((array) $sort);
+			$ret->sort((array) $sort);
 		}
 
 		return array_values(iterator_to_array($ret));
