@@ -55,6 +55,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
+		if ($this->line_type == 'tap3' && $usageType == 'sms') {
+			return;
+		}
 		$sid = $subscriberBalance['sid'];
 		$line_year = substr($this->line_time, 0, 4);
 		$line_month = substr($this->line_time, 4, 2);
