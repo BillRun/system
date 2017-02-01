@@ -150,7 +150,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			
 		foreach ($data as $current) {
 			// Add the stump line.
-			$results += $aggregator->aggregate($current);
+			$results = array_merge($results, $aggregator->aggregate($current));
 		}
 		return $results;
 	}

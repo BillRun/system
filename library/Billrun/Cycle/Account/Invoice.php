@@ -227,7 +227,8 @@ class Billrun_Cycle_Account_Invoice {
 		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
 			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
 			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
-			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
+			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'credit'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
 		);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);

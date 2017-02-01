@@ -41,8 +41,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$singleData = $this->translateDataForTax($singleData, $availableData);
 			$queryData[] = $singleData;
 		}
-		$data = $this->constructRequestData($this->config['request'],array('data'=> $queryData, 'config'=>$this->config));
-		$this->taxDataResults = $this->queryAPIforTaxes($data);
+		if(!empty($queryData)) {
+			$data = $this->constructRequestData($this->config['request'],array('data'=> $queryData, 'config'=>$this->config));
+			$this->taxDataResults = $this->queryAPIforTaxes($data);
+		}
 	}
 	
 	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
@@ -117,8 +119,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$retLinesTaxesData = array();
 		$data = (array) $data;
 		foreach($data['tax_data'] as $tax_data) {
-			$retTaxData= ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 			$tax_data = (array) $tax_data;
+			$retTaxData=  isset($retLinesTaxesData[$tax_data['unique_id']]) ? $retLinesTaxesData[$tax_data['unique_id']] : ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
+			
 			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_tax'] += $tax_data['taxrate'];
@@ -126,15 +129,18 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$retTaxData['taxes'][] = array( 'tax'=> $tax_data['taxrate'],
 											'amount' => $tax_data['taxamount'] ,
 											'type' => $tax_data['taxtype'],
-											'description' => $tax_data['descript'],
+											'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
 											'pass_to_customer' => $tax_data['passflag']);
+			
 			$retLinesTaxesData[$tax_data['unique_id']]= $retTaxData;
 		}
+		
 		return $retLinesTaxesData;
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$isRowFlat = in_array($availableData['row']['type'],array('flat','service'));
+		$isRowFlat = in_array($availableData['row']['type'],array('flat','service','credit'));
+		$flatMapping = array('service' => '012','flat'=>'002','credit'=>'015');
 		//switch destination and origin for incoming calls
 		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
 			$apiInputData['bill_num'] = $apiInputData['term_num'];
@@ -144,9 +150,16 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
 		$apiInputData['productcode'] = $isRowFlat ? 'V001' : 'V001';
-		$apiInputData['servicecode'] = $isRowFlat ? '012' : '007';
+		$apiInputData['servicecode'] = $isRowFlat ? $flatMapping[$availableData['row']['type']] : preg_match('/^1/',$apiInputData['term_num'])  ?  '007' : '007' ;
 		$apiInputData['minutes'] = $isRowFlat ? '': round($availableData['row']['usagev']/60);
 		return $apiInputData;
+	}
+	
+	protected function checkFailure($data) {
+		if( $data->{'status'} == 'FAIL') {
+		Billrun_Factory::log('Failed when quering the taxation API : '. print_r($data->{'error_codes'},1));
+		}
+		return $data;
 	}
 
 }

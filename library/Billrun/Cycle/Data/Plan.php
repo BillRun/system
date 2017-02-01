@@ -58,8 +58,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			$entry['charge_op'] = $key;
 			$entry['stamp'] = $this->generateLineStamp($entry);
 			if(!empty($entry['vatable'])) {
-				$taxCalc = Billrun_Calculator::getInstance(array_merge(Billrun_Factory::config()->getConfigValue('tax.calculator'),array('autoload' => false)));
-				$entry = $taxCalc->updateRow($entry);
+				$entry = $this->addTaxationToLine($entry);
 			}
 			$entries[] = $entry;
 		}
@@ -85,5 +84,24 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	
 	protected function generateLineStamp($line) {
 		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
+	}
+	
+	protected function addTaxationToLine($entry) {
+		$entryWithTax = FALSE;
+		for($i=0;$i < 3 && !$entryWithTax;$i++) {//Try 3 times to tax the line.
+			$taxCalc = Billrun_Calculator::getInstance(array_merge(Billrun_Factory::config()->getConfigValue('tax.calculator'),array('autoload' => false)));
+			$entryWithTax = $taxCalc->updateRow($entry);
+			if(!$entryWithTax) {
+				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...",Zend_Log::WARN);
+				sleep(1);
+			}
+		}
+		if(!empty($entryWithTax)) {
+			$entry = $entryWithTax;
+		} else {
+			throw new Exception("Couldn`t tax flat line {$entry['name']} for aid: {$entry['aid']} , sid : {$entry['sid']}");
+		}
+		
+		return $entry;
 	}
 }

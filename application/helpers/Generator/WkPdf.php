@@ -38,7 +38,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 		//TODO: use tenant LOGO
-		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/theme/logo.png" );
+		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
@@ -59,8 +59,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
 		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
 		$this->font_awesome_css_path = APPLICATION_PATH . '/public/css/font-awesome.css';
-		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',FALSE));
-		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . 'default_print_usage_details',TRUE));
+		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_usage_details',FALSE));
+		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details',TRUE));
 	}
 	
 	/**
@@ -77,10 +77,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
 		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', ''));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
-		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
+		$this->view->assign('datetime_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.datetime_format', 'd/m/Y H:i:s'));
+		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y'));
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
-		$this->view->assign('render_usage_details', $this->render_usage_details);
-		$this->view->assign('render_subscription_details', $this->render_subscription_details);
 	}
 	
 	/*
@@ -104,6 +103,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(	
 																		array('totals.after_vat'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)) ) , 
+																		array('totals.credit.after_vat'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)) ) 
 //																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
 																	) );
 		if(!empty($this->accountsToInvoice)) {
@@ -145,6 +145,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function accountSpecificViewParams($billrunData) {
+		$this->view->assign('render_usage_details', $this->render_usage_details);
+		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+
 		if(isset($billrunData['attributes']['invoice_details']['usage_details'])) {
 			$this->view->assign('render_usage_details',$billrunData['attributes']['invoice_details']['usage_details']);
 		}
