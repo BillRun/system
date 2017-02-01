@@ -45,10 +45,47 @@ class Models_Action_Uniqueget extends Models_Action {
 
 	/**
 	 * Run a DB query against the current collection
-	 * @param array $query
+	 * @param array $query pre-defined query to match
 	 * @return array the result set
 	 */
 	protected function runQuery($query, $sort = null) {
+		$ids = $this->getUniqueIds($query);
+
+		$filter = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
+
+		if (isset($this->request['project'])) {
+			$project = (array) json_decode($this->request['project'], true);
+		} else {
+			$project = array();
+		}
+
+		$ret = $this->collectionHandler->find($filter, $project);
+
+		if ($this->size != 0) {
+			$ret->limit($this->size);
+		}
+
+		if ($this->page != 0) {
+			$ret->skip($this->page * $this->size);
+		}
+
+		if ($sort) {
+			$ret->sort((array) $sort);
+		}
+
+		return array_values(iterator_to_array($ret));
+	}
+
+	/**
+	 * method to aggregate and get uniqueness 
+	 * @param array $query pre-defined query to match
+	 * @return array of mongo ids
+	 */
+	protected function getUniqueIds($query) {
 		$group = array(
 			'$group' => array(
 				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
@@ -94,35 +131,7 @@ class Models_Action_Uniqueget extends Models_Action {
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
-		$ids = array_column($aggregatedResults, 'id');
-
-		$filter = array(
-			'_id' => array(
-				'$in' => $ids
-			),
-		);
-
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
-		} else {
-			$project = array();
-		}
-
-		$ret = $this->collectionHandler->find($filter, $project);
-
-		if ($this->size != 0) {
-			$ret->limit($this->size);
-		}
-
-		if ($this->page != 0) {
-			$ret->skip($this->page * $this->size);
-		}
-
-		if ($sort) {
-			$ret->sort((array) $sort);
-		}
-
-		return array_values(iterator_to_array($ret));
+		return array_column($aggregatedResults, 'id');
 	}
 
 }
