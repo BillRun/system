@@ -139,7 +139,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$isRowFlat = in_array($availableData['row']['type'],array('flat','service'));
+		$isRowFlat = in_array($availableData['row']['type'],array('flat','service','credit'));
 		$flatMapping = array('service' => '012','flat'=>'002','credit'=>'015');
 		//switch destination and origin for incoming calls
 		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
