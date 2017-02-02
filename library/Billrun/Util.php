@@ -190,6 +190,18 @@ class Billrun_Util {
 		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
 		return date('F Y', $cycleData->start());
 	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
+	}
 
 	/**
 	 * convert corrency.  
