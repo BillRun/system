@@ -31,7 +31,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 	public function __construct($options) {
 
-		$this->startTime = time();
+		$this->startTime = $this->getStartTime($options);
 		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type . '.generator.db', 'archive.db'), array()));
 
 		//Load added configuration for the current action type. TODO move this to Billrun_Base Class
@@ -84,6 +84,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$this->loadServiceProviders();
                 
 		parent::__construct($options);
+	}
+	
+	protected function getStartTime($options) {
+		return time();
 	}
 
 	/**

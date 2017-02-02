@@ -57,6 +57,13 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected $aggregate = true;
 
+	/**
+	 * flag to indicate if to complete all available balances when query with zero value
+	 * 
+	 * @var boolean
+	 */
+	protected $completeAvailableBalances = true;
+
 	public function __construct() {
 		parent::__construct(array('error' => "Success querying balances"));
 		$this->relativeTime = strtotime('1 day ago'); // this will be start time of non-existing balances
@@ -73,7 +80,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 				->cursor()
 				->sort(array($this->sortField => ($this->sortOrder >= 1 ? 1 : -1)))
 				;
-			$returnData = $this->availableBalances;
+			if ($this->completeAvailableBalances) {
+				$returnData = $this->availableBalances;
+			} else {
+				$returnData = array();
+			}
 			$added = array();
 			$lastRand = 1;
 			// Going through the lines
@@ -115,7 +126,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			} else {
 				krsort($sortArray);
 			}
-			
+
 		} catch (\Exception $e) {
 			$errorCode = Billrun_Factory::config()->getConfigValue("balances_error_base") + 30;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
@@ -127,7 +138,8 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	
 	protected function getBalanceIndex($item, $field) {
 		if ($item[$field] instanceof MongoDate) {
-			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT);
+			// we assume difference between from/to is at least 1 day; the rand is used to help sorting by key
+			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT) + rand(0, 100);
 		}
 		if (is_numeric($item[$field])) {
 			$randRange = 10000;
@@ -243,6 +255,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$aggregate = $input->get('aggregate');
 		if (isset($aggregate) && is_numeric($aggregate)){
 			$this->aggregate = $aggregate;
+		}
+		
+		$completeAvailableBalances = $input->get('completeAvailableBalances');
+		if (isset($completeAvailableBalances) && is_numeric($completeAvailableBalances)){
+			$this->completeAvailableBalances = $completeAvailableBalances;
 		}
 		
 	}
@@ -414,9 +431,9 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		if (!empty($accountName)) {
 			$prepaidQuery['name'] = $accountName;
 		}
-		$accountExtrenalId = $input->get('pp_includes_external_id');
+		$accountExtrenalId = (int) $input->get('pp_includes_external_id');
 		if (!empty($accountExtrenalId)) {
-			$prepaidQuery['external_id '] = $accountExtrenalId;
+			$prepaidQuery['external_id'] = $accountExtrenalId;
 		}
 
 		return $prepaidQuery;
@@ -440,6 +457,10 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 
 		$this->balancesQuery['charging_by'] = $chargingBy;
 		$this->balancesQuery['charging_by_usaget'] = $chargingByUsegt;
+		
+		if (isset($prepaidQuery['external_id'])) {
+			$this->balancesQuery['pp_includes_external_id'] = $prepaidQuery['external_id'];
+		}
 
 		return true;
 	}
