@@ -14,6 +14,8 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  * @since    5.3
  */
 class GetController extends BillapiController {
+	
+	protected $action;
 
 	protected function verifyTranslated($translated) {
 		
@@ -28,6 +30,16 @@ class GetController extends BillapiController {
 		if (!is_null($this->params['sort'])) {
 			$this->validateSort($this->params['sort']);
 		}
+	}
+
+	protected function runOperation() {
+		$this->action = Models_Action::getInstance($this->params);
+		if (!$this->action) {
+			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
+		}
+		$this->output->details = $this->action->execute();
+		$this->output->status = 1;
+		return $this->output->details;
 	}
 
 }

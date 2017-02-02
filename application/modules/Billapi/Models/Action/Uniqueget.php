@@ -13,21 +13,23 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Uniqueget extends Models_Action {
+class Models_Action_Uniqueget extends Models_Action_Get {
 
-	public function execute() {
-		if (empty($this->request['query'])) {
-			$this->request['query'] = array();
-		}
-		return $this->runQuery($this->request['query']);
+	protected function runQuery() {
+		$ids = $this->getUniqueIds();
+		$this->query = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
+		return parent::runQuery();
 	}
 
 	/**
-	 * Run a DB query against the current collection
-	 * @param array $query
-	 * @return array the result set
+	 * method to aggregate and get uniqueness 
+	 * @return array of mongo ids
 	 */
-	protected function runQuery($query, $sort = null) {
+	protected function getUniqueIds() {
 		$group = array(
 			'$group' => array(
 				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
@@ -65,43 +67,14 @@ class Models_Action_Uniqueget extends Models_Action {
 			),
 		);
 
-		$find = (array) json_decode($query, true);
-		if (!empty($find)) {
-			$match['$match'] = array_merge($match['$match'], $find);
+		if (!empty($this->query)) {
+			$match['$match'] = array_merge($match['$match'], $this->query);
 		}
 		$res = $this->collectionHandler->aggregate($match, $group, $project);
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
-		$ids = array_column($aggregatedResults, 'id');
-
-		$filter = array(
-			'_id' => array(
-				'$in' => $ids
-			),
-		);
-
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
-		} else {
-			$project = array();
-		}
-
-		$ret = $this->collectionHandler->find($filter, $project);
-
-		if (isset($this->request['page']) && $this->request['page'] != -1) {
-			$res->skip((int) $this->page * (int) $this->size);
-		}
-
-		if (isset($this->request['size']) && $this->request['size'] != -1) {
-			$res->limit((int) $this->size);
-		}
-
-		if ($sort) {
-			$res = $res->sort((array) $sort);
-		}
-
-		return array_values(iterator_to_array($ret));
+		return array_column($aggregatedResults, 'id');
 	}
 
 }

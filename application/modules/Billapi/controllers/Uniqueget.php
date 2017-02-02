@@ -22,11 +22,16 @@ class UniquegetController extends GetController {
 	}
 	
 	protected function runOperation() {
-		$action = Models_Action::getInstance($this->params);
-		if (!$action) {
-			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
+		$res = parent::runOperation();
+		$resCount = count($res);
+		if ($resCount > $this->action->getSize()) { // if we have indication that we have next page
+			unset($res[$resCount-1]);
+			$this->output->details = $res;
+			$this->output->next_page = true;
+		} else {
+			$this->output->next_page = false;
 		}
-		return $action->execute();
+		return $res;
 	}
 
 }
