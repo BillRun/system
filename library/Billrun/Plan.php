@@ -383,7 +383,7 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->plan_ref;
 	}
 
-	public function isValueUnlimited($value) {
+	public static function isValueUnlimited($value) {
 		return $value == 'UNLIMITED';
 	}
 	
