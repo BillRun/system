@@ -61,7 +61,22 @@ class UsageVolumeAction extends ApiAction {
 				'total_volume' => '$total_volume',
 			)
 		);
-		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $project);
+		
+		$match2 = array(
+			'$match' => array(
+				'total_volume' => array(
+					'$gt' => 50 * $to_mb, // minimum of 10MB
+				)
+			)
+		);
+		
+		$sort = array(
+			'$sort' => array(
+				'total_volume' => -1,
+			),
+		);
+		
+		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $project, $sort, $match2);
 		return array_map(function($ele) use($to_mb){
 			$ele['total_volume'] = $ele['total_volume'] / $to_mb;
 			$ele['total_volume'] = number_format($ele['total_volume'], 4);
