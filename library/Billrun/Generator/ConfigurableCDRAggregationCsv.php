@@ -287,7 +287,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $str
 	 */
 	protected function writeToFile($str, $overwrite = false) {
-		parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES"));
+		if( parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES")) === FALSE) {
+			throw new Exception('Failed to write to : '.$this->file_path);
+		}
 	}
 
 	/**
@@ -345,12 +347,12 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		return $result['ok'] == 1;
 	}
         
-        protected function loadServiceProviders() {
-            $serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
-            foreach ($serviceProviders as $provider) {
-                $this->serviceProviders[$provider['name']] = $provider->getRawData();
-            }
-        }
+	protected function loadServiceProviders() {
+		 $serviceProviders = Billrun_Factory::db()->serviceprovidersCollection()->query()->cursor();
+		 foreach ($serviceProviders as $provider) {
+			 $this->serviceProviders[$provider['name']] = $provider->getRawData();
+		 }
+	 }
 
 	//---------------------- Manage files/cdrs function ------------------------
 
