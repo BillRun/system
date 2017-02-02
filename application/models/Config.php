@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 
 /**
  * Configmodel class
