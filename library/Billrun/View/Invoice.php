@@ -50,7 +50,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		$subscriptionList = array();
 		foreach($lines as $subLines) {
 			foreach($subLines as $line) {
-				if(in_array($line['type'],$this->flat_line_types)) {
+				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0) {
+					
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
 					$subscriptionList[$name]['desc'] = $name;				
