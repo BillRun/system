@@ -57,7 +57,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 					$flatData = $flatRate->getData();
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
-					$subscriptionList[$name]['desc'] = $name;				
+					$subscriptionList[$name]['desc'] = $name;	
+					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
 					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($flatData['price'][0]) ? $flatData['price'][0]['price'] : $flatData['price']));
 					@$subscriptionList[$name]['count']++;
 					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];

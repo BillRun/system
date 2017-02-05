@@ -395,10 +395,10 @@ img.billrun-logo {
 	object-fit:contain;
 }
 
-.sumup .table-default th:last-child,.sumup .table-default td:last-child {
+.sumup .table-default .complex-sumup th:last-child,.sumup .table-default .complex-sumup td:last-child {
 	width:140px;
 }
 
-.sumup .table-default th:first-child,.sumup .table-default td:first-child {
-	width: 325px;
+.sumup .table-default .complex-sumup th:first-child,.sumup .table-default .complex-sumup td:first-child {
+	width: 400px;
 }

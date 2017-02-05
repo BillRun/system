@@ -1,9 +1,9 @@
-<table>
+<table class="complex-sumup">
 	<thead>
 		<tr>
 			<th>Description</th>
-			<th>Rate</th>
 			<th>Qty</th>
+			<th>Rate</th>			
 			<th>Amount</th>
 		</tr>
 	</thead>
@@ -14,9 +14,9 @@
 			$endKey = end($subscriptionList);
 			foreach ($subscriptionList as $key =>$aggregated) { ?>	
 			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
-				<td><?php echo ucfirst($aggregated['desc']); ?></td>
-				<td><?php echo number_format($aggregated['rate'],2); ?></td>
+				<td><?php echo ucfirst($aggregated['desc']); ?></td>				
 				<td><?php echo ucfirst($aggregated['count']); ?></td>
+				<td><?php echo number_format($aggregated['rate'],2); ?></td>
 				<td><?php echo '$' . number_format($aggregated['amount'], 2); ?></td>
 			</tr>
 		<?php } ?>
