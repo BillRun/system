@@ -28,6 +28,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		//TODO  query the API  with lines
 		$queryData = array();
 		foreach($lines as $line) {
+			if(!$this->isLineLegitimate($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();
