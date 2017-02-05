@@ -73,7 +73,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'lastname' => $invoice['attributes']['lastname'],
 				'firstname' => $invoice['attributes']['firstname'],
 				'country_code' => Billrun_Util::getFieldVal($invoice['attributes']['country_code'], NULL),
-				'payment_method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], NULL),
+				'payment_method'=> Billrun_Util::getFieldVal($invoice['attributes']['payment_method'], Billrun_Factory::config()->getConfigValue('PaymentGateways.payment_method')),
 				'bank_name' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bank_name'],null),
 				'BIC' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['bic'],null),
 				'IBAN' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['iban'],null),
