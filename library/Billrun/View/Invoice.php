@@ -45,4 +45,21 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		return ucfirst(strtolower(preg_replace('/_/', ' ', $usageName)));
 	}
+	
+	public function buildSubscriptionListFromLines($lines) {
+		$subscriptionList = array();
+		foreach($lines as $subLines) {
+			foreach($subLines as $line) {
+				if(in_array($line['type'],$this->flat_line_types)) {
+					$line->collection(Billrun_Factory::db()->linesCollection());
+					$name = $this->getLineUsageName($line);
+					$subscriptionList[$name]['desc'] = $name;				
+					$subscriptionList[$name]['rate'] = "N/A";
+					@$subscriptionList[$name]['count']++;
+					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];
+				}
+			}
+		}
+		return $subscriptionList;
+	}
 }

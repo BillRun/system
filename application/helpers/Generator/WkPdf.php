@@ -79,11 +79,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('details_table_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', ''));
 		$this->view->assign('usage_line_types',  Billrun_Factory::config()->getFileTypes());
 		$this->view->assign('flat_line_types',  Billrun_Factory::config()->getConfigValue(self::$type . '.flat_line_types', array('flat','service','credit')));
-		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', ''));
+		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', '/application/views/invoices/tax/tax.phtml'));
+		$this->view->assign('simple_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.simple_sumup_template', '/application/views/invoices/sumup/simple_sumup.phtml'));
+		$this->view->assign('complex_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.complex_sumup_template', '/application/views/invoices/sumup/complex_sumup.phtml'));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
 		$this->view->assign('datetime_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.datetime_format', 'd/m/Y H:i:s'));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y'));
 		$this->view->assign('span_date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.span_date_format', 'd/m'));
+		$this->view->assign('use_complex_sumup',  Billrun_Factory::config()->getConfigValue(self::$type . '.use_complex_sumup', FALSE));
 		$this->view->assign('tanent_css', $this->tanent_css);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 	}
