@@ -150,7 +150,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
-		if(!$isRowFlat) {
+		if(!$isRowFlat || $availableData['row']['type'] == 'credit') {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
 		} else {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForFlat($availableData['row']));
