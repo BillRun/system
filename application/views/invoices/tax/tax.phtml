@@ -1,13 +1,14 @@
+<?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
 <tr class="total">
-	<td>TAXES</td>
+	<td colspan='<?php echo $colspan; ?>'>TAXES</td>
 	<td><?php echo '$' . number_format($data['after_vat'] - $data['before_vat'], 2); ?></td>
 </tr>
 <?php if(!empty($data['taxes'])) {	?>
 	<?php foreach($data['taxes'] as $key => $taxAmount) { ?>
 	<?php if($taxAmount == 0 ) { continue; } ?>
 		<tr class="total">
-			<td><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' .ucfirst(strtolower($key)) ?> </td>
-				<td><?php echo '$' . number_format($taxAmount,2) ?></td>
+			<td colspan="<?php echo $colspan; ?>"><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' .ucfirst(strtolower($key)) ?> </td>
+			<td><?php echo '$' . number_format($taxAmount,2) ?></td>
 		</tr>
 	<?php }//foreach ?>
 <?php } ?>

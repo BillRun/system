@@ -140,7 +140,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
 		$isRowFlat = in_array($availableData['row']['type'],array('flat','service','credit'));
-		$flatMapping = array('service' => '012','flat'=>'002','credit'=>'015');
+		
 		//switch destination and origin for incoming calls
 		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
 			$apiInputData['bill_num'] = $apiInputData['term_num'];
@@ -149,8 +149,11 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
-		$apiInputData['productcode'] = $isRowFlat ? 'V001' : 'V001';
-		$apiInputData['servicecode'] = $isRowFlat ? $flatMapping[$availableData['row']['type']] : preg_match('/^1/',$apiInputData['term_num'])  ?  '007' : '007' ;
+		if(!$isRowFlat) {
+			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
+		} else {
+			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForFlat($availableData['row']));
+		}
 		$apiInputData['minutes'] = $isRowFlat ? '': round($availableData['row']['usagev']/60);
 		return $apiInputData;
 	}
@@ -160,6 +163,34 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		Billrun_Factory::log('Failed when quering the taxation API : '. print_r($data->{'error_codes'},1));
 		}
 		return $data;
+	}
+	
+	protected function getProductAndServiceForFlat ($row) {
+		$flatRate = $row['type'] == 'flat' ? 
+						new Billrun_Plan(array('name'=> $row['name'], 'time'=> $row['urt']->sec)) : 
+						new Billrun_Service(array('name'=> $row['name'], 'time'=> $row['urt']->sec));		
+		if(!$flatRate) {
+			throw new Exception("Couldn`t find flat  rate  for taxation for name : {$row['name']}");
+		}
+		$flatData = $flatRate->getData();
+		$retData['productcode'] = $flatData['tax.product_code'];
+		$retData['servicecode'] = $flatData['tax.service_code'];
+			
+		return $retData;
+	}
+	
+	protected function getProductAndServiceForUsage ($row) {
+		$row->collection(Billrun_Factory::db()->linesCollection());
+		$rate = $row['arate'];
+		
+		if(!$rate['tax']) {
+			throw new Exception("Couldn`t find rate for taxation for rate : {$row['arate_key']}");
+		}
+		
+		$retData['productcode'] = $rate['tax.product_code'];
+		$retData['servicecode'] = $rate['tax.service_code'];
+			
+		return $retData;
 	}
 
 }
