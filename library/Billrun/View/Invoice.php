@@ -51,11 +51,14 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		foreach($lines as $subLines) {
 			foreach($subLines as $line) {
 				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0) {
-					
+					$flatRate = $line['type'] == 'flat' ? 
+						new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
+						new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
+					$flatData = $flatRate->getData();
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
 					$subscriptionList[$name]['desc'] = $name;				
-					$subscriptionList[$name]['rate'] = "N/A";
+					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($flatData['price'][0]) ? $flatData['price'][0]['price'] : $flatData['price']));
 					@$subscriptionList[$name]['count']++;
 					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];
 				}

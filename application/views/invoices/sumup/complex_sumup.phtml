@@ -2,6 +2,7 @@
 	<thead>
 		<tr>
 			<th>Description</th>
+			<th>Rate</th>
 			<th>Qty</th>
 			<th>Amount</th>
 		</tr>
@@ -14,6 +15,7 @@
 			foreach ($subscriptionList as $key =>$aggregated) { ?>	
 			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
 				<td><?php echo ucfirst($aggregated['desc']); ?></td>
+				<td><?php echo number_format($aggregated['rate'],2); ?></td>
 				<td><?php echo ucfirst($aggregated['count']); ?></td>
 				<td><?php echo '$' . number_format($aggregated['amount'], 2); ?></td>
 			</tr>
@@ -22,18 +24,18 @@
 		<?php foreach ($details_keys as $title => $key) { ?>
 			<?php if (empty($data->get('totals')[$key]) || in_array($key,$this->flat_line_types)) { continue; } ?>
 			<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
-				<td colspan="2"><?php echo ucfirst($title); ?></td>
+				<td colspan="3"><?php echo ucfirst($title); ?></td>
 				<td><?php echo '$' . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
 			</tr>
 		<?php } ?>			
 		<tr class="total">
-			<td colspan="2">SUBTOTAL</td>
+			<td colspan="3">SUBTOTAL</td>
 			<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
 		</tr>
-		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'), 'col_count' => 3)); ?>
+		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'), 'col_count' => 4)); ?>
 
 		<tr class="grand-total">
-			<td colspan="2">GRAND TOTAL</td>
+			<td colspan="3">GRAND TOTAL</td>
 			<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
 		</tr>
 	</tbody>
