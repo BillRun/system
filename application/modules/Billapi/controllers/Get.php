@@ -37,8 +37,16 @@ class GetController extends BillapiController {
 		if (!$this->action) {
 			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
 		}
-		$this->output->details = $this->action->execute();
 		$this->output->status = 1;
+		try {
+			$this->output->details = $this->action->execute();
+		} catch (Exception $ex) {
+			$this->output->status = 0;
+			$this->output->errorCode = $ex->getCode();
+			$this->output->desc = $ex->getMessage();
+			Billrun_Factory::log($this->output->errorCode . ': ' . $this->output->desc, Zend_Log::ERR);
+		}
+		
 		return $this->output->details;
 	}
 

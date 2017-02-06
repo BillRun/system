@@ -15,6 +15,30 @@
  */
 class Models_Action_Uniqueget extends Models_Action_Get {
 
+	/**
+	 * aggregate field to map the uniqueness
+	 * @var string
+	 */
+	protected $group = 'name';
+
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		$this->initGroup();
+	}
+
+	/**
+	 * initialize the collection
+	 * 
+	 * @todo override by child class
+	 */
+	protected function initGroup() {
+		if ($this->request['collection'] == 'rates') {
+			$this->group = 'key';
+		} else {
+			$this->group = 'name';
+		}
+	}
+
 	protected function runQuery() {
 		$ids = $this->getUniqueIds();
 		$this->query = array(
@@ -32,7 +56,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	protected function getUniqueIds() {
 		$group = array(
 			'$group' => array(
-				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
+				'_id' => '$' . $this->group,
 				'from' => array(
 					'$min' => '$from'
 				),

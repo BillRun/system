@@ -16,8 +16,17 @@
  */
 class Models_Action_Uniqueget_Accounts extends Models_Action_Uniqueget {
 
-	protected function runQuery($query, $sort = null) {
-		$query['type'] = 'account';
-		return parent::runQuery($query, $sort);
+	protected function runQuery() {
+		$this->query['type'] = 'account';
+		return parent::runQuery();
 	}
+
+	protected function initGroup() {
+		$this->group = 'aid';
+	}
+
+	protected function getCollectionName() {
+		return 'subscribers';
+	}
+
 }

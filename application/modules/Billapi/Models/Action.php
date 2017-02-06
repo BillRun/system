@@ -65,8 +65,18 @@ abstract class Models_Action {
 			$this->settings = $params['settings'];
 		}
 		if (isset($this->request['collection'])) {
-			$this->collectionHandler = Billrun_Factory::db()->{$this->request['collection'] . 'Collection'}();
+			$this->collectionHandler = Billrun_Factory::db()->{$this->getCollectionName() . 'Collection'}();
 		}
+	}
+	
+	/**
+	 * method to get the collection name of the action
+	 * by default it passed in the request
+	 * 
+	 * @return string the collection name
+	 */
+	protected function getCollectionName() {
+		return $this->request['collection'];
 	}
 	
 	/**
