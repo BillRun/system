@@ -15,36 +15,34 @@
 class Generator_BillrunToBill extends Billrun_Generator {
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
+	protected $invoices;
+	protected $hash;
+	protected $billrunColl;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
+		if (isset($options['invoices'])) {
+			$this->invoices = $options['invoices'];
+		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
 	}
 
 	public function load() {
-		$billrunColl = Billrun_Factory::db()->billrunCollection();		
+		$this->billrunColl = Billrun_Factory::db()->billrunCollection();
+		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
+		$this->mark($invoiceQuery);
 
-		$invoices = $billrunColl->query( array(
-											'billrun_key'=> (string) $this->stamp,
-											'billed'=>array('$ne'=>1),
-											'$or' => array(
-												array(
-													'totals.after_vat_rounded' => array('$gte' =>  $this->minimum_absolute_amount_for_bill),
-												),
-												array(
-													'totals.after_vat_rounded' => array('$lte' => -$this->minimum_absolute_amount_for_bill),
-												),
-											),
-											'invoice_id'=> array('$exists'=>1)
-						) )->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(-1);
+		$query = array(
+			'hash' => $this->hash,
+		);
+		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(-1);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-		
+
 		$this->data = $invoices;
-		
 	}
 
 	public function generate() {
@@ -146,5 +144,29 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				return false;
 		}		
 		return true;
+	}
+	
+	protected function mark($invoiceQuery) {
+		$this->hash = md5(time() . rand(0, PHP_INT_MAX));
+		$generateOrphanTime = new MongoDate(strtotime('6 hours ago')); // TODO move to ini/config
+		$query = array(
+			'billrun_key' => (string) $this->stamp,
+			'billed' => array('$ne' => 1),
+			'$or' => array(
+				array(
+					'totals.after_vat_rounded' => array('$gte' => $this->minimum_absolute_amount_for_bill),
+				),
+				array(
+					'totals.after_vat_rounded' => array('$lte' => -$this->minimum_absolute_amount_for_bill),
+				),
+			),
+			'invoice_id' => $invoiceQuery,
+			'$or' => array(
+				array('start_generate_time' => array('$exists' => 0)),
+				array('start_generate_time' => array('$lt' => $generateOrphanTime)),
+			),
+		);
+
+		$this->billrunColl->update($query, array('$set' => array('hash' => $this->hash, 'start_generate_time' => new MongoDate())), array('multiple' => 1));
 	}
 }
