@@ -14,6 +14,7 @@
 class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected $config = array();
+	protected $taxDataResults = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -140,22 +141,23 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	}
 	
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$isRowFlat = in_array($availableData['row']['type'],array('flat','service','credit'));
+		$rowIsNotUsage = in_array($availableData['row']['type'],array('flat','service','credit'));
 		
 		//switch destination and origin for incoming calls
-		if(!$isRowFlat && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
+		if(!$rowIsNotUsage && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
 			$apiInputData['bill_num'] = $apiInputData['term_num'];
 			$apiInputData['term_num'] = $apiInputData['orig_num'];
 			$apiInputData['orig_num'] = $apiInputData['bill_num'];
 		}
-		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
+		$apiInputData['record_type'] = $rowIsNotUsage ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
-		if(!$isRowFlat || $availableData['row']['type'] == 'credit') {
+		if(!$rowIsNotUsage || $availableData['row']['type'] == 'credit') {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
 		} else {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForFlat($availableData['row']));
 		}
-		$apiInputData['minutes'] = $isRowFlat ? '': round($availableData['row']['usagev']/60);
+		$apiInputData['minutes'] = $rowIsNotUsage ? '': round($availableData['row']['usagev']/60);
+		
 		return $apiInputData;
 	}
 	
@@ -180,9 +182,8 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		return $retData;
 	}
 	
-	protected function getProductAndServiceForUsage ($row) {
-		$row->collection(Billrun_Factory::db()->linesCollection());
-		$rate = $row['arate'];
+	protected function getProductAndServiceForUsage ($row) {		
+		$rate = Billrun_Rates_Util::getRateByRef($row instanceof \Mongodloid_Entity ? $row->get('arate',true) : $row['arate']);
 		
 		if(!$rate['tax']) {
 			throw new Exception("Couldn`t find rate for taxation for rate : {$row['arate_key']}");
