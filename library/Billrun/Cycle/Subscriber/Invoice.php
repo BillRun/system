@@ -259,7 +259,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 						 ||
 						Billrun_Factory::config()->getConfigValue('tax.config.apply_optional',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
 						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
-						$this->data['totals']['taxes'][$tax['description']] = $prevAmount +  $tax['amount'];
+						$this->data['totals']['taxes'][$tax['description']] = $prevAmount + $tax['amount'];
 					}
 				}
 			}
@@ -295,18 +295,20 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return integer Price after vat.
 	 */
 	protected function addLineVatableData($pricingData, $breakdownKey,$taxData = array()) {
-		if(!empty($taxData['total_amount']) || empty($taxData)) {
+		if(!empty($taxData['total_amount']) ) {
 			$this->data['totals']['vatable'] = Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0) + $pricingData['aprice'];
 			$this->data['totals'][$breakdownKey]['vatable'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
-			$vat = empty($taxData) ? Billrun_Rates_Util::getVat() : $taxData['total_tax'];			
-			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
+			$newPrice = $pricingData['aprice'];
 			//Add flat taxes (nonprecentage taxes)
 			foreach(Billrun_Util::getFieldVal($taxData['taxes'], array()) as $tax) {
-				if($tax['tax'] == 0 && $tax['amount'] != 0) {
+				if( $tax['amount'] != 0) {
 					$newPrice += $tax['amount'];
 				}
 			}
 			return $newPrice;
+		} else if( empty($taxData) ) {
+			$vat =  Billrun_Rates_Util::getVat();
+			$newPrice = $pricingData['aprice'] + ($pricingData['aprice'] * $vat);
 		}
 		//else 
 		return $pricingData['aprice'];
