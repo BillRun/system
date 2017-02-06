@@ -24,7 +24,8 @@ class UniquegetController extends GetController {
 	protected function runOperation() {
 		$res = parent::runOperation();
 		$resCount = count($res);
-		if ($resCount > $this->action->getSize()) { // if we have indication that we have next page
+		$pagesize = $this->action->getSize();
+		if ($pagesize > 0 && $resCount > $pagesize) { // if we have indication that we have next page
 			unset($res[$resCount-1]);
 			$this->output->details = $res;
 			$this->output->next_page = true;
