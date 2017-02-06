@@ -28,6 +28,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		//TODO  query the API  with lines
 		$queryData = array();
 		foreach($lines as $line) {
+			if(!$this->isLineLegitimate($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();
@@ -149,7 +150,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		$apiInputData['record_type'] = $isRowFlat ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
-		if(!$isRowFlat) {
+		if(!$isRowFlat || $availableData['row']['type'] == 'credit') {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
 		} else {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForFlat($availableData['row']));
