@@ -16,7 +16,7 @@
 			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
 				<td class='desc'><?php echo ucfirst($aggregated['desc']); ?></td>
 				<td class='qty'><?php echo $aggregated['count']; ?></td>
-				<td class='rate'><?php echo number_format($aggregated['rate'],2); ?></td>
+				<td class='rate'><?php echo  number_format( (!empty($aggregated['rate']) ? $aggregated['rate'] : $aggregated['amount']),2) ; ?></td>
 				<td class='amount'><?php echo '$' . number_format($aggregated['amount'], 2); ?></td>
 			</tr>
 		<?php } ?>
