@@ -61,7 +61,7 @@ class Billrun_Plans_Charge {
 			$object .= '_Upfront';
 		}
 		
-		$period = $plan['recurrence']['periodicity'];
+		$period = isset($plan['recurrence']['periodicity']) ? $plan['recurrence']['periodicity'] : 'month';
 		$object .= '_' . ucfirst(strtolower($period));
 		
 		// Check if exists

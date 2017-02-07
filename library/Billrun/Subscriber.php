@@ -468,4 +468,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		return $this->nextPlan;
 	}
 
+	
+	public function getSubscriberData() {
+		return $this->data;
+	}
 }

@@ -471,5 +471,9 @@ class Billrun_Factory {
 		}
 		return $gateway;
 	}
+	
+	public function remoteClient($param) {
+		return new SoapClient($param);
+	}
 
 }

@@ -33,5 +33,9 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$flatLine['type'] = 'service';
 		return $flatLine;
 	}
+	
+	protected function generateLineStamp($line) {
+		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->plan . $this->cycle->start() . $this->cycle->key());
+	}
 
 }

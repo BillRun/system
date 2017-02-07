@@ -11,7 +11,7 @@
 						<tbody><tr>
 								<td>Period</td>
 
-								<td><strong><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></strong></td>
+								<td><strong><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></strong></td>
 							</tr>
 
 							<tr>
@@ -23,7 +23,7 @@
 							<tr>
 								<td>Print Date</td>
 
-								<td><?php echo date('d/m/Y'); ?></td>
+								<td><?php echo date($date_format); ?></td>
 							</tr>
 						</tbody></table>
 				</td>
@@ -62,47 +62,14 @@
 			</tr>
 		</tbody></table>
 </section>
-<div class="section section-invoice-details">
+<div class="section section-invoice-details sumup">
 	<div class="section-head">
 		<h2 class="section-title section-title-alt">Invoice summary</h2><!-- /.section-title -->
 	</div><!-- /.section-head -->
 
 	<div class="section-body">
 		<div class="table table-default table-default-primary">
-			<table>
-				<thead>
-					<tr>
-						<th>Description</th>
-						<th>Amount</th>
-					</tr>
-				</thead>
-
-				<tbody>
-					<?php foreach ($details_keys as $title => $key) { ?>
-						<?php if (empty($data->get('totals')[$key])) { continue; } ?>
-						<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
-							<td><?php echo ucfirst($title); ?></td>
-							<td><?php echo '$' . number_format($data->get('totals')[$key]['after_vat'], 2); ?></td>
-						</tr>
-					<?php } ?>
-					
-					<tr class="total">
-						<td>TOTAL</td>
-						<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
-					</tr>
-					<tr class="total">
-						<td>VAT (17%)</td>
-						<td><?php echo '$' . number_format($data->get('totals')['after_vat'] - $data->get('totals')['before_vat'], 2); ?></td>
-					</tr>
-				</tbody>
-
-				<tfoot>
-					<tr class="grand-total">
-						<td>GRAND TOTAL</td>
-						<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
-					</tr>
-				</tfoot>
-			</table>
+			<?php echo $this->render($this->use_complex_sumup ? $this->complex_sumup_template : $this->simple_sumup_template ); ?>			
 		</div><!-- /.table table-default table-default-primary -->
 	</div><!-- /.section-body -->
 </div>

@@ -86,6 +86,13 @@ class Billrun_Service {
 	public function getName() {
 		return $this->get('name');
 	}
+	
+	public function getData($raw = false) {
+		if ($raw) {
+			return $this->data->getRawData();
+		}
+		return $this->data;
+	}
 
 	/**
 	 * method to receive all group rates of the current plan

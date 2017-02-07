@@ -476,13 +476,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$paymentParams['source'] = $customer['source'];
 			$gatewayDetails = $subscriber['payment_gateway'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
-			$paymentResponse = Billrun_Bill::pay('credit', array($paymentParams), $options);
+			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
 	}

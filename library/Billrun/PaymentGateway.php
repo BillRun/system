@@ -528,7 +528,7 @@ abstract class Billrun_PaymentGateway {
 					'$gt' => Billrun_Bill::precision,
 				),
 				'payment_method' => array(
-					'$in' => array('Credit'),
+					'$in' => array('automatic'),
 				),
 				'suspend_debit' => NULL,
 			),

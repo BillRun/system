@@ -242,7 +242,7 @@ blockquote:last-child { margin-bottom: 0; }
 .footer .section { border-top: 2px solid #404041; border-bottom: none; }
 .footer li { display: inline-block; margin-right: 10px; }
 .footer .fa { font-size: 25px; }
-.footer .credentials .text { display: inline-block; vertical-align: middle; margin-right:10px; }
+.footer .credentials .text { display: inline-block; vertical-align: middle; margin-right:5px; }
 .footer .credentials img { display: inline-block; vertical-align: middle; }
 /* ------------------------------------------------------------ *\
 	Main
@@ -337,7 +337,7 @@ input:-webkit-autofill { -webkit-text-fill-color: inherit; -webkit-box-shadow: 0
 	Table
 \* ------------------------------------------------------------ */
 tr { page-break-inside: avoid; }
-.table-default { border-bottom:2px solid; }
+.table-default { border-bottom:2px solid;  page-break-inside: avoid; margin-bottom: 100px;}
 .table-default th { text-align: left; border-bottom: 2px solid #404041; font-weight:300; color: #818285; padding-bottom:4px; padding-top: 4px; }
 .table-default th:nth-child(4),
 .table-default td:nth-child(4),
@@ -349,6 +349,7 @@ tr { page-break-inside: avoid; }
 .table-default tfoot td { background:transparent; font-size:44px; font-weight:300; border-top:7px double; border-bottom:7px double; }
 .table-default tbody tr:last-child td { background:transparent; }
 .table-default tbody .last td { background:transparent; border-bottom:2px solid; }
+.table-default tbody tr.grand-total { background:transparent; font-size:44px; font-weight:300; border-top:7px double; border-bottom:7px double; }
 .table-default tbody .total td { background:transparent; border-bottom:2px solid; }
 .table-default-primary { border-bottom:0; max-width: 692px; }
 /* ------------------------------------------------------------ *\
@@ -384,4 +385,20 @@ tr { page-break-inside: avoid; }
 
 .section-invoice-details tbody{
 	font-size: 16px;
+}
+.section-invoice-head .table-inline { 
+	width:325px; 
+}
+
+img.billrun-logo {
+	width:125px;
+	object-fit:contain;
+}
+
+.sumup .table-default .complex-sumup th:last-child,.sumup .table-default .complex-sumup td:last-child {
+	width:155px;
+}
+
+.sumup .table-default .complex-sumup th:first-child,.sumup .table-default .complex-sumup td:first-child {
+	width: 400px;
 }
