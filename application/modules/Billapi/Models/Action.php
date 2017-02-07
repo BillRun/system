@@ -13,62 +13,83 @@
  * @since    5.3
  */
 abstract class Models_Action {
-	
+
+	use Models_Verification;
+
 	/**
 	 * Singleton handler
 	 * 
 	 * @var Models_Action
 	 */
 	protected static $instance = null;
-	
+
 	/**
 	 * data container of the operation
 	 * 
 	 * @var array
 	 */
 	protected $data = array();
-	
+
 	/**
 	 * request container of the operation
 	 * 
 	 * @var array
 	 */
-	protected $request= array();
-	
+	protected $request = array();
+
 	/**
 	 * settings (config) container of the operation
 	 * 
 	 * @var array
 	 */
 	protected $settings = array();
-	
+
+	/**
+	 * The wanted query
+	 * @var array
+	 */
+	protected $query = array();
+
+	/**
+	 * The new data
+	 * @var array
+	 */
+	protected $update = array();
+
 	/**
 	 * collection handler
 	 * 
 	 * @var array
 	 */
 	protected $collectionHandler = array();
-	
+
 	/**
 	 * constructor
 	 * 
 	 * @param array $params parameters of the action
 	 */
 	protected function __construct(array $params = array()) {
-		if (isset($params['data'])) {
-			$this->setData($params['data']);
-		}
 		if (isset($params['request'])) {
 			$this->request = $params['request'];
 		}
+		
 		if (isset($params['settings'])) {
 			$this->settings = $params['settings'];
 		}
+		
+		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
+		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		list($this->query, $this->update) = $this->validateRequest($query, $update, $this->request['collection'], $this->settings, 999999, false);
+		
+		if (isset($params['data'])) {
+			$this->setData($params['data']);
+		}
+		
 		if (isset($this->request['collection'])) {
 			$this->collectionHandler = Billrun_Factory::db()->{$this->getCollectionName() . 'Collection'}();
 		}
 	}
-	
+
 	/**
 	 * method to get the collection name of the action
 	 * by default it passed in the request
@@ -78,7 +99,7 @@ abstract class Models_Action {
 	protected function getCollectionName() {
 		return $this->request['collection'];
 	}
-	
+
 	/**
 	 * get action instance
 	 * 
@@ -98,7 +119,7 @@ abstract class Models_Action {
 		}
 		return self::$instance;
 	}
-	
+
 	/**
 	 * set the data of the operation
 	 * 
@@ -107,7 +128,7 @@ abstract class Models_Action {
 	public function setData($d) {
 		$this->data = $d;
 	}
-	
+
 	/**
 	 * retrieve the data of the operation
 	 * 
@@ -116,6 +137,6 @@ abstract class Models_Action {
 	public function getData() {
 		return $this->data;
 	}
-	
+
 	abstract public function execute();
 }
