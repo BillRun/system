@@ -44,11 +44,11 @@ class GetController extends BillapiController {
 			$pagesize = $this->action->getSize();
 			if ($pagesize > 0 && $resCount > $pagesize) { // if we have indication that we have next page
 				unset($res[$resCount-1]);
-				$this->output->details = $res;
 				$this->output->next_page = true;
 			} else {
 				$this->output->next_page = false;
 			}
+			$this->output->details = $res;
 			return $res;
 		} catch (Exception $ex) {
 			$this->output->status = 0;
