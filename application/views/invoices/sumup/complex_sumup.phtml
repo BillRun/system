@@ -14,7 +14,8 @@
 			$endKey = end($subscriptionList);
 			foreach ($subscriptionList as $key =>$aggregated) { ?>	
 			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
-				<td class='desc'><?php echo ucfirst($aggregated['desc']); ?></td>
+				<!-- TODO : Remove this preg_replace code it`s only  here  to fix some issue with the  invoice for HighComm -->
+				<td class='desc'><?php echo preg_replace('/january$/','January', preg_replace('/002$/','',ucfirst($aggregated['desc']))); ?></td>
 				<td class='qty'><?php echo $aggregated['count']; ?></td>
 				<td class='rate'><?php echo  number_format( (!empty($aggregated['rate']) ? $aggregated['rate'] : $aggregated['amount']),2) ; ?></td>
 				<td class='amount'><?php echo '$' . number_format($aggregated['amount'], 2); ?></td>
