@@ -17,22 +17,7 @@ class UniquegetController extends GetController {
 
 	public function init() {
 		parent::init();
-		$request = $this->getRequest();
 		$this->params['field'] = $this->collection == 'rates' ? 'key' : 'name';
 	}
 	
-	protected function runOperation() {
-		$res = parent::runOperation();
-		$resCount = count($res);
-		$pagesize = $this->action->getSize();
-		if ($pagesize > 0 && $resCount > $pagesize) { // if we have indication that we have next page
-			unset($res[$resCount-1]);
-			$this->output->details = $res;
-			$this->output->next_page = true;
-		} else {
-			$this->output->next_page = false;
-		}
-		return $res;
-	}
-
 }

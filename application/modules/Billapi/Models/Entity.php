@@ -14,6 +14,8 @@
  */
 class Models_Entity {
 
+	use Models_Verification;
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -103,7 +105,7 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], $this->errorBase + 1);
 		$this->query = $translatedQuery;
 		$this->update = $translatedUpdate;
 		foreach ($this->availableOperations as $operation) {
@@ -120,73 +122,6 @@ class Models_Entity {
 		}
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
-		}
-	}
-
-	/**
-	 * Returns the translated (validated) request
-	 * @param array $query the query parameter
-	 * @param array $data the update parameter
-	 * 
-	 * @return array
-	 * 
-	 * @throws Billrun_Exceptions_Api
-	 * @throws Billrun_Exceptions_InvalidFields
-	 */
-	protected function validateRequest($query, $data) {
-		$options = array();
-		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
-			$options['fields'] = array();
-			$translated[$type] = array();
-			foreach (Billrun_Util::getFieldVal($this->config[$this->action][$type], array()) as $param) {
-				$name = $param['name'];
-				$isGenerated = (isset($param['generated']) && $param['generated']);
-				if (!isset($params[$name])) {
-					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
-						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
-					}
-					if (!$isGenerated) {
-						continue;
-					}
-				}
-				$options['fields'][] = array(
-					'name' => $name,
-					'type' => $param['type'],
-					'preConversions' => isset($param['pre_conversion']) ? $param['pre_conversion'] : [],
-					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
-					'options' => [],
-				);
-				if (!$isGenerated) {
-					$knownParams[$name] = $params[$name];
-				} else { // on generate field the value will be automatically generate
-					$knownParams[$name] = null;
-				}
-				unset($params[$name]);
-			}
-			if ($options['fields']) {
-				$translatorModel = new Api_TranslatorModel($options);
-				$ret = $translatorModel->translate($knownParams);
-				$translated[$type] = $ret['data'];
-//				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
-				if (!$ret['success']) {
-					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
-				}
-			}
-			if (!Billrun_Util::getFieldVal($this->config[$this->action]['restrict_query'], 1) && $params) {
-				$translated[$type] = array_merge($translated[$type], $params);
-			}
-		}
-		$this->verifyTranslated($translated);
-		return array($translated['query_parameters'], $translated['update_parameters']);
-	}
-
-	/**
-	 * Verify the translated query & update
-	 * @param array $translated
-	 */
-	protected function verifyTranslated($translated) {
-		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
-			throw new Billrun_Exceptions_Api($this->errorBase + 2, array(), 'No query/update was found or entity not supported');
 		}
 	}
 

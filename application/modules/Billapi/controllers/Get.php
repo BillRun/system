@@ -39,15 +39,23 @@ class GetController extends BillapiController {
 		}
 		$this->output->status = 1;
 		try {
-			$this->output->details = $this->action->execute();
+			$res = $this->action->execute();
+			$resCount = count($res);
+			$pagesize = $this->action->getSize();
+			if ($pagesize > 0 && $resCount > $pagesize) { // if we have indication that we have next page
+				unset($res[$resCount-1]);
+				$this->output->details = $res;
+				$this->output->next_page = true;
+			} else {
+				$this->output->next_page = false;
+			}
+			return $res;
 		} catch (Exception $ex) {
 			$this->output->status = 0;
 			$this->output->errorCode = $ex->getCode();
 			$this->output->desc = $ex->getMessage();
 			Billrun_Factory::log($this->output->errorCode . ': ' . $this->output->desc, Zend_Log::ERR);
 		}
-		
-		return $this->output->details;
 	}
 
 }

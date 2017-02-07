@@ -40,9 +40,9 @@ class Models_Action_Get extends Models_Action {
 	protected $sort = array();
 
 	public function execute() {
-		if (!empty($this->request['query'])) {
-			$this->query = (array) json_decode($this->request['query'], true);
-		}
+//		if (!empty($this->request['query'])) {
+//			$this->query = (array) json_decode($this->request['query'], true);
+//		}
 
 		if (isset($this->request['page']) && is_numeric($this->request['page'])) {
 			$this->page = (int) $this->request['page'];
