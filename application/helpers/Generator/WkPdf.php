@@ -45,8 +45,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
 		
 		$this->paths = array(
-			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$this->stamp.'/',
-			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$this->stamp.'/',
+			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/',
+			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/',
 			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $this->stamp . '/',
 		);
 		
