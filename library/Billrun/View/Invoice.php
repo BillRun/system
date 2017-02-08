@@ -35,11 +35,17 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 	}
 	
-	public function getLineUsageName($line) {
+	public function getLineUsageName($line,$rate) {
 		$usageName = '';
-		$typeMapping = array('flat' => 'name', 'service' => 'name');
-		if(in_array($line['type'],array_keys($typeMapping))) {
-			$usageName = $line[$typeMapping[$line['type']]];
+		$typeMapping = array('flat' => array('rate'=>'description','line'=>'name'), 
+							 'service' => array('rate'=>'description','line'=>'name'),
+							'credit' => array('rate'=>'description','line'=>'arate_key'));
+		if(in_array($line['type'],array_keys($typeMapping))) {			
+			$usageName = !empty($line['description'])	
+									? $line['description'] 
+									: (empty($rate[$typeMapping[$line['type']]['rate']]) 
+											?  $line[$typeMapping[$line['type']]['line']] 
+											: $rate[$typeMapping[$line['type']]['rate']]);
 		} else {
 			$usageName = !empty($line['description']) ? $line['description'] : $line['arate_key'];
 		}
@@ -53,19 +59,19 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			foreach($subLines as $line) {
 				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0) {
 					if($line['type'] == 'credit') {
-						$flatData = Billrun_Rates_Util::getRateByRef($line['arate'])['rates.call.BASE.rate'][0];
+						$rateData = Billrun_Rates_Util::getRateByRef($line['arate'])['rates.call.BASE.rate'][0];
 					} else {
 						$flatRate = $line['type'] == 'flat' ? 
 							new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
 							new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
-						$flatData = $flatRate->getData();
+						$rateData = $flatRate->getData();
 					}
 					$line->collection(Billrun_Factory::db()->linesCollection());
-					$name = $this->getLineUsageName($line);
+					$name = $this->getLineUsageName($line,$rateData);
 					$subscriptionList[$name]['desc'] = $name;	
 					$subscriptionList[$name]['type'] = $typeNames[$line['type']];
 					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($flatData['price'][0]['price']) ? $flatData['price'][0]['price'] : $flatData['price']));
+					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($rateData['price'][0]['price']) ? $rateData['price'][0]['price'] : $rateData['price']));
 					@$subscriptionList[$name]['count']++;
 					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];
 				}
