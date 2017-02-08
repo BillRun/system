@@ -93,9 +93,13 @@ class Models_Entity {
 	protected $availableOperations = array('query', 'update', 'sort');
 
 	public function __construct($params) {
-		$this->collectionName = $params['collection'];
+		if ($params['collection'] == 'accounts') {
+			$this->collectionName = 'subscribers';
+		} else {
+			$this->collectionName = $params['collection'];
+		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
-		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
+		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -105,7 +109,7 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], $this->errorBase + 1);
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->query = $translatedQuery;
 		$this->update = $translatedUpdate;
 		foreach ($this->availableOperations as $operation) {
