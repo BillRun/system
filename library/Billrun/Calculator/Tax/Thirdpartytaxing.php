@@ -123,12 +123,13 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		foreach($data['tax_data'] as $tax_data) {
 			$tax_data = (array) $tax_data;
 			$retTaxData=  isset($retLinesTaxesData[$tax_data['unique_id']]) ? $retLinesTaxesData[$tax_data['unique_id']] : ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
+			$calculatedTaxRate = !empty(0 + $tax_data['initial_charge']) ? ($tax_data['percenttaxable']) * ( ($tax_data['adjusted_tax_base']/$tax_data['initial_charge']) ) * $tax_data['taxrate'] : $tax_data['taxrate'];
 			
 			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
-				$retTaxData['total_tax'] += $tax_data['taxrate'];
+				$retTaxData['total_tax'] += $calculatedTaxRate;
 			}			
-			$retTaxData['taxes'][] = array( 'tax'=> $tax_data['taxrate'],
+			$retTaxData['taxes'][] = array( 'tax'=> $calculatedTaxRate,
 											'amount' => $tax_data['taxamount'] ,
 											'type' => $tax_data['taxtype'],
 											'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
@@ -144,13 +145,18 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$rowIsNotUsage = in_array($availableData['row']['type'],array('flat','service','credit'));
 		
 		//switch destination and origin for incoming calls
-		if(!$rowIsNotUsage && strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
-			$apiInputData['bill_num'] = $apiInputData['term_num'];
-			$apiInputData['term_num'] = $apiInputData['orig_num'];
-			$apiInputData['orig_num'] = $apiInputData['bill_num'];
+		if(!$rowIsNotUsage ) {
+			$apiInputData['bill_num'] = $apiInputData['location_a'];
+			if( strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
+				$apiInputData['term_num'] = $apiInputData['bill_num'];
+			} else {
+				$apiInputData['orig_num'] = $apiInputData['bill_num'];
+			}
+			
+				
 		}
 		$apiInputData['record_type'] = $rowIsNotUsage ? 'S' : 'C';
-		$apiInputData['invoice_date'] = date('Ymd',$availableData['row']['urt']->sec);
+		$apiInputData['invoice_date'] = date('Ymd',  Billrun_Billingcycle::getStartTime($availableData['row']['billrun']));
 		if(!$rowIsNotUsage || $availableData['row']['type'] == 'credit') {
 			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
 		} else {
