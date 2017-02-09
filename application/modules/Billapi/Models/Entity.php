@@ -161,6 +161,12 @@ class Models_Entity {
 	public function create() {
 		$this->action = 'create';
 		unset($this->update['_id']);
+		if (empty($this->update['from'])) {
+			$this->update['from'] = new MongoDate();
+		}
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+49 years'));
+		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);
