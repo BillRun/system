@@ -184,7 +184,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$flatData = $flatRate->getData();
 		$retData['productcode'] = $flatData['tax.product_code'];
 		$retData['servicecode'] = $flatData['tax.service_code'];
-			
+		if($flatData['tax.safe_harbor_override_pct']) {
+			$retData['safe_harbor_override_flag'] = 'Y';
+			$retData['safe_harbor_override_pct'] = $flatData['tax.safe_harbor_override_pct'];
+		}	
 		return $retData;
 	}
 	
@@ -197,6 +200,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		
 		$retData['productcode'] = $rate['tax.product_code'];
 		$retData['servicecode'] = $rate['tax.service_code'];
+		if($rate['tax.safe_harbor_override_pct']) {
+			$retData['safe_harbor_override_flag'] = 'Y';
+			$retData['safe_harbor_override_pct'] = $rate['tax.safe_harbor_override_pct'];
+		}
 			
 		return $retData;
 	}
