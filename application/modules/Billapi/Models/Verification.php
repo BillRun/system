@@ -29,7 +29,8 @@ trait Models_Verification {
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
 			$translated[$type] = array();
-			foreach (Billrun_Util::getFieldVal($config[$type], array()) as $param) {
+			$configParams = Billrun_Util::getFieldVal($config[$type], array());
+			foreach ($configParams as $param) {
 				$name = $param['name'];
 				$isGenerated = (isset($param['generated']) && $param['generated']);
 				if (!isset($params[$name])) {
