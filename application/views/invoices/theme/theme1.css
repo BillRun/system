@@ -260,8 +260,8 @@ blockquote:last-child { margin-bottom: 0; }
 /* ------------------------------------------------------------ *\
 	Wrapper
 \* ------------------------------------------------------------ */
-.wrapper { min-height: 100vh; margin-bottom: -80px; }
-.wrapper:after { content: ""; display: block; height: 80px; }
+.wrapper { min-height: 100vh; /*margin-bottom: -80px;*/ }
+/*.wrapper:after { content: ""; display: block; height: 80px; }*/
 /* ------------------------------------------------------------ *\
 	III. Modules
 \* ------------------------------------------------------------ */
