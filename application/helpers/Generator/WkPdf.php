@@ -76,7 +76,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
 		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
-		$this->view->assign('details_table_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', ''));
+		$this->view->assign('details_table_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', '/application/views/invoices/details/details_table.phtml'));
 		$this->view->assign('usage_line_types',  Billrun_Factory::config()->getFileTypes());
 		$this->view->assign('flat_line_types',  Billrun_Factory::config()->getConfigValue(self::$type . '.flat_line_types', array('flat','service','credit')));
 		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', '/application/views/invoices/tax/tax.phtml'));
