@@ -36,7 +36,19 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected $ftp_path = '/';
 	protected $ftpConfig = false;
 	
+	/**
+	 * the time which after can delete files from the ftp server.
+	 * 
+	 * @param string
+	 */
 	protected $file_delete_orphan_time;
+	
+	/**
+	 * if true delete files after fixed orphan time. 
+	 * 
+	 * @param string
+	 */
+	protected $delete_old_files;
 
 	protected $checkReceivedSize = true;
 	public function __construct($options) {
@@ -57,6 +69,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		
 		if (isset($options['receiver']['orphan_delete_time'])){
 			$this->file_delete_orphan_time = $options['receiver']['orphan_delete_time'];
+		}
+		
+		if (isset($options['delete']['old_files'])){
+			$this->delete_old_files = $options['delete']['old_files'];
 		}
 		
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
@@ -245,7 +261,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	}
 	
 	protected function isLongTimeSinceReceive($filename, $type, $more_fields = array()){
-		if (Billrun_Factory::config()->getConfigValue('delete.old_files', FALSE) != TRUE) {
+		if ($this->delete_old_files != TRUE) {
 			return FALSE;
 		}
 		$log = Billrun_Factory::db()->logCollection();
