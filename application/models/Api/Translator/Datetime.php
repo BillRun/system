@@ -22,7 +22,7 @@ class Api_Translator_DatetimeModel extends Api_Translator_TypeModel {
 	public function internalTranslateField($data) {
 		try {
 			if (isset($data['sec'])) {
-				return new MongoDate(strtotime($data['sec']));
+				return new MongoDate($data['sec']);
 			}
 			return new MongoDate(strtotime($data));
 		} catch (MongoException $ex) {
