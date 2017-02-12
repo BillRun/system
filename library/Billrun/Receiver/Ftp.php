@@ -55,7 +55,10 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			$this->checkReceivedSize = $options['received']['check_received_size'];
 		}
 		
-		$this->file_delete_orphan_time = Billrun_Factory::config()->getConfigValue('nsn.orphan_delete_time');
+		if (isset($options['receiver']['orphan_delete_time'])){
+			$this->file_delete_orphan_time = $options['receiver']['orphan_delete_time'];
+		}
+		
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
 		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');
@@ -121,6 +124,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 
 			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields) ) {
 				if ($this->isLongTimeSinceReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
+					Billrun_Log::getInstance()->log("Deleting File " . $file->name, Zend_log::NOTICE);
 					$file->delete();//delete file
 				}		
 				continue;	
@@ -241,18 +245,26 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	}
 	
 	protected function isLongTimeSinceReceive($filename, $type, $more_fields = array()){
+		if (Billrun_Factory::config()->getConfigValue('delete.old_files', FALSE) != TRUE) {
+			return FALSE;
+		}
 		$log = Billrun_Factory::db()->logCollection();
 		$orphan_window = $this->file_delete_orphan_time;
+		if (empty($orphan_window)) {
+			return FALSE;
+		}
 		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		$orphan_time = date("Y-m-d H:i:s", time() - $orphan_window);
 		$query = array(
 			'stamp' => $logData['stamp'],
 			'file_name' => $filename,
 			'source' => 'nsn',
-			'received_time' => array('$lt' => new MongoDate(time() - $orphan_window)),
+			'received_time' => array('$lt' => $orphan_time),
+			'process_time' => array('$exists' => 1)
 		);
 
 		$result = $log->query($query)->cursor()->current();	
-		if (empty($result)){
+		if (empty($result) || $result->isEmpty()){
 			return FALSE;
 		}
 		
