@@ -37,7 +37,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 												),
 											),
 											'invoice_id'=> array('$exists'=>1)
-						) )->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(-1);
+						) )->cursor()->timeout(-1);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
