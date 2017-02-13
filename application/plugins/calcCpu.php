@@ -228,8 +228,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$calc_options = array('type' => 'customerPricing');
 				break;
 
+			case 'tax':
 			case 'unify':
-				$calc_options = array('type' => 'unify');
+				$calc_options = array('type' => $calc_name);
 				break;
 
 			default :
