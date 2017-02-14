@@ -69,10 +69,8 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function validateFields($credit_row) {
-		$mandatoryFields = array('sid', 'aid', 'rate', 'time');
-		$additionalFields = array('aprice', 'usagev', 'usaget');
+		$fields = Billrun_Factory::config()->getConfigValue('credit.fields', array());
 		$ret = array();
-		$missingFields = array();
 		
 		// credit row must have aprice or usagev+usaget, but not all 3
 		if (((!isset($credit_row['aprice'])) &&
@@ -81,28 +79,41 @@ class CreditAction extends ApiAction {
 			return $this->setError('Invalid pricing fields', $credit_row);
 		}
 		
-		foreach ($mandatoryFields as $mandatoryField) {
-			if (is_array($mandatoryField)) {
-				foreach ($mandatoryField as $mandatoryFieldFromFew) {
-					if (isset($credit_row[$mandatoryFieldFromFew])) {
-						$ret[$mandatoryFieldFromFew] = $credit_row[$mandatoryFieldFromFew];
-						continue 2;
+		foreach ($fields as $fieldName => $field) {
+			if (isset($field['mandatory']) && $field['mandatory']) {
+				if (isset($credit_row[$fieldName])) {
+					$ret[$fieldName] = $credit_row[$fieldName];
+				} else if (isset($field['alternative_fields']) && is_array($field['alternative_fields'])) {
+					foreach ($field['alternative_fields'] as $alternativeFieldName) {
+						if (isset($credit_row[$alternativeFieldName])) {
+							$ret[$fieldName] = $credit_row[$alternativeFieldName];
+							break;
+						}
+						$this->setError('Following field/s are missing: one of: (' . implode(', ', array_merge(array($fieldName), $field['alternative_fields']))) . ')';
 					}
+				} else {
+					$this->setError('Following field/s are missing: ' . $fieldName);
 				}
-				$missingFields[] = 'one of: (' . implode(', ', $mandatoryField) . ')';
-			} else if (!isset($credit_row[$mandatoryField])) {
-				$missingFields[] = $mandatoryField;
+			} else if (isset($credit_row[$fieldName])) { // not mandatory field
+				$ret[$fieldName] = $credit_row[$fieldName];
+			} else {
+				continue;
 			}
-			$ret[$mandatoryField] = $credit_row[$mandatoryField];
-		}
-		
-		if (!empty($missingFields)) {
-			return $this->setError('Following field/s are missing: ' . implode(', ', $missingFields), $credit_row);
-		}
-		
-		foreach ($additionalFields as $additionalField) {
-			if (isset($credit_row[$additionalField])) {
-				$ret[$additionalField] = $credit_row[$additionalField];
+			
+			if (!empty($field['validator'])) {
+				$validator = Billrun_TypeValidator_Manager::getValidator($field['validator']);
+				if (!$validator) {
+					Billrun_Factory::log('Cannot get validator for field ' .  $fieldName . '. Details: ' . print_r($field, 1));
+					$this->setError('General error');
+				}
+				$params = isset($field['validator_params']) ? $field['validator_params'] : array();
+				if (!$validator->validate($ret[$fieldName], $params)) {
+					$this->setError('Field ' . $fieldName . ' should be of type ' . ucfirst($field['validator']));
+				}
+			}
+			
+			if (!empty($field['conversionMethod'])) {
+				$ret[$fieldName] = call_user_func($field['conversionMethod'], $ret[$fieldName]);
 			}
 		}
 		

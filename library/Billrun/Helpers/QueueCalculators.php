@@ -98,6 +98,7 @@ class Billrun_Helpers_QueueCalculators {
 	}
 	
 	protected function getCalcOptions($calc_name) {
+		$calc_options = array();
 		switch ($calc_name) {
 			case 'rate':
 				$type = ($this->options['credit'] ? 'rate_Credit' : 'rate_Usage');
@@ -113,8 +114,9 @@ class Billrun_Helpers_QueueCalculators {
 				$calc_options = array('type' => 'customerPricing');
 				break;
 
+			case 'tax':
 			case 'unify':
-				$calc_options = array('type' => 'unify');
+				$calc_options = array('type' => $calc_name);
 				break;
 
 			default :

@@ -28,7 +28,9 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		$rowKey = key($this->data['data']);
 		$row = &$this->data['data'][$rowKey];
 		$row['type'] = 'credit';
-		if (!isset($row['urt'])) {
+		if (isset($row['credit_time'])) {
+			$row['urt'] = new MongoDate($row['credit_time']);
+		} else {
 			$row['urt'] = new MongoDate();
 		}
 
