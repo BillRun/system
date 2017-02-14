@@ -178,6 +178,30 @@ class Billrun_Util {
 	public static function startsWith($haystack, $needle) {
 		return !strncmp($haystack, $needle, strlen($needle));
 	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToReadable($billrunKey) {
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date('F Y', $cycleData->start());
+	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
+	}
 
 	/**
 	 * convert corrency.  
@@ -1406,6 +1430,19 @@ class Billrun_Util {
 	public static function getCompanyName() {
 		return Billrun_Factory::config()->getConfigValue('tenant.name', '');
 	}
+
+	public static function getCompanyAddress() {
+		return Billrun_Factory::config()->getConfigValue('tenant.address', '');
+	}
+	public static function getCompanyPhone() {
+		return Billrun_Factory::config()->getConfigValue('tenant.phone', '');
+	}
+	public static function getCompanyWebsite() {
+		return Billrun_Factory::config()->getConfigValue('tenant.website', '');
+	}
+	public static function getCompanyEmail() {
+		return Billrun_Factory::config()->getConfigValue('tenant.email', '');
+	}
 	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
 		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
@@ -1442,6 +1479,18 @@ class Billrun_Util {
 		session_set_cookie_params(
 			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
 		);
+	}
+	
+	public static function isValidIP($subject) {
+		return preg_match('/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', strval($subject));
+	}
+	
+	public static function isValidHostName($subject) {
+		return preg_match('/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/', strval($subject));
+	}
+
+	public static function isValidIPOrHost($subject) {
+		return self::isValidIP($subject) || self::isValidHostName($subject);
 	}
 
 }

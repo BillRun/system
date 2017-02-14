@@ -76,6 +76,7 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
+		$ppPair['unlimited'] = !empty($prepaidRecord['unlimited']);
 
 		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}

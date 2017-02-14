@@ -33,10 +33,8 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * @return int, null if no charge
 	 */
 	public function getPrice() {
-		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($this->cycle->start())));
-		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
-		$price = $this->getPriceByOffset($startOffset);
+		
+		$price = $this->getPriceForcycle($this->cycle);
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
@@ -44,6 +42,13 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		return $price * $fraction;
 	}
 
+	protected function getPriceForcycle($cycle) {
+		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $cycle->end()));
+		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
+		$startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
+		return $this->getPriceByOffset($startOffset);
+	}
+	
 	/**
 	 * Get the price of the current plan
 	 * @param type $startOffset
@@ -51,7 +56,7 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 */
 	protected function getPriceByOffset($startOffset) {
 		foreach ($this->price as $tariff) {
-			if ($tariff['from'] <= $startOffset && $tariff['to'] > $startOffset) {
+			if ($tariff['from'] <= $startOffset && ($tariff['to'] == 'UNLIMITED'? PHP_INT_MAX : $tariff['to']) > $startOffset) {
 				return $tariff['price'];
 			}
 		}

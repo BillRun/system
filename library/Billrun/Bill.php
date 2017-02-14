@@ -505,7 +505,7 @@ abstract class Billrun_Bill {
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
-		if (in_array($method, array('cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
+		if (in_array($method, array('automatic','cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
@@ -556,6 +556,7 @@ abstract class Billrun_Bill {
 			$res = Billrun_Bill_Payment::savePayments($payments);
 			if ($res && isset($res['ok']) && $res['ok']) {
 				if (isset($options['payment_gateway']) && $options['payment_gateway']) {
+					$paymentSuccess = array();
 					foreach ($payments as $payment) {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
@@ -564,6 +565,8 @@ abstract class Billrun_Bill {
 							$paymentStatus = $gateway->pay($gatewayDetails);
 						} catch (Exception $e) {
 							$payment->setGatewayChargeFailure($e->getMessage());
+							$responseFromGateway = array('status' => $e->getCode(), 'stage' => "Rejected");
+							Billrun_Factory::log('Failed to pay bill: ' . $e->getMessage(), Zend_Log::ALERT);
 							continue;
 						}
 						$responseFromGateway = Billrun_PaymentGateway::checkPaymentStatus($paymentStatus, $gateway);
@@ -587,7 +590,7 @@ abstract class Billrun_Bill {
 					}
 				if (!isset($options['collect']) || $options['collect']) {
 					$involvedAccounts = array_unique($involvedAccounts);
-//					CollectAction::collect($involvedAccounts);
+					CollectAction::collect($involvedAccounts);
 				}
 			} else {
 				throw new Exception('Error encountered while saving the payments');

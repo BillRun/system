@@ -57,6 +57,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$rowCount = 0;
 		foreach ($parsedData as $parsedRow) {
 			$row = $this->getBillRunLine($parsedRow);
+			if (!$row){
+				return false;
+			}
 			$row['row_number'] = ++$rowCount;
 			$processedData['data'][$row['stamp']] = $row;
 		}
@@ -68,9 +71,14 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	public function getBillRunLine($rawLine) {
 		$row['uf'] = $this->filterFields($rawLine);
-		$datetime = Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
 
-		$row['urt'] = new MongoDate($datetime->format('U'));
+		$datetime = $this->getRowDateTime($row);
+		if (!$datetime) {
+			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
+			return false;
+		}
+		
+		$row['urt'] = new MongoDate($datetime->format('U'));	
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$row['usagev'] = $this->getLineUsageVolume($row['uf']);
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
@@ -81,6 +89,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['process_time'] = date(self::base_datetimeformat);
 		return $row;
+	}
+	
+	protected function getRowDateTime($row) {
+		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
 	}
 
 	/**

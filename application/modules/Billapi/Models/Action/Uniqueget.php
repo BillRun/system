@@ -13,24 +13,50 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Uniqueget extends Models_Action {
+class Models_Action_Uniqueget extends Models_Action_Get {
 
-	public function execute() {
-		if (empty($this->request['query'])) {
-			$this->request['query'] = array();
-		}
-		return $this->runQuery($this->request['query']);
+	/**
+	 * aggregate field to map the uniqueness
+	 * @var string
+	 */
+	protected $group = 'name';
+
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		$this->initGroup();
 	}
 
 	/**
-	 * Run a DB query against the current collection
-	 * @param array $query
-	 * @return array the result set
+	 * initialize the collection
+	 * 
+	 * @todo override by child class
 	 */
-	protected function runQuery($query, $sort = null) {
+	protected function initGroup() {
+		if ($this->request['collection'] == 'rates') {
+			$this->group = 'key';
+		} else {
+			$this->group = 'name';
+		}
+	}
+
+	protected function runQuery() {
+		$ids = $this->getUniqueIds();
+		$this->query = array(
+			'_id' => array(
+				'$in' => $ids
+			),
+		);
+		return parent::runQuery();
+	}
+
+	/**
+	 * method to aggregate and get uniqueness 
+	 * @return array of mongo ids
+	 */
+	protected function getUniqueIds() {
 		$group = array(
 			'$group' => array(
-				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
+				'_id' => '$' . $this->group,
 				'from' => array(
 					'$min' => '$from'
 				),
@@ -42,7 +68,7 @@ class Models_Action_Uniqueget extends Models_Action {
 				)
 			),
 		);
-		
+
 		if (!isset($this->request['history']) || !$this->request['history']) {
 			$match = array(
 				'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
@@ -57,36 +83,22 @@ class Models_Action_Uniqueget extends Models_Action {
 				),
 			);
 		}
-		$res = $this->collectionHandler->aggregate($match, $group);
+
+		$project = array(
+			'$project' => array(
+				'_id' => 0,
+				'id' => 1,
+			),
+		);
+
+		if (!empty($this->query)) {
+			$match['$match'] = array_merge($match['$match'], $this->query);
+		}
+		$res = $this->collectionHandler->aggregate($match, $group, $project);
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
-		$ids = array_column($aggregatedResults, 'id');
-
-		$find = (array) json_decode($this->request['query'], true);
-		$find['_id'] = array('$in' => $ids);
-		
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
-		} else {
-			$project = array();
-		}
-		
-		$ret = $this->collectionHandler->find($find, $project);
-		
-		if (isset($this->request['page']) && $this->request['page'] != -1) {
-			$res->skip((int) $this->page * (int) $this->size);
-		}
-
-		if (isset($this->request['size']) && $this->request['size'] != -1) {
-			$res->limit((int) $this->size);
-		}
-
-		if ($sort) {
-			$res = $res->sort((array) $sort);
-		}
-		
-		return array_values(iterator_to_array($ret));;
+		return array_column($aggregatedResults, 'id');
 	}
 
 }

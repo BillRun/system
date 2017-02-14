@@ -238,7 +238,7 @@ class Billrun_Cache {
 	 */
 	static public function getInstance(array $args = array()) {
 		if (count($args) < 2) {
-			Billrun_Factory::log('Cache is not configured well. Not enough args to instantiate', Zend_Log::ERR);
+			Billrun_Factory::log('Cache is not configured well. Not enough args to instantiate', Zend_Log::WARN);
 			return false;
 		}
 

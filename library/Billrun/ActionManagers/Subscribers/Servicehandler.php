@@ -17,13 +17,29 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 	 * @return array The array of services to set.
 	 */
 	protected function getSubscriberServices($services) {
-		if(empty($services) || !is_array($services)) {
-			return;
+		if (is_string($services)) {
+			// let's check if this is json
+			$services = @json_decode($services);
 		}
+		if(empty($services) || !is_array($services)) {
+			return array();
+		}
+		
+		// Initialize activation date to now.
+		$serviceAggregateOptions = array("activation" => strtotime("midnight"));
 		
 		$proccessedServices = array();
 		foreach ($services as $current) {
-			$serviceObj = new Billrun_DataTypes_Subscriberservice(array('name' => $current));
+			// Check that it has the name
+			if(!isset($current['name'])) {
+				$proccessedServices[] = $current;
+				continue;
+//				Billrun_Factory::log("Invalid service: " . print_r($current,1));
+//				continue;
+			}
+			
+			$serviceAggregateOptions['name'] = $current['name'];
+			$serviceObj = new Billrun_DataTypes_AggregateSubscriberservice($proccessedServices);
 			if(!$serviceObj->isValid()) {
 				continue;
 			}

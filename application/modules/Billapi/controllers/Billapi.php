@@ -44,33 +44,13 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * @var array
 	 */
 	protected $params = array();
-	
+
 	/**
 	 * config settings of the API
 	 * 
 	 * @var array
 	 */
 	protected $settings = array();
-
-	public function indexAction() {
-		$request = $this->getRequest();
-		$query = json_decode($request->get('query'), TRUE);
-		$update = json_decode($request->get('update'), TRUE);
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		$this->params['query'] = $translatedQuery;
-		$this->params['update'] = $translatedUpdate;
-		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
-		$this->params['settings'] = $this->settings;
-		$res = $this->runOperation();
-		$this->output->status = 1;
-		$this->output->details = $res;
-		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
-	}
-	
-	protected function runOperation() {
-		$entityModel = $this->getModel();
-		return $entityModel->{$this->action}();
-	}
 
 	public function init() {
 		$request = $this->getRequest();
@@ -79,11 +59,11 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->action = strtolower($request->getParam('action'));
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$this->setActionConfig();
-		
+
 		if (!$this->checkPermissions()) {
 			throw new Billrun_Exceptions_NoPermission();
 		}
-		
+
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
@@ -94,6 +74,21 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$errorMsg = isset($pluginStatus['error']['message']) ? $pluginStatus['error']['message'] : 'Operation was cancelled due to 3rd party plugin';
 			throw new Billrun_Exceptions_Api($errorCode, array(), $errorMsg);
 		}
+	}
+
+	public function indexAction() {
+		$request = $this->getRequest();
+		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
+		$this->params['settings'] = $this->settings;
+		$this->runOperation();
+		$this->getResponse()->setHeader('Content-Type', 'application/json');
+		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
+	}
+
+	protected function runOperation() {
+		$entityModel = $this->getModel();
+		$this->output->status = 1;
+		$this->output->details = $entityModel->{$this->action}();
 	}
 
 	/**
@@ -128,6 +123,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * 
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
+	 * @deprecated since version 5.3 moved to Entity model
 	 */
 	protected function validateRequest($query, $data) {
 		$options = array();
@@ -136,11 +132,14 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$translated[$type] = array();
 			foreach (Billrun_Util::getFieldVal($this->settings[$type], array()) as $param) {
 				$name = $param['name'];
+				$isGenerated = (isset($param['generated']) && $param['generated']);
 				if (!isset($params[$name])) {
-					if (isset($param['mandatory']) && $param['mandatory']) {
+					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
 						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
 					}
-					continue;
+					if (!$isGenerated) {
+						continue;
+					}
 				}
 				$options['fields'][] = array(
 					'name' => $name,
@@ -168,7 +167,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->verifyTranslated($translated);
 		return array($translated['query_parameters'], $translated['update_parameters']);
 	}
-	
+
 	/**
 	 * authentication & authorization method to bill api
 	 * 
@@ -180,12 +179,12 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		if (Billrun_Utils_Security::validateData($this->getRequest()->getRequest())) { // validation by secret
 			return true;
 		}
-		
+
 		if (!isset($this->settings['permission'])) {
 			Billrun_Factory::log("No permissions settings for API call.", Zend_Log::ERR);
 			return false;
 		}
-		
+
 		$permission = $this->settings['permission'];
 		$user = Billrun_Factory::user();
 		if (!$user || !$user->valid()) {
@@ -198,6 +197,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	/**
 	 * Verify the translated query & update
 	 * @param array $translated
+	 * @deprecated since version 5.3 moved to entity model
 	 */
 	protected function verifyTranslated($translated) {
 		if (!$translated['query_parameters'] && !$translated['update_parameters']) {

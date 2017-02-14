@@ -85,6 +85,7 @@ class Billrun_Helpers_QueueCalculators {
 			}
 			$index++;
 		}
+		Billrun_Factory::log('Plugin calc cpu end', Zend_Log::INFO);
 		return true;
 	}
 	
@@ -180,12 +181,12 @@ class Billrun_Helpers_QueueCalculators {
 	}
 	
 	public function release() {
-	foreach ($this->tx_saved_rows as $row) {
-		Billrun_Balances_Util::removeTx($row);
-	}
-	if (isset($this->unifyCalc)) {
-		$this->unifyCalc->releaseAllLines();
-	}
+		foreach ($this->tx_saved_rows as $row) {
+			Billrun_Balances_Util::removeTx($row);
+		}
+		if (isset($this->unifyCalc)) {
+			$this->unifyCalc->releaseAllLines();
+		}
 	}
 
 }

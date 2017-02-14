@@ -118,7 +118,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 	
 	protected function translateSingleCase($key, $value) {
 		if(in_array($key, array("from", "to"))) {
-			return strtotime($value);
+			return new MongoDate(strtotime($value));
 		}
 		return $value;
 	}
@@ -273,12 +273,12 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 			return false;
 		}
 		
-		
 		try{
 			// Test parsing.
 			$parseResult = $action->parse($test);
 		} catch(Billrun_Exceptions_Base $ex) {
 			$parseResult = false;
+			Billrun_Factory::log()->logCrash($ex, Zend_Log::DEBUG);
 		}
 		
 		if(!$parseResult) {
@@ -289,6 +289,7 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		try {
 			$result = $action->execute();
 		} catch (Billrun_Exceptions_Base $ex) {
+			Billrun_Factory::log()->logCrash($ex, Zend_Log::DEBUG);
 			$result = json_decode($ex->output(), 1);
 		}
 		
@@ -335,8 +336,9 @@ abstract class Tests_Api_Base_Action extends Tests_TestWrapper {
 		}
 		
 		$details = $results['details'];
-		// Remove mongo identifications.
-		unset($details['_id']);
+		foreach ($details as &$value) {
+			unset($value['_id']);
+		}
 		
 		return $details;
 	}

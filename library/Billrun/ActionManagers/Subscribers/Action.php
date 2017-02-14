@@ -10,7 +10,7 @@
  * This is a prototype for a subscriber action.
  *
  */
-abstract class Billrun_ActionManagers_Subscribers_Action {
+abstract class Billrun_ActionManagers_Subscribers_Action implements Billrun_ActionManagers_IAPIAction {
 
 	use Billrun_ActionManagers_ErrorReporter;
 	
@@ -59,12 +59,14 @@ abstract class Billrun_ActionManagers_Subscribers_Action {
 	
 	protected function initSubscriberType($input) {
 		$subscriberTypes = Billrun_Factory::config()->getConfigValue('subscribers.types', array('account', 'subscriber'));
-		if (empty($this->type = $input->get('type')) ||
-			!in_array($this->type, $subscriberTypes)) {
+		$type = $input->get('type');
+		if (empty($type) ||
+			!in_array($type, $subscriberTypes)) {
 			$errorCode =  7;
 			$this->reportError($errorCode, Zend_Log::NOTICE);
 			return false;
 		}		
+		$this->type = $type;
 		return true;
 	}
 	
