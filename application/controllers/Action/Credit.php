@@ -65,7 +65,15 @@ class CreditAction extends ApiAction {
 	
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
+		$ret['skip_calcs'] = $this->getSkipCalcs($ret);
 		return $ret;
+	}
+	
+	protected function getSkipCalcs($row) {
+		if (isset($row['aprice'])) {
+			return array('pricing', 'rate', 'tax', 'unify');
+		}
+		return array('unify');
 	}
 	
 	protected function validateFields($credit_row) {

@@ -31,7 +31,7 @@ class Billrun_Helpers_QueueCalculators {
 	protected $options = array();
 	
 	protected $realtime = false;
-	
+
 	public function __construct($options) {
 		$this->options = $options;
 		$this->realtime = (isset($this->options['realtime']) ? $this->options['realtime'] : false);
@@ -57,7 +57,7 @@ class Billrun_Helpers_QueueCalculators {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
 					$line['realtime'] = $this->realtime;
 					$entity = new Mongodloid_Entity($line);
-					if ($calc->isLineLegitimate($entity)) {
+					if (!$this->shouldSkipCalc($line, $calc_name) && $calc->isLineLegitimate($entity)) {
 						if ($calc->updateRow($entity) !== FALSE) {
 							if ($this->isLastCalc($calc_name, $last_calc)) {
 								$processor->unsetQueueRow($entity['stamp']);
@@ -135,32 +135,47 @@ class Billrun_Helpers_QueueCalculators {
 		return ($calc_name == $last_calc);
 	}
 	
+	protected function shouldSkipCalc($line, $calc_name) {
+		if (empty($line['skip_calcs'])) {
+			return false;
+		}
+		return (in_array($calc_name, $line['skip_calcs']));
+	}
+	
 	protected function unifyCalc(Billrun_Processor $processor, &$data) {
-		if (in_array('unify', $this->queue_calculators)) {
-			$this->unifyCalc = null;
-			$queue_data = $processor->getQueueData();
-			Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
-			foreach ($data['data'] as $key => &$line) {
-				$this->unifyCalc = Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
-				$this->unifyCalc->prepareData($data['data']);
-				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == 'pricing') {
-					$entity = new Mongodloid_Entity($line);
-					if ($this->unifyCalc->isLineLegitimate($entity)) {
-						$this->unifyCalc->updateRow($entity);
-					} else {
-						//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
-						// if this is last calculator, remove from queue
-						if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify') {
-							$processor->unsetQueueRow($entity['stamp']);
-						} else {
-							$processor->setQueueRowStep($entity['stamp'], 'unify');
-						}
-					}
-
-					$line = $entity->getRawData();
-				}
+		if (!in_array('unify', $this->queue_calculators)) {
+			return;
+		}
+		
+		$this->unifyCalc = null;
+		$queue_data = $processor->getQueueData();
+		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
+		foreach ($data['data'] as $key => &$line) {
+			if ($this->shouldSkipCalc($line, 'unify')) {
+				$processor->unsetQueueRow($line['stamp']);
+				continue;
 			}
+			$this->unifyCalc = Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
+			$this->unifyCalc->prepareData($data['data']);
+			if (isset($queue_data[$line['stamp']]) && in_array($queue_data[$line['stamp']]['calc_name'] , array('pricing', 'tax'))) {
+				$entity = new Mongodloid_Entity($line);
+				if ($this->unifyCalc->isLineLegitimate($entity)) {
+					$this->unifyCalc->updateRow($entity);
+				} else {
+					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
+					// if this is last calculator, remove from queue
+					if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify') {
+						$processor->unsetQueueRow($entity['stamp']);
+					} else {
+						$processor->setQueueRowStep($entity['stamp'], 'unify');
+					}
+				}
 
+				$line = $entity->getRawData();
+			}
+		}
+
+		if ($this->unifyCalc) {
 			$this->unifyCalc->updateUnifiedLines();
 
 			//remove lines that where succesfully unified / needed archive only.
