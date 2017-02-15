@@ -1,6 +1,6 @@
 <?php
 
-$CONFIG_FILE = '/home/tomfeigin/projects/billrun/system_tests/CustomerAggregator.ini';
+$CONFIG_FILE = dirname(__FILE__) .'/CustomerAggregator.ini';
 $CONFIGURATION = loadConfigurations();
 
 // connect to mongodb
@@ -9,27 +9,37 @@ $subColl = getSubscriberCollection($CONFIGURATION, $m);
 $planColl = getPlansCollection($CONFIGURATION, $m);
 $invoiceColl = getInvoiceCollection($CONFIGURATION, $m);
 $cycleColl = getCycleCollection($CONFIGURATION, $m);
+$linesColl = getLinesCollection($CONFIGURATION, $m);
+$servicesColl = getServicesCollection($CONFIGURATION, $m);
 
-// Get the subscribers before the test.
+// Get current collections
 $plansBefore = getBefore($planColl);
 $subsBefore = getBefore($subColl);
 $invoiceBefore = getBefore($invoiceColl);
 $cycleBefore = getBefore($cycleColl);
+$linesBefore = getBefore($linesColl);
+$servicesBefore = getBefore($servicesColl);
 
-// Erase the subscribers and plans collections.
+// Erase All
 $planColl->remove(array());
 $subColl->remove(array());
 $invoiceColl->remove(array());
 $cycleColl->remove(array());
+$linesColl->remove(array());
+$servicesColl->remove(array());
 
 handlePlans($planColl, $CONFIGURATION);
-handleSubscribers($subColl, $invoiceColl, $cycleColl, $CONFIGURATION);
+handleServices($servicesColl, $CONFIGURATION);
+handleSubscribers($subColl, $invoiceColl, $cycleColl, $linesColl, $CONFIGURATION);
 
 // Erase the subscribers and plans collections.
 $planColl->remove(array());
 $subColl->remove(array());
 $invoiceColl->remove(array());
 $cycleColl->remove(array());
+$linesColl->remove(array());
+$servicesColl->remove(array());
+
 
 // Put them all back
 if(!empty($subsBefore)) {
@@ -49,11 +59,21 @@ if(!empty($cycleBefore)) {
 	$cycleColl->batchInsert($cycleBefore);
 }
 
-function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceColl,MongoCollection $cycleColl, $config) {
+if(!empty($linesBefore)) {
+	$linesColl->batchInsert($linesBefore);
+}
+ 
+if(!empty($servicesColl)) {
+	$servicesColl->batchInsert($servicesBefore);
+}
+
+
+
+function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceColl,MongoCollection $cycleColl,MongoCollection $linesColl, $config) {
 	// Get the subscriber data files
 	$subData = $config['subscribers']['data'];
 	foreach ($subData as $dataFile) {
-		$currData = file_get_contents($dataFile);
+		$currData = file_get_contents(dirname(__FILE__).$dataFile);
 		$jsonData = json_decode($currData, true);
 		if($jsonData === null) {
 			echo("Skipping " . $dataFile . ". Cannot decode json.\n");
@@ -81,28 +101,28 @@ function handleSubscribers(MongoCollection $subColl, MongoCollection $invoiceCol
 		$subColl->remove();
 		$invoiceColl->remove(array());
 		$cycleColl->remove(array());
+		$linesColl->remove(array());
 		$subColl->batchInsert($testData);
 		
 		aggregate($config);
-		
 		generate($config, $testName);
-
+		
+		
 		// Get the invoice data
 		$invoice = $invoiceColl->find()->getNext();
 		if(!$invoice) {
-			echo("INVOICE WAS NOT CREATED!\n");
+			failed("INVOICE WAS NOT CREATED!");
 			continue;
 		}
 		
-		$subs = (!empty($invoice['subs'])) ? (count($invoice['subs'])) : 0;
-		$jsonSubs = (!empty($jsonData['subs'])) ? ($jsonData['subs']) : 0;
-		if($subs != $jsonSubs) {
-			echo($subs . " SUBSCRIBERS LISTED ISNTEAD OF " . $jsonSubs . "!\n");
-
-			continue;
-		}
-		
-		echo "TEST SUCCESSFUL!!!!\n";
+		$actualtSubs = (!empty($invoice['subs'])) ? (count($invoice['subs'])) : 0;
+		$expectedtSubs = (!empty($jsonData['subs'])) ? ($jsonData['subs']) : 0;
+		$actualtPayment = (!empty($invoice['totals']['before_vat'])) ? ($invoice['totals']['before_vat']) : 0;
+		$expectedPayment = (!empty($jsonData['payment'])) ? ($jsonData['payment']) : 0;
+		echo "\n".blue($testName);
+		echo "\n".blue("Expected:")." \n#subscribers: ".$expectedtSubs."\nbefore_vat_payment: ".$expectedPayment;
+		echo"\n".blue("Result:")." \n#subscribers: ".(($expectedtSubs==$actualtSubs) ? succeed($actualtSubs) : failed($actualtSubs)) ;
+		echo"\nbefore_vat_payment: ".(($expectedPayment==$actualtPayment) ? succeed($actualtPayment) : failed($actualtPayment))."\n" ;
 	}
 }
 
@@ -147,7 +167,7 @@ function handlePlans(MongoCollection $planColl, $config) {
 	$planData = $config['plans']['data'];
 	
 	foreach ($planData as $dataFile) {
-		$currData = file_get_contents($dataFile);
+		$currData = file_get_contents(dirname(__FILE__) . $dataFile);
 		$jsonData = json_decode($currData, true);
 		if($jsonData === null) {
 			echo("Skipping " . $dataFile . ". Cannot decode json.\n");
@@ -167,6 +187,34 @@ function handlePlans(MongoCollection $planColl, $config) {
 		
 		// Insert the data.
 		$planColl->batchInsert($translated);
+	}
+}
+
+function handleServices(MongoCollection $servicesColl, $config) {
+	// Get the services data files
+	$serviceData = $config['services']['data'];
+	
+	foreach ($serviceData as $dataFile) {
+		$currData = file_get_contents(dirname(__FILE__) . $dataFile);
+		$jsonData = json_decode($currData, true);
+		if($jsonData === null) {
+			echo("Skipping " . $dataFile . ". Cannot decode json.\n");
+			continue;
+		}
+		
+		// Get date fields
+		$dates = $jsonData['dates'];
+		$rawData = $jsonData['data'];
+		$translated = translateDates($rawData, $dates);
+		
+		// If it is empty
+		if(empty($translated)) {
+			echo("Skipping " . $dataFile . ". No data.\n");
+			continue;
+		}
+		
+		// Insert the data.
+		$servicesColl->batchInsert($translated);
 	}
 }
 
@@ -216,6 +264,14 @@ function getCycleCollection($configuration, MongoClient $m) {
 	return getCollection($configuration, $m, 'cycle');
 }
 
+function getLinesCollection($configuration, MongoClient $m) {
+	return getCollection($configuration, $m, 'lines');
+}
+
+function getServicesCollection($configuration, MongoClient $m) {
+	return getCollection($configuration, $m, 'services');
+}
+
 function getBefore(MongoCollection $coll) {
 	// Get the records before the test.
 	$cursor = $coll->find();
@@ -257,11 +313,21 @@ function validateConfigurations($config) {
 function validateFiles($files) {
 	$invalidFiles = array();
 	foreach ($files as $currentFile) {
-		if(!file_exists($currentFile)) {
+		if(!file_exists(dirname(__FILE__).$currentFile)) {
 			$invalidFiles[] = $currentFile;
 		}
 	}
 	return $invalidFiles;
+}
+
+function failed($mes){
+	return("\x1b[38;5;200m".$mes."\x1b[0m");
+}
+function succeed($mes){
+	return("\x1b[38;5;112m".$mes."\x1b[0m");
+}
+function blue($mes){
+	return "\x1b[38;5;45m".$mes."\x1b[0m";
 }
 
 ?>

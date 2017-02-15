@@ -4,92 +4,144 @@
 	],
 	"data":
 	[
-		{
-			"name": "PLAN-X3",
-			"plan_code": "PLAN-X3",
-			"description": "PLAN-X3",
-			"recurrence": {
-				"unit": 1,
-				"periodicity": "month"
+	{
+		"name" : "PLAN-X3",
+		"code" : "PLAN-X3",
+		"description" : "PLAN-X3",
+		"recurrence" : {
+			"unit" :1,
+			"periodicity" : "month"
+		},
+		"upfront" : false,
+		"price" : [
+			{
+				"price" : "10",
+				"from" : 0,
+				"to" : 2,
+				"trial" : true
 			},
-			"upfront": false,
-			"price": [
-				{
-					"price": "10",
-					"from": 0,
-					"to": 2,
-					"trial": true
+			{
+				"price" : "25",
+				"from" : 2,
+				"to" : 999999999
+			}
+		],
+
+		"rates": {
+			"CALL-USA": {
+				"call":{
+						"rate" : [
+
+							{
+								"from" : 0,
+								"to" : 20,
+								"interval" : 1,
+								"price" : "0.2"
+							},
+							{
+								"from" : 21,
+								"to" : 999999999,
+								"interval" : 1,
+								"price" : "0.5"
+							}
+
+					]}
+			}
+		},
+		"from" :  1375654916,
+		"to": 4731328516,
+		"include" : {
+			"groups" : {
+				"GROUPO" : {
+					"call" : "100",
+					"rates": ["CALL-USA"]
+					}
+				}
+			}
+	},
+	{
+		"name" : "PLAN-A0",
+		"code" : "PLAN-A0",
+		"description" : "PLAN-A0",
+		"recurrence" : {
+		"unit" : 1,
+		"periodicity" : "month"
+		},
+		"upfront" : false,
+		"price" : [
+		  {
+			  "price" : "50",
+			  "from" : 0,
+			  "to" : 2,
+			  "trial" : true
+		  },
+		  {
+			  "price" : "25",
+			  "from" : 2,
+			  "to" : 999999999
+		  }
+	  ],
+	   "from" :  1375654916,
+		"to": 4731328516
+	},
+	{
+	  "name" : "PLAN-A1",
+	  "code" : "PLAN-A1",
+	  "description" : "PLAN-A1",
+	  "recurrence" : {
+		  "unit" : 1,
+		  "periodicity" : "month"
+	  },
+	  "upfront" : false,
+	  "price" : [
+		  {
+			  "price" : "50",
+			  "from" : 0,
+			  "to" : 2,
+			  "trial" : true
+		  },
+		  {
+			  "price" : "25",
+			  "from" : 2,
+			  "to" : 999999999
+		  }
+		],
+		"rates": {
+			"VEG": {
+				"gr":{
+						"rate" : [
+
+							{
+								"from" : 0,
+								"to" : 20,
+								"interval" : 1,
+								"price" : "0.1"
+							},
+							{
+								"from" : 21,
+								"to" : 999999999,
+								"interval" : 1,
+								"price" : "0.2"
+							}
+
+					]}
+			}
+		},
+
+		"from" :  1375654916,
+		"to": 4731328516,
+		"include" : {
+			"groups" : {
+				"AAA" : {
+					"call" : "50",
+					"rates": ["CALL-USA","VEG"]
 				},
-				{
-					"price": "25",
-					"from": 2,
-					"to": 999999999
+				"SR4" : {
+					"gr" : "50",
+					"rates": ["VEG"]
 				}
-			],
-			"from" :  1375654916,
-			"to": 4731328516
-		},
-		{
-			"name": "PLAN-X2",
-			"plan_code": "PLAN-X2",
-			"description": "PLAN-X2",
-			"recurrence": {
-				"unit": 1,
-				"periodicity": "year"
-			},
-			"upfront": true,
-			"price": [
-				{
-					"price": "100",
-					"from": 0,
-					"to": 999999999
-				}
-			],
-			"from": 1375654916,
-			"to": 4731328516
-		},
-		{
-			"name": "PLAN-X1",
-			"plan_code": "PLAN-X1",
-			"description": "PLAN-X1",
-			"recurrence": {
-				"unit": 1,
-				"periodicity": "month"
-			},
-			"upfront": false,
-			"price": [
-				{
-					"price": "50",
-					"from": 0,
-					"to": 999999999
-				}
-			],
-			"from": 1375653916,
-			"to": 4731327516
-		},
-		{
-			"name": "PLAN-X4",
-			"plan_code": "PLAN-X4",
-			"description": "PLAN-X4",
-			"recurrence": {
-				"unit": 1,
-				"periodicity": "month"
-			},
-			"upfront": false,
-			"price": [
-				{
-					"price": "50",
-					"from": 0,
-					"to": 999999999
-				},
-				{
-					"price": "10",
-					"from": 0,
-					"to": 999999999
-				}
-			],
-			"from": 1375653916,
-			"to": 4731327516
+			}
 		}
+	  }
 	]
 }
