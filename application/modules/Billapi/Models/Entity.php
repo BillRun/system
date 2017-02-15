@@ -205,7 +205,7 @@ class Models_Entity {
 		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec - 1)
+				'to' => new MongoDate($this->update['from']->sec)
 			)
 		);
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
