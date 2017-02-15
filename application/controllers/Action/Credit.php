@@ -65,7 +65,7 @@ class CreditAction extends ApiAction {
 	
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
-		$ret['skip_calcs'] = $this->getSkipCalcs($ret);
+		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		return $ret;
 	}
 	

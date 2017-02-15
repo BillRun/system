@@ -136,10 +136,10 @@ class Billrun_Helpers_QueueCalculators {
 	}
 	
 	protected function shouldSkipCalc($line, $calc_name) {
-		if (empty($line['skip_calcs'])) {
+		if (empty($line['skip_calc'])) {
 			return false;
 		}
-		return (in_array($calc_name, $line['skip_calcs']));
+		return (in_array($calc_name, $line['skip_calc']));
 	}
 	
 	protected function unifyCalc(Billrun_Processor $processor, &$data) {
