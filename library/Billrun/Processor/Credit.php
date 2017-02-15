@@ -22,7 +22,7 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 	 * override abstract method
 	 * @return true
 	 */
-	public function parse($config) {
+	public function parse() {
 		// credit have only one event (currently)
 		reset($this->data['data']);
 		$rowKey = key($this->data['data']);
@@ -37,8 +37,8 @@ class Billrun_Processor_Credit extends Billrun_Processor {
 		return true;
 	}
 
-	public function process($config) {
-		if ($this->parse($config) === FALSE) {
+	public function process() {
+		if ($this->parse() === FALSE) {
 			Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 			return FALSE;
 		}
