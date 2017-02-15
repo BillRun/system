@@ -148,7 +148,19 @@
             }, {
                 "field_name": "address",
                 "mandatory": true
-            }, {
+            },
+			{
+                "field_name": "zip_code",
+                "title": "Zip code",
+				"generated": false,
+                "unique": false,
+                "editable": true,
+                "mandatory": true,
+				"system": true,
+				"show_in_list": false,
+				"display": true
+            },
+			{
                 "field_name": "card_token",
                 "editable": false,
                 "display": false
