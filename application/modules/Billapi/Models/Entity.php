@@ -200,8 +200,12 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
+		$now = new MongoDate();
 		if (!isset($this->update['from'])) {
-			return false;
+			$this->update['from'] = $now;
+		}
+		if ($this->update['from']->sec < $now->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'closeandnew must get a future update');
 		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
