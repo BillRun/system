@@ -73,7 +73,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 						'if' => array(
 							'$and' => array(
 								array('$lte' => array('$from', new MongoDate())),
-								array('$gte' => array('$to', new MongoDate())),
+								array('$gt' => array('$to', new MongoDate())),
 							),
 						),
 						'then' => self::STATE_ACTIVE,
