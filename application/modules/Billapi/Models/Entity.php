@@ -109,6 +109,9 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		if (json_last_error() != JSON_ERROR_NONE) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
+		}
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->query = $translatedQuery;
 		$this->update = $translatedUpdate;
