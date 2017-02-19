@@ -30,13 +30,15 @@ class CycleConfirmationAction extends ApiAction {
 				'type' => "BillrunToBill",
 				'stamp' => $billrunKey,
 			);
-			$success = $this->confirmCycle($invoicesId, $options);
+			$settings = $this->confirmCycle($invoicesId, $options);
+		} else if ($action == 'getcycles') {
+			$settings = $this->getCycles();
 		}
 		
 		$output = array (
-			'status' => $success ? 1 : 0,
-			'desc' => $success ? 'success' : 'error',
-			'details' => array(),
+			'status' => $settings ? 1 : 0,
+			'desc' => $settings ? 'success' : 'error',
+			'details' => empty($settings) ? array() : $settings,
 		);
 		$this->getController()->setOutput(array($output));
 	}
@@ -53,5 +55,17 @@ class CycleConfirmationAction extends ApiAction {
 		$generator->generate();
 		return true;
 	}
+	
+	protected function getCycles() {
+        $billrunKeys = array();
+        $currentStamp = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+        array_push($billrunKeys, $currentStamp);
+        $rangeOfCycles = Billrun_Factory::config()->getConfigValue('cyclemanagement.previous_cycles');
+        while ($rangeOfCycles) {
+            array_push($billrunKeys, Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime("$rangeOfCycles months ago")));
+            $rangeOfCycles--;
+        }
+        return $billrunKeys;
+    }
 	
 }
