@@ -16,8 +16,13 @@
  */
 class Models_Action_Uniqueget_Subscribers extends Models_Action_Uniqueget {
 
-	protected function runQuery($query, $sort = null) {
-		$query['type'] = 'subscriber';
-		return parent::runQuery($query, $sort);
+	protected function runQuery() {
+		$this->query['type'] = 'subscriber';
+		return parent::runQuery();
 	}
+
+	protected function initGroup() {
+		$this->group = 'sid';
+	}
+
 }

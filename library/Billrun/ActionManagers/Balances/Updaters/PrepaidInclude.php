@@ -57,9 +57,9 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 			return false;
 		}
 
-		if (isset($prepaidRecord['external_id']) &&
-			in_array($prepaidRecord['external_id'], Billrun_Factory::config()->getConfigValue('protected_unlimited_pp_includes', array()))) {
-			$recordToSet['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		// Check if the prepaid record is unlimited.
+		if (!empty($prepaidRecord['unlimited'])) { 
+			$recordToSet['to'] = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		}
 		// Get the subscriber.
 		$subscriber = $this->getSubscriber($subscriberId);
@@ -83,7 +83,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$findQuery['pp_includes_external_id'] = $chargingPlan->getPPID();
 
 		// Check if passing the max.
-		if ($chargingPlan->getPPID() == 1 && !$this->handleCoreBalance($subscriber['plan'], $chargingPlan, $findQuery)) {
+		if ($chargingPlan->getUnlimited() && !$this->handleUnlimitedBalance($subscriber['plan'], $chargingPlan, $findQuery)) {
 			return false;
 		}
 
@@ -127,6 +127,7 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$ppPair['priority'] = $prepaidRecord['priority'];
 		$ppPair['pp_includes_name'] = $prepaidRecord['name'];
 		$ppPair['pp_includes_external_id'] = $prepaidRecord['external_id'];
+		$ppPair['unlimited'] = !empty($prepaidRecord['unlimited']);
 
 		return new Billrun_DataTypes_Wallet($chargingByUsaget, $chargingByValue, $ppPair);
 	}
@@ -162,7 +163,13 @@ class Billrun_ActionManagers_Balances_Updaters_PrepaidInclude extends Billrun_Ac
 		$defaultBalance['from'] = new MongoDate();
 
 		$defaultBalance['to'] = $recordToSet['to'];
-		$defaultBalance['sid'] = $subscriber['sid'];
+		
+		// If the prepaid record is shared, then set the sid value to 0.
+		if(!empty($prepaidRecord['shared'])) {
+			$defaultBalance['sid'] = 0;
+		} else {
+			$defaultBalance['sid'] = $subscriber['sid'];
+		}
 		$defaultBalance['aid'] = $subscriber['aid'];
 //		$defaultBalance['current_plan'] = $this->getPlanRefForSubscriber($subscriber);
 		

@@ -294,7 +294,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @return boolean
 	 */
 	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
-		if ($tariff['from'] > $tariff['to']) {
+		if ($tariff['from'] > $tariff['to'] && !static::isValueUnlimited($tariff['to']) ) {
 			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
 			return false;
 		}
@@ -304,7 +304,7 @@ class Billrun_Plan extends Billrun_Service {
 			return false;
 		}
 
-		if ($startOffset > $tariff['to']) {
+		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
 			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.");
 			return false;
 		}
@@ -334,7 +334,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($tariff['from'] > $startOffset) {
 			$startPricing = $tariff['from'];
 		}
-		if ($tariff['to'] < $endOffset) {
+		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
 		}
 
@@ -383,12 +383,16 @@ class Billrun_Plan extends Billrun_Service {
 		return $this->plan_ref;
 	}
 
+	public static function isValueUnlimited($value) {
+		return $value == 'UNLIMITED';
+	}
+	
 	public function isUnlimited($usage_type) {
-		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == "UNLIMITED";
+		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == 'UNLIMITED';
 	}
 
 	public function isUnlimitedRate($rate, $usageType) {
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == 'UNLIMITED');
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
@@ -451,6 +455,10 @@ class Billrun_Plan extends Billrun_Service {
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
 	}
 
+	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
+		return static::calcFractionOfMonth($billrunKey, date(Billrun_Base::base_datetimeformat, $start_date), date(Billrun_Base::base_datetimeformat, $end_date) );
+	}
+	
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {
 		$billing_start_date = Billrun_Billingcycle::getStartTime($billrunKey);
 		$billing_end_date = Billrun_Billingcycle::getEndTime($billrunKey);

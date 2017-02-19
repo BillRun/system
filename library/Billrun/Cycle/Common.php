@@ -31,7 +31,7 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 		// Validate
 		if(!$this->validate($data)) {
 			// TODO: Swap with an actual aggregator exception
-			throw new Exception("Internal aggregator error");
+			throw new Exception("Internal aggregator error construction data is invalid.");
 		}
 		
 		$this->constructRecords($data);
@@ -56,7 +56,7 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	public function aggregate($data = array()) {
 		$results = array();
 		foreach ($this->records as $current) {
-			$results += $current->aggregate();
+			$results = array_merge($results , $current->aggregate());
 		}
 		return $results;
 	}

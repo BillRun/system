@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 
 /**
  * Configmodel class
@@ -386,7 +385,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		Billrun_Factory::log("Tempalte: " . print_r($template,1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
@@ -920,8 +919,8 @@ class ConfigModel {
 				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
-				if (filter_var($connection['host'], FILTER_VALIDATE_IP) === FALSE) {
-					throw new Exception($connection['host'] . ' is not a valid IP address');
+				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
+					throw new Exception($connection['host'] . ' is not a valid host');
 				}
 				$connection['passive'] = $connection['passive'] ? 1 : 0;
 				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;

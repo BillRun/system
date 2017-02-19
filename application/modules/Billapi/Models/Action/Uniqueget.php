@@ -13,95 +13,136 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Uniqueget extends Models_Action {
+class Models_Action_Uniqueget extends Models_Action_Get {
 
-	public function execute() {
-		if (empty($this->request['query'])) {
-			$this->request['query'] = array();
-		}
-		return $this->runQuery($this->request['query']);
+	const STATE_ACTIVE = 0;
+	const STATE_FUTURE = 1;
+	const STATE_EXPIRE = 2;
+
+	/**
+	 * aggregate field to map the uniqueness
+	 * @var string
+	 */
+	protected $group = 'name';
+
+	public function __construct(array $params = array()) {
+		parent::__construct($params);
+		$this->initGroup();
 	}
 
 	/**
-	 * Run a DB query against the current collection
-	 * @param array $query
-	 * @return array the result set
+	 * initialize the collection
+	 * 
+	 * @todo override by child class
 	 */
-	protected function runQuery($query, $sort = null) {
-		$group = array(
-			'$group' => array(
-				'_id' => '$' . ($this->request['collection'] == 'rates' ? 'key' : 'name'),
-				'from' => array(
-					'$min' => '$from'
-				),
-				'to' => array(
-					'$max' => '$to'
-				),
-				'id' => array(
-					'$first' => '$_id'
-				)
-			),
-		);
-
-		if (!isset($this->request['history']) || !$this->request['history']) {
-			$match = array(
-				'$match' => Billrun_Utils_Mongo::getDateBoundQuery(),
-			);
+	protected function initGroup() {
+		if ($this->request['collection'] == 'rates') {
+			$this->group = 'key';
 		} else {
-			// this is workaround, because aggregate cannot receive only 1 argument
-			$match = array(
-				'$match' => array(
-					'from' => array(
-						'$gte' => new MongoDate(strtotime('1970-01-01 00:00:00')),
-					)
-				),
-			);
+			$this->group = 'name';
 		}
+	}
 
-		$project = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => 1,
-			),
-		);
-
-		$find = (array) json_decode($query, true);
-		if (!empty($find)) {
-			$match['$match'] = array_merge($match['$match'], $find);
-		}
-		$res = $this->collectionHandler->aggregate($match, $group, $project);
-
-		$res->setRawReturn(true);
-		$aggregatedResults = array_values(iterator_to_array($res));
-		$ids = array_column($aggregatedResults, 'id');
-
-		$filter = array(
+	protected function runQuery() {
+		$ids = $this->getUniqueIds();
+		$this->query = array(
 			'_id' => array(
 				'$in' => $ids
 			),
 		);
+		return parent::runQuery();
+	}
 
-		if (isset($this->request['project'])) {
-			$project = (array) json_decode($this->request['project'], true);
+	/**
+	 * method to aggregate and get uniqueness 
+	 * @return array of mongo ids
+	 */
+	protected function getUniqueIds() {
+		if (!empty($this->query)) {
+			$pipelines[] = array('$match' => $this->query);
+		}
+		
+		$pipelines[] = array(
+			'$project' => array(
+				'_id' => 1,
+				'from' => 1,
+				'to' => 1,
+				$this->group => 1,
+				'state' => array(
+					'$cond' => array(
+						'if' => array(
+							'$and' => array(
+								array('$lte' => array('$from', new MongoDate())),
+								array('$gt' => array('$to', new MongoDate())),
+							),
+						),
+						'then' => self::STATE_ACTIVE,
+						'else' => array(
+							'$cond' => array(
+								'if' => array(
+									'$gte' => array('$from', new MongoDate()),
+								),
+								'then' => self::STATE_FUTURE,
+								'else' => self::STATE_EXPIRE,
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$pipelines[] = array(
+			'$sort' => array(
+				'state' => 1,
+				'to' => -1
+			),
+		);
+
+		$pipelines[] = array(
+			'$group' => array(
+				'_id' => '$' . $this->group,
+				'state' => array(
+					'$first' => '$state'
+				),
+				'id' => array(
+					'$first' => '$_id'
+				),
+			),
+		);
+
+		$pipelines[] = array(
+			'$project' => array(
+				'_id' => 0,
+				'id' => 1,
+				'state' => 1,
+			),
+		);
+
+		if (isset($this->request['states']) && $states = @json_decode($this->request['states'])) {
+			$filter_states = array_intersect($states, array(self::STATE_ACTIVE, self::STATE_EXPIRE, self::STATE_FUTURE));
+			$match = array(
+				'$match' => array(
+					'state' => array(
+						'$in' => $filter_states,
+					)
+				),
+			);
 		} else {
-			$project = array();
+			$match = array(
+				'$match' => array(
+					'state' => array(
+						'$in' => array(self::STATE_ACTIVE, self::STATE_FUTURE),
+					)
+				),
+			);
 		}
+		$pipelines[] = $match;
+		
+		$res = call_user_func_array(array($this->collectionHandler, 'aggregate'), $pipelines);
 
-		$ret = $this->collectionHandler->find($filter, $project);
-
-		if (isset($this->request['page']) && $this->request['page'] != -1) {
-			$res->skip((int) $this->page * (int) $this->size);
-		}
-
-		if (isset($this->request['size']) && $this->request['size'] != -1) {
-			$res->limit((int) $this->size);
-		}
-
-		if ($sort) {
-			$res = $res->sort((array) $sort);
-		}
-
-		return array_values(iterator_to_array($ret));
+		$res->setRawReturn(true);
+		$aggregatedResults = array_values(iterator_to_array($res));
+		return array_column($aggregatedResults, 'id');
 	}
 
 }

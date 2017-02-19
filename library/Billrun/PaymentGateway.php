@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
@@ -528,7 +527,7 @@ abstract class Billrun_PaymentGateway {
 					'$gt' => Billrun_Bill::precision,
 				),
 				'payment_method' => array(
-					'$in' => array('Credit'),
+					'$in' => array('automatic'),
 				),
 				'suspend_debit' => NULL,
 			),

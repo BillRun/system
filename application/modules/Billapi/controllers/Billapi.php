@@ -44,7 +44,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 * @var array
 	 */
 	protected $params = array();
-	
+
 	/**
 	 * config settings of the API
 	 * 
@@ -59,11 +59,11 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->action = strtolower($request->getParam('action'));
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
 		$this->setActionConfig();
-		
+
 		if (!$this->checkPermissions()) {
 			throw new Billrun_Exceptions_NoPermission();
 		}
-		
+
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
@@ -78,25 +78,17 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
 		$request = $this->getRequest();
-
-		// Moved to entity model
-//		$query = json_decode($request->get('query'), TRUE);
-//		$update = json_decode($request->get('update'), TRUE);
-//		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-//		$this->params['query'] = $translatedQuery;
-//		$this->params['update'] = $translatedUpdate;
-		
 		$this->params['request'] = array_merge($request->getParams(), $request->getRequest());
 		$this->params['settings'] = $this->settings;
-		$res = $this->runOperation();
-		$this->output->status = 1;
-		$this->output->details = $res;
+		$this->runOperation();
+		$this->getResponse()->setHeader('Content-Type', 'application/json');
 		Billrun_Factory::dispatcher()->trigger('afterBillApi', array($this->collection, $this->action, $request, $this->output));
 	}
-	
+
 	protected function runOperation() {
 		$entityModel = $this->getModel();
-		return $entityModel->{$this->action}();
+		$this->output->status = 1;
+		$this->output->details = $entityModel->{$this->action}();
 	}
 
 	/**
@@ -175,7 +167,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->verifyTranslated($translated);
 		return array($translated['query_parameters'], $translated['update_parameters']);
 	}
-	
+
 	/**
 	 * authentication & authorization method to bill api
 	 * 
@@ -187,12 +179,12 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		if (Billrun_Utils_Security::validateData($this->getRequest()->getRequest())) { // validation by secret
 			return true;
 		}
-		
+
 		if (!isset($this->settings['permission'])) {
 			Billrun_Factory::log("No permissions settings for API call.", Zend_Log::ERR);
 			return false;
 		}
-		
+
 		$permission = $this->settings['permission'];
 		$user = Billrun_Factory::user();
 		if (!$user || !$user->valid()) {

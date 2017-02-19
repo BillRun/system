@@ -187,7 +187,20 @@ class Billrun_Util {
 	 * @return type
 	 */
 	public static function billrunKeyToReadable($billrunKey) {
-		return date('F Y', strtotime($billrunKey . '01'));
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date('F Y', $cycleData->start());
+	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
 	/**
@@ -1466,6 +1479,18 @@ class Billrun_Util {
 		session_set_cookie_params(
 			(int) $sessionTimeout, $cookieParams['path'], $cookieParams['domain'], $cookieParams['secure']
 		);
+	}
+	
+	public static function isValidIP($subject) {
+		return preg_match('/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', strval($subject));
+	}
+	
+	public static function isValidHostName($subject) {
+		return preg_match('/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/', strval($subject));
+	}
+
+	public static function isValidIPOrHost($subject) {
+		return self::isValidIP($subject) || self::isValidHostName($subject);
 	}
 
 }

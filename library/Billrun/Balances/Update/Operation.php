@@ -143,6 +143,14 @@ abstract class Billrun_Balances_Update_Operation {
 		}
 
 		$balanceRecord = array_merge($defaultBalance, $partialBalance);
+		// If the wallet is shared, set the sid
+		if($wallet->isShared()) {
+			$balanceRecord['sid'] = 0;
+		}
+		// If the wallet is unlimited, set the 'to' field to unlimited.
+		if($wallet->getUnlimited()) {
+			$balanceRecord['to'] = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+		}
 		
 		return array(
 			'$setOnInsert' => $balanceRecord,
@@ -165,6 +173,11 @@ abstract class Billrun_Balances_Update_Operation {
 		$valueUpdateQuery['$set']['pp_includes_external_id'] = $wallet->getPPID();
 		$valueUpdateQuery['$set']['priority'] = $wallet->getPriority();
 
+		// If the wallet is shared, set the sid to 0
+		if($wallet->isShared()) {
+			$valueUpdateQuery['$set']['sid'] = 0;
+		}
+		
 		// Check if recurring.
 		if ($this->recurring) {
 			$valueUpdateQuery['$set']['recurring'] = 1;
@@ -210,5 +223,5 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	public abstract function handleCoreBalance($max, $wallet, $query);
+	public abstract function handleUnlimitedBalance($max, $wallet, $query);
 }

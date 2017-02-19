@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 

@@ -44,7 +44,7 @@ class Billrun_Balances_Update_Inc extends Billrun_Balances_Update_Operation {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	public function handleCoreBalance($max, $wallet, $query) {
+	public function handleUnlimitedBalance($max, $wallet, $query) {
 		$newValue = $wallet->getValue();
 
 		// Check if passing the max.
