@@ -57,8 +57,12 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 	 * method to aggregate and get uniqueness 
 	 * @return array of mongo ids
 	 */
-	protected function getUniqueIds($state = 'active') {
-		$project1 = array(
+	protected function getUniqueIds() {
+		if (!empty($this->query)) {
+			$pipelines[] = array('$match' => $this->query);
+		}
+		
+		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 1,
 				'from' => 1,
@@ -69,7 +73,7 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 						'if' => array(
 							'$and' => array(
 								array('$lte' => array('$from', new MongoDate())),
-								array('$gte' => array('$to', new MongoDate())),
+								array('$gt' => array('$to', new MongoDate())),
 							),
 						),
 						'then' => self::STATE_ACTIVE,
@@ -87,14 +91,14 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			),
 		);
 
-		$sort = array(
+		$pipelines[] = array(
 			'$sort' => array(
 				'state' => 1,
 				'to' => -1
 			),
 		);
 
-		$group = array(
+		$pipelines[] = array(
 			'$group' => array(
 				'_id' => '$' . $this->group,
 				'state' => array(
@@ -106,10 +110,11 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 			),
 		);
 
-		$project2 = array(
+		$pipelines[] = array(
 			'$project' => array(
 				'_id' => 0,
 				'id' => 1,
+				'state' => 1,
 			),
 		);
 
@@ -131,11 +136,9 @@ class Models_Action_Uniqueget extends Models_Action_Get {
 				),
 			);
 		}
-
-		if (!empty($this->query)) {
-			$match['$match'] = array_merge($match['$match'], $this->query);
-		}
-		$res = $this->collectionHandler->aggregate($project1, $sort, $group, $match, $project2);
+		$pipelines[] = $match;
+		
+		$res = call_user_func_array(array($this->collectionHandler, 'aggregate'), $pipelines);
 
 		$res->setRawReturn(true);
 		$aggregatedResults = array_values(iterator_to_array($res));
