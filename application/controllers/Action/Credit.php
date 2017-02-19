@@ -66,12 +66,24 @@ class CreditAction extends ApiAction {
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
+		if ($this->isCreditByPrice($ret)) {
+			$ret['billrun'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+			$ret['usaget'] = $this->getCreditUsaget($ret);
+		}
 		return $ret;
 	}
 	
+	protected function isCreditByPrice($row) {
+		return isset($row['aprice']);
+	}
+	
+	protected function getCreditUsaget($row) {
+		return ($row['aprice'] >= 0 ? 'charge' : 'credit');
+	}
+	
 	protected function getSkipCalcs($row) {
-		if (isset($row['aprice'])) {
-			return array('pricing', 'rate', 'tax', 'unify');
+		if ($this->isCreditByPrice($row)) {
+			return array('pricing', 'unify');
 		}
 		return array('unify');
 	}
