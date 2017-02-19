@@ -100,8 +100,9 @@ class Billrun_Util {
 	 * @param array $ar array to generate the stamp from
 	 * @return string the array stamp
 	 */
-	public static function generateArrayStamp($ar) {
-		return md5(serialize($ar));
+	public static function generateArrayStamp($ar, $filter = array()) {
+		
+		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
 
 	/**

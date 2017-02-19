@@ -27,11 +27,19 @@ class Models_Subscribers extends Models_Entity {
 		} else { // plan was not changed
 			$this->update['plan_activation'] = $this->before['plan_activation'];
 		}
+		
+		//transalte to and from fields
+		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+		
 	}
 
 	public function get() {
 		$this->query['type'] = 'subscriber';
-		return parent::get();
+		$records = parent::get();
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+		}
+		return $records;
 	}
 
 	/**
