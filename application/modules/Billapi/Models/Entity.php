@@ -318,7 +318,12 @@ class Models_Entity {
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
-		return array_values(iterator_to_array($res));
+		
+		$records =  array_values(iterator_to_array($res));
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+		}
+		return $records;
 	}
 
 	/**

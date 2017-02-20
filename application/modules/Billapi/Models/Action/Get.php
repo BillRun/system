@@ -85,7 +85,11 @@ class Models_Action_Get extends Models_Action {
 			$ret->sort((array) $this->sort);
 		}
 
-		return array_values(iterator_to_array($ret));
+		$records =  array_values(iterator_to_array($ret));
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+		}
+		return $records;
 	}
 
 	/**

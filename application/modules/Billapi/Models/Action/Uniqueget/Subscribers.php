@@ -18,11 +18,7 @@ class Models_Action_Uniqueget_Subscribers extends Models_Action_Uniqueget {
 
 	protected function runQuery() {
 		$this->query['type'] = 'subscriber';
-		$records =  parent::runQuery();
-		foreach($records as  &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
-		}
-		return $records;
+		return parent::runQuery();
 	}
 
 	protected function initGroup() {

@@ -30,16 +30,14 @@ class Models_Subscribers extends Models_Entity {
 		
 		//transalte to and from fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
+				
+		$this->verifyServices();
 		
 	}
 
 	public function get() {
 		$this->query['type'] = 'subscriber';
-		$records = parent::get();
-		foreach($records as  &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
-		}
-		return $records;
+		return parent::get();
 	}
 
 	/**
@@ -51,6 +49,25 @@ class Models_Subscribers extends Models_Entity {
 		$customFields = parent::getCustomFields();
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
 		return array_merge($accountFields, $customFields);
+	}
+	
+	/**
+	 * Verfiy services are corrrect before update is applied tothe subscrition.
+	 */
+	protected function verifyServices() {
+		if(empty($this->update)) {
+			return FALSE;
+		}
+		foreach($this->update['services'] as  &$service) {
+			if(typeof($service) =='string') {
+				$service = array('name' => $service);
+			}
+			if (empty($this->before)) { // this is new subscriber
+				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];				
+			} 
+			//to  can't be more then the updated 'to' of the subscription
+			$service['to'] = isset($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
+		}
 	}
 
 }
