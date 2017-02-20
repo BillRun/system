@@ -286,6 +286,7 @@ class Models_Entity {
 		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
 			$this->reopenPreviousEntry();
 		}
+		return true;
 	}
 
 	/**
