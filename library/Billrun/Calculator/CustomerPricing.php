@@ -155,7 +155,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 
-		$this->sidsQueuedForRebalance = array_flip(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'));
+		$this->sidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'), 'int'));
 	}
 
 	protected function getLines() {
@@ -247,6 +247,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$where = array('stamp' => $line['stamp']);
 		if ($save) {
 			Billrun_Factory::db()->linesCollection()->update($where, $save);
+			Billrun_Factory::db()->queueCollection()->update($where, $save);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
@@ -320,6 +321,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 	public static function getPrecision() {
 		return static::$precision;
+	}
+	
+	public function getActiveBillrunEndTime() {
+		return $this->active_billrun_end_time;
+	}
+	public function getActiveBillrun() {
+		return $this->active_billrun;
+	}
+	public function getNextActiveBillrun() {
+		return $this->next_active_billrun;
 	}
 
 }

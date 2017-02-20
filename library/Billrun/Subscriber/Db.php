@@ -53,7 +53,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 	public function load($params) {
 		$subscriberQuery = Billrun_Subscriber_Query_Manager::handle($params);
 		if ($subscriberQuery === false) {
-			Billrun_Factory::log('Cannot identify subscriber. Require phone or imsi to load. Current parameters: ' . print_R($params, 1), Zend_Log::ALERT);
+			Billrun_Factory::log('Cannot identify subscriber. Current parameters: ' . print_R($params, 1), Zend_Log::NOTICE);
 			return false;
 		}
 

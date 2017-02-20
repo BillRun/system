@@ -130,9 +130,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		}
 		
 		// Check if we have core balance.
-		$coreBalance = $this->getCoreBalance($balancesArray, $chargingPlanRecord);
-		if ($coreBalance !== null) {
-			if (!$this->handleCoreBalance($subscriber['plan'], $coreBalance, $updateQuery)) {
+		$coreBalances = $this->getUnlimitedBalances($balancesArray, $chargingPlanRecord);
+		foreach ($coreBalances as $balance) {
+			if (!$this->handleUnlimitedBalance($subscriber['plan'], $balance, $updateQuery)) {
 				return false;
 			}
 		}
@@ -170,24 +170,32 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		return $balancesToReturn;
 	}
 
-	protected function getCoreBalance($balancesArray, $chargingPlanRecord) {
+	/**
+	 * Get a list of unlimited balances.
+	 * @param type $balancesArray
+	 * @param type $chargingPlanRecord
+	 * @return \Billrun_DataTypes_Wallet
+	 */
+	protected function getUnlimitedBalances($balancesArray, $chargingPlanRecord) {
 		foreach ($balancesArray as $chargeKey => $chargeValue) {
 			if (Billrun_Util::isAssoc($chargeValue)) {
 				$chargeValue = array($chargeValue);
 			}
 
+			$unlimitedBalances = array();
 			foreach ($chargeValue as $chargingByValue) {
-				if ($chargingByValue['pp_includes_external_id'] == '1') {
+				if (!empty($chargingByValue['unlimited'])) {
 					$ppName = $chargingPlanRecord['pp_includes_name'];
 					$ppID = $chargingPlanRecord['pp_includes_external_id'];
 					$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+					$ppPair['unlimited'] = true;
 					$wallet = new Billrun_DataTypes_Wallet($chargeKey, $chargingByValue, $ppPair);
-					return $wallet;
+					$unlimitedBalances[] = $wallet;
 				}
 			}
 		}
 
-		return null;
+		return $unlimitedBalances;
 	}
 
 	/**
@@ -199,10 +207,10 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * 
 	 * @return boolean true if get to max value, else false
 	 */
-	protected function handleCoreBalance($planName, $wallet, $query) {
+	protected function handleUnlimitedBalance($planName, $wallet, $query) {
 		$query[$wallet->getFieldName()]['$exists'] = 1;
 		$query['pp_includes_external_id'] = $wallet->getPPID();
-		return parent::handleCoreBalance($planName, $wallet, $query);
+		return parent::handleUnlimitedBalance($planName, $wallet, $query);
 	}
 
 	/**
@@ -211,7 +219,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	protected function getReturnPair($chargingByValue, $chargingBy, $subscriber, $chargingPlanRecord, $recordToSet, $updateQuery) {
 		// Create a default balance record.
 		// TODO: Why are there values passed that are not used?
-		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet);
+		$defaultBalance = $this->getDefaultBalance($subscriber, $chargingByValue, $recordToSet);
 		if ($defaultBalance === false) {
 			return false;
 		}
@@ -223,6 +231,9 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 		$source = $this->getSourceForLineRecord($chargingPlanRecord);
 
 		$ppPair = $this->populatePPValues($chargingByValue, $ppName, $ppID);
+		
+		// Get the unlimited indicator from the charging plan record.
+		$ppPair['unlimited'] = !empty($chargingPlanRecord['unlimited']);
 		$params = array(
 			'chargingBy' => $chargingBy,
 			'chargingByValue' => $chargingByValue,
@@ -354,7 +365,7 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 	 * Get a default balance record, without charging by.
 	 * @param type $subscriber
 	 */
-	protected function getDefaultBalance($subscriber, $chargingPlanRecord, $recordToSet) {
+	protected function getDefaultBalance($subscriber, $chargingByValue, $recordToSet) {
 		$defaultBalance = array();
 		$nowTime = new MongoDate();
 		$defaultBalance['from'] = $nowTime;
@@ -366,7 +377,13 @@ class Billrun_ActionManagers_Balances_Updaters_ChargingPlan extends Billrun_Acti
 //		}
 
 		$defaultBalance['aid'] = $subscriber['aid'];
-		$defaultBalance['sid'] = $subscriber['sid'];
+		// If the charging plan record is shared, then set the sid to 0.
+		if(!empty($chargingByValue['shared'])) {
+			$defaultBalance['sid'] = 0;
+		} else {
+			$defaultBalance['sid'] = $subscriber['sid'];
+		}
+		$defaultBalance['charging_type'] = $subscriber['charging_type'];
 //		$defaultBalance['charging_plan_name'] = $chargingPlanRecord['name'];
 
 		// Get the ref to the subscriber's plan.

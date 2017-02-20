@@ -1,0 +1,66 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "testA",
+	"subs" : 3,
+	"payment" : 70,
+	"data": [
+		{
+            "firstname" : "r1",
+            "lastname" : "r1",
+            "email" : "r1",
+            "country" : "r1",
+            "address" : "r1",
+            "type" : "account",
+            "from": 1374980947,
+			"plan_activation": 1474980947,
+			"to" : 1477872000,
+            "aid" : 12
+        },
+ 
+        {
+            "aid" : 12,
+            "firstname" : "r4",
+            "lastname" : "r4",
+            "plan" : "PLAN-X3",
+            "address" : "r4",
+            "country" : "r4",
+            "type" : "subscriber",
+            "from": 1374980947,
+			"plan_activation": 1474980947,
+			"to" : 1477872000,
+            "sid" : 51,
+			"services" : ["SERVICE1", "SERVICE4"]
+        },
+        {
+            "aid" : 12,
+            "firstname" : "r3",
+            "lastname" : "r3",
+            "plan" : "PLAN-X3",
+            "address" : "r3",
+            "country" : "r3",
+            "type" : "subscriber",
+            "from": 1374980947,
+			"plan_activation": 1474980947,
+			"to" : 1477872000,
+            "sid" : 52,
+			"services" : ["SERVICE2", "SERVICE3"]
+        },
+        {
+            "aid" : 12,
+            "firstname" : "r5",
+            "lastname" : "r5",
+            "plan" : "PLAN-A0",
+            "address" : "r5",
+            "country" : "r5",
+            "type" : "subscriber",
+            "from": 1374980947,
+			"plan_activation": 1474980947,
+			"to" : 1477872000,
+            "sid" : 53
+            
+        }
+
+	]
+}

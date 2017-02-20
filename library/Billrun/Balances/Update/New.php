@@ -80,7 +80,7 @@ class Billrun_Balances_Update_New extends Billrun_Balances_Update_Set {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	public function handleCoreBalance($max, $wallet, $query) {
+	public function handleUnlimitedBalance($max, $wallet, $query) {
 		// [Balances Error 1240]
 		$errorCode =  40;
 		return array("onError" => $errorCode);

@@ -330,10 +330,10 @@ class Billrun_Utils_Mongo {
 		$ret['$or'] = array(
 				array('from' => array(
 					'$gte' => $from_date,
-					'$lte' => $to_date,
+					'$lt' => $to_date,
 				)),
 				array('to' => array(
-					'$gte' => $from_date,
+					'$gt' => $from_date,
 					'$lte' => $to_date,
 				))
 			);
@@ -352,5 +352,39 @@ class Billrun_Utils_Mongo {
 			return $id->getMongoID();
 		}
 		return $id;
+	}
+	
+	/**
+	 * Get objects that overlap with the supplied time range
+	 * @param string $fromFieldName
+	 * @param string $toFieldName
+	 * @param int $from
+	 * @param int $to
+	 * @return array The resulted query
+	 */
+	public static function getOverlappingWithRange($fromFieldName, $toFieldName, $from, $to) {
+		$fromTime = new MongoDate($from);
+		$toTime = new MongoDate($to);
+		$res = [
+			'$or' => [
+				// Starts during range
+				[
+					$fromFieldName => [
+						'$gte' => $fromTime,
+						'$lt' => $toTime,
+					]
+				],
+				// Starts before range and ends after range start
+				[
+					$fromFieldName => [
+						'$lt' => $fromTime,
+					],
+					$toFieldName => [
+						'$gt' => $fromTime,
+					],
+				],
+			],
+		];
+		return $res;
 	}
 }

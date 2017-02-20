@@ -17,16 +17,7 @@ class UniquegetController extends GetController {
 
 	public function init() {
 		parent::init();
-		$request = $this->getRequest();
 		$this->params['field'] = $this->collection == 'rates' ? 'key' : 'name';
 	}
 	
-	protected function runOperation() {
-		$action = Models_Action::getInstance($this->params);
-		if (!$action) {
-			throw new Billrun_Exceptions_Api(999999, array(), 'Action cannot be found');
-		}
-		return $action->execute();
-	}
-
 }

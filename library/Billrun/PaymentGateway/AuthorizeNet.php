@@ -23,7 +23,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
 			$this->EndpointUrl = "https://api2.authorize.net/xml/v1/request.api";
-			$this->actionUrl = 'https:/secure.authorize.net/profile/addPayment';
+			$this->actionUrl = 'https://secure.authorize.net/profile/addPayment';
 		} else { // test/dev environment
 			$this->EndpointUrl = "https://apitest.authorize.net/xml/v1/request.api";
 			$this->actionUrl = 'https://test.authorize.net/profile/addPayment';
@@ -79,7 +79,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		}
 	}
 
-	protected function buildTransactionPost($txId) {
+	protected function buildTransactionPost($txId, $additionalParams) {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
@@ -99,7 +99,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function getResponseDetails($result) {
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = simplexml_load_string($result);
+			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
@@ -136,7 +136,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function payResponse($result) {
-		$xmlObj = simplexml_load_string($result);
+		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
 		if (($resultCode != 'Ok')) {
 			$errorMessage = (string) $xmlObj->messages->message->text;
@@ -312,6 +312,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	public function isCustomerBasedCharge() {
+		return true;
+	}
+	
+	protected function needRequestForToken() {
 		return true;
 	}
 

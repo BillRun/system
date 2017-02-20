@@ -343,10 +343,10 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 	 * @return array ["onError"=>errorCode] if error occured, or ["block"=>boolean]
 	 * indicating if should be blocked.
 	 */
-	protected function handleCoreBalance($planName, $wallet, $query) {
+	protected function handleUnlimitedBalance($planName, $wallet, $query) {
 		$max = $this->getBalanceMaxValue($planName, $wallet->getPPID());
 		
-		$handleResult = $this->updateOperation->handleCoreBalance($max, $wallet, $query);
+		$handleResult = $this->updateOperation->handleUnlimitedBalance($max, $wallet, $query);
 		if(isset($handleResult['onError'])) {
 			$this->reportError($handleResult['onError']);
 			return false;

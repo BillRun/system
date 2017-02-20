@@ -19,45 +19,39 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 	 * @return int
 	 */
 	protected function getFractionOfMonth() {
-		if (empty($this->deactivation)) {
+		if (empty($this->deactivation) ) {
 			return 1;
 		} 
 
-		// subscriber deactivates and should be charged for a partial month		
+		// subscriber deactivates and should be charged for a partial month
 		if ($this->activation > $this->cycle->start()) {
-			return Billrun_Plan::calcFractionOfMonth($this->cycle->key(), $this->activation, $this->deactivation);
+			return 1 + Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $this->deactivation);
 		}
-		
-		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$formatStart = date(Billrun_Base::base_dateformat, $this->cycle->start());
-		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
-		
-		$activationDiffStart = floor(Billrun_Plan::getMonthsDiff($formatActivation, $formatStart));
-		$activationDiffDeactivation = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
-		$flooredActDeacDiff = floor($activationDiffDeactivation);
-		
-		if ($activationDiffStart == $flooredActDeacDiff) {
-			// TODO: What the hell???? Why am i returning null here? why is this condition so important?
-			return null;
-		}
-		
-		return $activationDiffDeactivation - floor($activationDiffDeactivation);
+
+		if ($this->deactivation > $this->cycle->end() ) {
+			return 1;
+		} 		
+
+		return null;
 	}
 
 	public function getRefund(Billrun_DataTypes_CycleTime $cycle) {
-		if (empty($this->deactivation)) {
+		
+		if (empty($this->deactivation)  ) {
 			return null;
 		}
 		
 		// get a refund for a cancelled plan paid upfront
-		if ($this->activation > $cycle->start()) { 
+		if ($this->activation > $cycle->start() //No refund need as it  started  in the current cycle
+			 || 
+			$this->deactivation > $this->cycle->end() // the deactivation is in a future cycle
+			) { 
 			return null;
 		}
 		
-		$lastUpfrontCharge = $this->getPrice();
-		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
-		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
-		$refundFraction = 1 - Billrun_Plan::calcFractionOfMonth($cycle->key(), $formatActivation, $formatDeactivation);
+		$lastUpfrontCharge = $this->getPriceForcycle($cycle);
+		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $this->deactivation) ;
+		
 		return -$lastUpfrontCharge * $refundFraction;
 	}
 }

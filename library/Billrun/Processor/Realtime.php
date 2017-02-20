@@ -37,9 +37,12 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$row['usagev'] = $this->getLineVolume($row, $config);
-		$row['urt'] = $this->getRowDateTime($row);
-		if (!$row['urt']) {
+		$row['process_time'] = date(self::base_datetimeformat);
+		$datetime = $this->getRowDateTime($row);
+		if (!$datetime) {
 			$row['urt'] = new MongoDate();
+		} else {
+			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
 
 		return true;
@@ -85,23 +88,27 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function getLineVolume($row, $config) {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
-			return $row['uf'][$config['processor']['volume_field']];
+			return floatval($row['uf'][$config['processor']['volume_field']]);
 		}
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
-			return $config['realtime']['default_values'][$row['record_type']];
+			return floatval($config['realtime']['default_values'][$row['record_type']]);
 		}
 		
 		if (isset($config['realtime']['default_values']['default'])) {
-			return $config['realtime']['default_values']['default'];
+			return floatval($config['realtime']['default_values']['default']);
 		}
 		
 		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
 			return 0;
 		}
-		return Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0));
+		return floatval(Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0)));
 	}
 
 	protected function processLines() {
+	}
+	
+	public function process_files() {
+		return 0;
 	}
 
 }

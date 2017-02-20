@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
@@ -18,7 +17,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since       5.2
  */
 class PaymentGatewaysController extends ApiController {
-
+	use Billrun_Traits_Api_PageRedirect;
+	
 	public function init() {
 		parent::init();
 	}
@@ -42,11 +42,12 @@ class PaymentGatewaysController extends ApiController {
 			$setting['params'] = $fields;
 			$settings[] = $setting;
 		}
-		$this->setOutput(array(
+		$output = array (
 			'status' => !empty($settings) ? 1 : 0,
 			'desc' => !empty($settings) ? 'success' : 'error',
 			'details' => empty($settings) ? array() : $settings,
-		));
+		);
+		$this->setOutput(array($output));
 	}
 
 	protected function render($tpl, array $parameters = array()) {
@@ -60,11 +61,14 @@ class PaymentGatewaysController extends ApiController {
 	public function getRequestAction() {
 		$request = $this->getRequest();
 		// Validate the data.
-		$requestData = json_decode($request->get('data'), true);
+		$originalRequestData = $requestData = json_decode($request->get('data'), true);
+		if (isset($requestData['return_url'])) {
+			$requestData['return_url'] = urlencode($requestData['return_url']);
+		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
-			return $this->setError("Failed to authenticate", $request);
+			return $this->setError("Failed to authenticate", $requestData);
 		} else {
-			$data = $requestData;
+			$data = $originalRequestData;
 			unset($data[Billrun_Utils_Security::SIGNATURE_FIELD]);
 		}
 
@@ -84,7 +88,6 @@ class PaymentGatewaysController extends ApiController {
 
 		$name = $data['name'];
 		$aid = $data['aid'];
-		$this->validatePaymentGateway($name, $aid);
 
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
@@ -96,9 +99,15 @@ class PaymentGatewaysController extends ApiController {
 		}
 		
 		$accountQuery = $this->getAccountQuery($aid);
-		$accountQuery['tennant_return_url'] = $returnUrl;
+		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		if ($result['content_type'] == 'url') {
+			$this->getView()->output = $result['content'];
+			$this->getView()->outputMethod = 'header';
+		} else if ($result['content_type'] == 'html') {
+			$this->setOutput(array($result['content'], TRUE));
+		}
 	}
 
 	/**
@@ -159,7 +168,10 @@ class PaymentGatewaysController extends ApiController {
 			}
 			$transactionId = $customer;
 		}
-		$paymentGateway->saveTransactionDetails($transactionId);
+		$additionalParams = $paymentGateway->addAdditionalParameters($request);
+		$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		$this->getView()->outputMethod = 'header';
+		$this->getView()->output = "Location: " . $returnUrl;
 	}
 
 	/**
@@ -177,7 +189,8 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	public function successAction() {
-		print_r("SUCCESS");
+		$this->getView()->outputMethod = 'print_r';
+		$this->setOutput(array("SUCCESS", TRUE));
 	}
 
 	

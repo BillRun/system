@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
@@ -15,7 +14,7 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  * @since    5.2
  */
 abstract class Billrun_PaymentGateway {
-
+	
 	use Billrun_Traits_Api_PageRedirect;
 
 	/**
@@ -150,19 +149,46 @@ abstract class Billrun_PaymentGateway {
 	 */
 	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
-		$subscribers->update($accountQuery, array('$set' => array('tennant_return_url' => $accountQuery['tennant_return_url'])));
-		$this->getToken($aid, $accountQuery['tennant_return_url'], $request);
+		$tenantReturnUrl = $accountQuery['tenant_return_url'];
+		unset($accountQuery['tenant_return_url']);
+		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
+		$okPage = $this->getOkPage($request);
+		if ($this->needRequestForToken()){
+			$response = $this->getToken($aid, $tenantReturnUrl, $okPage);
+		} else {
+			$updateOkPage = $this->adjustOkPage($okPage);
+			$response = $updateOkPage;
+		}
+		$this->updateRedirectUrl($response);
 		$this->updateSessionTransactionId();
 
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
-			$this->forceRedirect($this->redirectUrl);
+			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
-			$doc = new DOMDocument();
-			$doc->loadHTML($this->htmlForm);
-			echo $doc->saveHTML();
+			return array('content'=> $this->htmlForm, 'content_type' => 'html');
 		}
+	}
+	
+	 /**
+	  * True if there's a need to request token from the payment gateway. 
+	  * 
+	  */
+	abstract protected function needRequestForToken();
+
+	 /* returns the OkPage.
+	 * 
+	 * @param $request - the request that got from whtn the customer filed his personal details.
+	 * 
+	 */
+	protected function getOkPage($request) {
+		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
+		$pageRoot = $request->getServer()['HTTP_HOST'];
+		$protocol = empty($request->getServer()['HTTPS']) ? 'http' : 'https';
+		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+
+		return $okPage;
 	}
 
 	/**
@@ -192,9 +218,10 @@ abstract class Billrun_PaymentGateway {
 	 *  Build request to Query for getting transaction details.
 	 * 
 	 * @param string $txId - String that represents the transaction.
+	 * @param Array $additionalParams - additional parameters that's needed for integration. 
 	 * @return array - represents the request
 	 */
-	abstract protected function buildTransactionPost($txId);
+	abstract protected function buildTransactionPost($txId, $additionalParams);
 
 	/**
 	 * Get the name of the parameter that the payment gateway returns to represent billing agreement id.
@@ -278,18 +305,17 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 */
 	abstract protected function isHtmlRedirect();
-		
-	/**
+	
+		/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
 	 * @param $returnUrl - The page to redirect the client after success of the whole process.
+	 * @param $okPage - the page to return after the customer filed payment details.
+	 * 
+	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $request) {
-		$okTemplate = Billrun_Factory::config()->getConfigValue('PaymentGateways.ok_page');
-		$pageRoot = $request->getServer()['HTTP_HOST'];
-		$protocol = empty($request->getServer()['HTTPS'])? 'http' : 'https';
-		$okPage = sprintf($okTemplate, $protocol, $pageRoot, $this->billrunName);
+	protected function getToken($aid, $returnUrl, $okPage) {
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
@@ -299,7 +325,8 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
-		$this->updateRedirectUrl($result);	
+
+		return $result;
 	}
 
 	/**
@@ -307,14 +334,14 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @param $txId - String that represents the transaction.
 	 */
-	public function saveTransactionDetails($txId) {
-		$postArray = $this->buildTransactionPost($txId);
+	public function saveTransactionDetails($txId, $additionalParams) {
+		$postArray = $this->buildTransactionPost($txId, $additionalParams);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
 		} else {
 			$postString = $postArray;
 		}
-		if (function_exists("curl_init")) {
+		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if ($this->getResponseDetails($result) === FALSE) {
@@ -326,7 +353,7 @@ abstract class Billrun_PaymentGateway {
 		if (!$this->validatePaymentProcess($txId)) {
 			throw new Exception("Too much time passed");
 		}
-		$this->saveAndRedirect();
+		return $this->saveAndRedirect();
 	}
 
 	protected function saveAndRedirect() {
@@ -336,14 +363,10 @@ abstract class Billrun_PaymentGateway {
 		$query['type'] = "account";
 		$setQuery = $this->buildSetQuery();       
 		$this->subscribers->update($query, array('$set' => $setQuery));
+		$account = $this->subscribers->query($query)->cursor()->current();
+		$returnUrl = $account['tenant_return_url'];
 
-		if (isset($this->saveDetails['return_url'])) {
-			$returnUrl = (string) $this->saveDetails['return_url'];
-		} else {
-			$account = $this->subscribers->query($query)->cursor()->current();
-			$returnUrl = $account['tennant_return_url'];
-		}
-		$this->forceRedirect($returnUrl);
+		return $returnUrl;
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -504,7 +527,7 @@ abstract class Billrun_PaymentGateway {
 					'$gt' => Billrun_Bill::precision,
 				),
 				'payment_method' => array(
-					'$in' => array('Credit'),
+					'$in' => array('automatic'),
 				),
 				'suspend_debit' => NULL,
 			),
@@ -554,5 +577,17 @@ abstract class Billrun_PaymentGateway {
 	public function getTransactionId(){
 		return $this->transactionId;
 	}
- 
+	
+	/**
+	 * adding params that the payment gateway needs for further integraion.
+	 * 
+	 */
+	public function addAdditionalParameters() {
+		return array();
+	}
+	
+	protected function isTransactionDetailsNeeded() {
+		return true;
+	}
+	
 }

@@ -14,6 +14,8 @@
  */
 class Models_Entity {
 
+	use Models_Verification;
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -83,11 +85,37 @@ class Models_Entity {
 	 */
 	protected $action = 'change';
 
+	/**
+	 * the change action applied on the entity
+	 * 
+	 * @var string
+	 */
+	protected $availableOperations = array('query', 'update', 'sort');
+
 	public function __construct($params) {
-		$this->collectionName = $params['collection'];
+		if ($params['collection'] == 'accounts') {
+			$this->collectionName = 'subscribers';
+		} else {
+			$this->collectionName = $params['collection'];
+		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
-		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
-		foreach (array('query', 'update', 'sort') as $operation) {
+		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
+		if (isset($params['request']['action'])) {
+			$this->action = $params['request']['action'];
+		}
+		$this->init($params);
+	}
+
+	protected function init($params) {
+		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
+		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		if (json_last_error() != JSON_ERROR_NONE) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
+		}
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
+		$this->query = $translatedQuery;
+		$this->update = $translatedUpdate;
+		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
 			}
@@ -99,6 +127,32 @@ class Models_Entity {
 		if (isset($this->query['_id'])) {
 			$this->before = $this->loadById($this->query['_id']);
 		}
+		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
+			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
+		}
+	}
+
+	/**
+	 * method to add entity custom fields values from request
+	 * 
+	 * @param array $fields array of field settings
+	 */
+	protected function addCustomFields($fields, $originalUpdate) {
+//		$ad = $this->getCustomFields();
+		$additionalFields = array_column($this->getCustomFields(), 'field_name');
+		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		$customFields = array_diff($additionalFields, $defaultFields);
+//		print_R($customFields);
+		foreach ($customFields as $field) {
+			if (isset($originalUpdate[$field])) {
+				$this->update[$field] = $originalUpdate[$field];
+			}
+		}
+//		print_R($this->update);die;
+	}
+
+	protected function getCustomFields() {
+		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
 	}
 
 	/**
@@ -110,6 +164,12 @@ class Models_Entity {
 	public function create() {
 		$this->action = 'create';
 		unset($this->update['_id']);
+		if (empty($this->update['from'])) {
+			$this->update['from'] = new MongoDate();
+		}
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+49 years'));
+		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);
@@ -143,12 +203,16 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
+		$now = new MongoDate();
 		if (!isset($this->update['from'])) {
-			return false;
+			$this->update['from'] = $now;
+		}
+		if ($this->update['from']->sec < $now->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'closeandnew must get a future update');
 		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec - 1)
+				'to' => new MongoDate($this->update['from']->sec)
 			)
 		);
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
@@ -160,7 +224,7 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
-		$this->trackChanges($newId, isset($this->update['key']) ? 'key' : 'name');
+		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
 
@@ -197,7 +261,7 @@ class Models_Entity {
 			return;
 		}
 		$this->remove($this->query); // TODO: check return value (success to remove?)
-		$this->trackChanges(null, $this->collectionName == 'rates' ? 'key' : 'name'); // assuming remove by _id
+		$this->trackChanges(null); // assuming remove by _id
 	}
 
 	/**
@@ -221,10 +285,10 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id'], $this->collectionName == 'rates' ? 'key' : 'name');
+		$this->trackChanges($this->query['_id']);
 		return true;
 	}
-	
+
 	/**
 	 * DB update currently limited to update of one record
 	 * @param type $query
@@ -273,11 +337,11 @@ class Models_Entity {
 	 * 
 	 * @param MongoId $newId the new id; if null take from update array _id field
 	 * @param MongoId $oldId the old id; if null this is new document (insert operation)
-	 * @param string $field the field name that will be used as the key
 	 * 
 	 * @return boolean true on success else false
 	 */
-	protected function trackChanges($newId = null, $field = 'name') {
+	protected function trackChanges($newId = null) {
+		$field = $this->getKeyField();
 		if (is_null($newId) && isset($this->update['_id'])) {
 			$newId = $this->update['_id'];
 		}
@@ -355,6 +419,22 @@ class Models_Entity {
 			);
 		}
 		return $query ? !$this->collection->query($query)->count() : TRUE;
+	}
+
+	/**
+	 * Return the key field by collection
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		switch ($this->collectionName) {
+			case 'users':
+				return 'username';
+			case 'rates':
+				return 'key';
+			default:
+				return 'name';
+		}
 	}
 
 }

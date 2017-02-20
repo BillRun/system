@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 
 /**
  * Configmodel class
@@ -176,11 +175,10 @@ class ConfigModel {
 	}
 
 	/**
-	 * 
+	 * Update a config category with data
 	 * @param string $category
-	 * @param int $data
-	 * @param boolean $set
-	 * @return type
+	 * @param mixed $data
+	 * @return mixed
 	 */
 	public function updateConfig($category, $data) {
 		$updatedData = $this->getConfig();
@@ -200,15 +198,9 @@ class ConfigModel {
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
-			$rawFileSettings = $this->getFileTypeSettings($updatedData, $data['file_type']);
-			if ($rawFileSettings) {
-				$fileSettings = array_merge($rawFileSettings, $data);
-			} else {
-				$fileSettings = $data;
-			}
+			$this->setFileTypeSettings($updatedData, $data);
+			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
 			$fileSettings['enabled'] = isset($data['enabled']) ? $data['enabled'] : true;
-			$this->setFileTypeSettings($updatedData, $fileSettings);
-			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);	
 		} else if ($category === 'payment_gateways') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
@@ -286,6 +278,17 @@ class ConfigModel {
 		}
 
 		return $saveResult;
+	}
+	
+	public function validateConfig($category, $data) {
+		$updatedData = $this->getConfig();
+		if ($category === 'file_types') {
+			if (empty($data['file_type'])) {
+				throw new Exception('Couldn\'t find file type name');
+			}
+			$this->setFileTypeSettings($updatedData, $data);
+			return $this->validateFileSettings($updatedData, $data['file_type']);
+		}
 	}
 
 	/**
@@ -387,7 +390,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		Billrun_Factory::log("Tempalte: " . print_r($template,1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
@@ -510,30 +513,12 @@ class ConfigModel {
 		unset($updatedData['_id']);
 		if ($category === 'file_types') {
 			if (isset($data['file_type'])) {
-				if (count($data) == 1) {
-					$this->unsetFileTypeSettings($updatedData, $data['file_type']);
-				} else {
-					if (!$fileSettings = $this->getFileTypeSettings($updatedData, $data['file_type'])) {
-						throw new Exception('Unkown file type ' . $data['file_type']);
-					}
-					foreach (array_keys($data) as $key) {
-						if ($key != 'file_type') {
-							unset($fileSettings[$key]);
-						}
-					}
-					if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
-						throw new Exception('Operation will result in illegal file settings. Aborting.');
-					}
-					$this->setFileTypeSettings($updatedData, $fileSettings);
-					$fileSettings = $this->validateFileSettings($updatedData, $data['file_type']);
-				}
+				$this->unsetFileTypeSettings($updatedData, $data['file_type']);
 			}
 		}
 		if ($category === 'export_generators') {
 			if (isset($data['name'])) {
-				if (count($data) == 1) {
-					$this->unsetExportGeneratorSettings($updatedData, $data['name']);
-				} 
+				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
 		}
 		if ($category === 'payment_gateways') {
@@ -647,7 +632,8 @@ class ConfigModel {
 		}, $config['export_generators']);	
 	}
  
-	protected function validateFileSettings(&$config, $fileType) {
+	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
+		$completeFileSettings = FALSE;
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
@@ -668,22 +654,23 @@ class ConfigModel {
 						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators']);
 						if (isset($fileSettings['receiver'])) {
 							$updatedFileSettings['receiver'] = $this->validateReceiverConfiguration($fileSettings['receiver']);
+							$completeFileSettings = TRUE;
+						} else if (isset($fileSettings['realtime'], $fileSettings['response'])) {
+							$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
+							$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
+							$completeFileSettings = TRUE;
 						}
 					}
 				}
 			}
-			
-			if (isset($fileSettings['realtime'])) {
-				$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
-			}
-			if (isset($fileSettings['response'])) {
-				$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
-			}
+		}
+		if (!$allowPartial && !$completeFileSettings) {
+			throw new Exception('File settings is not complete.');
 		}
 		$this->setFileTypeSettings($config, $updatedFileSettings);
 		return $this->checkForConflics($config, $fileType);
 	}
-	
+
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
 		return in_array($type, $allowedTypes);
@@ -938,8 +925,8 @@ class ConfigModel {
 				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
 				}
-				if (filter_var($connection['host'], FILTER_VALIDATE_IP) === FALSE) {
-					throw new Exception($connection['host'] . ' is not a valid IP addresss');
+				if (!Billrun_Util::isValidIPOrHost($connection['host'])) {
+					throw new Exception($connection['host'] . ' is not a valid host');
 				}
 				$connection['passive'] = $connection['passive'] ? 1 : 0;
 				$connection['delete_received'] = $connection['delete_received'] ? 1 : 0;
