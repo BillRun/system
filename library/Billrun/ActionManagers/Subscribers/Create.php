@@ -194,7 +194,7 @@ class Billrun_ActionManagers_Subscribers_Create extends Billrun_ActionManagers_S
 			// TODO: Create some sort of polymorphic behaviour to correctly handle
 			// the updating fields.
 			if($fieldName === 'services') {
-				$toSet = $this->getSubscriberServices($queryData['services']);
+				$toSet = $this->getSubscriberServices($queryData['services'], new MongoDate(), new MongoDate(strtotime('+100 years')));
 			} else {
 				$toSet = $queryData[$fieldName];
 			}
