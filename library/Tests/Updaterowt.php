@@ -92,7 +92,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 60, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 55, 'over_group' => 225, 'aprice' => 86),
+		array('in_group' => 55, 'over_group' => 225, 'aprice' => 106.5),
 		array('in_group' => 0, 'over_group' => 180, 'aprice' => 18),
 		//case G expected
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
