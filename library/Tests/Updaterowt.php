@@ -114,7 +114,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.05), // over calls
 		//case J expected
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //in groups
-		array('in_group' => 50, 'over_group' => 25, 'aprice' => 12.5), //move group and over
+		array('in_group' => 70, 'over_group' => 5, 'aprice' => 2.5), //move group and over
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 15), //over group
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 6), //out group
 		//old results
