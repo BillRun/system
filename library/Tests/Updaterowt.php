@@ -36,7 +36,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'g1', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 120, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g2', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 110.5, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g3', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 20, 'services' => ["NEW-SERVICE3"]),
-		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services' => ["NEW-SERVICE3"]),
+//		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g5', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services' => ["NEW-SERVICE3"]),
 		//case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
 		array('stamp' => 'h1', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["NEW-SERVICE4"]),
@@ -66,7 +66,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services' => ["SERVICE3"]),
 		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
 		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["SERVICE4"]),
@@ -98,7 +98,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.1),
+//		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.1),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
 		//case H expected
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //gr from service 4, remain 165
@@ -128,7 +128,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.16),
+//		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.16),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
 		//case C expected
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //gr from service 4, remain 165
