@@ -99,7 +99,9 @@ class Billrun_Balances_Util {
 	 */
 	public static function removeTx($row) {
 		$query = array(
-			'sid' => $row['sid'],
+			'sid' => array(
+				'$in' => array(0, $row['sid']),
+			),
 			'from' => array(
 				'$lte' => $row['urt'],
 			),

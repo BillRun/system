@@ -269,21 +269,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 */
 	public function removeBalanceTx($row) {
-		$query = array(
-			'sid' => $row['sid'],
-			'from' => array(
-				'$lte' => $row['urt'],
-			),
-			'to' => array(
-				'$gt' => $row['urt'],
-			),
-		);
-		$values = array(
-			'$unset' => array(
-				'tx.' . $row['stamp'] => 1
-			)
-		);
-		$this->balances->update($query, $values);
+		Billrun_Balances_Util::removeTx($row);
 	}
 
 	/**
