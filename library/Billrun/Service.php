@@ -105,7 +105,7 @@ class Billrun_Service {
 		$groups = array();
 		if (is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
-				if (!empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+				if (array_key_exists($usageType, $groupIncludes) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;
 				}
 			}
@@ -248,7 +248,7 @@ class Billrun_Service {
 		if (!is_null($this->strongestGroup)) {
 			return $this->strongestGroup;
 		}
-		$limit = 10; // protect infinit loop
+		$limit = 10; // protect infinite loop
 		do {
 			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
 			// group not found
