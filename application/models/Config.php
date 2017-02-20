@@ -200,7 +200,6 @@ class ConfigModel {
 			}
 			$this->setFileTypeSettings($updatedData, $data);
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
-			$fileSettings['enabled'] = isset($data['enabled']) ? $data['enabled'] : true;
 		} else if ($category === 'payment_gateways') {
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
@@ -542,6 +541,22 @@ class ConfigModel {
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
+	
+	public function setFileTypeEnabled($category, $data, $enabled) {
+		$updatedData = $this->getConfig();
+		unset($updatedData['_id']);
+		if ($category === 'file_types') {
+			foreach ($updatedData['file_types'] as &$someFtSettings) {
+				if ($someFtSettings['file_type'] == $data['file_type']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
+		}
+ 
+		$ret = $this->collection->insert($updatedData);
+		return !empty($ret['ok']);
+	}
 
 	protected function getFileTypeSettings($config, $fileType) {
 		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
@@ -640,7 +655,6 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
-		$updatedFileSettings['enabled'] = isset($fileSettings['enabled']) ? $fileSettings['enabled'] : true;
 		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
 			$updatedFileSettings['type'] = $fileSettings['type'];
 		}
