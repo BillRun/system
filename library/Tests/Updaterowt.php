@@ -16,8 +16,7 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Updaterowt extends UnitTestCase {
-	
-	
+
 	protected $ratesCol;
 	protected $plansCol;
 	protected $linesCol;
@@ -155,7 +154,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
-		
+
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -191,20 +190,19 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected function compareExpected($key, $returnRow) {
 		$passed = True;
 		$epsilon = 0.000001;
-		$inGroupE= $this -> expected[$key]['in_group'];
-		$overGroupE = $this -> expected[$key]['over_group'];
-		$aprice =   round(10*($this -> expected[$key]['aprice']))/10;
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — aprice: '. $aprice .'<br> — in_group: '. $inGroupE .'<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
-		$message .= '— aprice: '.$returnRow['aprice'];
-		if(Billrun_Util::isEqual($returnRow['aprice'],$aprice,$epsilon)){
-			 $message .=  $this->pass;
-		}
-		else{
-			$message .=  $this->fail;
+		$inGroupE = $this->expected[$key]['in_group'];
+		$overGroupE = $this->expected[$key]['over_group'];
+		$aprice = round(10 * ($this->expected[$key]['aprice'])) / 10;
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
+		$message .= '— aprice: ' . $returnRow['aprice'];
+		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
+			$message .= $this->pass;
+		} else {
+			$message .= $this->fail;
 			$passed = False;
 		}
 		if ($inGroupE == 0) {
-			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'],0,$epsilon)) {
+			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'], 0, $epsilon)) {
 				$message .= '— in_group: 0' . $this->pass;
 			} else {
 				$message .= '— in_group: ' . $returnRow['in_group'] . $this->fail;
@@ -214,7 +212,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			if (!isset($returnRow['in_group'])) {
 				$message .= '— in_group: 0' . $this->fail;
 				$passed = False;
-			} else if (!Billrun_Util::isEqual($returnRow['in_group'],$inGroupE,$epsilon)) {
+			} else if (!Billrun_Util::isEqual($returnRow['in_group'], $inGroupE, $epsilon)) {
 				$message .= '— in_group: ' . $returnRow['in_group'] . $this->fail;
 				$passed = False;
 			} else {
@@ -222,7 +220,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			}
 		}
 		if ($overGroupE == 0) {
-			if (((!isset($returnRow['over_group'])) || (Billrun_Util::isEqual($returnRow['over_group'],0,$epsilon))) && ((!isset($returnRow['out_plan'])) || (Billrun_Util::isEqual($returnRow['out_plan'],0,$epsilon)))) {
+			if (((!isset($returnRow['over_group'])) || (Billrun_Util::isEqual($returnRow['over_group'], 0, $epsilon))) && ((!isset($returnRow['out_plan'])) || (Billrun_Util::isEqual($returnRow['out_plan'], 0, $epsilon)))) {
 				$message .= '— over_group and out_plan: doesnt set' . $this->pass;
 			} else {
 				if (isset($returnRow['over_group'])) {
@@ -239,14 +237,14 @@ class Tests_Updaterowt extends UnitTestCase {
 				$message .= '— over_group and out_plan: dont set' . $this->fail;
 				$passed = False;
 			} else if (isset($returnRow['over_group'])) {
-				if (!Billrun_Util::isEqual($returnRow['over_group'],$overGroupE,$epsilon)) {
+				if (!Billrun_Util::isEqual($returnRow['over_group'], $overGroupE, $epsilon)) {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->fail;
 					$passed = False;
 				} else {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->pass;
 				}
 			} else if (isset($returnRow['out_plan'])) {
-				if (!Billrun_Util::isEqual($returnRow['out_plan'],$overGroupE,$epsilon)) {
+				if (!Billrun_Util::isEqual($returnRow['out_plan'], $overGroupE, $epsilon)) {
 					$message .= '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
 					$passed = False;
 				} else {
