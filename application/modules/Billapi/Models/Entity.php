@@ -113,8 +113,8 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
-		$this->query = $translatedQuery;
-		$this->update = $translatedUpdate;
+		$this->setQuery($translatedQuery);
+		$this->setUpdate($translatedUpdate);
 		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
@@ -125,7 +125,7 @@ class Models_Entity {
 		$size = Billrun_Util::getFieldVal($params['size'], 10);
 		$this->size = Billrun_Util::IsIntegerValue($size) ? $size : 10;
 		if (isset($this->query['_id'])) {
-			$this->before = $this->loadById($this->query['_id']);
+			$this->setBefore($this->loadById($this->query['_id']));
 		}
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
@@ -282,6 +282,10 @@ class Models_Entity {
 		}
 		$this->remove($this->query); // TODO: check return value (success to remove?)
 		$this->trackChanges(null); // assuming remove by _id
+		
+		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
+			$this->reopenPreviousEntry();
+		}
 	}
 
 	/**
@@ -350,6 +354,49 @@ class Models_Entity {
 	 */
 	protected function remove($query) {
 		$this->collection->remove($query);
+	}
+	
+	/**
+	 * future entity was removed - need to update the to of the previous change
+	 */
+	protected function reopenPreviousEntry() {
+		$key = $this->getKeyField();
+		$previousEntryQuery = array(
+			$key => $this->before[$key],
+		);
+		$previousEntrySort = array(
+			'_id' => -1
+		);
+		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
+			->sort($previousEntrySort)->limit(1)->current();
+		$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+		$this->setUpdate(array('to' => $this->before['to']));
+		$this->setBefore($previousEntry);
+		$this->update();
+	}
+	
+	/**
+	 * method to update the update instruct
+	 * @param array $u mongo update instruct
+	 */
+	public function setUpdate($u) {
+		$this->update = $u;
+	}
+	
+	/**
+	 * method to update the query instruct
+	 * @param array $q mongo query instruct
+	 */
+	public function setQuery($q) {
+		$this->query = $q;
+	}
+
+	/**
+	 * method to update the before entity
+	 * @param array $b the before entity
+	 */
+	public function setBefore($b) {
+		$this->before = $b;
 	}
 
 	/**
