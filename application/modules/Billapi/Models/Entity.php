@@ -168,7 +168,7 @@ class Models_Entity {
 			$this->update['from'] = new MongoDate();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+49 years'));
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
@@ -202,12 +202,14 @@ class Models_Entity {
 	 * actual for update and closeandnew methods
 	 * 
 	 * @throws Billrun_Exceptions_Api
-	 * @todo dispatch plugin trigger to be able to stop update by 3rd party
 	 */
 	protected function preCheckUpdate() {
 		if (isset($this->before['to']->sec) && $this->before['to']->sec < time()) {
-			return false;
+			$ret = false;
+		} else {
+			$ret = true;
 		}
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
 		return true;
 	}
 
@@ -240,7 +242,7 @@ class Models_Entity {
 			return false;
 		}
 
-		$oldId = $this->query['_id'];
+//		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
@@ -277,14 +279,17 @@ class Models_Entity {
 	 */
 	public function delete() {
 		$this->action = 'delete';
-		if (!$this->query || empty($this->query)) { // currently must have some query
-			return;
+		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
+			return false;
 		}
-		$this->remove($this->query); // TODO: check return value (success to remove?)
+		$status = $this->remove($this->query); // TODO: check return value (success to remove?)
+		if (!isset($status['ok']) || !$status['ok']) {
+			return false;
+		}
 		$this->trackChanges(null); // assuming remove by _id
 		
 		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
-			$this->reopenPreviousEntry();
+			return $this->reopenPreviousEntry();
 		}
 		return true;
 	}
@@ -354,7 +359,7 @@ class Models_Entity {
 	 * @param array $query
 	 */
 	protected function remove($query) {
-		$this->collection->remove($query);
+		return $this->collection->remove($query);
 	}
 	
 	/**
@@ -373,7 +378,7 @@ class Models_Entity {
 		$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
 		$this->setUpdate(array('to' => $this->before['to']));
 		$this->setBefore($previousEntry);
-		$this->update();
+		return $this->update();
 	}
 	
 	/**
@@ -439,7 +444,8 @@ class Models_Entity {
 				'collection' => $this->collectionName,
 				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
 				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] : null,
+				'key' => isset($this->update[$field]) ? $this->update[$field] : 
+							(isset($this->before[$field]) ? $this->before[$field] : null),
 			);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
 			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
@@ -466,8 +472,9 @@ class Models_Entity {
 	 * Inserts a document to the DB, as is
 	 * @param array $data
 	 */
-	protected function insert($data) {
-		return $this->collection->insert($data, array('w' => 1));
+	protected function insert(&$data) {
+		$ret = $this->collection->insert($data, array('w' => 1, 'j' => 1));
+		return $ret;
 	}
 
 	/**
