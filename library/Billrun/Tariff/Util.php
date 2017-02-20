@@ -34,13 +34,9 @@ class Billrun_Tariff_Util {
 		} else {
 			$isNegative = false;
 		}
-		$price = static::getChargeByTariffRatesAndVolume(self::getTariffs($tariff), $volume);
+		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume);
 		$ret = $accessPrice + $price;
 		return ($isNegative ? $ret * (-1) : $ret);
-	}
-	
-	protected static function getTariffs($tariff) {
-		return isset($tariff['rate'])? $tariff['rate'] : $tariff;
 	}
 
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
