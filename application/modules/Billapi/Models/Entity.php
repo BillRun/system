@@ -185,12 +185,29 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
+		}
 		$this->action = 'update';
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
 		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+
+	/**
+	 * method to check if the update is valid
+	 * actual for update and closeandnew methods
+	 * 
+	 * @throws Billrun_Exceptions_Api
+	 * @todo dispatch plugin trigger to be able to stop update by 3rd party
+	 */
+	protected function preCheckUpdate() {
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < time()) {
+			return false;
+		}
 		return true;
 	}
 
@@ -202,6 +219,9 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
+		}
 		$this->action = 'closeandnew';
 		$now = new MongoDate();
 		if (!isset($this->update['from'])) {
