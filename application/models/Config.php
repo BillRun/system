@@ -640,7 +640,7 @@ class ConfigModel {
 		}
 		$updatedFileSettings = array();
 		$updatedFileSettings['file_type'] = $fileSettings['file_type'];
-		$updatedFileSettings['enabled'] = $fileSettings['enabled'];
+		$updatedFileSettings['enabled'] = isset($fileSettings['enabled']) ? $fileSettings['enabled'] : true;
 		if (isset($fileSettings['type']) && $this->validateType($fileSettings['type'])) {
 			$updatedFileSettings['type'] = $fileSettings['type'];
 		}
@@ -718,6 +718,9 @@ class ConfigModel {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			if (!isset($fileSettings['processor']['usaget_mapping'])) {
+				$fileSettings['processor']['usaget_mapping'] = array();
+			}
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];
