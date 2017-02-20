@@ -542,7 +542,7 @@ class ConfigModel {
 		return !empty($ret['ok']);
 	}
 	
-	public function setFileTypeEnabled($category, $data, $enabled) {
+	public function setEnabled($category, $data, $enabled) {
 		$updatedData = $this->getConfig();
 		unset($updatedData['_id']);
 		if ($category === 'file_types') {

@@ -58,9 +58,9 @@ class SettingsAction extends ApiAction {
 		} else if ($action === 'validate') {
 			$success = $this->model->validateConfig($category, $data);
 		} else if ($action === 'enable') {
-			$success = $this->model->setFileTypeEnabled($category, $data, true);
+			$success = $this->model->setEnabled($category, $data, true);
 		} else if ($action === 'disable') {
-			$success = $this->model->setFileTypeEnabled($category, $data, false);
+			$success = $this->model->setEnabled($category, $data, false);
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}
