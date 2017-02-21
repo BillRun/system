@@ -452,6 +452,9 @@ abstract class Billrun_Bill {
 				),
 				array(
 					'type' => 'rec',
+					'waiting_for_confirmation' => array(
+						'$ne' => true,
+					),
 				),
 			),
 		);
