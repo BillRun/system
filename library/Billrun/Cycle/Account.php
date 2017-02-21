@@ -312,55 +312,13 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 					}
 				}
 				$services = array_merge($services,$currServices);
-			}
-
-			
-//			$rawAdded = array_diff($currServices, $services);
-//			
-//			$services = $currServices;
-//			
-//			// Translate the added and removed.
-//			$func = function($v){
-//					return array('name' => $v);
-//				};
-//			$added = array_map($func, $rawAdded);
-//			$removed = array_map($func, $rawRemoved);
-//			
-//			// Add the services to the services data
-//			foreach ($added as $addedService) {
-//				$key = $addedService['name'];
-//				$serviceStart = new MongoDate($subscriber['sfrom']);
-//				if(!($serviceStart instanceof MongoDate)) {
-//					Billrun_Factory::log("from " . $serviceStart);
-//					throw new Exception("For not plan dates are mongo dates");
-//				}
-//				$serviceRow = array("service" => $key, "start" => $serviceStart->sec);
-//				$servicesData[$key] = $serviceRow;
-//			}
-//			
-//			// Handle the removed services. 
-//			foreach ($removed as $removedService) {
-//				$key = $removedService['name'];
-//				$updateService = $servicesData[$key];
-//				unset($servicesData[$key]);
-//				$serviceEnd = $subscriber['plans'][0]['from']->sec;
-//				$updateService['end'] = $serviceEnd;
-//
-//				// Push back
-//				$servicesAggregatorData[$serviceEnd][] = $updateService;
-//			}
+			}	
 			
 		}
 		
 		foreach($services as $service) {
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
-
-
-//		foreach ($servicesData as $lastService) {
-//			$lastService['end'] = $sto;
-//			$servicesAggregatorData["$sto"][] = $lastService;
-//		}
 		
 		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);
 		
