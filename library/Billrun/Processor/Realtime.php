@@ -36,7 +36,15 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		$rowKey = key($this->data['data']);
 		$row = &$this->data['data'][$rowKey];
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
+		if ($row['usaget'] === false) {
+			Billrun_Factory::log("Billrun_Processor: cannot get line usage type. details: " . print_R($row, 1), Zend_Log::ERR);
+			return false;
+		}
 		$row['usagev'] = $this->getLineVolume($row, $config);
+		if ($row['usagev'] === false) {
+			Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
+			return false;
+		}
 		$row['process_time'] = date(self::base_datetimeformat);
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
@@ -88,6 +96,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function getLineVolume($row, $config) {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
+			if (empty($row['uf'][$config['processor']['volume_field']])) {
+				return false;
+			}
 			return floatval($row['uf'][$config['processor']['volume_field']]);
 		}
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
