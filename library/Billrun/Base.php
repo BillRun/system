@@ -157,7 +157,7 @@ abstract class Billrun_Base {
 
 		if (!$config_type = Billrun_Factory::config()->{$type}) {
 			$config_type = array_filter(Billrun_Factory::config()->file_types->toArray(), function($fileSettings) use ($type) {
-				return $fileSettings['file_type'] === $type;
+				return $fileSettings['file_type'] === $type && Billrun_Config::isFileTypeConfigEnabled($fileSettings);
 			});
 			if ($config_type) {
 				$config_type = current($config_type);

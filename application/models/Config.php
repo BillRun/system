@@ -558,9 +558,10 @@ class ConfigModel {
 		return !empty($ret['ok']);
 	}
 
-	protected function getFileTypeSettings($config, $fileType) {
-		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	protected function getFileTypeSettings($config, $fileType, $enabledOnly = false) {
+		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType && 
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		})) {
 			return current($filtered);
 		}
