@@ -56,8 +56,42 @@ class InternalPaypageController extends ExternalPaypageController {
 				header("Location: " . $request['return_url']);
 				return false;
 			}
+		} else {
+			$index = 0;
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid' => $request['aid']));
+			$accountPg = $account->payment_gateway;		
+			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
+			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
+			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
+				if (!isset($accountPg['former'])) { 
+					$previousPg = array();
+				} else {
+					$previousPg = $accountPg['former'];
+					$counter = 0;
+					foreach ($previousPg as $gateway) {
+						if ($gateway['name'] == $prevPgName) {
+							$PrevPgParams = $previousPg[$counter];
+							unset($previousPg[$counter]);
+							$index = $counter;
+						} 
+						$counter++;
+					}
+					
+				}
+				$pgAccountDetails = !empty($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams['params']);		
+				$pgParams = array('name' => $prevPgName, 'pgAccountDetails' => $pgAccountDetails);
+				$currentPg = array(
+					'name' => $pgParams['name'],
+					'params' => $pgParams['pgAccountDetails']
+				);
+				$previousPg[$index] = $currentPg;
+				$setValues['payment_gateway']['former'] = $previousPg;
+				$account->closeAndNew($setValues);
+				$prevPaymentGateway->deleteAccountInPg($pgAccountDetails);
+			}
 		}
-
+		
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $request['aid'],

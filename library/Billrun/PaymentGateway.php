@@ -231,6 +231,11 @@ abstract class Billrun_PaymentGateway {
 	abstract public function getTransactionIdName();
 
 	/**
+	 * True in case of success in the process of adding payment gateway, dealing with what to do in case of failure.
+	 * 
+	 */
+	abstract public function handleOkPageData($txId);
+	/**
 	 * Query the response to getting needed details.
 	 * 
 	 * @param $result - response from the payment gateway to the request to get billing agreement.
@@ -244,11 +249,6 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function buildSetQuery();
 
-	/**
-	 * True if the charge is customer based and not by token.
-	 * 
-	 */
-	abstract public function isCustomerBasedCharge();
 
 	/**
 	 * Checks against the chosen payment gateway if the credentials passed are correct.
@@ -590,4 +590,12 @@ abstract class Billrun_PaymentGateway {
 		return true;
 	}
 	
+	public function isUpdatePgChangesNeeded() {
+		return false;
+	}
+	
+	protected function checkIfCustomerExists () {
+		return false;
+	}
+		
 }
