@@ -202,7 +202,7 @@ class Billrun_Service {
 		} else { // specific group required to check
 			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
 				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
-				return 0;
+				return array('usagev' => 0);
 			}
 
 			if (isset($this->data['include']['groups'][$staticGroup]['limits'])) {
@@ -210,7 +210,7 @@ class Billrun_Service {
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
 				if ($groupSelected === FALSE) {
-					return 0;
+					return array('usagev' => 0);
 				}
 			}
 			
@@ -219,13 +219,15 @@ class Billrun_Service {
 		
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
-				return 0;
+				return array('usagev' => 0);
 			} else {
 			}
 			$cost = $this->data['include']['groups'][$groupSelected]['cost'];
 			// convert cost to volume
 			if ($cost === 'UNLIMITED') {
-				return PHP_INT_MAX;
+				return array(
+					'cost' => PHP_INT_MAX,
+				);
 			}
 
 			if (isset($subscriberBalance['balance']['groups'][$groupSelected]['cost'])) {
@@ -240,7 +242,9 @@ class Billrun_Service {
 		} else {
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 			if ($rateUsageIncluded === 'UNLIMITED') {
-				return PHP_INT_MAX;
+				return array(
+					'usagev' => PHP_INT_MAX,
+				);
 			}
 
 			if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
