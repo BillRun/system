@@ -105,7 +105,7 @@ class Billrun_Service {
 		$groups = array();
 		if (is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
-				if (array_key_exists($usageType, $groupIncludes) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+				if ((array_key_exists($usageType, $groupIncludes) || (array_key_exists('cost', $groupIncludes))) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;
 				}
 			}
@@ -220,7 +220,6 @@ class Billrun_Service {
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
-			} else {
 			}
 			$cost = $this->data['include']['groups'][$groupSelected]['cost'];
 			// convert cost to volume
@@ -235,9 +234,9 @@ class Billrun_Service {
 			} else {
 				$subscriberSpent = 0;
 			}
-			$usageLeft = $rateUsageIncluded - $subscriberSpent;
+			$costLeft = $cost - $subscriberSpent;
 			return array(
-				'cost' => floatval($usageLeft < 0 ? 0 : $usageLeft),
+				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
 			);
 		} else {
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];

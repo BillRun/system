@@ -411,26 +411,35 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
 				if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
-					$ret['over_group'] = $ret['over_plan'] = $value = $this->usageLeftInServicesGroups($rate, $usageType, $services, $valueToCharge, $ret['arategroups']);
-					$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $value;
-					$valueToCharge = $value;
+					$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
+					$balanceType = key($value);
+					$ret['over_group'] = $ret['over_plan'] = current($value);
+					$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $ret['over_group'];
+					$valueToCharge = $ret['over_group'];
 					unset($ret['out_group'], $ret['out_plan']);
 				}
 			}
 		} else {
+			$balanceType = 'usagev';
 			$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
 			if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
 				$ret['arategroups'] = array();
-				$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volume, $ret['arategroups']);
-				$ret['in_plan'] = $ret['in_group'] = $volume - $groupVolumeLeft;
-				$valueToCharge = $groupVolumeLeft;
+				$groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $volume), $ret['arategroups']);
+				$balanceType = key($groupVolumeLeft);
+				$ret['over_group'] = $ret['over_plan'] = current($groupVolumeLeft);
+				$ret['in_plan'] = $ret['in_group'] = $volume - $ret['over_group'];
+				$valueToCharge = $ret['over_group'];
 			} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
 				$ret['out_plan'] = $ret['out_group'] = $valueToCharge = $volume;
 			}
 		}
 
-		$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
-		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, $this));
+		if (empty($balanceType) || $balanceType != 'cost') {
+			$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
+		} else {
+			$charges = array('total' => $valueToCharge);
+		}
+		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, &$ret, $this));
 
 		$ret[$this->pricingField] = $charges['total'];
 		return $ret;
@@ -483,14 +492,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param array $rate the rate
 	 * @param string $usageType usage type
 	 * @param array $services array of Billrun_Service objects
-	 * @param int $volumeRequired the volume required to charge
+	 * @param int $required the volume/cost required to charge
 	 * @param array $arategroups the group services to return to (reference - will be added to this array)
 	 * 
 	 * @return int volume left to charge after used by all services groups
 	 */
-	protected function usageLeftInServicesGroups($rate, $usageType, $services, $volumeRequired, &$arategroups) {
+	protected function usageLeftInServicesGroups($rate, $usageType, $services, $required, &$arategroups) {
+		$keyRequired = key($required);
+		$valueRequired = current($required);
 		foreach ($services as $service) {
-			if ($volumeRequired <= 0) {
+			if ($valueRequired <= 0) {
 				break;
 			}
 
@@ -512,11 +523,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				if ($value === FALSE || $value <= 0) {
 					continue;
 				}
-				if ($balanceType == 'cost') {
-					$valueRequired = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeRequired);
-				} else {
-					$valueRequired = $volumeRequired;
-				}
 				if ($valueRequired <= $value) {
 					$arategroups[(string) $balance->getId()][] = array(
 						'name' => $serviceGroup,
@@ -525,7 +531,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
 						'balance' => $balance,
 					);
-					return 0;
+					return array($keyRequired => 0);
 				}
 				$arategroups[(string) $balance->getId()][] = array(
 					'name' => $serviceGroup,
@@ -534,14 +540,18 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
 					'balance' => $balance,
 				);
-				if ($balanceType == 'cost') {
-					$volumeRequired -= Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value);
+				if ($keyRequired != $balanceType) {
+					if ($keyRequired == 'cost') {
+						$valueRequired -= Billrun_Rates_Util::getCharges($rate, $usageType, $value);
+					} else {
+						$valueRequired -= Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value);
+					}
 				} else {
-					$volumeRequired -= $value;
+					$valueRequired -= $value;
 				}
 			}
 		}
-		return $volumeRequired; // volume left to charge
+		return array($keyRequired => $valueRequired); // volume/cost left to charge
 	}
 
 }
