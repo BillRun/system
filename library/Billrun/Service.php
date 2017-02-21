@@ -193,7 +193,8 @@ class Billrun_Service {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
-			if (!isset($this->data['include']['groups'][$staticGroup][$usageType])) {
+			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
+				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
 				return 0;
 			}
 
@@ -210,10 +211,16 @@ class Billrun_Service {
 		}
 		
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-			return 0;
+			if (isset($this->data['include']['groups'][$groupSelected]['cost'])) {
+				$cost = $this->data['include']['groups'][$groupSelected]['cost'];
+				// convert cost to volume
+				$rateUsageIncluded = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $cost);
+			} else {
+				return 0;
+			}
+		} else {
+			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 		}
-
-		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
 
 		if ($rateUsageIncluded === 'UNLIMITED') {
 			return PHP_INT_MAX;
@@ -250,7 +257,8 @@ class Billrun_Service {
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+			if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+				&& !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				continue;
 			}
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
