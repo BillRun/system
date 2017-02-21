@@ -40,7 +40,7 @@ class ConfigModel {
 	 * reserved names of File Types.
 	 * @var array
 	 */
-        protected $reservedFileTypeName = array('service', 'flat', 'credit');
+        protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
 
 	public function __construct() {
 		// load the config data from db
