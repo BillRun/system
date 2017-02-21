@@ -54,7 +54,7 @@
 			<?php 
 			endif;
 				//print $this->render('internalpaypage/total_charge.phtml', $this->_tpl_vars); 
-				if (empty($account['payment_gateway']) || $action === 'updatePaymentGateway') :
+				if (empty($account['payment_gateway']['active']) || $action === 'updatePaymentGateway') :
 					print $this->render('internalpaypage/payment_details.phtml', $this->_tpl_vars); 
 				endif;
 			?>
