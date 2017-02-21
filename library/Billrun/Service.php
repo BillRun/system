@@ -218,28 +218,41 @@ class Billrun_Service {
 		}
 		
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-			if (isset($this->data['include']['groups'][$groupSelected]['cost'])) {
-				$cost = $this->data['include']['groups'][$groupSelected]['cost'];
-				// convert cost to volume
-				$rateUsageIncluded = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $cost);
-			} else {
+			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return 0;
+			} else {
 			}
+			$cost = $this->data['include']['groups'][$groupSelected]['cost'];
+			// convert cost to volume
+			if ($cost === 'UNLIMITED') {
+				return PHP_INT_MAX;
+			}
+
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected]['cost'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
+			} else {
+				$subscriberSpent = 0;
+			}
+			$usageLeft = $rateUsageIncluded - $subscriberSpent;
+			return array(
+				'cost' => floatval($usageLeft < 0 ? 0 : $usageLeft),
+			);
 		} else {
 			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-		}
+			if ($rateUsageIncluded === 'UNLIMITED') {
+				return PHP_INT_MAX;
+			}
 
-		if ($rateUsageIncluded === 'UNLIMITED') {
-			return PHP_INT_MAX;
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+			} else {
+				$subscriberSpent = 0;
+			}
+			$usageLeft = $rateUsageIncluded - $subscriberSpent;
+			return array(
+				'usagev' => floatval($usageLeft < 0 ? 0 : $usageLeft),
+			);
 		}
-
-		if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
-		} else {
-			$subscriberSpent = 0;
-		}
-		$usageLeft = $rateUsageIncluded - $subscriberSpent;
-		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 
 	/**

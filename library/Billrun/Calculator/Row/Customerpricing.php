@@ -375,26 +375,35 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$balanceId = (string) $this->balance->getId();
 		if ($plan->isRateInEntityGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType);
-			$volumeToCharge = $volume - $groupVolumeLeft;
+			
+			$balanceType = key($groupVolumeLeft); // usagev or cost
+			$value = current($groupVolumeLeft);
+			if ($balanceType == 'cost') {
+				$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
+				$volumeToCharge = $cost - $value;
+			} else {
+				$volumeToCharge = $volume - $value;
+			}
+			
 			if ($volumeToCharge < 0) {
 				$volumeToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
 				$ret['arategroups'][$balanceId][] = array(
 					'name' => $plan->getEntityGroup(),
-					'usagev' => $volume,
-					'left' => $groupVolumeLeft - $volume,
-					'total' => $plan->getGroupVolume($usageType),
+					$balanceType => $value,
+					'left' => $value - ($balanceType == 'cost' ? $cost : $volume),
+					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType),
 					'balance' => $this->balance,
 				);
 			} else if ($volumeToCharge > 0) {
-				$ret['in_group'] = $ret['in_plan'] = $groupVolumeLeft;
+				$ret['in_group'] = $ret['in_plan'] = $value;
 				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $volumeToCharge;
 					$ret['arategroups'][$balanceId][] = array(
 						'name' => $plan->getEntityGroup(),
-						'usagev' => $ret['in_group'],
+						$balanceType => $ret['in_group'],
 						'left' => 0,
-						'total' => $plan->getGroupVolume($usageType),
+						'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType),
 						'balance' => $this->balance,
 					);
 				} else if ($volumeToCharge > 0) {
@@ -402,9 +411,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 				$services = $this->loadSubscriberServices((isset($row['services']) ? $row['services'] : array()), $row['urt']->sec);
 				if ($volumeToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
-					$ret['over_group'] = $ret['over_plan'] = $groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
-					$ret['in_plan'] = $ret['in_group'] += $volumeToCharge - $groupVolumeLeft;
-					$volumeToCharge = $groupVolumeLeft;
+					$ret['over_group'] = $ret['over_plan'] = $value = $this->usageLeftInServicesGroups($rate, $usageType, $services, $volumeToCharge, $ret['arategroups']);
+					$ret['in_plan'] = $ret['in_group'] += $volumeToCharge - $value;
+					$volumeToCharge = $value;
 					unset($ret['out_group'], $ret['out_plan']);
 				}
 			}
@@ -497,27 +506,39 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					$balance = $this->balance;
 				}
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup);
-				if ($groupVolume === FALSE || $groupVolume <= 0) {
+				$balanceType = key($groupVolume); // usagev or cost
+				$value = current($groupVolume);
+
+				if ($value === FALSE || $value <= 0) {
 					continue;
 				}
-				if ($volumeRequired <= $groupVolume) {
+				if ($balanceType == 'cost') {
+					$valueRequired = Billrun_Rates_Util::getCharges($rate, $usageType, $volumeRequired);
+				} else {
+					$valueRequired = $volumeRequired;
+				}
+				if ($valueRequired <= $value) {
 					$arategroups[(string) $balance->getId()][] = array(
 						'name' => $serviceGroup,
-						'usagev' => $volumeRequired,
-						'left' => $groupVolume - $volumeRequired,
-						'total' => $service->getGroupVolume($usageType, $serviceGroup),
+						$balanceType => $valueRequired,
+						'left' => $value - $valueRequired,
+						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
 						'balance' => $balance,
 					);
 					return 0;
 				}
 				$arategroups[(string) $balance->getId()][] = array(
 					'name' => $serviceGroup,
-					'usagev' => $groupVolume,
+					$balanceType => $value,
 					'left' => 0,
-					'total' => $service->getGroupVolume($usageType, $serviceGroup),
+					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
 					'balance' => $balance,
 				);
-				$volumeRequired -= $groupVolume;
+				if ($balanceType == 'cost') {
+					$volumeRequired -= Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value);
+				} else {
+					$volumeRequired -= $valueRequired;
+				}
 			}
 		}
 		return $volumeRequired; // volume left to charge
