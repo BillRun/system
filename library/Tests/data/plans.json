@@ -315,8 +315,23 @@
             }
         }
 
-        }
-		
+        },
+	{
+		"name" : "SHARED-PLAN-K3",
+		"plan_code" : "SHARED-PLAN-K3",
+		"description" : "SHARED-PLAN-K3",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GR1" : {
+					"call" : 5,
+					"rates": ["SHARED-RATE"]
+				}
+			}
+		}
 
+        }
 ]
 }
