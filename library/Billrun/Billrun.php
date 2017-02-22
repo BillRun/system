@@ -994,9 +994,9 @@ class Billrun_Billrun {
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
 	
-	protected static function getFileTypes() {
+	protected static function getFileTypes($enabledOnly = false) {
 		if (empty(self::$fileTypes)) {
-			self::$fileTypes = Billrun_Factory::config()->getFileTypes();
+			self::$fileTypes = Billrun_Factory::config()->getFileTypes($enabledOnly);
 		}
 		return self::$fileTypes;
 	}

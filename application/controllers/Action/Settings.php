@@ -57,6 +57,10 @@ class SettingsAction extends ApiAction {
 			$success = $this->model->unsetFromConfig($category, $data);
 		} else if ($action === 'validate') {
 			$success = $this->model->validateConfig($category, $data);
+		} else if ($action === 'enable') {
+			$success = $this->model->setEnabled($category, $data, true);
+		} else if ($action === 'disable') {
+			$success = $this->model->setEnabled($category, $data, false);
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}

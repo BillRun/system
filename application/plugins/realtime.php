@@ -162,7 +162,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function getConfig($row) {
 		if (empty($this->config)) {
-			$this->config = Billrun_Factory::config()->getFileTypeSettings($row['type']);
+			$this->config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
 		}
 		return $this->config;
 	}
