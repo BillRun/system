@@ -55,6 +55,10 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'j2', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services' => ["NEW-SERVICE1"]),
 		array('stamp' => 'j3', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["NEW-SERVICE1"]),
 		array('stamp' => 'j4', 'sid' => 66, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["NEW-SERVICE1"]),
+		//case K shared account test
+		array('stamp' => 'k1', 'aid' => 7777, 'sid' => 71, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services' => ["SHARED-SERVICE1"]),
+		array('stamp' => 'k2', 'aid' => 7777, 'sid' => 72, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services' => ["SHARED-SERVICE1"]),
+		array('stamp' => 'k3', 'aid' => 7771, 'sid' => 73, 'arate_key' => 'SHARED-RATE', 'plan' => 'SHARED-PLAN-K3',  'usaget' => 'call', 'usagev' => 20, 'services' => ["SHARED-SERVICE1"]),
 		//old tests
 		//case A: PLAN-X3+SERVICE1+SERVICE2
 		array('stamp' => 'a1', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 60, 'services' => ["SERVICE1", "SERVICE2"]),
@@ -117,6 +121,10 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 2.5), //move group and over
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 15), //over group
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 6), //out group
+		//case K expected
+		array('in_group' => 8, 'over_group' => 0, 'aprice' => 0), //in groups
+		array('in_group' => 2, 'over_group' => 6, 'aprice' => 0.6), //in groups
+		array('in_group' => 15, 'over_group' => 5, 'aprice' => 0.5), //in groups
 		//old results
 		//case A expected
 		array('in_group' => 60, 'over_group' => 0, 'aprice' => 0),
