@@ -16,8 +16,7 @@ require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 define('UNIT_TESTING', 'true');
 
 class Tests_Updaterowt extends UnitTestCase {
-	
-	
+
 	protected $ratesCol;
 	protected $plansCol;
 	protected $linesCol;
@@ -37,7 +36,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'g1', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 120, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g2', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 110.5, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g3', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 20, 'services' => ["NEW-SERVICE3"]),
-		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services' => ["NEW-SERVICE3"]),
+//		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services' => ["NEW-SERVICE3"]),
 		array('stamp' => 'g5', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services' => ["NEW-SERVICE3"]),
 		//case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
 		array('stamp' => 'h1', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["NEW-SERVICE4"]),
@@ -67,7 +66,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
+//		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
 		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services' => ["SERVICE3"]),
 		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
 		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["SERVICE4"]),
@@ -93,13 +92,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 60, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 55, 'over_group' => 225, 'aprice' => 86),
+		array('in_group' => 55, 'over_group' => 225, 'aprice' => 106.5),
 		array('in_group' => 0, 'over_group' => 180, 'aprice' => 18),
 		//case G expected
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.1),
+//		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.1),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
 		//case H expected
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //gr from service 4, remain 165
@@ -115,7 +114,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.05), // over calls
 		//case J expected
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //in groups
-		array('in_group' => 50, 'over_group' => 25, 'aprice' => 12.5), //move group and over
+		array('in_group' => 70, 'over_group' => 5, 'aprice' => 2.5), //move group and over
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 15), //over group
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 6), //out group
 		//old results
@@ -129,7 +128,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.16),
+//		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.16),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
 		//case C expected
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //gr from service 4, remain 165
@@ -155,7 +154,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
-		
+
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -191,20 +190,19 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected function compareExpected($key, $returnRow) {
 		$passed = True;
 		$epsilon = 0.000001;
-		$inGroupE= $this -> expected[$key]['in_group'];
-		$overGroupE = $this -> expected[$key]['over_group'];
-		$aprice =   round(10*($this -> expected[$key]['aprice']))/10;
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — aprice: '. $aprice .'<br> — in_group: '. $inGroupE .'<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
-		$message .= '— aprice: '.$returnRow['aprice'];
-		if(Billrun_Util::isEqual($returnRow['aprice'],$aprice,$epsilon)){
-			 $message .=  $this->pass;
-		}
-		else{
-			$message .=  $this->fail;
+		$inGroupE = $this->expected[$key]['in_group'];
+		$overGroupE = $this->expected[$key]['over_group'];
+		$aprice = round(10 * ($this->expected[$key]['aprice'])) / 10;
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
+		$message .= '— aprice: ' . $returnRow['aprice'];
+		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
+			$message .= $this->pass;
+		} else {
+			$message .= $this->fail;
 			$passed = False;
 		}
 		if ($inGroupE == 0) {
-			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'],0,$epsilon)) {
+			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'], 0, $epsilon)) {
 				$message .= '— in_group: 0' . $this->pass;
 			} else {
 				$message .= '— in_group: ' . $returnRow['in_group'] . $this->fail;
@@ -214,7 +212,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			if (!isset($returnRow['in_group'])) {
 				$message .= '— in_group: 0' . $this->fail;
 				$passed = False;
-			} else if (!Billrun_Util::isEqual($returnRow['in_group'],$inGroupE,$epsilon)) {
+			} else if (!Billrun_Util::isEqual($returnRow['in_group'], $inGroupE, $epsilon)) {
 				$message .= '— in_group: ' . $returnRow['in_group'] . $this->fail;
 				$passed = False;
 			} else {
@@ -222,7 +220,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			}
 		}
 		if ($overGroupE == 0) {
-			if (((!isset($returnRow['over_group'])) || (Billrun_Util::isEqual($returnRow['over_group'],0,$epsilon))) && ((!isset($returnRow['out_plan'])) || (Billrun_Util::isEqual($returnRow['out_plan'],0,$epsilon)))) {
+			if (((!isset($returnRow['over_group'])) || (Billrun_Util::isEqual($returnRow['over_group'], 0, $epsilon))) && ((!isset($returnRow['out_plan'])) || (Billrun_Util::isEqual($returnRow['out_plan'], 0, $epsilon)))) {
 				$message .= '— over_group and out_plan: doesnt set' . $this->pass;
 			} else {
 				if (isset($returnRow['over_group'])) {
@@ -239,14 +237,14 @@ class Tests_Updaterowt extends UnitTestCase {
 				$message .= '— over_group and out_plan: dont set' . $this->fail;
 				$passed = False;
 			} else if (isset($returnRow['over_group'])) {
-				if (!Billrun_Util::isEqual($returnRow['over_group'],$overGroupE,$epsilon)) {
+				if (!Billrun_Util::isEqual($returnRow['over_group'], $overGroupE, $epsilon)) {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->fail;
 					$passed = False;
 				} else {
 					$message .= '— over_group: ' . $returnRow['over_group'] . $this->pass;
 				}
 			} else if (isset($returnRow['out_plan'])) {
-				if (!Billrun_Util::isEqual($returnRow['out_plan'],$overGroupE,$epsilon)) {
+				if (!Billrun_Util::isEqual($returnRow['out_plan'], $overGroupE, $epsilon)) {
 					$message .= '— out_plan: ' . $returnRow['out_plan'] . $this->fail;
 					$passed = False;
 				} else {

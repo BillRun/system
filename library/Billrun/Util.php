@@ -1154,6 +1154,9 @@ class Billrun_Util {
 	 * @param array $data
 	 */
 	public static function parseDataToBillrunConvention($data = array()) {
+		if (empty($data)) {
+			return array();
+		}
 		$parsedData = array();
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {

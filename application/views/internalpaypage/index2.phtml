@@ -84,7 +84,7 @@
 								</div>
 							</div>
 						<?php endif; ?>
-						<?php if (empty($account['payment_gateway']) || $action === 'updatePaymentGateway') : ?>
+						<?php if (empty($account['payment_gateway']['active']) || $action === 'updatePaymentGateway') : ?>
 							<div class="panel panel-primary">
 								<div class="panel-heading">
 									<h4>Payment Gateway</h4>
@@ -100,7 +100,7 @@
 											<div class='col-md-3'>
 												<div class='radio'>
 													<label>
-														<input type='radio' name='payment_gateway' value='<?php echo htmlspecialchars($pg['name']); ?>' <?php echo ($account['payment_gateway']['name'] === $pg['name']) ? 'checked' : '' ?> />
+														<input type='radio' name='payment_gateway' value='<?php echo htmlspecialchars($pg['name']); ?>' <?php echo ($account['payment_gateway']['active']['name'] === $pg['name']) ? 'checked' : '' ?> />
 														<?php if (!empty($pg['image_url'])) : ?>
 															<img src='<?php echo $pg['image_url'] ?>' />
 														<?php else : ?>
