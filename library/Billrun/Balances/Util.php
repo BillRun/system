@@ -114,8 +114,11 @@ class Billrun_Balances_Util {
 				'tx.' . $row['stamp'] => 1
 			)
 		);
+		$options = array(
+			'multiple' => 1,
+		);
 		
 		$balances = Billrun_Factory::db()->balancesCollection();
-		return $balances->update($query, $values);
+		return $balances->update($query, $values, $options);
 	}
 }
