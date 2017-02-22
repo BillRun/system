@@ -84,6 +84,9 @@ class ExternalPaypageController extends Yaf_Controller_Abstract {
 		} else {
 			$request['aid'] = intval($request['aid']);
 		}
+		if (isset($request['services']) && is_array($request['services'])) {
+			$request['services'] = array_map(function($srv) { return array('name'=>$srv);}, $request['services']);
+		}
 		$query = array(
 			"type" => $type,
 			"subscriber" => json_encode($request)

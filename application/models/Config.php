@@ -197,6 +197,10 @@ class ConfigModel {
 		}
 		// TODO: Create a config class to handle just file_types.
 		else if ($category === 'file_types') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for file types.");
+				return 0;
+			}
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
@@ -543,10 +547,27 @@ class ConfigModel {
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
+	
+	public function setEnabled($category, $data, $enabled) {
+		$updatedData = $this->getConfig();
+		unset($updatedData['_id']);
+		if ($category === 'file_types') {
+			foreach ($updatedData['file_types'] as &$someFtSettings) {
+				if ($someFtSettings['file_type'] == $data['file_type']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
+		}
+ 
+		$ret = $this->collection->insert($updatedData);
+		return !empty($ret['ok']);
+	}
 
-	protected function getFileTypeSettings($config, $fileType) {
-		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	protected function getFileTypeSettings($config, $fileType, $enabledOnly = false) {
+		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType && 
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		})) {
 			return current($filtered);
 		}
@@ -721,6 +742,9 @@ class ConfigModel {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			if (!isset($fileSettings['processor']['usaget_mapping'])) {
+				$fileSettings['processor']['usaget_mapping'] = array();
+			}
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];

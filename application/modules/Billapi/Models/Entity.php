@@ -270,6 +270,15 @@ class Models_Entity {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Verify that an entity can be deleted.
+	 * 
+	 * @return boolean
+	 */
+	protected function canEntityBeDeleted() {
+		return true;
+	}
 
 	/**
 	 * Deletes an entity by a query
@@ -279,6 +288,9 @@ class Models_Entity {
 	 */
 	public function delete() {
 		$this->action = 'delete';
+		if (!$this->canEntityBeDeleted()) {
+			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
+		}
 		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
@@ -351,7 +363,12 @@ class Models_Entity {
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
-		return array_values(iterator_to_array($res));
+		
+		$records =  array_values(iterator_to_array($res));
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+		}
+		return $records;
 	}
 
 	/**

@@ -16,17 +16,14 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 	 * @param type $services
 	 * @return array The array of services to set.
 	 */
-	protected function getSubscriberServices($services) {
+	protected function getSubscriberServices($services, $fromLimit, $toLimit) {
 		if (is_string($services)) {
 			// let's check if this is json
-			$services = @json_decode($services);
+			$services = @json_decode($services, JSON_OBJECT_AS_ARRAY);
 		}
 		if(empty($services) || !is_array($services)) {
 			return array();
 		}
-		
-		// Initialize activation date to now.
-		$serviceAggregateOptions = array("activation" => strtotime("midnight"));
 		
 		$proccessedServices = array();
 		foreach ($services as $current) {
@@ -36,14 +33,11 @@ trait Billrun_ActionManagers_Subscribers_Servicehandler {
 				continue;
 //				Billrun_Factory::log("Invalid service: " . print_r($current,1));
 //				continue;
-			}
-			
-			$serviceAggregateOptions['name'] = $current['name'];
-			$serviceObj = new Billrun_DataTypes_AggregateSubscriberservice($proccessedServices);
-			if(!$serviceObj->isValid()) {
-				continue;
-			}
-			$proccessedServices[] = $serviceObj->getService();
+			} 
+			$proccessedServices[] = array(  'name' => $current['name'],
+											'from' => max(@$current['from'],$fromLimit),
+											'to' => !empty($current['to']) && $current['to'] <= $toLimit ? $current['to'] : $toLimit,
+										);
 		}
 		
 		return $proccessedServices;

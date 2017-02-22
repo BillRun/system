@@ -57,7 +57,7 @@ class Billrun_DataTypes_Subscriberservice {
 	 */
 	public function isValid() {
 		if(empty($this->name) || !is_string($this->name) || 
-		  (!is_float($this->price)) && !Billrun_Util::IsIntegerValue($this->price)) {
+		  ((!is_numeric($this->price)) && !Billrun_Util::IsIntegerValue($this->price) && !is_array($this->price)) ) {
 			Billrun_Factory::log("Invalid parameters in subscriber service. name: " . print_r($this->name,1) . " price: " . print_r($this->price,1));
 			return false;
 		}

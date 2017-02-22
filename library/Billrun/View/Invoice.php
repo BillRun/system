@@ -37,13 +37,22 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function getLineUsageName($line) {
 		$usageName = '';
-		$typeMapping = array('flat' => 'name', 'service' => 'name');
-		if(in_array($line['type'],array_keys($typeMapping))) {
-			$usageName = $line[$typeMapping[$line['type']]];
+		$rate = $this->getRateForLine($line);
+		$typeMapping = array('flat' => array('rate'=> 'description','line'=>'name'), 
+							 'service' => array('rate'=> 'description','line' => 'name'));
+		
+		if(in_array($line['type'],array_keys($typeMapping))) {			
+			$usageName = isset($typeMapping[$line['type']]['rate']) ? 
+								$rate[$typeMapping[$line['type']]['rate']] :
+								ucfirst(strtolower(preg_replace('/_/', ' ',$line[$typeMapping[$line['type']]['line']])));
 		} else {
-			$usageName = !empty($line['description']) ? $line['description'] : $line['arate_key'];
+			$usageName = !empty($line['description']) ?
+							$line['description'] : 
+							(!empty($rate['description']) ? 
+								$rate['description'] :
+								ucfirst(strtolower(preg_replace('/_/', ' ',$line['arate_key']))) );
 		}
-		return ucfirst(strtolower(preg_replace('/_/', ' ', $usageName)));
+		return $usageName;
 	}
 	
 	public function buildSubscriptionListFromLines($lines) {
@@ -52,14 +61,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		foreach($lines as $subLines) {
 			foreach($subLines as $line) {
 				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0) {
-					if($line['type'] == 'credit') {
-						$flatData = Billrun_Rates_Util::getRateByRef($line['arate'])['rates.call.BASE.rate'][0];
-					} else {
-						$flatRate = $line['type'] == 'flat' ? 
-							new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
-							new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
-						$flatData = $flatRate->getData();
-					}
+					$rate = $this->getRateForLine($line);
+					$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
+					
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
 					$subscriptionList[$name]['desc'] = $name;	
@@ -72,5 +76,18 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			}
 		}
 		return $subscriptionList;
+	}
+	
+	protected function getRateForLine($line) {
+		$rate = FALSE;
+		if(!empty($line['arate'])) {
+			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+		} else {
+			$flatRate = $line['type'] == 'flat' ? 
+				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
+				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
+			$rate = $flatRate->getData();
+		}
+		return $rate;			
 	}
 }

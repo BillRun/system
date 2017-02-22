@@ -42,7 +42,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
-		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type']);
+		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
 				'decoder' => $this->config['parser']['type']
 		));
