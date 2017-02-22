@@ -276,6 +276,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function buildSubAggregator(array $current, $endTime) {		
 		$servicesAggregatorData = array();
 		
+		
 		$subscriberPlans = array();
 		$services = array();
 		$servicesData = array();
@@ -288,51 +289,35 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Get the services.
 			$currServices = array();
-			if(isset($subscriber['services'])) {
-				$currServices = $subscriber['services'];
-			}
-
-			// Check the differences in the services.
-			$rawRemoved  = array_diff($services, $currServices);
-			$rawAdded = array_diff($currServices, $services);
-			
-			$services = $currServices;
-			
-			// Translate the added and removed.
-			$func = function($v){
-					return array('name' => $v);
-				};
-			$added = array_map($func, $rawAdded);
-			$removed = array_map($func, $rawRemoved);
-			
-			// Add the services to the services data
-			foreach ($added as $addedService) {
-				$key = $addedService['name'];
-				$serviceStart = new MongoDate($subscriber['sfrom']);
-				if(!($serviceStart instanceof MongoDate)) {
-					Billrun_Factory::log("from " . $serviceStart);
-					throw new Exception("For not plan dates are mongo dates");
+			if(isset($subscriber['services']) && is_array($subscriber['services'])) {
+				foreach($subscriber['services'] as  $tmpService) {
+					 $serviceData = array( 'name' => $tmpService['name'],
+											'start'=> $tmpService['from']->sec,
+											'end'=> min($tmpService['to']->sec, $endTime ) );
+					 
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start'));
+					$currServices[$stamp] = $serviceData; 
 				}
-				$serviceRow = array("service" => $key, "start" => $serviceStart->sec);
-				$servicesData[$key] = $serviceRow;
-			}
+				// Check for removed services in the current subscriber record.
+				$serviceCompare = function  ($a, $b)  {
+					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start'));
+					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start'));
+					return $aStamp - $bStamp;
+				};
+				
+				$removedServices  = array_udiff($services, $currServices, $serviceCompare);
+				foreach($removedServices as $stamp => $removed) {
+					if($sto < $removed['end'] && $sto <= $services[$stamp]['end']) {
+						$services[$stamp]['end'] = $sto;
+					}
+				}
+				$services = array_merge($services,$currServices);
+			}	
 			
-			// Handle the removed services. 
-			foreach ($removed as $removedService) {
-				$key = $removedService['name'];
-				$updateService = $servicesData[$key];
-				unset($servicesData[$key]);
-				$serviceEnd = $subscriber['plans'][0]['from']->sec;
-				$updateService['end'] = $serviceEnd;
-
-				// Push back
-				$servicesAggregatorData[$serviceEnd][] = $updateService;
-			}
 		}
-
-		foreach ($servicesData as $lastService) {
-			$lastService['end'] = $sto;
-			$servicesAggregatorData["$sto"][] = $lastService;
+		
+		foreach($services as $service) {
+				$servicesAggregatorData[$service['end']][] = $service;
 		}
 		
 		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);

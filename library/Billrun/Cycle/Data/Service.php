@@ -12,10 +12,10 @@
 class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	
 	public function __construct(array $options) {
-		if(!isset($options['service'], $options['cycle'])) {
+		if(!isset($options['name'], $options['cycle'])) {
 			throw new InvalidArgumentException("Received empty service!");
 		}
-		$this->plan = $options['service'];
+		$this->plan = $options['name'];
 		$this->cycle = $options['cycle'];
 		$this->constructOptions($options);
 	}

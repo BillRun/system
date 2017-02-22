@@ -35,7 +35,7 @@ class InternalPaypageController extends ExternalPaypageController {
 		if ($request['action'] !== 'updatePaymentGateway') {
 			$create = new Billrun_ActionManagers_Subscribers_Create();
 			if (isset($request['services']) && is_array($request['services'])) {
-				$request['services'] = json_encode($request['services']);
+				$request['services'] =  array_map(function($srv) { return array('name'=>$srv); }, $request['services']);
 			}
 			$query = array(
 				"type" => $type,

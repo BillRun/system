@@ -268,7 +268,7 @@ class Billrun_Utils_Mongo {
 	 * @param array $arr - Arr to translate its values.
 	 */
 	public static function convertQueryMongoDates(&$arr) {
-		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
+		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/';
 		foreach ($arr as &$value) {
 			if (is_array($value)) {
 				self::convertQueryMongoDates($value);
