@@ -179,7 +179,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-//		$init->restoreColletions();
+		$init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 
