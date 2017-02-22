@@ -99,7 +99,9 @@ class Billrun_Balances_Util {
 	 */
 	public static function removeTx($row) {
 		$query = array(
-			'sid' => $row['sid'],
+			'sid' => array(
+				'$in' => array(0, $row['sid']),
+			),
 			'from' => array(
 				'$lte' => $row['urt'],
 			),
@@ -112,8 +114,11 @@ class Billrun_Balances_Util {
 				'tx.' . $row['stamp'] => 1
 			)
 		);
+		$options = array(
+			'multiple' => 1,
+		);
 		
 		$balances = Billrun_Factory::db()->balancesCollection();
-		return $balances->update($query, $values);
+		return $balances->update($query, $values, $options);
 	}
 }

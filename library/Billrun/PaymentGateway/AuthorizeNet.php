@@ -19,6 +19,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^1$/";
 	protected $rejectionCodes = "/^2$|^3$/";
 	protected $actionUrl;
+	protected $failureReturnUrl;
 
 	protected function __construct() {
 		if (Billrun_Factory::config()->isProd()) {
@@ -35,7 +36,10 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	protected function buildPostArray($aid, $returnUrl, $okPage) {
-		$customerProfileId = $this->createCustomer($aid);
+		$customerProfileId = $this->checkIfCustomerExists($aid);
+		if (empty($customerProfileId)) {
+			$customerProfileId = $this->createCustomer($aid);
+		}
 		$this->customerId = $customerProfileId;
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
@@ -94,7 +98,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 
 	public function getTransactionIdName() {
-		return false;
+		return "customer";
 	}
 
 	protected function getResponseDetails($result) {
@@ -116,7 +120,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway' => array(
+			'payment_gateway.active' => array(
 				'name' => $this->billrunName,
 				'customer_profile_id' => $this->saveDetails['customer_profile_id'],
 				'payment_profile_id' => $this->saveDetails['payment_profile_id'],
@@ -311,11 +315,133 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return true;
 	}
 
-	public function isCustomerBasedCharge() {
+	protected function needRequestForToken() {
+		return true;
+	}
+
+	public function isUpdatePgChangesNeeded() {
 		return true;
 	}
 	
-	protected function needRequestForToken() {
+	public function deleteAccountInPg($pgAccountDetails) {
+		if (empty($pgAccountDetails['payment_id'])) {
+			return;
+		}
+		$credentials = $this->getGatewayCredentials();
+		$apiLoginId = $credentials['login_id'];
+		$transactionKey = $credentials['transaction_key'];
+		$profile_id = $pgAccountDetails['profile_id'];
+		$payment_id = $pgAccountDetails['payment_id'];
+		$deleteAccountRequest = "<deleteCustomerPaymentProfileRequest xmlns= 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
+								<merchantAuthentication>
+									<name>$apiLoginId</name>
+									<transactionKey>$transactionKey</transactionKey>
+								</merchantAuthentication>
+								<customerProfileId>$profile_id</customerProfileId>
+							    <customerPaymentProfileId>$payment_id</customerPaymentProfileId>
+							</deleteCustomerPaymentProfileRequest>";
+
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $deleteAccountRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		if (function_exists("simplexml_load_string")) {
+			$xmlObj = simplexml_load_string($result);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if (($resultCode != 'Ok')) {
+				$errorMessage = (string) $xmlObj->messages->message->text;
+				throw new Exception($errorMessage);
+			} else {
+				$message = (string) $xmlObj->messages->message->text;
+				if ($message != 'Successful.') {
+					throw new Exception($message);
+				}
+			}
+		} else {
+			die("simplexml_load_string function is not support, upgrade PHP version!");
+		}
+	}
+	
+	public function getNeededParamsAccountUpdate($account) {
+		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
+	}
+	
+	protected function checkIfCustomerExists ($aid) {
+		$customerProfileId = '';
+		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountQuery['type'] = 'account';
+		$accountQuery['aid'] = $aid;
+		$subscribers = Billrun_Factory::db()->subscribersCollection();
+		$account = $subscribers->query($accountQuery)->cursor()->current();
+		$formerGateways = $account['payment_gateway.former'];
+		foreach ($formerGateways as $gateway) {
+			if ($gateway['name'] == 'AuthorizeNet') {
+				$customerProfileId = $gateway['params']['customer_profile_id'];
+			}
+		}
+		
+		return $customerProfileId;
+	}
+	
+	public function handleOkPageData($txId) {
+		$credentials = $this->getGatewayCredentials();
+		$apiLoginId = $credentials['login_id'];
+		$transactionKey = $credentials['transaction_key'];
+		$customerProfileRequest = "<getCustomerProfileRequest xmlns= 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
+										<merchantAuthentication>
+											<name>$apiLoginId</name>
+											<transactionKey>$transactionKey</transactionKey>
+										</merchantAuthentication>
+										<customerProfileId>$txId</customerProfileId>
+									</getCustomerProfileRequest>";
+		
+		if (function_exists("curl_init")) {
+			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerProfileRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+		}
+		
+		if (function_exists("simplexml_load_string")) {
+			$xmlObj = @simplexml_load_string($result);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if (($resultCode != 'Ok')) {
+				$errorMessage = (string) $xmlObj->messages->message->text;
+				throw new Exception($errorMessage);
+			}
+			$customerProfile = $xmlObj->profile;
+			$aid = (int) $customerProfile->merchantCustomerId;
+			$paymentProfileId = (string) $customerProfile->paymentProfiles->customerPaymentProfileId;
+		} else {
+			die("simplexml_load_string function is not support, upgrade PHP version!");
+		}
+		
+		if (empty($paymentProfileId)) {	
+			$index = 0;
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid' => $aid));
+			$accountPg = $account->payment_gateway;
+			$setValues['payment_gateway']['active'] = array();
+			if (!isset($accountPg['former'])) { 
+				$previousPg = array();
+			} else {
+				$previousPg = $accountPg['former'];
+				$counter = 0;
+				foreach ($previousPg as $gateway) {
+					if ($gateway['name'] == 'AuthorizeNet') {
+						unset($previousPg[$counter]);
+						$index = $counter;
+					} 
+					$counter++;
+				}
+			}
+			$currentPg = array(
+				'name' => 'AuthorizeNet',
+				'params' => array('customer_profile_id' => $txId)
+			);
+			$previousPg[$index] = $currentPg;
+			$setValues['payment_gateway']['former'] = $previousPg;
+			$account->closeAndNew($setValues);
+			$failureReturnUrl = $account->tenant_return_url;
+			return $failureReturnUrl;
+		} 
+		
 		return true;
 	}
 

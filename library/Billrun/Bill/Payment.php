@@ -476,7 +476,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$gatewayDetails = $subscriber['payment_gateway'];
+			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
