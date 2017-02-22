@@ -165,6 +165,48 @@
             "sid" : 66,
             "services" : ["NEW-SERVICE1"]
         },
+	{
+            "aid" : 7777,
+            "firstname" : "a71",
+            "lastname" : "b71",
+            "plan" : "NEW-PLAN-A2",
+            "address" : "nr7",
+            "country" : "nr7",
+            "type" : "subscriber",
+            "from" : "time*2016-11-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-11-11T09:17:58.865Z",
+            "to" : "time*2116-11-11T09:17:58Z",
+            "sid" : 71,
+            "services" : ["SHARED-SERVICE1"]
+        },
+	{
+            "aid" : 7777,
+            "firstname" : "a72",
+            "lastname" : "a72",
+            "plan" : "NEW-PLAN-A2",
+            "address" : "nr7",
+            "country" : "nr7",
+            "type" : "subscriber",
+            "from" : "time*2016-11-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-11-11T09:17:58.865Z",
+            "to" : "time*2116-11-11T09:17:58Z",
+            "sid" : 72,
+            "services" : ["SHARED-SERVICE1"]
+        },
+        {
+            "aid" : 7771,
+            "firstname" : "a73",
+            "lastname" : "a73",
+            "plan" : "SHARED-PLAN-K3",
+            "address" : "nr7",
+            "country" : "nr7",
+            "type" : "subscriber",
+            "from" : "time*2016-11-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-11-11T09:17:58.865Z",
+            "to" : "time*2116-11-11T09:17:58Z",
+            "sid" : 73,
+            "services" : ["SHARED-SERVICE1", "NO-SHARED-SERVICE2"]
+        },
         {
             "aid" : 23457,
             "firstname" : "nr8",

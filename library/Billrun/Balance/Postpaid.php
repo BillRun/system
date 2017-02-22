@@ -55,6 +55,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt) {
 		$query = array(
+			'aid' => $aid,
 			'sid' => $sid,
 			'from' => array(
 				'$lte' => new MongoDate($urt),
