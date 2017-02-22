@@ -367,12 +367,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			if ($this->limit != 0) {
 				Billrun_Factory::log()->log('Looking for the last available line in the queue', Zend_Log::DEBUG);
 				if (isset($querydata['hint'])) {
-					$hq = $queue->query($query)->cursor()->hint(array($querydata['hint'] => 1))->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->setReadPreference('RP_PRIMARY')->hint(array($querydata['hint'] => 1))->limit($this->limit);
 					if ($this->autosort) {
 						$hq->sort(array('urt' => 1));
 					}
 				} else {
-					$hq = $queue->query($query)->cursor()->limit($this->limit);
+					$hq = $queue->query($query)->cursor()->setReadPreference('RP_PRIMARY')->limit($this->limit);
 					if ($this->autosort) {
 						$hq->sort(array('urt' => 1));
 					}
@@ -397,7 +397,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			//Billrun_Factory::log()->log(print_r($query,1),Zend_Log::DEBUG);
 			$queue->update($query, $update, array('multiple' => true, 'w' => 1));
 
-			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor();
+			$foundLines = $queue->query(array_merge($localquery, array('hash' => $this->workHash, 'calc_time' => $this->signedMicrotime)))->cursor()->setReadPreference('RP_PRIMARY');
 
 			if ($this->autosort) {
 				$foundLines->sort(array('urt' => 1));
