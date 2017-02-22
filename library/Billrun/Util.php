@@ -1411,7 +1411,7 @@ class Billrun_Util {
 	public static function isValidCustomLineKey($jsonKey) {
 		if (strpos($jsonKey, '.') === FALSE) {
 			$protectedKeys = static::getBillRunProtectedLineKeys();
-			return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+			return is_scalar($jsonKey) && preg_match('/^(([a-z]|[A-Z]|\d|_)+)$/', $jsonKey);
 		}
 		
 		foreach (explode('.', $jsonKey) as $key) {
