@@ -146,16 +146,30 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		}
 		foreach ($pricingData['arategroups'] as &$arategroup) {
 			$group = $arategroup['name'];
-			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
-			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
-			$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
-			$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
-//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-			if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
-				$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+			if (isset($arategroup['cost'])) {
+				// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
+				$update['$inc']['balance.groups.' . $group . '.cost'] = $arategroup['cost'];
+				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				if (isset($this->get('balance')['groups'][$group]['cost'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['cost']);
+				} else {
+					$arategroup['usagesb'] = 0;
+				}
 			} else {
-				$arategroup['usagesb'] = 0;
+				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
+				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
+//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+				if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+				} else {
+					$arategroup['usagesb'] = 0;
+				}
 			}
+			// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
 		}
 	}
 

@@ -82,6 +82,17 @@
                           }
                       }
         },
+        {
+          "name" : "NEW-SERVICE5", "description" : "SERVICE5", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+          "include" : {
+              "groups" : {
+                  "SR5" : {
+							"cost" : 10,
+							"rates": ["NEW-VEG"]
+							}
+                          }
+                      }
+        },
 	{
 		"name" : "SHARED-SERVICE1", "description" : "SHARED-SERVICE-1", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
 		"include" : {
