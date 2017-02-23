@@ -92,6 +92,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		/**** NEW TEST CASES ****/
 		//case L cost
 		array('stamp' => 'l1', 'sid' => 77, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services' => ["NEW-SERVICE5"]),
+		array('stamp' => 'l2', 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L3"]),
+		array('stamp' => 'l3', 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
+		array('stamp' => 'l4', 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
 
 	];
 	protected $expected = [
@@ -161,6 +164,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 30, 'aprice' => 6), //out group
 		//case L expected
 		array('in_group' => 30, 'over_group' => 18, 'aprice' => 18), //out group
+		array('in_group' => 30, 'over_group' => 210, 'aprice' => 21), //out group
+		array('in_group' => 12, 'over_group' => 12, 'aprice' => 12), //out group
+		array('in_group' => 35, 'over_group' => 205, 'aprice' => 20.5), //out group
 	];
 
 	public function __construct($label = false) {

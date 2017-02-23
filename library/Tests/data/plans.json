@@ -390,6 +390,76 @@
 			}
 		}
 
+        },
+	{
+		"name" : "PLAN-L2",
+		"plan_code" : "PLAN-L2",
+		"description" : "PLAN-L2",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP2" : {
+					"call" : 10,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L3",
+		"plan_code" : "PLAN-L3",
+		"description" : "PLAN-L3",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP3" : {
+					"cost" : 10,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L4-SHARED",
+		"plan_code" : "PLAN-L4-SHARED",
+		"description" : "PLAN-L4-SHARED",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP4" : {
+					"call" : 15,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L5-SHARED",
+		"plan_code" : "PLAN-L5-SHARED",
+		"description" : "PLAN-L5-SHARED",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP5" : {
+					"cost" : 10,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
         }
 		
 
