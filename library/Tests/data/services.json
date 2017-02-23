@@ -115,6 +115,54 @@
 				}
 			}
 		}
+	},
+	{
+		"name" : "SERVICE-L2", "description" : "SERVICE-L2", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRS2" : {
+					"call" : 20,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+	},
+	{
+		"name" : "SERVICE-L3", "description" : "SERVICE-L3", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRS3" : {
+					"cost" : 2,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+	},
+	
+	
+	{
+		"name" : "SERVICE-L4-SHARED", "description" : "SERVICE-L4-SHARED", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRS4" : {
+					"call" : 20,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+	},
+	{
+		"name" : "SERVICE-L5-SHARED", "description" : "SERVICE-L5-SHARED", "price" : 33, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRS5" : {
+					"cost" : 4,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
 	}
         ]
 		

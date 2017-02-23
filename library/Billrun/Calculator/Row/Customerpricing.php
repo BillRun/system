@@ -302,6 +302,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 
+		$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+		$pricingData['arategroups'] = array_values($pricingData['arategroups']);
 		foreach ($pricingData['arategroups'] as &$balanceData) {
 			$balance = $balanceData[0]['balance'];
 			if (($crashedPricingData = $this->getTx($row['stamp'], $balance)) !== FALSE) {
@@ -317,7 +319,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				unset($data['balance']);
 			}
 
-			$balancePricingData = $pricingData;
 			$balancePricingData['arategroups'] = $balanceData;
 
 			$balance_id = $balance->getId();
@@ -435,13 +436,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 
 		if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
-			$charges = array('total' => $valueToCharge);
+			$charges = $valueToCharge;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, &$ret, $this));
 
-		$ret[$this->pricingField] = $charges['total'];
+		$ret[$this->pricingField] = $charges;
 		return $ret;
 	}
 
@@ -508,10 +509,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				// pre-check if need to switch to other balance with the new service
-				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup)) {
+				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = 0;
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else {
 					$balance = $this->balance;
@@ -523,7 +529,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				if ($value === FALSE || $value <= 0) {
 					continue;
 				}
-				if ($valueRequired <= $value) {
+				if ($balanceType != $keyRequired) {
+					if ($keyRequired == 'cost') {
+						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan']);
+					} else {
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan']);
+					}
+				} else {
+					$comparedValue = $value;
+				}
+				if ($valueRequired <= $comparedValue) {
 					$arategroups[(string) $balance->getId()][] = array(
 						'name' => $serviceGroup,
 						$balanceType => $valueRequired,
@@ -542,9 +557,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				);
 				if ($keyRequired != $balanceType) {
 					if ($keyRequired == 'cost') {
-						$valueRequired -= Billrun_Rates_Util::getCharges($rate, $usageType, $value);
+						$valueRequired -= $comparedValue;
 					} else {
-						$valueRequired -= Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value);
+						$valueRequired -= $comparedValue;
 					}
 				} else {
 					$valueRequired -= $value;

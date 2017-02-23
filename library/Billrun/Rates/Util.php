@@ -210,7 +210,7 @@ class Billrun_Rates_Util {
 	 */
 	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null) {
 		// Check if the price is enough for default usagev
-		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 0, 'float'); // float avoid set type to int
+		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 100, 'float'); // float avoid set type to int
 		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset, $time);
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
@@ -224,8 +224,8 @@ class Billrun_Rates_Util {
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
 		$currentUsage = $defaultUsage - (abs($defaultUsage - $min_balance_volume) / 2);
-		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.5);
-		$limitLoop = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.limitLoop', 40);
+		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.1);
+		$limitLoop = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.limitLoop', 50);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
 			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset, $time);
 			$diff = abs($currentUsage - $previousUsage) / 2;
