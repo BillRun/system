@@ -302,6 +302,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $pricingData;
 		}
 
+		$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
+		$pricingData['arategroups'] = array_values($pricingData['arategroups']);
 		foreach ($pricingData['arategroups'] as &$balanceData) {
 			$balance = $balanceData[0]['balance'];
 			if (($crashedPricingData = $this->getTx($row['stamp'], $balance)) !== FALSE) {
@@ -317,7 +319,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				unset($data['balance']);
 			}
 
-			$balancePricingData = $pricingData;
 			$balancePricingData['arategroups'] = $balanceData;
 
 			$balance_id = $balance->getId();
@@ -508,10 +509,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				// pre-check if need to switch to other balance with the new service
-				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup)) {
+				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = 0;
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else {
 					$balance = $this->balance;
