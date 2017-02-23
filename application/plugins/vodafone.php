@@ -21,7 +21,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $count_days;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if (($row['type'] == 'tap3' && $row['usaget'] != 'sms') || isset($row['roaming'])) {
+		if ($row['type'] == 'tap3' || isset($row['roaming'])) {
 			if (isset($row['urt'])) {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
@@ -55,7 +55,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
-		if ($this->line_type == 'tap3' && $usageType == 'sms') {
+		if ($this->line_type == 'tap3' && $usageType == 'sms' && $this->line_time >= Billrun_Factory::config()->getConfigValue('billrun.transfer_day', "20170301000000")) {
 			return;
 		}
 		$sid = $subscriberBalance['sid'];

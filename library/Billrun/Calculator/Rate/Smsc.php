@@ -79,7 +79,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 
 	protected function getLineRate($row, $usage_type) {
 		$possible_rates = array();
-		$possible_ac_rates = array();
+		$fullEqual_rates = array();
 		$line_time = $row['urt'];
 		if (isset($row['roaming'])) {
 			if ($this->shouldLineBeRated($row)) {
