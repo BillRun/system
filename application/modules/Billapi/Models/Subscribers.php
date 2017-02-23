@@ -59,7 +59,7 @@ class Models_Subscribers extends Models_Entity {
 			return FALSE;
 		}
 		foreach($this->update['services'] as  &$service) {
-			if(typeof($service) =='string') {
+			if(gettype($service) =='string') {
 				$service = array('name' => $service);
 			}
 			if (empty($this->before)) { // this is new subscriber
