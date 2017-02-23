@@ -435,13 +435,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 
 		if (empty($balanceType) || $balanceType != 'cost') {
-			$charges = Billrun_Rates_Util::getCharges($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
+			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), 0, $row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
-			$charges = array('total' => $valueToCharge);
+			$charges = $valueToCharge;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterChargesCalculation', array(&$row, &$charges, &$ret, $this));
 
-		$ret[$this->pricingField] = $charges['total'];
+		$ret[$this->pricingField] = $charges;
 		return $ret;
 	}
 
@@ -523,7 +523,16 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				if ($value === FALSE || $value <= 0) {
 					continue;
 				}
-				if ($valueRequired <= $value) {
+				if ($balanceType != $keyRequired) {
+					if ($keyRequired == 'cost') {
+						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan']);
+					} else {
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan']);
+					}
+				} else {
+					$comparedValue = $value;
+				}
+				if ($valueRequired <= $comparedValue) {
 					$arategroups[(string) $balance->getId()][] = array(
 						'name' => $serviceGroup,
 						$balanceType => $valueRequired,
@@ -542,9 +551,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				);
 				if ($keyRequired != $balanceType) {
 					if ($keyRequired == 'cost') {
-						$valueRequired -= Billrun_Rates_Util::getCharges($rate, $usageType, $value);
+						$valueRequired -= $comparedValue;
 					} else {
-						$valueRequired -= Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value);
+						$valueRequired -= $comparedValue;
 					}
 				} else {
 					$valueRequired -= $value;
