@@ -14,14 +14,20 @@
  * @since    2.8
  */
 class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
-
+	
+	protected $transferDaySmsc;
 	protected $line_time = null;
 	protected $line_type = null;
 	protected $cached_results = array();
 	protected $count_days;
 
+	
+	public function __construct() {
+		$this->transferDaySmsc = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_smsc_transfer_day', "20170301000000");
+	}
+	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if ($row['type'] == 'tap3') {
+		if ($row['type'] == 'tap3' || isset($row['roaming'])) {
 			if (isset($row['urt'])) {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
@@ -29,7 +35,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-		}	
+		}
 	}
 
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
@@ -53,6 +59,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
+			return;
+		}
+		if ($this->line_type == 'tap3' && $usageType == 'sms' && $this->line_time >= $this->transferDaySmsc) {
 			return;
 		}
 		$sid = $subscriberBalance['sid'];
@@ -103,7 +112,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$match = array(
 			'$match' => array(
 				'sid' => $sid,
-				'type' => 'tap3',
+				'$or' => array(
+					array('type' => "tap3"),
+					array('type' => "smsc"),
+				),
 				'plan' => $plan->getData()->get('name'),
 				'arategroup' => $groupSelected,
 				'in_group' => array(

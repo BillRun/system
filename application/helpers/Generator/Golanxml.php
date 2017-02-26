@@ -619,7 +619,17 @@ class Generator_Golanxml extends Billrun_Generator {
 			foreach ($subscriber_roaming as $zone_key => $zone) {
 				$this->writer->startElement('BREAKDOWN_SUBTOPIC');
 				$this->writer->writeAttribute('name', '');
-				$this->writer->writeAttribute('plmn', $zone_key);
+				foreach ($this->rates as $rate){
+					if ($rate['key'] == $zone_key){
+						$roaming_sms = $rate;
+						break;
+					}
+				}
+				if (empty($roaming_sms)){
+					$this->writer->writeAttribute('plmn', $zone_key);
+				} else {
+					$this->writer->writeAttribute('alpha3', $roaming_sms['alpha3']);
+				}
 				foreach ($zone['totals'] as $usage_type => $usage_totals) {
 					$this->writer->startElement('BREAKDOWN_ENTRY');
 					$this->writer->writeElement('TITLE', $this->getBreakdownEntryTitle($usage_type, $this->getNsoftRoamingRate($usage_type)));
@@ -1002,7 +1012,7 @@ class Generator_Golanxml extends Billrun_Generator {
 		} else if ($line['type'] == 'credit' && isset($line['service_name'])) {
 			$tariffItem = $line['service_name'];
 		} else {
-			if ($line['type'] == 'tap3') {
+			if ($line['type'] == 'tap3'|| isset($line['roaming'])) {
 				$tariffItem = $this->getNsoftRoamingRate($line['usaget']);
 			} else {
 				$arate = $this->getRowRate($line);
@@ -1118,7 +1128,24 @@ EOI;
 				if (!$line->isEmpty() && $line['type'] != 'ggsn') {
 					$lines_counter++;
 					$line->collection($this->lines_coll);
-					$this->writeBillingRecord($this->getDate($line), $this->getTariffItem($line, $subscriber), $this->getCalledNo($line), $this->getCallerNo($line), $this->getUsageVolume($line), $this->getCharge($line), $this->getCredit($line), $this->getTariffKind($line['usaget']), $this->getAccessPrice($line), $this->getInterval($line), $this->getRate($line), $this->getIntlFlag($line), $this->getDiscountUsage($line), $this->getRoaming($line), $this->getServingNetwork($line), $this->getLineTypeOfBillingChar($line));
+					$date = $this->getDate($line);
+					$tariffItem = $this->getTariffItem($line, $subscriber);
+					$alpha3 = $this->getLineAlpha3($line);
+					$usageVolume = $this->getUsageVolume($line);
+					$called = $this->getCalledNo($line);
+					$caller = $this->getCallerNo($line);
+					$charge = $this->getCharge($line);
+					$credit = $this->getCredit($line);
+					$tariffKind = $this->getTariffKind($line['usaget']);
+					$accessPrice = $this->getAccessPrice($line);
+					$interval = $this->getInterval($line);
+					$rate = $this->getRate($line);
+					$intlFlag = $this->getIntlFlag($line);
+					$discountUsage = $this->getDiscountUsage($line);
+					$roaming = $this->getRoaming($line);
+					$servingNetwork = $this->getServingNetwork($line);
+					$lineTypeBilling = $this->getLineTypeOfBillingChar($line);
+					$this->writeBillingRecord($date, $tariffItem, $called, $caller, $usageVolume, $charge, $credit, $tariffKind, $accessPrice, $interval, $rate, $intlFlag, $discountUsage, $roaming, $servingNetwork, $lineTypeBilling, $alpha3);
 					if ($lines_counter % $this->flush_size == 0) {
 						$this->flush();
 					}
@@ -1126,7 +1153,7 @@ EOI;
 			}
 			$subscriber_aggregated_data = $this->get_subscriber_aggregated_data_lines($subscriber);
 			foreach ($subscriber_aggregated_data as $line) {
-				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D');
+				$this->writeBillingRecord($line['day'], $line['rate_key'], '', '', $line['usage_volume'], $line['aprice'], 0, $line['tariff_kind'], 0, $line['interval'], $line['rate_price'], 0, $line['discount_usage'], 0, '', 'D', '');
 			}
 		}
 		$this->writer->endElement(); // end BILLING_LINES
@@ -1353,7 +1380,7 @@ EOI;
 		return str_replace(' ', '_', strtoupper($taarif_kind . '-' . $rate_key));
 	}
 
-	protected function writeBillingRecord($golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char) {
+	protected function writeBillingRecord($golan_date, $tariff_item, $called_number, $caller_number, $volume, $charge, $credit, $tariff_kind, $access_price, $interval, $rate, $intl_flag, $discount_usage, $roaming, $serving_network, $type_of_billing_char, $alpha3) {
 		$this->writer->startElement('BILLING_RECORD');
 		$this->writer->writeElement('TIMEOFBILLING', $golan_date);
 		$this->writer->writeElement('TARIFFITEM', $tariff_item);
@@ -1371,6 +1398,7 @@ EOI;
 		$this->writer->writeElement('ROAMING', $roaming);
 		$this->writer->writeElement('SERVINGPLMN', $serving_network);
 		$this->writer->writeElement('TYPE_OF_BILLING_CHAR', $type_of_billing_char);
+		$this->writer->writeElement('ALPHA3', $alpha3);
 		$this->writer->endElement();
 	}
 
@@ -1429,7 +1457,7 @@ EOI;
 	}
 
 	protected function getRoaming($line) {
-		return $line['type'] == 'tap3' ? 1 : 0;
+		return ($line['type'] == 'tap3'  || isset($line['roaming'])) ? 1 : 0;
 	}
 
 	protected function getServingNetwork($line) {
@@ -1473,6 +1501,10 @@ EOI;
 
 	public function __destruct() {
 		libxml_use_internal_errors(FALSE);
+	}
+	
+	protected function getLineAlpha3($line){
+		return isset($line['alpha3']) ? $line['alpha3'] : '';
 	}
 
 }
