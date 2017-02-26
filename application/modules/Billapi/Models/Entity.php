@@ -391,13 +391,16 @@ class Models_Entity {
 			'_id' => -1
 		);
 		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
-			->sort($previousEntrySort)->limit(1)->current();
-		$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
-		$this->setUpdate(array('to' => $this->before['to']));
-		$this->setBefore($previousEntry);
-		return $this->update();
+				->sort($previousEntrySort)->limit(1)->current();
+		if (!$previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+			$this->setUpdate(array('to' => $this->before['to']));
+			$this->setBefore($previousEntry);
+			return $this->update();
+		}
+		return TRUE;
 	}
-	
+
 	/**
 	 * method to update the update instruct
 	 * @param array $u mongo update instruct
