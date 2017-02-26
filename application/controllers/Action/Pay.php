@@ -23,11 +23,14 @@ class PayAction extends ApiAction {
 		$method = $request->getPost('method');
 		$jsonPayments = $request->getPost('payments');
 
+		if (!$method) {
+			return $this->setError('No method found', $request->getPost());
+		}
 		if (!(($paymentsArr = json_decode($jsonPayments, TRUE)) && (json_last_error() == JSON_ERROR_NONE) && is_array($paymentsArr))) {
 			return $this->setError('No payments found', $request->getPost());
 		}
 		try {
-			$payments = static::pay($method, $paymentsArr);
+			$payments = Billrun_Bill::pay($method, $paymentsArr);
 			$emailsToSend = array();
 			foreach ($payments as $payment) {
 				$method = $payment->getPaymentMethod();
