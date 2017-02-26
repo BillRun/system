@@ -147,7 +147,10 @@ class Vfdays2Action extends Action_Base {
 		
 		$match = array(
 			'$match' => array(
-				'type' => 'tap3',
+				'$or' => array(
+					array('type' => 'tap3'),
+					array('type' => 'smsc'),
+				),
 //				'$or' => array(
 //					array('sid' => 960903),
 //				),
