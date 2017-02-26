@@ -133,7 +133,335 @@
             }
         }
 
+        },	
+	{
+    "name" : "NEW-PLAN-X3",
+    "code" : "NEW-PLAN-X3",
+    "description" : "NEW-PLAN-X3",
+    "recurrence" : {
+        "unit" :1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "10",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
         }
+    ],
+	
+	"rates": {
+		"NEW-CALL-USA": {
+			"call": {
+					"rate":
+					 [
+				
+						{
+							"from" : 0,
+							"to" : 20,
+							"interval" : 1,
+							"price" : "0.2"
+						},
+						{
+							"from" : 21,
+							"to" : 999999999,
+							"interval" : 1,
+							"price" : "0.5"
+						}
+						
+				]
+			}
+		}
+	},
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z",
+    "include" : {
+        "groups" : {
+            "NEW-GROUPO" : {
+                "call" : "100",
+				"rates": ["NEW-CALL-USA"]
+            }
+        }
+    }
+  },
+  {
+    "name" : "NEW-PLAN-A0",
+    "code" : "NEW-PLAN-A0",
+    "description" : "NEW-PLAN-A0",
+    "recurrence" : {
+        "unit" : 1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "50",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z"
+  },
+  {
+    "name" : "NEW-PLAN-A1",
+    "code" : "NEW-PLAN-A1",
+    "description" : "NEW-PLAN-A1",
+    "recurrence" : {
+        "unit" : 1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "50",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+	"rates": {
+		"NEW-VEG": {
+			"gr":{
+					"rate":
+					 [
+				
+						{
+							"from" : 0,
+							"to" : 20,
+							"interval" : 1,
+							"price" : "0.1"
+						},
+						{
+							"from" : 21,
+							"to" : 999999999,
+							"interval" : 1,
+							"price" : "0.2"
+						}
+						
+				]
+			}
+		}
+	},
+	
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z",
+    "include" : {
+        "groups" : {
+            "NEW-AAA" : {
+                "call" : "50",
+				"rates": ["NEW-CALL-USA","NEW-VEG"]
+            },
+            "NEW-SR4" : {
+                "gr" : "50",
+				"rates": ["NEW-VEG"]
+            }
+        }
+    }
+
+    },
+    {
+        "name" : "NEW-PLAN-A2",
+        "code" : "NEW-PLAN-A2",
+        "description" : "NEW-PLAN-A2",
+        "recurrence" : {
+            "unit" : 1,
+            "periodicity" : "month"
+        },
+        "upfront" : false,
+        "price" : [
+            {
+                "price" : "50",
+                "from" : 0,
+                "to" : 2,
+                "trial" : false
+            },
+            {
+                "price" : "25",
+                "from" : 2,
+                "to" : 999999999
+            }
+        ],
+        "from" : "time*2016-10-05T08:08:36Z",
+        "to" : "time*2116-10-05T08:08:36Z",
+        "include" : {
+            "groups" : {
+                "NEW-AAA" : {
+                    "call" : "60",
+					"rates": ["NEW-CALL-USA","NEW-VEG"]
+                },
+                "NEW-GROUPO" : {
+                    "call" : "40",
+					"rates": ["NEW-CALL-USA"]
+                }
+            }
+        }
+
+        },
+		
+		{
+    "name" : "NEW-PLAN-Z5",
+    "code" : "NEW-PLAN-Z5",
+    "description" : "NEW-PLAN-Z5",
+    "recurrence" : {
+        "unit" :1,
+        "periodicity" : "month"
+    },
+    "upfront" : false,
+    "price" : [
+        {
+            "price" : "10",
+            "from" : 0,
+            "to" : 2,
+            "trial" : true
+        },
+        {
+            "price" : "25",
+            "from" : 2,
+            "to" : 999999999
+        }
+    ],
+	
+	"rates": {
+		"NEW-CALL-USA": {
+			"call": {
+					"rate":
+					 [
+				
+						{
+							"from" : 0,
+							"to" : 20,
+							"interval" : 1,
+							"price" : "0.2"
+						},
+						{
+							"from" : 21,
+							"to" : 999999999,
+							"interval" : 1,
+							"price" : "0.5"
+						}
+						
+				]
+			}
+		}
+	},
+    "from" : "time*2016-10-05T08:08:36Z",
+    "to" : "time*2116-10-05T08:08:36Z",
+    "include" : {
+        "groups" : {
+            "GR_CST" : {
+                "cost" : 20,
+				"rates": ["NEW-CALL-USA", "NEW-CALL-EUROPE","NEW-VEG"]
+            }
+        }
+    }
+  },
+	{
+		"name" : "SHARED-PLAN-K3",
+		"plan_code" : "SHARED-PLAN-K3",
+		"description" : "SHARED-PLAN-K3",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GR1" : {
+					"call" : 5,
+					"rates": ["SHARED-RATE"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L2",
+		"plan_code" : "PLAN-L2",
+		"description" : "PLAN-L2",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP2" : {
+					"call" : 10,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L3",
+		"plan_code" : "PLAN-L3",
+		"description" : "PLAN-L3",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP3" : {
+					"cost" : 10,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L4-SHARED",
+		"plan_code" : "PLAN-L4-SHARED",
+		"description" : "PLAN-L4-SHARED",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP4" : {
+					"call" : 15,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        },
+	{
+		"name" : "PLAN-L5-SHARED",
+		"plan_code" : "PLAN-L5-SHARED",
+		"description" : "PLAN-L5-SHARED",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"GRP5" : {
+					"cost" : 10,
+					"account_shared": true,
+					"rates": ["RATE-L3"]
+				}
+			}
+		}
+
+        }
+		
 
 ]
 }

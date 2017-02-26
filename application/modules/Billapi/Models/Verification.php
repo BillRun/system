@@ -33,7 +33,7 @@ trait Models_Verification {
 			foreach ($configParams as $param) {
 				$name = $param['name'];
 				$isGenerated = (isset($param['generated']) && $param['generated']);
-				if (!isset($params[$name])) {
+				if (!isset($params[$name]) || $params[$name] === "") {
 					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
 						throw new Billrun_Exceptions_Api($error, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
 					}

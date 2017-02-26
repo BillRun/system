@@ -79,6 +79,9 @@ abstract class Models_Action {
 		
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
+		if (json_last_error() != JSON_ERROR_NONE) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
+		}
 		list($this->query, $this->update) = $this->validateRequest($query, $update, $this->request['collection'], $this->settings, 999999, false);
 		
 		if (isset($params['data'])) {

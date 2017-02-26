@@ -142,6 +142,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @return array
 	 */
 	protected function getBalanceLoadQuery(array $query = array()) {
+		$query['aid'] = $this->row['aid'];
 		$query['sid'] = $this->row['sid'];
 		$query['from'] = array('$lte' => $this->row['urt']);
 		$query['to'] = array('$gte' => $this->row['urt']);

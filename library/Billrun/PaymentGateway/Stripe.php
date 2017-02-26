@@ -6,6 +6,8 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
+require_once(APPLICATION_PATH . '/library/stripe-php/init.php');
+
 /**
  * This class represents a payment gateway
  *
@@ -52,7 +54,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	protected function buildSetQuery() {
 		return array(
-			'payment_gateway' => array(
+			'payment_gateway.active' => array(
 				'name' => $this->billrunName,
 				'customer_id' => $this->saveDetails['customer_id'],
 				'stripe_email' => $this->saveDetails['email'],
@@ -120,10 +122,6 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	protected function isHtmlRedirect() {
 		return true;
-	}
-
-	public function isCustomerBasedCharge() {
-		return false;
 	}
 
 	protected function needRequestForToken() {
@@ -219,4 +217,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		\Stripe\Balance::retrieve(); // calling function from Stripe API to check if connection succeeded
 	}
 
+	public function handleOkPageData($txId) {
+		return true;
+	}
 }

@@ -42,7 +42,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
-		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type']);
+		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
 				'decoder' => $this->config['parser']['type']
 		));
@@ -71,13 +71,13 @@ class RealtimeController extends ApiController {
 		$this->event['session_id'] = $this->getSessionId();
 		$this->event['rand'] = rand(1, 1000000);
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		$this->event['record_type'] = $this->getDataRecordType($this->usaget, $this->event);
+		$this->event['record_type'] = $this->getDataRecordType($this->event);
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 
-		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event, &$this->usaget));
+		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event));
 	}
 
-	protected function getDataRecordType($usaget, $data) {
+	protected function getDataRecordType($data) {
 		$requestCode = $data['request_type'];
 		$requestTypes = Billrun_Factory::config()->getConfigValue('realtimeevent.requestType', array());
 		foreach ($requestTypes as $requestTypeDesc => $requestTypeCode) {
@@ -86,7 +86,7 @@ class RealtimeController extends ApiController {
 			}
 		}
 
-		Billrun_Factory::log("No record type found. Params: " . print_R($usaget, 1) . "," . print_R($data, 1), Zend_Log::ERR);
+		Billrun_Factory::log("No record type found. Params: " . print_R($data, 1), Zend_Log::ERR);
 		return false;
 	}
 
@@ -107,6 +107,7 @@ class RealtimeController extends ApiController {
 	 */
 	protected function getRequestType() {
 		if (isset($this->config['realtime']['postpay_charge']) && $this->config['realtime']['postpay_charge']) {
+			$this->event['skip_calc'] = array('unify');
 			return Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST', "4");
 		}
 		$requestTypeField = $this->config['realtime']['request_type_field'];
@@ -122,10 +123,10 @@ class RealtimeController extends ApiController {
 	 * @return string request num
 	 */
 	protected function getRequestNum() {
-		$requestNumField = $this->config['realtime']['request_num_field'];
-		if (!$requestNumField) {
+		if (!isset($this->config['realtime']['request_num_field'])) {
 			return (isset($this->event['uf']['request_num']) ? $this->event['uf']['request_num'] : null);
 		}
+		$requestNumField = $this->config['realtime']['request_num_field'];
 		return $this->event['uf'][$requestNumField];
 	}
 
@@ -135,10 +136,10 @@ class RealtimeController extends ApiController {
 	 * @return string session id
 	 */
 	protected function getSessionId() {
-		$sessionIdFields = $this->config['realtime']['session_id_fields'];
-		if (!$sessionIdFields) {
+		if (!isset($this->config['realtime']['session_id_fields'])) {
 			return (isset($this->event['uf']['session_id']) ? $this->event['uf']['session_id'] : Billrun_Util::generateRandomNum());
 		}
+		$sessionIdFields = $this->config['realtime']['session_id_fields'];
 		$sessionIdArr = array_intersect_key($this->event['uf'], array_flip($sessionIdFields));
 		return Billrun_Util::generateArrayStamp($sessionIdArr);
 	}
@@ -198,7 +199,7 @@ class RealtimeController extends ApiController {
 	 * @return boolean
 	 */
 	protected function isPretend($event) {
-		$pretendField = $this->config['realtime']['pretend_field'];
+		$pretendField = isset($this->config['realtime']['pretend_field']) ? $this->config['realtime']['pretend_field'] : 'pretend';
 		return (isset($event['uf'][$pretendField]) && $event['uf'][$pretendField]);
 	}
 

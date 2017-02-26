@@ -402,13 +402,13 @@ class Mongodloid_Collection {
 	/**
 	 * method to insert document
 	 * 
-	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $ins array or object. If an object is used, it may not have protected or private properties
 	 * @param array $options the options for the insert; see php documentation
 	 * 
 	 * @return mixed Returns an array containing the status of the insertion if the "w" option is set. Otherwise, returns TRUE if the inserted array is not empty
 	 * @see http://www.php.net/manual/en/mongocollection.insert.php
 	 */
-	public function insert($a, array $options = array()) {
+	public function insert(&$ins, array $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
@@ -416,8 +416,16 @@ class Mongodloid_Collection {
 		if (!isset($options['j'])) {
 			$options['j'] = $this->j;
 		}
-
-		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
+		if ($ins instanceof Mongodloid_Entity) {
+			$a = $ins->getRawData();
+			$ret = $this->_collection->insert($a , $options);
+			$ins = new Mongodloid_Entity($a);
+		} else {
+			$a = $ins; // pass by reference - _id is not saved on by-ref var
+			$ret = $this->_collection->insert($a , $options);
+			$ins = $a;
+		}
+		return $ret;
 	}
 
 	/**

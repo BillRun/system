@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Pay.php';
 require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
 
@@ -136,9 +135,9 @@ class PaymentGatewaysController extends ApiController {
 		// Get the accound object.
 		$accountQuery = $this->getAccountQuery($aid);
 		$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
-		if($account && !$account->isEmpty() && isset($account['payment_gateway']['name'])) {
+		if($account && !$account->isEmpty() && isset($account['payment_gateway']['active']['name'])) {
 			// Check the payment gateway
-			if($account['payment_gateway']['name'] != $name) {
+			if($account['payment_gateway']['active']['name'] != $name) {
 				$invField = new Billrun_DataTypes_InvalidField('payment_gateway');
 				throw new Billrun_Exceptions_InvalidFields(array($invField));
 			}
@@ -157,20 +156,17 @@ class PaymentGatewaysController extends ApiController {
 		}
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		$transactionName = $paymentGateway->getTransactionIdName();
-		if ($transactionName) {
-			$transactionId = $request->get($transactionName);
-			if (is_null($transactionId)) {
-				return $this->setError("Operation Failed. Try Again...", $request);
-			}
-		} else if ($paymentGateway->isCustomerBasedCharge()){
-			$customer = $request->get('customer');
-			if (is_null($customer)) {
-				return $this->setError("Operation Failed. Try Again...", $request);
-			}
-			$transactionId = $customer;
+		$transactionId = $request->get($transactionName);
+		if (is_null($transactionId)) {
+			return $this->setError("Operation Failed. Try Again...", $request);
 		}
-		$additionalParams = $paymentGateway->addAdditionalParameters($request);
-		$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		$handleResponse = $paymentGateway->handleOkPageData($transactionId);
+		if ($handleResponse !== true) {
+			$returnUrl = $handleResponse;
+		} else {
+			$additionalParams = $paymentGateway->addAdditionalParameters($request);
+			$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+		}
 		$this->getView()->outputMethod = 'header';
 		$this->getView()->output = "Location: " . $returnUrl;
 	}

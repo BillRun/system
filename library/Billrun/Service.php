@@ -102,14 +102,21 @@ class Billrun_Service {
 	 * @since 2.6
 	 */
 	public function getRateGroups($rate, $usageType) {
-		$name = $this->getName();
-		if (isset($this->data['include']['groups'][$name]['rates'])) {
-			return in_array($rate['key'], $this->data['include']['groups'][$name]['rates']);
+		$groups = array();
+		if (is_array($this->data['include']['groups'])) {
+			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
+				if ((array_key_exists($usageType, $groupIncludes) || (array_key_exists('cost', $groupIncludes))) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+					$groups[] = $groupName;
+				}
+			}
 		}
+		if ($groups) {
+			return $groups;
+		}
+		
+		//backward compatibility
 		if (isset($rate['rates'][$usageType]['groups'])) {
 			$groups = $rate['rates'][$usageType]['groups'];
-		} else if (isset($rate['rates'][$usageType]['groups'][$name])) {
-			$groups = $rate['rates'][$usageType]['groups'][$name];
 		} else {
 			return array();
 		}
@@ -193,8 +200,9 @@ class Billrun_Service {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
-			if (!isset($this->data['include']['groups'][$staticGroup][$usageType])) {
-				return 0;
+			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
+				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
+				return array('usagev' => 0);
 			}
 
 			if (isset($this->data['include']['groups'][$staticGroup]['limits'])) {
@@ -202,7 +210,7 @@ class Billrun_Service {
 				$limits = $this->data['include']['groups'][$staticGroup]['limits'];
 				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$staticGroup, $limits, $this, $usageType, $rate, $subscriberBalance));
 				if ($groupSelected === FALSE) {
-					return 0;
+					return array('usagev' => 0);
 				}
 			}
 			
@@ -210,22 +218,44 @@ class Billrun_Service {
 		}
 		
 		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
-			return 0;
-		}
+			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
+				return array('usagev' => 0);
+			}
+			$cost = $this->data['include']['groups'][$groupSelected]['cost'];
+			// convert cost to volume
+			if ($cost === 'UNLIMITED') {
+				return array(
+					'cost' => PHP_INT_MAX,
+				);
+			}
 
-		$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
-
-		if ($rateUsageIncluded === 'UNLIMITED') {
-			return PHP_INT_MAX;
-		}
-
-		if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-			$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected]['cost'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
+			} else {
+				$subscriberSpent = 0;
+			}
+			$costLeft = $cost - $subscriberSpent;
+			return array(
+				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
+			);
 		} else {
-			$subscriberSpent = 0;
+			$rateUsageIncluded = $this->data['include']['groups'][$groupSelected][$usageType];
+			if ($rateUsageIncluded === 'UNLIMITED') {
+				return array(
+					'usagev' => PHP_INT_MAX,
+				);
+			}
+
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+			} else {
+				$subscriberSpent = 0;
+			}
+			$usageLeft = $rateUsageIncluded - $subscriberSpent;
+			return array(
+				'usagev' => floatval($usageLeft < 0 ? 0 : $usageLeft),
+			);
 		}
-		$usageLeft = $rateUsageIncluded - $subscriberSpent;
-		return floatval($usageLeft < 0 ? 0 : $usageLeft);
 	}
 
 	/**
@@ -241,7 +271,7 @@ class Billrun_Service {
 		if (!is_null($this->strongestGroup)) {
 			return $this->strongestGroup;
 		}
-		$limit = 10; // protect infinit loop
+		$limit = 10; // protect infinite loop
 		do {
 			$groupSelected = $this->setNextStrongestGroup($rate, $usageType);
 			// group not found
@@ -250,7 +280,8 @@ class Billrun_Service {
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+			if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+				&& !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				continue;
 			}
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {

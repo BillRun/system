@@ -145,9 +145,10 @@ class Billrun_Config {
 		return self::$instance[$stamp];
 	}
 	
-	public function getFileTypeSettings($fileType) {
-		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	public function getFileTypeSettings($fileType, $enabledOnly = false) {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType &&
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		});
 		if ($fileType) {
 			$fileType = current($fileType);
@@ -155,10 +156,10 @@ class Billrun_Config {
 		return $fileType;
 	}
 
-	public function getFileTypes() {
-		return array_map(function($fileSettings) {
-			return $fileSettings['file_type'];
-		}, $this->getConfigValue('file_types'));
+	public function getFileTypes($enabledOnly = false) {
+		return array_filter(array_map(function($fileSettings) use($enabledOnly) {
+			return ((!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings)) ? $fileSettings['file_type'] : null);
+		}, $this->getConfigValue('file_types')));
 	}
 
 	public function loadDbConfig() {
@@ -435,6 +436,10 @@ class Billrun_Config {
 	
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
+	}
+		
+	public static function isFileTypeConfigEnabled($fileTypeSettings) {
+		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
 	}
 
 }

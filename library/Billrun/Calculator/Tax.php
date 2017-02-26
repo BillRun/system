@@ -71,10 +71,10 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		return 'tax';
 	}
 
-	protected function isLineLegitimate($line) {
+	public function isLineLegitimate($line) {
 		//Line is legitimate if it has rated usag
-		$rate =  Billrun_Rates_Util::getRateByRef($line->get('arate', true));
-		return !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && (@$line['vatable'] || @$rate['vatable']) ; // all rated lines that are taxable
+		$rate =  Billrun_Rates_Util::getRateByRef( $line instanceof Mongodloid_Entity ? $line->get('arate', true): $line['arate']);
+		return !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'] ; // all rated lines that are taxable
 	}	
 	
 	protected function isLineDataComplete($line) {

@@ -1,0 +1,62 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"data":
+	[
+	{
+          "name" : "SERVICE1", "description" : "SERVICE1", "price" : 33,
+		  "from" :  1375654916,
+		  "to": 4731328516,
+          "include" : {
+              "groups" : {
+                  "AAA" : {
+							"call" : 40,
+							"rates": ["CALL-USA","VEG"]
+							}
+                          }
+                      }
+        },
+         {
+          "name" : "SERVICE2", "description" : "SERVICE2", "price" : 45,
+		  "from" :  1375654916,
+		  "to": 4731328516,
+          "include" : {
+              "groups" : {
+                  "BBB" : {"call" : 75,
+					  "rates": ["CALL-USA"]}
+                          }
+                      }
+          },
+        {
+			"name" : "SERVICE3", "description" : "SERVICE3", "price" : 33,
+			"from" :  1375654916,
+			"to": 4731328516,
+			"include" : {
+              "groups" : {
+                  "AAA" : {
+							"call" : 40,
+							"rates": ["CALL-USA","VEG"]
+							},
+                  "BBB" : {
+							"call" : 75,
+							"rates": ["CALL-USA"]
+							}
+                          }
+                      }
+        },
+        {
+        "name" : "SERVICE4", "description" : "SERVICE4", "price" : 33,
+		"from" :  1375654916,
+		"to": 4731328516,
+        "include" : {
+              "groups" : {
+                  "SR4" : {
+							"gr" : 200,
+							"rates": ["VEG"]
+							}
+                          }
+                      }
+        }
+	]
+}

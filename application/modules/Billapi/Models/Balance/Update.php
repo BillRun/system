@@ -14,9 +14,6 @@
  */
 abstract class Models_Balance_Update {
 
-	protected $before;
-	protected $after;
-
 	public function __construct(array $params = array()) {
 		// load balance update
 	}

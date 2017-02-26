@@ -30,4 +30,26 @@ class Models_Balances extends Models_Entity {
 //		parent::init($params);
 	}
 	
+	public function update() {
+		$className = 'Models_Action_Update_Balance_';
+		if (isset($this->query['pp_includes_external_id'])) {
+			$className .= 'Prepaidinclude';
+			// load pp includes update balance
+		} else if (isset($this->query['charging_plan'])) {
+			$className .= 'Chargingplan';
+			// load charging plan update balance
+		} else if (isset($this->query['secret'])) {
+			$className .= 'Secret';
+		} else {
+			// throw an error
+		}
+//		if (isset())
+//		$upsert = $this
+		$params = array_merge($this->query, $this->update);
+		$action = new $className($params);
+		$ret = $action->update();
+		print_R($this);die;
+		return true;
+	}
+	
 }

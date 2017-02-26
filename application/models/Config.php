@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 
 /**
  * Configmodel class
@@ -36,6 +35,12 @@ class ConfigModel {
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
+        
+        /**
+	 * reserved names of File Types.
+	 * @var array
+	 */
+        protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
 
 	public function __construct() {
 		// load the config data from db
@@ -192,6 +197,10 @@ class ConfigModel {
 		}
 		// TODO: Create a config class to handle just file_types.
 		else if ($category === 'file_types') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for file types.");
+				return 0;
+			}
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
@@ -386,7 +395,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		Billrun_Factory::log("Tempalte: " . print_r($template,1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
@@ -538,10 +547,27 @@ class ConfigModel {
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
+	
+	public function setEnabled($category, $data, $enabled) {
+		$updatedData = $this->getConfig();
+		unset($updatedData['_id']);
+		if ($category === 'file_types') {
+			foreach ($updatedData['file_types'] as &$someFtSettings) {
+				if ($someFtSettings['file_type'] == $data['file_type']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
+		}
+ 
+		$ret = $this->collection->insert($updatedData);
+		return !empty($ret['ok']);
+	}
 
-	protected function getFileTypeSettings($config, $fileType) {
-		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	protected function getFileTypeSettings($config, $fileType, $enabledOnly = false) {
+		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType && 
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		})) {
 			return current($filtered);
 		}
@@ -631,6 +657,9 @@ class ConfigModel {
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
 		$completeFileSettings = FALSE;
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
+                if ($this->isReservedFileTypeName($fileType)) {
+                    throw new Exception($fileType . ' is a reserved BillRun file type');
+                }
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
 		}
@@ -713,6 +742,9 @@ class ConfigModel {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			if (!isset($fileSettings['processor']['usaget_mapping'])) {
+				$fileSettings['processor']['usaget_mapping'] = array();
+			}
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];
@@ -992,5 +1024,10 @@ class ConfigModel {
 		$saveData = array_merge($data, $items);
 		$this->setConfig($saveData);
 	}
+        
+        protected function isReservedFileTypeName($name) {
+            $lowCaseName = strtolower($name);
+            return in_array($lowCaseName, $this->reservedFileTypeName);
+        }
 
 }
