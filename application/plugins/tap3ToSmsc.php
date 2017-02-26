@@ -14,11 +14,17 @@
  * @since    0.9
  */
 class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
+	protected $transferDaySmsc;
+	
+	public function __construct() {
+		$this->transferDaySmsc = Billrun_Factory::config()->getConfigValue('billrun.tap3_to_smsc_transfer_day', "20170301000000");
+	}
+
 
 	public function afterCalculatorUpdateRow($row, $calculator) {
 		if ($calculator->getCalculatorQueueType() == 'pricing' && $row['type'] == 'tap3' && $row['usaget'] == 'sms') {
 			$lineTime = $row['urt']->sec;
-			$transferDay = strtotime(Billrun_Factory::config()->getConfigValue('billrun.transfer_day', "20170301000000"));
+			$transferDay = strtotime($this->transferDaySmsc);
 			if ($lineTime >= $transferDay) {
 				unset($row['billrun']);
 			}
@@ -26,7 +32,7 @@ class tap3ToSmscPlugin extends Billrun_Plugin_BillrunPluginBase {
 		
 		if ($calculator->getCalculatorQueueType() == 'pricing' && $row['type'] == 'smsc' && $row['roaming']) {
 			$lineTime = $row['urt']->sec;
-			$transferDay = strtotime(Billrun_Factory::config()->getConfigValue('billrun.transfer_day', "20170301000000"));
+			$transferDay = strtotime($this->transferDaySmsc);
 			if ($lineTime < $transferDay) {
 				unset($row['billrun']); 
 			}
