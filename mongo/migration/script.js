@@ -145,3 +145,7 @@ db.subscribers.find({type: "subscriber", services: {$ne: [], $exists: 1}}).forEa
 	obj.services = services;
 	db.subscribers.save(obj);
 });
+
+
+db.balances.dropIndex('sid_1_from_1_to_1_priority_1');
+db.balances.ensureIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
