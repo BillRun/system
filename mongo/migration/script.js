@@ -113,6 +113,19 @@ if (!found_zip_code) {
 		"display": true
 	});
 }
+
+var found_tax_field = false;
+lastConfig.rates.fields.forEach(function (field) {
+	if (field.field_name == "tax") {
+		found_tax_field = true;
+	}
+})
+if (!found_tax_field) {
+	lastConfig.rates.fields.push({
+		"field_name": "tax",
+	});
+}
+
 db.config.insert(lastConfig);
 
 // BRCD-614
