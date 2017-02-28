@@ -45,7 +45,14 @@ class LocaleController extends ApiController {
 				}
 			}
 		}
-		$this->getView()->list = $ret;
+                $output = array (
+	
+			'status' => !empty($ret) ? 1 : 0,
+			'desc' => !empty($ret) ? 'success' : 'error',
+			'details' => empty($ret) ? array() : $ret,
+		);
+		
+		$this->getView()->list = $output;
 	}
 	
 	protected function getPermissionLevel() {
