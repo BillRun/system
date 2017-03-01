@@ -18,7 +18,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->config = Billrun_Factory::config()->getConfigValue('tax.config',array());
+		$this->config = Billrun_Factory::config()->getConfigValue('taxation.config',array());
 	}
 	
 	public static function isConfigComplete($config) {
