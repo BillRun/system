@@ -162,3 +162,13 @@ db.subscribers.find({type: "subscriber", services: {$ne: [], $exists: 1}}).forEa
 
 db.balances.dropIndex('sid_1_from_1_to_1_priority_1');
 db.balances.ensureIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+
+// BRCD-646
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var pricingVat = lastConfig.pricing.vat;
+delete lastConfig['pricing']['vat'];
+lastConfig.taxation = {};
+lastConfig.taxation.vat = pricingVat;
+lastConfig.taxation.tax_type = "vat";
+db.config.insert(lastConfig);
