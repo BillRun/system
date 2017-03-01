@@ -82,7 +82,7 @@ abstract class Billrun_Calculator_Row {
 	}
 
 	static public function getInstance($calc, ArrayAccess $row, $callerClass, $subcalc = null) {
-		$stamp = Billrun_Util::generateArrayStamp($row);
+		$stamp = Billrun_Util::generateArrayStamp(array($calc, $subcalc, spl_object_hash($callerClass)));
 		if (!isset(self::$instances[$stamp])) {
 			$class = get_called_class() . '_' . ucfirst($calc);
 			if (!is_null($subcalc)) {
@@ -91,6 +91,9 @@ abstract class Billrun_Calculator_Row {
 				$class .= '_Postpaid';
 			}
 			self::$instances[$stamp] = new $class($row, $callerClass);
+		} else {
+			self::$instances[$stamp]->setRow($row);
+			self::$instances[$stamp]->init();
 		}
 		return self::$instances[$stamp];
 	}
