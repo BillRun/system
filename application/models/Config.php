@@ -59,7 +59,7 @@ class ConfigModel {
 			->sort(array('_id' => -1))
 			->limit(1)
 			->current()
-			->getRawData();;
+			->getRawData();
 		$this->data = $ret;
 	}
 
