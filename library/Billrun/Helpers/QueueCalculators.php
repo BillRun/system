@@ -101,7 +101,7 @@ class Billrun_Helpers_QueueCalculators {
 		$calc_options = array();
 		switch ($calc_name) {
 			case 'rate':
-				$type = ($this->options['credit'] ? 'rate_Credit' : 'rate_Usage');
+				$type = (isset($this->options['credit']) && $this->options['credit'] ? 'rate_Credit' : 'rate_Usage');
 				$calc_options = array('type' => $type);
 				break;
 
