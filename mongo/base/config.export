@@ -147,7 +147,8 @@
                 "mandatory": true
             }, {
                 "field_name": "address",
-                "mandatory": true
+                "mandatory": true,
+                "title": "Address"
             },
 			{
                 "field_name": "zip_code",
