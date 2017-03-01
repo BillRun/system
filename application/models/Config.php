@@ -59,11 +59,14 @@ class ConfigModel {
 			->sort(array('_id' => -1))
 			->limit(1)
 			->current()
-			->getRawData();
+			->getRawData();;
 		$this->data = $ret;
 	}
 
-	public function getConfig() {
+	public function getConfig($includeFilesConfig = false) {
+		if ($includeFilesConfig)  {
+			return Billrun_Config::mergeConfigs(Billrun_Factory::config()->toArray(), $this->data);
+		}
 		return $this->data;
 	}
 
@@ -86,7 +89,7 @@ class ConfigModel {
 	}
 
 	public function getFromConfig($category, $data) {
-		$currentConfig = $this->getConfig();
+		$currentConfig = $this->getConfig(true);
 
 		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
