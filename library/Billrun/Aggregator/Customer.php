@@ -294,7 +294,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
-			$data = $data + $this->aggregateMongo($mongoCycle, 0, 1, $account_id);
+			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
 		}
 		$result['data'] = $data;
 		return $result;
