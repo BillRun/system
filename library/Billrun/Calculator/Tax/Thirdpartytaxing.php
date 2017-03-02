@@ -13,13 +13,9 @@
  */
 class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
-	protected $config = array();
+
 	protected $taxDataResults = array();
 
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		$this->config = Billrun_Factory::config()->getConfigValue('tax.config',array());
-	}
 	
 	public static function isConfigComplete($config) {
 		return true;
@@ -35,12 +31,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$account = new Billrun_Account_Db();
 			$account->load(array('aid'=>$line['aid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			
-			$availableData = array( 'row'=> $line,
-									'account'=>$account->getCustomerData(),
-									'subscriber'=> $subscriber->getSubscriberData(),
-									'config'=>$this->config);
-			$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
-			$singleData = $this->translateDataForTax($singleData, $availableData);
+			$singleData = $this->constructSingleRowData($line, $subscriber->getSubscriberData(), $account->getCustomerData());
 			$queryData[] = $singleData;
 		}
 		if(!empty($queryData)) {
@@ -53,12 +44,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		if(isset($this->taxDataResults[$line['stamp']])) {
 			$line['tax_data'] = $this->taxDataResults[$line['stamp']];
 		} else {
-			$availableData = array( 'row'=> $line,
-									'account'=>$account,
-									'subscriber'=> $subscriber,
-									'config'=>$this->config);
-			$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
-			$singleData = $this->translateDataForTax($singleData, $availableData);
+			$singleData = $this->constructSingleRowData($line, $subscriber, $account);
 			$data = $this->constructRequestData($this->config['request'],array('data'=> array($singleData), 'config'=>$this->config));
 			$taxResults = $this->queryAPIforTaxes($data);
 			if(isset($taxResults[$line['stamp']])) {
@@ -87,6 +73,29 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 
 		return $response;
+	}
+	/**
+	 *  Build a single row tax information data request.
+	 * @param type $line
+	 * @param type $subscriber
+	 * @param type $account
+	 * @return type
+	 */
+	protected function constructSingleRowData($line, $subscriber, $account) {
+		$singleData = array();
+		$rate = $this->getRateForLine($line);
+		$taxationMapping = $this->mapArrayToStructuredHash($this->config[$this->config['tac_type']], array('file_type','usaget'));
+		$availableData = array( 'row'=> $line,
+								'account'=> $account,
+								'subscriber'=> $subscriber,
+								'rate' => $rate,
+								'config'=> $this->config,
+								'mapping' => $taxationMapping );
+		
+		$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
+		$singleData = $this->translateDataForTax($singleData, $availableData);
+		
+		return $singleData;
 	}
 	
 	protected function constructRequestData($config, $data) {
@@ -157,11 +166,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		$apiInputData['record_type'] = $rowIsNotUsage ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',  Billrun_Billingcycle::getStartTime($availableData['row']['billrun']));
-		if(!$rowIsNotUsage || $availableData['row']['type'] == 'credit') {
-			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForUsage($availableData['row']));
-		} else {
-			$apiInputData = array_merge($apiInputData,$this->getProductAndServiceForFlat($availableData['row']));
-		}
+		
+		$apiInputData = array_merge($apiInputData,$this->getDataFromRate($availableData['row'],$availableData['rate']));
+		
 		$apiInputData['minutes'] = $rowIsNotUsage ? '': round($availableData['row']['usagev']/60);
 		
 		return $apiInputData;
@@ -174,29 +181,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		return $data;
 	}
 	
-	protected function getProductAndServiceForFlat ($row) {
-		$flatRate = $row['type'] == 'flat' ? 
-						new Billrun_Plan(array('name'=> $row['name'], 'time'=> $row['urt']->sec)) : 
-						new Billrun_Service(array('name'=> $row['name'], 'time'=> $row['urt']->sec));		
-		if(!$flatRate) {
-			throw new Exception("Couldn`t find flat  rate  for taxation for name : {$row['name']}");
-		}
-		$flatData = $flatRate->getData();
-		$retData['productcode'] = $flatData['tax.product_code'];
-		$retData['servicecode'] = $flatData['tax.service_code'];
-		if($flatData['tax.safe_harbor_override_pct']) {
-			$retData['safe_harbor_override_flag'] = 'Y';
-			$retData['safe_harbor_override_pct'] = $flatData['tax.safe_harbor_override_pct'];
-		}	
-		return $retData;
-	}
-	
-	protected function getProductAndServiceForUsage ($row) {		
-		$rate = Billrun_Rates_Util::getRateByRef($row instanceof \Mongodloid_Entity ? $row->get('arate',true) : $row['arate']);
-		
-		if(!$rate['tax']) {
-			throw new Exception("Couldn`t find rate for taxation for rate : {$row['arate_key']}");
-		}
+	protected function getDataFromRate ($row,$rate) {		
 		
 		$retData['productcode'] = $rate['tax.product_code'];
 		$retData['servicecode'] = $rate['tax.service_code'];
@@ -206,6 +191,36 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 			
 		return $retData;
+	}
+	
+	protected function getRateForLine($line) {
+		$rate = FALSE;
+		if(!empty($line['arate'])) {
+			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+		} else {
+			$flatRate = $line['type'] == 'flat' ? 
+				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
+				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
+			$rate = $flatRate->getData();
+		}
+		return $rate;			
+	}
+	
+	protected function mapArrayToStructuredHash($arrayData,$hashKeys) {
+		$retHash =array();
+		$currentKey = array_shift($hashKeys);
+		if(isset($arrayData[0]) && is_array($arrayData)) {
+			foreach($arrayData as $data) {
+				if(isset($data[$currentKey])) {
+					$retHash[$data[$currentKey]] = $this->mapArrayToStructuredHash($data, $hashKeys);
+				}else {
+					//TODO log error
+				}
+			}
+		} else {
+			$retHash = $arrayData;
+		}
+		return $retHash;
 	}
 
 }

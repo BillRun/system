@@ -13,11 +13,15 @@
  */
 abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 
+	static protected $type = 'tax';
+	
+	protected $config = array();
 	protected $nonTaxableTypes = array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
-		$this->nonTaxableTypes = Billrun_Factory::config('tax.non_taxable_types', array());
+		$this->config = Billrun_Factory::config()->getConfigValue('taxation',array());
+		$this->nonTaxableTypes = Billrun_Factory::config('taxation.non_taxable_types', array());
 	}
 
 	public function updateRow($row) {
