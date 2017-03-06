@@ -86,6 +86,7 @@ db.services.find({'to': {$gt: new Date()}}).forEach(function (service) {
 
 // Add zip code account system field if it doesn't yet exist
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
 delete lastConfig['_id'];
 var found_zip_code = false;
 lastConfig.subscribers.account.fields.forEach(function (field) {
@@ -127,6 +128,7 @@ if (!found_tax_field) {
 }
 
 db.config.insert(lastConfig);
+}
 
 // BRCD-614
 var serviceDic = {}

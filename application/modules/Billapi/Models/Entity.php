@@ -139,11 +139,17 @@ class Models_Entity {
 	 */
 	protected function addCustomFields($fields, $originalUpdate) {
 //		$ad = $this->getCustomFields();
-		$additionalFields = array_column($this->getCustomFields(), 'field_name');
+		$customFields = $this->getCustomFields();
+		$additionalFields = array_column($customFields, 'field_name');
+		$mandatorylValues = array_map(function($field) {return isset($field['mandatory']) ? $field['mandatory'] : false;}, $customFields);
+		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
+			if ($mandatoryFields[$field] && (!isset($originalUpdate[$field]) || $originalUpdate[$field] === "")) {
+				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
+			}
 			if (isset($originalUpdate[$field])) {
 				$this->update[$field] = $originalUpdate[$field];
 			}
