@@ -703,7 +703,7 @@ class ConfigModel {
 	}
 	
 	protected function validateUsageType($usageType) {
-		$reservedUsageTypes = Billrun_Factory::config()->getConfigValue('reservedUsageTypes', array('cost'));
+		$reservedUsageTypes = array('cost');
 		return !in_array($usageType, $reservedUsageTypes);
 	}
 	
