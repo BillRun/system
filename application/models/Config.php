@@ -269,6 +269,8 @@ class ConfigModel {
  			if (!$generatorSettings){
  				return 0;
  			}
+		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
+				throw new Exception($data . ' is illegal usage type');
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -698,6 +700,11 @@ class ConfigModel {
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
 		return in_array($type, $allowedTypes);
+	}
+	
+	protected function validateUsageType($usageType) {
+		$reservedUsageTypes = array('cost');
+		return !in_array($usageType, $reservedUsageTypes);
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
