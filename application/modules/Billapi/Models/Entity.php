@@ -151,7 +151,7 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			if (isset($originalUpdate[$field])) {
-				$this->update[$field] = $originalUpdate[$field];
+				Billrun_Util::setIn($this->update, $field, $originalUpdate[$field]);
 			}
 		}
 //		print_R($this->update);die;

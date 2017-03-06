@@ -1547,4 +1547,28 @@ class Billrun_Util {
 		return $retData;
 	}
 	
+	/**
+	 * Deeply sets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to set
+	 * @param mixed $value - new value to set
+	 */
+	public static function setIn(&$arr, $keys, $value) {
+		if (!$arr) {
+			return;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		
+		$current = $value;
+	}
+	
 }
