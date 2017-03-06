@@ -262,7 +262,7 @@ class Models_Entity {
 	 * @param array $data
 	 * @return array the entities found
 	 */
-	public function get() {
+	public function get() {		
 		if (isset($this->config['active_documents']) && $this->config['active_documents']) {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
@@ -536,6 +536,68 @@ class Models_Entity {
 			default:
 				return 'name';
 		}
+	}
+	
+	
+	/**
+	 * Add revision info (status, early_expiration) to record
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $collection - Record collection
+	 * 
+	 * @return The record with revision info.
+	 */
+	static function setRevisionInfo($record, $collection) {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($record['to']), true);
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
+		foreach ($uniqueFields as $fieldName) {
+			$query[$fieldName] = $record[$fieldName];
+		}
+		$DBCollection = call_user_func(array(Billrun_Factory::db(), $collection . 'Collection'));
+		$isFutureExist = $DBCollection->query($query)->count() > 0;
+		$status = self::getStatus($record, $isFutureExist);
+		$earlyExpiration = self::isEearlyExpiration($record, $status);
+		$record['revision_info'] = array(
+			"status" => $status,
+			"early_expiration" => $earlyExpiration,
+		);
+		return $record;
+	}
+	
+	/**
+	 * Calculate record status
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param bool $isFutureExist - Flag, if future revision exist for this record
+	 * 
+	 * @return string Status, available values are: "future", "expired", "active_with_future", "active"
+	 */
+	static function getStatus($record, $isFutureExist) {
+		if (strtotime($record['to']) < time()) {
+			return "expired";
+		}
+		if (strtotime($record['from']) > time()) {
+			return "future";
+		}
+		if ($isFutureExist) {
+			return "active_with_future";
+		}
+		return "active";
+	}
+
+	/**
+	 * Check if record was cloused  by close action
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $status - Record status, available values are: "expired", "active_with_future", "active", "future"
+	 * 
+	 * @return bool
+	 */
+	static function isEearlyExpiration($record, $status) {
+		if ($status === "future" || $status === 'active') {
+			return strtotime("+50 years", strtotime($record['from'])) > strtotime($record['to']);
+		}
+		return false;
 	}
 
 }
