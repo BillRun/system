@@ -117,6 +117,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected $acounts;
 	
 	/**
+	 * True if Cycle process
+	 * @var boolean
+	 */
+	protected $isCycle = false;
+	
+	/**
 	 * If true then we can load the data.
 	 * @var boolean
 	 */
@@ -169,13 +175,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (isset($options['aggregator']['override_accounts'])) {
 			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
 		}
-
-		$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
+		
+		if (isset($options['action']) && $options['action'] == 'cycle') {
+			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
+			$this->isCycle = true;
+		}
+		
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 
-		if (!$this->recreateInvoices){
+		if (!$this->recreateInvoices && $this->isCycle){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
 			$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 			$pageResult = $this->getPage($maxProcesses, $zeroPages);
@@ -294,7 +304,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
-			$data = $data + $this->aggregateMongo($mongoCycle, 0, 1, $account_id);
+			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
 		}
 		$result['data'] = $data;
 		return $result;
@@ -445,7 +455,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	protected function afterLoad($data) {
-		if (!$this->recreateInvoices){			
+		if (!$this->recreateInvoices && $this->isCycle){			
 			$this->handleInvoices($data);
 		}
 
@@ -486,7 +496,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->sendEndMail($end_msg);
 
 		// @TODO trigger after aggregate
-		if (!$this->recreateInvoices){
+		if (!$this->recreateInvoices && $this->isCycle){
 			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
 			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);

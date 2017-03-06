@@ -57,13 +57,14 @@ class Billrun_Plans_Charge {
 	 */
 	protected function getChargeObject($plan) {
 		$object = __CLASS__;
-		if(isset($plan['upfront']) && $plan['upfront']) {
-			$object .= '_Upfront';
-		}
 		
-		$period = isset($plan['recurrence']['periodicity']) ? $plan['recurrence']['periodicity'] : 'month';
-		$object .= '_' . ucfirst(strtolower($period));
-		
+		//Should  the  charge be  upfornt or  arrears
+		$object .= !empty($plan['upfront']) ? '_Upfront' : '_Arrears';
+		//Should the charge  be unprorated?
+		$object .= !isset($plan['prorated']) || !empty($plan['prorated']) ? '' : '_Notprorated';		 
+		//Should we  use  a diffrent peroid  then monthly charge?
+		$object .= isset($plan['recurrence']['periodicity']) ? '_'. ucfirst($plan['recurrence']['periodicity']) 
+															 : '_Month';
 		// Check if exists
 		if(!class_exists($object)) {
 			Billrun_Factory::log("Could not find class: " . print_r($object,1));

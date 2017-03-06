@@ -206,9 +206,11 @@ class ResetLinesModel {
 				'usagesb' => 1,
 //				'usagev' => 1,
 				'balance_ref' => 1,
+				'tax_data' => 1,
 			),
 			'$set' => array(
 				'rebalance' => new MongoDate(),
+				'in_queue' => true,
 			),
 		);
 	}
