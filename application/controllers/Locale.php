@@ -14,6 +14,7 @@
  * @since    5.3
  */
 class LocaleController extends ApiController {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function indexAction() {
@@ -33,7 +34,7 @@ class LocaleController extends ApiController {
 					'name' => $name,
 				);
 				if (isset($currencySymbols[$key])) {
-					$ret[count($ret)-1]['symbol'] = $currencySymbols[$key];
+					$ret[count($ret) - 1]['symbol'] = $currencySymbols[$key];
 				}
 			} else {
 				$ret[$key] = array(
@@ -45,10 +46,18 @@ class LocaleController extends ApiController {
 				}
 			}
 		}
-		$this->getView()->list = $ret;
+
+		$output = array(
+			'status' => !empty($ret) ? 1 : 0,
+			'desc' => !empty($ret) ? 'success' : 'error',
+			'details' => empty($ret) ? array() : $ret,
+		);
+
+		$this->getView()->list = $output;
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }
