@@ -210,12 +210,26 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function preCheckUpdate() {
-		if (isset($this->before['to']->sec) && $this->before['to']->sec < time()) {
-			$ret = false;
-		} else {
-			$ret = true;
-		}
+		$ret = $this->checkDateRangeFields();
 		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
+		return $ret;
+	}
+	
+	/**
+	 * method to check date range fields
+	 * by default checking only to field (not in the past)
+	 * 
+	 * @param int $time (optional) unix timestamp for minimum to value
+	 * 
+	 * @return true if check success else false
+	 */
+	protected function checkDateRangeFields($time = null) {
+		if (is_null($time)) {
+			$time = time();
+		}
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < $time) {
+			return false;
+		}
 		return true;
 	}
 
