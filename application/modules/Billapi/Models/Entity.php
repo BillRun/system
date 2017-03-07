@@ -270,7 +270,7 @@ class Models_Entity {
 	 * @param array $data
 	 * @return array the entities found
 	 */
-	public function get() {		
+	public function get() {
 		if (isset($this->config['active_documents']) && $this->config['active_documents']) {
 			$add_query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$this->query = array_merge($add_query, $this->query);
