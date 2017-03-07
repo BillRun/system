@@ -15,9 +15,14 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 
 	protected $taxDataResults = array();
+        protected $thirdpartyConfig = array();
+        
+        public function __construct($options = array()) {
+            parent::__construct($options);
+            $this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
+	}
 
-	
-	public static function isConfigComplete($config) {
+        public static function isConfigComplete($config) {
 		return true;
 	}
 	
@@ -35,7 +40,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$queryData[] = $singleData;
 		}
 		if(!empty($queryData)) {
-			$data = $this->constructRequestData($this->config['request'],array('data'=> $queryData, 'config'=>$this->config));
+			$data = $this->constructRequestData($this->thirdpartyConfig['request'],array('data'=> $queryData, 'config'=>$this->config));
 			$this->taxDataResults = $this->queryAPIforTaxes($data);
 		}
 	}
@@ -45,7 +50,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$line['tax_data'] = $this->taxDataResults[$line['stamp']];
 		} else {
 			$singleData = $this->constructSingleRowData($line, $subscriber, $account);
-			$data = $this->constructRequestData($this->config['request'],array('data'=> array($singleData), 'config'=>$this->config));
+			$data = $this->constructRequestData($this->thirdpartyConfig['request'],array('data'=> array($singleData), 'config'=>$this->config));
 			$taxResults = $this->queryAPIforTaxes($data);
 			if(isset($taxResults[$line['stamp']])) {
 				$line['tax_data'] = $taxResults[$line['stamp']];
@@ -58,15 +63,15 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function queryAPIforTaxes($data) {
 
-		foreach(@$this->config['transforms']['request'] as $transfom) {
+		foreach(@$this->thirdpartyConfig['transforms']['request'] as $transfom) {
 			$data = method_exists($this,$transfom) 
 							? $this->{$transfom}($data) 
 							: (function_exists($transfom) ? $transfom($data) : $data); 
 		}
 		
-		$client = Billrun_Factory::remoteClient($this->config['apiUrl']);
-		$response = $client->{$this->config['tax_method']}($data);
-		foreach(@$this->config['transforms']['response'] as $transfom) {
+		$client = Billrun_Factory::remoteClient($this->thirdpartyConfig['apiUrl']);
+		$response = $client->{$this->thirdpartyConfig['tax_method']}($data);
+		foreach(@$this->thirdpartyConfig['transforms']['response'] as $transfom) {
 			$response = method_exists($this,$transfom) 
 							? $this->{$transfom}($response) 
 							: (function_exists($transfom) ? $transfom($response) : $response); 
@@ -84,7 +89,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	protected function constructSingleRowData($line, $subscriber, $account) {
 		$singleData = array();
 		$rate = $this->getRateForLine($line);
-		$taxationMapping = $this->mapArrayToStructuredHash($this->config[$this->config['tac_type']], array('file_type','usaget'));
+		$taxationMapping = $this->mapArrayToStructuredHash($this->config[$this->config['tax_type']], array('file_type','usaget'));
 		$availableData = array( 'row'=> $line,
 								'account'=> $account,
 								'subscriber'=> $subscriber,
@@ -92,7 +97,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 								'config'=> $this->config,
 								'mapping' => $taxationMapping );
 		
-		$singleData = $this->constructRequestData( $this->config['input_mapping'], $availableData );
+		$singleData = $this->constructRequestData( $this->thirdpartyConfig['input_mapping'], $availableData );
 		$singleData = $this->translateDataForTax($singleData, $availableData);
 		
 		return $singleData;
@@ -134,42 +139,44 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$retTaxData=  isset($retLinesTaxesData[$tax_data['unique_id']]) ? $retLinesTaxesData[$tax_data['unique_id']] : ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 			$calculatedTaxRate = !empty(0 + $tax_data['initial_charge']) ? ($tax_data['percenttaxable']) * ( ($tax_data['adjusted_tax_base']/$tax_data['initial_charge']) ) * $tax_data['taxrate'] : $tax_data['taxrate'];
 			
-			if($tax_data['passflag'] == 1 || $this->config['apply_optional'] && $tax_data['passflag'] == 0) {
+			if($tax_data['passflag'] == 1 || $this->thirdpartyConfig['apply_optional'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_tax'] += $calculatedTaxRate;
 			}			
 			$retTaxData['taxes'][] = array( 'tax'=> $calculatedTaxRate,
-											'amount' => $tax_data['taxamount'] ,
-											'type' => $tax_data['taxtype'],
-											'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
-											'pass_to_customer' => $tax_data['passflag']);
-			
+                                                        'amount' => $tax_data['taxamount'] ,
+                                                        'type' => $tax_data['taxtype'],
+                                                        'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
+                                                        'pass_to_customer' => $tax_data['passflag']);
+
 			$retLinesTaxesData[$tax_data['unique_id']]= $retTaxData;
 		}
 		
 		return $retLinesTaxesData;
 	}
-	
+	/**
+         * Translate billrun data to Taxable data ( CSI format)
+         * TODO this logic should be done by the configuration.
+         * @param type $apiInputData
+         * @param type $availableData
+         * @return type
+         */
 	protected function translateDataForTax($apiInputData, $availableData) {
-		$rowIsNotUsage = in_array($availableData['row']['type'],array('flat','service','credit'));
+		$rowIsUsage = !in_array($availableData['row']['type'],array('flat','service','credit'));
 		
-		//switch destination and origin for incoming calls
-		if(!$rowIsNotUsage ) {
+        //Map origination / destinatio for usage
+		if( $rowIsUsage ) {                    
 			$apiInputData['bill_num'] = $apiInputData['location_a'];
-			if( strstr($availableData['row']['usaget'],'incoming_') !== FALSE) {
-				$apiInputData['term_num'] = $apiInputData['bill_num'];
-			} else {
-				$apiInputData['orig_num'] = $apiInputData['bill_num'];
-			}
-			
-				
+			foreach(@$availableData['mapping'][$availableData['row']['type']][$availableData['row']['usaget']] as $fieldKey => $mapping) {
+                            $apiInputData[$fieldKey] = $this->mapFromArray('$row'.$mapping, $availableData);
+                        }	
 		}
-		$apiInputData['record_type'] = $rowIsNotUsage ? 'S' : 'C';
-		$apiInputData['invoice_date'] = date('Ymd',  Billrun_Billingcycle::getStartTime($availableData['row']['billrun']));
+		$apiInputData['record_type'] = !$rowIsUsage ? 'S' : 'C';
+		$apiInputData['invoice_date'] = date('Ymd',  Billrun_Billingcycle::getEndTime($availableData['row']['billrun'])+1);
 		
-		$apiInputData = array_merge($apiInputData,$this->getDataFromRate($availableData['row'],$availableData['rate']));
+		$apiInputData = array_merge($apiInputData, $this->getDataFromRate($availableData['row'], $availableData['rate']) );
 		
-		$apiInputData['minutes'] = $rowIsNotUsage ? '': round($availableData['row']['usagev']/60);
+		$apiInputData['minutes'] = !$rowIsUsage ? '' : round($availableData['row']['usagev']/60);
 		
 		return $apiInputData;
 	}
@@ -181,10 +188,10 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		return $data;
 	}
 	
-	protected function getDataFromRate ($row,$rate) {		
-		
-		$retData['productcode'] = $rate['tax.product_code'];
-		$retData['servicecode'] = $rate['tax.service_code'];
+	protected function getDataFromRate ($row, $rate) {		
+		$retData = array();
+		//$retData['productcode'] = $rate['tax.product_code'];
+		//$retData['servicecode'] = $rate['tax.service_code'];
 		if($rate['tax.safe_harbor_override_pct']) {
 			$retData['safe_harbor_override_flag'] = 'Y';
 			$retData['safe_harbor_override_pct'] = $rate['tax.safe_harbor_override_pct'];
@@ -213,7 +220,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			foreach($arrayData as $data) {
 				if(isset($data[$currentKey])) {
 					$retHash[$data[$currentKey]] = $this->mapArrayToStructuredHash($data, $hashKeys);
-				}else {
+				} else {
 					//TODO log error
 				}
 			}

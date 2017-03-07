@@ -188,7 +188,7 @@ abstract class Billrun_Base {
 					if($match) {
 						$class_type = $typeConfig['type'];
 						$args['type'] = $type;
-						break 2;
+						break;
 					}
 				}
 			}
