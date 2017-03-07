@@ -546,7 +546,6 @@ class Models_Entity {
 		}
 	}
 	
-	
 	/**
 	 * Add revision info (status, early_expiration) to record
 	 * 
@@ -557,8 +556,7 @@ class Models_Entity {
 	 */
 	static function setRevisionInfo($record, $collection) {
 		$status = self::getStatus($record, $collection);
-		$earlyExpiration = self::isEearlyExpiration($record, $status);
-		
+		$earlyExpiration = self::isEarlyExpiration($record, $status);
 		$record['revision_info'] = array(
 			"status" => $status,
 			"early_expiration" => $earlyExpiration,
@@ -597,7 +595,7 @@ class Models_Entity {
 	}
 	
 	/**
-	 * Check if record was cloused  by close action.
+	 * Check if record was closed by close action.
 	 * true if the "to" field is less than 50 years from record "from" date.
 	 * 
 	 * @param array $record - Record to set revision info.
@@ -605,7 +603,7 @@ class Models_Entity {
 	 * 
 	 * @return bool
 	 */
-	static function isEearlyExpiration($record, $status) {
+	static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
 			return strtotime("+50 years", strtotime($record['from'])) > strtotime($record['to']);
 		}
