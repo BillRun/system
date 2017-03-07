@@ -14,6 +14,7 @@
  * @since    5.3
  */
 class LocaleController extends ApiController {
+
 	use Billrun_Traits_Api_UserPermissions;
 
 	public function indexAction() {
@@ -26,36 +27,37 @@ class LocaleController extends ApiController {
 		$currencySymbols = Zend_Locale::getTranslationList('currencysymbol');
 		$simpleArray = (bool) $this->getRequest()->getRequest('simpleArray', false);
 		$ret = array();
-		foreach ($currencySymbols as $key => $currencySymbol) {
+		foreach ($currencyNames as $key => $name) {
 			if ($simpleArray) {
 				$ret[] = array(
-					'symbol' => $currencySymbol,
 					'code' => $key,
+					'name' => $name,
 				);
-				if (isset($currencyNames[$key])) {
-					$ret[count($ret)-1]['name'] = $currencyNames[$key];
+				if (isset($currencySymbols[$key])) {
+					$ret[count($ret) - 1]['symbol'] = $currencySymbols[$key];
 				}
 			} else {
 				$ret[$key] = array(
-					'symbol' => $currencySymbol,
 					'code' => $key,
+					'name' => $name,
 				);
-				if (isset($currencyNames[$key])) {
-					$ret[$key]['name'] = $currencyNames[$key];
+				if (isset($currencySymbols[$key])) {
+					$ret[$key]['symbol'] = $currencySymbols[$key];
 				}
 			}
 		}
-                $output = array (
-	
+
+		$output = array(
 			'status' => !empty($ret) ? 1 : 0,
 			'desc' => !empty($ret) ? 'success' : 'error',
 			'details' => empty($ret) ? array() : $ret,
 		);
-		
+
 		$this->getView()->list = $output;
 	}
-	
+
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+
 }

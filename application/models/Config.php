@@ -63,7 +63,10 @@ class ConfigModel {
 		$this->data = $ret;
 	}
 
-	public function getConfig() {
+	public function getConfig($includeFilesConfig = false) {
+		if ($includeFilesConfig)  {
+			return Billrun_Config::mergeConfigs(Billrun_Factory::config()->toArray(), $this->data);
+		}
 		return $this->data;
 	}
 
@@ -86,7 +89,7 @@ class ConfigModel {
 	}
 
 	public function getFromConfig($category, $data) {
-		$currentConfig = $this->getConfig();
+		$currentConfig = $this->getConfig(true);
 
 		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
@@ -269,6 +272,8 @@ class ConfigModel {
  			if (!$generatorSettings){
  				return 0;
  			}
+		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
+				throw new Exception($data . ' is illegal usage type');
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -703,6 +708,11 @@ class ConfigModel {
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
 		return in_array($type, $allowedTypes);
+	}
+	
+	protected function validateUsageType($usageType) {
+		$reservedUsageTypes = array('cost');
+		return !in_array($usageType, $reservedUsageTypes);
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
