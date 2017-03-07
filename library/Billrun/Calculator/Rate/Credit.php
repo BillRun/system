@@ -42,4 +42,15 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		return array_merge(array(array('$match' => $match)), array(array('$group' => $group)), $sortQuery, array(array('$limit' => 1)));
 	}
 	
+	/**
+	 * see Billrun_Calculator_Rate_Usage::getAddedValues
+	 * 
+	 * @return array values to add from rate
+	 */
+	protected function getAddedValues($rate) {
+		$added_values = parent::getAddedValues($rate);
+		$added_values['usaget'] = current(array_keys($rate['rates']));
+		return $added_values;
+	}
+	
 }

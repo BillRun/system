@@ -68,9 +68,9 @@ class CreditAction extends ApiAction {
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		$ret['process_time'] = new MongoDate();
 		if ($this->isCreditByPrice($ret)) {
+			$ret['aprice'] = $ret['aprice'] * $ret['usagev'];
 			$ret['billrun'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 			$ret['usaget'] = $this->getCreditUsaget($ret);
-			$ret['usagev'] = 1;
 		}
 		return $ret;
 	}
@@ -93,13 +93,6 @@ class CreditAction extends ApiAction {
 	protected function validateFields($credit_row) {
 		$fields = Billrun_Factory::config()->getConfigValue('credit.fields', array());
 		$ret = array();
-		
-		// credit row must have aprice or usagev+usaget, but not all 3
-		if (((!isset($credit_row['aprice'])) &&
-			(!isset($credit_row['usagev']) || !isset($credit_row['usaget']))) ||
-			(isset($credit_row['aprice']) && isset($credit_row['usagev']) && isset($credit_row['usaget']))) {
-			return $this->setError('Invalid pricing fields', $credit_row);
-		}
 		
 		foreach ($fields as $fieldName => $field) {
 			if (isset($field['mandatory']) && $field['mandatory']) {
