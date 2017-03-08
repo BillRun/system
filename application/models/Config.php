@@ -63,10 +63,7 @@ class ConfigModel {
 		$this->data = $ret;
 	}
 
-	public function getConfig($includeFilesConfig = false) {
-		if ($includeFilesConfig)  {
-			return Billrun_Config::mergeConfigs(Billrun_Factory::config()->toArray(), $this->data);
-		}
+	public function getConfig() {
 		return $this->data;
 	}
 
