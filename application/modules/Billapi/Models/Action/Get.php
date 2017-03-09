@@ -89,7 +89,7 @@ class Models_Action_Get extends Models_Action {
 		foreach($records as  &$record) {
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
 			if(empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) {
-				$record = Models_Entity::setRevisionInfo($record, $this->request['collection']);
+				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
 			}
 		}
 		return $records;
