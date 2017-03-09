@@ -155,11 +155,12 @@ class Models_Entity {
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (!isset($originalUpdate[$field]) || $originalUpdate[$field] === "")) {
+			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
-			if (isset($originalUpdate[$field])) {
-				Billrun_Util::setIn($this->update, $field, $originalUpdate[$field]);
+			$val = Billrun_Util::getIn($originalUpdate, $field, false);
+			if ($val) {
+				Billrun_Util::setIn($this->update, $field, $val);
 			}
 		}
 //		print_R($this->update);die;

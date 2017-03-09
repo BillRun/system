@@ -1059,23 +1059,22 @@ class ConfigModel {
 	}
 		
 	protected function updateTaxationSettings(&$config) {
-		 if ($config['taxation']['tax_type'] === 'CSI') {
-			 $modelsWithTaxation = $this->getModelsWithTaxation();
-			 $mandatoryTaxationFields = $this->getMandatoryTaxationFields();
-			 foreach ($modelsWithTaxation as $model) {
-				foreach ($mandatoryTaxationFields as $mandatoryField) {
-					$this->setMandatoryField($config, $model, $mandatoryField);
-				}
-			 }
-		 }
+		$mandatory = ($config['taxation']['tax_type'] === 'CSI');
+		$modelsWithTaxation = $this->getModelsWithTaxation();
+		$mandatoryTaxationFields = $this->getMandatoryTaxationFields();
+		foreach ($modelsWithTaxation as $model) {
+		   foreach ($mandatoryTaxationFields as $mandatoryField) {
+			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatory);
+		   }
+		}
 	}
 	
-	protected function setMandatoryField(&$config, $model, $fieldName) {
+	protected function setMandatoryField(&$config, $model, $fieldName, $mandatory = true) {
 		foreach ($config[$model]['fields'] as &$field) {
 			if ($field['field_name'] === $fieldName) {
-				$field['display'] = true;
-				$field['editable'] = true;
-				$field['mandatory'] = true;
+				$field['display'] = $mandatory;
+				$field['editable'] = $mandatory;
+				$field['mandatory'] = $mandatory;
 				return;
 			}
 		}
@@ -1083,9 +1082,9 @@ class ConfigModel {
 		$config[$model]['fields'][] = array(
 			'field_name' => $fieldName,
 			'title' => $fieldName,
-			'display' => true,
-			'editable' => true,
-			'mandatory' => true,
+			'display' => $mandatory,
+			'editable' => $mandatory,
+			'mandatory' => $mandatory,
 		);
 	}
 	
