@@ -1101,6 +1101,10 @@ class ConfigModel {
 	public function getWarnings($category, $data) {
 		$warnings = array();
 		
+		if (Billrun_Util::isAssoc($data)) {
+			$data = array($data);
+		}
+		
 		foreach ($data as $config) {
 			if (isset($config['taxation']) && $config['taxation']['tax_type'] === 'CSI') {
 				$modelsWithTaxation = $this->getModelsWithTaxation();
