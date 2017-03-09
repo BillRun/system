@@ -67,12 +67,29 @@ class CreditAction extends ApiAction {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		$ret['process_time'] = new MongoDate();
+		$ret['usaget'] = $this->getCreditUsaget($ret);
+		$ret['credit'] = array(
+			'usagev' => $ret['usagev'],
+			'credit_by' => 'rate',
+			'rate' => $ret['rate'],
+		);
 		if ($this->isCreditByPrice($ret)) {
-			$ret['aprice'] = $ret['aprice'] * $ret['usagev'];
-			$ret['billrun'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-			$ret['usaget'] = $this->getCreditUsaget($ret);
+			$this->parseCreditByPrice($ret);
+		} else {
+			$this->parseCreditByUsagev($ret);
 		}
 		return $ret;
+	}
+	
+	protected function parseCreditByPrice(&$row) {
+		$row['credit']['aprice'] = $row['aprice'];
+		$row['aprice'] = $row['aprice'] * $row['usagev'];
+		$row['prepriced'] = true;
+	}
+	
+	protected function parseCreditByUsagev(&$row) {
+		$row['usagev'] = 1;
+		$row['prepriced'] = false;
 	}
 	
 	protected function isCreditByPrice($row) {
@@ -80,13 +97,13 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function getCreditUsaget($row) {
-		return ($row['aprice'] >= 0 ? 'charge' : 'credit');
+		if (!isset($row['aprice'])) {
+			return 'refund';
+		}
+		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
 	
 	protected function getSkipCalcs($row) {
-		if ($this->isCreditByPrice($row)) {
-			return array('pricing', 'unify');
-		}
 		return array('unify');
 	}
 	

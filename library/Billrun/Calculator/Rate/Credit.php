@@ -47,9 +47,10 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 	 * 
 	 * @return array values to add from rate
 	 */
-	protected function getAddedValues($rate) {
+	protected function getAddedValues($rate, $row = array()) {
 		$added_values = parent::getAddedValues($rate);
-		$added_values['usaget'] = current(array_keys($rate['rates']));
+		$added_values['credit'] = $row['credit'];
+		$added_values['credit']['usaget'] = current(array_keys($rate['rates'])); // assumes rate is only for one usage type
 		return $added_values;
 	}
 	
