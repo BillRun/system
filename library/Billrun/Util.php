@@ -1571,4 +1571,24 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+	public static function getIn($arr, $keys, $defaultValue = null) {
+		if (!$arr) {
+			return $defaultValue;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$ret = $arr;
+		foreach ($keys as $key) {
+			if (!isset($ret[$key])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$key];
+		}
+		
+		return $ret;
+	}
+	
 }
