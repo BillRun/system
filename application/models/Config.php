@@ -344,7 +344,7 @@ class ConfigModel {
 	protected function _updateConfig(&$currentConfig, $category, $data) {
 		
 		if ($category === 'taxation') {
-			$this->updateTaxationSettings($currentConfig);
+			$this->updateTaxationSettings($currentConfig, $data);
 		}
 		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
@@ -1054,24 +1054,32 @@ class ConfigModel {
 		return ucfirst($model);
 	}
 	
-	protected function getMandatoryTaxationFields() {
-		return array('taxation.service_code', 'taxation.product_code');
+	protected function getMandatoryTaxationFields($withTitles = false) {
+		$ret = array(
+			'taxation.service_code' => 'Taxation service code',
+			'taxation.product_code' => 'Taxation product code',
+		);
+		if ($withTitles) {
+			return $ret;
+		}
+		return array_keys($ret);
 	}
 		
-	protected function updateTaxationSettings(&$config) {
-		$mandatory = ($config['taxation']['tax_type'] === 'CSI');
+	protected function updateTaxationSettings(&$config, $data) {
+		$mandatory = ($data['tax_type'] === 'CSI');
 		$modelsWithTaxation = $this->getModelsWithTaxation();
-		$mandatoryTaxationFields = $this->getMandatoryTaxationFields();
+		$mandatoryTaxationFields = $this->getMandatoryTaxationFields(true);
 		foreach ($modelsWithTaxation as $model) {
-		   foreach ($mandatoryTaxationFields as $mandatoryField) {
-			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatory);
+		   foreach ($mandatoryTaxationFields as $mandatoryField => $mandatoryFieldTitle) {
+			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatoryFieldTitle, $mandatory);
 		   }
 		}
 	}
 	
-	protected function setMandatoryField(&$config, $model, $fieldName, $mandatory = true) {
+	protected function setMandatoryField(&$config, $model, $fieldName, $title, $mandatory = true) {
 		foreach ($config[$model]['fields'] as &$field) {
 			if ($field['field_name'] === $fieldName) {
+				$field['title'] = $title;
 				$field['display'] = $mandatory;
 				$field['editable'] = $mandatory;
 				$field['mandatory'] = $mandatory;
@@ -1081,7 +1089,7 @@ class ConfigModel {
 		
 		$config[$model]['fields'][] = array(
 			'field_name' => $fieldName,
-			'title' => $fieldName,
+			'title' => $title,
 			'display' => $mandatory,
 			'editable' => $mandatory,
 			'mandatory' => $mandatory,
