@@ -63,10 +63,7 @@ class ConfigModel {
 		$this->data = $ret;
 	}
 
-	public function getConfig($includeFilesConfig = false) {
-		if ($includeFilesConfig)  {
-			return Billrun_Config::mergeConfigs(Billrun_Factory::config()->toArray(), $this->data);
-		}
+	public function getConfig() {
 		return $this->data;
 	}
 
@@ -345,6 +342,11 @@ class ConfigModel {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function _updateConfig(&$currentConfig, $category, $data) {
+		
+		if ($category === 'taxation') {
+			$this->updateTaxationSettings($currentConfig, $data);
+		}
+		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
@@ -1039,5 +1041,100 @@ class ConfigModel {
             $lowCaseName = strtolower($name);
             return in_array($lowCaseName, $this->reservedFileTypeName);
         }
+	
+	protected function getModelsWithTaxation() {
+		return array('plans', 'services', 'rates');
+	}
+	
+	protected function getModelName($model) {
+		if ($model === 'rates') {
+			return 'Products';
+		}
+		
+		return ucfirst($model);
+	}
+	
+	protected function getMandatoryTaxationFields($withTitles = false) {
+		$ret = array(
+			'taxation.service_code' => 'Taxation service code',
+			'taxation.product_code' => 'Taxation product code',
+		);
+		if ($withTitles) {
+			return $ret;
+		}
+		return array_keys($ret);
+	}
+		
+	protected function updateTaxationSettings(&$config, $data) {
+		$mandatory = ($data['tax_type'] === 'CSI');
+		$modelsWithTaxation = $this->getModelsWithTaxation();
+		$mandatoryTaxationFields = $this->getMandatoryTaxationFields(true);
+		foreach ($modelsWithTaxation as $model) {
+		   foreach ($mandatoryTaxationFields as $mandatoryField => $mandatoryFieldTitle) {
+			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatoryFieldTitle, $mandatory);
+		   }
+		}
+	}
+	
+	protected function setMandatoryField(&$config, $model, $fieldName, $title, $mandatory = true) {
+		foreach ($config[$model]['fields'] as &$field) {
+			if ($field['field_name'] === $fieldName) {
+				$field['title'] = $title;
+				$field['display'] = $mandatory;
+				$field['editable'] = $mandatory;
+				$field['mandatory'] = $mandatory;
+				return;
+			}
+		}
+		
+		$config[$model]['fields'][] = array(
+			'field_name' => $fieldName,
+			'title' => $title,
+			'display' => $mandatory,
+			'editable' => $mandatory,
+			'mandatory' => $mandatory,
+		);
+	}
+	
+	/**
+	 * Get warnings of configuration if exists
+	 * 
+	 * @param type $category
+	 * @param type $data
+	 */
+	public function getWarnings($category, $data) {
+		$warnings = array();
+		
+		if (Billrun_Util::isAssoc($data)) {
+			$data = array($data);
+		}
+		
+		foreach ($data as $config) {
+			if (isset($config['taxation']) && $config['taxation']['tax_type'] === 'CSI') {
+				$modelsWithTaxation = $this->getModelsWithTaxation();
+				$mandatoryTaxationFields = $this->getMandatoryTaxationFields();
+				foreach ($modelsWithTaxation as $model) {
+					if ($this->hasEntitiesWithoutMandatoryFields($model, $mandatoryTaxationFields)) {
+						$warnings[] = 'There are valid entities of type "' . $this->getModelName($model) . '" without mandatory fields: ' . implode(', ', $mandatoryTaxationFields);
+					}
+				}
+			}
+		}
+		
+		return $warnings;
+	}
+	
+	protected function hasEntitiesWithoutMandatoryFields($model, $mandatoryFields) {
+		if (empty($mandatoryFields)) {
+			return false;
+		}
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		foreach ($mandatoryFields as $mandatoryField) {
+			$query['$or'][] = array($mandatoryField => '');
+			$query['$or'][] = array($mandatoryField => array('$exists' => false));
+		}
+		
+		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
+	}
 
 }
