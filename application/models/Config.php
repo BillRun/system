@@ -950,7 +950,7 @@ class ConfigModel {
 		if (!array_key_exists('connections', $receiverSettings) || !is_array($receiverSettings['connections']) || !$receiverSettings['connections']) {
 			throw new Exception('Receiver \'connections\' does not exist or is empty');
 		}
-		$receiverSettings['type'] = 'ftp';
+		
 		if (isset($receiverSettings['limit'])) {
 			if (!Billrun_Util::IsIntegerValue($receiverSettings['limit']) || $receiverSettings['limit'] < 1) {
 				throw new Exception('Illegal receiver limit value ' . $receiverSettings['limit']);
@@ -959,7 +959,7 @@ class ConfigModel {
 		} else {
 			$receiverSettings['limit'] = 3;
 		}
-		if ($receiverSettings['type'] == 'ftp') {
+		if (in_array($receiverSettings['type'], array('ftp', 'ssh'))) {
 			foreach ($receiverSettings['connections'] as $index => $connection) {
 				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
