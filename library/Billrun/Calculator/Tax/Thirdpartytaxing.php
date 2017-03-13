@@ -168,7 +168,12 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		if( $rowIsUsage ) {                    
 			$apiInputData['bill_num'] = $apiInputData['location_a'];
 			foreach(@$availableData['mapping'][$availableData['row']['type']][$availableData['row']['usaget']] as $fieldKey => $mapping) {
-				$apiInputData[$fieldKey] = $this->mapFromArray('$row.uf.'.$mapping, $availableData);
+				if(@$this->thirdpartyConfig['taxation_mapping_override'][$availableData['row']['usaget']][$mapping]) {
+					$mapping = $this->thirdpartyConfig['taxation_mapping_override'][$availableData['row']['usaget']][$mapping];
+				} else {
+					$mapping = '$row.uf.'.$mapping;
+				}
+				$apiInputData[$fieldKey] = $this->mapFromArray($mapping, $availableData);
 			}	
 		}
 		$apiInputData['record_type'] = !$rowIsUsage ? 'S' : 'C';
@@ -190,8 +195,6 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function getDataFromRate ($row, $rate) {		
 		$retData = array();
-		//$retData['productcode'] = $rate['tax.product_code'];
-		//$retData['servicecode'] = $rate['tax.service_code'];
 		if(@$rate['tax.safe_harbor_override_pct']) {
 			$retData['safe_harbor_override_flag'] = 'Y';
 			$retData['safe_harbor_override_pct'] = $rate['tax.safe_harbor_override_pct'];
