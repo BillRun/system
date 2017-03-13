@@ -40,6 +40,14 @@
 	"taxation" :{
 		"tax_type": "vat",
 		 "CSI": {
+				"available_providers" :  {
+											"00":"ILEC",
+											"01" : "IXC",
+											"02" : "CLEC",
+											"03" : "VOIP",
+											"04" : "ISP",
+											"05" : "Wireless"
+				},
 				"taxation_mapping": [],
 				"provider": "",
 				"auth_code": "",

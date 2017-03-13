@@ -1056,8 +1056,8 @@ class ConfigModel {
 	
 	protected function getMandatoryTaxationFields($withTitles = false) {
 		$ret = array(
-			'taxation.service_code' => 'Taxation service code',
-			'taxation.product_code' => 'Taxation product code',
+			'tax.service_code' => 'Taxation service code',
+			'tax.product_code' => 'Taxation product code',
 		);
 		if ($withTitles) {
 			return $ret;

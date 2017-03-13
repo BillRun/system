@@ -89,7 +89,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	protected function constructSingleRowData($line, $subscriber, $account) {
 		$singleData = array();
 		$rate = $this->getRateForLine($line);
-		$taxationMapping = $this->mapArrayToStructuredHash($this->config[$this->config['tax_type']], array('file_type','usaget'));
+		$taxationMapping = Billrun_Util::mapFlatArrayToStructuredHash( $this->config[$this->config['tax_type']]['taxation_mapping'], array('file_type','usaget') );
 		$availableData = array( 'row'=> $line,
 								'account'=> $account,
 								'subscriber'=> $subscriber,
@@ -139,7 +139,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			$retTaxData=  isset($retLinesTaxesData[$tax_data['unique_id']]) ? $retLinesTaxesData[$tax_data['unique_id']] : ['total_amount'=> 0,'total_tax'=> 0,'taxes'=>[]];
 			$calculatedTaxRate = !empty(0 + $tax_data['initial_charge']) ? ($tax_data['percenttaxable']) * ( ($tax_data['adjusted_tax_base']/$tax_data['initial_charge']) ) * $tax_data['taxrate'] : $tax_data['taxrate'];
 			
-			if($tax_data['passflag'] == 1 || $this->thirdpartyConfig['apply_optional'] && $tax_data['passflag'] == 0) {
+			if($tax_data['passflag'] == 1 || $this->thirdpartyConfig['apply_optional_charges'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_tax'] += $calculatedTaxRate;
 			}			
@@ -168,8 +168,8 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		if( $rowIsUsage ) {                    
 			$apiInputData['bill_num'] = $apiInputData['location_a'];
 			foreach(@$availableData['mapping'][$availableData['row']['type']][$availableData['row']['usaget']] as $fieldKey => $mapping) {
-                            $apiInputData[$fieldKey] = $this->mapFromArray('$row'.$mapping, $availableData);
-                        }	
+				$apiInputData[$fieldKey] = $this->mapFromArray('$row.uf.'.$mapping, $availableData);
+			}	
 		}
 		$apiInputData['record_type'] = !$rowIsUsage ? 'S' : 'C';
 		$apiInputData['invoice_date'] = date('Ymd',  Billrun_Billingcycle::getEndTime($availableData['row']['billrun'])+1);
@@ -192,7 +192,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		$retData = array();
 		//$retData['productcode'] = $rate['tax.product_code'];
 		//$retData['servicecode'] = $rate['tax.service_code'];
-		if($rate['tax.safe_harbor_override_pct']) {
+		if(@$rate['tax.safe_harbor_override_pct']) {
 			$retData['safe_harbor_override_flag'] = 'Y';
 			$retData['safe_harbor_override_pct'] = $rate['tax.safe_harbor_override_pct'];
 		}
@@ -213,21 +213,5 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		return $rate;			
 	}
 	
-	protected function mapArrayToStructuredHash($arrayData,$hashKeys) {
-		$retHash =array();
-		$currentKey = array_shift($hashKeys);
-		if(isset($arrayData[0]) && is_array($arrayData)) {
-			foreach($arrayData as $data) {
-				if(isset($data[$currentKey])) {
-					$retHash[$data[$currentKey]] = $this->mapArrayToStructuredHash($data, $hashKeys);
-				} else {
-					//TODO log error
-				}
-			}
-		} else {
-			$retHash = $arrayData;
-		}
-		return $retHash;
-	}
 
 }
