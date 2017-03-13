@@ -32,7 +32,8 @@ class Models_Balances extends Models_Entity {
 	
 	public function update() {
 		$className = 'Models_Action_Update_Balance_';
-		if (isset($this->query['pp_includes_external_id'])) {
+		if (isset($this->query['pp_includes_external_id']) || isset($this->query['pp_includes_external_name']) 
+			|| isset($this->query['id']) || isset($this->query['_id'])) {
 			$className .= 'Prepaidinclude';
 			// load pp includes update balance
 		} else if (isset($this->query['charging_plan'])) {
