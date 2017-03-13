@@ -34,6 +34,27 @@ var globalSetting = {
       itemType: 'plan',
       itemsType: 'plans',
     },
+    charging_plan: {
+      collection: 'plans',
+      uniqueField: 'name',
+      itemName: 'Buckets Group',
+      itemType: 'charging_plan',
+      itemsType: 'charging_plans',
+    },
+    prepaid_plan: {
+      collection: 'plans',
+      uniqueField: 'name',
+      itemName: 'Prepaid Plan',
+      itemType: 'prepaid_plan',
+      itemsType: 'prepaid_plans',
+    },
+    prepaid_include: {
+      collection: 'prepaidincludes',
+      uniqueField: 'name',
+      itemName: 'Prepaid Bucket',
+      itemType: 'prepaid_include',
+      itemsType: 'prepaid_includes',
+    },
     product: {
       collection: 'rates',
       uniqueField: 'key',

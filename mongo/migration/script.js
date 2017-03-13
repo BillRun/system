@@ -86,6 +86,7 @@ db.services.find({'to': {$gt: new Date()}}).forEach(function (service) {
 
 // Add zip code account system field if it doesn't yet exist
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
 delete lastConfig['_id'];
 var found_zip_code = false;
 lastConfig.subscribers.account.fields.forEach(function (field) {
@@ -127,6 +128,7 @@ if (!found_tax_field) {
 }
 
 db.config.insert(lastConfig);
+}
 
 // BRCD-614
 var serviceDic = {}
@@ -162,3 +164,13 @@ db.subscribers.find({type: "subscriber", services: {$ne: [], $exists: 1}}).forEa
 
 db.balances.dropIndex('sid_1_from_1_to_1_priority_1');
 db.balances.ensureIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+
+// BRCD-646
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var pricingVat = lastConfig.pricing.vat;
+delete lastConfig['pricing']['vat'];
+lastConfig.taxation = {};
+lastConfig.taxation.vat = pricingVat;
+lastConfig.taxation.tax_type = "vat";
+db.config.insert(lastConfig);

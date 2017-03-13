@@ -66,9 +66,11 @@ class CreditAction extends ApiAction {
 	protected function parse($credit_row) {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
+		$ret['process_time'] = new MongoDate();
 		if ($this->isCreditByPrice($ret)) {
 			$ret['billrun'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 			$ret['usaget'] = $this->getCreditUsaget($ret);
+			$ret['usagev'] = 1;
 		}
 		return $ret;
 	}
