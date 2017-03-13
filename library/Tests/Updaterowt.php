@@ -93,10 +93,10 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'e4', 'sid' => 55, 'arate_key' => 'VEG', 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["SERVICE1"]),
 		/**** NEW TEST CASES ****/
 		//case L cost
-		array('stamp' => 'l1', 'sid' => 77, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services' => ["NEW-SERVICE5"]),
-		array('stamp' => 'l2', 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L3"]),
-		array('stamp' => 'l3', 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
-		array('stamp' => 'l4', 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
+		array('stamp' => 'l1', 'aid' => 23457, 'sid' => 77, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services' => ["NEW-SERVICE5"]),
+		array('stamp' => 'l2', 'aid' => 23457, 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L3"]),
+		array('stamp' => 'l3', 'aid' => 23457, 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
+		array('stamp' => 'l4', 'aid' => 23458, 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
 
 	];
 	protected $expected = [

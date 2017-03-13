@@ -5,7 +5,7 @@ var globalSetting = {
   datetimeFormat: "DD/MM/YYYY HH:mm",
   dateFormat: "DD/MM/YYYY",
   timeFormat: "HH:mm",
-  apiDateTimeFormat: "YYYY/MM/DD HH:mm:ss",
+  apiDateTimeFormat: "YYYY-MM-DD",
   currency: '$',
   list: {
     maxItems: 100
@@ -21,4 +21,45 @@ var globalSetting = {
   queue_calculators: ['customer', 'rate', 'pricing'],
   mail_support: 'cloud_support@billrun.com',
   logoMaxSize: 2,
+  systemItems: {
+    service: {
+      collection: 'services',
+      uniqueField: 'name',
+      itemType: 'service',
+      itemsType: 'services',
+    },
+    plan: {
+      collection: 'plans',
+      uniqueField: 'name',
+      itemType: 'plan',
+      itemsType: 'plans',
+    },
+    charging_plan: {
+      collection: 'plans',
+      uniqueField: 'name',
+      itemName: 'Buckets Group',
+      itemType: 'charging_plan',
+      itemsType: 'charging_plans',
+    },
+    prepaid_plan: {
+      collection: 'plans',
+      uniqueField: 'name',
+      itemName: 'Prepaid Plan',
+      itemType: 'prepaid_plan',
+      itemsType: 'prepaid_plans',
+    },
+    prepaid_include: {
+      collection: 'prepaidincludes',
+      uniqueField: 'name',
+      itemName: 'Prepaid Bucket',
+      itemType: 'prepaid_include',
+      itemsType: 'prepaid_includes',
+    },
+    product: {
+      collection: 'rates',
+      uniqueField: 'key',
+      itemType: 'product',
+      itemsType: 'products',
+    },
+  },
 };

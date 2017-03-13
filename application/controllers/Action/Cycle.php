@@ -49,6 +49,7 @@ class CycleAction extends Action_Base {
 			$options['size'] = Billrun_Factory::config()->getConfigValue('customer.aggregator.size');
 		}
 		
+		$options['action'] = 'cycle';
 		return $options;
 	}
 	

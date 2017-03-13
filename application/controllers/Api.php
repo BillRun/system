@@ -253,5 +253,9 @@ class ApiController extends Yaf_Controller_Abstract {
 	public function localeAction() {
 		$this->forward('Locale', 'index');
 	}
-
+        
+        public function currenciesAction() {
+		$this->forward('currencies', 'index');
+	}
+        
 }

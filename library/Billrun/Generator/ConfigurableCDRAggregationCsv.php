@@ -330,7 +330,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 
 		try {
 			$log = Billrun_Factory::db()->logCollection();
-			$result = $log->insert(new Mongodloid_Entity($data));
+			$logLine = new Mongodloid_Entity($data);
+			$result = $log->insert($logLine);
 
 			if ($result['ok'] != 1) {
 				Billrun_Factory::log("Billrun_Receiver::logDB - Failed when trying to update a file log record " . $data['file_name'] . " with stamp of : {$data['stamp']}", Zend_Log::NOTICE);

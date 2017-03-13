@@ -584,7 +584,7 @@ abstract class Billrun_Bill {
 						if ($payment->getDir() == 'fc') {
 							foreach ($payment->getPaidBills() as $billType => $bills) {
 								foreach ($bills as $billId => $amountPaid) {
-									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, $responseFromGateway['stage'])->save();
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
 								}
 							}
 						} else {

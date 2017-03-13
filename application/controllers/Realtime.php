@@ -68,10 +68,12 @@ class RealtimeController extends ApiController {
 		$this->event['type'] = $this->getEventType();
 		$this->event['request_type'] = $this->getRequestType();
 		$this->event['request_num'] = $this->getRequestNum();
-		$this->event['session_id'] = $this->getSessionId();
-		$this->event['rand'] = rand(1, 1000000);
+		$recordType = $this->getDataRecordType($this->event);
+		if ($recordType != 'postpay_charge_request') {
+			$this->event['session_id'] = $this->getSessionId();
+		}
 		$this->event['stamp'] = Billrun_Util::generateArrayStamp($this->event);
-		$this->event['record_type'] = $this->getDataRecordType($this->event);
+		$this->event['record_type'] = $recordType;
 		$this->event['billrun_pretend'] = $this->isPretend($this->event);
 
 		Billrun_Factory::dispatcher()->trigger('realtimeAfterSetEventData', array(&$this->event));

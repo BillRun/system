@@ -437,8 +437,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($line['sid'])) {
 					$line['subscriber_id'] = $line['sid'];
 				}
-
-				$fraud_connection->insert(new Mongodloid_Entity($line));
+				$mongoLine = new Mongodloid_Entity($line);
+				$fraud_connection->insert($mongoLine);
 			}
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);

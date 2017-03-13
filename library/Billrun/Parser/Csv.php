@@ -33,6 +33,8 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	 */
 	protected $structure;
 	protected $lineTypes;
+	protected $hasHeader;
+	protected $hasFooter;
 
 	
 	public function __construct($options) {
@@ -49,9 +51,9 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		if (isset($options['line_types'])) {
 			$this->setLineTypes($options['line_types']);
 		}
-
+		$this->hasHeader =  (isset($options['csv_has_header']) ? $options['csv_has_header'] : false);
+		$this->hasFooter =  (isset($options['csv_has_footer']) ? $options['csv_has_footer'] : false);
 	}
-
 
 	/**
 	 * method to set structure of the parsed file
@@ -76,6 +78,11 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	public function parse($fp) {
 		$totalLines = 0;
 		$skippedLines = 0;
+		
+		if ($this->hasHeader) {
+			$this->getLine($fp);
+		}
+		
 		while ($line = $this->getLine($fp)) {
 			$totalLines++;
 			$record_type = $this->getLineType($line);
@@ -103,6 +110,9 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 					break;
 			}
 		}
+		if ($this->hasFooter) {
+			$this->removeLastLine($record_type);
+		}
 		if ($totalLines < $skippedLines * 2) {
 			Billrun_Factory::log('Billrun_Parser_Csv: cannot identify record type of ' . $skippedLines . ' lines.', Zend_Log::ALERT);
 		}
@@ -125,5 +135,20 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	public function getLine($fp) {
 		return fgets($fp);
 	}
-
+	
+	public function removeLastLine($record_type) {
+		switch ($record_type) {
+			case static::DATA_LINE:
+				array_pop($this->dataRows);
+				break;
+			case static::HEADER_LINE:
+				array_pop($this->headerRows);
+				break;
+			case static::TRAILER_LINE:
+				array_pop($this->trailerRows);
+				break;
+			default:
+				break;
+		}
+	}
 }

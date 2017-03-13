@@ -330,7 +330,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$credentials = $this->getGatewayCredentials();
 		$apiLoginId = $credentials['login_id'];
 		$transactionKey = $credentials['transaction_key'];
-		$profile_id = $pgAccountDetails['profile_id'];
+		$profile_id = $pgAccountDetails['customer_profile_id'];
 		$payment_id = $pgAccountDetails['payment_id'];
 		$deleteAccountRequest = "<deleteCustomerPaymentProfileRequest xmlns= 'AnetApi/xml/v1/schema/AnetApiSchema.xsd'>
 								<merchantAuthentication>
