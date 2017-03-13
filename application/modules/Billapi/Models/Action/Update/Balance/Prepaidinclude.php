@@ -22,7 +22,6 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 	protected $before;
 	protected $after;
 
-
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
 		if (!isset($params['sid'])) {
@@ -83,9 +82,10 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 	protected function loadSubscriber($sid) {
 		$subQuery = array(
 			'$or' => array(
-				array('type' => array(
-					'$exists' => false,
-				)), // backward compatibility (type not exists)
+				array(
+					'type' => array(
+						'$exists' => false,
+					)), // backward compatibility (type not exists)
 				array('type' => 'subscriber'),
 			),
 			'sid' => $sid,
@@ -113,12 +113,29 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 			),
 			'$setOnInsert' => array(
 				'from' => new MongoDate(),
+				'aid' => $this->subscriber['aid'],
+				'charging_type' => 'prepaid',
+				'charging_by' => $this->data['charging_by'],
+				'charging_by_usaget' => $this->data['charging_by_usaget'],
+				'priority' => $this->data['priority'],
+				'pp_includes_name' => $this->data['name'],
 			),
 		);
 		if (isset($this->query['to']) && Zend_Date::isDate($this->query['to'])) {
 			$update['$set'] = array(
 				'to' => new MongoDate(strtotime($this->query['to'])),
 			);
+		} else if (isset($this->data['unlimited']) && $this->data['unlimited']) {
+			$update['$set'] = array(
+				'to' => new MongoDate(Billrun_Utils_Time::UNLIMITED_DATE),
+			);
+		} else { // fallback to 30 days charge (@TODO move to config)
+			$update['$set'] = array(
+				'to' => new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1),
+			);
+		}
+		if (isset($this->data['shared']) && $this->data['shared']) {
+			$this->query['sid'] = 0;
 		}
 		$findAndModify = array(
 			'new' => true,

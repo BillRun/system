@@ -48,7 +48,6 @@ class Models_Balances extends Models_Entity {
 		$params = array_merge($this->query, $this->update);
 		$action = new $className($params);
 		$ret = $action->update();
-		print_R($this);die;
 		return true;
 	}
 	
