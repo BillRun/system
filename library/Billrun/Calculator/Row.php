@@ -72,6 +72,9 @@ abstract class Billrun_Calculator_Row {
 	}
 
 	public function __get($name) {
+		if ($this->row['type'] === 'credit' && in_array($name , array('usaget', 'usagev'))) {
+			return $this->row['credit'][$name];
+		}
 		if (isset($this->row[$name])) {
 			return $this->row[$name];
 		}
