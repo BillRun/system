@@ -35,6 +35,20 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected $ftp_path = '/';
 	protected $ftpConfig = false;
+	
+	/**
+	 * the time which after can delete files from the ftp server.
+	 * 
+	 * @param string
+	 */
+	protected $file_delete_orphan_time;
+	
+	/**
+	 * if true delete files after fixed orphan time. 
+	 * 
+	 * @param string
+	 */
+	protected $delete_old_files;
 
 	protected $checkReceivedSize = true;
 	public function __construct($options) {
@@ -52,7 +66,15 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 		if (isset($options['received']['check_received_size'])) {
 			$this->checkReceivedSize = $options['received']['check_received_size'];
 		}
-
+		
+		if (isset($options['receiver']['orphan_delete_time'])){
+			$this->file_delete_orphan_time = $options['receiver']['orphan_delete_time'];
+		}
+		
+		if (isset($options['delete']['old_files'])){
+			$this->delete_old_files = $options['delete']['old_files'];
+		}
+		
 		Zend_Ftp_Factory::registerParserType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Parser_NsnFtpParser');
 		Zend_Ftp_Factory::registerInteratorType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_Directory_NsnIterator');
 		Zend_Ftp_Factory::registerFileType(Zend_Ftp::UNKNOWN_SYSTEM_TYPE, 'Zend_Ftp_File_NsnCDRFile');
@@ -117,9 +139,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			}
 
 			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields) ) {
-				continue;
+				if ($this->isLongTimeSinceReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
+					Billrun_Log::getInstance()->log("Deleting old file " . $file->name, Zend_log::NOTICE);
+					$file->delete();//delete file
+				}		
+				continue;	
 			}
-
+			
 			$fileData = $this->getFileLogData($file->name, static::$type, $isFileReceivedMoreFields);
 
 			Billrun_Factory::log()->log("FTP: Download file " . $file->name . " from remote host", Zend_Log::INFO);
@@ -233,5 +259,31 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	protected function isFileValid($filename, $path) {
 		return preg_match($this->filenameRegex, $filename);
 	}
+	
+	protected function isLongTimeSinceReceive($filename, $type, $more_fields = array()){
+		if ($this->delete_old_files != TRUE) {
+			return FALSE;
+		}
+		$log = Billrun_Factory::db()->logCollection();
+		$orphan_window = $this->file_delete_orphan_time;
+		if (empty($orphan_window)) {
+			return FALSE;
+		}
+		$logData = $this->getFileLogData($filename, $type, $more_fields);
+		$orphan_time = date("Y-m-d H:i:s", time() - $orphan_window);
+		$query = array(
+			'stamp' => $logData['stamp'],
+			'file_name' => $filename,
+			'source' => 'nsn',
+			'received_time' => array('$lt' => $orphan_time),
+			'process_time' => array('$exists' => 1)
+		);
 
+		$result = $log->query($query)->cursor()->current();	
+		if (empty($result) || $result->isEmpty()){
+			return FALSE;
+		}
+		
+		return TRUE;
+	}
 }
