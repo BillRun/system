@@ -341,14 +341,5 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $ret;
 	}
-	
-	public function afterCalculatorUpdateRow($row, Billrun_Calculator $calculator) {
-		if ($calculator->getType() == 'pricing') {
-			if ($row['type'] == 'credit' && $row['usaget'] === 'refund') { // handle the case of refund by usagev (calculators can only handle positive values)
-				$row['aprice'] = -abs($row['aprice']);
-
-			}
-		}
-	}
 
 }
