@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Chargingplan extends Models_Balance_Update {
+class Models_Action_Update_Balance_Secret extends Models_Balance_Update {
 
 	/**
 	 * @todo

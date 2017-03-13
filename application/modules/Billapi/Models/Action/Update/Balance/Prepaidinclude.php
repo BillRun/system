@@ -148,6 +148,9 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 		$this->before = Billrun_Factory::db()->balancesCollection()->query($this->query)->cursor()->current();
 	}
 
+	/**
+	 * @todo
+	 */
 	public function createLines() {
 		
 	}
