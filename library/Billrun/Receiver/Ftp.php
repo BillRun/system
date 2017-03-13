@@ -140,7 +140,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 
 			if(!$this->shouldFileBeReceived($file, $isFileReceivedMoreFields) ) {
 				if ($this->isLongTimeSinceReceive($file->name, static::$type, $isFileReceivedMoreFields)) {
-					Billrun_Log::getInstance()->log("Deleting File " . $file->name, Zend_log::NOTICE);
+					Billrun_Log::getInstance()->log("Deleting old file " . $file->name, Zend_log::NOTICE);
 					$file->delete();//delete file
 				}		
 				continue;	
