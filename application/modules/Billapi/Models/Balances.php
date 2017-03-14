@@ -44,12 +44,10 @@ class Models_Balances extends Models_Entity {
 		} else {
 			// throw an error
 		}
-//		if (isset())
-//		$upsert = $this
 		$params = array_merge($this->query, $this->update);
 		$action = new $className($params);
-		$ret = $action->update();
-		return true;
+		$ret = $action->execute();
+		return $ret;
 	}
 	
 }

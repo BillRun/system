@@ -12,34 +12,12 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Secret extends Models_Balance_Update {
+class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Prepaidinclude {
 
 	/**
-	 * @todo
+	 * the update method type
+	 * @var string
 	 */
-	public function update() {
-		
-	}
-
-	/**
-	 * @todo
-	 */
-	protected function preload() {
-		
-	}
-
-	/**
-	 * @todo
-	 */
-	public function createLines() {
-		
-	}
-
-	/**
-	 * @todo
-	 */
-	protected function preload() {
-		
-	}
+	protected $updateType = 'Id';
 
 }

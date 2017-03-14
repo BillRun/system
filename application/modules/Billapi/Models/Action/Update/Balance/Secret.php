@@ -12,8 +12,14 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Id extends Models_Balance_Update {
+class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Abstract {
 
+	/**
+	 * the update method type
+	 * @var string
+	 */
+	protected $updateType = 'Id';
+	
 	/**
 	 * @todo
 	 */
@@ -29,16 +35,10 @@ class Models_Action_Update_Balance_Id extends Models_Balance_Update {
 	}
 
 	/**
+	 * create row to track the balance update
 	 * @todo
 	 */
-	public function createLines() {
-		
-	}
-
-	/**
-	 * @todo
-	 */
-	protected function preload() {
+	public function createTrackingLines() {
 		
 	}
 

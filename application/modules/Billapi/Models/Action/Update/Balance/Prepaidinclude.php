@@ -12,14 +12,55 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update {
+class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_Balance_Abstract {
 
+	/**
+	 * the update method type
+	 * @var string
+	 */
+	protected $updateType = 'Prepaidinclude';
+
+	/**
+	 * operation of update (inc, set, new)
+	 * @var string
+	 */
 	protected $operation = 'inc';
+
+	/**
+	 * the data container of the entry that has the update properties
+	 * can be prepaid include, charging plan, card secret, etc
+	 * @var array
+	 */
 	protected $data = array(); // data container of the prepaid includes record
+
+	/**
+	 * the subscriber entry
+	 * @var array
+	 */
 	protected $subscriber = array();
+
+	/**
+	 * the charging value to update
+	 * @var type 
+	 */
 	protected $chargeValue;
+
+	/**
+	 * query to form on update
+	 * @var array 
+	 */
 	protected $query;
+
+	/**
+	 * the balance entry before
+	 * @var array
+	 */
 	protected $before;
+
+	/**
+	 * the balance entry after
+	 * @var array
+	 */
 	protected $after;
 
 	public function __construct(array $params = array()) {
@@ -34,7 +75,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 
 		$this->loadSubscriber((int) $params['sid']);
 
-		if (isset($params['operation']) && in_array($params['operation'], array('inc', 'set', 'new'))) {
+		if (isset($params['operation']) && in_array($params['operation'], array('inc', 'set', 'new'))) { // TODO: move array values to config
 			$this->operation = $params['operation'];
 		}
 
@@ -74,7 +115,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function load($ppQuery) {
-		if (isset($ppQuery['id']) || $ppQuery['_id']) {
+		if (isset($ppQuery['id']) || isset($ppQuery['_id'])) {
 			$balance = Billrun_Factory::db()->balancesCollection()->query($ppQuery)->cursor()->current();
 			if ($balance->isEmpty()) {
 				throw new Billrun_Exceptions_Api(0, array(), 'Balance not found');
@@ -168,10 +209,45 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Balance_Update 
 	}
 
 	/**
-	 * @todo
+	 * create row to track the balance update
 	 */
-	public function createLines() {
-		
+	public function createTrackingLines() {
+		$row = array(
+			'source' => 'billapi',
+			'type' => 'balance',
+			'usaget' => 'balance',
+			'charging_type' => $this->updateType,
+			'urt' => new MongoDate(),
+			'source_ref' => Billrun_Factory::db()->prepaidincludesCollection()->createRefByEntity($this->data),
+			'aid' => $this->subscriber['aid'],
+			'sid' => $this->subscriber['sid'],
+			'pp_includes_name' => $this->data['name'],
+			'pp_includes_external_id' => $this->data['external_id'],
+			'charging_usaget' => $this->data['charging_by_usaget'],
+			'balance_ref' => Billrun_Factory::db()->balancesCollection()->createRefByEntity($this->after),
+			'balance_before' => $this->getBalanceBefore(),
+			'balance_after' => $this->getBalanceAfter(),
+		);
+		if (isset($this->data['service_provider'])) { // backward compatibility
+			$row['service_provider'] = $this->data['service_provider'];
+		}
+		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
+		Billrun_Factory::db()->linesCollection()->insert($row);
+		return $row;
+	}
+
+	protected function getBalanceBefore($afterValue = null) {
+		if (is_null($afterValue)) {
+			$afterValue = $this->getBalanceAfter();
+		}
+		return $afterValue - $this->chargeValue;
+	}
+
+	protected function getBalanceAfter() {
+		if (isset($this->after['balance']['cost'])) {
+			return $this->after['balance']['cost'];
+		}
+		return $this->after['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']];
 	}
 
 }
