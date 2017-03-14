@@ -195,9 +195,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function getDataFromRate ($row, $rate) {		
 		$retData = array();
-		if(@$rate['tax.safe_harbor_override_pct']) {
+		if(@$rate['tax']['safe_harbor_override_pct']) {
 			$retData['safe_harbor_override_flag'] = 'Y';
-			$retData['safe_harbor_override_pct'] = $rate['tax.safe_harbor_override_pct'];
+			$retData['safe_harbor_override_pct'] = $rate['tax']['safe_harbor_override_pct'];
 		}
 			
 		return $retData;

@@ -52,6 +52,7 @@
 				"provider": "",
 				"auth_code": "",
 				"apply_optional_charges": true
-		 }
+		 },
+		 "vat" : 0
 	}
 }

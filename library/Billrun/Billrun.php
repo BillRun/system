@@ -56,7 +56,7 @@ class Billrun_Billrun {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->vat = Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18);
+		$this->vat = Billrun_Factory::config()->getConfigValue('taxation.vat', 0.18);
 		if (isset($options['aid']) && isset($options['billrun_key'])) {
 			$this->aid = $options['aid'];
 			$this->billrun_key = $options['billrun_key'];
@@ -248,7 +248,7 @@ class Billrun_Billrun {
 			$billrun_end_time = Billrun_Billingcycle::getEndTime($billrun_key);
 			self::$vatsByBillrun[$billrun_key] = self::getVATAtDate($billrun_end_time);
 			if (is_null(self::$vatsByBillrun[$billrun_key])) {
-				self::$vatsByBillrun[$billrun_key] = floatval(Billrun_Factory::config()->getConfigValue('pricing.vat', 0.18));
+				self::$vatsByBillrun[$billrun_key] = floatval(Billrun_Factory::config()->getConfigValue('taxation.vat', 0.18));
 			}
 		}
 		return self::$vatsByBillrun[$billrun_key];

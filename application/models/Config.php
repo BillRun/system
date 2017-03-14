@@ -1058,6 +1058,7 @@ class ConfigModel {
 		$ret = array(
 			'tax.service_code' => 'Taxation service code',
 			'tax.product_code' => 'Taxation product code',
+			'tax.safe_harbor_override_pct' => 'Safe Horbor override string',
 		);
 		if ($withTitles) {
 			return $ret;
