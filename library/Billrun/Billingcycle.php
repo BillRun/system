@@ -14,7 +14,7 @@
  * @todo Create unit tests for this module
  */
 class Billrun_Billingcycle {
-	
+    
 	/**
 	 * Table holding the values of the charging end dates.
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
@@ -26,7 +26,7 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-	
+        
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
@@ -131,4 +131,96 @@ class Billrun_Billingcycle {
 		$ret = date("Ym", $month_before);
 		return $ret;
 	}
+        
+        public function removeBeforeRerun($billingCycleCol, $billrunKey) {
+            $linesColl = Billrun_Factory::db()->linesCollection();
+            $billrunColl = Billrun_Factory::db()->billrunCollection();
+            $linesRemoveQuery = array('type' => array('$in' => array('service', 'flat')));
+            $billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));      
+            $countersColl = Billrun_Factory::db()->countersCollection();
+            $billrunsToRemove = $billrunColl->query($billrunQuery)->cursor();
+            foreach ($billrunsToRemove as $billrun) {
+                 $invoicesToRemove[] = $billrun['invoice_id'];
+                 if (count($invoicesToRemove) > 1000) {  // remove bulks from billrun collection(bulks of 1000 records)
+                     $countersColl->remove(array('seq' => array('$in' => $invoicesToRemove)));
+                     $invoicesToRemove = array();
+                 }
+            } 
+            if (count($invoicesToRemove) > 0) { // remove leftovers
+                $countersColl->remove(array('seq' => array('$in' => $invoicesToRemove)));
+            }
+            $billingCycleCol->remove(array('billrun_key' => $billrunKey));
+            $linesColl->remove($linesRemoveQuery);
+            $billrunColl->remove($billrunQuery);
+        }
+
+        public function isBillingCycleRerun($billingCycleCol, $billrunKey, $size) {
+           $zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+           return Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages);
+        }
+        
+        protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
+            $existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
+            $keyCount = $billingCycleCol->query($existsKeyQuery)->count();
+            if ($keyCount < 1) {
+                return false;
+            }
+            return true;
+        }
+        
+        public function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
+            $zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+            if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages)) {
+                return true;
+            }  
+            return false;            
+        }
+        
+        public function isCycleRunning($billingCycleCol, $billrunKey, $size) {
+            if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
+                return false;
+            }
+            $zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
+            if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages)) {
+                return false;
+            }  
+            return true;
+        }
+        
+        public function isCycleConfirmed($billrunKey) {
+            $billrunColl = Billrun_Factory::db()->billrunCollection();
+            $totalQuery = array(
+                'billrun_key' => $billrunKey
+            );
+            $finishedQuery = array(
+                'billrun_key' => $billrunKey,
+                'billed' => 1
+            );
+            $totalBillrun = $billrunColl->query($totalQuery)->count();
+            $numberOfFinished = $billrunColl->query($finishedQuery)->count();
+            if ($numberOfFinished == $totalBillrun) {
+                return true;
+            }
+            return false;
+        }
+        
+        public function getCycleCompletionPercentage($billingCycleCol, $billrunKey, $size) {
+            $totalPagesQuery = array(
+                'billrun_key' => $billrunKey
+            );
+            $totalPages = $billingCycleCol->query($totalPagesQuery)->count();
+            $finishedPagesQuery = array(
+                'billrun_key' => $billrunKey,
+                'end_time' => array('$exists' => true)
+            );
+            $finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();                
+            if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)){
+                $completionPercentage = ($finishedPages / $totalPages) * 100;
+            } else {
+                $completionPercentage = ($finishedPages / ($totalPages + 1)) * 100;
+            }
+            
+            return $completionPercentage;
+        }
+        
 }
