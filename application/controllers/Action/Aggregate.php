@@ -32,7 +32,10 @@ class AggregateAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
+		if (!$this->shouldRunAggregate($options['stamp'])) {
+			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
+			return;
+		}
 		$this->_controller->addOutput("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		$this->_controller->addOutput("Aggregator loaded");
@@ -52,5 +55,13 @@ class AggregateAction extends Action_Base {
 		$aggregator->aggregate();
 		$this->_controller->addOutput("Finish to Aggregate.");
 	}
-
+	
+	protected function shouldRunAggregate($stamp) {
+		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
+		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+			return false;
+		}
+		return true;
+	}
+	
 }
