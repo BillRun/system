@@ -21,8 +21,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
-		if (isset($options['invoices'])) {
-			$this->invoices = $options['invoices'];
+		if (!empty($options['invoices'])) {
+			$this->invoices = json_decode($options['invoices']);
 		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);

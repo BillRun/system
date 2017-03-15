@@ -19,18 +19,13 @@ class CycleConfirmationAction extends ApiAction {
 		$request = $this->getRequest();
 		$action = $request->get('action');
 		$invoices = $request->get('invoices');
-		$invoicesId = json_decode($invoices);
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
 		
 		if ($action == 'confirm') {
-			$options = array (
-				'type' => "BillrunToBill",
-				'stamp' => $billrunKey,
-			);
-			$success = $this->confirmCycle($invoicesId, $options);
+			$success = $this->processConfirmCycle($billrunKey, $invoices);
 		}
 		
 		$output = array (
@@ -41,17 +36,19 @@ class CycleConfirmationAction extends ApiAction {
 		$this->getController()->setOutput(array($output));
 	}
 
-	protected function confirmCycle($invoicesId, $options) {	
+	protected function confirmCycle($invoicesId, $options) {
 		if (!empty($invoicesId)) {
 			$options['invoices'] = $invoicesId;	
 		}
-		$generator = Billrun_Generator::getInstance($options);
-		if (!$generator) {
-			throw new Exception("Failure to create bills, try again");
-		}
-		$generator->load();
-		$generator->generate();
+
 		return true;
 	}
+
+	protected function processConfirmCycle($billrunKey, $invoicesId) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		return Billrun_Util::forkProcessCli($cmd);
+	}
 	
+	
+
 }
