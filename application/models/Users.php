@@ -51,8 +51,8 @@ class UsersModel extends TableModel {
 				Billrun_Factory::log("Username already exist {$username}", Zend_Log::INFO);
 				throw $ex = new Billrun_Exceptions_Api(0, array(), 'Username already exist');
 			}
-
-			$insertQuery = $this->collection->insert(['username' => $username, 'password' => $password, 'roles' => $roles]);
+			$userData = ['username' => $username, 'password' => $password, 'roles' => $roles];
+			$insertQuery = $this->collection->insert($userData);
 			Billrun_Factory::log("Finish insert new user", Zend_Log::INFO);
 		}catch(\MongoException $e){
 			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::CRIT);

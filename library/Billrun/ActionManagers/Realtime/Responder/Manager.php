@@ -40,7 +40,7 @@ class Billrun_ActionManagers_Realtime_Responder_Manager {
 		$classNamePref = 'Billrun_ActionManagers_Realtime_Responder_Realtime_';
 		$className = $classNamePref . str_replace(" ", "", ucwords(str_replace("_", " ", $data['record_type'])));
 		$defaultClassName = $classNamePref . 'Base';
-		return class_exists($className) ? $className : $defaultClassName;
+		return @class_exists($className) ? $className : $defaultClassName;
 	}
 
 }

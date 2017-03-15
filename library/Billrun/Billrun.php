@@ -574,7 +574,7 @@ class Billrun_Billrun {
 		if ($vatable) {
 			$sraw['totals']['vatable'] = $this->getFieldVal($sraw['totals']['vatable'], 0) + $pricingData['aprice'];
 			$sraw['totals'][$breakdownKey]['vatable'] = $this->getFieldVal($sraw['totals'][$breakdownKey]['vatable'], 0) + $pricingData['aprice'];
-			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * self::getVATByBillrunKey($billrun_key));
+			$price_after_vat = $pricingData['aprice'] + ($pricingData['aprice'] * $vatable);
 		} else {
 			$price_after_vat = $pricingData['aprice'];
 		}
@@ -802,13 +802,13 @@ class Billrun_Billrun {
 
 			if ($line['type'] != 'flat') {
 				$rate = $this->getRowRate($line);
-				$vatable = (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable));
+				$vatable = $this->getVatFromRow($line,$rate);
 				$this->updateBillrun($this->billrun_key, array($line['usaget'] => $line['usagev']), $pricingData, $line, $vatable);
 			} else {
 				$plan_ref = $line->get('plan_ref', true);
 				if (!empty($plan_ref)) {
 					$plan = self::getPlanById(strval($plan_ref['$id']));
-					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, is_null($plan->get('vatable')) ? TRUE : FALSE);
+					$this->updateBillrun($this->billrun_key, array(), array('aprice' => $line['aprice']), $line, $this->getVatFromRow($line, $plan) );
 				} else {
 					Billrun_Factory::log("No plan or unrecognized plan for row " . $line['stamp'] . " Subscriber " . $line['sid'], Zend_Log::ALERT);
 					continue;
@@ -994,9 +994,9 @@ class Billrun_Billrun {
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
 	
-	protected static function getFileTypes() {
+	protected static function getFileTypes($enabledOnly = false) {
 		if (empty(self::$fileTypes)) {
-			self::$fileTypes = Billrun_Factory::config()->getFileTypes();
+			self::$fileTypes = Billrun_Factory::config()->getFileTypes($enabledOnly);
 		}
 		return self::$fileTypes;
 	}
@@ -1030,6 +1030,17 @@ class Billrun_Billrun {
 		$this->data['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 	}
 
+	protected function getVatFromRow($row,$rate) {
+		$vat = ($row['type'] == 'flat') 
+					? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0) 
+					: ( (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) ? self::getVATByBillrunKey($this->billrun_key): 0 ) ;
+		if($row['tax_data']) {
+			$vat = $row['tax_data']['total_tax'];
+		}
+		
+		return $vat;
+	}
+	
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.

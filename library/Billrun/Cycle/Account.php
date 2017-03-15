@@ -92,8 +92,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				Billrun_Factory::log("SID " . $sid . " not in filtered!");
 			}
 			
-			$constructed = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);
-			$aggregatableRecords = array_merge($aggregatableRecords, $constructed);
+			$aggregatableRecords[] = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);;
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -110,35 +109,30 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
 	protected function constructForSid($sorted, $filtered, &$plans, &$services, &$rates, $cycle, $invoiceData) {		
-		$aggregateable = array();
+		$aggregateable = reset($sorted);
+		$changes = array(	'plans'=>array(),
+							'services'=> array() );
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($rates, $invoiceData);
 		foreach ($sorted as $sub) {
-			$constructed = $sub;
-			unset($constructed['plans']);
-			unset($constructed['services']);
 			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
-				$constructed += $filtered[$filterKey]; 
+				$changes = array_merge($changes, $filtered[$filterKey]); 
 			} else {
 				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
 			}
-			
-			if(!isset($constructed['plans'])) {
-				Billrun_Factory::log("Overriding plans: " . print_r($filtered,1));				
-				$constructed['plans'] = array();
-			}
-			
-			$constructed['invoice'] = &$invoice;
-			$constructed['mongo_plans'] = &$plans;
-			$constructed['mongo_services'] = &$services;
-			$constructed['mongo_rates'] = &$rates;
-			$constructed['cycle'] = &$cycle;
-			$constructed['line_stump'] = $this->getLineStump($sub, $cycle);
-			$cycleSub =  new Billrun_Cycle_Subscriber($constructed);
-
-			$aggregateable[] = $cycleSub;
 		}
-		return $aggregateable;
+		$aggregateable['plans'] = $changes['plans'];
+		$aggregateable['services'] = $changes['services'];
+		
+		$aggregateable['invoice'] = &$invoice;
+		$aggregateable['mongo_plans'] = &$plans;
+		$aggregateable['mongo_services'] = &$services;
+		$aggregateable['mongo_rates'] = &$rates;
+		$aggregateable['cycle'] = &$cycle;
+		$aggregateable['line_stump'] = $this->getLineStump($sub, $cycle);
+		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable);
+
+		return $cycleSub;
 	}
 	
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
@@ -173,7 +167,10 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$sid = $subscriber['sid'];
 			$sorted[$sid][] = $this->handleSubscriberDates($subscriber, $endTime);
 		}
-		
+		//sort each of the subscriber histort from past to present
+		foreach($sorted as  $sid => &$subHistory) {			
+			usort($subHistory, function($a, $b){ return $a['sto'] - $b['sto'];});
+		}
 		return $sorted;
 	}
 	
@@ -231,13 +228,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$from = null;
 		$to = null;
 		$aggregatorData = array();
-		
+		//sort plans history by date
+		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
 		// Go through the plans
 		foreach ($plans as $subPlan) {
 			// First iteration.
 			if($name === null) {
 				$name = $subPlan['plan'];
-				$from = $subPlan['from']->sec;
+				$from = $subPlan['plan_activation']->sec;
 				$to = $subPlan['to']->sec;
 				continue;
 			}
@@ -254,7 +252,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Update all the details.
 			$name = $subPlan['plan'];
-			$from = $subPlan['from']->sec;
+			$from = $subPlan['plan_activation']->sec;
 			$to = $subPlan['to']->sec;
 		}
 		// Add the last value.
@@ -278,6 +276,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function buildSubAggregator(array $current, $endTime) {		
 		$servicesAggregatorData = array();
 		
+		
 		$subscriberPlans = array();
 		$services = array();
 		$servicesData = array();
@@ -286,55 +285,39 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$sto = $subscriber['sto'];
 			
 			// Get the plans
-			$subscriberPlans[]= $subscriber['plans'][0];
+			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
 			
 			// Get the services.
 			$currServices = array();
-			if(isset($subscriber['services'])) {
-				$currServices = $subscriber['services'];
-			}
-
-			// Check the differences in the services.
-			$rawRemoved  = array_diff($services, $currServices);
-			$rawAdded = array_diff($currServices, $services);
-			
-			$services = $currServices;
-			
-			// Translate the added and removed.
-			$func = function($v){
-					return array('name' => $v);
-				};
-			$added = array_map($func, $rawAdded);
-			$removed = array_map($func, $rawRemoved);
-			
-			// Add the services to the services data
-			foreach ($added as $addedService) {
-				$key = $addedService['name'];
-				$serviceStart = new MongoDate($subscriber['sfrom']);
-				if(!($serviceStart instanceof MongoDate)) {
-					Billrun_Factory::log("from " . $serviceStart);
-					throw new Exception("For not plan dates are mongo dates");
+			if(isset($subscriber['services']) && is_array($subscriber['services'])) {
+				foreach($subscriber['services'] as  $tmpService) {
+					 $serviceData = array( 'name' => $tmpService['name'],
+											'start'=> $tmpService['from']->sec,
+											'end'=> min($tmpService['to']->sec, $endTime ) );
+					 
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start'));
+					$currServices[$stamp] = $serviceData; 
 				}
-				$serviceRow = array("service" => $key, "start" => $serviceStart->sec);
-				$servicesData[$key] = $serviceRow;
-			}
+				// Check for removed services in the current subscriber record.
+				$serviceCompare = function  ($a, $b)  {
+					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start'));
+					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start'));
+					return $aStamp - $bStamp;
+				};
+				
+				$removedServices  = array_udiff($services, $currServices, $serviceCompare);
+				foreach($removedServices as $stamp => $removed) {
+					if($sto < $removed['end'] && $sto <= $services[$stamp]['end']) {
+						$services[$stamp]['end'] = $sto;
+					}
+				}
+				$services = array_merge($services,$currServices);
+			}	
 			
-			// Handle the removed services. 
-			foreach ($removed as $removedService) {
-				$key = $removedService['name'];
-				$updateService = $servicesData[$key];
-				unset($servicesData[$key]);
-				$serviceEnd = $subscriber['plans'][0]['from']->sec;
-				$updateService['end'] = $serviceEnd;
-
-				// Push back
-				$servicesAggregatorData[$serviceEnd][] = $updateService;
-			}
 		}
-
-		foreach ($servicesData as $lastService) {
-			$lastService['end'] = $sto;
-			$servicesAggregatorData["$sto"][] = $lastService;
+		
+		foreach($services as $service) {
+				$servicesAggregatorData[$service['end']][] = $service;
 		}
 		
 		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);

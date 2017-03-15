@@ -216,10 +216,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return $pricingData;
 			}
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
+		}
+	}
+	
+	/**
+	 * Handles special cases in customer pricing needs to be updated after price calculation
+	 * 
+	 * @param $row (reference) - will be changed 
+	 */
+	protected function afterCustomerPricing(&$row) {
+		if ($row['type'] == 'credit' && $row['usaget'] === 'refund') { // handle the case of refund by usagev (calculators can only handle positive values)
+			$row['aprice'] = -abs($row['aprice']);
+
 		}
 	}
 
@@ -269,21 +282,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 */
 	public function removeBalanceTx($row) {
-		$query = array(
-			'sid' => $row['sid'],
-			'from' => array(
-				'$lte' => $row['urt'],
-			),
-			'to' => array(
-				'$gt' => $row['urt'],
-			),
-		);
-		$values = array(
-			'$unset' => array(
-				'tx.' . $row['stamp'] => 1
-			)
-		);
-		$this->balances->update($query, $values);
+		Billrun_Balances_Util::removeTx($row);
 	}
 
 	/**

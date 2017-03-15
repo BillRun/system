@@ -133,29 +133,31 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				return $row;
 			}
 		}
-
-		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
-			if (is_numeric($subscriber->{$key})) {
-				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
-			}
-			$subscriber_field = $subscriber->{$key};
-			if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) {
-				$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
-			} else {
-				$row[$key] = $subscriber_field;
-			}
-		}
 		
-		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
-			if ($this->isExtraDataRelevant($row, $key)) {
-				$subscriber_field = $subscriber->{$key};
-				if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) { // if existing value is array and in input value is array let's do merge
-					$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
-				} else {
-					$row[$key] = $subscriber_field;
-				}
-			}
-		}
+		$row = $this->enrichWithSubscriberInformation($row,$subscriber);
+
+//		foreach (array_keys($subscriber->getAvailableFields()) as $key) {
+//			if (is_numeric($subscriber->{$key})) {
+//				$subscriber->{$key} = intval($subscriber->{$key}); // remove this conversion when the CRM output contains integers
+//			}
+//				$subscriber_field = $subscriber->{$key};
+//			if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) {
+//				$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
+//			} else {
+//				$row[$key] = $subscriber_field;
+//			}
+//		}
+//		
+//		foreach (array_keys($subscriber->getCustomerExtraData())as $key) {
+//			if ($this->isExtraDataRelevant($row, $key)) {
+//					$subscriber_field = $subscriber->{$key};
+//				if (is_array($row[$key]) && (is_array($subscriber_field) || is_null($subscriber_field))) { // if existing value is array and in input value is array let's do merge
+//					$row[$key] = array_merge($row[$key], is_null($subscriber_field) ? array() : $subscriber_field);
+//				} else {
+//					$row[$key] = $subscriber_field;
+//				}
+//			}
+//		}
 
 		$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec));
 		$plan_ref = $plan->createRef();
@@ -163,6 +165,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::log('No plan found for subscriber ' . $row['sid'], Zend_Log::ALERT);
 			$row['usagev'] = 0;
 			$row['apr'] = 0;
+			return false;
+		}
+		
+		$connection_type = $plan->get('connection_type') ? $plan->get('connection_type') : 'postpaid';
+		if ($row['type'] === 'credit' && $connection_type !== 'postpaid') {
+			Billrun_Factory::log('Credit can only be applied on postpaid customers ' . $row->get('stamp'), Zend_Log::ERR);
 			return false;
 		}
 		
@@ -187,14 +195,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (empty($this->extraData[$line['type']]) || !in_array($field, $this->extraData[$line['type']])) {
 			return false;
 		}
-		if ($line['type'] == 'ggsn') {
-			if (is_array($line)) {
-				$arate = $line['arate'];
-			} else {
-				$arate = $line->get('arate', true);
-			}
-			return isset($this->intlGgsnRates[strval($arate['$id'])]);
-		}
+		
 		return true;
 	}
 
@@ -342,6 +343,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
 			}
 		}
+		if (empty($params) && $row['type'] === 'credit' && isset($row['sid'])) {
+			$params = array(
+				'sid' => $row['sid'],
+				'aid' => $row['aid'],
+			);
+		}
 		return $params;
 	}
 
@@ -382,49 +389,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-//		if ($this->isCustomerable($line)) {
-//			if (!$this->overrideMandatoryFields) {
-//				$validSubscriber = TRUE;
-//				foreach ($this->subscriber->getAvailableFields() as $requiredField) {
-//					if (!isset($line[$requiredField]) || is_null($line[$requiredField])) {
-//						$validSubscriber = FALSE;
-//						break;
-//					}
-//				}
-//				if ($validSubscriber) {
-//					return FALSE;
-//				}
-//			}
-//			$customer = $this->isOutgoingCall($line) ? "caller" : "callee";
-//			if (isset($this->translateCustomerIdentToAPI[$customer])) {
-//				$customer_identification_translation = $this->translateCustomerIdentToAPI[$customer];
-//				foreach ($customer_identification_translation as $key => $toKey) {
-//					if (isset($line[$key]) && strlen($line[$key])) {
-//						return true;
-//					}
-//				}
-//			}
-//		}
-//		return false;
 		return true;
 	}
 
-	protected function isCustomerable($line) {
-		if ($line['type'] == 'nsn') {
-			$record_type = $line['record_type'];
-			if ($record_type == '11' || $record_type == '12') {
-				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
-				if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
-					return false;
-				}
-				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
-					return false;
-				}
-				// what about IN direction (3060/3061)?
-			} else if (!in_array($record_type, array('01', '02'))) {
-				return false;
-			}
-		}
+	protected function isCustomerable($line) {		
 		return true;
 	}
 
@@ -443,31 +411,42 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		return $outgoing;
 	}
-
-	protected function loadIntlGgsnRates() {
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$query = array(
-			'params.sgsn_addresses' => array(
-				'$exists' => TRUE,
-			),
-			'key' => array(
-				'$ne' => 'INTERNET_BILL_BY_VOLUME',
-			),
-		);
-		$rates = $rates_coll->query($query)->cursor();
-		foreach ($rates as $rate) {
-			$this->intlGgsnRates[strval($rate->getId())] = $rate;
-		}
-	}
 	
 	protected function getCustomerIdentificationTranslation() {
 		$customerIdentificationTranslation = array();
 		foreach (Billrun_Factory::config()->getConfigValue('file_types', array()) as $fileSettings) {
-			if (!empty($fileSettings['customer_identification_fields'])) {
+			if (Billrun_Config::isFileTypeConfigEnabled($fileSettings) && !empty($fileSettings['customer_identification_fields'])) {
 				$customerIdentificationTranslation[$fileSettings['file_type']] = $fileSettings['customer_identification_fields'];
 			}
 		}
 		return $customerIdentificationTranslation;
 	}
 
+	protected function enrichWithSubscriberInformation($row, $subscriber) {
+		$enrichedData = array();
+		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
+		$enrinchmentMapping = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array());
+		foreach($enrinchmentMapping as $mapping ) {
+			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
+		}
+		if(!empty($enrichedData)) {
+			if($row instanceof Mongodloid_Entity) {
+				$row->setRawData( array_merge($rowData, $enrichedData));
+			} else {
+				$row = array_merge($row,$enrichedData);
+			}
+		}
+		return $row;
+	}
+	
+	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
+		$retServices = array();
+		foreach($services as $service) {
+			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+				$retServices[] = $service['name'];
+			}
+		}
+		return $retServices;;
+	}
+	
 }

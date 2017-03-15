@@ -119,6 +119,10 @@ abstract class Billrun_Account extends Billrun_Base {
 		return $this->customerExtraData;
 	}
 	
+	public function getCustomerData() {
+		return $this->data;
+	}
+	
 	/**
 	 * 
 	 * @return Billrun_Collection
@@ -129,4 +133,5 @@ abstract class Billrun_Account extends Billrun_Base {
 	abstract public function getExcludedFromCollection($aids = array());
 
 
+	
 }

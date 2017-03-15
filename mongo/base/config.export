@@ -28,14 +28,6 @@
         }
     },
     "pricing": {
-        "vat": {
-            "v": 0.17,
-            "t": "Float",
-            "range": {
-                "max": 1,
-                "min" : 0
-            }
-        },
         "currency": "USD"
     },
     "log": {
@@ -133,12 +125,12 @@
                 "field_name": "firstname",
                 "mandatory": true,
                 "title": "First name",
-				"show_in_list" : true
+                "show_in_list" : true
             }, {
                 "field_name": "lastname",
                 "mandatory": true,
                 "title": "Last name",
-				"show_in_list" : true
+                "show_in_list" : true
             }, {
                 "field_name": "email",
                 "mandatory": true
@@ -147,19 +139,24 @@
                 "mandatory": true
             }, {
                 "field_name": "address",
-                "mandatory": true
-            }, {
-                "field_name": "card_token",
-                "editable": false,
-                "display": false
-            }, {
-                "field_name": "card_expiration",
-                "editable": false,
-                "display": false
-            }, {
+                "mandatory": true,
+                "title": "Address"
+            },
+            {
+                "field_name": "zip_code",
+                "title": "Zip code",
+                "generated": false,
+                "unique": false,
+                "editable": true,
+                "mandatory": true,
+                "system": true,
+                "show_in_list": false,
+                "display": true
+            },
+            {
                 "field_name": "payment_gateway",
                 "editable": false,
- 		"display": true
+         "display": true
             }, {
                 "field_name": "personal_id",
                 "editable": false,
@@ -242,20 +239,20 @@
     "receive": "1",
     "process": "1",
     "calculate": "1",
-		"tenant": {
-		  "name": {
-		    "t": "String",
-		    "v": "Example Company"
-		  },
-		  "address": {
-		    "t": "String",
-		    "v": "Example address"
-		  },
-		  "phone": "199-522-001",
-		  "email": "example@example.com",
-		  "website": "example.com"
-		},
-		"invoice_export": {
+        "tenant": {
+          "name": {
+            "t": "String",
+            "v": "Example Company"
+          },
+          "address": {
+            "t": "String",
+            "v": "Example address"
+          },
+          "phone": "199-522-001",
+          "email": "example@example.com",
+          "website": "example.com"
+        },
+    "invoice_export": {
       "export": "files/invoices/",
       "generator": {
         "type": "WkPdf"
@@ -276,5 +273,22 @@
       ]
     },
   "export_generators": [],
-  "payment_gateways" : [ ]
+  "payment_gateways" : [],
+  "taxation" :{
+    "tax_type": "vat",
+     "CSI": {
+        "taxation_mapping": [],
+        "provider": "",
+        "auth_code": "",
+        "apply_optional_charges": true
+     },
+     "vat": {
+       "v": 0.17,
+       "t": "Float",
+       "range": {
+         "max": 1,
+         "min" : 0
+       }
+     }
+  }
 }

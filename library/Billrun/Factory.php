@@ -322,7 +322,7 @@ class Billrun_Factory {
 	 */
 	static public function collectionSteps() {
 		if (!self::$collectionSteps) {
-			$settings = self::config()->getConfigValue('collectionSteps', array());
+			$settings = self::config()->getConfigValue('collection_steps', array());
 			self::$collectionSteps = Billrun_CollectionSteps::getInstance($settings);
 		}
 
@@ -470,6 +470,10 @@ class Billrun_Factory {
 			return FALSE;
 		}
 		return $gateway;
+	}
+	
+	public static function remoteClient($param) {
+		return new SoapClient($param);
 	}
 
 }

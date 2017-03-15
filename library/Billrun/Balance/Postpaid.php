@@ -40,7 +40,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
 		$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan);
+		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec);
 	}
 
 	/**
@@ -50,11 +50,19 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $from billrun start date
 	 * @param type $to billrun end date
 	 * @param Billrun_Plan $plan the subscriber plan.
+	 * @param type $urt line time
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan) {
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt) {
 		$query = array(
+			'aid' => $aid,
 			'sid' => $sid,
+			'from' => array(
+				'$lte' => new MongoDate($urt),
+			),
+			'to' => array(
+				'$gte' => new MongoDate($urt),
+			),
 		);
 		$update = array(
 			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan),
@@ -113,10 +121,12 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
-		$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
-		$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
-		$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+		if ($this->get('sid') != 0) {
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
+			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
+			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
+		}
 		// update balance group (if exists); supported only on postpaid
 		$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_totals_key);
 		$pricingData['usagesb'] = floatval($currentUsage);
@@ -138,16 +148,30 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		}
 		foreach ($pricingData['arategroups'] as &$arategroup) {
 			$group = $arategroup['name'];
-			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
-			$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
-			$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
-			$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
-//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-			if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
-				$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+			if (isset($arategroup['cost'])) {
+				// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
+				$update['$inc']['balance.groups.' . $group . '.cost'] = $arategroup['cost'];
+				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
+				if (isset($this->get('balance')['groups'][$group]['cost'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['cost']);
+				} else {
+					$arategroup['usagesb'] = 0;
+				}
 			} else {
-				$arategroup['usagesb'] = 0;
+				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
+				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
+//				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
+				if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+				} else {
+					$arategroup['usagesb'] = 0;
+				}
 			}
+			// $subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['cost'];
 		}
 	}
 

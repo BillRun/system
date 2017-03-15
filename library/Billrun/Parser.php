@@ -33,9 +33,9 @@ abstract class Billrun_Parser extends Billrun_Base {
 	 */
 	protected $return = 'array';
 	
-	protected $headerRows;
-	protected $dataRows;
-	protected $trailerRows;
+	protected $headerRows = array();
+	protected $dataRows = array();
+	protected $trailerRows = array();
 
 	public function __construct($options) {
 

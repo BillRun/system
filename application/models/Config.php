@@ -6,7 +6,6 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
-require_once APPLICATION_PATH . '/library/vendor/autoload.php';
 
 /**
  * Configmodel class
@@ -36,6 +35,12 @@ class ConfigModel {
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
+        
+        /**
+	 * reserved names of File Types.
+	 * @var array
+	 */
+        protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
 
 	public function __construct() {
 		// load the config data from db
@@ -81,7 +86,7 @@ class ConfigModel {
 	}
 
 	public function getFromConfig($category, $data) {
-		$currentConfig = $this->getConfig();
+		$currentConfig = $this->getConfig(true);
 
 		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
@@ -192,6 +197,10 @@ class ConfigModel {
 		}
 		// TODO: Create a config class to handle just file_types.
 		else if ($category === 'file_types') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for file types.");
+				return 0;
+			}
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
@@ -260,6 +269,8 @@ class ConfigModel {
  			if (!$generatorSettings){
  				return 0;
  			}
+		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
+				throw new Exception($data . ' is illegal usage type');
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -331,6 +342,11 @@ class ConfigModel {
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
 	protected function _updateConfig(&$currentConfig, $category, $data) {
+		
+		if ($category === 'taxation') {
+			$this->updateTaxationSettings($currentConfig, $data);
+		}
+		
 		$valueInCategory = Billrun_Utils_Mongo::getValueByMongoIndex($currentConfig, $category);
 
 		if ($valueInCategory === null) {
@@ -386,7 +402,7 @@ class ConfigModel {
 		$splitCategory = explode('.', $category);
 
 		$template = $this->loadTemplate();
-		Billrun_Factory::log("Tempalte: " . print_r($template,1), Zend_Log::DEBUG);
+		Billrun_Factory::log("Template: " . print_r($template,1), Zend_Log::DEBUG);
 		$found = true;
 		$ptrTemplate = &$template;
 		$newConfig = $currentConfig;
@@ -538,10 +554,27 @@ class ConfigModel {
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
+	
+	public function setEnabled($category, $data, $enabled) {
+		$updatedData = $this->getConfig();
+		unset($updatedData['_id']);
+		if ($category === 'file_types') {
+			foreach ($updatedData['file_types'] as &$someFtSettings) {
+				if ($someFtSettings['file_type'] == $data['file_type']) {
+					$someFtSettings['enabled'] = $enabled;
+					break;
+				}
+			}
+		}
+ 
+		$ret = $this->collection->insert($updatedData);
+		return !empty($ret['ok']);
+	}
 
-	protected function getFileTypeSettings($config, $fileType) {
-		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	protected function getFileTypeSettings($config, $fileType, $enabledOnly = false) {
+		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType && 
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		})) {
 			return current($filtered);
 		}
@@ -631,6 +664,9 @@ class ConfigModel {
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
 		$completeFileSettings = FALSE;
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
+                if ($this->isReservedFileTypeName($fileType)) {
+                    throw new Exception($fileType . ' is a reserved BillRun file type');
+                }
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
 		}
@@ -669,6 +705,11 @@ class ConfigModel {
 	protected function validateType($type) {
 		$allowedTypes = array('realtime');
 		return in_array($type, $allowedTypes);
+	}
+	
+	protected function validateUsageType($usageType) {
+		$reservedUsageTypes = array('cost');
+		return !in_array($usageType, $reservedUsageTypes);
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
@@ -713,6 +754,9 @@ class ConfigModel {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
 			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			if (!isset($fileSettings['processor']['usaget_mapping'])) {
+				$fileSettings['processor']['usaget_mapping'] = array();
+			}
 			$useFromStructure = $uniqueFields;
 			$usagetMappingSource = array_map(function($mapping) {
 				return $mapping['src_field'];
@@ -906,7 +950,7 @@ class ConfigModel {
 		if (!array_key_exists('connections', $receiverSettings) || !is_array($receiverSettings['connections']) || !$receiverSettings['connections']) {
 			throw new Exception('Receiver \'connections\' does not exist or is empty');
 		}
-		$receiverSettings['type'] = 'ftp';
+		
 		if (isset($receiverSettings['limit'])) {
 			if (!Billrun_Util::IsIntegerValue($receiverSettings['limit']) || $receiverSettings['limit'] < 1) {
 				throw new Exception('Illegal receiver limit value ' . $receiverSettings['limit']);
@@ -915,7 +959,7 @@ class ConfigModel {
 		} else {
 			$receiverSettings['limit'] = 3;
 		}
-		if ($receiverSettings['type'] == 'ftp') {
+		if (in_array($receiverSettings['type'], array('ftp', 'ssh'))) {
 			foreach ($receiverSettings['connections'] as $index => $connection) {
 				if (!isset($connection['name'], $connection['host'], $connection['user'], $connection['password'], $connection['remote_directory'], $connection['passive'], $connection['delete_received'])) {
 					throw new Exception('Missing receiver\'s connection field at index ' . $index);
@@ -991,6 +1035,106 @@ class ConfigModel {
 		$data = $this->getConfig();
 		$saveData = array_merge($data, $items);
 		$this->setConfig($saveData);
+	}
+        
+        protected function isReservedFileTypeName($name) {
+            $lowCaseName = strtolower($name);
+            return in_array($lowCaseName, $this->reservedFileTypeName);
+        }
+	
+	protected function getModelsWithTaxation() {
+		return array('plans', 'services', 'rates');
+	}
+	
+	protected function getModelName($model) {
+		if ($model === 'rates') {
+			return 'Products';
+		}
+		
+		return ucfirst($model);
+	}
+	
+	protected function getMandatoryTaxationFields($withTitles = false) {
+		$ret = array(
+			'taxation.service_code' => 'Taxation service code',
+			'taxation.product_code' => 'Taxation product code',
+		);
+		if ($withTitles) {
+			return $ret;
+		}
+		return array_keys($ret);
+	}
+		
+	protected function updateTaxationSettings(&$config, $data) {
+		$mandatory = ($data['tax_type'] === 'CSI');
+		$modelsWithTaxation = $this->getModelsWithTaxation();
+		$mandatoryTaxationFields = $this->getMandatoryTaxationFields(true);
+		foreach ($modelsWithTaxation as $model) {
+		   foreach ($mandatoryTaxationFields as $mandatoryField => $mandatoryFieldTitle) {
+			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatoryFieldTitle, $mandatory);
+		   }
+		}
+	}
+	
+	protected function setMandatoryField(&$config, $model, $fieldName, $title, $mandatory = true) {
+		foreach ($config[$model]['fields'] as &$field) {
+			if ($field['field_name'] === $fieldName) {
+				$field['title'] = $title;
+				$field['display'] = $mandatory;
+				$field['editable'] = $mandatory;
+				$field['mandatory'] = $mandatory;
+				return;
+			}
+		}
+		
+		$config[$model]['fields'][] = array(
+			'field_name' => $fieldName,
+			'title' => $title,
+			'display' => $mandatory,
+			'editable' => $mandatory,
+			'mandatory' => $mandatory,
+		);
+	}
+	
+	/**
+	 * Get warnings of configuration if exists
+	 * 
+	 * @param type $category
+	 * @param type $data
+	 */
+	public function getWarnings($category, $data) {
+		$warnings = array();
+		
+		if (Billrun_Util::isAssoc($data)) {
+			$data = array($data);
+		}
+		
+		foreach ($data as $config) {
+			if (isset($config['taxation']) && $config['taxation']['tax_type'] === 'CSI') {
+				$modelsWithTaxation = $this->getModelsWithTaxation();
+				$mandatoryTaxationFields = $this->getMandatoryTaxationFields();
+				foreach ($modelsWithTaxation as $model) {
+					if ($this->hasEntitiesWithoutMandatoryFields($model, $mandatoryTaxationFields)) {
+						$warnings[] = 'There are valid entities of type "' . $this->getModelName($model) . '" without mandatory fields: ' . implode(', ', $mandatoryTaxationFields);
+					}
+				}
+			}
+		}
+		
+		return $warnings;
+	}
+	
+	protected function hasEntitiesWithoutMandatoryFields($model, $mandatoryFields) {
+		if (empty($mandatoryFields)) {
+			return false;
+		}
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		foreach ($mandatoryFields as $mandatoryField) {
+			$query['$or'][] = array($mandatoryField => '');
+			$query['$or'][] = array($mandatoryField => array('$exists' => false));
+		}
+		
+		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
 	}
 
 }

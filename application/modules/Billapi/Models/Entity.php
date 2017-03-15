@@ -14,6 +14,16 @@
  */
 class Models_Entity {
 
+	use Models_Verification;
+	
+	/**
+	 * Entirty available statuses values
+	 */
+	const FUTURE = 'future';
+	const EXPIRED = 'expired';
+	const ACTIVE = 'active';
+	const ACTIVE_WITH_FUTURE = 'active_with_future';
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -91,9 +101,13 @@ class Models_Entity {
 	protected $availableOperations = array('query', 'update', 'sort');
 
 	public function __construct($params) {
-		$this->collectionName = $params['collection'];
+		if ($params['collection'] == 'accounts') {
+			$this->collectionName = 'subscribers';
+		} else {
+			$this->collectionName = $params['collection'];
+		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
-		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $this->collectionName, array());
+		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -103,9 +117,12 @@ class Models_Entity {
 	protected function init($params) {
 		$query = isset($params['request']['query']) ? @json_decode($params['request']['query'], TRUE) : array();
 		$update = isset($params['request']['update']) ? @json_decode($params['request']['update'], TRUE) : array();
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update);
-		$this->query = $translatedQuery;
-		$this->update = $translatedUpdate;
+		if (json_last_error() != JSON_ERROR_NONE) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
+		}
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
+		$this->setQuery($translatedQuery);
+		$this->setUpdate($translatedUpdate);
 		foreach ($this->availableOperations as $operation) {
 			if (isset($params[$operation])) {
 				$this->{$operation} = $params[$operation];
@@ -116,77 +133,10 @@ class Models_Entity {
 		$size = Billrun_Util::getFieldVal($params['size'], 10);
 		$this->size = Billrun_Util::IsIntegerValue($size) ? $size : 10;
 		if (isset($this->query['_id'])) {
-			$this->before = $this->loadById($this->query['_id']);
+			$this->setBefore($this->loadById($this->query['_id']));
 		}
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
-		}
-	}
-
-	/**
-	 * Returns the translated (validated) request
-	 * @param array $query the query parameter
-	 * @param array $data the update parameter
-	 * 
-	 * @return array
-	 * 
-	 * @throws Billrun_Exceptions_Api
-	 * @throws Billrun_Exceptions_InvalidFields
-	 */
-	protected function validateRequest($query, $data) {
-		$options = array();
-		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
-			$options['fields'] = array();
-			$translated[$type] = array();
-			foreach (Billrun_Util::getFieldVal($this->config[$this->action][$type], array()) as $param) {
-				$name = $param['name'];
-				$isGenerated = (isset($param['generated']) && $param['generated']);
-				if (!isset($params[$name])) {
-					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
-						throw new Billrun_Exceptions_Api($this->errorBase + 1, array(), 'Mandatory ' . str_replace('_parameters', '', $type) . ' parameter ' . $name . ' missing');
-					}
-					if (!$isGenerated) {
-						continue;
-					}
-				}
-				$options['fields'][] = array(
-					'name' => $name,
-					'type' => $param['type'],
-					'preConversions' => isset($param['pre_conversion']) ? $param['pre_conversion'] : [],
-					'postConversions' => isset($param['post_conversion']) ? $param['post_conversion'] : [],
-					'options' => [],
-				);
-				if (!$isGenerated) {
-					$knownParams[$name] = $params[$name];
-				} else { // on generate field the value will be automatically generate
-					$knownParams[$name] = null;
-				}
-				unset($params[$name]);
-			}
-			if ($options['fields']) {
-				$translatorModel = new Api_TranslatorModel($options);
-				$ret = $translatorModel->translate($knownParams);
-				$translated[$type] = $ret['data'];
-//				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
-				if (!$ret['success']) {
-					throw new Billrun_Exceptions_InvalidFields($translated[$type]);
-				}
-			}
-			if (!Billrun_Util::getFieldVal($this->config[$this->action]['restrict_query'], 1) && $params) {
-				$translated[$type] = array_merge($translated[$type], $params);
-			}
-		}
-		$this->verifyTranslated($translated);
-		return array($translated['query_parameters'], $translated['update_parameters']);
-	}
-
-	/**
-	 * Verify the translated query & update
-	 * @param array $translated
-	 */
-	protected function verifyTranslated($translated) {
-		if (!$translated['query_parameters'] && !$translated['update_parameters']) {
-			throw new Billrun_Exceptions_Api($this->errorBase + 2, array(), 'No query/update was found or entity not supported');
 		}
 	}
 
@@ -197,13 +147,20 @@ class Models_Entity {
 	 */
 	protected function addCustomFields($fields, $originalUpdate) {
 //		$ad = $this->getCustomFields();
-		$additionalFields = array_column($this->getCustomFields(), 'field_name');
+		$customFields = $this->getCustomFields();
+		$additionalFields = array_column($customFields, 'field_name');
+		$mandatorylValues = array_map(function($field) {return isset($field['mandatory']) ? $field['mandatory'] : false;}, $customFields);
+		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if (isset($originalUpdate[$field])) {
-				$this->update[$field] = $originalUpdate[$field];
+			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
+			}
+			$val = Billrun_Util::getIn($originalUpdate, $field, false);
+			if ($val) {
+				Billrun_Util::setIn($this->update, $field, $val);
 			}
 		}
 //		print_R($this->update);die;
@@ -222,6 +179,12 @@ class Models_Entity {
 	public function create() {
 		$this->action = 'create';
 		unset($this->update['_id']);
+		if (empty($this->update['from'])) {
+			$this->update['from'] = new MongoDate();
+		}
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);
@@ -237,12 +200,45 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
+		}
 		$this->action = 'update';
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
 		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+
+	/**
+	 * method to check if the update is valid
+	 * actual for update and closeandnew methods
+	 * 
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function preCheckUpdate() {
+		$ret = $this->checkDateRangeFields();
+		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
+		return $ret;
+	}
+	
+	/**
+	 * method to check date range fields
+	 * by default checking only to field (not in the past)
+	 * 
+	 * @param int $time (optional) unix timestamp for minimum to value
+	 * 
+	 * @return true if check success else false
+	 */
+	protected function checkDateRangeFields($time = null) {
+		if (is_null($time)) {
+			$time = time();
+		}
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < $time) {
+			return false;
+		}
 		return true;
 	}
 
@@ -254,13 +250,20 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
-		$this->action = 'closeandnew';
-		if (!isset($this->update['from'])) {
+		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
+		}
+		$this->action = 'closeandnew';
+		$now = new MongoDate();
+		if (!isset($this->update['from'])) {
+			$this->update['from'] = $now;
+		}
+		if ($this->update['from']->sec < $now->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'closeandnew must get a future update');
 		}
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec - 1)
+				'to' => new MongoDate($this->update['from']->sec)
 			)
 		);
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
@@ -268,7 +271,7 @@ class Models_Entity {
 			return false;
 		}
 
-		$oldId = $this->query['_id'];
+//		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
@@ -296,6 +299,15 @@ class Models_Entity {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Verify that an entity can be deleted.
+	 * 
+	 * @return boolean
+	 */
+	protected function canEntityBeDeleted() {
+		return true;
+	}
 
 	/**
 	 * Deletes an entity by a query
@@ -305,11 +317,22 @@ class Models_Entity {
 	 */
 	public function delete() {
 		$this->action = 'delete';
-		if (!$this->query || empty($this->query)) { // currently must have some query
-			return;
+		if (!$this->canEntityBeDeleted()) {
+			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
-		$this->remove($this->query); // TODO: check return value (success to remove?)
+		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
+			return false;
+		}
+		$status = $this->remove($this->query); // TODO: check return value (success to remove?)
+		if (!isset($status['ok']) || !$status['ok']) {
+			return false;
+		}
 		$this->trackChanges(null); // assuming remove by _id
+		
+		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
+			return $this->reopenPreviousEntry();
+		}
+		return true;
 	}
 
 	/**
@@ -369,7 +392,12 @@ class Models_Entity {
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
-		return array_values(iterator_to_array($res));
+		
+		$records =  array_values(iterator_to_array($res));
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+		}
+		return $records;
 	}
 
 	/**
@@ -377,7 +405,53 @@ class Models_Entity {
 	 * @param array $query
 	 */
 	protected function remove($query) {
-		$this->collection->remove($query);
+		return $this->collection->remove($query);
+	}
+	
+	/**
+	 * future entity was removed - need to update the to of the previous change
+	 */
+	protected function reopenPreviousEntry() {
+		$key = $this->getKeyField();
+		$previousEntryQuery = array(
+			$key => $this->before[$key],
+		);
+		$previousEntrySort = array(
+			'_id' => -1
+		);
+		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
+				->sort($previousEntrySort)->limit(1)->current();
+		if (!$previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+			$this->setUpdate(array('to' => $this->before['to']));
+			$this->setBefore($previousEntry);
+			return $this->update();
+		}
+		return TRUE;
+	}
+
+	/**
+	 * method to update the update instruct
+	 * @param array $u mongo update instruct
+	 */
+	public function setUpdate($u) {
+		$this->update = $u;
+	}
+	
+	/**
+	 * method to update the query instruct
+	 * @param array $q mongo query instruct
+	 */
+	public function setQuery($q) {
+		$this->query = $q;
+	}
+
+	/**
+	 * method to update the before entity
+	 * @param array $b the before entity
+	 */
+	public function setBefore($b) {
+		$this->before = $b;
 	}
 
 	/**
@@ -419,7 +493,8 @@ class Models_Entity {
 				'collection' => $this->collectionName,
 				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
 				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] : null,
+				'key' => isset($this->update[$field]) ? $this->update[$field] : 
+							(isset($this->before[$field]) ? $this->before[$field] : null),
 			);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
 			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
@@ -446,8 +521,9 @@ class Models_Entity {
 	 * Inserts a document to the DB, as is
 	 * @param array $data
 	 */
-	protected function insert($data) {
-		return $this->collection->insert($data, array('w' => 1));
+	protected function insert(&$data) {
+		$ret = $this->collection->insert($data, array('w' => 1, 'j' => 1));
+		return $ret;
 	}
 
 	/**
@@ -483,6 +559,70 @@ class Models_Entity {
 			default:
 				return 'name';
 		}
+	}
+	
+	/**
+	 * Add revision info (status, early_expiration) to record
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $collection - Record collection
+	 * 
+	 * @return The record with revision info.
+	 */
+	static function setRevisionInfo($record, $collection) {
+		$status = self::getStatus($record, $collection);
+		$earlyExpiration = self::isEarlyExpiration($record, $status);
+		$record['revision_info'] = array(
+			"status" => $status,
+			"early_expiration" => $earlyExpiration,
+		);
+		return $record;
+	}
+	
+	/**
+	 * Calculate record status
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $collection - Record collection name
+	 * 
+	 * @return string Status, available values are: "future", "expired", "active_with_future", "active"
+	 */
+	static function getStatus($record, $collection) {
+		if (strtotime($record['to']) < time()) {
+			return self::EXPIRED;
+		}
+		if (strtotime($record['from']) > time()) {
+			return self::FUTURE;
+		}
+		// For active records, check if it has furure revisions
+		$query = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($record['to']), true);
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
+		foreach ($uniqueFields as $fieldName) {
+			$query[$fieldName] = $record[$fieldName];
+		}
+		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
+		$isFutureExist = $recordCollection->query($query)->count() > 0;
+		
+		if ($isFutureExist) {
+			return self::ACTIVE_WITH_FUTURE;
+		}
+		return self::ACTIVE;
+	}
+	
+	/**
+	 * Check if record was closed by close action.
+	 * true if the "to" field is less than 50 years from record "from" date.
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $status - Record status, available values are: "expired", "active_with_future", "active", "future"
+	 * 
+	 * @return bool
+	 */
+	static function isEarlyExpiration($record, $status) {
+		if ($status === self::FUTURE || $status === self::ACTIVE) {
+			return strtotime("+50 years", strtotime($record['from'])) > strtotime($record['to']);
+		}
+		return false;
 	}
 
 }

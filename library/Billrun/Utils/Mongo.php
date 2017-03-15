@@ -268,7 +268,7 @@ class Billrun_Utils_Mongo {
 	 * @param array $arr - Arr to translate its values.
 	 */
 	public static function convertQueryMongoDates(&$arr) {
-		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/';
+		$ISODatePattern = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d\d\:?\d\d)$/';
 		foreach ($arr as &$value) {
 			if (is_array($value)) {
 				self::convertQueryMongoDates($value);
@@ -357,22 +357,24 @@ class Billrun_Utils_Mongo {
 	/**
 	 * Get objects that overlap with the supplied time range
 	 * @param string $fromFieldName
-	 * @param int $from
 	 * @param string $toFieldName
+	 * @param int $from
 	 * @param int $to
 	 * @return array The resulted query
 	 */
-	public static function getOverlappingWithRange($fromFieldName, $from, $toFieldName, $to) {
+	public static function getOverlappingWithRange($fromFieldName, $toFieldName, $from, $to) {
 		$fromTime = new MongoDate($from);
 		$toTime = new MongoDate($to);
 		$res = [
 			'$or' => [
+				// Starts during range
 				[
 					$fromFieldName => [
 						'$gte' => $fromTime,
 						'$lt' => $toTime,
 					]
 				],
+				// Starts before range and ends after range start
 				[
 					$fromFieldName => [
 						'$lt' => $fromTime,
@@ -381,7 +383,7 @@ class Billrun_Utils_Mongo {
 						'$gt' => $fromTime,
 					],
 				],
-			]
+			],
 		];
 		return $res;
 	}

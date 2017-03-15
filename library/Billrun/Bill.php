@@ -452,6 +452,9 @@ abstract class Billrun_Bill {
 				),
 				array(
 					'type' => 'rec',
+					'waiting_for_confirmation' => array(
+						'$ne' => true,
+					),
 				),
 			),
 		);
@@ -505,7 +508,7 @@ abstract class Billrun_Bill {
 	
 	public static function pay($method, $paymentsArr, $options = array()) {
 		$involvedAccounts = $payments = array();
-		if (in_array($method, array('cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
+		if (in_array($method, array('automatic','cheque', 'wire_transfer', 'cash', 'credit', 'write_off', 'debit'))) {
 			$className = Billrun_Bill_Payment::getClassByPaymentMethod($method);
 			foreach ($paymentsArr as $rawPayment) {
 				$aid = intval($rawPayment['aid']);
@@ -581,7 +584,7 @@ abstract class Billrun_Bill {
 						if ($payment->getDir() == 'fc') {
 							foreach ($payment->getPaidBills() as $billType => $bills) {
 								foreach ($bills as $billId => $amountPaid) {
-									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, $responseFromGateway['stage'])->save();
+									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();
 								}
 							}
 						} else {

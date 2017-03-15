@@ -16,7 +16,7 @@
 							</td>
 							<td>
 								<span class="label">Period</span>
-								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToReadable($data->get('billrun_key')); ?></h3>
+								<h3 class="inline"><?php echo Billrun_Util::billrunKeyToPeriodSpan($data->get('billrun_key'),$span_date_format); ?></h3>
 							</td>
 						</tr>
 					</tbody></table>
@@ -31,7 +31,7 @@
 
 		<div class="section section-invoice-details">
 			<div class="section-head">
-				<h2 class="section-title">Usage summary</h2><!-- /.section-title -->
+				<h2 class="section-title">Subscription summary</h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
@@ -49,64 +49,55 @@
 							<?php if (empty($sub['totals'][$key])) { continue; } ?>
 							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
 								<td><?php echo ucfirst($title); ?></td>
-								<td><?php echo '$' . number_format($sub['totals'][$key]['after_vat'], 2); ?></td>
+								<td><?php echo '$' . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
 							</tr>
 						<?php } ?>
 							<tr class="total">
-								<td>TOTAL</td>
+								<td>SUBTOTAL</td>
 								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
-							<tr class="total">
-								<td>VAT (17%)</td>
-								<td><?php echo '$' . number_format($sub['totals']['after_vat'] - $sub['totals']['before_vat'], 2); ?></td>
-							</tr>
-						</tbody>
-						<tfoot>
+							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
+
 							<tr class="grand-total">
 								<td>GRAND TOTAL</td>
 								<td><?php echo '$' . number_format($sub['totals']['after_vat'], 2); ?></td>
 							</tr>
-						</tfoot>
+						</tbody>
 					</table>
 				</div><!-- /.table table-default table-default-primary -->
 			</div><!-- /.section-body -->
 		</div><!-- /.section section-invoice-total -->
-
+		
+		<!---- break the page to the detail section -->
 		<div class="break"></div>
+		<div class="section section-invoice-details">
+			<div class="section-head">
+				<h2 class="section-title">Subscription line items</h2><!-- /.section-title -->
+			</div><!-- /.section-head -->
+
+			<div class="section-body">
+				<?php 
+					if(!empty($this->lines[$sub['sid']])) {
+						echo $this->render($this->details_table_template,array('lines'=> $this->lines[$sub['sid']],'lines_detail_types' => $flat_line_types) ); 
+					}
+				?>
+			</div><!-- /.section-body -->
+		</div>
+		
+	<?php if($render_usage_details) { ?>	
 		<div class="section section-invoice-details">
 			<div class="section-head">
 				<h2 class="section-title">Usage details</h2><!-- /.section-title -->
 			</div><!-- /.section-head -->
 
 			<div class="section-body">
-				<div class="table table-default">
-					<table>
-						<thead>
-							<tr>
-								<th>Date &amp; Time</th>
-								<th>Type</th>
-								<th>Rate</th>
-								<th>Volume</th>
-								<th>Amount</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							<?php if (!empty($this->lines[$sub['sid']])) { ?>
-								<?php foreach ($this->lines[$sub['sid']] as $line) { ?>
-									<tr>
-										<td><?php echo date($date_format, $line['urt']->sec); ?></td>
-										<td><?php echo $line['type']; ?></td>
-										<td><?php echo $line['arate_key']; ?></td>
-										<td><?php echo number_format($line['usagev'], 2); ?></td>
-										<td><?php echo number_format($line['aprice'], 2); ?></td>
-									</tr>
-								<?php } ?>
-							<?php } ?>
-						</tbody>
-					</table>
-				</div><!-- /.table table-default -->
+				<?php 
+						if(!empty($this->lines[$sub['sid']])) {
+							echo $this->render($this->details_table_template,array('lines'=> $this->lines[$sub['sid']],'lines_detail_types' => $usage_line_types) ); 
+						}
+				?>
 			</div><!-- /.section-body -->
 		</div>
+	<?php } ?>
 	</div>
 <?php } ?>

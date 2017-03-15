@@ -36,5 +36,14 @@
 		"v" : { "main" : { "tmp" : "tmp" } }
 	},
 	"template_token":{},
-	"payment_gateways":[]
+	"payment_gateways":[],
+	"taxation" :{
+		"tax_type": "vat",
+		 "CSI": {
+				"taxation_mapping": [],
+				"provider": "",
+				"auth_code": "",
+				"apply_optional_charges": true
+		 }
+	}
 }

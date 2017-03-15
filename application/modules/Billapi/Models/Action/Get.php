@@ -40,9 +40,9 @@ class Models_Action_Get extends Models_Action {
 	protected $sort = array();
 
 	public function execute() {
-		if (!empty($this->request['query'])) {
-			$this->query = (array) json_decode($this->request['query'], true);
-		}
+//		if (!empty($this->request['query'])) {
+//			$this->query = (array) json_decode($this->request['query'], true);
+//		}
 
 		if (isset($this->request['page']) && is_numeric($this->request['page'])) {
 			$this->page = (int) $this->request['page'];
@@ -85,7 +85,14 @@ class Models_Action_Get extends Models_Action {
 			$ret->sort((array) $this->sort);
 		}
 
-		return array_values(iterator_to_array($ret));
+		$records =  array_values(iterator_to_array($ret));
+		foreach($records as  &$record) {
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+			if(empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) {
+				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
+			}
+		}
+		return $records;
 	}
 
 	/**

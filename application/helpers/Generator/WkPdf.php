@@ -20,6 +20,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $filePermissions =  0666; 
 	protected $invoice_threshold= 0.005;
 	
+	protected $render_usage_details= FALSE;
+	protected $render_subscription_details= TRUE;
 	/**
 	 *
 	 * @var Mongodloid_Cursor
@@ -36,15 +38,15 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 		//TODO: use tenant LOGO
-		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/theme/logo.png" );
+		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . '/views/' .'invoices/';
 		
 		$this->paths = array(
-			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/'.$this->stamp.'/',
-			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/'.$this->stamp.'/',
+			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/',
+			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/',
 			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $this->stamp . '/',
 		);
 		
@@ -57,7 +59,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
 		$this->css_path = APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.theme');
 		$this->font_awesome_css_path = APPLICATION_PATH . '/public/css/font-awesome.css';
-
+		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_usage_details',FALSE));
+		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'],Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details',TRUE));
+		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css',''));
 	}
 	
 	/**
@@ -72,8 +76,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('company_name', Billrun_Util::getCompanyName());
 		$this->view->assign('sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.sumup_template', ''));
 		$this->view->assign('details_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_template', ''));
+		$this->view->assign('details_table_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.details_table_template', '/application/views/invoices/details/details_table.phtml'));
+		$this->view->assign('usage_line_types',  Billrun_Factory::config()->getFileTypes());
+		$this->view->assign('flat_line_types',  Billrun_Factory::config()->getConfigValue(self::$type . '.flat_line_types', array('flat','service','credit')));
+		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', '/application/views/invoices/tax/tax.phtml'));
+		$this->view->assign('simple_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.simple_sumup_template', '/application/views/invoices/sumup/simple_sumup.phtml'));
+		$this->view->assign('complex_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.complex_sumup_template', '/application/views/invoices/sumup/complex_sumup.phtml'));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
-		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y H:i:s'));
+		$this->view->assign('datetime_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.datetime_format', 'd/m/Y H:i:s'));
+		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y'));
+		$this->view->assign('span_date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.span_date_format', 'd/m'));
+		$this->view->assign('use_complex_sumup',  Billrun_Factory::config()->getConfigValue(self::$type . '.use_complex_sumup', FALSE));
+		$this->view->assign('tanent_css', $this->tanent_css);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 	}
 	
@@ -98,6 +112,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$billrun = Billrun_Factory::db()->billrunCollection();
 		$query = array('billrun_key' => $this->stamp, '$or' => array(	
 																		array('totals.after_vat'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)) ) , 
+																		array('totals.credit.after_vat'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold)) ) 
 //																		array('totals.before_discounts'=>array('$not' => array('$gt'=>-$this->invoice_threshold,'$lt'=>$this->invoice_threshold))) 
 																	) );
 		if(!empty($this->accountsToInvoice)) {
@@ -125,7 +140,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$pdf_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".pdf";
 			$html = $this->paths['html'].$file_name;
 			$pdf = $this->paths['pdf'].$pdf_name;
-					
+			
+			$this->accountSpecificViewParams($account);
+			
 			file_put_contents($html, $this->view->render($this->view_path . 'invoice.phtml'));
 			chmod( $html, $this->filePermissions );
 			
@@ -134,6 +151,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
 			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
+	}
+	
+	protected function accountSpecificViewParams($billrunData) {
+		$this->view->assign('render_usage_details', $this->render_usage_details);
+		$this->view->assign('render_subscription_details', $this->render_subscription_details);
+
+		if(isset($billrunData['attributes']['invoice_details']['usage_details'])) {
+			$this->view->assign('render_usage_details',$billrunData['attributes']['invoice_details']['usage_details']);
+		}
+		if(isset($billrunData['attributes']['invoice_details']['subscription_details'])) {
+			$this->view->assign('render_subscription_details',$billrunData['attributes']['invoice_details']['subscription_details']);
+		}
 	}
 	
 	protected function getDetailsKeys() {
@@ -199,6 +228,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function getInvoiceHeaderContent() {
 		//TODO : in future header should came from config
 		return "
+			{$this->tanent_css}
 			<div class='table'>
 				<table>
 					<tbody>
@@ -215,7 +245,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected function getInvoiceFooterContent() {
 		//TODO : in future footer should came from config
 		return "
-			<div class='table'>
+			{$this->tanent_css}
+			<div class='table footer'>
 			  <table style='font-size:16px;'>
 				<tbody><tr>
 					<td>
@@ -230,13 +261,17 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					  </ul>
 					</td>
 					<td>
-					  <p class='credentials'> <span class='text'>powered by</span> <img style='width:125px;object-fit:contain;' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
+					  <p class='credentials'> <span class='text'>powered by</span> <img class='billrun-logo' src='" . $this->billrun_footer_logo_path . "' alt=''></p>
 					</td>
 				  </tr>
 				</tbody>
 			  </table>
 			</div>";
 		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
+	}
+	
+	protected function buildTanentCss($css) {
+		return '<style>' . str_replace('<','',$css) .'</style>';
 	}
 	
 }

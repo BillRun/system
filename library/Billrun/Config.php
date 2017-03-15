@@ -79,7 +79,7 @@ class Billrun_Config {
 	public function addConfig($path) {
 		if (file_exists($path)) {
 			$addedConf = new Yaf_Config_Ini($path);
-			$this->config = new Yaf_Config_Simple($this->mergeConfigs($this->config->toArray(), $addedConf->toArray()));
+			$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf->toArray()));
 		} else {
 			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
@@ -91,7 +91,7 @@ class Billrun_Config {
 	 * @param type $moreImportantConf the  configuration array to merge from.
 	 * @return type array containing the  overriden values.
 	 */
-	protected function mergeConfigs($lessImportentConf, $moreImportantConf) {
+	public static function mergeConfigs($lessImportentConf, $moreImportantConf) {
 		// If the config value is not an array, or is a complex object then we
 		// there is no further level to retrieve.
 		// Return the conf value.
@@ -107,7 +107,7 @@ class Billrun_Config {
 			// If the key exists in the less importent config array then we have
 			// another level of config values to process.
 			if(isset($lessImportentConf[$key])) {
-				$confValue = $this->mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
+				$confValue = self::mergeConfigs($lessImportentConf[$key], $moreImportantConf[$key]);
 			} else {
 				$confValue = $moreImportantConf[$key];
 			}
@@ -145,9 +145,10 @@ class Billrun_Config {
 		return self::$instance[$stamp];
 	}
 	
-	public function getFileTypeSettings($fileType) {
-		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType) {
-			return $fileSettings['file_type'] === $fileType;
+	public function getFileTypeSettings($fileType, $enabledOnly = false) {
+		$fileType = array_filter($this->getConfigValue('file_types'), function($fileSettings) use ($fileType, $enabledOnly) {
+			return $fileSettings['file_type'] === $fileType &&
+				(!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings));
 		});
 		if ($fileType) {
 			$fileType = current($fileType);
@@ -155,10 +156,10 @@ class Billrun_Config {
 		return $fileType;
 	}
 
-	public function getFileTypes() {
-		return array_map(function($fileSettings) {
-			return $fileSettings['file_type'];
-		}, $this->getConfigValue('file_types'));
+	public function getFileTypes($enabledOnly = false) {
+		return array_filter(array_map(function($fileSettings) use($enabledOnly) {
+			return ((!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings)) ? $fileSettings['file_type'] : null);
+		}, $this->getConfigValue('file_types')));
 	}
 
 	public function loadDbConfig() {
@@ -177,7 +178,7 @@ class Billrun_Config {
 				unset($dbConfig['_id']);
 				$iniConfig = $this->config->toArray();
 				$this->translateComplex($dbConfig);
-				$this->config = new Yaf_Config_Simple($this->mergeConfigs($iniConfig, $dbConfig));
+				$this->config = new Yaf_Config_Simple(self::mergeConfigs($iniConfig, $dbConfig));
 				
 				// Set the timezone from the config.
 				$this->setTenantTimezone($dbConfig);
@@ -435,6 +436,10 @@ class Billrun_Config {
 	
 	public static function getMultitenantConfigPath() {
 		return self::$multitenantDir;
+	}
+		
+	public static function isFileTypeConfigEnabled($fileTypeSettings) {
+		return (!isset($fileTypeSettings['enabled']) || $fileTypeSettings['enabled']);
 	}
 
 }

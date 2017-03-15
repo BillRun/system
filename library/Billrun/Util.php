@@ -100,8 +100,9 @@ class Billrun_Util {
 	 * @param array $ar array to generate the stamp from
 	 * @return string the array stamp
 	 */
-	public static function generateArrayStamp($ar) {
-		return md5(serialize($ar));
+	public static function generateArrayStamp($ar, $filter = array()) {
+		
+		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
 
 	/**
@@ -187,7 +188,20 @@ class Billrun_Util {
 	 * @return type
 	 */
 	public static function billrunKeyToReadable($billrunKey) {
-		return date('F Y', strtotime($billrunKey . '01'));
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date('F Y', $cycleData->start());
+	}
+	
+	/**
+	 * Returns a readable date from billrun key.
+	 * example: converts "201607" to : "July 2016"
+	 * 
+	 * @param type $billrunKey
+	 * @return type
+	 */
+	public static function billrunKeyToPeriodSpan($billrunKey,$format) {
+		$cycleData = new Billrun_DataTypes_CycleTime($billrunKey);
+		return date($format, $cycleData->start()) .' - '. date($format, $cycleData->end()-1);
 	}
 
 	/**
@@ -1141,6 +1155,9 @@ class Billrun_Util {
 	 * @param array $data
 	 */
 	public static function parseDataToBillrunConvention($data = array()) {
+		if (empty($data)) {
+			return array();
+		}
 		$parsedData = array();
 		foreach ($data as $key => $value) {
 			if (is_array($value)) {
@@ -1394,8 +1411,7 @@ class Billrun_Util {
 	
 	public static function isValidCustomLineKey($jsonKey) {
 		if (strpos($jsonKey, '.') === FALSE) {
-			$protectedKeys = static::getBillRunProtectedLineKeys();
-			return is_scalar($jsonKey) && preg_match('/^(([a-z]|\d|_)+)$/', $jsonKey) && !in_array($jsonKey, $protectedKeys);
+			return is_scalar($jsonKey) && preg_match('/^(([a-z]|[A-Z]|\d|_)+)$/', $jsonKey);
 		}
 		
 		foreach (explode('.', $jsonKey) as $key) {
@@ -1480,4 +1496,99 @@ class Billrun_Util {
 		return self::isValidIP($subject) || self::isValidHostName($subject);
 	}
 
+	/**
+	 * 
+	 * @param type $source
+	 * @param type $translations
+	 * @return type
+	 */
+	public static function translateFields($source, $translations, $instance = FALSE,$userData = FALSE) {
+		$retData = array();
+		
+		foreach ($translations as $key => $trans) {
+			if (!isset($source[$key])) {
+				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+			} else if(is_string($trans) && isset($source[$key])){
+				//Handle s simple field copy  translation
+				$retData[$trans] =  $source[$key];
+			} else switch (@$trans['type']) {
+				//Handle funtion based transaltion
+				case 'function' :
+					if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
+						$retData[$key] = $instance->{$trans['translation']['function']}($source[$key],
+																						Billrun_Util::getFieldVal($trans['translation']['values'], array()),
+																						$source,
+																						$userData);
+					} else if (function_exists($trans['translation']['function'])) {
+						$retData[$key] = call_user_func_array($trans['translation']['function'], array($source[$key],
+																									   $userData) );
+					} else {
+						Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
+					}
+					break;
+				//Handle regex translation
+				case 'regex' :
+					if (isset($trans['translation'][0]) && is_array($trans)) {
+						foreach ($trans['translation'] as $value) {
+							$retData[$key] = preg_replace(key($value), reset($value), $source[$key]);
+						}
+					} else if(isset($trans['translation'])) {
+						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$key]);
+					} else {
+						Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
+					}
+					break;
+				default :
+						Billrun_Factory::log("Couldn't translate field $key with translation of :".print_r($trans,1).' type is not supported.',Zend_Log::ERR);
+					break;
+			}
+		}
+		
+		return $retData;
+	}
+	
+	/**
+	 * Deeply sets an array value.
+	 * 
+	 * @param type $arr - reference to the array (will be changed)
+	 * @param mixed $keys - array or string separated by dot (.) "path" to set
+	 * @param mixed $value - new value to set
+	 */
+	public static function setIn(&$arr, $keys, $value) {
+		if (!$arr) {
+			return;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		
+		$current = $value;
+	}
+	
+	public static function getIn($arr, $keys, $defaultValue = null) {
+		if (!$arr) {
+			return $defaultValue;
+		}
+		
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		
+		$ret = $arr;
+		foreach ($keys as $key) {
+			if (!isset($ret[$key])) {
+				return $defaultValue;
+			}
+			$ret = $ret[$key];
+		}
+		
+		return $ret;
+	}
+	
 }

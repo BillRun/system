@@ -35,7 +35,7 @@ class InternalPaypageController extends ExternalPaypageController {
 		if ($request['action'] !== 'updatePaymentGateway') {
 			$create = new Billrun_ActionManagers_Subscribers_Create();
 			if (isset($request['services']) && is_array($request['services'])) {
-				$request['services'] = json_encode($request['services']);
+				$request['services'] =  array_map(function($srv) { return array('name'=>$srv); }, $request['services']);
 			}
 			$query = array(
 				"type" => $type,
@@ -56,8 +56,42 @@ class InternalPaypageController extends ExternalPaypageController {
 				header("Location: " . $request['return_url']);
 				return false;
 			}
+		} else {
+			$index = 0;
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid' => $request['aid']));
+			$accountPg = $account->payment_gateway;		
+			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
+			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
+			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
+				if (!isset($accountPg['former'])) { 
+					$previousPg = array();
+				} else {
+					$previousPg = $accountPg['former'];
+					$counter = 0;
+					foreach ($previousPg as $gateway) {
+						if ($gateway['name'] == $prevPgName) {
+							$PrevPgParams = $previousPg[$counter];
+							unset($previousPg[$counter]);
+							$index = $counter;
+						} 
+						$counter++;
+					}
+					
+				}
+				$pgAccountDetails = !empty($accountPg['active']['name']) ? $prevPaymentGateway->getNeededParamsAccountUpdate($accountPg['active']) : $prevPaymentGateway->getNeededParamsAccountUpdate($PrevPgParams['params']);		
+				$pgParams = array('name' => $prevPgName, 'pgAccountDetails' => $pgAccountDetails);
+				$currentPg = array(
+					'name' => $pgParams['name'],
+					'params' => $pgParams['pgAccountDetails']
+				);
+				$previousPg[$index] = $currentPg;
+				$setValues['payment_gateway']['former'] = $previousPg;
+				$account->closeAndNew($setValues);
+				$prevPaymentGateway->deleteAccountInPg($pgAccountDetails);
+			}
 		}
-
+		
 		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
 		$data = array(
 			"aid" => $request['aid'],

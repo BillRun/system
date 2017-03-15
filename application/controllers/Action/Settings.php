@@ -51,22 +51,31 @@ class SettingsAction extends ApiAction {
 		$this->enforcePermissions($data, $category, $action);
 		$success = true;
 		$output = array();
+		$warnings = array();
 		if ($action === 'set') {
 			$success = $this->model->updateConfig($category, $data);
+			$warnings = $this->model->getWarnings($category, $data);
 		} else if ($action === 'unset') {
 			$success = $this->model->unsetFromConfig($category, $data);
 		} else if ($action === 'validate') {
 			$success = $this->model->validateConfig($category, $data);
+		} else if ($action === 'enable') {
+			$success = $this->model->setEnabled($category, $data, true);
+		} else if ($action === 'disable') {
+			$success = $this->model->setEnabled($category, $data, false);
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}
+		
+		$status = $success ? (empty($warnings) ? 1 : 2) : 0;
 
-		$this->getController()->setOutput(array(array(
-				'status' => $success ? 1 : 0,
+		$this->getController()->setOutput(array( array(
+				'status' => $status,
 				'desc' => $success ? 'success' : 'error',
 				'input' => $request->getPost(),
 				'details' => is_bool($output) ? array() : $output,
-		)));
+				'warnings' => $warnings,
+			)));
 		return TRUE;
 	}
 
