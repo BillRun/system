@@ -33,6 +33,13 @@ class GenerateAction extends Action_Base {
 		}
 
 		$this->_controller->addOutput("Loading generator");
+		
+		
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
+		
 		$generator = Billrun_Generator::getInstance($options);
 
 		if (!$generator) {
