@@ -101,7 +101,11 @@ class BillrunController extends ApiController {
 		$setting['end_date'] = date('Y-m-d H:i:s', Billrun_Billingcycle::getEndTime($billrunKey));
 		$setting['cycle_status'] = $this->getCycleStatus($billrunKey);
 		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($this->billingCycleCol, $billrunKey, $this->size);
-
+		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey);
+		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey);
+		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size)) {
+			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey);
+		}
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
@@ -173,5 +177,5 @@ class BillrunController extends ApiController {
 
 		return '';
 	}
-
+	
 }

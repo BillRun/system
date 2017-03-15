@@ -222,5 +222,28 @@ class Billrun_Billingcycle {
 
 		return $completionPercentage;
 	}
+	
+	public function getNumberOfGeneratedBills($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'billrun_key' => $billrunKey,
+			'billed' => 1
+		);
+		$generatedBills = $billrunColl->query($query)->count();
+		return $generatedBills;
+	}
+	
+	public function getNumberOfGeneratedInvoices($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'billrun_key' => $billrunKey
+		);
+		$generatedInvoices = $billrunColl->query($query)->count();
+		return $generatedInvoices;
+	}
+	
+	public function getCycleConfirmationPercentage($billrunKey) {
+		return (self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100;
+	}
 
 }
