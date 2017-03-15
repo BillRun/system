@@ -36,13 +36,6 @@ class CycleConfirmationAction extends ApiAction {
 		$this->getController()->setOutput(array($output));
 	}
 
-	protected function confirmCycle($invoicesId, $options) {
-		if (!empty($invoicesId)) {
-			$options['invoices'] = $invoicesId;	
-		}
-
-		return true;
-	}
 
 	protected function processConfirmCycle($billrunKey, $invoicesId) {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
