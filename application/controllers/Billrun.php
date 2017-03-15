@@ -54,7 +54,34 @@ class BillrunController extends ApiController {
 			Billrun_Billingcycle::removeBeforeRerun($this->billingCycleCol, $billrunKey);
 		}
 
-		self::processCycle($billrunKey);
+		$success = self::processCycle($billrunKey);
+		$output = array (
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'error',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
+	}
+	
+	
+	/**
+	 * Generating bills by invoice id's.
+	 * 
+	 */
+	public function confirmCycleAction() {
+		$request = $this->getRequest();
+		$invoices = $request->get('invoices');
+		$billrunKey = $request->get('stamp');
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			return $this->setError("stamp is in incorrect format or missing ", $request);
+		}
+		$success = self::processConfirmCycle($billrunKey, $invoices);
+		$output = array (
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'error',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
 	}
 
 	protected function render($tpl, array $parameters = array()) {
@@ -116,7 +143,7 @@ class BillrunController extends ApiController {
 
 	protected function processCycle($billrunKey) {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey;
-		Billrun_Util::forkProcessCli($cmd);
+		return Billrun_Util::forkProcessCli($cmd);
 	}
 
 	protected function getCyclesKeys($params) {
@@ -176,6 +203,11 @@ class BillrunController extends ApiController {
 		}
 
 		return '';
+	}
+	
+	protected function processConfirmCycle($billrunKey, $invoicesId) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
 }
