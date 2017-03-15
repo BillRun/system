@@ -45,5 +45,28 @@
 				"auth_code": "",
 				"apply_optional_charges": true
 		 }
-	}
+	},
+	"template_token":{},
+	"discounts": {
+    "fields": [
+      {
+        "field_name": "key",
+        "mandatory": true
+      },
+      {
+        "field_name": "from",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "to",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "description",
+        "mandatory": true
+      }
+    ]
+  }
 }
