@@ -55,13 +55,13 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * the balance entry before
 	 * @var array
 	 */
-	protected $before;
+	protected $before = null;
 
 	/**
 	 * the balance entry after
 	 * @var array
 	 */
-	protected $after;
+	protected $after = null;
 
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
@@ -85,6 +85,14 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 
 		$this->chargeValue = (int) $params['value'];
 		$this->init();
+	}
+
+	public function getBefore() {
+		return $this->before;
+	}
+
+	public function getAfter() {
+		return $this->after;
 	}
 
 	protected function init() {
@@ -211,7 +219,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	/**
 	 * create row to track the balance update
 	 */
-	public function createTrackingLines() {
+	protected function createBillingLines() {
 		$row = array(
 			'source' => 'billapi',
 			'type' => 'balance',
@@ -248,6 +256,44 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			return $this->after['balance']['cost'];
 		}
 		return $this->after['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']];
+	}
+
+	/**
+	 * method to track change in audit trail
+	 * 
+	 * @return true on success log change else false
+	 */
+	protected function trackChanges() {
+		try {
+			$user = Billrun_Factory::user();
+			if (!is_null($user)) {
+				$trackUser = array(
+					'_id' => $user->getMongoId()->getMongoID(),
+					'name' => $user->getUsername(),
+				);
+			} else { // in case 3rd party API update with token => there is no user
+				$trackUser = array(
+					'_id' => null,
+					'name' => '_3RD_PARTY_TOKEN_',
+				);
+			}
+			$logEntry = array(
+				'source' => 'audit',
+				'type' => 'update',
+				'urt' => new MongoDate(),
+				'user' => $trackUser,
+				'collection' => 'balances',
+				'old' => $this->before,
+				'new' => $this->after,
+				'key' => $this->subscriber['aid'] . '_' . $this->subscriber['sid'],
+			);
+			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
+			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
+			return true;
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
+		}
+		return false;
 	}
 
 }

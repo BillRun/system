@@ -19,7 +19,7 @@ class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Abstr
 	 * @var string
 	 */
 	protected $updateType = 'Id';
-	
+
 	/**
 	 * @todo
 	 */
@@ -38,7 +38,11 @@ class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Abstr
 	 * create row to track the balance update
 	 * @todo
 	 */
-	public function createTrackingLines() {
+	protected function createBillingLines() {
+		
+	}
+
+	protected function trackChanges() {
 		
 	}
 

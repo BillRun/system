@@ -13,7 +13,7 @@
  * @since    5.3
  */
 abstract class Models_Action_Update_Balance_Abstract {
-	
+
 	/**
 	 * the update method type
 	 * @var string
@@ -23,7 +23,7 @@ abstract class Models_Action_Update_Balance_Abstract {
 	public function __construct(array $params = array()) {
 		// load balance update
 	}
-	
+
 	/**
 	 * get the update method type
 	 * @return string
@@ -31,20 +31,21 @@ abstract class Models_Action_Update_Balance_Abstract {
 	public function getUpdateType() {
 		return $this->updateType;
 	}
-	
+
 	public function execute() {
 		if ($this->preValidate() === false) {
 			return false;
 		}
-		
+
 		$this->update();
-		
+
 		if ($this->postValidate() === false) {
 			return false;
 		}
 
-		$this->createTrackingLines();
-		
+		$this->createBillingLines();
+		$this->trackChanges();
+
 		return true;
 	}
 
@@ -53,7 +54,9 @@ abstract class Models_Action_Update_Balance_Abstract {
 	/**
 	 * create row to track the balance update
 	 */
-	abstract function createTrackingLines();
+	abstract protected function createBillingLines();
+
+	abstract protected function trackChanges();
 
 	/**
 	 * method to load the before state
