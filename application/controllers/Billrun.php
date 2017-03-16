@@ -75,7 +75,9 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		$success = self::processConfirmCycle($billrunKey, $invoices);
+		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size)){
+			$success = self::processConfirmCycle($billrunKey, $invoices);
+		}
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -86,6 +88,22 @@ class BillrunController extends ApiController {
 
 	protected function render($tpl, array $parameters = array()) {
 		return parent::render('index', $parameters);
+	}
+	
+	/**
+	 * Charge accounts.
+	 * 
+	 */
+	public function chargeAccountAction() {
+		$request = $this->getRequest();
+		$aids = $request->get('aids');
+		$success = self::processCharge($aids);
+		$output = array (
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'error',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
 	}
 
 	/**
@@ -207,6 +225,11 @@ class BillrunController extends ApiController {
 	
 	protected function processConfirmCycle($billrunKey, $invoicesId) {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		return Billrun_Util::forkProcessCli($cmd);
+	}
+	
+	protected function processCharge($aids) {
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	

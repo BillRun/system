@@ -57,7 +57,7 @@ class AggregateAction extends Action_Base {
 	}
 	
 	protected function shouldRunAggregate($stamp) {
-		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
+		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
 		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
 			return false;
 		}

@@ -469,8 +469,13 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-	public static function getCustomers() {
+	public static function getCustomers($aidQuery) {
 		$billsColl = Billrun_Factory::db()->billsCollection();
+		$match = array(
+			'$match' => array(
+				'aid' => $aidQuery,
+			),
+		);
 		$sort = array(
 			'$sort' => array(
 				'type' => 1,
@@ -521,7 +526,7 @@ abstract class Billrun_PaymentGateway {
 				),
 			),
 		);
-		$match = array(
+		$match2 = array(
 			'$match' => array(
 				'due' => array(
 					'$gt' => Billrun_Bill::precision,
@@ -532,7 +537,7 @@ abstract class Billrun_PaymentGateway {
 				'suspend_debit' => NULL,
 			),
 		);
-		$res = $billsColl->aggregate($sort, $group, $match);
+		$res = $billsColl->aggregate($match, $sort, $group, $match2);
 		return $res;
 	}
 	

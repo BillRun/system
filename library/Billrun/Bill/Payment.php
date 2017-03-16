@@ -445,17 +445,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	/**
 	 * Responsible for paying payments and classifying payments responses: completed, pending or rejected.
 	 * 
-	 * @param string $stamp - Billrun key that represents the cycle.
+	 * @param array $chargeOptions - Options regarding charge operation.
 	 *
 	 */
-	public static function makePayment($stamp) {
-		$paymentParams = array(
-			'dd_stamp' => $stamp
-		);
-		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
+	public static function makePayment($chargeOptions) {
+		if (!empty($chargeOptions['aids'])) {
+			$aids = json_decode($chargeOptions['aids']);
+		}
+		$aidQuery = !empty($aids) ? array('$in' => $aids) : array('$exists' => 1);
+		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun
 			throw new Exception('Error removing payments before rerun');
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers());
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($aidQuery));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {

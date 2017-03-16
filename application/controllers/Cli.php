@@ -174,6 +174,7 @@ class CliController extends Yaf_Controller_Abstract {
 	}
 	
 	public function getParameters() {
+		$options = array();
 		foreach($this->options->getRemainingArgs() as  $cmdLineArg) {
 			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? explode("=", $cmdLineArg) : explode(" ", $cmdLineArg);
 			$inLineOpt = isset($seperatedCmdStr[1]) ?  $seperatedCmdStr[1] : true;
