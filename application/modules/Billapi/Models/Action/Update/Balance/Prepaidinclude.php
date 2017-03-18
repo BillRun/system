@@ -27,19 +27,6 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	protected $operation = 'inc';
 
 	/**
-	 * the data container of the entry that has the update properties
-	 * can be prepaid include, charging plan, card secret, etc
-	 * @var array
-	 */
-	protected $data = array(); // data container of the prepaid includes record
-
-	/**
-	 * the subscriber entry
-	 * @var array
-	 */
-	protected $subscriber = array();
-
-	/**
 	 * the charging value to update
 	 * @var type 
 	 */
@@ -63,17 +50,19 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 */
 	protected $after = null;
 
+	/**
+	 * expiration date
+	 * @var MongoDate
+	 */
+	protected $to = null;
+
 	public function __construct(array $params = array()) {
 		parent::__construct($params);
-		if (!isset($params['sid'])) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id is not define in input under prepaid include');
-		}
 
 		$query = $this->getLoadQuery($params);
 
 		$this->load($query);
 
-		$this->loadSubscriber((int) $params['sid']);
 
 		if (isset($params['operation']) && in_array($params['operation'], array('inc', 'set', 'new'))) { // TODO: move array values to config
 			$this->operation = $params['operation'];
@@ -85,6 +74,11 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 
 		$this->chargeValue = (int) $params['value'];
 		$this->init();
+
+		// this should be done after init (load before state)
+		if (isset($params['expiration_date'])) {
+			$this->setTo($params['expiration_date']);
+		}
 	}
 
 	public function getBefore() {
@@ -93,6 +87,20 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 
 	public function getAfter() {
 		return $this->after;
+	}
+
+	protected function setTo($expirationDate) {
+		if (isset($this->data['unlimited']) && $this->data['unlimited']) {
+			$this->to = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
+		} else if ($expirationDate instanceof MongoDate) {
+			$this->to = $expirationDate;
+		} else if (is_numeric($expirationDate)) {
+			$this->to = new MongoDate($expirationDate);
+		} else if (is_string($expirationDate)) {
+			$this->to = new MongoDate(strtotime($expirationDate));
+		} else { // fallback to 30 days charge (@TODO move to config)
+			$this->to = new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1);
+		}
 	}
 
 	protected function init() {
@@ -107,7 +115,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		if (isset($params['pp_includes_external_id'])) {
 			return array('external_id' => $params['pp_includes_external_id']);
 		} else if (isset($params['pp_includes_name'])) {
-			return array('name' => $params['pp_includes_external_name']);
+			return array('name' => $params['pp_includes_name']);
 		} else if (isset($params['id'])) {
 			return array('_id' => new MongoId($params['id']));
 		} else if (isset($params['_id'])) {
@@ -138,31 +146,6 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		}
 	}
 
-	/**
-	 * method to load subscriber details
-	 * @param type $sid
-	 * @throws Billrun_Exceptions_Api
-	 * @todo add connection type (limit to prepaid)
-	 * @return array subscriber details
-	 */
-	protected function loadSubscriber($sid) {
-		$subQuery = array(
-			'$or' => array(
-				array(
-					'type' => array(
-						'$exists' => false,
-					)), // backward compatibility (type not exists)
-				array('type' => 'subscriber'),
-			),
-			'sid' => $sid,
-		);
-		$sub = Billrun_Factory::db()->subscribersCollection()->query($subQuery)->cursor()->current();
-		if ($sub->isEmpty()) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber not found on prepaid include update');
-		}
-		$this->subscriber = $sub->getRawData();
-	}
-
 	public function update() {
 		switch ($this->data['charging_by']) :
 			case 'cost':
@@ -174,9 +157,6 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 				$key = 'balance.cost';
 		endswitch;
 		$update = array(
-			'$inc' => array(
-				$key => $this->chargeValue,
-			),
 			'$setOnInsert' => array(
 				'from' => new MongoDate(),
 				'aid' => $this->subscriber['aid'],
@@ -187,23 +167,38 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 				'pp_includes_name' => isset($this->data['name']) ? $this->data['name'] : $this->data['pp_includes_name'],
 			),
 		);
-		if (isset($this->query['to']) && Zend_Date::isDate($this->query['to'])) {
-			$update['$set'] = array(
-				'to' => new MongoDate(strtotime($this->query['to'])),
-			);
-		} else if (isset($this->data['unlimited']) && $this->data['unlimited']) {
-			$update['$set'] = array(
-				'to' => new MongoDate(Billrun_Utils_Time::UNLIMITED_DATE),
-				'unlimited' => true,
-			);
-		} else { // fallback to 30 days charge (@TODO move to config)
-			$update['$set'] = array(
-				'to' => new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1),
-			);
+
+		switch ($this->operation) :
+			case 'new':
+				$this->query['rand'] = rand(0, 1000000); // this will make the FAM to always insert
+			// do not break here, need to set value
+			case 'set':
+				$update['$set'] = array(
+					$key => $this->chargeValue,
+				);
+				break;
+			case 'inc':
+			default:
+				$update['$inc'] = array(
+					$key => $this->chargeValue,
+				);
+
+				break;
+		endswitch;
+
+		if (!empty($this->to)) {
+			if (!isset($update['$set'])) {
+				$update['$set'] = array();
+			}
+			$update['$set']['to'] = $this->to;
+			if (isset($this->data['unlimited']) && $this->data['unlimited']) {
+				$update['$setOnInsert']['unlimited'] = true;
+			}
 		}
+
 		if (isset($this->data['shared']) && $this->data['shared']) {
 			$this->query['sid'] = 0;
-			$update['shared'] = true;
+			$update['$setOnInsert']['shared'] = true;
 		}
 		$findAndModify = array(
 			'new' => true,
@@ -283,8 +278,8 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 				'urt' => new MongoDate(),
 				'user' => $trackUser,
 				'collection' => 'balances',
-				'old' => $this->before,
-				'new' => $this->after,
+				'old' => $this->before->getRawData(),
+				'new' => $this->after->getRawData(),
 				'key' => $this->subscriber['aid'] . '_' . $this->subscriber['sid'],
 			);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);

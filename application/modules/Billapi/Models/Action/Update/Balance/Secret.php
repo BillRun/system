@@ -20,6 +20,10 @@ class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Abstr
 	 */
 	protected $updateType = 'Id';
 
+	protected function init() {
+		
+	}
+
 	/**
 	 * @todo
 	 */
