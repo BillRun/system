@@ -177,8 +177,20 @@ abstract class Billrun_Base {
 			$args = array_merge($config_type, $args);
 			if (isset($config_type[$called_class::$type]) &&
 				isset($config_type[$called_class::$type]['type'])) {
-				$class_type = $config_type[$called_class::$type]['type'];
-				$args['type'] = $type;
+					$class_type = $config_type[$called_class::$type]['type'];
+					$args['type'] = $type;
+			} else if(!empty($config_type[$called_class::$type]['type_mapping'])) {
+				foreach (@$config_type[$called_class::$type]['type_mapping'] as $typeConfig) {
+					$match = true;
+					foreach (@$typeConfig['config'] as $field => $value) {
+						$match &= Billrun_Factory::config()->getConfigValue($field,null) == $value;
+					}
+					if($match) {
+						$class_type = $typeConfig['type'];
+						$args['type'] = $type;
+						break;
+					}
+				}
 			}
 		}
 		$class = $called_class . '_' . ucfirst($class_type);
