@@ -89,7 +89,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected function addTaxationToLine($entry) {
 		$entryWithTax = FALSE;
 		for($i=0;$i < 3 && !$entryWithTax;$i++) {//Try 3 times to tax the line.
-			$taxCalc = Billrun_Calculator::getInstance(array_merge(Billrun_Factory::config()->getConfigValue('tax.calculator'),array('autoload' => false)));
+			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false,'type'=>'tax'));
 			$entryWithTax = $taxCalc->updateRow($entry);
 			if(!$entryWithTax) {
 				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...",Zend_Log::WARN);
