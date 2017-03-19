@@ -393,7 +393,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'name' => $plan->getEntityGroup(),
 					$balanceType => $volume,
 					'left' => $value - ($balanceType == 'cost' ? $cost : $volume),
-					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType),
+					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
 					'balance' => $this->balance,
 				);
 			} else if ($valueToCharge > 0) {
@@ -404,7 +404,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'name' => $plan->getEntityGroup(),
 						$balanceType => $ret['in_group'],
 						'left' => 0,
-						'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType),
+						'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
 						'balance' => $this->balance,
 					);
 				} else if ($valueToCharge > 0) {
@@ -543,7 +543,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'name' => $serviceGroup,
 						$balanceType => $valueRequired,
 						'left' => $value - $valueRequired,
-						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
+						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
 						'balance' => $balance,
 					);
 					return array($keyRequired => 0);
@@ -552,7 +552,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'name' => $serviceGroup,
 					$balanceType => $value,
 					'left' => 0,
-					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $serviceGroup),
+					'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
 					'balance' => $balance,
 				);
 				if ($keyRequired != $balanceType) {
