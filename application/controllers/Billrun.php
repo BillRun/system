@@ -47,7 +47,7 @@ class BillrunController extends ApiController {
 		if (Billrun_Billingcycle::isCycleRunning($this->billingCycleCol, $billrunKey, $this->size)) {
 			throw new Exception("Already Running");
 		}
-		if (Billrun_Billingcycle::isBillingCycleRerun($this->billingCycleCol, $billrunKey, $this->size) && $this->getCycleStatus($billrunKey) == 'finished') {
+		if ($this->getCycleStatus($billrunKey) == 'finished') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
@@ -75,8 +75,12 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size)){
-			$success = self::processConfirmCycle($billrunKey, $invoices);
+		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size) && (!Billrun_Billingcycle::isCycleConfirmed($billrunKey) || !empty($invoices))){
+			if (is_null($invoices)) {
+				$success = self::processConfirmCycle($billrunKey);
+			} else {
+				$success = self::processConfirmCycle($billrunKey, $invoices);
+			}
 		}
 		$output = array (
 			'status' => $success ? 1 : 0,
@@ -97,7 +101,11 @@ class BillrunController extends ApiController {
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
-		$success = self::processCharge($aids);
+		if (is_null($aids)) {
+			$success = self::processCharge();
+		} else {
+			$success = self::processCharge($aids);
+		}
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -118,8 +126,8 @@ class BillrunController extends ApiController {
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
-			$setting['start_date'] = date('Y-m-d H:i:s', Billrun_Billingcycle::getStartTime($billrunKey));
-			$setting['end_date'] = date('Y-m-d H:i:s', Billrun_Billingcycle::getEndTime($billrunKey));
+			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
+			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
 			$setting['cycle_status'] = $this->getCycleStatus($billrunKey);
 			$settings[] = $setting;
 		}
@@ -142,8 +150,8 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass stamp of the wanted cycle info');
 		}
-		$setting['start_date'] = date('Y-m-d H:i:s', Billrun_Billingcycle::getStartTime($billrunKey));
-		$setting['end_date'] = date('Y-m-d H:i:s', Billrun_Billingcycle::getEndTime($billrunKey));
+		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
+		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
 		$setting['cycle_status'] = $this->getCycleStatus($billrunKey);
 		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($this->billingCycleCol, $billrunKey, $this->size);
 		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey);
@@ -160,6 +168,9 @@ class BillrunController extends ApiController {
 	}
 
 	protected function processCycle($billrunKey) {
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			throw new Exception('Need to pass correct billrun key');
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
@@ -171,64 +182,63 @@ class BillrunController extends ApiController {
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
-		return $this->getPreviousCycles();
+		$to = date('Y/m/d', time());
+		$from = date('Y/m/d', strtotime('12 months ago'));		
+		return $this->getCyclesInRange($from, $to);
 	}
 
 	public function getCyclesInRange($from, $to) {
+		$limit = 0;
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
 		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
 		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
 
-		while ($currentBillrunKey <= $lastBillrunKey) {
+		while ($currentBillrunKey <= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
 			$currentBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrunKey);
+			$limit++;
 		}
 
-		return $billrunKeys;
-	}
-
-	public function getPreviousCycles() {
-		$billrunKeys = array();
-		$currentStamp = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-		array_push($billrunKeys, $currentStamp);
-		$rangeOfCycles = Billrun_Factory::config()->getConfigValue('cyclemanagement.previous_cycles');
-		while ($rangeOfCycles) {
-			array_push($billrunKeys, Billrun_Billingcycle::getBillrunKeyByTimestamp(strtotime("$rangeOfCycles months ago")));
-			$rangeOfCycles--;
-		}
 		return $billrunKeys;
 	}
 
 	public function getCycleStatus($billrunKey) {
 		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$cycleConfirmed = Billrun_Billingcycle::isCycleConfirmed($billrunKey);
+		$cycleEnded = Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size);
+		$cycleRunning = Billrun_Billingcycle::isCycleRunning($this->billingCycleCol, $billrunKey, $this->size);
+		
 		if ($billrunKey == $currentBillrunKey) {
 			return 'current';
 		}
 		if ($billrunKey > $currentBillrunKey) {
 			return 'future';
 		}
-		if ($billrunKey < $currentBillrunKey && !Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size)) {
+		if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			return 'to_run';
-		} else if (!Billrun_Billingcycle::isCycleConfirmed($billrunKey)) {
+		} else if (!$cycleConfirmed) {
 			return 'finished';
 		}
-		if (Billrun_Billingcycle::isCycleRunning($this->billingCycleCol, $billrunKey, $this->size)) {
+		if ($cycleRunning) {
 			return 'running';
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size) && Billrun_Billingcycle::isCycleConfirmed($billrunKey)) {
+		if ($cycleEnded && $cycleConfirmed) {
 			return 'confirmed';
 		}
 
 		return '';
 	}
 	
-	protected function processConfirmCycle($billrunKey, $invoicesId) {
+	protected function processConfirmCycle($billrunKey, $invoicesId = array()) {
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			throw new Exception('Need to pass correct billrun key');
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
-	protected function processCharge($aids) {
+	protected function processCharge($aids = array()) {
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
 		return Billrun_Util::forkProcessCli($cmd);
 	}

@@ -142,21 +142,16 @@ class Billrun_Billingcycle {
 		foreach ($billrunsToRemove as $billrun) {
 			$invoicesToRemove[] = $billrun['invoice_id'];
 			if (count($invoicesToRemove) > 1000) {  // remove bulks from billrun collection(bulks of 1000 records)
-				$countersColl->remove(array('seq' => array('$in' => $invoicesToRemove)));
+				$countersColl->remove(array('coll' => 'billrun', 'seq' => array('$in' => $invoicesToRemove)));
 				$invoicesToRemove = array();
 			}
 		}
 		if (count($invoicesToRemove) > 0) { // remove leftovers
-			$countersColl->remove(array('seq' => array('$in' => $invoicesToRemove)));
+			$countersColl->remove(array('coll' => 'billrun', 'seq' => array('$in' => $invoicesToRemove)));
 		}
 		$billingCycleCol->remove(array('billrun_key' => $billrunKey));
 		$linesColl->remove($linesRemoveQuery);
 		$billrunColl->remove($billrunQuery);
-	}
-
-	public function isBillingCycleRerun($billingCycleCol, $billrunKey, $size) {
-		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		return Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages);
 	}
 
 	protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
