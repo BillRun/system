@@ -195,7 +195,7 @@ class Billrun_Service {
 	 * 
 	 * @return int usage left in the group
 	 */
-	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null) {
+	public function usageLeftInEntityGroup($subscriberBalance, $rate, $usageType, $staticGroup = null, $time = null) {
 		if (is_null($staticGroup)) {
 			$rateUsageIncluded = 0; // pass by reference
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
@@ -222,7 +222,7 @@ class Billrun_Service {
 				return array('usagev' => 0);
 			}
 			
-			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected);
+			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time);
 			// convert cost to volume
 			if ($cost === 'UNLIMITED') {
 				return array(
@@ -240,7 +240,7 @@ class Billrun_Service {
 				'cost' => floatval($costLeft < 0 ? 0 : $costLeft),
 			);
 		} else {
-			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected);
+			$rateUsageIncluded = $this->getGroupVolume($usageType, $subscriberBalance['aid'], $groupSelected, $time);
 			if ($rateUsageIncluded === 'UNLIMITED') {
 				return array(
 					'usagev' => PHP_INT_MAX,
@@ -334,14 +334,14 @@ class Billrun_Service {
 		return isset($this->data['include']['groups'][$group]['account_pool']) && $this->data['include']['groups'][$group]['account_pool'];
 	}
 
-	public function getGroupVolume($usageType, $aid, $group = null) {
+	public function getGroupVolume($usageType, $aid, $group = null, $time = null) {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
 		if (!isset($this->data['include']['groups'][$group][$usageType])) {
 			return 0;
 		}
-		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid)) {
+		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
 			return $this->data['include']['groups'][$group][$usageType] * $pool;
 		}
 		return $this->data['include']['groups'][$group][$usageType];
@@ -353,12 +353,15 @@ class Billrun_Service {
 	 * @param string $group the group
 	 * @return int
 	 */
-	protected function getPoolSharingUsageCount($aid) {
+	protected function getPoolSharingUsageCount($aid, $time = null) {
+		if (is_null($time)) {
+			$time = time();
+		}
 		$query = array(
 			'aid' => $aid,
 			'type' => 'subscriber',
-			'to' => array('$gt' => new MongoDate()),
-			'from' => array('$lt' => new MongoDate()),
+			'to' => array('$gt' => new MongoDate($time)),
+			'from' => array('$lt' => new MongoDate($time)),
 		);
 		if ($this instanceof Billrun_Service) {
 			$query['services'] = $this->data['name'];
