@@ -66,5 +66,12 @@ var globalSetting = {
       itemType: 'product',
       itemsType: 'products',
     },
+    discount: {
+      collection: 'discounts',
+      uniqueField: 'key',
+      itemName: 'discount',
+      itemType: 'discount',
+      itemsType: 'discounts',
+    },
   },
 };
