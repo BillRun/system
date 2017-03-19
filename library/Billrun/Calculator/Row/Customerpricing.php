@@ -122,11 +122,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$this->countConcurrentRetries = 0;
 		//TODO  change this to be configurable.
 		$pricingData = array();
-		$volume = isset($this->row['usagev']) ? $this->row['usagev'] : null;
+		$volume =$this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			if ($this->row['type'] === 'credit' && isset($this->row['aprice'])) {
-				$charges = (float)$this->row['aprice'];
+			if (isset($this->row['prepriced']) && $this->row['prepriced']) {
+				$charges = (float)$this->row[$this->pricingField];
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 			}
