@@ -61,6 +61,11 @@ abstract class Models_Action_Update_Balance_Abstract {
 		return true;
 	}
 
+	/**
+	 * method to trigger the update
+	 * 
+	 * @return boolean true on success else false
+	 */
 	abstract protected function update();
 
 	/**
@@ -68,6 +73,11 @@ abstract class Models_Action_Update_Balance_Abstract {
 	 */
 	abstract protected function createBillingLines();
 
+	/**
+	 * method to track change in audit trail
+	 * 
+	 * @return true on success log change else false
+	 */
 	abstract protected function trackChanges();
 
 	public function preValidate() {

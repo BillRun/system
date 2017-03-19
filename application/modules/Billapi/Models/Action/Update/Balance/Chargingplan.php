@@ -95,6 +95,11 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 		}
 	}
 
+	/**
+	 * method to track change in audit trail
+	 * 
+	 * @return true on success log change else false
+	 */
 	protected function trackChanges() {
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->trackChanges();
