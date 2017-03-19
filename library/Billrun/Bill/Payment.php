@@ -452,11 +452,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			$aids = json_decode($chargeOptions['aids']);
 		}
-		$aidQuery = !empty($aids) ? array('$in' => $aids) : array('$exists' => 1);
 		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun
 			throw new Exception('Error removing payments before rerun');
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($aidQuery));
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($aids));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {

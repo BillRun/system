@@ -469,20 +469,22 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-	public static function getCustomers($aidQuery) {
-		$billsColl = Billrun_Factory::db()->billsCollection();
-		$match = array(
-			'$match' => array(
-				'aid' => $aidQuery,
-			),
-		);
-		$sort = array(
+	public static function getCustomers($aids = array()) {
+		$billsColl = Billrun_Factory::db()->billsCollection();		
+		if (!empty($aids)){
+			$pipelines[] = array(
+				'$match' => array(
+					'aid' => array('$in' => $aids),
+				),
+			);		
+		}
+		$pipelines[] = array(
 			'$sort' => array(
 				'type' => 1,
 				'due_date' => -1,
 			),
 		);
-		$group = array(
+		$pipelines[] = array(
 			'$group' => array(
 				'_id' => '$aid',
 				'suspend_debit' => array(
@@ -526,7 +528,7 @@ abstract class Billrun_PaymentGateway {
 				),
 			),
 		);
-		$match2 = array(
+		$pipelines[] = array(
 			'$match' => array(
 				'due' => array(
 					'$gt' => Billrun_Bill::precision,
@@ -537,7 +539,7 @@ abstract class Billrun_PaymentGateway {
 				'suspend_debit' => NULL,
 			),
 		);
-		$res = $billsColl->aggregate($match, $sort, $group, $match2);
+		$res = $billsColl->aggregate($pipelines);
 		return $res;
 	}
 	

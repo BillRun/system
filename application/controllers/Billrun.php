@@ -71,6 +71,10 @@ class BillrunController extends ApiController {
 	public function confirmCycleAction() {
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
+		$invoicesId = json_decode($invoices);
+		if (!empty($invoices) && is_null($invoicesId)) {
+			throw new Exception('Invoices parameter must be array of integers');
+		}
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
@@ -79,7 +83,7 @@ class BillrunController extends ApiController {
 			if (is_null($invoices)) {
 				$success = self::processConfirmCycle($billrunKey);
 			} else {
-				$success = self::processConfirmCycle($billrunKey, $invoices);
+				$success = self::processConfirmCycle($billrunKey, $invoicesId);
 			}
 		}
 		$output = array (
@@ -101,10 +105,14 @@ class BillrunController extends ApiController {
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
+		$aidsArray = json_decode($aids);
+		if (!empty($aids) && is_null($aidsArray)) {
+			throw new Exception('aids parameter must be array of integers');
+		}
 		if (is_null($aids)) {
 			$success = self::processCharge();
 		} else {
-			$success = self::processCharge($aids);
+			$success = self::processCharge($aidsArray);
 		}
 		$output = array (
 			'status' => $success ? 1 : 0,
@@ -234,11 +242,19 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
+		if (!empty($invoicesId)) {
+			$invoicesArray = Billrun_util::verify_array($invoicesId, 'int');
+			$invoicesId = json_encode($invoicesArray);			
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
 	protected function processCharge($aids = array()) {
+		if (!empty($aids)) {
+			$aidsArray = Billrun_util::verify_array($aids, 'int');
+			$aids = json_encode($aidsArray);			
+		}
 		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
