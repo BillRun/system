@@ -144,6 +144,12 @@ class Billrun_Cycle_Account_Invoice {
 		return $this->key;
 	}
 
+        public function applyDiscounts() {
+            $dm = new Billrun_DiscountManager();
+            $discounts = $dm->getEligibleDiscounts($this);
+            print_r($discounts);
+        }
+        
 	/**
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
@@ -159,7 +165,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
 		$newRawData = $this->setInvoicID($rawDataWithSubs, $invoiceId);
 		$this->data->setRawData($newRawData);		
-
+                               
 		$ret = $this->billrun_coll->save($this->data);
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
@@ -273,4 +279,14 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
+        
+        //======================================================
+        
+        public function getSubscribers() {
+            return $this->subscribers;
+        }
+        
+        public function getTotals() {
+            return $this->data['totals'];
+        }
 }

@@ -61,6 +61,25 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	public function prepareData($lines) { }
 
 	
+        //================================= Static =================================
+        /**
+         *  Get  the  total amount with taxes  for a given line
+         * @param type $taxedLine a line *after* taxation  was applied to it.
+         * @return float the  price of the line including taxes
+         */
+        public static function addTax($taxedLine) {
+            return $taxedLine['aprice'] + $taxedLine['tax_data']['tax_amount'];
+        }
+        
+        /**
+         *  Remove the taxes from the total amount with taxes for a given line
+         * @param type $taxedLine a line *after* taxation  was applied to it.
+         * @return float the  price of the line including taxes
+         */
+        public static function removeTax($taxedPrice, $taxedLine) {
+            return $taxedPrice + $taxedLine['tax_data']['tax_amount'];
+        }
+        
 	//================================ Protected ===============================	
 
 	/**

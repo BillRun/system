@@ -21,7 +21,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $data;
 	
 	protected $rates = array();
-		
+        
 	/**
 	 * 
 	 * @param array $data - Subscriber data
@@ -158,7 +158,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 	}
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $count) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $count, $tax_data) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
@@ -167,6 +167,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
+                                foreach($tax_data as $tax ) {
+                                    @$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+                                }
 				return;
 			}
 		}
@@ -239,7 +242,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes']);
 		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -493,4 +496,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		return $ret;
 	}
+        
+        public function getTotals() {
+            return $this->data['totals'];
+        }
 }
