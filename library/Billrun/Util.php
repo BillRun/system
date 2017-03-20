@@ -1577,6 +1577,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return $arr[$keys];
+			}
 			$keys = explode('.', $keys);
 		}
 		
