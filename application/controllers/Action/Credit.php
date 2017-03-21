@@ -67,12 +67,29 @@ class CreditAction extends ApiAction {
 		$ret = $this->validateFields($credit_row);
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		$ret['process_time'] = new MongoDate();
+		$ret['usaget'] = $this->getCreditUsaget($ret);
+		$ret['credit'] = array(
+			'usagev' => $ret['usagev'],
+			'credit_by' => 'rate',
+			'rate' => $ret['rate'],
+		);
 		if ($this->isCreditByPrice($ret)) {
-			$ret['billrun'] = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-			$ret['usaget'] = $this->getCreditUsaget($ret);
-			$ret['usagev'] = 1;
+			$this->parseCreditByPrice($ret);
+		} else {
+			$this->parseCreditByUsagev($ret);
 		}
 		return $ret;
+	}
+	
+	protected function parseCreditByPrice(&$row) {
+		$row['credit']['aprice'] = $row['aprice'];
+		$row['aprice'] = $row['aprice'] * $row['usagev'];
+		$row['prepriced'] = true;
+	}
+	
+	protected function parseCreditByUsagev(&$row) {
+		$row['usagev'] = 1;
+		$row['prepriced'] = false;
 	}
 	
 	protected function isCreditByPrice($row) {
@@ -80,26 +97,19 @@ class CreditAction extends ApiAction {
 	}
 	
 	protected function getCreditUsaget($row) {
-		return ($row['aprice'] >= 0 ? 'charge' : 'credit');
+		if (!isset($row['aprice'])) {
+			return 'refund';
+		}
+		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
 	
 	protected function getSkipCalcs($row) {
-		if ($this->isCreditByPrice($row)) {
-			return array('pricing', 'unify');
-		}
 		return array('unify');
 	}
 	
 	protected function validateFields($credit_row) {
 		$fields = Billrun_Factory::config()->getConfigValue('credit.fields', array());
 		$ret = array();
-		
-		// credit row must have aprice or usagev+usaget, but not all 3
-		if (((!isset($credit_row['aprice'])) &&
-			(!isset($credit_row['usagev']) || !isset($credit_row['usaget']))) ||
-			(isset($credit_row['aprice']) && isset($credit_row['usagev']) && isset($credit_row['usaget']))) {
-			return $this->setError('Invalid pricing fields', $credit_row);
-		}
 		
 		foreach ($fields as $fieldName => $field) {
 			if (isset($field['mandatory']) && $field['mandatory']) {

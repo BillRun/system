@@ -100,9 +100,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			}
 		} else if ($row['type'] == 'credit') {
 			if (!isset($this->data['costs']['credit'][$row['usaget']][$vat_key])) {
-				$this->data['costs']['credit'][$row['usaget']][$vat_key] = $pricingData['aprice'];
+				$this->data['costs'][$row['usaget']][$vat_key] = $pricingData['aprice'];
 			} else {
-				$this->data['costs']['credit'][$row['usaget']][$vat_key] += $pricingData['aprice'];
+				$this->data['costs'][$row['usaget']][$vat_key] += $pricingData['aprice'];
 			}
 		} else if ($row['type'] == 'service') {
 			if (!isset($this->data['costs']['service'][$vat_key])) {
@@ -196,7 +196,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		
 		if (in_array($row['type'], array('credit'))) {
-			return $row['type'];
+			return $row['usaget'];
 		}
 		
 		Billrun_Factory::log("Cannot get type for line. Details: " . print_R($row, 1), Zend_Log::ALERT);
@@ -332,9 +332,12 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['service']['before_vat'], 0);
 		$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['service']['after_vat'], 0);
 		$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['service']['vatable'], 0);
-		$newTotals['credit']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['credit']['before_vat'], 0);
-		$newTotals['credit']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['credit']['after_vat'], 0);
-		$newTotals['credit']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['credit']['vatable'], 0);
+		$newTotals['refund']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['before_vat'], 0);
+		$newTotals['refund']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['after_vat'], 0);
+		$newTotals['refund']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['vatable'], 0);
+		$newTotals['charge']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['before_vat'], 0);
+		$newTotals['charge']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['after_vat'], 0);
+		$newTotals['charge']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['vatable'], 0);
 		$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['before_vat'], 0);
 		$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['after_vat'], 0);
 		$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['vatable'], 0);

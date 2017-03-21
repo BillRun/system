@@ -39,10 +39,10 @@ if (RUNNING_FROM_CLI && getenv('APPLICATION_MULTITENANT') && !defined('APPLICATI
 	if (empty($cliArgs['tenant'])) {
 		die('Tenant was not setup!' . PHP_EOL);
 	}
-
+	
 	define('APPLICATION_TENANT', $cliArgs['tenant']);
 }
 
-if (!RUNNING_FROM_CLI && !defined('APPLICATION_MULTITENANT') && $multitenant = getenv('APPLICATION_MULTITENANT')) {
+if (!defined('APPLICATION_MULTITENANT') && $multitenant = getenv('APPLICATION_MULTITENANT')) {
 	define('APPLICATION_MULTITENANT', $multitenant);
 }

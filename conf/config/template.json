@@ -54,5 +54,27 @@
 				"apply_optional_charges": true
 		 },
 		 "vat" : 0
-	}
+	},
+	"discounts": {
+    "fields": [
+      {
+        "field_name": "key",
+        "mandatory": true
+      },
+      {
+        "field_name": "from",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "to",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "description",
+        "mandatory": true
+      }
+    ]
+  }
 }

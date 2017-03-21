@@ -1,4 +1,5 @@
 var globalSetting = {
+  storageVersion: 'v0.1',
   serverUrl: "",
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',
@@ -8,7 +9,8 @@ var globalSetting = {
   apiDateTimeFormat: "YYYY-MM-DD",
   currency: '$',
   list: {
-    maxItems: 100
+    maxItems: 100,
+    defaultItems: 10,
   },
   statusMessageDisplayTimeout: 5000,
   planCycleUnlimitedValue: 'UNLIMITED',
@@ -25,41 +27,51 @@ var globalSetting = {
     service: {
       collection: 'services',
       uniqueField: 'name',
+      itemName: 'service',
       itemType: 'service',
       itemsType: 'services',
     },
     plan: {
       collection: 'plans',
       uniqueField: 'name',
+      itemName: 'plan',
       itemType: 'plan',
       itemsType: 'plans',
     },
     charging_plan: {
       collection: 'plans',
       uniqueField: 'name',
-      itemName: 'Buckets Group',
+      itemName: 'buckets group',
       itemType: 'charging_plan',
       itemsType: 'charging_plans',
     },
     prepaid_plan: {
       collection: 'plans',
       uniqueField: 'name',
-      itemName: 'Prepaid Plan',
+      itemName: 'prepaid plan',
       itemType: 'prepaid_plan',
       itemsType: 'prepaid_plans',
     },
     prepaid_include: {
       collection: 'prepaidincludes',
       uniqueField: 'name',
-      itemName: 'Prepaid Bucket',
+      itemName: 'prepaid bucket',
       itemType: 'prepaid_include',
       itemsType: 'prepaid_includes',
     },
     product: {
       collection: 'rates',
       uniqueField: 'key',
+      itemName: 'product',
       itemType: 'product',
       itemsType: 'products',
+    },
+    discount: {
+      collection: 'discounts',
+      uniqueField: 'key',
+      itemName: 'discount',
+      itemType: 'discount',
+      itemsType: 'discounts',
     },
   },
 };
