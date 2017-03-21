@@ -31,7 +31,7 @@ trait Models_Verification {
 			$translated[$type] = array();
 			$configParams = Billrun_Util::getFieldVal($config[$type], array());
 			foreach ($configParams as $param) {
-				$name = $param['name'];
+				$name = $this->getParamName($param, $params);
 				$isGenerated = (isset($param['generated']) && $param['generated']);
 				if (!isset($params[$name]) || $params[$name] === "") {
 					if (isset($param['mandatory']) && $param['mandatory'] && !$isGenerated) {
@@ -72,6 +72,17 @@ trait Models_Verification {
 			$this->verifyTranslated($translated);
 		}
 		return array($translated['query_parameters'], $translated['update_parameters']);
+	}
+	
+	protected function getParamName($param, $params) {
+		$paramNameToFind = $param['name'] . '.';
+		$paramNameToFindLength = strlen($paramNameToFind);
+		foreach (array_keys($params) as $key) {
+			if ((substr($key, 0, $paramNameToFindLength) === $paramNameToFind)) {
+				return $key;
+			}
+		}
+		return $param['name'];
 	}
 
 	/**
