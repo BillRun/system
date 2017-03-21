@@ -275,6 +275,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			'_id' => $balance->getId()->getMongoId(),
 		);
 		Billrun_Factory::db()->balancesCollection()->update($query, $update);
+		unset($balance['notifications_sent']); // unset in memory variable same as we did in db
 		$plan = $this->getSubscriberPlan($subscriber);
 		$this->handleBalanceNotifications("BALANCE_LOAD", $plan, $subscriber['msisdn'], $balance);
 	}
