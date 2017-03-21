@@ -13,6 +13,8 @@
  * @since    0.5
  */
 class Generator_BillrunToBill extends Billrun_Generator {
+	
+	use Billrun_Traits_Api_OperationsLock;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
@@ -151,6 +153,34 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				return false;
 		}		
 		return true;
+	}
+		
+	protected function getConflictingQuery() {	
+		if (!empty($this->invoices)){
+			return array(
+				'$or' => array(
+					array('invoices' => 'all'),
+					array('invoices' => array('$in' => $this->invoices)),
+				),
+			);
+		}
+		
+		return array();	
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'ConfirmCycle',
+			'invoices' => (empty($this->invoices) ? 'all' : $this->invoices),
+		);
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'ConfirmCycle',
+			'invoices' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'end_time' => array('$exists' => false)
+		);
 	}
 	
 }

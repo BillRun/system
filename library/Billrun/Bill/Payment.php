@@ -13,7 +13,8 @@
  * @since    5.0
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
-
+	
+	use Billrun_Traits_Api_OperationsLock;
 	/**
 	 *
 	 * @var string
@@ -38,6 +39,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country');
 
+	protected static $aids;
 	/**
 	 * 
 	 * @param type $options
@@ -450,12 +452,16 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public static function makePayment($chargeOptions) {
 		if (!empty($chargeOptions['aids'])) {
-			$aids = json_decode($chargeOptions['aids']);
+			self::$aids = json_decode($chargeOptions['aids']);
+		}
+		if (!static::lock()) {
+			$this->_controller->addOutput("Charging is already running");
+			return;
 		}
 		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun
 			throw new Exception('Error removing payments before rerun');
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers($aids));
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
@@ -484,6 +490,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
+		
+		if (!static::release()) {
+			$this->_controller->addOutput("Problem in releasing operation");
+			return;
+		}
+		
 	}
 	
 	/**
@@ -556,4 +568,33 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setGatewayChargeFailure($message){
 		return $this->data['failure_message'] = $message;
 	}
+	
+	protected function getConflictingQuery() {
+		if (!empty(self::$aids)){
+			return array(
+				'$or' => array(
+					array('aids' => 'all'),
+					array('aids' => array('$in' => self::$aids)),
+				),
+			);
+		}
+		
+		return array();
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'ChargeAccount',
+			'aids' => (empty(self::$aids) ? 'all' : self::$aids),
+		);
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'ChargeAccount',
+			'aids' => (empty(self::$aids) ? 'all' : self::$aids),
+			'end_time' => array('$exists' => false)
+		);
+	}
+	
 }
