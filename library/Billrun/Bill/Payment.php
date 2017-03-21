@@ -573,8 +573,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty(self::$aids)){
 			return array(
 				'$or' => array(
-					array('aids' => 'all'),
-					array('aids' => array('$in' => self::$aids)),
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => self::$aids)),
 				),
 			);
 		}
@@ -584,15 +584,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	
 	protected function getInsertData() {
 		return array(
-			'action' => 'ChargeAccount',
-			'aids' => (empty(self::$aids) ? 'all' : self::$aids),
+			'action' => 'charge_account',
+			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
 		);
 	}
 	
 	protected function getReleaseQuery() {
 		return array(
-			'action' => 'ChargeAccount',
-			'aids' => (empty(self::$aids) ? 'all' : self::$aids),
+			'action' => 'charge_account',
+			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
 			'end_time' => array('$exists' => false)
 		);
 	}

@@ -159,8 +159,8 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		if (!empty($this->invoices)){
 			return array(
 				'$or' => array(
-					array('invoices' => 'all'),
-					array('invoices' => array('$in' => $this->invoices)),
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => $this->invoices)),
 				),
 			);
 		}
@@ -170,15 +170,15 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	
 	protected function getInsertData() {
 		return array(
-			'action' => 'ConfirmCycle',
-			'invoices' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'action' => 'confirm_cycle',
+			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
 		);
 	}
 	
 	protected function getReleaseQuery() {
 		return array(
-			'action' => 'ConfirmCycle',
-			'invoices' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'action' => 'confirm_cycle',
+			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
 			'end_time' => array('$exists' => false)
 		);
 	}
