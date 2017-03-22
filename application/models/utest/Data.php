@@ -20,6 +20,29 @@ class utest_DataModel extends utest_AbstractUtestModel {
 		$this->result = array('balance_before', 'balance_after', 'lines');
 		$this->label = 'Data | Real-time event';
 	}
+	
+	protected function getMsccData($usages) {
+		$ret = array();
+		
+		foreach ($usages as $usage) {
+			$usedUnitsAndRatingGroup = explode(':', $usage);
+			$usedUnits = $usedUnitsAndRatingGroup[0];
+			$ratingGroup = isset($usedUnitsAndRatingGroup[1]) ? (int)$usedUnitsAndRatingGroup[1] : 92;
+			$currentData = array(
+				"event" => "initial",
+				"reportingReason" => "0",
+				"serviceId" => "400700",
+				"ratingGroup" => $ratingGroup,
+				"requestedUnits" => 1000,
+			);
+			if (!empty($usedUnits)) {
+				$currentData["usedUnits"] = $usedUnits;
+			}
+			$ret[] = $currentData;
+		}
+		
+		return $ret;
+	}
 
 	/**
 	 * main action to do basic tests
@@ -35,14 +58,16 @@ class utest_DataModel extends utest_AbstractUtestModel {
 
 		//Run test scenario
 		foreach ($scenario as $index => $name) {
-			$nameAndUssage = explode("|", $name);
+			$nameAndUsages = explode("|", $name);
+			$usages = explode(',', $nameAndUsages[1]);
+			
 			$params = array(
 				'imsi' => $imsi,
 				'mcc' => $mcc,
 				'requestNum' => ($index + 1),
-				'type' => $nameAndUssage[0],
+				'type' => $nameAndUsages[0],
 				'sessionId' => $this->controller->getReference(),
-				'usedUnits' => isset($nameAndUssage[1]) ? $nameAndUssage[1] : 1048576
+				'msccData' => $this->getMsccData($usages),
 			);
 			$data = $this->getRequestData($params);
 			$this->controller->sendRequest(array('usaget' => 'data', 'request' => $data));
@@ -59,10 +84,10 @@ class utest_DataModel extends utest_AbstractUtestModel {
 	protected function getRequestData($params) {
 		$type = $params['type'];
 		$imsi = $params['imsi'];
-		$usedUnits = (int) $params['usedUnits'];
 		$requestNum = $params['requestNum'];
 		$sessionId = $params['sessionId'];
 		$mcc = $params['mcc'];
+		$msccData = $params['msccData'];
 
 		$request = array(
 			//"requestType" => "1",
@@ -72,16 +97,7 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			"imsi" => $imsi,
 			"imei" => "3542010614744704",
 			"msisdn" => "972505050092",
-			"msccData" => array(
-				array(
-					"event" => "initial",
-					"reportingReason" => "0",
-					"serviceId" => "400700",
-					"ratingGroup" => "92",
-					"requestedUnits" => 1000,
-				//"usedUnits" => 1000
-				),
-			),
+			"msccData" => $msccData,
 			"service" => array(
 				"PdnConnectionId" => "0",
 				"PdpAddress" => "10.161.48.3",
@@ -114,12 +130,10 @@ class utest_DataModel extends utest_AbstractUtestModel {
 			case 'update':
 				$request['requestType'] = "2";
 				$request['requestNum'] = $requestNum;
-				$request['msccData'][0]['usedUnits'] = $usedUnits;
 				break;
 			case 'final':
 				$request['requestType'] = "3";
 				$request['requestNum'] = $requestNum;
-				$request['msccData'][0]['usedUnits'] = $usedUnits;
 				break;
 			default: return NULL;
 				break;
