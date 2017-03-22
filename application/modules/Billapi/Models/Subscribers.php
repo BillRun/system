@@ -69,5 +69,15 @@ class Models_Subscribers extends Models_Entity {
 			$service['to'] = isset($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 		}
 	}
+	
+		
+	/**
+	 * Return the key field
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		return 'sid';
+	}
 
 }

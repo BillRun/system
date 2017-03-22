@@ -556,8 +556,6 @@ class Models_Entity {
 				return 'username';
 			case 'rates':
 				return 'key';
-			case 'subscribers':
-				return 'sid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
