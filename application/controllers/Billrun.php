@@ -93,6 +93,18 @@ class BillrunController extends ApiController {
 		);
 		$this->setOutput(array($output));
 	}
+	
+	public function chargeStatusAction() {
+		$setting['status'] = $this->isChargeAllowed();
+		$setting['owed_amount'] = $this->getOwedAmount();
+
+		$output = array(
+			'status' => !empty($setting) ? 1 : 0,
+			'desc' => !empty($setting) ? 'success' : 'error',
+			'details' => empty($setting) ? array() : $setting,
+		);
+		$this->setOutput(array($output));
+	}
 
 	protected function render($tpl, array $parameters = array()) {
 		return parent::render('index', $parameters);
@@ -259,4 +271,38 @@ class BillrunController extends ApiController {
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
+	protected function getOwedAmount() {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		$match = array(
+			'$match' => array(
+				'aid' => array('$exists' => true),
+			),
+		);
+		
+		$group = array(
+			'$group' => array(
+				'_id' => null,
+				'amount' => array(
+					'$sum' => '$due',
+				)
+			)
+		);
+
+		$result = $billsColl->aggregate($match, $group)->current();
+		return $result['amount'];
+	}
+	
+	protected function isChargeAllowed() {
+		$operationsColl = Billrun_Factory::db()->operationsCollection();
+		$query = array(
+			'action' => array('$in' => array('confirm_cycle', 'charge_account')),
+			'end_time' => array('$exists' => false),
+		);
+		
+		$chargeAllowed = $operationsColl->query($query)->cursor()->current();
+		if ($chargeAllowed->isEmpty()) {
+			return true;
+		}
+		return false;
+	}
 }
