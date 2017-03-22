@@ -7,7 +7,7 @@
  */
 
 /**
- * Billapi model for subscribers entity
+ * Billapi accounts model for subscribers entity
  *
  * @package  Billapi
  * @since    5.3
