@@ -80,7 +80,8 @@ class ResetLinesAction extends ApiAction {
 	
 	/**
 	 * Gets the query to get sids by aids list.
-	 * gets all subscribers from past 3 months.
+	 * gets all subscribers from past 3 months - for late lines.
+	 * only active cycles will be handled because of the billrun key
 	 * 
 	 * @param array $aids
 	 * @return query
@@ -89,10 +90,10 @@ class ResetLinesAction extends ApiAction {
 		$time = date(strtotime('-3 months'));
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate($time ),
+				'$gt' => new MongoDate($time),
 			),
 			'from' => array(
-				'$lte' => new MongoDate($time ),
+				'$lte' => new MongoDate(),
 			),
 			'aid' => array(
 				'$in' => $aids,
