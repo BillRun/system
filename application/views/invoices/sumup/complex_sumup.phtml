@@ -30,8 +30,9 @@
 		<?php } ?>			
 		<tr class="total">
 			<td colspan="3">SUBTOTAL</td>
-			<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
+			<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'] - @$data['totals']['credit']['before_vat'], 2); ?></strong></td>
 		</tr>
+		<?php echo $this->render($this->discount_template,array('data' => array('totals'=> $data['totals'],'discounts'=> $this->getAllDiscount($this->lines)), 'col_count' => 4)); ?>
 		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'), 'col_count' => 4)); ?>
 
 		<tr class="grand-total">

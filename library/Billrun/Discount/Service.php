@@ -22,8 +22,7 @@ class Billrun_Discount_Service extends Billrun_Discount {
 	
 	public function __construct($discountRate, $eligibilityOnly = FALSE ) {
 		parent::__construct($discountRate, $eligibilityOnly );
-		$this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types',array('flat'=>'flat','switched'=>'flat'));
-		$this->discountableUsageTypes = Billrun_Factory::config()->getConfigValue('discounts.service.usage_types',array('usage'));
+		$this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types',array('flat'=>'flat','switched'=>'flat','service'=>'service'));
 	}
 	
 	/**
@@ -66,7 +65,7 @@ class Billrun_Discount_Service extends Billrun_Discount {
 		foreach (@Billrun_Util::getFieldVal($this->discountData['params'], array()) as $key => $values) {
                     $eligible &= isset($subscriberData[$key])  && $subscriberData[$key] == $values 
                                     || 
-                                isset($service['breakdown'][$key]) && $service['breakdown'][$key] == $values;
+								isset($subscriberData['breakdown'][$key]) && is_array($values) && array_intersect(array_map(function($a){return $a['name'];},$subscriberData['breakdown'][$key]),$values);
 		}
 
 		$ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $switch_date, 'end_date' => $end_date), $addedData));
@@ -104,88 +103,6 @@ class Billrun_Discount_Service extends Billrun_Discount {
 		}
 		return FALSE;
 	}	
-
-	/**
-	 * 
-	 * @param type $service
-	 * @param type $discountParams
-	 * @param type $switch_date
-	 * @param type $multiplier
-	 * @param type $startDate
-	 * @param type $endDate
-	 * @param type $sfieldRegex
-	 * @return type
-	 */
-	protected function checkService($service, &$discountParams, $discount, $switch_date, $startDate, $endDate = null, $sfieldRegex = FALSE) {
-		$tMultiplier = 1;
-		$addedValues = array();
-		foreach ($discountParams as $sfield => $val) {
-			$orgSFlid = $sfield;
-			if (!empty($sfieldRegex)) {
-				$sfield = preg_replace($sfieldRegex['regex'], $sfieldRegex['replace'], $sfield);
-			}
-			if (!isset($service[$sfield])) {
-				continue;
-			}
-			if (is_array($val)) {
-				foreach ($val as $vk => $vs) {
-					foreach ($vs as $vsk => $v) {
-						if ((is_array($service[$sfield]) && in_array($v, $service[$sfield]) ) || $service[$sfield] == $v ||
-							(is_array($service[$sfield]) && static::hasOptions($service[$sfield], $v))) {
-							foreach (@Billrun_Util::getFieldVal($discount['domains'], array()) as $dmKey => $domains) {
-								if (in_array($service[$sfield], $domains) && strstr($dmKey, 'required_with_commitment') !== FALSE && !static::serviceWithinCommitment($service)) {
-									break 2;
-								}
-							}
-							if (@Billrun_Util::getFieldVal($startDate, FALSE) && $this->billrunStartDate < $startDate && $startDate <= $this->billrunDate) {
-								$tMultiplier = max(0, min(Billrun_Util::calcPartialMonthMultiplier($startDate, $this->billrunDate, $this->billrunStartDate, $endDate), $tMultiplier));
-								if (empty($endDate) || $endDate > $this->billrunDate) {
-									$tMultiplier += 1;
-								}
-								if (!empty($tMultiplier)) {									
-									$switch_date = $startDate;
-								}
-							}
-
-							if (!empty($tMultiplier)) {								
-								if ($vk == 'optional') {
-									$addedValues['multiplier'] = $tMultiplier;
-									$addedValues['end_date'] = $endDate;
-									$addedValues['start_date'] = $startDate;
-									
-								} else {
-									unset($discountParams[$orgSFlid][$vk][$vsk]);
-									if ($vk == 'required') {//HACK to fix BIL-515 for NPLAY_X discounts
-										if(is_array($service[$sfield]) && static::hasOptions($service[$sfield], $v)) {
-											$addedValues['by_option'] =1;
-										} else {
-											$addedValues['required'] = $tMultiplier;
-										}
-										$addedValues['multiplier'] = $tMultiplier;
-										$addedValues['end_date'] =  $this->billrunDate > $endDate ? $endDate : "";			
-										$addedValues['start_date'] = $this->billrunStartDate < $startDate ? $startDate : "";
-										
-										unset($discountParams[$orgSFlid][$vk]);
-									}
-								}
-								if (!empty($discountParams[$orgSFlid][$vk])) {
-									unset($discountParams[$orgSFlid][$vk]);
-								}
-								
-								break 2;
-							}
-						}
-					}
-				}
-				if (empty($discountParams[$orgSFlid])) {
-					unset($discountParams[$orgSFlid]);
-				}
-			} else if (preg_match('/' . $val . '/', $service[$sfield])) {
-				unset($discountParams[$sfield]);
-			}
-		}
-		return $addedValues;
-	}
 	
 	protected function isServiceOptional($service, $discountParams) {
 		return !empty($discountParams['services']['next_plan']['optional']) && in_array($service, $discountParams['services']['next_plan']['optional']);
@@ -224,29 +141,31 @@ class Billrun_Discount_Service extends Billrun_Discount {
 	}
 
 	protected function getTotalsFromBillrun($billrun,$entityId) {
-        if(empty($this->discountData['filter_keys'])) {
+        if(empty($this->discountData['discount_subject'])) {
             return parent::getTotalsFromBillrun($billrun, $entityId);
         }
             
         $usageTotals = array('after_vat'=> 0,'before_vat'=> 0,'usage'=>[], 'flat' => [], 'miscellaneous' => [] );
-        $subData = $billrun->getSubRawData($entityId);
+		foreach( $billrun->getSubscribers() as $sub) {
+			$subData = $sub->getData();
+			if($subData['sid'] == $entityId) {
+				break;
+			}
+		}
         foreach(Billrun_Util::getFieldVal($subData['breakdown'],array()) as $section => $types) {
             if( !isset($this->discountableSections[$section]) ) {
                 continue;
             }
-            foreach($types as $type => $typedUsages) {
-                if( !in_array($type,  $this->discountableUsageTypes) ) {
-                    continue;
-                }
-                foreach($typedUsages as $vat => $usages) {
-                    foreach($usages as $invoiceName => $usage) {
-						
-                        if( !empty($usage['keys']) && !empty(array_intersect($usage['keys'], $this->discountData['filter_keys'])) ) { 
-                                $usageTotals[$this->discountableSections[$section]][$vat] = Billrun_Util::getFieldVal($usageTotals[$this->discountableSections[$section]][$vat], 0) +  $usage['cost']; 
-                                $usageTotals['after_vat'] += $usage['cost'] * ( 1 + ($vat/100) ); 
-                                $usageTotals['before_vat'] += $usage['cost'];
-                        }
-                    }
+            foreach($types as $type => $usage) {						
+				if( !empty($usage['name']) && (
+												isset($this->discountData['discount_subject']['service'])  && !empty(in_array($usage['name'], array_keys($this->discountData['discount_subject']['service']))) 
+												||
+												isset($this->discountData['discount_subject']['plan'])  && !empty(in_array($usage['name'], array_keys($this->discountData['discount_subject']['plan'])))
+					)) { 
+						//$usageTotals[$this->discountableSections[$section]][$vat] = Billrun_Util::getFieldVal($usageTotals[$this->discountableSections[$section]][$vat], 0) +  $usage['cost']; 
+						$usageTotals['after_vat'] += $usage['cost'] ; 
+						$usageTotals['before_vat'] += $usage['cost'];
+						@$usageTotals[$usage['name']] += $usage['cost'];
                 }
             }
         }

@@ -1,0 +1,17 @@
+<?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
+
+<?php 
+if(!empty($data['discounts'])) {
+	?>
+	<?php foreach($data['discounts']['lines'] as $title => $amount) { ?>
+	<?php if($amount == 0 ) { continue; } ?>
+		<tr class="total">
+			<td colspan="<?php echo $colspan; ?>"><?php echo $title ?> </td>
+			<td><?php echo '$' . number_format($amount,2) ?></td>
+		</tr>
+	<?php }//foreach ?>
+<?php } ?>
+<tr class="total">
+	<td colspan='<?php echo $colspan; ?>'>AFTER DISCOUNTS</td>
+	<td><?php echo '$' . number_format($data['totals']['before_vat'] , 2); ?></td>
+</tr>

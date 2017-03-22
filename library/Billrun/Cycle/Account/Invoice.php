@@ -144,11 +144,24 @@ class Billrun_Cycle_Account_Invoice {
 		return $this->key;
 	}
 
-        public function applyDiscounts() {
-            $dm = new Billrun_DiscountManager();
-            $discounts = $dm->getEligibleDiscounts($this);
-            print_r($discounts);
-        }
+	public function applyDiscounts() {
+		$dm = new Billrun_DiscountManager();
+		$discounts = $dm->getEligibleDiscounts($this);
+		
+		print_r($discounts);
+		
+		foreach($discounts as $discount) {			
+			foreach($this->subscribers as  $subscriber) {
+				if($subscriber->getData()['sid'] == $discount['sid']) {
+					$rawDiscount = $discount->getRawData();
+					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
+					continue;
+				}
+			}
+			Billrun_Factory::db()->linesCollection()->save($discount);
+		}
+		$this->updateTotals();
+	}
         
 	/**
 	 * Closes the billrun in the db by creating a unique invoice id

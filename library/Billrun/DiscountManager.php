@@ -28,10 +28,10 @@ class Billrun_DiscountManager {
 					'Billrun_Discount_Account' => array(
 						array('level' => 'account'),
 					),
-                                        'Billrun_Discount_Service' => array(
+	               'Billrun_Discount_Service' => array(
 						array('level' => 'service'),
 						array('level' => '^$'),
-                                                array('key' => '.*')
+                        array('key' => '.*')
 						
 					),
 				)
@@ -74,6 +74,7 @@ class Billrun_DiscountManager {
 		foreach($discountCdrs as $discountId => &$discountCdr) {
 			foreach($discountCdr as &$cdr) {
 				$cdr['aprice'] = $discountInstances[$discountId]->calculatePrice($cdr, $invoice);
+				$cdr = $this->addTaxationToLine($cdr);
 			}
 		}
 		/*
@@ -101,6 +102,25 @@ class Billrun_DiscountManager {
 			$returnedCdrs = array_merge($returnedCdrs, $discountCdr);
 		}
 		return static::getFinalCDRs($returnedCdrs);
+	}
+	
+	protected function addTaxationToLine($entry) {
+		$entryWithTax = FALSE;
+		for($i=0;$i < 3 && !$entryWithTax;$i++) {//Try 3 times to tax the line.
+			$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false,'type'=>'tax'));
+			$entryWithTax = $taxCalc->updateRow($entry);
+			if(!$entryWithTax) {
+				Billrun_Factory::log("Taxation of {$entry['name']} failed retring...",Zend_Log::WARN);
+				sleep(1);
+			}
+		}
+		if(!empty($entryWithTax)) {
+			$entry = $entryWithTax;
+		} else {
+			throw new Exception("Couldn`t tax flat line {$entry['name']} for aid: {$entry['aid']} , sid : {$entry['sid']}");
+		}
+		
+		return $entry;
 	}
 	
 	/**

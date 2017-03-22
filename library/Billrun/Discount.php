@@ -58,8 +58,9 @@ abstract class Billrun_Discount {
 				$vat = 0.1;//TODO  replace  with  actual tax
 				$discountLine = array(
 					'key' => $this->discountData['key'],
+					'name' => $this->discountData['description'],
 					'type' => 'credit',
-					'invoice_label' => $this->discountData['description'],					
+					'description' => $this->discountData['description'],					
 					'usaget' => 'discount',//TODO move to  disocunt rate data?
 					'discount_type' => $this->discountData['discount_type'],
 					'urt' => new MongoDate($creationTime),
@@ -164,7 +165,7 @@ abstract class Billrun_Discount {
 			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$aprice = call_user_func_array($callback, array($discount, 10, $val['value'], $discountLimit, $discountVAT));
+			$aprice = call_user_func_array($callback, array($discount, $totals[$key], $val['value'], $discountLimit, $discountVAT));
 			$totalPrice += $aprice;
 		}
 		if (!empty($totalPrice)) {
@@ -240,21 +241,22 @@ abstract class Billrun_Discount {
 	 * @param type $discountVAT
 	 * @return type
 	 */
-	protected function calculatePriceEuro($discount, $totals, $value, $limit, $discountVAT) {
+	protected function calculatePriceEuro($discount, $total, $value, $limit, $discountVAT) {
 		if ($value > 0 || Billrun_Util::getFieldVal($discount['termination'], FALSE)) {//if the  discount is a terminataed charge no need to  compare against existing totals
 			return $value;
 		}
 		$discountLeft = $value;
 		$vat = null;
-		foreach ($totals as $vat => &$pr) {
-			$vatRate = ( (1 + ($discountVAT)) / (1 + ($vat / 100)) ); //get discount to charge rate
-			$totals[$vat] += $discountLeft * $vatRate;
-			$discountLeft = ($pr < 0 ? $pr : 0 ) / $vatRate;
-			$totals[$vat] -= $discountLeft;
-		}
-		if ($vat !== null) {
-			$totals[$vat] += $discountLeft; // revert last carry if theres still discount value Left
-		}
+//		foreach ($totals as $vat => &$pr) {
+//			$vatRate = ( (1 + ($discountVAT)) / (1 + ($vat / 100)) ); //get discount to charge rate
+//			$totals[$vat] += $discountLeft * $vatRate;
+//			$discountLeft = ($pr < 0 ? $pr : 0 ) / $vatRate;
+//			$totals[$vat] -= $discountLeft;
+//		}
+//		if ($vat !== null) {
+//			$totals[$vat] += $discountLeft; // revert last carry if theres still discount value Left
+//		}
+		$discountLeft = $total - $value;
 		return $value > $discountLeft ? 0 : //if the totals was negative before the discount application no discount needed.
 			max((($discountLeft < 0 ) ? $value - $discountLeft : $value), $limit);
 	}
@@ -449,13 +451,13 @@ abstract class Billrun_Discount {
 		return $this->discountData['key'];
 	}
         
-        /**
-         * Get Totals from the billrun object
-         * @param type $billrun
-         * @param type $entityId
-         * @return type
-         */
-        protected function getTotalsFromBillrun( $billrun, $entityId ) {
+	/**
+	 * Get Totals from the billrun object
+	 * @param type $billrun
+	 * @param type $entityId
+	 * @return type
+	 */
+    protected function getTotalsFromBillrun( $billrun, $entityId ) {
             return $billrun->getTotals($entityId);
 	}
 	
