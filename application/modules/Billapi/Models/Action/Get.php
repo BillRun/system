@@ -67,6 +67,13 @@ class Models_Action_Get extends Models_Action {
 
 		if (isset($this->request['project'])) {
 			$project = (array) json_decode($this->request['project'], true);
+			// if revision_info requested, all entity unique fields are requried for query
+			if(array_key_exists("revision_info",$project)){
+				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->getCollectionName()}.duplicate_check", array());
+				foreach ($uniqueFields as $fieldName) {
+					$project[$fieldName] = 1;
+				}
+			}
 		} else {
 			$project = array();
 		}
