@@ -148,8 +148,6 @@ class Billrun_Cycle_Account_Invoice {
 		$dm = new Billrun_DiscountManager();
 		$discounts = $dm->getEligibleDiscounts($this);
 		
-		print_r($discounts);
-		
 		foreach($discounts as $discount) {			
 			foreach($this->subscribers as  $subscriber) {
 				if($subscriber->getData()['sid'] == $discount['sid']) {

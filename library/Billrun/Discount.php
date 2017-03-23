@@ -140,15 +140,14 @@ abstract class Billrun_Discount {
 	 * @param type $callback
 	 * @throws Exception
 	 */
-	public function calculatePrice($discount, $billrun) {
+	public function calculatePriceAndTax($discount, $billrun) {
 		if (isset($discount['sid'])) {
 			$entityId = $discount['sid'];
 		} else {
 			$entityId = null;
 		}
-		$discountVAT = $this->getDiscountVat($discount, $billrun);
 		$totals = $this->getTotalsFromBillrun($billrun, $entityId);		
-		$discountLimit = max(Billrun_Util::getFieldVal($discount['limit'], -PHP_INT_MAX), -($totals['after_vat'] / (1 + $discountVAT)));
+		$discountLimit = Billrun_Util::getFieldVal($discount['limit'], -PHP_INT_MAX);
 		
 		if (!isset($discount['discount'])) {
 			Billrun_Factory::log('Missing  discount field in conditional discount : ' . $discount['key']);
@@ -165,8 +164,9 @@ abstract class Billrun_Discount {
 			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$aprice = call_user_func_array($callback, array($discount, $totals[$key], $val['value'], $discountLimit, $discountVAT));
-			$totalPrice += $aprice;
+			$price = call_user_func_array($callback, array($discount, $totals[$key], $val['value'], $discountLimit));
+			$taxationInformation[] = $this->getTaxationDataForPrice($price ,$key, $discount) ;
+			$totalPrice += $price;
 		}
 		if (!empty($totalPrice)) {
 			$charge = $totalPrice > 0 ?  $totalPrice : max($totalPrice, $discountLimit);
@@ -175,18 +175,42 @@ abstract class Billrun_Discount {
 			$charge = $discountLimit;
 		}
 		$charge *= $discount['usagev'];
-		return $charge;
+		return array('price' => $charge, 'tax_info' => $taxationInformation);;
 	}
 	
-	//TODO  Rename!
-	 public function getDiscountType() {
-		 foreach($this->discountData['rates'] as $usage => $values ) {
-			 if(!empty($values['units'])) {
-				 return $values['units'];
-			 }
-		 }
-			 
-		return null;
+	protected function getTaxationDataForPrice($price,$identifingKey,$discount) {
+		$taxRate = FALSE;
+		$retTaxInfo = array();
+		//Get the  tax rate  by the subject key
+		$collMapping =  array(	'plan'=>array('coll'=>'plans','key_field' => 'name'),
+								'service'=> array('coll'=>'services','key_field' => 'name'),
+								'usage'=>array('coll'=>'rates','key_field' => 'key'));
+		
+		foreach($collMapping as $subjectType => $mapping) {
+			if(empty($this->discountData['discount_subject'][$subjectType])) { continue;}
+			
+			foreach($this->discountData['discount_subject'][$subjectType] as $key => $val) {
+				if($identifingKey == $key) {
+					$rateColl = Billrun_Factory::db()->getCollection($mapping['coll']);
+					$query = array_merge(array($mapping['key_field'] => $key), Billrun_Utils_Mongo::getDateBoundQuery($discount['urt']->sec));
+					$taxRate = $rateColl->query($query)->cursor()->limit(1)->current();
+
+					break;
+				}
+			}
+		}
+		
+		if($taxRate) {
+			$retTaxInfo = array('tax_rate' => $taxRate->createRef($rateColl),'price' => $price);
+		} else {
+			Billrun_Factory::log("Cloudn't find taxation rate for discount {$disocunt['key']} for discount subject {$$identifingKey}.",Zend_Log::ERR);
+		}
+		
+		return $retTaxInfo;
+	}
+	
+	 public function getDiscountType() {			 
+		return $this->discountData['discount_type'];
 	}
 
 	public function getRateCategoryKeys($totalsSections = array()) {
@@ -203,25 +227,13 @@ abstract class Billrun_Discount {
 	 * @param type $discountVat
 	 * @return type
 	 */
-	public function calculatePricePercent($discount, $totals, $value, $limit, $discountVat, &$updatedTotals = array()) {
+	public function calculatePricePercent($discount, $totals, $value, $limit, &$updatedTotals = array()) {
 		$priceCorrection = 0;
 		$aprice = 0;		
-		if (is_array($totals)) {
-			foreach ($totals as $vat => $pr) {				
-				$vatRate = ( (1 + ($discountVat)) / (1 + ($vat / 100)) ); //get discount to charge rate
-				$discountValue = $pr * floatval($value) / $vatRate;
-				$oldAPrice = Billrun_Util::getFieldVal($aprice, 0);
-				$aprice = max(Billrun_Util::getFieldVal($aprice, 0) - $discountValue, $limit);
-				$discountValueLeft = $aprice - $oldAPrice;
-				$totals[$vat] += $discountValueLeft * $vatRate;
-				$priceCorrection += $totals[$vat] / $vatRate;
-			}
-		} else {
-			$discountValue = $totals * floatval($value);
-			$aprice = max(Billrun_Util::getFieldVal($aprice, 0) - $discountValue, $limit);
-			$totals += $aprice;
-			$priceCorrection = $totals;
-		}
+		$discountValue = $totals * floatval($value);
+		$aprice = max(Billrun_Util::getFieldVal($aprice, 0) - $discountValue, $limit);
+		$totals += $aprice;
+		$priceCorrection = $totals;
 		// if the total gone  below 0  correct the discount value to keep it equal to 0
 		if ($priceCorrection < 0 && $priceCorrection > $aprice) {
 			$aprice -= $priceCorrection;
@@ -241,10 +253,10 @@ abstract class Billrun_Discount {
 	 * @param type $discountVAT
 	 * @return type
 	 */
-	protected function calculatePriceEuro($discount, $total, $value, $limit, $discountVAT) {
-		if ($value > 0 || Billrun_Util::getFieldVal($discount['termination'], FALSE)) {//if the  discount is a terminataed charge no need to  compare against existing totals
-			return $value;
-		}
+	protected function calculatePriceEuro($discount, $total, $value, $limit) {
+		
+		
+		
 		$discountLeft = $value;
 		$vat = null;
 //		foreach ($totals as $vat => &$pr) {
@@ -256,7 +268,7 @@ abstract class Billrun_Discount {
 //		if ($vat !== null) {
 //			$totals[$vat] += $discountLeft; // revert last carry if theres still discount value Left
 //		}
-		$discountLeft = $total - $value;
+		$discountLeft = $total + $value;
 		return $value > $discountLeft ? 0 : //if the totals was negative before the discount application no discount needed.
 			max((($discountLeft < 0 ) ? $value - $discountLeft : $value), $limit);
 	}

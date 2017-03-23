@@ -1,17 +1,23 @@
 <?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
 
 <?php 
-if(!empty($data['discounts'])) {
+$displayTotal = FALSE;
+if(!empty($data['discounts']['lines'])) {
 	?>
 	<?php foreach($data['discounts']['lines'] as $title => $amount) { ?>
-	<?php if($amount == 0 ) { continue; } ?>
+	<?php
+		if($amount == 0 ) { continue; }
+		$displayTotal = TRUE;
+	?>
 		<tr class="total">
-			<td colspan="<?php echo $colspan; ?>"><?php echo $title ?> </td>
+			<td colspan="<?php echo $colspan; ?>"><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $title ?> </td>
 			<td><?php echo '$' . number_format($amount,2) ?></td>
 		</tr>
 	<?php }//foreach ?>
+	<?php if($displayTotal) { ?>
+		<tr class="total">
+			<td colspan='<?php echo $colspan; ?>'>TOTAL DISCOUNTS</td>
+			<td><?php echo '$' . number_format($data['discounts']['total'] , 2); ?></td>
+		</tr>
+	<?php } ?>
 <?php } ?>
-<tr class="total">
-	<td colspan='<?php echo $colspan; ?>'>AFTER DISCOUNTS</td>
-	<td><?php echo '$' . number_format($data['totals']['before_vat'] , 2); ?></td>
-</tr>

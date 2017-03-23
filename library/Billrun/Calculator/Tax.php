@@ -61,25 +61,25 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	public function prepareData($lines) { }
 
 	
-        //================================= Static =================================
-        /**
-         *  Get  the  total amount with taxes  for a given line
-         * @param type $taxedLine a line *after* taxation  was applied to it.
-         * @return float the  price of the line including taxes
-         */
-        public static function addTax($taxedLine) {
-            return $taxedLine['aprice'] + $taxedLine['tax_data']['tax_amount'];
-        }
-        
-        /**
-         *  Remove the taxes from the total amount with taxes for a given line
-         * @param type $taxedLine a line *after* taxation  was applied to it.
-         * @return float the  price of the line including taxes
-         */
-        public static function removeTax($taxedPrice, $taxedLine) {
-            return $taxedPrice + $taxedLine['tax_data']['tax_amount'];
-        }
-        
+	//================================= Static =================================
+	/**
+	 *  Get  the  total amount with taxes  for a given line
+	 * @param type $taxedLine a line *after* taxation  was applied to it.
+	 * @return float the  price of the line including taxes
+	 */
+	public static function addTax($taxedLine) {
+		return $taxedLine['aprice'] + $taxedLine['tax_data']['tax_amount'];
+	}
+
+	/**
+	 *  Remove the taxes from the total amount with taxes for a given line
+	 * @param type $taxedLine a line *after* taxation  was applied to it.
+	 * @return float the  price of the line including taxes
+	 */
+	public static function removeTax($taxedPrice, $taxedLine) {
+		return $taxedPrice + $taxedLine['tax_data']['tax_amount'];
+	}
+
 	//================================ Protected ===============================	
 
 	/**
@@ -88,7 +88,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 */
 	protected function getLines() {
 		return $this->getQueuedLines( array( 'type' => array( '$nin' => $this->nonTaxableTypes ) ) );
-	}
+	}	
 
 	public function getCalculatorQueueType() {
 		return 'tax';
@@ -111,5 +111,5 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @param array $subscriber  the subscriber that is associated with the line
 	 * @return array updated line/row with the tax data
 	 */
-	abstract protected function updateRowTaxInforamtion($line, $subscriber, $account);
+	abstract protected function updateRowTaxInforamtion($line, $subscriber, $account);	
 }

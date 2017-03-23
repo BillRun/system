@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
 
-class Billrun_Discount_Usage extends Billrun_Discount_Service {
+class Billrun_Discount_Usage extends Billrun_Discount_Subscriber {
       
     public function __construct($discountRate, $eligibilityOnly = FALSE ) {
         parent::__construct($discountRate, $eligibilityOnly);

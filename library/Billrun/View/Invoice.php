@@ -61,7 +61,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			foreach($subLines as $line) {
 				if($line['usaget'] == 'discount') {
 					@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
-					@$discounts['totals'] +=$line['aprice'];
+					@$discounts['total'] +=$line['aprice'];
 				}
 			}
 		}
