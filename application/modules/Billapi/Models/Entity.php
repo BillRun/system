@@ -259,7 +259,7 @@ class Models_Entity {
 			$this->update['from'] = $now;
 		}
 		
-		$this->checkMinimumDate($this->update, 'from', 'Trackable update');
+		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
