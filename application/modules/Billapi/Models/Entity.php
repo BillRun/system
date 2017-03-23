@@ -335,7 +335,7 @@ class Models_Entity {
 		}
 		$fromMinTime = $this->getMinimumUpdateDate();
 		if ($params[$field]->sec < $fromMinTime) {
-			throw new Billrun_Exceptions_Api(1, array(), $action . ' minimum date is ' . date('Y-m-d', $fromMinTime));
+			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
 		}
 		return true;
