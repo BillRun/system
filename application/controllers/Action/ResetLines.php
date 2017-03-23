@@ -98,6 +98,7 @@ class ResetLinesAction extends ApiAction {
 			'aid' => array(
 				'$in' => $aids,
 			),
+			'type' => 'subscriber',
 		);
 	}
 
