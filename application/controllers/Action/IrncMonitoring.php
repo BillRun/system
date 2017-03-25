@@ -38,10 +38,10 @@ class IrncMonitoringAction extends Action_Base {
 
 	protected function getSidPerAlpha3($alphaArray) {
 		$currentDay = strtotime(date('Y-m-d', time()));
-		$previousDay = strtotime(date('Y-m-d', strtotime('-1 day')));
+		$previousDay = strtotime(date('Y-m-d', strtotime('midnight')));
 		$dayStart = new MongoDate($previousDay);
 		$dayEnd = new MongoDate($currentDay);
-		
+
 		$match = array(
 			'$match' => array(
 				'$or' => array(
@@ -77,5 +77,5 @@ class IrncMonitoringAction extends Action_Base {
 		$res = Billrun_Factory::db()->linesCollection()->aggregate($match, $group, $project);
 		return $res;
 	}
-	
+
 }
