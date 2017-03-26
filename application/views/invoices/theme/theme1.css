@@ -402,3 +402,8 @@ img.billrun-logo {
 .sumup .table-default .complex-sumup th:first-child,.sumup .table-default .complex-sumup td:first-child {
 	width: 400px;
 }
+
+/* Emphsize the  sub-total */
+.subtotal {
+	font-weight: bold;
+}
