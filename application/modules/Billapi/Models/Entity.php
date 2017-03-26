@@ -218,8 +218,8 @@ class Models_Entity {
 	 * 
 	 * @throws Billrun_Exceptions_Api
 	 */
-	protected function preCheckUpdate() {
-		$ret = $this->checkDateRangeFields();
+	protected function preCheckUpdate($time = null) {
+		$ret = $this->checkDateRangeFields($time);
 		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
 		return $ret;
 	}
@@ -260,6 +260,11 @@ class Models_Entity {
 		}
 		
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		
+		if ($this->before['from']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
+			return false;
+		}
 		
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
