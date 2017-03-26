@@ -131,4 +131,19 @@ class Billrun_Billingcycle {
 		$ret = date("Ym", $month_before);
 		return $ret;
 	}
+	
+	/**
+	 * method to get the last closed billing cycle
+	 * if no cycle exists will return 197001 (equivalent to unix timestamp)
+	 * 
+	 * @return string format YYYYmm
+	 */
+	public static function getLastClosedBillingCycle() {
+		$sort = array("billrun_key" => -1);
+		$entry = Billrun_Factory::db()->billing_cycleCollection()->query(array())->cursor()->sort($sort)->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return '197001';
+		}
+		return $entry['billrun_key'];
+	}
 }
