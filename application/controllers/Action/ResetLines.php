@@ -31,8 +31,12 @@ class ResetLinesAction extends ApiAction {
 			$this->cleanAccountCache($request['aid']);
 		}
 
-		$billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp();
+		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp() : $request['billrun_key'];
 
+		if(!preg_match("/\d{6}/", $billrun_key)) {
+			return $this->setError('Illegal billrun key', $request);
+		}
+		
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = $this->getRequestSids($request);
 
