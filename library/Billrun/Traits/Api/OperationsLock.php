@@ -60,7 +60,7 @@ trait Billrun_Traits_Api_OperationsLock {
 				)
 			);
 		}
-		unset($data['aids']);
+		unset($data['filtration']);
 		$query = array_merge($data, $lockCondition);
 		$updateOperation = $operationsColl->findAndModify($query, array('$setOnInsert' => $updateQuery), array(),  array('upsert' => true));
 		if ($updateOperation->isEmpty()) {
