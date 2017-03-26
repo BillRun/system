@@ -31,6 +31,8 @@ class Billrun_Helpers_QueueCalculators {
 	protected $options = array();
 	
 	protected $realtime = false;
+	
+	protected $calculatorFailed = false;
 
 	public function __construct($options) {
 		$this->options = $options;
@@ -79,6 +81,7 @@ class Billrun_Helpers_QueueCalculators {
 
 				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
 					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
+					$this->calculatorFailed = true;
 					$this->unifyCalc($processor, $data);
 					return false;
 				}
@@ -152,7 +155,9 @@ class Billrun_Helpers_QueueCalculators {
 		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->shouldSkipCalc($line, 'unify')) {
-				$processor->unsetQueueRow($line['stamp']);
+				if ($this->shouldRemoveFromQueue($line)) {
+					$processor->unsetQueueRow($line['stamp']);
+				}
 				continue;
 			}
 			$this->unifyCalc = Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
@@ -164,7 +169,7 @@ class Billrun_Helpers_QueueCalculators {
 				} else {
 					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
 					// if this is last calculator, remove from queue
-					if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify') {
+					if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify' && $this->shouldRemoveFromQueue($line)) {
 						$processor->unsetQueueRow($entity['stamp']);
 					} else {
 						$processor->setQueueRowStep($entity['stamp'], 'unify');
@@ -204,6 +209,19 @@ class Billrun_Helpers_QueueCalculators {
 		if (isset($this->unifyCalc)) {
 			$this->unifyCalc->releaseAllLines();
 		}
+	}
+	
+	/**
+	 * Should only remove lines from queue if the didn't failed in one of the calculators.
+	 * Realtime prepaid lines should also be removed
+	 * 
+	 * @param type $line
+	 * @return bool
+	 */
+	protected function shouldRemoveFromQueue($line) {
+		return !$this->calculatorFailed ||
+			($this->realtime && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST'));
+			
 	}
 
 }

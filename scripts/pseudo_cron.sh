@@ -56,6 +56,9 @@ do
 
 		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_tax.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type tax" &
 		echo "Invoked tax calculator for "$TENANT" file"
+
+		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_rebalance.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type rebalance" &
+		echo "Invoked rebalance calculator for "$TENANT" file"
 	else
 		echo "No tenants found"
 	fi	

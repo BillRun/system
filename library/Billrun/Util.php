@@ -1577,6 +1577,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return $arr[$keys];
+			}
 			$keys = explode('.', $keys);
 		}
 		
@@ -1591,4 +1594,56 @@ class Billrun_Util {
 		return $ret;
 	}
 	
+	/**
+	 * Maps a nested array  where the identifing key is in the object (as a field) to an hash  where the identifing key is the field name.
+	 * (used to  convert querable objects from the DB to a faster structure in PHP (keyed hash))
+	 * @param type $arrayData the  nested
+	 * @param type $hashKeys the  keys to search for.
+	 * @return type
+	 */
+	public static function mapArrayToStructuredHash($arrayData,$hashKeys) {
+		$retHash =array();
+		$currentKey = array_shift($hashKeys);
+		if(isset($arrayData[0]) && is_array($arrayData) && $currentKey) {
+			foreach($arrayData as $data) {
+				if(isset($data[$currentKey])) {
+					$retHash[$data[$currentKey]] = static::mapArrayToStructuredHash( $data, $hashKeys );
+				} else {
+					Billrun_Factory::log("Could not map the $currentKey in array to hashed value, received array :".print_r($data,1), Zend_Log::WARN);
+				}
+			}
+		} else {
+			$retHash = $arrayData;
+		}
+		return $retHash;
+	}
+	
+	/**
+	 * Maps a totaly array where the identifing keys are in the object (as a field) to an hash  where the  identifing key is the field name.
+	 * (used to  convert querable objects from the DB to a faster structure in PHP (keyed hash))	
+	 * @param type $arrayData the  nested
+	 * @param type $hashKeys the  keys to search for.
+	 * @return type
+	 */
+	public static function mapFlatArrayToStructuredHash($arrayData,$hashKeys) {
+		$retHash =array();
+		$currentKey = array_shift($hashKeys);
+		if($currentKey) {
+			foreach($arrayData as $data) {
+				if(isset($data[$currentKey])) {
+						$key = $data[$currentKey];
+						unset($data[$currentKey]);
+						$retHash[$key] = array_merge(
+														Billrun_Util::getFieldVal( $retHash[$key], array()),
+														static::mapFlatArrayToStructuredHash(array($data), $hashKeys) 
+													);
+				} else {
+					Billrun_Factory::log("Could not map the $currentKey in flat array to hash, received array :".print_r($data,1), Zend_Log::WARN);
+				}
+			}
+		} else {
+			$retHash = $arrayData[0];
+		}
+		return $retHash;
+	}
 }

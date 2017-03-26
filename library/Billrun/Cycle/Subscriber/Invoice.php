@@ -255,9 +255,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
+					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
 					if( $tax['pass_to_customer'] == 1 
 						 ||
-						Billrun_Factory::config()->getConfigValue('taxation.config.apply_optional',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
+						Billrun_Factory::config()->getConfigValue('taxation.CSI.apply_optional_charges',FALSE) && $tax['pass_to_customer'] == 0 && $row['tax_data']['total_amount'] !== 0 ) {
 						$prevAmount = Billrun_Util::getFieldVal($this->data['totals']['taxes'][$tax['description']],0);
 						$this->data['totals']['taxes'][$tax['description']] = $prevAmount + $tax['amount'];
 					}

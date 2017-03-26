@@ -258,9 +258,9 @@ class Models_Entity {
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = $now;
 		}
-		if ($this->update['from']->sec < $now->sec) {
-			throw new Billrun_Exceptions_Api(1, array(), 'closeandnew must get a future update');
-		}
+		
+		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
 				'to' => new MongoDate($this->update['from']->sec)
@@ -277,6 +277,15 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
+	}
+	
+	/**
+	 * method get the minimum time to update
+	 * 
+	 * @return unix timestamp
+	 */
+	protected function getMinimumUpdateDate() {
+		return Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastClosedBillingCycle());
 	}
 
 	/**
@@ -310,6 +319,28 @@ class Models_Entity {
 	}
 
 	/**
+	 * method to check minimum date by the last billing cycle
+	 * 
+	 * @param array $params the parameters the field exists
+	 * @param string $field the field to check
+	 * @param string $action the action that is checking
+	 * 
+	 * @return true on success else false
+	 * 
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function checkMinimumDate($params, $field = 'to', $action = null) {
+		if (is_null($action)) {
+			$action = $this->action;
+		}
+		$fromMinTime = $this->getMinimumUpdateDate();
+		if ($params[$field]->sec < $fromMinTime) {
+			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
+			return false;
+		}
+		return true;
+	}
+	/**
 	 * Deletes an entity by a query
 	 * @param array $query
 	 * @param array $update
@@ -320,6 +351,9 @@ class Models_Entity {
 		if (!$this->canEntityBeDeleted()) {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
+		
+		$this->checkMinimumDate($this->before, 'from');
+
 		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
@@ -351,6 +385,8 @@ class Models_Entity {
 				'to' => new MongoDate()
 			);
 		}
+		
+		$this->checkMinimumDate($this->update);
 
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
@@ -556,6 +592,8 @@ class Models_Entity {
 				return 'username';
 			case 'rates':
 				return 'key';
+			case 'subscribers':
+				return 'sid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}

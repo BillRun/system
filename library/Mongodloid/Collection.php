@@ -333,7 +333,14 @@ class Mongodloid_Collection {
 	 */
 	public function createRefByEntity($entity) {
 		// TODO: Validate the entity?
-		return $this->_collection->createDBRef($entity->getRawData());
+		if (is_array($entity)) {
+			$refData = $entity;
+		} else if ($entity instanceof Mongodloid_Entity) {
+			$refData = $entity->getRawData();
+		} else {
+			return false;
+		}
+		return $this->_collection->createDBRef($refData);
 	}
 	
 	/**
