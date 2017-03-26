@@ -37,8 +37,8 @@ class IrncMonitoringAction extends Action_Base {
 	}
 
 	protected function getSidPerAlpha3($alphaArray) {
-		$currentDay = strtotime(date('Y-m-d', time()));
-		$previousDay = strtotime(date('Y-m-d', strtotime('midnight')));
+		$currentDay = time();
+		$previousDay = strtotime('midnight');
 		$dayStart = new MongoDate($previousDay);
 		$dayEnd = new MongoDate($currentDay);
 
