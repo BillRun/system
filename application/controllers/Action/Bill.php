@@ -125,7 +125,7 @@ class BillAction extends ApiAction {
 	}
 
 	protected function getCollectionDebt($request) {
-		$jsonAids = $request->getPost('aids', '[]');
+		$jsonAids = $request->get('aids', '[]');
 		$aids = json_decode($jsonAids, TRUE);
 		if (!is_array($aids) || json_last_error()) {
 			$this->setError('Illegal account ids', $request->getPost());
@@ -135,7 +135,11 @@ class BillAction extends ApiAction {
 			$this->setError('Must supply at least one aid', $request->getPost());
 			return FALSE;
 		}
-		return Billrun_Bill::getContractorsInCollection($aids);
+		$contractors= Billrun_Bill::getContractorsInCollection($aids);
+		foreach ($contractors as $contractor) {
+			$result[$contractor['aid']] = current($contractor);
+		}	
+		return $result;
 	}
 
 	protected function getPermissionLevel() {
