@@ -1110,8 +1110,8 @@ class ConfigModel {
 		foreach ($data as $config) {
 			if (isset($config['taxation']) && $config['taxation']['tax_type'] === 'CSI') {
 				$modelsWithTaxation = $this->getModelsWithTaxation();
-				$mandatoryTaxationFields = array_keys($this->getTaxationFields());
-				foreach ($modelsWithTaxation as $model => $details) {
+				$mandatoryTaxationFields = array_keys(array_filter($this->getTaxationFields(),function($a){return $a['mandatory'];}));
+				foreach ($modelsWithTaxation as $model) {
 					if ($this->hasEntitiesWithoutMandatoryFields($model, $mandatoryTaxationFields )) {
 						$warnings[] = 'There are valid entities of type "' . $this->getModelName($model) . '" without mandatory fields: ' . implode(', ', $mandatoryTaxationFields);
 					}
@@ -1131,7 +1131,6 @@ class ConfigModel {
 			$query['$or'][] = array($mandatoryField => '');
 			$query['$or'][] = array($mandatoryField => array('$exists' => false));
 		}
-		
 		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
 	}
 
