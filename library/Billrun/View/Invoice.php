@@ -66,12 +66,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 					
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
-					$subscriptionList[$name]['desc'] = $name;	
-					$subscriptionList[$name]['type'] = $typeNames[$line['type']];
+					$key = $this->getLineAggregationKey($line, $rate, $name);
+					$subscriptionList[$key]['desc'] = $name;	
+					$subscriptionList[$key]['type'] = $typeNames[$line['type']];
 					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($flatData['price'][0]['price']) ? $flatData['price'][0]['price'] : $flatData['price']));
-					@$subscriptionList[$name]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
-					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];
+					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],(isset($flatData['price'][0]['price']) ? $flatData['price'][0]['price'] : $flatData['price']));
+					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
+					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
 				}
 			}
 		}
@@ -89,5 +90,13 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			$rate = $flatRate->getData();
 		}
 		return $rate;			
+	}
+	
+	protected function getLineAggregationKey($line,$rate,$name) {
+		$key = $name;
+		if($line['type'] == 'service' && $rate['quantitative']) {
+			$key .= $line['usagev']. $line['sid'];
+		}
+		return $key;
 	}
 }
