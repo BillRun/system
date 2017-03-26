@@ -7,7 +7,7 @@
  */
 
 /**
- * Billapi model for balance update by prepaid include
+ * Billapi model for balance update by prepaid charging group
  *
  * @package  Billapi
  * @since    5.3
