@@ -211,12 +211,12 @@ class BillrunController extends ApiController {
 		$limit = 0;
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
-		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
+		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
 
-		while ($currentBillrunKey <= $lastBillrunKey && $limit < 100) {
+		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
-			$currentBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($currentBillrunKey);
+			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
 			$limit++;
 		}
 
