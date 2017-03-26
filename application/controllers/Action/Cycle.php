@@ -71,21 +71,20 @@ class CycleAction extends Action_Base {
 	 * method to execute the aggregate process
 	 * it's called automatically by the cli main controller
 	 */
-	public function execute() {
-		// Check if we should cycle.
-		$startHoursLag = Billrun_Factory::config()->getConfigValue('billrun.start_hours_lag');
-		if(!$this->isChargeDay($startHoursLag)) {
-			$this->_controller->addOutput("Skipping cycle.");
-			return;
-		}
-		
+	public function execute() {		
 		$options = $this->buildOptions();
 		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
 		$processInterval = $this->getProcessInterval();
 
 		$stamp = $options['stamp'];
 		$size = (int)$options['size'];
-		
+        $allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run');
+        // Check if we should cycle.
+        if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+			$this->_controller->addOutput("Can't run billing cycle before the cycle end time.");
+            return;
+		} 
+
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 				
 		while(!Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {

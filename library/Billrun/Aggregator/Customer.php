@@ -181,6 +181,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->isCycle = true;
 		}
 		
+		if (!$this->shouldRunAggregate($options['stamp'])) {
+			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
+			return;
+		}
+		
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
@@ -918,5 +923,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
 		$billrun->populateInvoiceWithAccountData($account, $options);
 	}
-
+	
+	protected function shouldRunAggregate($stamp) {
+		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
+		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+			return false;
+		}
+		return true;
+	}
+	
 }
