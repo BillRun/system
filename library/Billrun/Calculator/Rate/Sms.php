@@ -89,7 +89,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 					foreach ($this->rates[$prefix] as $rate) {
 						if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-								if ($without_called_msc || $this->checkCalledMsc($rate, $called_msc, $usage_type)){
+								if ($without_called_msc || $this->checkCalledMsc($rate, $called_msc)){
 									$matchedRate = $rate;
 									break 2;
 								}	
@@ -160,9 +160,9 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	}
 	
 	
-	protected function checkCalledMsc($rate, $called_msc, $usage_type) {
-		if (isset($rate['rates'][$usage_type]['called_msc'])){
-			$called_msc_regex = $rate['rates'][$usage_type]['called_msc'];
+	protected function checkCalledMsc($rate, $called_msc) {
+		if (isset($rate['params']['called_msc'])){
+			$called_msc_regex = $rate['params']['called_msc'];
 		} else {
 			return true;
 		}
