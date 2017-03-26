@@ -20,8 +20,8 @@ class PayAction extends ApiAction {
 		$this->allowed();
 		$request = $this->getRequest();
 		Billrun_Factory::log()->log('Pay API call with params: ' . print_r($request->getRequest(), 1), Zend_Log::INFO);
-		$method = $request->getPost('method');
-		$jsonPayments = $request->getPost('payments');
+		$method = $request->get('method');
+		$jsonPayments = $request->get('payments');
 
 		if (!$method) {
 			return $this->setError('No method found', $request->getPost());

@@ -187,7 +187,7 @@ abstract class Billrun_Bill {
 		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
-				'contractor_no' => '$_id',
+				'aid' => '$_id',
 				'total' => 1,
 				'total2' =>  1,
 			),
@@ -214,7 +214,7 @@ abstract class Billrun_Bill {
 			}, $results);
 		}
 		return array_combine(array_map(function($ele) {
-				return $ele['contractor_no'];
+				return $ele['aid'];
 			}, $results), $results);
 	}
 
