@@ -13,7 +13,7 @@
  * @since    5.2
  */
 class Billrun_Subscriber_Aggregate_Services extends Billrun_Subscriber_Aggregate_Aggregator {
-
+	//TODO is this  logic  still being used? 20170325
 	protected function getCharge(array $values, string $billrunKey) {
 		$name = $values['key'];
 		$service = new Billrun_DataTypes_Subscriberservice($name);
