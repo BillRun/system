@@ -1372,7 +1372,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * @param string $viewName the view name to render
 	 * @return type
 	 */
-	protected function renderView($viewName, array $params = array()) {
+	protected function renderView($viewName, array $params = null) {
 		$path = Billrun_Factory::config()->getConfigValue('application.directory');
 		$view_path = $path . '/views/' . strtolower($this->getRequest()->getControllerName());
 		$view = new Yaf_View_Simple($view_path);
@@ -1444,7 +1444,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	 *
 	 * @return string the render layout including the page (component)
 	 */
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		if ($tpl == 'edit' || $tpl == 'confirm' || $tpl == 'logdetails' || $tpl == 'wholesaleajax') {
 			return parent::render($tpl, $parameters);
 		}
