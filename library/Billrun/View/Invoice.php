@@ -101,10 +101,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			$key .= $line['usagev']. $line['sid'];
 		}
 		if(!empty($line['start'])) {
-			$key .= $line['start']->sec;
+			$key .= date('ymd',$line['start']->sec);
 		}
 		if(!empty($line['end'])) {
-			$key .= $line['end']->sec;
+			$key .=  date('ymd',$line['end']->sec);
 		}
 		return $key;
 	}
