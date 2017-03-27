@@ -20,16 +20,6 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		}
 	}
 	
-	public function _initPHP7DatabaseLayer(Yaf_Dispatcher $dispatcher) {
-//		require_once APPLICATION_PATH . '/library/MongoDB/Client.php';
-//		require_once APPLICATION_PATH . '/library/Mongo/MongoClient.php';
-//		Yaf_Loader::getInstance(APPLICATION_PATH . '/library/Mongo/')->registerLocalNamespace('');
-//		Yaf_Loader::getInstance(APPLICATION_PATH . '/library/MongoDB/')->registerLocalNamespace('');
-//		print_R(Yaf_Loader::getInstance());
-//		use MongoDB;
-		$a = new MongoClient();
-	}
-
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
 		// set include paths of the system.
