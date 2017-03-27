@@ -68,7 +68,7 @@
 	</div><!-- /.section-head -->
 
 	<div class="section-body">
-		<div class="table table-default table-default-primary">
+		<div class="table table-default table-default-primary <?php echo $this->use_complex_sumup ? 'complex-sumup-wrapper' : 'simple-sumup-wrapper'; ?>">
 			<?php echo $this->render($this->use_complex_sumup ? $this->complex_sumup_template : $this->simple_sumup_template ); ?>			
 		</div><!-- /.table table-default table-default-primary -->
 	</div><!-- /.section-body -->

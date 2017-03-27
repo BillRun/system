@@ -402,3 +402,11 @@ img.billrun-logo {
 .sumup .table-default .complex-sumup th:first-child,.sumup .table-default .complex-sumup td:first-child {
 	width: 400px;
 }
+
+.small-text {
+	font-size:12px;
+}
+
+.table-default-primary.complex-sumup-wrapper {
+	max-width:800px;
+}

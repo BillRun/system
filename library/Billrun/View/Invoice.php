@@ -73,6 +73,9 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],(isset($flatData['price'][0]['price']) ? $flatData['price'][0]['price'] : $flatData['price']));
 					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
 					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
+					$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
+					$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
+					$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
 				}
 			}
 		}
@@ -97,6 +100,18 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		if($line['type'] == 'service' && $rate['quantitative']) {
 			$key .= $line['usagev']. $line['sid'];
 		}
+		if(!empty($line['start'])) {
+			$key .= $line['start']->sec;
+		}
+		if(!empty($line['end'])) {
+			$key .= $line['end']->sec;
+		}
 		return $key;
+	}
+	
+	protected function getListItemSpan($item) {
+		return (empty($item['start']) ? '' : 'Starting '.date(date($this->date_format,$item['start']->sec))) .
+				(empty($item['start']) || empty($item['end']) ? '' : ' - ') .
+				(empty($item['end'])   ? '' : 'Ending '.date(date($this->date_format,$item['end']->sec)));
 	}
 }

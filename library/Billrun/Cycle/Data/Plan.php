@@ -14,6 +14,8 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected $vatable = null;
 	protected $charges = array();
 	protected $stumpLine = array();
+	protected $start = 0;
+	protected $end = PHP_INT_MAX;
 	
 	/**
 	 *
@@ -29,6 +31,8 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
+		$this->start = Billrun_Util::getFieldVal($options['start'],$this->start);
+		$this->end = Billrun_Util::getFieldVal($options['end'],$this->end);
 		$this->constructOptions($options);
 	}
 
@@ -57,6 +61,12 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 			$entry['aprice'] = $value;
 			$entry['charge_op'] = $key;
 			$entry['stamp'] = $this->generateLineStamp($entry);
+			if($this->start && $this->cycle->start() < $this->start) {
+				$entry['start'] =  new MongoDate($this->start);
+			}
+			if($this->end && $this->cycle->end() > $this->end) {
+				$entry['end'] =  new MongoDate($this->end);
+			}
 			if(!empty($entry['vatable'])) {
 				$entry = $this->addTaxationToLine($entry);
 			}
