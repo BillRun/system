@@ -69,8 +69,9 @@ class FindAction extends ApiAction {
 			$find = $db->find($query, $project)->sort($sort)->skip($page * $size)->limit($size + 1);
 			
 			// Get timeout
-			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
-			$find->timeout($timeout);
+			// marked-out due to new mongodb driver (PHP7+) 
+//			$timeout = Billrun_Factory::config()->getConfigValue("api.config.find.timeout", 60000);
+//			$find->timeout($timeout);
 			$entities = array_values(iterator_to_array($find));
             $next_page = count($entities) > $size;
 		} catch (Exception $e) {
