@@ -15,12 +15,12 @@ class Mongodloid_Cursor implements Iterator, Countable {
 
 	protected $_cursor;
 	
-	public function __construct($cursor, $timeout = null) {
+	public function __construct($cursor/*, $timeout = null*/) {
 		if ($cursor instanceof MongoCursor || (is_object($cursor) && get_class($cursor) == 'MongoCommandCursor')) {
 			$this->_cursor = $cursor;
-			if (!is_null($timeout)) {
-				$this->_cursor->timeout((int) $timeout);
-			}
+//			if (!is_null($timeout)) {
+//				$this->_cursor->timeout((int) $timeout);
+//			}
 		}
 	}
 
