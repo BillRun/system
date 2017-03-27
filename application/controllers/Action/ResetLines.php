@@ -36,6 +36,9 @@ class ResetLinesAction extends ApiAction {
 		if(!preg_match("/\d{6}/", $billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
 		}
+		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle()) {
+			return $this->setError("Billrun {$billrun_key} allready closed", $request);
+		}
 		
 		// Warning: will convert half numeric strings / floats to integers
 		$sids = $this->getRequestSids($request);
