@@ -9,6 +9,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
 
 /**
  * Operations action class
+ * Returns information regarding the status of actions 
+ * regarding billing cycle management
  *
  * @package  Action
  * 
