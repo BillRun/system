@@ -119,10 +119,11 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			$sortArray = array();
 			
 			foreach ($returnData as $row) {
+				$sortKey = '';
 				foreach ($sortFields as $sortField) {
-					$sortKey = $this->generateUniqueSortKey($row, $sortField, $sortArray);
-					$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
+					$sortKey .= $this->generateUniqueSortKey($row, $sortField, $sortArray);
 				}
+				$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
 
 			if ($this->sortOrder >= 1) {
