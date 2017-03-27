@@ -255,5 +255,9 @@ class Billrun_Billingcycle {
 	public static function getCycleConfirmationPercentage($billrunKey) {
 		return (self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100;
 	}
+	
+	public static function isBillrunKeyLegitimate($billrunKey) {
+		return preg_match("/^\d{6}$/", $billrun_key);
+	}
 
 }
