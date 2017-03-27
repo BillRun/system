@@ -160,7 +160,8 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'$setOnInsert' => array(
 				'from' => new MongoDate(),
 				'aid' => $this->subscriber['aid'],
-				'charging_type' => 'prepaid',
+//				'charging_type' => 'prepaid',
+				'connection_type' => 'prepaid',
 				'charging_by' => $this->data['charging_by'],
 				'charging_by_usaget' => $this->data['charging_by_usaget'],
 				'priority' => $this->data['priority'],
