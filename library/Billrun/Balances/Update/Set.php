@@ -46,4 +46,48 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 		// we're using absolute for both cases - positive and negative values
 		return array("block"=>(abs($newValue) > abs($max)));
 	}
+	
+	/**
+	 * Update the database.
+	 * @param type $coll
+	 * @param type $query
+	 * @param type $update
+	 * @param type $options
+	 * @return type
+	 */
+	public function update($coll, $query, $update, $options) {
+		if (!key_exists('_id', $query) && !key_exists('id', $query)) {
+			$this->resetParallelBalances($coll, $query);
+		}
+		return parent::update($coll, $query, $update, $options);
+	}
+	
+	protected function resetParallelBalances($coll, $query) {
+		$balances = $coll->query($query);
+		$updater = new Billrun_ActionManagers_Balances_Update();
+		foreach ($balances as $balance) {
+			$updaterInput = array(
+				'sid' => $balance->get('sid'),
+				'query' =>
+					json_encode(array(
+						'_id' => $balance->getId()->getMongoId(),
+					)), 
+				'upsert' => 
+					json_encode(array(
+						'operation' => 'set',
+						'value' => 0,
+						'expiration_date' => $balance->get('to'),
+					)),
+			);
+			$jsonObject = new Billrun_AnObj($updaterInput);
+			if (!$updater->parse($jsonObject)) {
+				return false;
+			}
+			if (!$updater->execute()) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 }

@@ -74,11 +74,16 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 	 */
 	protected function queryRangeBalances() {
 		try {
+			$sortQuery = array();
+			$sortFields = $this->getSortFields();
+			foreach ($sortFields as $sortField) {
+				$sortQuery[$sortField] = $this->sortOrder >= 1 ? 1 : -1;
+			}
 			$cursor = $this->collection
 				->setReadPreference(MongoClient::RP_PRIMARY, array())
 				->query($this->balancesQuery)
 				->cursor()
-				->sort(array($this->sortField => ($this->sortOrder >= 1 ? 1 : -1)))
+				->sort($sortQuery)
 				;
 			if ($this->completeAvailableBalances) {
 				$returnData = $this->availableBalances;
@@ -112,12 +117,12 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			}
 			
 			$sortArray = array();
+			
 			foreach ($returnData as $row) {
-				$i = 100; // avoid infinite loop
-				do {
-					$sortKey = $this->getBalanceIndex($row, $this->sortField);
-				} while (isset($sortArray[$sortKey]) && !$i--);
-
+				$sortKey = '';
+				foreach ($sortFields as $sortField) {
+					$sortKey .= $this->generateUniqueSortKey($row, $sortField, $sortArray);
+				}
 				$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
 
@@ -134,6 +139,21 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 
 		return array_values($sortArray);
+	}
+	
+	protected function getSortFields() {
+		if (is_array($this->sortField)) {
+			return $this->sortField;
+		}
+		return array($this->sortField);
+	}
+	
+	protected function generateUniqueSortKey($row, $sortField, $sortArray) {
+		$i = 100; // avoid infinite loop
+		do {
+			$sortKey = $this->getBalanceIndex($row, $sortField);
+		} while (isset($sortArray[$sortKey]) && $i-- > 0);
+		return $sortKey;
 	}
 	
 	protected function getBalanceIndex($item, $field) {
@@ -243,8 +263,15 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		}
 		
 		$sort = $input->get('sort');
-		if (!empty($sort) && in_array($sort, array('from', 'to', 'pp_includes_external_id', 'pp_includes_name', 'priority'))) {
-			$this->sortField = $sort;
+		if (!empty($sort)) {
+			$sortFields = explode(',', $sort);
+			$availableSortFields = array('from', 'to', 'pp_includes_external_id', 'pp_includes_name', 'priority');
+			$this->sortField = array();
+			foreach ($sortFields as $sortField) {
+				if (in_array($sortField, $availableSortFields)) {
+					$this->sortField[] = $sortField;
+				}
+			}
 		}
 		
 		$sortOrder = $input->get('sortOrder');
