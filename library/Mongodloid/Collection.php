@@ -37,7 +37,7 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
 			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
@@ -144,7 +144,13 @@ class Mongodloid_Collection {
 			$w = $this->w;
 		}
 
-		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
+		$options = array('w' => $w);
+		
+		if ($this->_db->compareServerVersion('3.4', '<')) {
+			$options['j'] = $this->j;
+		}
+
+		$result = $this->_collection->save($data, $options);
 		if (!$result)
 			return false;
 
@@ -377,7 +383,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
 			$options['j'] = $this->j;
 		}
 
@@ -407,7 +413,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 		
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
 			$options['j'] = $this->j;
 		}
 
@@ -541,7 +547,7 @@ class Mongodloid_Collection {
 		}
 	}
 	
-	public function distinct($key, array $query = null) {
+	public function distinct($key, array $query = array()) {
 		return $this->_collection->distinct($key, $query);
 	}
 
