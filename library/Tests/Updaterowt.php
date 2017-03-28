@@ -97,7 +97,14 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'l2', 'aid' => 23457, 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L3"]),
 		array('stamp' => 'l3', 'aid' => 23457, 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
 		array('stamp' => 'l4', 'aid' => 23458, 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
-
+		//case M pooled account services
+		array('stamp' => 'm1', 'aid' => 8880, 'sid' => 800, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 10, 'services' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm2', 'aid' => 8881, 'sid' => 801, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm3', 'aid' => 8882, 'sid' => 803, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm4', 'aid' => 8883, 'sid' => 804, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 15, 'services' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm5', 'aid' => 8884, 'sid' => 806, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 25, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
+		array('stamp' => 'm6', 'aid' => 8884, 'sid' => 807, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 10, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
+		array('stamp' => 'm7', 'aid' => 8885, 'sid' => 809, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 100, 'services' => ["POOLED-SERVICE3"]),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -171,6 +178,14 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 30, 'over_group' => 210, 'aprice' => 21), //out group
 		array('in_group' => 12, 'over_group' => 12, 'aprice' => 12), //out group
 		array('in_group' => 35, 'over_group' => 205, 'aprice' => 20.5), //out group
+		//case M expected
+		array('in_group' => 10, 'over_group' => 0, 'aprice' => 0), //1 subscriber with one service
+		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0), //2 subscribers with one service
+		array('in_group' => 10, 'over_group' => 10, 'aprice' => 1), //1 subscribers with one service (big usagev)
+		array('in_group' => 10, 'over_group' => 5, 'aprice' => 0.5), //2 subscribers with different services
+		array('in_group' => 25, 'over_group' => 0, 'aprice' => 0), //3 subscriber3 with pooled plan
+		array('in_group' => 5, 'over_group' => 5, 'aprice' => 0.5), //3 subscriber3 with pooled plan
+		array('in_group' => 50, 'over_group' => 50, 'aprice' => 5), //1 subscriber with one service of cost
 	];
 
 	public function __construct($label = false) {
@@ -217,7 +232,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$inGroupE = $this->expected[$key]['in_group'];
 		$overGroupE = $this->expected[$key]['over_group'];
 		$aprice = round(10 * ($this->expected[$key]['aprice'])) / 10;
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '. <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#'  . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
 		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
 			$message .= $this->pass;

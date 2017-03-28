@@ -460,6 +460,25 @@
 			}
 		}
 
+        },
+	{
+		"name" : "POOLED-PLAN-1",
+		"plan_code" : "POOLED-PLAN-1",
+		"description" : "POOLED-PLAN-1",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"groups" : {
+				"POOL2" : {
+					"call" : 10,
+					"account_shared": true,
+					"account_pool": true,
+					"rates": ["SHARED-RATE"]
+				}
+			}
+		}
+
         }
 		
 
