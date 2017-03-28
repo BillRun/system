@@ -21,120 +21,122 @@ abstract class Billrun_Discount {
 	 * @var array
 	 */
 	protected $discountData;
-
 	protected $eligibilityOnly = FALSE;
-	
+
 	/**
-     * on filtered  totals  discounts this array hold the breakdown sections  that should be included in the discount.
-     * @var type  array
-     */
-    protected $discountableSections = array();
-	
-	public function __construct($discountRate, $eligibilityOnly = FALSE ) {
+	 * on filtered  totals  discounts this array hold the breakdown sections  that should be included in the discount.
+	 * @var type  array
+	 */
+	protected $discountableSections = array();
+
+	public function __construct($discountRate, $eligibilityOnly = FALSE) {
 		$this->discountData = $discountRate;
 		$this->eligibilityOnly = $eligibilityOnly;
 	}
 
 	abstract public function checkEligibility($accountBillrun);
+
 	abstract public function checkTermination($accountBillrun);
 
 	public function generateCDRs($eligibleData, $accountInvoice) {
 		$discountLines = array();
 		$prcisn = 10000000;
-		$discountsCount= 0;
+		$discountsCount = 0;
 		foreach ($eligibleData as $eligibleRow) {
 			$discountsCount++;
 			//Apply the maximum limit of the discount
-			if(!empty($this->discountData['max_count_limit']) && $discountsCount > $this->discountData['max_count_limit']) {
-				Billrun_Factory::log("Account {$eligibleRow['aid']} has reached its maximum limit of discounts : {$this->discountData['key']}",Zend_Log::INFO);
+			if (!empty($this->discountData['max_count_limit']) && $discountsCount > $this->discountData['max_count_limit']) {
+				Billrun_Factory::log("Account {$eligibleRow['aid']} has reached its maximum limit of discounts : {$this->discountData['key']}", Zend_Log::INFO);
 				break;
 			}
 			$groupingId = rand(0, 1 << 31);
-			$orgMOdifier = $modifier = $eligibleRow['modifier'];
+			$orgModifier = $modifier = $eligibleRow['modifier'];
 			$quantity = !empty($eligibleRow['quantity']) ? $eligibleRow['quantity'] : 1;
 			while (abs($modifier) >= 1 / ($prcisn * 10)) {
 				$lineModifier = !empty($modifier * $prcisn % $prcisn) ? ($modifier * $prcisn % $prcisn) / $prcisn : ($modifier / abs($modifier));
 				$modifier = round($modifier - $lineModifier, 3);
 				$creationTime = (!empty($accountInvoice) ? static::getBillrunDate($accountInvoice->getBillrunKey()) : time() );
-				
-				$serviceType = $this->getDiscountVatType($accountInvoice);
-				$vat = 0.1;//TODO  replace  with  actual tax
-				$discountLine = array(
-					'key' => $this->discountData['key'],
-					'name' => $this->discountData['description'],
-					'type' => 'credit',
-					'description' => $this->discountData['description'],					
-					'usaget' => 'discount',//TODO move to  disocunt rate data?
-					'discount_type' => $this->discountData['discount_type'],
-					'urt' => new MongoDate($creationTime),
-					'process_time' => date(Billrun_Base::base_dateformat,$creationTime),
-					'modifier' => $lineModifier,
-					'orignal_modifier' => $orgMOdifier,
-					'arate' => $this->discountData->createRef(Billrun_Factory::db()->ratesCollection()),
-					'aid' => $eligibleRow['aid'],
-					'source' => 'billrun',
-					'billrun' => $accountInvoice->getBillrunKey(),
-					'usagev' => $quantity,
-				);
-				foreach ($this->getOptionalCDRFields() as $field) {
-					if (isset($eligibleRow[$field])) {
-						$discountLine[$field] = $eligibleRow[$field];
-					}
-				}
-				if (!empty($this->discountData['cycles'])) {
-					$discountLine['discount_cycles'] = $this->discountData['cycles'];
-				}
-				foreach ($this->discountData['discount_subject'] as $subjectType => $subjects) {
-					foreach ($subjects as $key => $val) {					
-							if ($this->discountData['discount_type'] == 'monetary') {
-									$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;						
-							} else { //Calualte  Percent  avarage (not preceise but very close)
-									$discountLine['is_percent'] = true;//TODO change  all references to work with 'discount_type' field
-									$discountLine['discount'][$key]['value'] = $val;
-							}
-					}
-					$discountLine['affected_sections'] =  array_keys($this->discountableSections);
-				}
 
-				if (!empty($this->discountData['limit'])) {
-					$limit = 0 < $this->discountData['limit'] ? -$this->discountData['limit'] : $this->discountData['limit'];
-					$discountLine['limit'] = $limit * $lineModifier;
-				}
-
-				if (!empty($eligibleRow)) {
-					if (empty($eligibleRow['end_date'])) {
-						unset($eligibleRow['end_date']);
-					} else {
-						$eligibleRow['end'] = new MongoDate($eligibleRow['end_date']);
-					}
-					if (empty($eligibleRow['start_date'])) {
-						unset($eligibleRow['start_date']);
-					} else if(is_numeric($eligibleRow['start_date'])){
-						$eligibleRow['start'] = new MongoDate($eligibleRow['start_date']);
-					}
-					$discountLine = array_merge($eligibleRow, $discountLine);
-//					if ($lineModifier == 1) {
-//						unset($discountLine['switch_date']);
-//						unset($discountLine['start_date']);
-//					}
-				}
-
-				$discountLine['grouping'] = $groupingId;
-				$discountLine['process_time'] = date(Billrun_Base::base_dateformat);
-				if (!empty($accountInvoice)) {
-					$discountLine['received_count'] = static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $accountInvoice->getRawData()['aid']);
-				}
-								
-				$discountLines[] = $discountLine;
+				$discountLines[] = $this->generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow);
 			}
 		}
 		//Apply the minimum limit of the discount
-		if(!empty($this->discountData['min_limit']) && $discountsCount < $this->discountData['min_limit']) {
-			Billrun_Factory::log("Account {$eligibleRow['aid']} hasn't reached it minimum limit for discount : {$this->discountData['key']}",Zend_Log::INFO);
+		if (!empty($this->discountData['min_limit']) && $discountsCount < $this->discountData['min_limit']) {
+			Billrun_Factory::log("Account {$eligibleRow['aid']} hasn't reached it minimum limit for discount : {$this->discountData['key']}", Zend_Log::INFO);
 			return array();
 		}
-		
+
 		return $discountLines;
+	}
+
+	/**
+	 * 
+	 * @param type $param
+	 */
+	protected function generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow) {
+		$discountLine = array(
+			'key' => $this->discountData['key'],
+			'name' => $this->discountData['description'],
+			'type' => 'credit',
+			'description' => $this->discountData['description'],
+			'usaget' => 'discount', //TODO move to  disocunt rate data?
+			'discount_type' => $this->discountData['discount_type'],
+			'urt' => new MongoDate($creationTime),
+			'process_time' => date(Billrun_Base::base_dateformat, $creationTime),
+			'modifier' => $lineModifier,
+			'orignal_modifier' => $orgModifier,
+			'arate' => $this->discountData->createRef(Billrun_Factory::db()->ratesCollection()),
+			'aid' => $eligibleRow['aid'],
+			'source' => 'billrun',
+			'billrun' => $accountInvoice->getBillrunKey(),
+			'usagev' => $quantity,
+		);
+		foreach ($this->getOptionalCDRFields() as $field) {
+			if (isset($eligibleRow[$field])) {
+				$discountLine[$field] = $eligibleRow[$field];
+			}
+		}
+		if (!empty($this->discountData['cycles'])) {
+			$discountLine['discount_cycles'] = $this->discountData['cycles'];
+		}
+		foreach ($this->discountData['discount_subject'] as $subjects) {
+			foreach ($subjects as $key => $val) {
+				if ($this->discountData['discount_type'] == 'monetary') {
+					$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;
+				} else { //Calualte  Percent  avarage (not preceise but very close)
+					$discountLine['is_percent'] = true; //TODO change  all references to work with 'discount_type' field
+					$discountLine['discount'][$key]['value'] = $val;
+				}
+			}
+			$discountLine['affected_sections'] = array_keys($this->discountableSections);
+		}
+
+		if (!empty($this->discountData['limit'])) {
+			$limit = 0 < $this->discountData['limit'] ? -$this->discountData['limit'] : $this->discountData['limit'];
+			$discountLine['limit'] = $limit * $lineModifier;
+		}
+
+		if (!empty($eligibleRow)) {
+			if (empty($eligibleRow['end_date'])) {
+				unset($eligibleRow['end_date']);
+			} else {
+				$eligibleRow['end'] = new MongoDate($eligibleRow['end_date']);
+			}
+			if (empty($eligibleRow['start_date'])) {
+				unset($eligibleRow['start_date']);
+			} else if (is_numeric($eligibleRow['start_date'])) {
+				$eligibleRow['start'] = new MongoDate($eligibleRow['start_date']);
+			}
+			$discountLine = array_merge($eligibleRow, $discountLine);
+		}
+
+		$discountLine['grouping'] = $groupingId;
+		$discountLine['process_time'] = date(Billrun_Base::base_dateformat);
+		if (!empty($accountInvoice)) {
+			$discountLine['received_count'] = static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $accountInvoice->getRawData()['aid']);
+		}
+
+		return $discountLine;
 	}
 
 	/**
@@ -151,9 +153,9 @@ abstract class Billrun_Discount {
 		} else {
 			$entityId = null;
 		}
-		$totals = $this->getTotalsFromBillrun($billrun, $entityId);		
+		$totals = $this->getTotalsFromBillrun($billrun, $entityId);
 		$discountLimit = Billrun_Util::getFieldVal($discount['limit'], -PHP_INT_MAX);
-		
+
 		if (!isset($discount['discount'])) {
 			Billrun_Factory::log('Missing discount field in conditional discount : ' . $discount['key']);
 			return FALSE;
@@ -164,35 +166,38 @@ abstract class Billrun_Discount {
 
 			if ($discount['discount_type'] == 'monetary') {
 				$callback = array($this, 'calculatePriceEuro');
-			} else  {
+			} else {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$price = call_user_func_array($callback, array($discount, $totals[$key], $val['value'], $discountLimit));
-			$taxationInformation[] = $this->getTaxationDataForPrice($price ,$key, $discount) ;
+			$taxationInformation[] = $this->getTaxationDataForPrice($price, $key, $discount);
 			$totalPrice += $price;
 		}
 		//make sure that the  discount is not lees then it  limit
 		if (!empty($totalPrice)) {
-			$charge = $totalPrice > 0 ?  $totalPrice : max($totalPrice, $discountLimit);
+			$charge = $totalPrice > 0 ? $totalPrice : max($totalPrice, $discountLimit);
 		}
-		
+
 		$charge *= $discount['usagev'];
-		return array('price' => $charge, 'tax_info' => $taxationInformation);;
+		return array('price' => $charge, 'tax_info' => $taxationInformation);
+		;
 	}
-	
-	protected function getTaxationDataForPrice($price,$identifingKey,$discount) {
+
+	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
 		$taxRate = FALSE;
 		$retTaxInfo = array();
 		//Get the  tax rate  by the subject key
-		$collMapping =  array(	'plan'=>array('coll'=>'plans','key_field' => 'name'),
-								'service'=> array('coll'=>'services','key_field' => 'name'),
-								'usage'=>array('coll'=>'rates','key_field' => 'key'));
-		
-		foreach($collMapping as $subjectType => $mapping) {
-			if(empty($this->discountData['discount_subject'][$subjectType])) { continue;}
-			
-			foreach($this->discountData['discount_subject'][$subjectType] as $key => $val) {
-				if($identifingKey == $key) {
+		$collMapping = array('plan' => array('coll' => 'plans', 'key_field' => 'name'),
+			'service' => array('coll' => 'services', 'key_field' => 'name'),
+			'usage' => array('coll' => 'rates', 'key_field' => 'key'));
+
+		foreach ($collMapping as $subjectType => $mapping) {
+			if (empty($this->discountData['discount_subject'][$subjectType])) {
+				continue;
+			}
+
+			foreach ($this->discountData['discount_subject'][$subjectType] as $key => $val) {
+				if ($identifingKey == $key) {
 					$rateColl = Billrun_Factory::db()->getCollection($mapping['coll']);
 					$query = array_merge(array($mapping['key_field'] => $key), Billrun_Utils_Mongo::getDateBoundQuery($discount['urt']->sec));
 					$taxRate = $rateColl->query($query)->cursor()->limit(1)->current();
@@ -201,25 +206,28 @@ abstract class Billrun_Discount {
 				}
 			}
 		}
-		
-		if($taxRate) {
-			$retTaxInfo = array('tax_rate' => $taxRate->createRef($rateColl),'price' => $price);
+
+		if ($taxRate) {
+			$retTaxInfo = array('tax_rate' => $taxRate->createRef($rateColl), 'price' => $price);
 		} else {
-			Billrun_Factory::log("Cloudn't find taxation rate for discount {$disocunt['key']} for discount subject {$$identifingKey}.",Zend_Log::ERR);
+			Billrun_Factory::log("Cloudn't find taxation rate for discount {$disocunt['key']} for discount subject {$$identifingKey}.", Zend_Log::ERR);
 		}
-		
+
 		return $retTaxInfo;
 	}
-	
-	 public function getDiscountType() {			 
+
+	public function getDiscountType() {
 		return $this->discountData['discount_type'];
 	}
 
 	public function getRateCategoryKeys($totalsSections = array()) {
-		$filteredSections = array_filter($totalsSections,function($value) { return !empty($value); });
-		$intersected = empty($filteredSections) ? $this->discountableSections : array_intersect_key($this->discountableSections,$filteredSections);
-		return array_keys( $intersected );
+		$filteredSections = array_filter($totalsSections, function($value) {
+			return !empty($value);
+		});
+		$intersected = empty($filteredSections) ? $this->discountableSections : array_intersect_key($this->discountableSections, $filteredSections);
+		return array_keys($intersected);
 	}
+
 	/**
 	 * 
 	 * @param type $discount
@@ -231,7 +239,7 @@ abstract class Billrun_Discount {
 	 */
 	public function calculatePricePercent($discount, $totals, $value, $limit, &$updatedTotals = array()) {
 		$priceCorrection = 0;
-		$aprice = 0;		
+		$aprice = 0;
 		$discountValue = $totals * floatval($value);
 		$aprice = max(Billrun_Util::getFieldVal($aprice, 0) - $discountValue, $limit);
 		$totals += $aprice;
@@ -240,7 +248,7 @@ abstract class Billrun_Discount {
 		if ($priceCorrection < 0 && $priceCorrection > $aprice) {
 			$aprice -= $priceCorrection;
 		}
-		if(!empty($updatedTotals)) {
+		if (!empty($updatedTotals)) {
 			$updatedTotals = $totals;
 		}
 		return min($aprice, 0);
@@ -261,15 +269,14 @@ abstract class Billrun_Discount {
 		return $value > $discountLeft ? 0 : //if the totals was negative before the discount application no discount needed.
 			max((($discountLeft < 0 ) ? $value - $discountLeft : $value), $limit);
 	}
-	
+
 	protected function adjustDiscountDuration($invoice, &$multiplier, $subscriber = FALSE) {
 		$billrunStartDate = Billrun_Billingcycle::getStartTime($invoice['billrun_key']);
-		$receivedCount = empty($subscriber) ? static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $invoice['aid'] )
-							: static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $subscriber['sid'],'sid');
+		$receivedCount = empty($subscriber) ? static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $invoice['aid']) : static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $subscriber['sid'], 'sid');
 		$cycleLimited = !empty($this->discountData['cycles']) && $receivedCount > $this->discountData['cycles'] && ( $receivedCount > 0 );
 		$followingBillrunKey = Billrun_Billingcycle::getFollowingBillrunKey($invoice['billrun_key']);
 		$end_date = Billrun_Billingcycle::getEndTime($followingBillrunKey);
-		if ($cycleLimited && $receivedCount >= $this->discountData['cycles'] ) {
+		if ($cycleLimited && $receivedCount >= $this->discountData['cycles']) {
 			$multiplier = max(0, min($multiplier, $this->discountData['cycles'] - $receivedCount));
 			if ($multiplier < 1) {
 				//$end_date = Billrun_ calcEndDateByMonthMultiplier($multiplier, Billrun_Util::getEndTime($followingBillrunKey), Billrun_Billingcycle::getStartTime($followingBillrunKey));
@@ -305,7 +312,7 @@ abstract class Billrun_Discount {
 			}
 		}
 		//If the  dicount  domains are empty  it  eligible for all domains/services in other words it ignore which services the  account has
-		return empty($discount['domains']); 
+		return empty($discount['domains']);
 	}
 
 	/**
@@ -410,40 +417,19 @@ abstract class Billrun_Discount {
 	public function getId() {
 		return $this->discountData['key'];
 	}
-        
+
 	/**
 	 * Get Totals from the billrun object
 	 * @param type $billrun
 	 * @param type $entityId
 	 * @return type
 	 */
-    protected function getTotalsFromBillrun( $billrun, $entityId ) {
-            return $billrun->getTotals($entityId);
+	protected function getTotalsFromBillrun($billrun, $entityId) {
+		return $billrun->getTotals($entityId);
 	}
-	
-	protected function getDiscountVatType($billrun) {
-		return (isset($this->discountData['vat_type']) ? $this->discountData['vat_type'] : 'mobile');
-	}
-	
-	protected function getDiscountVat($discount, $billrun) {
-            //TODO implement!!!
-		return 0.1; //!empty($discount['vatable']) ? $discount['vatable'] : $billrun->getEligibleVat($billrun->getInvoiceDate()->sec)['rates'][$this->getDiscountVatType($billrun)]['rate'][0]['percent'];
-	}
-	
-	protected function getSuppportedVats($rate) {
-		$retArr = array();
-		if(!empty($this->discountData['variable_vat']) && is_array($this->discountData['variable_vat'])) {
-			foreach( $this->discountData['variable_vat'] as $vatType) {
-				$retArr[] = '' . intval(Billrun_Calculator_Rate_Vat::getVatFromRate($rate, $vatType) * 100);
-			}
-		}
-		return $retArr;
-	}
-	
+
 	protected function getRequiredOptions() {
-		return isset($this->discountData['params']['discount']['services']['options']['required']) 
-				?	$this->discountData['params']['discount']['services']['options']['required'] 
-				:	array();
+		return isset($this->discountData['params']['discount']['services']['options']['required']) ? $this->discountData['params']['discount']['services']['options']['required'] : array();
 	}
 
 }

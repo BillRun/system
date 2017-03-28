@@ -12,7 +12,7 @@
  * @package  Discounts
  * @since    3.0
  */
-class Billrun_Discount_Account extends Billrun_AbstractDiscount {
+class Billrun_Discount_Account extends Billrun_Discount {
 
 	/**
 	 * Check a single discount if an account is eligible to get it.
@@ -26,7 +26,6 @@ class Billrun_Discount_Account extends Billrun_AbstractDiscount {
 		$addedData = array('aid' => $billrun->getAid());
 		$eligible = $this->discountData['from']->sec < $billrunDate && $billrunDate < $this->discountData['to']->sec ; 
 
-		
 
 		return $eligible ? array(array_merge(array('modifier' => $multiplier, 'start_date' => $switch_date, 'end_date' => $end_date), $addedData)) : FALSE;
 	}

@@ -71,37 +71,6 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return $eligible ? $ret : FALSE;
     }
 
-//    protected function getDefaultEligibilityData($account, $service, $multiplier, $end_date, $switch_date) {
-//        $start_date = $this->billrunStartDate;
-//        if ($this->billrunStartDate < @Billrun_Util::getFieldVal($service['switch_date'], 0) && $service['switch_date'] <= $this->billrunDate) {
-//            $start_date = $switch_date = max($switch_date, $service['switch_date'], $this->billrunStartDate);
-//        }
-//        if (@Billrun_Util::getFieldVal($account['end_date'], PHP_INT_MAX) < $this->billrunDate) {
-//            $end_date = min(Billrun_Util::getFieldVal($end_date, PHP_INT_MAX), $account['end_date']);
-//        }
-//        $multiplier = (!empty($end_date) ? 0 : 1) + ///add next month discount
-//                (!empty($switch_date) || !empty($end_date) ? max(0, min(Billrun_Util::calcPartialMonthMultiplier($start_date, $this->billrunDate, $this->billrunStartDate, $end_date), $multiplier)) : 0); //add prorataed discount
-//        return array($start_date, $switch_date, $end_date, $multiplier);
-//    }
-
-    /**
-     * 
-     * @param type $accountOpts
-     * @param type $OptToFind
-     * @return boolean
-     */
-    protected static function hasOptions($accountOpts, $OptToFind, $atDate = FALSE) {
-        foreach ($accountOpts as $value) {
-            if (@isset($value['key']) && (@$value['key'] == $OptToFind || is_array($OptToFind) && in_array(@$value['key'], $OptToFind))) {
-                //Should we check the date of the option...
-                if (!$atDate || (empty($value['start_date']) || $value['start_date'] <= $atDate) && ( empty($value['end_date']) || $atDate < $value['end_date'])) {
-                    return TRUE;
-                }
-            }
-        }
-        return FALSE;
-    }
-
     protected function isServiceOptional($service, $discountParams) {
         return !empty($discountParams['services']['next_plan']['optional']) && in_array($service, $discountParams['services']['next_plan']['optional']);
     }
