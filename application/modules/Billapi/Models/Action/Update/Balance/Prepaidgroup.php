@@ -7,13 +7,10 @@
  */
 
 /**
- * BillRun Payment class
+ * Billapi model for balance update by prepaid group
+ * Reference to old charging plan
  *
- * @package  Billrun
- * @since    5.0
+ * @package  Billapi
+ * @since    5.3
  */
-class Billrun_Bill_Payment_Cash extends Billrun_Bill_Payment {
-
-	protected $method = 'cash';
-
-}
+class Models_Action_Update_Balance_Prepaidgroup extends Models_Action_Update_Balance_Chargingplan {}

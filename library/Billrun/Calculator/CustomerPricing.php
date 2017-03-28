@@ -216,10 +216,23 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				return $pricingData;
 			}
 			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
+		}
+	}
+	
+	/**
+	 * Handles special cases in customer pricing needs to be updated after price calculation
+	 * 
+	 * @param $row (reference) - will be changed 
+	 */
+	protected function afterCustomerPricing(&$row) {
+		if ($row['type'] == 'credit' && $row['usaget'] === 'refund') { // handle the case of refund by usagev (calculators can only handle positive values)
+			$row['aprice'] = -abs($row['aprice']);
+
 		}
 	}
 

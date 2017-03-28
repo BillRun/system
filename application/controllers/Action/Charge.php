@@ -20,19 +20,20 @@ class ChargeAction extends Action_Base {
 	 */
 	public function execute() {
 		$possibleOptions = array(
-			'stamp' => false,
+			'stamp' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
-		if (is_null($options['stamp']) || !Billrun_Util::isBillrunKey($options['stamp'])) {
-			return $this->setError("Illegal stamp ", $options['stamp']);
+		
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
 		}
 		Billrun_Bill_Payment::checkPendingStatus();
 		$this->getController()->addOutput("Starting to charge unpaid payments");
-		Billrun_Bill_Payment::makePayment($options['stamp']);
+		Billrun_Bill_Payment::makePayment($options);
 		$this->getController()->addOutput("Charging Done");
 	}
 

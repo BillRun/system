@@ -16,7 +16,6 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 	static protected $type = 'ssh';
 	protected $ssh = null;
-	protected $ssh_path = '/';
 	protected $sshConfig = false;
 	protected $backup = false;
 	protected $checkReceivedSize = true;
@@ -24,11 +23,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 	public function __construct($options) {
 		parent::__construct($options);
-		$this->sshConfig = isset($options['ssh']['host']) ? array($options['ssh']) : $options['ssh'];
-
-		if (isset($options['ssh']['remote_directory'])) {
-			$this->ssh_path = $options['ssh']['remote_directory'];
-		}
+		$this->sshConfig = $options['receiver']['connections'];
 
 		if (isset($options['backup_path'])) {
 			$this->backup = $options['backup_path'];
@@ -45,6 +40,8 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 * @return array list of the files received
 	 */
 	public function receive() {
+		$ret = array();
+		
 		foreach ($this->sshConfig as $config) {
 
 			// Check if private key exist
@@ -63,7 +60,9 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 				$hostAndPort .= ':'.$config['port'];
 			}
 			
-			$ret = array();
+			$ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
+			$this->filenameRegex = isset($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
+			
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
 			$this->ssh->connect($config['user']);
 			
@@ -73,7 +72,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			 }
 			
 			try {
-				$files = $this->ssh->getListOfFiles($this->ssh_path, true);
+				$files = $this->ssh->getListOfFiles($ssh_path, true);
 	
 				$type = static::$type;
 				$count = 0;
@@ -103,7 +102,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 					Billrun_Factory::log()->log("SSH: Download file " . $file, Zend_Log::INFO);
 
-					$sourcePath = $this->ssh_path;
+					$sourcePath = $ssh_path;
 					if (substr($sourcePath, -1) != '/') {
 						$sourcePath .= '/';
 					}
@@ -148,7 +147,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						$count++;
 
 						// Delete from remote
-						if (isset($config['delete_remote_after_receive']) && $config['delete_remote_after_receive']) {
+						if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
 							$this->deleteRemote($fileData['file_name']);
 						}
@@ -201,6 +200,14 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			}
 		}
 		return true;
+	}
+	
+	/**
+	 * Verify that the file is a valid file. 
+	 * @return boolean false if the file name should not be received true if it should.
+	 */
+	protected function isFileValid($filename, $path) {
+		return preg_match($this->filenameRegex, $filename);
 	}
 
 }

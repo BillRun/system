@@ -13,38 +13,45 @@
  * @since    0.5
  */
 class Generator_BillrunToBill extends Billrun_Generator {
+	
+	use Billrun_Traits_Api_OperationsLock;
 
 	protected $minimum_absolute_amount_for_bill= 0.005;
+	protected $invoices;
+	protected $billrunColl;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
+		if (!empty($options['invoices'])) {
+			$this->invoices = Billrun_Util::verify_array($options['invoices'], 'int');
+		}
 		parent::__construct($options);
 		$this->minimum_absolute_amount_for_bill = Billrun_Util::getFieldVal($options['generator']['minimum_absolute_amount'],0.005);
 	}
 
 	public function load() {
-		$billrunColl = Billrun_Factory::db()->billrunCollection();		
-
-		$invoices = $billrunColl->query( array(
-											'billrun_key'=> (string) $this->stamp,
-											'billed'=>array('$ne'=>1),
-											'$or' => array(
-												array(
-													'totals.after_vat_rounded' => array('$gte' =>  $this->minimum_absolute_amount_for_bill),
-												),
-												array(
-													'totals.after_vat_rounded' => array('$lte' => -$this->minimum_absolute_amount_for_bill),
-												),
-											),
-											'invoice_id'=> array('$exists'=>1)
-						) )->cursor()->timeout(-1);
+		$this->billrunColl = Billrun_Factory::db()->billrunCollection();
+		$invoiceQuery = !empty($this->invoices) ? array('$in' => $this->invoices) : array('$exists' => 1);
+		$query = array(
+			'billrun_key' => (string) $this->stamp,
+			'billed' => array('$ne' => 1),
+			'$or' => array(
+				array(
+					'totals.after_vat_rounded' => array('$gte' => $this->minimum_absolute_amount_for_bill),
+				),
+				array(
+					'totals.after_vat_rounded' => array('$lte' => -$this->minimum_absolute_amount_for_bill),
+				),
+			),
+			'invoice_id' => $invoiceQuery,
+		);
+		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(-1);
 
 		Billrun_Factory::log()->log('generator entities loaded: ' . $invoices->count(true), Zend_Log::INFO);
 
 		Billrun_Factory::dispatcher()->trigger('afterGeneratorLoadData', array('generator' => $this));
-		
+
 		$this->data = $invoices;
-		
 	}
 
 	public function generate() {
@@ -147,4 +154,33 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}		
 		return true;
 	}
+		
+	protected function getConflictingQuery() {	
+		if (!empty($this->invoices)){
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => $this->invoices)),
+				),
+			);
+		}
+		
+		return array();	
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'confirm_cycle',
+			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+		);
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'confirm_cycle',
+			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
+			'end_time' => array('$exists' => false)
+		);
+	}
+	
 }
