@@ -11,9 +11,9 @@
 	<tbody>
 		<?php
 			$subscriptionList = $this->buildSubscriptionListFromLines($this->lines);
-			$endKey = end($subscriptionList);
+			$endKey = end(array_keys($subscriptionList));
 			foreach ($subscriptionList as $key =>$aggregated) { ?>	
-			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
+			<tr class="">
 				<td class='desc'><?php echo $aggregated['desc']; ?></td>
 				<td class='qty'><?php echo $aggregated['count']; ?></td>
 				<td class='rate'><?php echo  number_format( (!empty($aggregated['rate']) ? $aggregated['rate'] : $aggregated['amount']),2) ; ?></td>
@@ -21,18 +21,23 @@
 			</tr>
 		<?php } ?>
 			
-		<?php foreach ($details_keys as $title => $key) { ?>
+		<?php 
+			$endKey = end($details_keys);
+			foreach ($details_keys as $title => $key) { ?>
 			<?php if (empty($data->get('totals')[$key]) || in_array($key,$this->flat_line_types)) { continue; } ?>
-			<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
+			<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
 				<td colspan="3"><?php echo ucfirst($title); ?></td>
 				<td><?php echo '$' . number_format($data->get('totals')[$key]['before_vat'], 2); ?></td>
 			</tr>
 		<?php } ?>			
-		<tr class="total">
-			<td colspan="3">SUBTOTAL</td>
-			<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
-		</tr>
+		
 		<?php echo $this->render($this->discount_template,array('data' => array('totals'=> $data['totals'],'discounts'=> $this->getAllDiscount($this->lines)), 'col_count' => 4)); ?>
+		
+		<tr class="total subtotal">
+			<td colspan="3" >SUBTOTAL</td>
+			<td><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></td>
+		</tr>		
+		
 		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'), 'col_count' => 4)); ?>
 
 		<tr class="grand-total">
