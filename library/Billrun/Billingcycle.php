@@ -182,6 +182,7 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
 	 * 
+	 * @return bool - True if billing cycle had started.
 	 */
 	protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
@@ -198,6 +199,7 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
 	 * 
+	 * @return bool - True if billing cycle is ended.
 	 */
 	public static function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
@@ -213,6 +215,7 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
 	 * 
+	 * @return bool - True if generated all the bills from billrun objects
 	 */
 	public static function isCycleRunning($billingCycleCol, $billrunKey, $size) {
 		if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
@@ -255,6 +258,7 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * @param int $size - size of page 
 	 * 
+	 *  @return cycle completion percentage 
 	 */
 	public static function getCycleCompletionPercentage($billingCycleCol, $billrunKey, $size) {
 		$totalPagesQuery = array(
