@@ -363,10 +363,10 @@ class Billrun_Service {
 			'to' => array('$gt' => new MongoDate($time)),
 			'from' => array('$lt' => new MongoDate($time)),
 		);
-		if ($this instanceof Billrun_Service) {
-			$query['services'] = $this->data['name'];
-		} else if ($this instanceof Billrun_Plan) {
+		if ($this instanceof Billrun_Plan) {
 			$query['plan'] = $this->data['name'];
+		} else if ($this instanceof Billrun_Service) {
+			$query['services.name'] = $this->data['name'];
 		} else {
 			return 0;
 		}
@@ -383,7 +383,7 @@ class Billrun_Service {
 				)
 			)
 		);
-		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregateMatch, $aggregateGroup)->cursort()->current();
+		$results = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregateMatch, $aggregateGroup)->current();
 		if (!isset($results['s'])) {
 			return 0;
 		}
