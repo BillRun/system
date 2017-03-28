@@ -117,9 +117,8 @@ class BillrunController extends ApiController {
 	public function confirmCycleAction() {
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
-		$invoicesId = json_decode($invoices);
-		if (!empty($invoices) && is_null($invoicesId)) {
-			throw new Exception('Invoices parameter must be array of integers');
+		if (!empty($invoices)) {
+			$invoicesId = explode(',', $invoices);
 		}
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -167,7 +166,7 @@ class BillrunController extends ApiController {
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
-		$aidsArray = json_decode($aids);
+		$aidsArray = explode(',', $aids);
 		if (!empty($aids) && is_null($aidsArray)) {
 			throw new Exception('aids parameter must be array of integers');
 		}
@@ -309,9 +308,13 @@ class BillrunController extends ApiController {
 			if (empty($invoicesArray)) {
 				throw new Exception("Illgal invoices");
 			}
-			$invoicesId = json_encode($invoicesArray);			
+			$invoicesId = implode(',', $invoicesArray);			
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		if (!empty($invoicesId)) {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		} else {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
@@ -321,9 +324,13 @@ class BillrunController extends ApiController {
 			if (empty($aidsArray)) {
 				throw new Exception("Illgal account id's");
 			}
-			$aids = json_encode($aidsArray);			
+			$aids = implode(',', $aidsArray);			
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
+		if (!empty($aids)) {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
+		} else {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge';
+		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
