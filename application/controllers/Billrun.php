@@ -63,6 +63,52 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 	
+	/**
+	 * Runs billing cycle by billrun key on specific account id's.
+	 * 
+	 */
+	public function specificCycleAction() {
+		$request = $this->getRequest();
+		$billrunKey = $request->get('stamp');
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			throw new Exception('Need to pass correct billrun key');
+		}
+		$accountArray = json_decode($request->get('aids'));
+		if (empty($accountArray)) {
+			throw new Exception('Need to supply at least one account id');
+		}
+		$aids = array_diff(Billrun_Util::verify_array($accountArray, 'int'), array(0));
+		if (empty($aids)) {
+			throw new Exception("Illgal account id's");
+		}
+		$status = $this->getCycleStatus($billrunKey);
+		if (!in_array($status, array('to_run', 'finished'))) {
+			throw new Exception("Can't Run");
+		}
+		$customerAggregatorOptions = array(
+			'override_accounts' => $aids,
+		);
+		$options = array(
+			'type' =>  'customer',
+			'stamp' =>  $billrunKey,
+			'size' =>  $this->size,
+			'aggregator' => $customerAggregatorOptions
+		);
+			
+		$aggregator = Billrun_Aggregator::getInstance($options);
+		if(!$aggregator) {
+			throw new Exception("Can't Run");
+		}
+		$aggregator->load();
+		$aggregator->aggregate();
+		$output = array (
+			'status' => 1,
+			'desc' => 'success',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
+	}
+	
 	
 	/**
 	 * Generating bills by invoice id's.
@@ -71,9 +117,8 @@ class BillrunController extends ApiController {
 	public function confirmCycleAction() {
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
-		$invoicesId = json_decode($invoices);
-		if (!empty($invoices) && is_null($invoicesId)) {
-			throw new Exception('Invoices parameter must be array of integers');
+		if (!empty($invoices)) {
+			$invoicesId = explode(',', $invoices);
 		}
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -94,6 +139,10 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 	
+	/**
+	 * Checks if can charge and display the total amount owed.
+	 * 
+	 */
 	public function chargeStatusAction() {
 		$setting['status'] = $this->isChargeAllowed();
 		$setting['owed_amount'] = $this->getOwedAmount();
@@ -117,7 +166,7 @@ class BillrunController extends ApiController {
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
-		$aidsArray = json_decode($aids);
+		$aidsArray = explode(',', $aids);
 		if (!empty($aids) && is_null($aidsArray)) {
 			throw new Exception('aids parameter must be array of integers');
 		}
@@ -255,19 +304,33 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		if (!empty($invoicesId)) {
-			$invoicesArray = Billrun_util::verify_array($invoicesId, 'int');
-			$invoicesId = json_encode($invoicesArray);			
+			$invoicesArray = array_diff(Billrun_util::verify_array($invoicesId, 'int'), array(0));
+			if (empty($invoicesArray)) {
+				throw new Exception("Illgal invoices");
+			}
+			$invoicesId = implode(',', $invoicesArray);			
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		if (!empty($invoicesId)) {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey . ' invoices=' . $invoicesId;
+		} else {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --generate --type billrunToBill --stamp ' . $billrunKey;
+		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
 	protected function processCharge($aids = array()) {
 		if (!empty($aids)) {
-			$aidsArray = Billrun_util::verify_array($aids, 'int');
-			$aids = json_encode($aidsArray);			
+			$aidsArray = array_diff(Billrun_util::verify_array($aids, 'int'), array(0));
+			if (empty($aidsArray)) {
+				throw new Exception("Illgal account id's");
+			}
+			$aids = implode(',', $aidsArray);			
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
+		if (!empty($aids)) {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
+		} else {
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge';
+		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	

@@ -452,7 +452,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	public static function makePayment($chargeOptions) {
 		if (!empty($chargeOptions['aids'])) {
-			self::$aids = json_decode($chargeOptions['aids']);
+			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
 		if (!static::lock()) {
 			$this->_controller->addOutput("Charging is already running");

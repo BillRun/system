@@ -179,9 +179,9 @@ class CliController extends Yaf_Controller_Abstract {
 			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? explode("=", $cmdLineArg) : explode(" ", $cmdLineArg);
 			$inLineOpt = isset($seperatedCmdStr[1]) ?  $seperatedCmdStr[1] : true;
 			foreach (array_reverse(explode("\.", $seperatedCmdStr[0])) as $field) {				
+				$inLineOpt = preg_match('/\w,\w/',$inLineOpt) ? explode(',', $inLineOpt) : $inLineOpt;
 				$inLineOpt = array( $field => $inLineOpt);
 			}
-			//$options['cmd_opts'] = array_merge_recursive( Billrun_Util::getFieldVal($options['cmd_opts'] ,array() ), $inLineOpt );
 			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
 		}
 		return $options;
