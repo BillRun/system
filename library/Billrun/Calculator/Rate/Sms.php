@@ -77,15 +77,22 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		if ($this->shouldLineBeRated($row)) {
 			$line_time = $row['urt'];
 			$matchedRate = $this->rates['UNRATED'];
+			$without_called_msc = true;
+			$called_msc = $row['called_msc'];
 			$called_number = $this->extractNumber($row);
 			$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+			if ($usage_type == 'sms' && !preg_match('/^0*972/', $called_number)) {
+				$without_called_msc = false;
+			}
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
 					foreach ($this->rates[$prefix] as $rate) {
 						if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-								$matchedRate = $rate;
-								break 2;
+								if ($without_called_msc || $this->checkCalledMsc($rate, $called_msc)){
+									$matchedRate = $rate;
+									break 2;
+								}	
 							}
 						}
 					}
@@ -151,5 +158,15 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	protected function getAdditionalProperties() {
 		return array_merge(array('alpha3'), parent::getAdditionalProperties());
 	}
-
+	
+	
+	protected function checkCalledMsc($rate, $called_msc) {
+		if (isset($rate['params']['called_msc'])){
+			$called_msc_regex = $rate['params']['called_msc'];
+		} else {
+			return true;
+		}
+		return preg_match($called_msc_regex, $called_msc);
+	}
+	
 }
