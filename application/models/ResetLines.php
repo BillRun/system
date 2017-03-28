@@ -108,6 +108,7 @@ class ResetLinesModel {
 						'calc_name' => false,
 						'calc_time' => false,
 						'skip_fraud' => true,
+						'rebalance' => new MongoDate(),
 					);
 					
 					// todo: refactoring
