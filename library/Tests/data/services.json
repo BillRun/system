@@ -182,7 +182,7 @@
 		"include" : {
 			"groups" : {
 				"POOL3" : {
-					"cost" : 5,
+					"cost" : 3,
 					"account_shared": true,
 					"account_pool": true,
 					"rates": ["SHARED-RATE"]

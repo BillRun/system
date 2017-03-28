@@ -185,7 +185,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 10, 'over_group' => 5, 'aprice' => 0.5), //2 subscribers with different services
 		array('in_group' => 25, 'over_group' => 0, 'aprice' => 0), //3 subscriber3 with pooled plan
 		array('in_group' => 5, 'over_group' => 5, 'aprice' => 0.5), //3 subscriber3 with pooled plan
-		array('in_group' => 50, 'over_group' => 50, 'aprice' => 5), //1 subscriber with one service of cost
+		array('in_group' => 60, 'over_group' => 40, 'aprice' => 4), //1 subscriber with one service of cost
 	];
 
 	public function __construct($label = false) {
