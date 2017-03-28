@@ -309,6 +309,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+				continue;
+			}
 			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
 		}
 		$result['data'] = $data;
