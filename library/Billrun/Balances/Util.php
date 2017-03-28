@@ -47,7 +47,7 @@ class Billrun_Balances_Util {
 	 * @param type $operationKey
 	 * @return string
 	 */
-	protected function getOperationName($options, $operationKey) {
+	protected static function getOperationName($options, $operationKey) {
 		if (self::$DEFAULT_UPDATE_OPERATION === 0) {
 			self::$DEFAULT_UPDATE_OPERATION = Billrun_Factory::config()->getConfigValue('balances.operation.default');
 		}
