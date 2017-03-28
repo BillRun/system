@@ -147,6 +147,12 @@ class Billrun_Billingcycle {
 		return $entry['billrun_key'];
 	}
 
+	/**
+	 * Preparing database for billing cycle rerun. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * 
+	 */
     public static function removeBeforeRerun($billingCycleCol, $billrunKey) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -169,6 +175,15 @@ class Billrun_Billingcycle {
 		$billrunColl->remove($billrunQuery);
 	}
 
+	
+	/**
+	 * True if billing cycle had started. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * 
+	 * @return bool - True if billing cycle had started.
+	 */
 	protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
@@ -178,6 +193,14 @@ class Billrun_Billingcycle {
 		return true;
 	}
 
+	/**
+	 * True if billing cycle is ended. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * 
+	 * @return bool - True if billing cycle is ended.
+	 */
 	public static function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages)) {
@@ -186,6 +209,14 @@ class Billrun_Billingcycle {
 		return false;
 	}
 
+	/**
+	 * True if billing cycle is running for a given billrun key. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * 
+	 * @return bool - True if generated all the bills from billrun objects
+	 */
 	public static function isCycleRunning($billingCycleCol, $billrunKey, $size) {
 		if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
 			return false;
@@ -196,7 +227,14 @@ class Billrun_Billingcycle {
 		}
 		return true;
 	}
-
+	
+	/**
+	 * True if generated all the bills from billrun objects.
+	 * @param string $billrunKey - Billrun key
+	 * 
+	 * @return bool - True if generated all the bills from billrun objects
+	 * 
+	 */
 	public static function isCycleConfirmed($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$totalQuery = array(
@@ -214,6 +252,14 @@ class Billrun_Billingcycle {
 		return false;
 	}
 
+	/**
+	 * Returns the percentage of cycle progress. 
+	 * @param $billingCycleCol - billing cycle collection
+	 * @param string $billrunKey - Billrun key
+	 * @param int $size - size of page 
+	 * 
+	 *  @return cycle completion percentage 
+	 */
 	public static function getCycleCompletionPercentage($billingCycleCol, $billrunKey, $size) {
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
@@ -233,6 +279,12 @@ class Billrun_Billingcycle {
 		return $completionPercentage;
 	}
 	
+	/**
+	 * Returns the number of generated bills.
+	 * @param string $billrunKey - Billrun key
+	 *
+	 * @return int - number of generated bills.
+	 */
 	public static function getNumberOfGeneratedBills($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
@@ -243,6 +295,12 @@ class Billrun_Billingcycle {
 		return $generatedBills;
 	}
 	
+	/**
+	 * Returns the number of generated Invoices.
+	 * @param string $billrunKey - Billrun key
+	 * 
+	 * @return int - number of generated Invoices.
+	 */
 	public static function getNumberOfGeneratedInvoices($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
@@ -251,7 +309,12 @@ class Billrun_Billingcycle {
 		$generatedInvoices = $billrunColl->query($query)->count();
 		return $generatedInvoices;
 	}
-	
+		
+	/**
+	 * Computes the percentage of generated bills from billrun object.
+	 * @param string $billrunKey - Billrun key
+	 * @return percentage of completed bills
+	 */
 	public static function getCycleConfirmationPercentage($billrunKey) {
 		return (self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100;
 	}
