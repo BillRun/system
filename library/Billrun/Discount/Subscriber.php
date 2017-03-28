@@ -14,15 +14,10 @@
  */
 class Billrun_Discount_Subscriber extends Billrun_Discount {
 
-    /**
-     * on filtered  totals  discounts this array hold the breakdown sections  that should be included in the discount.
-     * @var type  array
-     */
-    protected $discountableSections = array();
 
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
-        $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'switched' => 'flat', 'service' => 'service'));
+        $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
     }
 
     /**
@@ -39,11 +34,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                 $ret = array_merge($ret, $eligibles);
             }
         }
-        foreach ($accountInvoice->getSubscribers() as $billableService) {
-            if ($eligibles = $this->getTerminatedDiscounts($billableService, $accountInvoice)) {
-                $ret = array_merge($ret, $eligibles);
-            }
-        }
+
 
         if ($ret) {
             return $ret;
@@ -52,37 +43,46 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     }
 
     public function checkTermination($accountBillrun) {
-        return array();
+		$ret = array();
+//        foreach ($accountInvoice->getSubscribers() as $billableService) {
+//            if ($eligibles = $this->getTerminatedDiscounts($billableService, $accountInvoice)) {
+//                $ret = array_merge($ret, $eligibles);
+//            }
+//        }
+		 if (!empty($ret)) {
+            return $ret;
+        }
+        return FALSE;
     }
 
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
         $eligible = !empty(@Billrun_Util::getFieldVal($this->discountData['params'], array()));
         $multiplier = 1;
-        $switch_date = $end_date = null;
+        $startDate = $endDate = null;
         $subscriberData = $subscriber->getData();
         $addedData = array('aid' => $accountInvoice->getRawData()['aid'], 'sid' => $subscriberData['sid']);
         foreach (@Billrun_Util::getFieldVal($this->discountData['params'], array()) as $key => $values) {
             $eligible &= isset($subscriberData[$key]) && $subscriberData[$key] == $values ||
-                    isset($subscriberData['breakdown'][$key]) && is_array($values) && count($values) ==  count(array_intersect(array_map(function($a) { return $a['name']; }, $subscriberData['breakdown'][$key]), $values));
+                    isset($subscriberData['breakdown'][$key]) && is_array($values) && count($values) == count(array_intersect(array_map(function($a) { return $a['name']; }, $subscriberData['breakdown'][$key]), $values));
         }
-
-        $ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $switch_date, 'end_date' => $end_date), $addedData));
+		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
+        $ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $startDate, 'end_date' => $endDate), $addedData));
 
         return $eligible ? $ret : FALSE;
     }
 
-    protected function getDefaultEligibilityData($account, $service, $multiplier, $end_date, $switch_date) {
-        $start_date = $this->billrunStartDate;
-        if ($this->billrunStartDate < @Billrun_Util::getFieldVal($service['switch_date'], 0) && $service['switch_date'] <= $this->billrunDate) {
-            $start_date = $switch_date = max($switch_date, $service['switch_date'], $this->billrunStartDate);
-        }
-        if (@Billrun_Util::getFieldVal($account['end_date'], PHP_INT_MAX) < $this->billrunDate) {
-            $end_date = min(Billrun_Util::getFieldVal($end_date, PHP_INT_MAX), $account['end_date']);
-        }
-        $multiplier = (!empty($end_date) ? 0 : 1) + ///add next month discount
-                (!empty($switch_date) || !empty($end_date) ? max(0, min(Billrun_Util::calcPartialMonthMultiplier($start_date, $this->billrunDate, $this->billrunStartDate, $end_date), $multiplier)) : 0); //add prorataed discount
-        return array($start_date, $switch_date, $end_date, $multiplier);
-    }
+//    protected function getDefaultEligibilityData($account, $service, $multiplier, $end_date, $switch_date) {
+//        $start_date = $this->billrunStartDate;
+//        if ($this->billrunStartDate < @Billrun_Util::getFieldVal($service['switch_date'], 0) && $service['switch_date'] <= $this->billrunDate) {
+//            $start_date = $switch_date = max($switch_date, $service['switch_date'], $this->billrunStartDate);
+//        }
+//        if (@Billrun_Util::getFieldVal($account['end_date'], PHP_INT_MAX) < $this->billrunDate) {
+//            $end_date = min(Billrun_Util::getFieldVal($end_date, PHP_INT_MAX), $account['end_date']);
+//        }
+//        $multiplier = (!empty($end_date) ? 0 : 1) + ///add next month discount
+//                (!empty($switch_date) || !empty($end_date) ? max(0, min(Billrun_Util::calcPartialMonthMultiplier($start_date, $this->billrunDate, $this->billrunStartDate, $end_date), $multiplier)) : 0); //add prorataed discount
+//        return array($start_date, $switch_date, $end_date, $multiplier);
+//    }
 
     /**
      * 
@@ -136,6 +136,12 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return empty($terminatedDiscounts) ? FALSE : $terminatedDiscounts;
     }
 
+	/**
+	 * Create  a totals structure out of fileds that  are  supported by the discount
+	 * @param type $billrun
+	 * @param type $entityId
+	 * @return type
+	 */
     protected function getTotalsFromBillrun($billrun, $entityId) {
         if (empty($this->discountData['discount_subject'])) {
             return parent::getTotalsFromBillrun($billrun, $entityId);
@@ -161,6 +167,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                     $usageTotals['after_vat'] += $usage['cost'];
                     $usageTotals['before_vat'] += $usage['cost'];
                     @$usageTotals[$usage['name']] += $usage['cost'];
+					@$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
                 }
             }
         }

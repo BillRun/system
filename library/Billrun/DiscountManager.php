@@ -88,13 +88,11 @@ class Billrun_DiscountManager {
 				}
 			}
 		}
-		/*
-		 * TODO implement when possible
-		  if(empty($eligibilityOnly)) {
+		
+		 if(empty($eligibilityOnly)) {
 		  // Reprice the Discounts so they won't pass the charges in the account.
-		  $this->repriceCDRs($discountCdrs ,$discountInstances, $billrun);
+			  $this->repriceCDRs($discountCdrs ,$discountInstances, $invoice);
 		  }
-		 */
 
 		$returnedCdrs = array();
 		//Transform $discountCdrs  to a simple array.
@@ -205,55 +203,39 @@ class Billrun_DiscountManager {
 	 * 
 	 * @param type $discounts
 	 * @param type $discountInstances
-	 * @param Billrun_Billrun $billrunObj
+	 * @param Billrun_Billrun $invoiceObj
 	 * @return array
 	 */
-	protected function repriceCDRs(&$discounts, $discountInstances, $billrunObj) {
+	protected function repriceCDRs(&$discounts, $discountInstances, $invoiceObj) {
 		// if the  totals  equal to zero (aproximate 0.00000001)  then the  discount aprice will be adjasted to 0.
 		//else apply discount to totals
-		//if it cause negative value decrease thata  value  from the  discount.
-		$accountTotals = $this->convertTotalsToAfterVat($billrunObj->getTotals());
+		//if it cause negative value decrease thata value from the discount.
+		
+		//Reorder discounts to discount from the most amount of affected section to the least amount of section affected.
+		$accountTotals = $invoiceObj->getTotals();
 		uksort($discounts, function ($discountId1, $discountId2) use ($discountInstances, $accountTotals) {
 			$categoryKeys1 = $discountInstances[$discountId1]->getRateCategoryKeys($accountTotals);
 			$categoryKeys2 = $discountInstances[$discountId2]->getRateCategoryKeys($accountTotals);
 			return (count($categoryKeys1) < count($categoryKeys2) ? -1 : (count($categoryKeys1) == count($categoryKeys2) ? 0 : 1));
 		});
 
-		$accountEntityId = 'aid' . $billrunObj->getAid();
-		$beforeVatTotals[$accountEntityId] = $billrunObj->getTotals();
+		$accountEntityId = 'aid' . $invoiceObj->getRawData()['aid'];
+		$beforeVatTotals[$accountEntityId] = $invoiceObj->getTotals();
 		foreach ($discounts as $discountId => &$typeDiscounts) {
 			$instance = $discountInstances[$discountId];
-			foreach ($typeDiscounts as &$discount) {
-				$discountVAT = Billrun_Calculator_Rate_Vat::getVatFromRate($billrunObj->getEligibleVat($billrunObj->getInvoiceDate()->sec), $discount['service_type']);
-				$entityId = $instance->getEntityId($discount);
-				$vatRate = $discount['tax_data']['tax_rate'];
+			foreach ($typeDiscounts as &$discount) {			
+				$entityId = $instance->getEntityId($discount);			
 				if (!isset($entityTotals[$entityId])) {
-					$beforeVatTotals[$entityId] = $instance->getInvoiceTotals($billrunObj, $discount);
-					$entityTotals[$entityId] = $this->convertTotalsToAfterVat($instance->getInvoiceTotals($billrunObj, $discount));
-				}
-				if ($instance->getDiscountType() == 'PERCENT') {
-					$discount['aprice'] = $this->adjustPercentageDiscount($beforeVatTotals, $discount, $instance, $discountVAT, $entityId, $accountEntityId);
+					$beforeVatTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
+					$entityTotals[$entityId] = $instance->getInvoiceTotals($invoiceObj, $discount);
 				}
 
-				$discount['aprice'] = $this->getUpdatedChargeBeforeVAT($discount, $entityTotals[$entityId], $accountTotals, $discount['variable_vat'] ? FALSE : intval($discountVAT * 100));
+				$discount['aprice'] = $this->getUpdatedCharge($discount, $entityTotals[$entityId], $accountTotals);
 			}
 		}
 		return $discounts;
 	}
 
-	protected function convertTotalsToAfterVat($totalsArr) {
-		$vatKeys = array('flat', 'usage', 'miscellaneous');
-		foreach ($vatKeys as $vatKey) {
-			$totalAfterVat = 0;
-			if (!empty($totalsArr[$vatKey])) {
-				foreach (Billrun_Util::getFieldVal($totalsArr[$vatKey], array()) as $vatPercentage => $totalBeforeVat) {
-					$totalAfterVat += Billrun_Calculator_Rate_Vat::addVatByVatPercentage($totalBeforeVat, $vatPercentage / 100);
-				}
-			}
-			$totalsArr[$vatKey] = $totalAfterVat;
-		}
-		return $totalsArr;
-	}
 
 	/**
 	 * 
@@ -261,57 +243,25 @@ class Billrun_DiscountManager {
 	 * @param type $totalArr totals array in "after VAT" format
 	 * @return float
 	 */
-	protected function getUpdatedChargeBeforeVAT($cdr, &$totalArr, &$accountTotals, $discountVat = FALSE) {
+	protected function getUpdatedCharge($cdr, &$totalArr, &$accountTotals) {
 		if ($cdr['aprice'] < 0) {
-			$vatRate = $cdr['tax_data']['tax_rate'];
-			$chargeWithVat = Billrun_Calculator_Tax::addTax($cdr);
-			$totalsVat = $discountVat ? Billrun_Calculator_Rate_Vat::addVat($totalArr['vatable'][$discountVat], $vatRate, $cdr['service_type']) : PHP_INT_MAX;
-			$accountTotalsVat = $discountVat ? Billrun_Calculator_Rate_Vat::addVat($accountTotals['vatable'][$discountVat], $vatRate, $cdr['service_type']) : PHP_INT_MAX;
 			$availableCharge = 0;
-			foreach (array_keys($cdr['discount']) as $sectionKey) {
-				if ($totalArr[$sectionKey] <= 0) {
+			foreach ($cdr['affected_sections'] as $sectionKey) {
+				if ($totalArr[$sectionKey]['before_vat'] <= 0) {
 					continue;
 				} else {
-					$repriceDiff = min($totalArr[$sectionKey], abs($chargeWithVat), $accountTotals[$sectionKey], $totalsVat, $accountTotalsVat);
-					$totalArr[$sectionKey] -= $repriceDiff;
-					$accountTotals[$sectionKey] -= $repriceDiff;
-					$chargeWithVat += $repriceDiff;
-					$availableCharge -= $repriceDiff;
-					if ($discountVat) {
-						$totalsVat -= $repriceDiff;
-						$accountTotalsVat -= $repriceDiff;
-					}
+					$repriceDiff = min($totalArr[$sectionKey]['before_vat'],$accountTotals[$sectionKey]['before_vat'],$totalArr['before_vat'],$totalArr['before_vat']);
+					$totalArr[$sectionKey]['before_vat'] -= $repriceDiff;
+					$accountTotals[$sectionKey]['before_vat'] -= $repriceDiff;
+					$availableCharge -= $repriceDiff;					
 				}
 			}
-			$availableCharge = $availableCharge - min(0, $availableCharge + $accountTotals['after_vat']);
-			$accountTotals['after_vat'] += $availableCharge;
-			$cdr['aprice'] = Billrun_Calculator_Rate_Vat::removeVat($availableCharge, $vatRate, $cdr['service_type']);
-			if ($discountVat) {
-				$totalArr['vatable'][$discountVat] += $cdr['aprice'];
-				$accountTotals['vatable'][$discountVat] += $cdr['aprice'];
-			}
+			$availableCharge = $availableCharge - min(0, $availableCharge + $accountTotals['before_vat']);
+			$accountTotals['before_vat'] += $availableCharge;
+			$cdr['aprice'] = $availableCharge;
 		}
 		return $cdr['aprice'];
 	}
-
-	protected function adjustPercentageDiscount(&$beforeVatTotals, $discount, $instance, $discountVAT, $entityId, $accountEntityId) {
-		$aprice = 0;
-		$limit = !empty($discount['limit']) ? $discount['limit'] : $discount['aprice'];
-		foreach ($discount['discount'] as $section => $discountValues) {
-			if (!isset($beforeVatTotals[$entityId][$section])) {
-				continue;
-			}
-			$oldVatArray = $beforeVatTotals[$entityId][$section];
-			$aprice += $instance->calculatePricePercent($discount, $beforeVatTotals[$entityId][$section], $discountValues, $limit, $discountVAT, $beforeVatTotals[$entityId][$section]);
-			if ($accountEntityId != $entityId) {
-				foreach ($oldVatArray as $vat => $oldVal) {
-					$beforeVatTotals[$accountEntityId][$section][$vat] += $beforeVatTotals[$entityId][$section][$vat] - $oldVal;
-				}
-			}
-		}
-		return $aprice;
-	}
-
 	/**
 	 * Inisiate discount object for discount rate
 	 * @param type $discountRate
@@ -379,32 +329,15 @@ class Billrun_DiscountManager {
 		return $ret;
 	}
 
-	/**
-	 * 
-	 * @param Billrun_Billrun $billrun
-	 * @return type
-	 */
-	public static function getExceptionalDiscounts($billrun) {
-		$linesColl = Billrun_Factory::db()->linesCollection();
-		$query = array('type' => array('$in' => array('credit')), 'aid' => $billrun->getAid(),
-			'credit_type' => array('$in' => array('refund')));
-		$query['billrun'] = $billrun->getBillrunKey();
-		$loadedDiscounts = array();
-		foreach ($linesColl->query($query) as $dis) {
-			$disTemp = $dis->getRawData();
-			$disTemp['key'] = empty($disTemp['key']) ? $disTemp['service_name'] : $disTemp['key'];
-			$loadedDiscounts[] = $disTemp;
-		}
-		return static::getFinalCDRs($loadedDiscounts);
-	}
 
 	public static function generateDiscountStamp($discount) {
 		$releventKeys = array(
-			'key', 'creation_time', 'modifier', 'billrun', 'usaget', 'source',
-			'urt', 'arate', 'sid', 'aid', 'type', 'credit_type', 'service_name',
+			'key', 'process_time', 'modifier','original_modifier',
+			'billrun', 'usaget', 'source',
+			'arate', 'sid', 'aid', 'type',  
 		);
 		//Dont stamp the price for discounts in which thier price is affected from elements other  then to target of the discounts (Remise embasedor, precentage discounts, etc...)
-		if (empty($discount['is_percent']) && !($discount['usaget'] == 'conditional_discount' && empty($discount['sid']))) {
+		if (empty($discount['is_percent']) && !($discount['usaget'] == 'discount' && empty($discount['sid']))) {
 			$releventKeys[] = 'aprice';
 		}
 		return Billrun_Util::generateFilteredArrayStamp($discount, $releventKeys);
@@ -418,24 +351,6 @@ class Billrun_DiscountManager {
 			$cdr = is_array($cdr) ? new Mongodloid_Entity($cdr) : $cdr;
 		}
 		return $cdrs;
-	}
-
-	/**
-	 * save discount to the DB.
-	 * @param type $query
-	 */
-	static public function saveDiscounts($discounts, $aid) {
-		$linesColl = Billrun_Factory::db()->linesCollection();
-		Billrun_Factory::log('Saving discounts to account ' . $aid, Zend_Log::INFO);
-		foreach ($discounts as $discount) {
-			try {
-				$linesColl->insert($discount, array("w" => 1));
-			} catch (Exception $ex) {
-				if ($ex->getCode() != "11000") {
-					Billrun_Factory::Log("Couldn't save discount for account $aid got  exception : " . $ex->getMessage(), Zend_Log::ALERT);
-				}
-			}
-		}
 	}
 
 }
