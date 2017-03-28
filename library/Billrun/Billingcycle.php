@@ -229,6 +229,8 @@ class Billrun_Billingcycle {
 	 * True if generated all the bills from billrun objects.
 	 * @param string $billrunKey - Billrun key
 	 * 
+	 * @return bool - True if generated all the bills from billrun objects
+	 * 
 	 */
 	public static function isCycleConfirmed($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -276,7 +278,8 @@ class Billrun_Billingcycle {
 	/**
 	 * Returns the number of generated bills.
 	 * @param string $billrunKey - Billrun key
-	 * 
+	 *
+	 * @return int - number of generated bills.
 	 */
 	public static function getNumberOfGeneratedBills($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -292,6 +295,7 @@ class Billrun_Billingcycle {
 	 * Returns the number of generated Invoices.
 	 * @param string $billrunKey - Billrun key
 	 * 
+	 * @return int - number of generated Invoices.
 	 */
 	public static function getNumberOfGeneratedInvoices($billrunKey) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();

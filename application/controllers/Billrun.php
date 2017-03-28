@@ -25,7 +25,7 @@ class BillrunController extends ApiController {
 
 	public function init() {
 		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
-		$this->size = (int)Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
+		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		parent::init();
 	}
 
