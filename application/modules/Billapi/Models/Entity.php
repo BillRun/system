@@ -92,6 +92,13 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $action = 'change';
+	
+	/**
+	 * minimum update datetime (unix timestamp)
+	 * 
+	 * @var int
+	 */
+	protected $minUpdateDatetime;
 
 	/**
 	 * the change action applied on the entity
@@ -120,6 +127,7 @@ class Models_Entity {
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
+		$this->minUpdateDatetime = $this->getMinimumUpdateDate();
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
@@ -320,6 +328,22 @@ class Models_Entity {
 	 * @return boolean
 	 */
 	protected function canEntityBeDeleted() {
+		if ($this->checkLastEntry() === false) {
+			throw new Billrun_Exceptions_Api(1500, array(), "Cannot remove old entries, but only the last created entry that exists");
+		}
+		return true;
+	}
+	
+	/**
+	 * method to check if the current query allocate the last entry
+	 * 
+	 * @return boolean true if the last entry else false
+	 */
+	protected function checkLastEntry() {
+		$entry = $this->collection->query($this->query)->cursor()->sort(array('_id' => 1))->current();
+		if (isset($entry['_id']) && $this->before['_id'] != $entry['_id']) {
+			return false;
+		}
 		return true;
 	}
 
@@ -338,8 +362,8 @@ class Models_Entity {
 		if (is_null($action)) {
 			$action = $this->action;
 		}
-		$fromMinTime = $this->getMinimumUpdateDate();
-		if ($params[$field]->sec < $fromMinTime) {
+
+		if ($params[$field]->sec < $this->minUpdateDatetime) {
 			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
 		}
@@ -373,7 +397,7 @@ class Models_Entity {
 		}
 		return true;
 	}
-
+	
 	/**
 	 * make entity expired by setting to field with datetime of now
 	 * 
