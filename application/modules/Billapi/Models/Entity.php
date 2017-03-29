@@ -392,7 +392,7 @@ class Models_Entity {
 		}
 		$this->trackChanges(null); // assuming remove by _id
 		
-		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
+		if (isset($this->before['from']->sec) && $this->before['from']->sec >= $this->minUpdateDatetime) {
 			return $this->reopenPreviousEntry();
 		}
 		return true;
