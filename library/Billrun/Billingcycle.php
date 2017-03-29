@@ -203,7 +203,9 @@ class Billrun_Billingcycle {
 	 */
 	public static function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages)) {
+		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
+		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
+		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -221,8 +223,7 @@ class Billrun_Billingcycle {
 		if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
 			return false;
 		}
-		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages)) {
+		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
 			return false;
 		}
 		return true;
@@ -271,9 +272,9 @@ class Billrun_Billingcycle {
 		);
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
 		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
-			$completionPercentage = ($finishedPages / $totalPages) * 100;
+			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
-			$completionPercentage = ($finishedPages / ($totalPages + 1)) * 100;
+			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
 		}
 
 		return $completionPercentage;
@@ -316,7 +317,11 @@ class Billrun_Billingcycle {
 	 * @return percentage of completed bills
 	 */
 	public static function getCycleConfirmationPercentage($billrunKey) {
-		return (self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100;
+		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey);
+		if ($generatedInvoices != 0) {
+			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
+		}
+		return 0;
 	}
 
 }
