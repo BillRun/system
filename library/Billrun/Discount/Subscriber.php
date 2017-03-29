@@ -67,7 +67,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
 		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
 		
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
-        $ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $startDate, 'end_date' => $endDate), $addedData));
+        $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 
         return $eligible ? $ret : FALSE;
     }
@@ -77,7 +77,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     }
 
     protected function getOptionalCDRFields() {
-        return array('sid');
+        return array('sid','start','end');
     }
 
     /**
@@ -138,6 +138,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                     $usageTotals['before_vat'] += $usage['cost'];
                     @$usageTotals[$usage['name']] += $usage['cost'];
 					@$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
+					@$usageTotals['count'][$this->discountableSections[$section]] += $usage['usagev'];
                 }
             }
         }

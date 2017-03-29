@@ -36,6 +36,12 @@ abstract class Billrun_Discount {
 
 	abstract public function checkTermination($accountBillrun);
 
+	/**
+	 * Generate all eligible discount CDRs for a given account.
+	 * @param type $eligibleData
+	 * @param type $accountInvoice
+	 * @return type
+	 */
 	public function generateCDRs($eligibleData, $accountInvoice) {
 		$discountLines = array();
 		$prcisn = 10000000;
@@ -69,8 +75,7 @@ abstract class Billrun_Discount {
 	}
 
 	/**
-	 * 
-	 * @param type $param
+	 * Generate a single discount CDR
 	 */
 	protected function generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow, $billrunKey, $quantity) {
 		$discountLine = array(
@@ -96,13 +101,13 @@ abstract class Billrun_Discount {
 			}
 		}
 		if (!empty($this->discountData['cycles'])) {
-			$discountLine['discount_cycles'] = $this->discountData['cycles'];
+			$discountLine['cycles'] = $this->discountData['cycles'];
 		}
 		foreach ($this->discountData['discount_subject'] as $subjects) {
 			foreach ($subjects as $key => $val) {
 				if ($this->discountData['discount_type'] == 'monetary') {
 					$discountLine['discount'][$key]['value'] = -(abs($val)) * $lineModifier;
-				} else { //Calualte  Percent  avarage (not preceise but very close)
+				} else {
 					$discountLine['is_percent'] = true; //TODO change  all references to work with 'discount_type' field
 					$discountLine['discount'][$key]['value'] = $val;
 				}
@@ -114,20 +119,7 @@ abstract class Billrun_Discount {
 			$limit = 0 < $this->discountData['limit'] ? -$this->discountData['limit'] : $this->discountData['limit'];
 			$discountLine['limit'] = $limit * $lineModifier;
 		}
-
-		if (!empty($eligibleRow)) {
-			if (empty($eligibleRow['end_date'])) {
-				unset($eligibleRow['end_date']);
-			} else {
-				$eligibleRow['end'] = new MongoDate($eligibleRow['end_date']);
-			}
-			if (empty($eligibleRow['start_date'])) {
-				unset($eligibleRow['start_date']);
-			} else if (is_numeric($eligibleRow['start_date'])) {
-				$eligibleRow['start'] = new MongoDate($eligibleRow['start_date']);
-			}
-			$discountLine = array_merge($eligibleRow, $discountLine);
-		}
+		
 
 		$discountLine['process_time'] = date(Billrun_Base::base_dateformat);
 		if (!empty($accountInvoice)) {
@@ -161,22 +153,24 @@ abstract class Billrun_Discount {
 		$charge = $totalPrice = 0;
 		//discount each of the subject  included in the discount
 		foreach ($discount['discount'] as $key => $val) {
-
+			//If the  discount discount several subjects increase the  discount to fit
+			$usagev = isset($totals['count'][$key]) ? $totals['count'][$key] : 1; 
 			if ($discount['discount_type'] == 'monetary') {
 				$callback = array($this, 'calculatePriceEuro');
+				$val['value'] *= $usagev;
 			} else {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$price = call_user_func_array($callback, array($discount, $totals[$key], $val['value'], $discountLimit));
+			
+			$price = call_user_func_array($callback, array($totals[$key], $val['value'], $discountLimit * $usagev));
 			$taxationInformation[] = $this->getTaxationDataForPrice($price, $key, $discount);
-			$totalPrice += $price;
+			$totalPrice += $price ;
 		}
 		//make sure that the  discount is not lees then it  limit
 		if (!empty($totalPrice)) {
 			$charge = $totalPrice > 0 ? $totalPrice : max($totalPrice, $discountLimit);
 		}
 
-		$charge *= $discount['usagev'];
 		return array('price' => $charge, 'tax_info' => $taxationInformation);
 		;
 	}
@@ -184,10 +178,10 @@ abstract class Billrun_Discount {
 	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
 		$taxRate = FALSE;
 		$retTaxInfo = array();
-		//Get the  tax rate  by the subject key
-		$collMapping = array('plan' => array('coll' => 'plans', 'key_field' => 'name'),
-			'service' => array('coll' => 'services', 'key_field' => 'name'),
-			'usage' => array('coll' => 'rates', 'key_field' => 'key'));
+		//Get the tax rate by the subject key
+		$collMapping = array(	'plan' => array('coll' => 'plans', 'key_field' => 'name'),
+								'service' => array('coll' => 'services', 'key_field' => 'name'),
+								'usage' => array('coll' => 'rates', 'key_field' => 'key')	);
 
 		foreach ($collMapping as $subjectType => $mapping) {
 			if (empty($this->discountData['discount_subject'][$subjectType])) {
@@ -235,9 +229,7 @@ abstract class Billrun_Discount {
 	 * @param type $discountVat
 	 * @return type
 	 */
-	public function calculatePricePercent($discount, $totals, $value, $limit, &$updatedTotals = array()) {
-		$priceCorrection = 0;
-		$aprice = 0;
+	public function calculatePricePercent($totals, $value, $limit, &$updatedTotals = array()) {
 		$discountValue = $totals * floatval($value);
 		$aprice = max(Billrun_Util::getFieldVal($aprice, 0) - $discountValue, $limit);
 		$totals += $aprice;
@@ -261,7 +253,7 @@ abstract class Billrun_Discount {
 	 * @param type $discountVAT
 	 * @return type
 	 */
-	protected function calculatePriceEuro($discount, $total, $value, $limit) {
+	protected function calculatePriceEuro($total, $value, $limit) {
 
 		$discountLeft = $total + $value;
 		return $value > $discountLeft ? 0 : //if the totals was negative before the discount application no discount needed.
@@ -357,8 +349,8 @@ abstract class Billrun_Discount {
 	 * @param type $discount
 	 * @return type
 	 */
-	public static function isConditional($discount) {
-		return !empty($discount['usaget']) && $discount['usaget'] == 'conditional_discount';
+	public static function isDiscount($discount) {
+		return !empty($discount['usaget']) && $discount['usaget'] == 'discount';
 	}
 
 	/**
@@ -382,10 +374,6 @@ abstract class Billrun_Discount {
 	 */
 	protected function getTotalsFromBillrun($billrun, $entityId) {
 		return $billrun->getTotals($entityId);
-	}
-
-	protected function getRequiredOptions() {
-		return isset($this->discountData['params']['discount']['services']['options']['required']) ? $this->discountData['params']['discount']['services']['options']['required'] : array();
 	}
 
 }

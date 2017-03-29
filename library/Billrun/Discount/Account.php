@@ -27,7 +27,7 @@ class Billrun_Discount_Account extends Billrun_Discount {
 		$eligible = $this->discountData['from']->sec < $billrunDate && $billrunDate < $this->discountData['to']->sec ; 
 
 
-		return $eligible ? array(array_merge(array('modifier' => $multiplier, 'start_date' => $switch_date, 'end_date' => $end_date), $addedData)) : FALSE;
+		return $eligible ? array(array_merge(array('modifier' => $multiplier, 'start' => $switch_date, 'end' => $end_date), $addedData)) : FALSE;
 	}
 
 	public function checkTermination($account, $billrun) {
