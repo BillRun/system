@@ -18,7 +18,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
         $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
-		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$covers' => array('*' => '*.name') ));
+		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$all' => array('*' => '*.name') ));
     }
 
     /**

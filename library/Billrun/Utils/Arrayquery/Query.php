@@ -24,7 +24,7 @@ class Billrun_Utils_Arrayquery_Query {
 		'$neq' => '_neq',
 		'$in' => '_in',
 		'$nin' => '_nin',
-		'$covers' => '_covers',
+		'$all' => '_covers',
 		'$and' => '_and',
 		'$or' => '_or',
 		'$not' => '_not',
