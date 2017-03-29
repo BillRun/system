@@ -13,6 +13,9 @@
  * @since    5.1
  */
 class Billrun_Tariff_Util {
+	
+	const PRICING_METHOD_TIERED = 'tiered';
+	const PRICING_METHOD_VOLUME = 'volume';
 
 	/**
 	 * Gets correct access price from tariff
@@ -28,7 +31,7 @@ class Billrun_Tariff_Util {
 
 	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
-			$pricingMethod = 'tiered';
+			$pricingMethod = self::PRICING_METHOD_TIERED;
 		}
 		$accessPrice = self::getAccessPrice($tariff);
 		if ($volume < 0) {
@@ -44,11 +47,11 @@ class Billrun_Tariff_Util {
 
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
-			$pricingMethod = 'tiered';
+			$pricingMethod = self::PRICING_METHOD_TIERED;
 		}
 		$charge = 0;
-		$lastRate = array();
-		$volumeCount = $volume;
+		$lastRate = array();	
+	$volumeCount = $volume;
 		foreach ($tariffs as $currRate) {
 			// Check that it is an array.
 			// TODO: Use a rate class.
@@ -65,10 +68,10 @@ class Billrun_Tariff_Util {
 				break;
 			}
 
-			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate);
+			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate, $pricingMethod);
 			$lastRate = $rate;
 		}
-		return $pricingMethod === 'volume' ? $charge : floatval($volume / $lastRate['interval'] * $lastRate['price']);
+		return $pricingMethod === self::PRICING_METHOD_TIERED ? $charge : self::getChargeValueForRateStep($volume, $lastRate);
 	}
 
 	public static function getIntervalCeiling($tariff, $volume) {
@@ -125,12 +128,28 @@ class Billrun_Tariff_Util {
 	 * @param array $rate - The current rate.
 	 * @return int Volume value after handling.
 	 */
-	protected static function handleChargeAndVolume($volume, &$charge, $rate) {
+	protected static function handleChargeAndVolume($volume, &$charge, $rate, $pricingMethod) {
 		$maxVolumeInRate = ($rate['to'] == 'UNLIMITED' ? PHP_INT_MAX : $rate['to']) - $rate['from'];
 
 		// get the volume that needed to be priced for the current rating
 		$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
+		
+		if ($pricingMethod === self::PRICING_METHOD_TIERED) {
+			$charge += self::getChargeValueForRateStep($volumeToPriceCurrentRating, $rate);
+		}
 
+		//decrease the volume that was priced
+		return $volume - $volumeToPriceCurrentRating;
+	}
+	
+	/**
+	 * Gets the charge value according to rate parameters, handles the "ceil" mechanism.
+	 * 
+	 * @param type $volume
+	 * @param type $rate
+	 * @return type
+	 */
+	protected static function getChargeValueForRateStep($volume, $rate) {
 		$ceil = true;
 		if (isset($rate['ceil'])) {
 			$ceil = $rate['ceil'];
@@ -138,14 +157,11 @@ class Billrun_Tariff_Util {
 
 		if ($ceil) {
 			// actually price the usage volume by the current 	
-			$charge += floatval(ceil($volumeToPriceCurrentRating / $rate['interval']) * $rate['price']);
-		} else {
-			// actually price the usage volume by the current 
-			$charge += floatval($volumeToPriceCurrentRating / $rate['interval'] * $rate['price']);
+			return floatval(ceil($volume / $rate['interval']) * $rate['price']);
 		}
-
-		//decrease the volume that was priced
-		return $volume - $volumeToPriceCurrentRating;
+	
+		// actually price the usage volume by the current 
+		return floatval($volume / $rate['interval'] * $rate['price']);
 	}
 
 }
