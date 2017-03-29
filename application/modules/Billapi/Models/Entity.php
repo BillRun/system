@@ -98,7 +98,7 @@ class Models_Entity {
 	 * 
 	 * @var int
 	 */
-	protected $minUpdateDatetime;
+	static protected $minUpdateDatetime;
 
 	/**
 	 * the change action applied on the entity
@@ -127,7 +127,7 @@ class Models_Entity {
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
-		$this->minUpdateDatetime = $this->getMinimumUpdateDate();
+
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
@@ -297,8 +297,11 @@ class Models_Entity {
 	 * 
 	 * @return unix timestamp
 	 */
-	protected function getMinimumUpdateDate() {
-		return Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastClosedBillingCycle());
+	protected static function getMinimumUpdateDate() {
+		if (empty(self::$minUpdateDatetime)) {
+			self::$minUpdateDatetime = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastClosedBillingCycle());
+		}
+		return self::$minUpdateDatetime;
 	}
 
 	/**
@@ -363,7 +366,7 @@ class Models_Entity {
 			$action = $this->action;
 		}
 
-		if ($params[$field]->sec < $this->minUpdateDatetime) {
+		if ($params[$field]->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
 		}
@@ -392,7 +395,7 @@ class Models_Entity {
 		}
 		$this->trackChanges(null); // assuming remove by _id
 		
-		if (isset($this->before['from']->sec) && $this->before['from']->sec >= $this->minUpdateDatetime) {
+		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
 		}
 		return true;
@@ -636,12 +639,12 @@ class Models_Entity {
 	 * 
 	 * @return The record with revision info.
 	 */
-	static function setRevisionInfo($record, $collection) {
+	public static function setRevisionInfo($record, $collection) {
 		$status = self::getStatus($record, $collection);
 		$earlyExpiration = self::isEarlyExpiration($record, $status);
 		$record['revision_info'] = array(
 			"status" => $status,
-			"removable" => $record['from']->sec >= $this->minUpdateDatetime,
+			"removable" => $record['from']->sec >= self::getMinimumUpdateDate(),
 			"early_expiration" => $earlyExpiration,
 		);
 		return $record;
