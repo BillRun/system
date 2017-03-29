@@ -659,14 +659,14 @@ class Models_Entity {
 	 * @return string Status, available values are: "future", "expired", "active_with_future", "active"
 	 */
 	static function getStatus($record, $collection) {
-		if (strtotime($record['to']) < time()) {
+		if ($record['to']->sec < time()) {
 			return self::EXPIRED;
 		}
-		if (strtotime($record['from']) > time()) {
+		if ($record['from']->sec > time()) {
 			return self::FUTURE;
 		}
 		// For active records, check if it has furure revisions
-		$query = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($record['to']), true);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
@@ -691,7 +691,7 @@ class Models_Entity {
 	 */
 	static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return strtotime("+50 years", strtotime($record['from'])) > strtotime($record['to']);
+			return $record['from']->sec > $record['to']->sec;
 		}
 		return false;
 	}
