@@ -28,7 +28,7 @@ class Billrun_Tariff_Util {
 
 	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
-			$pricingMethod = 'volume';
+			$pricingMethod = 'tiered';
 		}
 		$accessPrice = self::getAccessPrice($tariff);
 		if ($volume < 0) {
@@ -44,7 +44,7 @@ class Billrun_Tariff_Util {
 
 	public static function getChargeByTariffRatesAndVolume($tariffs, $volume, $pricingMethod = null) {
 		if (is_null($pricingMethod)) {
-			$pricingMethod = 'volume';
+			$pricingMethod = 'tiered';
 		}
 		$charge = 0;
 		$lastRate = array();
