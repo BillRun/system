@@ -14,8 +14,6 @@
  */
 abstract class Billrun_Discount {
 
-	const SECS_IN_AN_YEAR = 31557600;
-
 	/**
 	 *
 	 * @var array
@@ -49,7 +47,7 @@ abstract class Billrun_Discount {
 				Billrun_Factory::log("Account {$eligibleRow['aid']} has reached its maximum limit of discounts : {$this->discountData['key']}", Zend_Log::INFO);
 				break;
 			}
-			$groupingId = rand(0, 1 << 31);
+
 			$orgModifier = $modifier = $eligibleRow['modifier'];
 			$quantity = !empty($eligibleRow['quantity']) ? $eligibleRow['quantity'] : 1;
 			while (abs($modifier) >= 1 / ($prcisn * 10)) {
@@ -57,7 +55,8 @@ abstract class Billrun_Discount {
 				$modifier = round($modifier - $lineModifier, 3);
 				$creationTime = (!empty($accountInvoice) ? static::getBillrunDate($accountInvoice->getBillrunKey()) : time() );
 
-				$discountLines[] = $this->generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow);
+				$discountLines[] = $this->generateCDR($lineModifier, $creationTime, $orgModifier, 
+													  $eligibleRow, $accountInvoice->getBillrunKey(), $quantity);
 			}
 		}
 		//Apply the minimum limit of the discount
@@ -73,7 +72,7 @@ abstract class Billrun_Discount {
 	 * 
 	 * @param type $param
 	 */
-	protected function generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow) {
+	protected function generateCDR($lineModifier, $creationTime, $orgModifier, $eligibleRow, $billrunKey, $quantity) {
 		$discountLine = array(
 			'key' => $this->discountData['key'],
 			'name' => $this->discountData['description'],
@@ -88,7 +87,7 @@ abstract class Billrun_Discount {
 			'arate' => $this->discountData->createRef(Billrun_Factory::db()->ratesCollection()),
 			'aid' => $eligibleRow['aid'],
 			'source' => 'billrun',
-			'billrun' => $accountInvoice->getBillrunKey(),
+			'billrun' => $billrunKey,
 			'usagev' => $quantity,
 		);
 		foreach ($this->getOptionalCDRFields() as $field) {
@@ -130,7 +129,6 @@ abstract class Billrun_Discount {
 			$discountLine = array_merge($eligibleRow, $discountLine);
 		}
 
-		$discountLine['grouping'] = $groupingId;
 		$discountLine['process_time'] = date(Billrun_Base::base_dateformat);
 		if (!empty($accountInvoice)) {
 			$discountLine['received_count'] = static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $accountInvoice->getRawData()['aid']);
@@ -292,48 +290,6 @@ abstract class Billrun_Discount {
 	 */
 	protected static function getBillrunDate($billrunKey) {
 		return Billrun_Billingcycle::getEndTime($billrunKey);
-	}
-
-	protected static function serviceWithinCommitment($service, $billrunTime = FALSE) {
-//		if ($billrunTime) {
-//			Billrun_Factory::log($service['engagement_end_date']);
-//		}
-		return !empty($service['engagement_end_date']) && ( empty($billrunTime) || $service['engagement_end_date'] > $billrunTime );
-	}
-
-	protected static function isDiscountUnderServicesDomains($discount, $services, $key, $billrunTime = FALSE) {
-		foreach (@Billrun_Util::getFieldVal($services, array()) as $service) {
-			foreach (@Billrun_Util::getFieldVal($discount['domains'], array()) as $domainKey => $domains) {
-				if (!empty($domains) && isset($service[$key]) && in_array($service[$key], $domains) &&
-					( (strstr($domainKey, 'with_commitment') === FALSE) || static::serviceWithinCommitment($service, $billrunTime))
-				) {
-					return TRUE;
-				}
-			}
-		}
-		//If the  dicount  domains are empty  it  eligible for all domains/services in other words it ignore which services the  account has
-		return empty($discount['domains']);
-	}
-
-	/**
-	 * Retrive a match inside a timed object.
-	 * @param type $fieldsArr 
-	 * @param type $values
-	 * @return mixed the identified timed field that matched the $values or false if none found
-	 */
-	protected static function findTimedField($fieldsArr, $values) {
-		if (is_array($fieldsArr)) {
-			foreach ($fieldsArr as $fieldVal) {
-				//Check that the value is actually timed.
-				if (!isset($fieldVal['name']) || (!isset($fieldVal['start_date']) && !isset($fieldVal['end_date']))) {
-					continue;
-				}
-				if (static::simpleFieldCompare($fieldVal['name'], $values)) {
-					return $fieldVal;
-				}
-			}
-		}
-		return FALSE;
 	}
 
 	/**
