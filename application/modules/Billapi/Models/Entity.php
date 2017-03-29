@@ -641,6 +641,7 @@ class Models_Entity {
 		$earlyExpiration = self::isEarlyExpiration($record, $status);
 		$record['revision_info'] = array(
 			"status" => $status,
+			"removable" => $record['from']->sec >= $this->minUpdateDatetime,
 			"early_expiration" => $earlyExpiration,
 		);
 		return $record;
