@@ -317,8 +317,9 @@ class Billrun_Billingcycle {
 	 * @return percentage of completed bills
 	 */
 	public static function getCycleConfirmationPercentage($billrunKey) {
-		if (self::getNumberOfGeneratedInvoices($billrunKey) != 0) {
-			return round((self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100, 2);
+		$generatedInvoices = self::getNumberOfGeneratedInvoices($billrunKey);
+		if ($generatedInvoices != 0) {
+			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
 		}
 		return 0;
 	}
