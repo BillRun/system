@@ -50,8 +50,8 @@ class Billrun_Tariff_Util {
 			$pricingMethod = self::PRICING_METHOD_TIERED;
 		}
 		$charge = 0;
-		$lastRate = array();	
-	$volumeCount = $volume;
+		$lastRate = array();
+		$volumeCount = $volume;
 		foreach ($tariffs as $currRate) {
 			// Check that it is an array.
 			// TODO: Use a rate class.
