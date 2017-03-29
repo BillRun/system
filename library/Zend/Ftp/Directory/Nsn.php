@@ -41,13 +41,6 @@ class Zend_Ftp_Directory_Nsn extends Zend_Ftp_Directory  implements Zend_Ftp_Dir
 	 */
 	protected $incomingFile = null;
 	
-	/**
-	 * Number of  seconds to wait  after updating the files state on the server
-	 * (this is to prevent constently updating the file and creating a race condition with the server)
-	 * @var int  number of seconds
-	 */
-	protected $updateFileStateWaitTime = 3;
-	
 	public function __construct($path , $ftp) {	
 		parent::__construct($path, $ftp);
 
@@ -99,11 +92,10 @@ class Zend_Ftp_Directory_Nsn extends Zend_Ftp_Directory  implements Zend_Ftp_Dir
 		fseek($outgoingFile, 0);
 		//upload the updated file to the server.
 		if (!ftp_fput( $this->_ftp->getConnection(), $processedPath, $outgoingFile, FTP_BINARY ) ) {
-			throw new Exception('couldnt upload ' . $this->outgoingFilename . ' File to '. $processedPath .' on NSN server');
+			throw new Exception('couldnt upload ' . static::OUTGOING_FILE_NAME . ' File from NSN server');
 		}
 		
 		fclose($outgoingFile);
-		sleep($this->updateFileStateWaitTime);
 		
 	}
 	
