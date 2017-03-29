@@ -26,7 +26,10 @@ class Billrun_Tariff_Util {
 		return 0;
 	}
 
-	public static function getChargeByVolume($tariff, $volume) {
+	public static function getChargeByVolume($tariff, $volume, $pricingMethod = null) {
+		if (is_null($pricingMethod)) {
+			$pricingMethod = 'volume';
+		}
 		$accessPrice = self::getAccessPrice($tariff);
 		if ($volume < 0) {
 			$volume *= (-1);
@@ -34,12 +37,15 @@ class Billrun_Tariff_Util {
 		} else {
 			$isNegative = false;
 		}
-		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume);
+		$price = static::getChargeByTariffRatesAndVolume($tariff['rate'], $volume, $pricingMethod);
 		$ret = $accessPrice + $price;
 		return ($isNegative ? $ret * (-1) : $ret);
 	}
 
-	public static function getChargeByTariffRatesAndVolume($tariffs, $volume) {
+	public static function getChargeByTariffRatesAndVolume($tariffs, $volume, $pricingMethod = null) {
+		if (is_null($pricingMethod)) {
+			$pricingMethod = 'volume';
+		}
 		$charge = 0;
 		$lastRate = array();
 		$volumeCount = $volume;
@@ -62,7 +68,7 @@ class Billrun_Tariff_Util {
 			$volumeCount = self::handleChargeAndVolume($volumeCount, $charge, $rate);
 			$lastRate = $rate;
 		}
-		return $charge;
+		return $pricingMethod === 'volume' ? $charge : floatval($volume / $lastRate['interval'] * $lastRate['price']);
 	}
 
 	public static function getIntervalCeiling($tariff, $volume) {
