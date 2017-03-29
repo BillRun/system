@@ -18,6 +18,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
         $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
+		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$covers' => array('*' => '*.name') ));
     }
 
     /**
@@ -61,10 +62,10 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         $startDate = $endDate = null;
         $subscriberData = $subscriber->getData();
         $addedData = array('aid' => $accountInvoice->getRawData()['aid'], 'sid' => $subscriberData['sid']);
-        foreach (@Billrun_Util::getFieldVal($this->discountData['params'], array()) as $key => $values) {
-            $eligible &= isset($subscriberData[$key]) && $subscriberData[$key] == $values ||
-                    isset($subscriberData['breakdown'][$key]) && is_array($values) && count($values) == count(array_intersect(array_map(function($a) { return $a['name']; }, $subscriberData['breakdown'][$key]), $values));
-        }
+		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
+		
+		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
+		
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
         $ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $startDate, 'end_date' => $endDate), $addedData));
 
@@ -142,5 +143,29 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         }
         return $usageTotals;
     }
+
+	protected function mapFlatArrayToStructure($flatArray,$structuredArray) {
+		if(!is_array($structuredArray)) {
+			return $structuredArray;
+		}
+		$retArray = array();
+		foreach($flatArray as $key => $value) {
+			if(isset($structuredArray[$key])) {
+				if(is_array($structuredArray[$key])) {
+					foreach ($structuredArray[$key] as $mapKey => $mapping) {
+						$retArray[$mapKey] = $this->mapFlatArrayToStructure($value, $mapping);
+					}
+				} else {
+					$retArray[$structuredArray[$key]] = $value;
+				}
+			} else if(count($structuredArray) == 1 && reset(array_keys($structuredArray)) == '*'){
+				$retArray[$key] = array( $this->mapFlatArrayToStructure($value, reset($structuredArray)) => $value);
+			} else {
+				$retArray[$key] = $value;
+			}
+		}
+		
+		return $retArray;
+	}
 
 }
