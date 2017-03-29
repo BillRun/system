@@ -208,10 +208,10 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		$this->action = 'update';
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
-		$this->action = 'update';
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
@@ -244,7 +244,7 @@ class Models_Entity {
 		if (is_null($time)) {
 			$time = time();
 		}
-		if (isset($this->before['to']->sec) && $this->before['to']->sec < $time) {
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate()) {
 			return false;
 		}
 		return true;
@@ -258,16 +258,17 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		$this->action = 'closeandnew';
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
-		$this->action = 'closeandnew';
 		$now = new MongoDate();
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = $now;
 		}
 		
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		$this->verifyLastEntry();
 		
 		if ($this->before['from']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
@@ -331,9 +332,6 @@ class Models_Entity {
 	 * @return boolean
 	 */
 	protected function canEntityBeDeleted() {
-		if ($this->checkLastEntry() === false) {
-			throw new Billrun_Exceptions_Api(1500, array(), "Cannot remove old entries, but only the last created entry that exists");
-		}
 		return true;
 	}
 	
@@ -342,10 +340,10 @@ class Models_Entity {
 	 * 
 	 * @return boolean true if the last entry else false
 	 */
-	protected function checkLastEntry() {
+	protected function verifyLastEntry() {
 		$entry = $this->collection->query($this->query)->cursor()->sort(array('_id' => 1))->current();
 		if (isset($entry['_id']) && $this->before['_id'] != $entry['_id']) {
-			return false;
+			throw new Billrun_Exceptions_Api(1500, array(), "Cannot remove old entries, but only the last created entry that exists");
 		}
 		return true;
 	}
@@ -366,7 +364,8 @@ class Models_Entity {
 			$action = $this->action;
 		}
 
-		if ($params[$field]->sec < self::getMinimumUpdateDate()) {
+		$fromMinTime = self::getMinimumUpdateDate();
+		if (isset($params[$field]->sec) && $params[$field]->sec < $fromMinTime) {
 			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
 			return false;
 		}
@@ -384,11 +383,13 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
 		
-		$this->checkMinimumDate($this->before, 'from');
-
-		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
+		if (!$this->query || empty($this->query) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
+		
+		$this->verifyLastEntry();
+		$this->checkMinimumDate($this->before, 'from');
+
 		$status = $this->remove($this->query); // TODO: check return value (success to remove?)
 		if (!isset($status['ok']) || !$status['ok']) {
 			return false;
