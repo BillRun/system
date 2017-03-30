@@ -274,4 +274,8 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
+	
+	public function getAid() {
+		return $this->aid;
+	}
 }
