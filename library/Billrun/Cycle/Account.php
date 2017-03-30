@@ -116,7 +116,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		foreach ($sorted as $sub) {
 			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
-				$changes = array_merge($changes, $filtered[$filterKey]); 
+				$changes = array_merge_recursive($changes, $filtered[$filterKey]); 
 			} else {
 				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
 			}
@@ -283,6 +283,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$sto = 0;
 		foreach ($current as $subscriber) {
 			$sto = $subscriber['sto'];
+			$sfrom = $subscriber['sfrom'];
 			
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
@@ -292,16 +293,17 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 				foreach($subscriber['services'] as  $tmpService) {
 					 $serviceData = array( 'name' => $tmpService['name'],
+											'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 											'start'=> $tmpService['from']->sec,
 											'end'=> min($tmpService['to']->sec, $endTime ) );
 					 
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start'));
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
 					$currServices[$stamp] = $serviceData; 
 				}
 				// Check for removed services in the current subscriber record.
 				$serviceCompare = function  ($a, $b)  {
-					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start'));
-					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start'));
+					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
+					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
 					return $aStamp - $bStamp;
 				};
 				
@@ -309,6 +311,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($removedServices as $stamp => $removed) {
 					if($sto < $removed['end'] && $sto <= $services[$stamp]['end']) {
 						$services[$stamp]['end'] = $sto;
+					} elseif ( $sfrom < $removed['end'] ) {
+						$services[$stamp]['end'] = $sfrom;
 					}
 				}
 				$services = array_merge($services,$currServices);
