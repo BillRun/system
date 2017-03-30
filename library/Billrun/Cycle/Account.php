@@ -329,4 +329,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		return $planAggregatorData;
 	}
+	
+	public function getInvoice() {
+		return $this->invoice;
+	}
 }

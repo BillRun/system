@@ -150,7 +150,7 @@ class BillrunController extends ApiController {
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
-			'details' => empty($setting) ? array() : $setting,
+			'details' => empty($setting) ? array() : array($setting),
 		);
 		$this->setOutput(array($output));
 	}

@@ -51,8 +51,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		
 		$this->tmp_paths = array(
-			'header' => $this->paths['tmp'] . 'tmp_header.html',
-			'footer' => $this->paths['tmp'] . 'tmp_footer.html',
+			'header' => $this->paths['tmp'] . getmyuid() . '/tmp_header.html',
+			'footer' => $this->paths['tmp'] . getmyuid() . '/tmp_footer.html',
 		);
 		
 		//only generate bills that are 0.01 and above.

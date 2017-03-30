@@ -493,6 +493,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		// Write down the invoice data.
 		foreach ($this->acounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));
 		}
 		
 		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
