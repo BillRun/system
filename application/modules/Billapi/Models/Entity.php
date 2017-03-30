@@ -496,6 +496,24 @@ class Models_Entity {
 	}
 
 	/**
+	 * method to return the before state of the entity
+	 *
+	 * @return array $b the before state entity
+	 */
+	public function getBefore() {
+		$this->before;
+	}
+
+	/**
+	 * method to return the after state of the entity
+	 *
+	 * @return array $b the after state entity
+	 */
+	public function getAfter() {
+		$this->after;
+	}
+
+	/**
 	 * method to track changes with audit trail
 	 * 
 	 * @param MongoId $newId the new id; if null take from update array _id field
