@@ -323,5 +323,4 @@ class Billrun_Billingcycle {
 		}
 		return 0;
 	}
-
 }
