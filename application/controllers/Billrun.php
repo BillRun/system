@@ -286,12 +286,16 @@ class BillrunController extends ApiController {
 		}
 		if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			return 'to_run';
-		} else if (!$cycleConfirmed) {
-			return 'finished';
-		}
+		} 
+		
 		if ($cycleRunning) {
 			return 'running';
 		}
+		
+		if (!$cycleConfirmed && $cycleEnded) {
+			return 'finished';
+		}
+		
 		if ($cycleEnded && $cycleConfirmed) {
 			return 'confirmed';
 		}
