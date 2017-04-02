@@ -156,7 +156,7 @@ class Billrun_Billingcycle {
     public static function removeBeforeRerun($billingCycleCol, $billrunKey) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$linesRemoveQuery = array('type' => array('$in' => array('service', 'flat')));
+		$linesRemoveQuery = array('billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
 		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		$countersColl = Billrun_Factory::db()->countersCollection();
 		$billrunsToRemove = $billrunColl->query($billrunQuery)->cursor();
