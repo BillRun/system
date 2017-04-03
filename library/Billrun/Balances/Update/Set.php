@@ -57,15 +57,22 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	 */
 	public function update($coll, $query, $update, $options) {
 		if (!key_exists('_id', $query) && !key_exists('id', $query)) {
-			$this->resetParallelBalances($coll, $query);
+			return $this->resetParallelBalances($coll, $query, $update, $options);
 		}
 		return parent::update($coll, $query, $update, $options);
+			
 	}
 	
-	protected function resetParallelBalances($coll, $query) {
+	protected function resetParallelBalances($coll, $query, $update, $options) {
 		$balances = $coll->query($query);
 		$updater = new Billrun_ActionManagers_Balances_Update();
+		$firstRun = true;
 		foreach ($balances as $balance) {
+			if ($firstRun) {
+				$firstRun = false;
+				$_id = $balance->getId()->getMongoId();
+				continue;
+			}
 			$updaterInput = array(
 				'sid' => $balance->get('sid'),
 				'query' =>
@@ -89,6 +96,9 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 			}
 		}
 
-		return true;
+		if (empty($_id)) {
+			return parent::update($coll, $query, $update, $options);
+		}
+		return parent::update($coll, array('_id' => $_id), $update, $options);
 	}
 }
