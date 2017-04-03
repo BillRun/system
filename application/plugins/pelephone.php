@@ -301,15 +301,17 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		switch ($type) {
 			case ('BALANCE_AFTER'):
 				if (!$this->notificationSent) {
-					$this->notificationSent = true;
-					return $balanceBefore >= $notification['value'];
+					$ret = $balanceBefore >= $notification['value'];
+					$this->notificationSent = $ret;
+					return $ret;
 				} else {
 					return false;
 				}
 			case ('BALANCE_LOAD'):
 				if (!$this->notificationSent) {
-					$this->notificationSent = true;
-					return in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+					$ret = in_array($balance->get('pp_includes_external_id'), $notification['pp_includes']);
+					$this->notificationSent = $ret;
+					return $ret;
 				} else {
 					return false;
 				}
@@ -324,7 +326,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
 				return;
 			}
-			$notificationKey = $this->getNotificationKey($type, $balance);
+				$notificationKey = $this->getNotificationKey($type, $balance);
 			foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
 				if (!$notificationSent = $balance->get('notifications_sent')) {
 					$notificationSent = array($notificationKey => array());
