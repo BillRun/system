@@ -718,10 +718,14 @@ class Models_Entity {
 	public static function setRevisionInfo($record, $collection) {
 		$status = self::getStatus($record, $collection);
 		$earlyExpiration = self::isEarlyExpiration($record, $status);
+		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
 			"status" => $status,
-			"removable" => $record['from']->sec >= self::getMinimumUpdateDate(),
 			"early_expiration" => $earlyExpiration,
+			"updatable" => $isCurrentCycle,
+			"closeandnewable" => $isCurrentCycle,
+			"movable" => $isCurrentCycle,
+			"removable" => $isCurrentCycle,
 		);
 		return $record;
 	}
