@@ -209,6 +209,12 @@ class Models_Entity {
 	 */
 	public function update() {
 		$this->action = 'update';
+//		
+//		@TODO: check with FE
+//		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
+//			return;
+//		}
+//		
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
@@ -383,7 +389,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
 		
-		if (!$this->query || empty($this->query) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
 		
@@ -426,6 +432,57 @@ class Models_Entity {
 			return false;
 		}
 		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * move from date of entity including change the previous entity to field
+	 * 
+	 * @return boolean true on success else false
+	 */
+	public function move() {
+		$this->action = 'move';
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
+			return;
+		}
+		
+		if (!isset($this->update['from'])) {
+			$this->update = array(
+				'from' => new MongoDate()
+			);
+		}
+		
+		if ($this->update['from']->sec > $this->before['to']->sec) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
+		}
+		
+		$this->checkMinimumDate($this->update, 'from');
+		
+		$keyField = $this->getKeyField();
+		$query = array(
+			$keyField => $this->before[$keyField], 
+			'to' => array(
+				'$lte' => $this->before['from'],
+			)
+		);
+		$previousEntry = $this->collection->query($query)->cursor()->sort(array('to' => -1))->current();
+
+		if (!empty($previousEntry) && !$previousEntry->isEmpty() && $previousEntry['from']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date is less than previous end date');
+		}
+		
+		$status = $this->dbUpdate($this->query, $this->update);
+		if (!isset($status['nModified']) || !$status['nModified']) {
+			return false;
+		}
+		$this->trackChanges($this->query['_id']);
+		
+		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+			$this->setUpdate(array('to' => new MongoDate($this->update['from']->sec - 1)));
+			$this->setBefore($previousEntry);
+			return $this->update();
+		}
 		return true;
 	}
 
