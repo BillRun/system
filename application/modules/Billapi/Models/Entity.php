@@ -501,7 +501,7 @@ class Models_Entity {
 	 * @return array $b the before state entity
 	 */
 	public function getBefore() {
-		$this->before;
+		return $this->before;
 	}
 
 	/**
@@ -510,7 +510,7 @@ class Models_Entity {
 	 * @return array $b the after state entity
 	 */
 	public function getAfter() {
-		$this->after;
+		return $this->after;
 	}
 
 	/**
