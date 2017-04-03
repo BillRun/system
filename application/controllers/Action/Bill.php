@@ -136,6 +136,7 @@ class BillAction extends ApiAction {
 			return FALSE;
 		}
 		$contractors= Billrun_Bill::getContractorsInCollection($aids);
+		$result = array();
 		foreach ($contractors as $contractor) {
 			$result[$contractor['aid']] = current($contractor);
 		}	
