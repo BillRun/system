@@ -188,7 +188,7 @@ abstract class Billrun_Balances_Update_Operation {
 	 * @return type
 	 */
 	public function update($coll, $query, $update, $options) {
-		return $coll->findAndModify($query, $update, array(), $options, true);
+		return $coll->findAndModify($query, $update, array(), $options, true) ;
 	}
 	
 	/**
