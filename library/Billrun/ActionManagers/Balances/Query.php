@@ -120,8 +120,13 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 			
 			foreach ($returnData as $row) {
 				$sortKey = '';
+				$i = 0;
 				foreach ($sortFields as $sortField) {
-					$sortKey .= $this->generateUniqueSortKey($row, $sortField, $sortArray);
+					if ($i++ == count($sortFields)-1) { // last entry in the array
+						$sortKey .= $this->generateUniqueSortKey($row, $sortField, $sortArray, true);
+					} else {
+						$sortKey .= $this->generateUniqueSortKey($row, $sortField, $sortArray, false);
+					}
 				}
 				$sortArray[$sortKey] = Billrun_Util::convertRecordMongoDatetimeFields($row);
 			}
@@ -148,24 +153,24 @@ class Billrun_ActionManagers_Balances_Query extends Billrun_ActionManagers_Balan
 		return array($this->sortField);
 	}
 	
-	protected function generateUniqueSortKey($row, $sortField, $sortArray) {
+	protected function generateUniqueSortKey($row, $sortField, $sortArray, $rand = true) {
 		$i = 100; // avoid infinite loop
 		do {
-			$sortKey = $this->getBalanceIndex($row, $sortField);
+			$sortKey = $this->getBalanceIndex($row, $sortField, $rand);
 		} while (isset($sortArray[$sortKey]) && $i-- > 0);
 		return $sortKey;
 	}
 	
-	protected function getBalanceIndex($item, $field) {
-		if ($item[$field] instanceof MongoDate) {
+	protected function getBalanceIndex($item, $field, $rand = true) {
+		if ($item[$field] instanceof MongoDate && $rand) {
 			// we assume difference between from/to is at least 1 day; the rand is used to help sorting by key
 			return $item[$field]->sec . str_pad($item[$field]->usec, 6, '0', STR_PAD_LEFT) + rand(0, 100);
 		}
-		if (is_numeric($item[$field])) {
+		if (is_numeric($item[$field]) && $rand) {
 			$randRange = 10000;
 			return $item[$field] * $randRange + rand(0, $randRange-1);
 		}
-		if (is_string($item[$field])) {
+		if (is_string($item[$field]) && $rand) {
 			$randRange = 10000;
 			$suffix = $randRange + rand(0, $randRange-1);
 			settype($suffix, 'string');
