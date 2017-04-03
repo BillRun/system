@@ -27,6 +27,8 @@ abstract class Billrun_Balances_Update_Operation {
 	 */
 	protected $recurring = false;
 	
+	protected $additional = array();
+	
 	/**
 	 * Return an indication for is the 
 	 * @return type
@@ -51,6 +53,10 @@ abstract class Billrun_Balances_Update_Operation {
 		// Check for recurring.
 		if (isset($options['recurring'])) {
 			$this->recurring = $options['recurring'];
+		}
+		
+		if (isset($options['additional'])) {
+			$this->additional = $options['additional'];
 		}
 	}
 	

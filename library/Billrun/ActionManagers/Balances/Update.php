@@ -502,6 +502,8 @@ class Billrun_ActionManagers_Balances_Update extends Billrun_ActionManagers_Bala
 			$options['recurring'] = true;
 		}
 		
+		$options['additional'] = $this->additional;
+		
 		/**
 		 * @var Billrun_Balances_Update_Operation
 		 */

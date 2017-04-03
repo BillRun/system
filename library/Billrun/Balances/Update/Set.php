@@ -60,7 +60,6 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 			return $this->resetParallelBalances($coll, $query, $update, $options);
 		}
 		return parent::update($coll, $query, $update, $options);
-			
 	}
 	
 	protected function resetParallelBalances($coll, $query, $update, $options) {
@@ -85,6 +84,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 						'value' => 0,
 						'expiration_date' => $balance->get('to'),
 					)),
+				'additional' => json_encode($this->additional),
 			);
 			$jsonObject = new Billrun_AnObj($updaterInput);
 			if (!$updater->parse($jsonObject)) {
@@ -98,6 +98,6 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 		if (empty($_id)) {
 			return parent::update($coll, $query, $update, $options);
 		}
-		return parent::update($coll, array('_id' => $_id), $update, $options);
+		return parent::update($coll, array('_id' => $_id, 'sid' => $balance->get('sid')), $update, $options);
 	}
 }
