@@ -309,6 +309,9 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		
 		$data = array();
 		foreach ($this->overrideAccountIds as $account_id) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+				continue;
+			}
 			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
 		}
 		$result['data'] = $data;
@@ -493,6 +496,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		// Write down the invoice data.
 		foreach ($this->acounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));
 		}
 		
 		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";

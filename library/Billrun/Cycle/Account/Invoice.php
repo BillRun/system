@@ -176,7 +176,7 @@ class Billrun_Cycle_Account_Invoice {
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
 		$newRawData = $this->setInvoicID($rawDataWithSubs, $invoiceId);
 		$this->data->setRawData($newRawData);		
-                               
+
 		$ret = $this->billrun_coll->save($this->data);
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
@@ -294,6 +294,10 @@ class Billrun_Cycle_Account_Invoice {
         
         //======================================================
         
+        public function getAid() {
+		return $this->aid;
+	}
+	
         public function getSubscribers() {
             return $this->subscribers;
         }

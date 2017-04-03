@@ -407,3 +407,10 @@ img.billrun-logo {
 .subtotal {
 	font-weight: bold;
 }
+.small-text {
+	font-size:12px;
+}
+
+.table-default-primary.complex-sumup-wrapper {
+	max-width:800px;
+}

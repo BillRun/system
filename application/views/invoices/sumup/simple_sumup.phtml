@@ -20,10 +20,10 @@
 			<td >SUBTOTAL</td>
 			<td><strong><?php echo '$' . number_format($data->get('totals')['before_vat'], 2); ?></strong></td>
 		</tr>
-		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals')))	?>
+		<?php echo $this->render($this->tax_template,array('data' => $data->get('totals'),'col_count'=>2))	?>
 
 		<tr class="grand-total">
-			<td colspan="2">GRAND TOTAL</td>
+			<td colspan="1">GRAND TOTAL</td>
 			<td><?php echo '$' . number_format($data->get('totals')['after_vat'], 2); ?></td>
 		</tr>
 	</tbody>
