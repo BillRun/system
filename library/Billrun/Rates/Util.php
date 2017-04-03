@@ -96,15 +96,15 @@ class Billrun_Rates_Util {
 	 */
 	public static function getCharges($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		$tariff = static::getTariff($rate, $usageType, $plan, $time);
+		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
-			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset);
+			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
-			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume);
+			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
 		return array(
 			'total' => $chargeWoIC,
 		);
-		;
 	}
 
 	/**
@@ -183,10 +183,11 @@ class Billrun_Rates_Util {
 	 */
 	public static function getChargesByRate($rate, $usageType, $volume, $plan = null, $offset = 0, $time = NULL) {
 		$tariff = Billrun_Rates_Util::getTariff($rate, $usageType, $plan, $time);
+		$pricingMethod = $rate['pricing_method'];
 		if ($offset) {
-			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset);
+			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $offset + $volume, $pricingMethod) - Billrun_Tariff_Util::getChargeByVolume($tariff, $offset, $pricingMethod);
 		} else {
-			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume);
+			$chargeWoIC = Billrun_Tariff_Util::getChargeByVolume($tariff, $volume, $pricingMethod);
 		}
 		return array(
 			'total' => $chargeWoIC,
