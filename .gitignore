@@ -8,7 +8,7 @@ workspace
 mongo/*.json
 *~
 exports
-logs/debug.log*
+logs
 cache
 crontab
 conf/dori.ini
