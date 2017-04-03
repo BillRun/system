@@ -543,6 +543,9 @@ class Billrun_Util {
 	 */
 	public static function forkProcessCli($cmd) {
 		$syscmd = $cmd . " > /dev/null & ";
+		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
+		}
 		if (system($syscmd) === FALSE) {
 			error_log("Can't fork PHP process");
 			return false;
