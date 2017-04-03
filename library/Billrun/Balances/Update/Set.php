@@ -78,6 +78,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 						'value' => 0,
 						'expiration_date' => $balance->get('to'),
 					)),
+				'additional' => json_encode($this->additional),
 			);
 			$jsonObject = new Billrun_AnObj($updaterInput);
 			if (!$updater->parse($jsonObject)) {
