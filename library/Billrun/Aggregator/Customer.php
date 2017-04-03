@@ -826,8 +826,10 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
 		$cycleCount = $cycleCol->query($cycleQuery)->count();
+		$numOfPages = $cycleCol->query(array('billrun_key' => $stamp, 'page_size' => $size))->count();
+		$finishedPages = $cycleCol->query(array('billrun_key' => $stamp, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
 		
-		if ($cycleCount >= $zeroPages) {
+		if ($cycleCount >= $zeroPages && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			Billrun_Factory::log("Finished going over all the pages", Zend_Log::DEBUG);
 			return true;
 		}		

@@ -271,9 +271,9 @@ class Billrun_Billingcycle {
 		);
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
 		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
-			$completionPercentage = ($finishedPages / $totalPages) * 100;
+			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
-			$completionPercentage = ($finishedPages / ($totalPages + 1)) * 100;
+			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
 		}
 
 		return $completionPercentage;
@@ -316,7 +316,10 @@ class Billrun_Billingcycle {
 	 * @return percentage of completed bills
 	 */
 	public static function getCycleConfirmationPercentage($billrunKey) {
-		return (self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100;
+		if (self::getNumberOfGeneratedInvoices($billrunKey) != 0) {
+			return round((self::getNumberOfGeneratedBills($billrunKey) / self::getNumberOfGeneratedInvoices($billrunKey)) * 100, 2);
+		}
+		return 0;
 	}
 
 }
