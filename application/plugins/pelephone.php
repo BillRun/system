@@ -326,7 +326,7 @@ class pelephonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!$balance || !$plan || !isset($plan['notifications_threshold'])) {
 				return;
 			}
-				$notificationKey = $this->getNotificationKey($type, $balance);
+			$notificationKey = $this->getNotificationKey($type, $balance);
 			foreach ($plan['notifications_threshold'][$notificationKey] as $index => $notification) {
 				if (!$notificationSent = $balance->get('notifications_sent')) {
 					$notificationSent = array($notificationKey => array());
