@@ -89,6 +89,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('use_complex_sumup',  Billrun_Factory::config()->getConfigValue(self::$type . '.use_complex_sumup', FALSE));
 		$this->view->assign('tanent_css', $this->tanent_css);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
+		$this->prepareGraphicsResources();
 	}
 	
 	/*
@@ -272,6 +273,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	
 	protected function buildTanentCss($css) {
 		return '<style>' . str_replace('<','',$css) .'</style>';
+	}
+	
+	protected function prepareGraphicsResources() {
+		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$logo = $gridFsColl->find(array('billtype'=>'logo'))->sort(array('uploadDate'=>-1))->limit(1)->getNext();
+		if( $logo ) {
+			if(file_put_contents($this->logo_path, $logo->getBytes()) === FALSE) {
+				Billrun_Factory::log("Failed to  export logo from DB to {$this->logo_path}");
+			}
+		} else {
+			Billrun_Factory::log('Couldn`t find logo file in DB');
+		}
 	}
 	
 }
