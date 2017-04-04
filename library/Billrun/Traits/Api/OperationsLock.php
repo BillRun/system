@@ -62,7 +62,9 @@ trait Billrun_Traits_Api_OperationsLock {
 		}
 		unset($data['filtration']);
 		$query = array_merge($data, $lockCondition);
+		Billrun_Factory::log("Locking operation " . $data['action'], Zend_Log::DEBUG);
 		$updateOperation = $operationsColl->findAndModify($query, array('$setOnInsert' => $updateQuery), array(),  array('upsert' => true));
+		Billrun_Factory::log("Operation " . $data['action'] . ' was locked', Zend_Log::DEBUG);
 		if ($updateOperation->isEmpty()) {
 			return true;
 		}
@@ -77,7 +79,9 @@ trait Billrun_Traits_Api_OperationsLock {
 	public function release() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$query = static::getReleaseQuery();	
+		Billrun_Factory::log("Releasing operation " . $query['action'], Zend_Log::DEBUG);
 		$releaseOperation = $operationsColl->findAndModify($query, array('$set' => array('end_time' => new MongoDate())));
+		Billrun_Factory::log("Operation " . $query['action'] . ' was released', Zend_Log::DEBUG);
 		if (!$releaseOperation->isEmpty()){
 			return true;
 		}

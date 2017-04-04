@@ -167,6 +167,7 @@ class PaymentGatewaysController extends ApiController {
 			$additionalParams = $paymentGateway->addAdditionalParameters($request);
 			$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
 		}
+		Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
 		$this->getView()->outputMethod = 'header';
 		$this->getView()->output = "Location: " . $returnUrl;
 	}
