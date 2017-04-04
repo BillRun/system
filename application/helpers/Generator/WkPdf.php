@@ -37,8 +37,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return is_array($acts) ? $acts : explode(',',$acts); });
 		
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
-		//TODO: use tenant LOGO
-		$this->logo_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
+
+		$this->logo_path = $this->getLogoPath();
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->footer_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['footer_tpl'], "/application/views/invoices/footer/footer_tpl.html" );
 		$this->wkpdf_exec = Billrun_Util::getFieldVal( $options['exec'],Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf') );
@@ -47,7 +47,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/',
 			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/',
-			'tmp' => sys_get_temp_dir() . '/' . str_replace(' ', '_', $this->getCompanyName()) . '/' . $this->stamp . '/',
+			'tmp' => $this->getTempDir(),
 		);
 		
 		$this->tmp_paths = array(
@@ -275,16 +275,34 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		return '<style>' . str_replace('<','',$css) .'</style>';
 	}
 	
+	protected function getTempDir() {
+		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', $this->getCompanyName()) . DIRECTORY_SEPARATOR. $this->stamp . DIRECTORY_SEPARATOR;
+		if(!file_exists($tmpdirPath)) {
+			mkdir($tmpdirPath, 0775, true);
+		}
+		return $tmpdirPath;
+	}
+	
+	protected function getLogoPath($options = array()) {
+		if(!defined('APPLICATION_MULTITENANT')  || !APPLICATION_MULTITENANT ) {
+			return APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
+		} 
+		return $this->getTempDir() .DIRECTORY_SEPARATOR. 'logo.png'; 
+	}
+	
 	protected function prepareGraphicsResources() {
 		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
 		$logo = $gridFsColl->find(array('billtype'=>'logo'))->sort(array('uploadDate'=>-1))->limit(1)->getNext();
 		if( $logo ) {
-			if(file_put_contents($this->logo_path, $logo->getBytes()) === FALSE) {
-				Billrun_Factory::log("Failed to  export logo from DB to {$this->logo_path}");
+			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . $logo->getFilename();
+			if(file_put_contents($exportPath, $logo->getBytes()) === FALSE) {
+				Billrun_Factory::log("Failed to export logo from DB to {$exportPath}");
 			}
+			$this->logo_path = $exportPath;
 		} else {
 			Billrun_Factory::log('Couldn`t find logo file in DB');
 		}
 	}
+	
 	
 }
