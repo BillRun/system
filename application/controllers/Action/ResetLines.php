@@ -33,7 +33,7 @@ class ResetLinesAction extends ApiAction {
 
 		$billrun_key = empty($request['billrun_key'])  ? Billrun_Billingcycle::getBillrunKeyByTimestamp() : $request['billrun_key'];
 
-		if(!Billrun_Billingcycle::isBillrunKeyLegitimate($billrun_key)) {
+		if(!Billrun_Util::isBillrunKey($billrun_key)) {
 			return $this->setError('Illegal billrun key', $request);
 		}
 		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle()) {
