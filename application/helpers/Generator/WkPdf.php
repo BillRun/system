@@ -270,11 +270,18 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			</div>";
 		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
 	}
-	
+	/**
+	 * generate Teanat specific CSS 
+	 * @param type $css
+	 * @return type
+	 */
 	protected function buildTanentCss($css) {
 		return '<style>' . str_replace('<','',$css) .'</style>';
 	}
-	
+	/**
+	 * Retrive and create tenant temporary direcotory
+	 * @return string the  directory path
+	 */
 	protected function getTempDir() {
 		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', $this->getCompanyName()) . DIRECTORY_SEPARATOR. $this->stamp . DIRECTORY_SEPARATOR;
 		if(!file_exists($tmpdirPath)) {
@@ -282,7 +289,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 		return $tmpdirPath;
 	}
-	
+	/**
+	 * retrive the  invoice logo path
+	 * @param type $options
+	 * @return type
+	 */
 	protected function getLogoPath($options = array()) {
 		if(!defined('APPLICATION_MULTITENANT')  || !APPLICATION_MULTITENANT ) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
@@ -290,8 +301,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		return $this->getTempDir() .DIRECTORY_SEPARATOR. 'logo.png'; 
 	}
 	
+	/**
+	 * generate graphic that is required for generating the invoice.
+	 */
 	protected function prepareGraphicsResources() {
 		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		// generate the tenant logo.
 		$logo = $gridFsColl->find(array('billtype'=>'logo'))->sort(array('uploadDate'=>-1))->limit(1)->getNext();
 		if( $logo ) {
 			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . $logo->getFilename();
