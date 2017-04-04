@@ -157,8 +157,17 @@ class Models_Entity {
 //		$ad = $this->getCustomFields();
 		$customFields = $this->getCustomFields();
 		$additionalFields = array_column($customFields, 'field_name');
-		$mandatorylValues = array_map(function($field) {return isset($field['mandatory']) ? $field['mandatory'] : false;}, $customFields);
-		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
+		$mandatoryFields = array();
+		$uniqueFields = array();
+		$defaultFieldsValues= array();
+		
+		foreach ($customFields as $customField) {
+			$fieldName = $customField['field_name'];
+			$mandatoryFields[$fieldName] =  isset($customField['mandatory']) ? $customField['mandatory'] : false;
+			$uniqueFields[$fieldName] =  isset($customField['unique']) ? $customField['unique'] : false;
+			$defaultFieldsValues[$fieldName] =  isset($customField['default_value']) ? $customField['default_value'] : false;
+		}
+	
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -167,11 +176,31 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
+			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+			}
 			if ($val) {
 				Billrun_Util::setIn($this->update, $field, $val);
+			} else if ($defaultFieldsValues[$field] !== false) {
+				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
 //		print_R($this->update);die;
+	}
+	
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+		// builds a query that gets all entities that are not revisions of the current entity, but has same unique value
+		$query = array(
+			'$or' => array(),
+		);
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query['$or'][] = array(
+				$fieldName => array('$ne' => $data[$fieldName]),
+			);
+		}
+		$query[$field] = $val;
+		
+		return $this->collection->query($query)->count() > 0;
 	}
 
 	protected function getCustomFields() {
