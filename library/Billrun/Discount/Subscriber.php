@@ -42,19 +42,6 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return FALSE;
     }
 
-    public function checkTermination($accountBillrun) {
-		$ret = array();
-//        foreach ($accountInvoice->getSubscribers() as $billableService) {
-//            if ($eligibles = $this->getTerminatedDiscounts($billableService, $accountInvoice)) {
-//                $ret = array_merge($ret, $eligibles);
-//            }
-//        }
-		 if (!empty($ret)) {
-            return $ret;
-        }
-        return FALSE;
-    }
-
     protected function checkServiceEligiblity($subscriber, $accountInvoice) {
         $eligible = !empty(@Billrun_Util::getFieldVal($this->discountData['params'], array()));
         $multiplier = 1;
@@ -123,19 +110,6 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return 'sid' . $cdr['sid'];
     }
 
-    /**
-     * Get all the discounts that were terminated during the month.
-     * @param type $account
-     * @param type $billrun
-     */
-    public function getTerminatedDiscounts($service, $accountInvoice) {
-        $billrunDate = static::getBillrunDate($accountInvoice->getBillrunKey());
-        $billrunStartDate = Billrun_Billingcycle::getStartTime($accountInvoice->getBillrunKey());
-        $terminatedDiscounts = array();
-        //TODO implement only for up front discounts
-        return empty($terminatedDiscounts) ? FALSE : $terminatedDiscounts;
-    }
-
 	/**
 	 * Create  a totals structure out of fileds that  are  supported by the discount
 	 * @param type $billrun
@@ -161,13 +135,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
             foreach ($types as $type => $usage) {
                 if (!empty($usage['name']) && (
                         isset($this->discountData['discount_subject']['service']) && in_array($usage['name'], array_keys($this->discountData['discount_subject']['service'])) ||
-                        isset($this->discountData['discount_subject']['plan']) && in_array($usage['name'], array_keys($this->discountData['discount_subject']['plan']))
+                        isset($this->discountData['discount_subject']['plan']) && in_array($usage['name'], array_keys($this->discountData['discount_subject']['plan'])) ||
+                        $this->isApplyToAnySubject()
                         )) {
                     //$usageTotals[$this->discountableSections[$section]][$vat] = Billrun_Util::getFieldVal($usageTotals[$this->discountableSections[$section]][$vat], 0) +  $usage['cost']; 
                     $usageTotals['after_vat'] += $usage['cost'];
                     $usageTotals['before_vat'] += $usage['cost'];
-                    @$usageTotals[$usage['name']] += $usage['cost'];
-					@$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
+                    @$usageTotals['rates'][$usage['name']] += $usage['cost'];
+                    @$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
                 }
             }
         }

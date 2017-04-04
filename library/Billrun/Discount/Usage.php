@@ -17,7 +17,6 @@ class Billrun_Discount_Usage extends Billrun_Discount_Subscriber {
 	protected function checkServiceEligiblity($service, $account, $billrun) {
 		 $eligiblityData = parent::checkServiceEligiblity($service, $account, $billrun);
 		 
-		 $serviceTotals = $this->getTotalsFromBillrun($billrun, $service['sid']);
 		 return !empty($eligiblityData) && $this->serviceHasEligibleUsage($billrun, $service) ? $eligiblityData : FALSE;
 	}
     

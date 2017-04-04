@@ -143,5 +143,16 @@ class Billrun_Db extends Mongodloid_Db {
 		}
 		return $arr;
 	}
+	
+	public function getByDBRef($dbRef) {
+		if(!(MongoDBRef::isRef($dbRef))) {
+			$coll = $this->getCollection($dbRef['$name']);
+			if($coll) {
+				return $coll->getRef($dbRef);
+			}
+		}
+		
+		return FALSE;
+	}
 
 }
