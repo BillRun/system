@@ -18,6 +18,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     public function __construct($discountRate, $eligibilityOnly = FALSE) {
         parent::__construct($discountRate, $eligibilityOnly);
         $this->discountableSections = Billrun_Factory::config()->getConfigValue('discounts.service.section_types', array('flat' => 'flat', 'service' => 'service'));
+		$this->discountToQueryMapping =  array('plan' => 'breakdown.flat.*', 'service' => array('breakdown.service.$all' => array('*' => '*.name') ));
     }
 
     /**
@@ -61,45 +62,14 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         $startDate = $endDate = null;
         $subscriberData = $subscriber->getData();
         $addedData = array('aid' => $accountInvoice->getRawData()['aid'], 'sid' => $subscriberData['sid']);
-        foreach (@Billrun_Util::getFieldVal($this->discountData['params'], array()) as $key => $values) {
-            $eligible &= isset($subscriberData[$key]) && $subscriberData[$key] == $values ||
-                    isset($subscriberData['breakdown'][$key]) && is_array($values) && count($values) == count(array_intersect(array_map(function($a) { return $a['name']; }, $subscriberData['breakdown'][$key]), $values));
-        }
+		$paramsQuery = $this->mapFlatArrayToStructure(@Billrun_Util::getFieldVal($this->discountData['params'],array()), $this->discountToQueryMapping);
+		
+		$eligible &=  Billrun_Utils_Arrayquery_Query::exists($subscriberData, $paramsQuery);
+		
 		$endDate = $this->adjustDiscountDuration($accountInvoice->getRawData(), $multiplier, $subscriberData);
-        $ret = array(array_merge(array('modifier' => $multiplier, 'start_date' => $startDate, 'end_date' => $endDate), $addedData));
+        $ret = array(array_merge(array('modifier' => $multiplier, 'start' => $startDate, 'end' => $endDate), $addedData));
 
         return $eligible ? $ret : FALSE;
-    }
-
-//    protected function getDefaultEligibilityData($account, $service, $multiplier, $end_date, $switch_date) {
-//        $start_date = $this->billrunStartDate;
-//        if ($this->billrunStartDate < @Billrun_Util::getFieldVal($service['switch_date'], 0) && $service['switch_date'] <= $this->billrunDate) {
-//            $start_date = $switch_date = max($switch_date, $service['switch_date'], $this->billrunStartDate);
-//        }
-//        if (@Billrun_Util::getFieldVal($account['end_date'], PHP_INT_MAX) < $this->billrunDate) {
-//            $end_date = min(Billrun_Util::getFieldVal($end_date, PHP_INT_MAX), $account['end_date']);
-//        }
-//        $multiplier = (!empty($end_date) ? 0 : 1) + ///add next month discount
-//                (!empty($switch_date) || !empty($end_date) ? max(0, min(Billrun_Util::calcPartialMonthMultiplier($start_date, $this->billrunDate, $this->billrunStartDate, $end_date), $multiplier)) : 0); //add prorataed discount
-//        return array($start_date, $switch_date, $end_date, $multiplier);
-//    }
-
-    /**
-     * 
-     * @param type $accountOpts
-     * @param type $OptToFind
-     * @return boolean
-     */
-    protected static function hasOptions($accountOpts, $OptToFind, $atDate = FALSE) {
-        foreach ($accountOpts as $value) {
-            if (@isset($value['key']) && (@$value['key'] == $OptToFind || is_array($OptToFind) && in_array(@$value['key'], $OptToFind))) {
-                //Should we check the date of the option...
-                if (!$atDate || (empty($value['start_date']) || $value['start_date'] <= $atDate) && ( empty($value['end_date']) || $atDate < $value['end_date'])) {
-                    return TRUE;
-                }
-            }
-        }
-        return FALSE;
     }
 
     protected function isServiceOptional($service, $discountParams) {
@@ -107,7 +77,7 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
     }
 
     protected function getOptionalCDRFields() {
-        return array('sid');
+        return array('sid','start','end');
     }
 
     /**
@@ -168,10 +138,35 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
                     $usageTotals['before_vat'] += $usage['cost'];
                     @$usageTotals[$usage['name']] += $usage['cost'];
 					@$usageTotals['sections'][$this->discountableSections[$section]] += $usage['cost'];
+					@$usageTotals['count'][$this->discountableSections[$section]] += $usage['usagev'];
                 }
             }
         }
         return $usageTotals;
     }
+
+	protected function mapFlatArrayToStructure($flatArray,$structuredArray) {
+		if(!is_array($structuredArray)) {
+			return $structuredArray;
+		}
+		$retArray = array();
+		foreach($flatArray as $key => $value) {
+			if(isset($structuredArray[$key])) {
+				if(is_array($structuredArray[$key])) {
+					foreach ($structuredArray[$key] as $mapKey => $mapping) {
+						$retArray[$mapKey] = $this->mapFlatArrayToStructure($value, $mapping);
+					}
+				} else {
+					$retArray[$structuredArray[$key]] = $value;
+				}
+			} else if(count($structuredArray) == 1 && reset(array_keys($structuredArray)) == '*'){
+				$retArray[$key] = array( $this->mapFlatArrayToStructure($value, reset($structuredArray)) => $value);
+			} else {
+				$retArray[$key] = $value;
+			}
+		}
+		
+		return $retArray;
+	}
 
 }
