@@ -189,18 +189,30 @@ class Models_Entity {
 	}
 	
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
-		// builds a query that gets all entities that are not revisions of the current entity, but has same unique value
-		$query = array(
-			'$or' => array(),
-		);
+		$query = $this->getNotRevisionsOfEntity($data);
+		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		
+		return $this->collection->query($query)->count() > 0;
+	}
+	
+	/**
+	 * builds a query that gets all entities that are not revisions of the current entity
+	 * 
+	 * @param type $data
+	 */
+	protected function getNotRevisionsOfEntity($data) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		$query['$or'] = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
 		}
-		$query[$field] = $val;
 		
-		return $this->collection->query($query)->count() > 0;
+		return $query;
 	}
 
 	protected function getCustomFields() {
