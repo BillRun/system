@@ -209,12 +209,11 @@ class Models_Entity {
 	 */
 	public function update() {
 		$this->action = 'update';
-//		
-//		@TODO: check with FE
-//		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
-//			return;
-//		}
-//		
+		
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
+			return;
+		}
+		
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
