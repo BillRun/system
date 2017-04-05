@@ -214,6 +214,8 @@ class Models_Entity {
 			return;
 		}
 		
+		$this->protectKeyField();
+
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
@@ -272,6 +274,7 @@ class Models_Entity {
 			$this->update['from'] = $now;
 		}
 		
+		$this->protectKeyField();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$this->verifyLastEntry();
 		
@@ -296,6 +299,17 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
+	}
+	
+	/**
+	 * method to protect key field update
+	 * used on update & closeandnew operation
+	 */
+	protected function protectKeyField() {
+		$keyField = $this->getKeyField();
+		if (isset($this->update[$keyField]) && $this->update[$keyField] != $this->before[$keyField]) {
+			$this->update[$keyField] = $this->before[$keyField];
+		}
 	}
 	
 	/**
