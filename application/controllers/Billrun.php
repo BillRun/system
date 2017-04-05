@@ -261,7 +261,7 @@ class BillrunController extends ApiController {
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
 		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
-		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+		$lastBillrunKey = $this->getLastBillrunKey($startTime);
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
@@ -270,6 +270,16 @@ class BillrunController extends ApiController {
 		}
 
 		return $billrunKeys;
+	}
+	
+	protected function getLastBillrunKey($startTime) {
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
+		if (!$registrationDate) {
+			return $lastBillrunKey;
+		}
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
+		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
 	public function getCycleStatus($billrunKey) {

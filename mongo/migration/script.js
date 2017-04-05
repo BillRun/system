@@ -176,3 +176,11 @@ if (!lastConfig.taxation || !lastConfig.taxation.tax_type) {
 	lastConfig.taxation.tax_type = "vat";
 	db.config.insert(lastConfig);
 }
+
+// BRCD-731
+var firstConfig = db.config.find().sort({_id: 1}).limit(1).pretty()[0];
+var registrationDate = firstConfig._id.getTimestamp();
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+lastConfig.registration_date = registrationDate;
+db.config.insert(lastConfig);
