@@ -124,10 +124,10 @@ class Models_Subscribers extends Models_Entity {
 		$this->trackChanges($this->query['_id']);
 
 		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
-			$update = array('to' => new MongoDate($this->update['from']->sec - 1));
+			$update = array('to' => new MongoDate($this->update['from']->sec));
 			foreach($previousEntry['services'] as $key => $service) {
-				if ($service['to']->sec == $update['to']) {
-					$this->update['services'][$key]['to'] = $update['to'];
+				if ($service['to']->sec == $previousEntry['to']->sec) {
+					$update['services'][$key]['to'] = $update['to'];
 				}
 			}
 			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));

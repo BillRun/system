@@ -492,7 +492,7 @@ class Models_Entity {
 		
 		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
 			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
-			$this->setUpdate(array('to' => new MongoDate($this->update['from']->sec - 1)));
+			$this->setUpdate(array('to' => new MongoDate($this->update['from']->sec)));
 			$this->setBefore($previousEntry);
 			return $this->update();
 		}
