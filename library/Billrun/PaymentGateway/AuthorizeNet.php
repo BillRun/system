@@ -274,7 +274,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							</createCustomerProfileRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response from Authorize.Net: " . $result, Zend_Log::DEBUG);			
 		}
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);
