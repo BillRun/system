@@ -308,7 +308,23 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function isHtmlRedirect();
 	
-		/**
+	/**
+	 * Checks that it's all the necessary details for charging exist.
+	 * 
+	 * @param Array $gateway - array with payment gateway details.
+	 * @return Boolean - True if valid structure of the payment gateway.
+	 */
+	abstract protected function validateStructureForCharge($gatewayDetails); 
+	
+	/**
+	 * Handles errors that come back from the payment gateway.
+	 * 
+	 * @param $response - response from the payment gateway to the request for token.
+	 * 
+	 */
+	abstract protected function handleTokenRequestError($response, $params); 
+	
+	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -327,9 +343,10 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			$response = $this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage));
 		}
 
-		return $result;
+		return $response;
 	}
 
 	/**
@@ -364,7 +381,10 @@ abstract class Billrun_PaymentGateway {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = (int) $this->saveDetails['aid'];
 		$query['type'] = "account";
-		$setQuery = $this->buildSetQuery();       
+		$setQuery = $this->buildSetQuery();
+		if (!$this->validateStructureForCharge($setQuery['payment_gateway.active'])) {
+			throw new Exception("Non valid payment gateway for aid = " . $query['aid'], Zend_Log::ALERT);
+		}
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
 		$account = $this->subscribers->query($query)->cursor()->current();
@@ -607,5 +627,19 @@ abstract class Billrun_PaymentGateway {
 	protected function checkIfCustomerExists () {
 		return false;
 	}
-		
+	
+	/**
+	 * Checks if the it's chargeable payment gateway. 
+	 * @param Array $gatewayDetails - array with payment gateway details.
+	 *
+	 * @return Boolean - True if it's possible to charge according to the passed details.
+	 */
+	public static function isValidGatewayStructure($gatewayDetails) {
+		if (empty($gatewayDetails) || empty($gatewayDetails['name'])) {
+			return false;
+		}
+		$gateway = self::getInstance($gatewayDetails['name']);
+		return $gateway->validateStructureForCharge($gatewayDetails);
+	}
+			
 }

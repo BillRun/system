@@ -295,4 +295,12 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	public function handleOkPageData($txId) {
 		return true;
 	}
+	
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['card_token']) && !empty($structure['card_expiration']) && !empty($structure['personal_id']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		return $response;
+	}
 }

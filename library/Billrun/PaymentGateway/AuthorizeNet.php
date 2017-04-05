@@ -362,7 +362,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	public function getNeededParamsAccountUpdate($account) {
-		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
+		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => isset($account['payment_profile_id']) ? $account['payment_profile_id'] : '');
 	}
 	
 	protected function checkIfCustomerExists ($aid) {
@@ -373,6 +373,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$account = $subscribers->query($accountQuery)->cursor()->current();
 		$formerGateways = $account['payment_gateway.former'];
+		if (is_null($formerGateways)) {
+			return $customerProfileId;
+		}
 		foreach ($formerGateways as $gateway) {
 			if ($gateway['name'] == 'AuthorizeNet') {
 				$customerProfileId = $gateway['params']['customer_profile_id'];
@@ -445,4 +448,25 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		return true;
 	}
 
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['customer_profile_id']) && !empty($structure['payment_profile_id']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		$xmlObj = @simplexml_load_string($response);
+		$resultCode = (string) $xmlObj->messages->resultCode;
+		if (($resultCode == 'Error')) {
+			$errorCode = (string) $xmlObj->messages->message->code;
+			if ($errorCode == 'E00040') {
+				$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+				$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$accountQuery['type'] = 'account';
+				$accountQuery['aid'] = $params['aid'];
+				$subscribersColl->update($accountQuery, array('$unset' => array('payment_gateway' => 1)));	
+				$postString = $this->buildPostArray($params['aid'], $params['return_url'], $params['ok_page']);
+				return Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			}
+		}
+		return $response;
+	}
 }
