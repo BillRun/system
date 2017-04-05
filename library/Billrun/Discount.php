@@ -402,8 +402,6 @@ abstract class Billrun_Discount {
 	protected function getTotalsFromBillrun($billrun, $entityId) {
 		return $billrun->getTotals($entityId);
 	}
-
-	}
 	
 	protected function isApplyToAnySubject() {
 		return !empty($this->discountData['any_subject']);
