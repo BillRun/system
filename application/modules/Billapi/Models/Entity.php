@@ -701,6 +701,8 @@ class Models_Entity {
 				return 'key';
 			case 'subscribers':
 				return 'sid'; // for account it should be 'aid'
+			case 'accounts':
+				return 'aid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
