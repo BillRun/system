@@ -163,9 +163,9 @@ class Models_Entity {
 		
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
-			$mandatoryFields[$fieldName] =  isset($customField['mandatory']) ? $customField['mandatory'] : false;
-			$uniqueFields[$fieldName] =  isset($customField['unique']) ? $customField['unique'] : false;
-			$defaultFieldsValues[$fieldName] =  isset($customField['default_value']) ? $customField['default_value'] : false;
+			$mandatoryFields[$fieldName] =  Billrun_Util::getFieldVal($customField['mandatory'], false);
+			$uniqueFields[$fieldName] =  Billrun_Util::getFieldVal($customField['unique'], false);
+			$defaultFieldsValues[$fieldName] =  Billrun_Util::getFieldVal($customField['default_value'], false);
 		}
 	
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -210,6 +210,10 @@ class Models_Entity {
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
+		}
+		
+		if (empty($query['$or'])) {
+			unset($query['$or']);
 		}
 		
 		return $query;
