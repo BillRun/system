@@ -455,7 +455,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
 		if (!static::lock()) {
-			$this->_controller->addOutput("Charging is already running");
+			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
 		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun

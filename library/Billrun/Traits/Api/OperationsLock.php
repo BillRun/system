@@ -64,8 +64,8 @@ trait Billrun_Traits_Api_OperationsLock {
 		$query = array_merge($data, $lockCondition);
 		Billrun_Factory::log("Locking operation " . $data['action'], Zend_Log::DEBUG);
 		$updateOperation = $operationsColl->findAndModify($query, array('$setOnInsert' => $updateQuery), array(),  array('upsert' => true));
-		Billrun_Factory::log("Operation " . $data['action'] . ' was locked', Zend_Log::DEBUG);
 		if ($updateOperation->isEmpty()) {
+			Billrun_Factory::log("Operation " . $data['action'] . ' was locked', Zend_Log::DEBUG);
 			return true;
 		}
 		return false;

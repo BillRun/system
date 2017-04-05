@@ -125,6 +125,7 @@ class BillAction extends ApiAction {
 	}
 
 	protected function getCollectionDebt($request) {
+		$result = array();
 		$jsonAids = $request->get('aids', '[]');
 		$aids = json_decode($jsonAids, TRUE);
 		if (!is_array($aids) || json_last_error()) {

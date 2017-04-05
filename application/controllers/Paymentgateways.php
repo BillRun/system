@@ -161,6 +161,7 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		$handleResponse = $paymentGateway->handleOkPageData($transactionId);
+		Billrun_Factory::log("Token received from " . $name, Zend_Log::INFO);
 		if ($handleResponse !== true) {
 			$returnUrl = $handleResponse;
 		} else {
