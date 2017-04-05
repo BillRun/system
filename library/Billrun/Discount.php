@@ -166,8 +166,9 @@ abstract class Billrun_Discount {
 				$callback = array($this, 'calculatePricePercent');
 			}
 			$price = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
-			$taxationInformation[] = $this->getTaxationDataForPrice($price, $key, $discount);
-			$totalPrice += $this->repriceForUpfront( $price, $taxationInformation, $discount, $invoice);
+			$taxationInfo = $this->getTaxationDataForPrice($price, $key, $discount);
+			$taxationInformation[] = $taxationInfo;
+			$totalPrice += $this->repriceForUpfront( $price, @$taxationInfo['tax_rate'], $discount, $invoice, $callback, $val);
 		}
 		//make sure that the  discount is not lees then it  limit
 		if (!empty($totalPrice)) {
@@ -255,7 +256,7 @@ abstract class Billrun_Discount {
 	 * audjust price for terminated discounts that have upfront subjects.
 	 * @return float with the new price taking the upfront subject into account.
 	 */
-	protected function repriceForUpfront( $price, $discounRates, $discount, $billrun) {
+	protected function repriceForUpfront( $price, $rateRef, $discount, $billrun, $callback, $discountValue) {
 		$adjustAmount = 0;
 		$previousBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($billrun->getBillrunKey());
 		$entityId = empty($discount['sid']) ? $discount['aid'] : $discount['sid'] ;
@@ -264,13 +265,13 @@ abstract class Billrun_Discount {
 		if( !empty($discount['end']) && $discount['end']->sec < static::getBillrunDate($billrun->getBillrunKey()) 
 			&& $this->countReceivedDiscountsOfKey($previousBillrunKey, $discount['key'], $entityId, $entityType)) {
 			
-			foreach($discounRates as $rateRef) {
-				$rate = Billrun_Factory::db()->getByDBReff($rateRef);
-				//If the subject of the discount was upfront then charge 
-				if($rate && !empty($rate['upfront'])) {
-					$fullPrice = 0;//TOOD get the full price of the rate
-					$adjustAmount += min($fullPrice, abs($this->getLimit()));
-				}
+			$rate = Billrun_Factory::db()->getByDBReff($rateRef);
+			//If the subject of the discount was upfront then charge 
+			if($rate && !empty($rate['upfront'])) {
+				$charger = new Billrun_Plans_Charge();//TOOD get the full price of the rate
+				$fullPrice = $charger->charge($rate, new Billrun_DataTypes_CycleTime($previousBillrunKey));
+				$discountCharge =  call_user_func_array($callback, array($fullPrice, $discountValue, $this->getLimit()));
+				$adjustAmount += min($discountCharge, abs($this->getLimit()));
 			}
 			
 		}
@@ -360,8 +361,6 @@ abstract class Billrun_Discount {
 		return 0;
 	}
 
-	abstract protected function getOptionalCDRFields();
-
 	/**
 	 * 
 	 * @param type $discount
@@ -378,6 +377,8 @@ abstract class Billrun_Discount {
 	 */
 	abstract public function getInvoiceTotals($billrunObj, $cdr);
 
+	abstract protected function getOptionalCDRFields();
+	
 	abstract public function getEntityId($cdr);
 
 	public function getId() {

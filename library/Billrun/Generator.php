@@ -171,7 +171,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	public function addFolder($path) {
 		if (!file_exists($path)) {
 			$old_umask = umask(0);
-			mkdir($path, Billrun_Factory::config()->getConfigValue(static::$type.'.new_folder_permissions',0777), true);
+			mkdir($path, octdec(Billrun_Factory::config()->getConfigValue(static::$type.'.new_folder_permissions','0775')), true);
 			umask($old_umask);
 		}
 	}
