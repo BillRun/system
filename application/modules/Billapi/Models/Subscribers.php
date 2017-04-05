@@ -95,6 +95,7 @@ class Models_Subscribers extends Models_Entity {
 
 		$keyField = $this->getKeyField();
 		$query = array(
+			'type' => 'subscriber',
 			$keyField => $this->before[$keyField],
 			'to' => array(
 				'$lte' => $this->before['from'],
