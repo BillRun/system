@@ -62,7 +62,9 @@ class Billrun_Utils_Arrayquery_Query {
 				$key = substr($key,0,$pos);
 				$value = static::translateQueryKeys(array( $left => $value ), $separator);
 			}			
-			$translatedQuery[$key] = is_array($value) ? static::translateQueryKeys( $value , $separator) : $value;
+			$translatedQuery[$key] = is_array($value) ?
+										array_merge(Billrun_Util::getFieldVal($translatedQuery[$key],array()),static::translateQueryKeys( $value , $separator)) 
+										: $value;
 		}
 		return $translatedQuery;
 	}

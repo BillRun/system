@@ -157,15 +157,15 @@ abstract class Billrun_Discount {
 				continue;
 			}
 			$val = $this->isApplyToAnySubject() ? $discount['discount']['any_subject']['value'] - $totalPrice : $discount['discount'][$key]['value'];
+			//If the  discount discount several subjects increase the  discount to fit
+			$usagev = isset($totals['count'][$key]) ? $totals['count'][$key] : 1;
 			if ($this->isMonetray()) {
-				//If the  discount discount several subjects increase the  discount to fit
-				$usagev = isset($totals['count'][$key]) ? $totals['count'][$key] : 1;
 				$val *= $usagev;
 				$callback = array($this, 'calculatePriceEuro');
 			} else  {
 				$callback = array($this, 'calculatePricePercent');
 			}
-			$price = call_user_func_array($callback, array($discount, $ratePrice, $val, $discountLimit * $usagev));
+			$price = call_user_func_array($callback, array($ratePrice, $val, $discountLimit));
 			$taxationInformation[] = $this->getTaxationDataForPrice($price, $key, $discount);
 			$totalPrice += $this->repriceForUpfront( $price, $taxationInformation, $discount, $invoice);
 		}
@@ -175,7 +175,6 @@ abstract class Billrun_Discount {
 		}
 
 		return array('price' => $charge, 'tax_info' => $taxationInformation);
-		;
 	}
 
 	protected function getTaxationDataForPrice($price, $identifingKey, $discount) {
@@ -223,13 +222,7 @@ abstract class Billrun_Discount {
 	}
 
 	/**
-	 * 
-	 * @param type $discount
-	 * @param type $totals
-	 * @param type $value
-	 * @param type $limit
-	 * @param type $discountVat
-	 * @return type
+	 * Calcuate a precentage price form a given total amount
 	 */
 	public function calculatePricePercent($totals, $value, $limit, &$updatedTotals = array()) {
 		$discountValue = $totals * floatval($value);

@@ -142,7 +142,8 @@ class Billrun_DiscountManager {
 		$originalCdrMapping = array();
 		foreach ($discounts as $cdr) {
 			foreach ($cdr['tax_info'] as $taxInfo) {
-				$cdrForTaxation = $cdr;
+				//Work around for copy on write behavior of PHP
+				$cdrForTaxation = new Mongodloid_Entity($cdr->getRawData());
 				$cdrForTaxation['aprice'] = $taxInfo['price'];
 				$cdrForTaxation['arate'] = $taxInfo['tax_rate'];
 				$cdrForTaxation['stamp'] = Billrun_Util::generateArrayStamp($cdrForTaxation);
@@ -245,23 +246,26 @@ class Billrun_DiscountManager {
 	 */
 	protected function getUpdatedCharge($cdr, &$totalArr, &$accountTotals) {
 		if ($cdr['aprice'] < 0) {
-			$availableCharge = 0;
+			$availableCharge = abs($cdr['aprice']);
+			$adjustedDiscount = 0;
 			foreach ($cdr['affected_sections'] as $sectionKey) {
 				if ($totalArr[$sectionKey]['before_vat'] <= 0) {
 					continue;
 				} else {
-					$repriceDiff = min($totalArr[$sectionKey]['before_vat'],$accountTotals[$sectionKey]['before_vat'],$totalArr['before_vat'],$totalArr['before_vat']);
+					$repriceDiff = min($availableCharge, $totalArr[$sectionKey]['before_vat'], $accountTotals[$sectionKey]['before_vat'], $totalArr['before_vat']);
 					$totalArr[$sectionKey]['before_vat'] -= $repriceDiff;
 					$accountTotals[$sectionKey]['before_vat'] -= $repriceDiff;
-					$availableCharge -= $repriceDiff;					
+					$availableCharge -= $repriceDiff;
+					$adjustedDiscount -= $repriceDiff;
 				}
 			}
-			$availableCharge = $availableCharge - min(0, $availableCharge + $accountTotals['before_vat']);
-			$accountTotals['before_vat'] += $availableCharge;
-			$cdr['aprice'] = $availableCharge;
+			$adjustedDiscount = $adjustedDiscount - min(0, $adjustedDiscount + $accountTotals['before_vat']);
+			$accountTotals['before_vat'] += $adjustedDiscount;
+			$cdr['aprice'] = $adjustedDiscount;
 		}
 		return $cdr['aprice'];
 	}
+
 	/**
 	 * Inisiate discount object for discount rate
 	 * @param type $discountRate
