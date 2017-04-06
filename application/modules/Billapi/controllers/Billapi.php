@@ -89,6 +89,12 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$entityModel = $this->getModel();
 		$this->output->status = 1;
 		$this->output->details = $entityModel->{$this->action}();
+		$entity = $entityModel->getAfter();
+		if ($entity instanceof Mongodloid_Entity) {
+			$this->output->entity = $entity->getRawData();
+		} else {
+			$this->output->entity = $entity;
+		}
 	}
 
 	/**

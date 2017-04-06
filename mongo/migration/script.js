@@ -87,47 +87,47 @@ db.services.find({'to': {$gt: new Date()}}).forEach(function (service) {
 // Add zip code account system field if it doesn't yet exist
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 if ((typeof lastConfig) !== "undefined") {
-delete lastConfig['_id'];
-var found_zip_code = false;
-lastConfig.subscribers.account.fields.forEach(function (field) {
-	if (field.field_name == "zip_code") {
-		found_zip_code = true;
-		field.unique = false;
-		field.generated = false;
-		field.editable = true;
-		field.mandatory = true;
-		field.system = true;
-		field.show_in_list = false;
-		field.display = true;
+	delete lastConfig['_id'];
+	var found_zip_code = false;
+	lastConfig.subscribers.account.fields.forEach(function (field) {
+		if (field.field_name == "zip_code") {
+			found_zip_code = true;
+			field.unique = false;
+			field.generated = false;
+			field.editable = true;
+			field.mandatory = true;
+			field.system = true;
+			field.show_in_list = false;
+			field.display = true;
+		}
+	})
+	if (!found_zip_code) {
+		lastConfig.subscribers.account.fields.push({
+			"field_name": "zip_code",
+			"title": "Zip code",
+			"generated": false,
+			"unique": false,
+			"editable": true,
+			"mandatory": true,
+			"system": true,
+			"show_in_list": false,
+			"display": true
+		});
 	}
-})
-if (!found_zip_code) {
-	lastConfig.subscribers.account.fields.push({
-		"field_name": "zip_code",
-		"title": "Zip code",
-		"generated": false,
-		"unique": false,
-		"editable": true,
-		"mandatory": true,
-		"system": true,
-		"show_in_list": false,
-		"display": true
-	});
-}
 
-var found_tax_field = false;
-lastConfig.rates.fields.forEach(function (field) {
-	if (field.field_name == "tax") {
-		found_tax_field = true;
+	var found_tax_field = false;
+	lastConfig.rates.fields.forEach(function (field) {
+		if (field.field_name == "tax") {
+			found_tax_field = true;
+		}
+	})
+	if (!found_tax_field) {
+		lastConfig.rates.fields.push({
+			"field_name": "tax",
+		});
 	}
-})
-if (!found_tax_field) {
-	lastConfig.rates.fields.push({
-		"field_name": "tax",
-	});
-}
 
-db.config.insert(lastConfig);
+	db.config.insert(lastConfig);
 }
 
 // BRCD-614
@@ -163,14 +163,16 @@ db.subscribers.find({type: "subscriber", services: {$ne: [], $exists: 1}}).forEa
 
 
 db.balances.dropIndex('sid_1_from_1_to_1_priority_1');
-db.balances.ensureIndex( { aid: 1, sid: 1, from: 1, to: 1, priority: 1 },{ unique: true, background: true });
+db.balances.ensureIndex({aid: 1, sid: 1, from: 1, to: 1, priority: 1}, {unique: true, background: true});
 
 // BRCD-646
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
-var pricingVat = lastConfig.pricing.vat;
-delete lastConfig['pricing']['vat'];
-lastConfig.taxation = {};
-lastConfig.taxation.vat = pricingVat;
-lastConfig.taxation.tax_type = "vat";
-db.config.insert(lastConfig);
+if (!lastConfig.taxation || !lastConfig.taxation.tax_type) {
+	delete lastConfig['_id'];
+	var pricingVat = lastConfig.pricing.vat;
+	delete lastConfig['pricing']['vat'];
+	lastConfig.taxation = {};
+	lastConfig.taxation.vat = pricingVat;
+	lastConfig.taxation.tax_type = "vat";
+	db.config.insert(lastConfig);
+}
