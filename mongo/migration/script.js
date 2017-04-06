@@ -176,3 +176,7 @@ if (!lastConfig.taxation || !lastConfig.taxation.tax_type) {
 	lastConfig.taxation.tax_type = "vat";
 	db.config.insert(lastConfig);
 }
+
+// BRCD-749
+db.rebalance_queue.dropIndex("sid_1");
+db.rebalance_queue.ensureIndex({"sid": 1, "billrun_key": 1}, {unique: true, "background": true})
