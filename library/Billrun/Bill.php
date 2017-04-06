@@ -625,7 +625,7 @@ abstract class Billrun_Bill {
 					$result = '2';
 				}
 				else {
-					$result = $this->getDue() <= ($this->getPaidAmount() + static::precision) ? '1' : '0'; 
+					$result = $this->isPaid() ? '1' : '0'; 
 				}
 				break;
 
