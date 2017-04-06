@@ -15,7 +15,7 @@
 class Models_Entity {
 
 	use Models_Verification;
-	
+
 	/**
 	 * Entirty available statuses values
 	 */
@@ -92,7 +92,7 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $action = 'change';
-	
+
 	/**
 	 * minimum update datetime (unix timestamp)
 	 * 
@@ -157,7 +157,9 @@ class Models_Entity {
 //		$ad = $this->getCustomFields();
 		$customFields = $this->getCustomFields();
 		$additionalFields = array_column($customFields, 'field_name');
-		$mandatorylValues = array_map(function($field) {return isset($field['mandatory']) ? $field['mandatory'] : false;}, $customFields);
+		$mandatorylValues = array_map(function($field) {
+			return isset($field['mandatory']) ? $field['mandatory'] : false;
+		}, $customFields);
 		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
@@ -209,11 +211,11 @@ class Models_Entity {
 	 */
 	public function update() {
 		$this->action = 'update';
-		
+
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-		
+
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
@@ -238,7 +240,7 @@ class Models_Entity {
 		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
 		return $ret;
 	}
-	
+
 	/**
 	 * method to check date range fields
 	 * by default checking only to field (not in the past)
@@ -273,16 +275,16 @@ class Models_Entity {
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = $now;
 		}
-		
+
 		$this->protectKeyField();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$this->verifyLastEntry();
-		
+
 		if ($this->before['from']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
 			return false;
 		}
-		
+
 		$closeAndNewPreUpdateOperation = array(
 			'$set' => array(
 				'to' => new MongoDate($this->update['from']->sec)
@@ -300,7 +302,7 @@ class Models_Entity {
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
-	
+
 	/**
 	 * method to protect key field update
 	 * used on update & closeandnew operation
@@ -311,7 +313,7 @@ class Models_Entity {
 			$this->update[$keyField] = $this->before[$keyField];
 		}
 	}
-	
+
 	/**
 	 * method get the minimum time to update
 	 * 
@@ -344,7 +346,7 @@ class Models_Entity {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Verify that an entity can be deleted.
 	 * 
@@ -353,7 +355,7 @@ class Models_Entity {
 	protected function canEntityBeDeleted() {
 		return true;
 	}
-	
+
 	/**
 	 * method to check if the current query allocate the last entry
 	 * 
@@ -390,6 +392,7 @@ class Models_Entity {
 		}
 		return true;
 	}
+
 	/**
 	 * Deletes an entity by a query
 	 * @param array $query
@@ -401,11 +404,11 @@ class Models_Entity {
 		if (!$this->canEntityBeDeleted()) {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
-		
+
 		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
-		
+
 		$this->verifyLastEntry();
 		$this->checkMinimumDate($this->before, 'from');
 
@@ -414,13 +417,13 @@ class Models_Entity {
 			return false;
 		}
 		$this->trackChanges(null); // assuming remove by _id
-		
+
 		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
 		}
 		return true;
 	}
-	
+
 	/**
 	 * make entity expired by setting to field with datetime of now
 	 * 
@@ -437,7 +440,7 @@ class Models_Entity {
 				'to' => new MongoDate()
 			);
 		}
-		
+
 		$this->checkMinimumDate($this->update);
 
 		$status = $this->dbUpdate($this->query, $this->update);
@@ -447,52 +450,72 @@ class Models_Entity {
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
-	
-	/**
-	 * move from date of entity including change the previous entity to field
-	 * 
-	 * @return boolean true on success else false
-	 */
+
 	public function move() {
 		$this->action = 'move';
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
 			return;
 		}
 		
-		if (!isset($this->update['from'])) {
+		if (isset($this->update['from']) || !isset($this->update['to'])) { // default is move from
+			return $this->moveEntry('from');
+		} 
+		
+		return $this->moveEntry('to');
+	}
+
+	/**
+	 * move from date of entity including change the previous entity to field
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function moveEntry($edge = 'from') {
+		if ($edge == 'from') {
+			$otherEdge = 'to';
+		} else { // $current == 'to'
+			$otherEdge = 'from';
+		}
+		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				'from' => new MongoDate()
+				$edge => new MongoDate()
 			);
 		}
-		
-		if ($this->update['from']->sec > $this->before['to']->sec) {
+
+		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
+			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec))  {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
 		}
-		
-		$this->checkMinimumDate($this->update, 'from');
-		
+
+		$this->checkMinimumDate($this->update, $edge);
+
 		$keyField = $this->getKeyField();
 		$query = array(
-			$keyField => $this->before[$keyField], 
-			'to' => array(
-				'$lte' => $this->before['from'],
+			$keyField => $this->before[$keyField],
+			$otherEdge => array(
+				($otherEdge == 'to' ? '$lte' : '$gte') => $this->before[$edge],
 			)
 		);
-		$previousEntry = $this->collection->query($query)->cursor()->sort(array('to' => -1))->current();
+		$previousEntry = $this->collection->query($query)->cursor()->sort(array($otherEdge => ($otherEdge == 'to' ? -1 : 1)))->current();
 
-		if (!empty($previousEntry) && !$previousEntry->isEmpty() && $previousEntry['from']->sec > $this->update['from']->sec) {
+		if (!empty($previousEntry) && !$previousEntry->isEmpty() 
+			&& (
+			($edge == 'from' && $previousEntry[$edge]->sec > $this->update[$edge]->sec)
+			||
+			($edge == 'to' && $previousEntry[$otherEdge]->sec < $this->update[$otherEdge]->sec)
+			)
+			) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date is less than previous end date');
 		}
-		
+
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
 		$this->trackChanges($this->query['_id']);
-		
+
 		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
 			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
-			$this->setUpdate(array('to' => new MongoDate($this->update['from']->sec)));
+			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
 			$this->setBefore($previousEntry);
 			return $this->update();
 		}
@@ -531,9 +554,9 @@ class Models_Entity {
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
-		
-		$records =  array_values(iterator_to_array($res));
-		foreach($records as  &$record) {
+
+		$records = array_values(iterator_to_array($res));
+		foreach ($records as &$record) {
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
 		}
 		return $records;
@@ -546,7 +569,7 @@ class Models_Entity {
 	protected function remove($query) {
 		return $this->collection->remove($query);
 	}
-	
+
 	/**
 	 * future entity was removed - need to update the to of the previous change
 	 */
@@ -576,7 +599,7 @@ class Models_Entity {
 	public function setUpdate($u) {
 		$this->update = $u;
 	}
-	
+
 	/**
 	 * method to update the query instruct
 	 * @param array $q mongo query instruct
@@ -650,8 +673,8 @@ class Models_Entity {
 				'collection' => $this->collectionName,
 				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
 				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] : 
-							(isset($this->before[$field]) ? $this->before[$field] : null),
+				'key' => isset($this->update[$field]) ? $this->update[$field] :
+				(isset($this->before[$field]) ? $this->before[$field] : null),
 			);
 			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
 			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
@@ -721,7 +744,7 @@ class Models_Entity {
 				return 'name';
 		}
 	}
-	
+
 	/**
 	 * Add revision info (status, early_expiration) to record
 	 * 
@@ -744,7 +767,7 @@ class Models_Entity {
 		);
 		return $record;
 	}
-	
+
 	/**
 	 * Calculate record status
 	 * 
@@ -768,13 +791,13 @@ class Models_Entity {
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
 		$isFutureExist = $recordCollection->query($query)->count() > 0;
-		
+
 		if ($isFutureExist) {
 			return self::ACTIVE_WITH_FUTURE;
 		}
 		return self::ACTIVE;
 	}
-	
+
 	/**
 	 * Check if record was closed by close action.
 	 * true if the "to" field is less than 50 years from record "from" date.
