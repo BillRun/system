@@ -57,7 +57,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	 */
 	public function update($coll, $query, $update, $options) {
 		if (!key_exists('_id', $query) && !key_exists('id', $query)) {
-			return $this->resetParallelBalances($coll, $query, $update, $options);
+			$this->resetParallelBalances($coll, $query, $update, $options);
 		}
 		return parent::update($coll, $query, $update, $options);
 	}
@@ -65,13 +65,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	protected function resetParallelBalances($coll, $query, $update, $options) {
 		$balances = $coll->query($query);
 		$updater = new Billrun_ActionManagers_Balances_Update();
-		$firstRun = true;
 		foreach ($balances as $balance) {
-			if ($firstRun) {
-				$firstRun = false;
-				$_id = $balance->getId()->getMongoId();
-				continue;
-			}
 			$updaterInput = array(
 				'sid' => $balance->get('sid'),
 				'query' =>
@@ -82,22 +76,17 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 					json_encode(array(
 						'operation' => 'set',
 						'value' => 0,
-						'expiration_date' => $balance->get('to'),
+						'expiration_date' => new MongoDate(strtotime('5 minutes ago')),
 					)),
 				'additional' => json_encode($this->additional),
 			);
 			$jsonObject = new Billrun_AnObj($updaterInput);
 			if (!$updater->parse($jsonObject)) {
-				return false;
+				continue;
 			}
 			if (!$updater->execute()) {
-				return false;
+				continue;
 			}
 		}
-
-		if (empty($_id)) {
-			return parent::update($coll, $query, $update, $options);
-		}
-		return parent::update($coll, array('_id' => $_id, 'sid' => $balance->get('sid')), $update, $options);
 	}
 }
