@@ -86,8 +86,13 @@ class InternalPaypageController extends ExternalPaypageController {
 					'params' => $pgParams['pgAccountDetails']
 				);
 				$previousPg[$index] = $currentPg;
-				$setValues['payment_gateway']['former'] = $previousPg;
-				$account->closeAndNew($setValues);
+				if ($prevPaymentGateway->needUpdateFormerGateway($pgAccountDetails)) {
+					$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+					$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+					$accountQuery['type'] = 'account';
+					$accountQuery['aid'] = $request['aid'];
+					$subscribersColl->update($accountQuery, array('$set' => array('payment_gateway.former' => $previousPg)));
+				}
 				$prevPaymentGateway->deleteAccountInPg($pgAccountDetails);
 			}
 		}
