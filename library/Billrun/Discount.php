@@ -269,10 +269,7 @@ abstract class Billrun_Discount {
 			$rate = Billrun_Factory::db()->getByDBRef($rateRef);
 			//If the subject of the discount was upfront then charge 
 			if($rate && !empty($rate['upfront']) && $rate = $rate->getRawData()) {
-				$charger = new Billrun_Plans_Charge();//TOOD get the full price of the rate
-				$rate['cycle'] = new Billrun_DataTypes_CycleTime($previousBillrunKey);
-				$fullPrice = $charger->charge($rate, $rate['cycle']);
-				$discountCharge =  call_user_func_array($callback, array($fullPrice['charge'], $discountValue, $this->getLimit()));
+				$discountCharge =  call_user_func_array($callback, array(-$currentCharge, $discountValue, $this->getLimit()));
 				$adjustAmount -= max($discountCharge, $this->getLimit());
 			}
 			
