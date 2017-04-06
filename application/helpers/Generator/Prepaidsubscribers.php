@@ -25,7 +25,7 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 		$this->transactions = array();
 		parent::__construct($options);
 		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type);// strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'), $this->startTime);
+		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type);
 		$this->loadPlans();
 	}
 	
@@ -145,6 +145,7 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
                                 $this->translateUrt($this->transactions[$sid][$parameters['field']], $parameters) :
                                 '';
 	}
+	
 	protected function getBalancesForSid($sid) {
 		return (isset($this->balances[$sid]) ? $this->balances[$sid] : array());
 	}
