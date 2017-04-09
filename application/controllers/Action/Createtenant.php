@@ -174,6 +174,7 @@ class CreatetenantAction extends ApiAction {
 	protected function addDbConfigData(&$dbConfig) {
 		$dbConfig['shared_secret'] = $this->createSecret();
 		$dbConfig['company_name'] = $this->tenant;
+		$dbConfig['registration_date'] = new MongoDate();
 	}
 
 	/**
