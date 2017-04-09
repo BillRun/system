@@ -31,6 +31,19 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 		return false;
 	}
 	
+	
+	/**
+	 * Set operation will always create new balance (handle multi-balances)
+	 * 
+	 * @param array $query - Query for getting the balance.
+	 * @param Billrun_DataTypes_Wallet $wallet
+	 * @param boolean $isExisting - If true, a balance exists before the update.
+	 * @return array Query for set updating the balance.
+	 */
+	 public function getUpdateBalanceQuery($query, $wallet, $defaultBalance, $isExisting) {
+		return $this->getSetOnInsert($wallet, $defaultBalance);
+	}
+	
 	/**
 	 * Handle the core balance
 	 * 
