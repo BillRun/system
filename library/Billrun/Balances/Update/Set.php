@@ -41,7 +41,10 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	 * @return array Query for set updating the balance.
 	 */
 	 public function getUpdateBalanceQuery($query, $wallet, $defaultBalance, $isExisting) {
-		return $this->getSetOnInsert($wallet, $defaultBalance);
+		 if (!key_exists('_id', $query) && !key_exists('id', $query)) {
+			 return $this->getSetOnInsert($wallet, $defaultBalance);
+		 }
+		 return parent::getUpdateBalanceQuery($query, $wallet, $defaultBalance, $isExisting);
 	}
 	
 	/**
