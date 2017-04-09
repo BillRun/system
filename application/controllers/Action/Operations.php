@@ -23,23 +23,25 @@ class OperationsAction extends ApiAction {
 		$request = $this->getRequest();
 		$action = $request->get('action');
 		$filtration = $request->get('filtration');
+		if (Billrun_Util::IsIntegerValue($filtration)) {
+			$filtration = (int) $filtration;
+		}
 		$query = array(
 			'action' => $action,
 			'filtration' => $filtration,
 			'start_time' => array('$gt' => new MongoDate(strtotime($this->orphanTime))),
-			'end_time' => array('$exists' => true)
+			'end_time' => array('$exists' => false),
 		);
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$activeOperation = $operationsColl->query($query)->cursor()->current();	
+		$ret = array();
 		if (!$activeOperation->isEmpty()) {
-			$active['start_date'] = $activeOperation['start_time'];
-		} else {
-			$active = 'No active operation';
+			$ret['start_date'] = $activeOperation['start_time'];
 		}
 		$output = array (
-			'status' => $active ? 1 : 0,
-			'desc' => $active ? 'success' : 'error',
-			'details' =>  !isset($active['start_date']) ? array() : array($active),
+			'status' => 1,
+			'desc' => 'success',
+			'details' =>  array($ret),
 		);
 		$this->getController()->setOutput(array($output));
 	}
