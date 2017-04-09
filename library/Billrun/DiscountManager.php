@@ -188,8 +188,9 @@ class Billrun_DiscountManager {
 							unset($compareDiscounts[$oldDscntIdx]);
 						}
 						//Does the discounts apply to the same subject? choose the higher discount
-						if (!empty(array_intersect(array_keys($oldDiscount['discount']), array_keys($discount['discount'])))) {
-							if ($oldDiscount['aprice'] >= $discount['aprice']) {
+						if (!empty(array_intersect(array_keys($oldDiscount['discount']), array_keys($discount['discount']))) &&
+							( Billrun_Util::getFieldVal($oldDiscount['sid'], true) === Billrun_Util::getFieldVal($discount['sid'], false) )) {
+							if (abs($oldDiscount['aprice']) < abs($discount['aprice'])) {
 								unset($compareDiscounts[$oldDscntIdx]);
 							}
 						}
