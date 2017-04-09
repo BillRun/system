@@ -455,11 +455,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
 		if (!static::lock()) {
-			$this->_controller->addOutput("Charging is already running");
+			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
-		}
-		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun
-			throw new Exception('Error removing payments before rerun');
 		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
 		$involvedAccounts = array();
@@ -492,7 +489,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		
 		if (!static::release()) {
-			$this->_controller->addOutput("Problem in releasing operation");
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::NOTICE);
 			return;
 		}
 		
@@ -506,7 +503,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param String $gatewayName - name of the payment gateway.
 	 * 
 	 */
-	public function updateAccordingToStatus($response, $payment, $gatewayName) {
+	public static function updateAccordingToStatus($response, $payment, $gatewayName) {
 		if ($response['stage'] == "Completed") { // payment succeeded 
 			$payment->updateConfirmation();
 			$payment->setPaymentStatus($response['status'], $gatewayName);
