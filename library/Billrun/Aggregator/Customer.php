@@ -132,7 +132,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * If true need to override data in billrun collection, 
 	 * @var boolean
 	 */
-	protected $overrideAccounts;
+	protected $overrideMode;
 	
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -195,7 +195,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->overrideAccounts = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_accounts', true);
+		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_accounts', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
@@ -339,7 +339,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$accountData = array();
 		$billrunData = array(
 			'billrun_key' => $cycle->key(),
-			'autoload' => !empty($this->overrideAccounts));
+			'autoload' => !empty($this->overrideMode));
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = $subscriberPlan['id']['aid'];
 			
@@ -406,7 +406,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$invoice = new Billrun_Cycle_Account_Invoice($billrunData);
 
 		// Check if already exists.
-		if(!$this->overrideAccounts && $invoice->exists()) {
+		if(!$this->overrideMode && $invoice->exists()) {
 			Billrun_Factory::log("Billrun " . $cycle->key() . " already exists for account " . $aid, Zend_Log::ALERT);
 			return false;
 		} 
@@ -491,7 +491,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$dataKeys = array_keys($data);
 		//$existingAccounts = array();			
 		foreach ($dataKeys as $key => $aid) {
-			if (!$this->overrideAccounts && $this->billrun->exists($aid)) {
+			if (!$this->overrideMode && $this->billrun->exists($aid)) {
 				unset($dataKeys[$key]);
 			}
 		}
@@ -760,7 +760,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 
 		// If the accounts should not be overriden, filter the existing ones before.
-		if (!$this->overrideAccounts) {
+		if (!$this->overrideMode) {
 			// Get the aid exclusion query
 			$exclusionQuery = $this->billrun->existingAccountsQuery();
 			$match['$match']['aid'] = $exclusionQuery;
@@ -796,11 +796,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		try {	
 			$linesCol->batchInsert($results);
 		} catch (Exception $e) {
+			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
 			foreach ($results as $line) {
 				try {
 					$linesCol->insert($line);
 				} catch (Exception $ex) {
-					Billrun_Factory::log($ex->getMessage(), Zend_Log::NOTICE);
+					Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
 				}
 			}
 		}
@@ -957,17 +958,33 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	protected function beforeAggregate($accounts) {
-		if ($this->overrideAccounts) {
+		if ($this->overrideMode) {
 			$aids = array();
 			foreach ($accounts as $account) {
 				$aids[] = $account->getInvoice()->getAid();
-			}
+			}		
 			$billrunKey = $this->billrun->key();
-			$removeQuery = array('aid' => array('$in' => $aids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
-			$billrunQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-			$this->lines->remove($removeQuery);
-			$this->billrunCol->remove($billrunQuery);
+			$this->removeBeforeAggregate($billrunKey, $aids);
 		}
+	}
+	
+	public function removeBeforeAggregate($billrunKey, $aids = array()) {
+		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		$notBilled = $this->billrunCol->query($billrunQuery)->cursor();
+		$notBilledAids = array();
+		foreach ($notBilled as $account) {
+			$notBilledAids[] = $account['aid'];
+		}
+		if (empty($aids)) {
+			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$billrunRemoveQuery = $billrunQuery;
+		} else {
+			$aids = array_intersect($notBilledAids, $aids);
+			$linesRemoveQuery = array('aid' => array('$in' => $aids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		}
+		$this->lines->remove($linesRemoveQuery);
+		$this->billrunCol->remove($billrunRemoveQuery);
 	}
 	
 }
