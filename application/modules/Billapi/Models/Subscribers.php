@@ -75,45 +75,68 @@ class Models_Subscribers extends Models_Entity {
 	 * 
 	 * @return boolean true on success else false
 	 */
-	public function move() {
-		$this->action = 'move';
-		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
-			return;
+	protected function moveEntry($edge = 'from') {
+		if ($edge == 'from') {
+			$otherEdge = 'to';
+		} else { // $current == 'to'
+			$otherEdge = 'from';
 		}
-
-		if (!isset($this->update['from'])) {
+		if (!isset($this->update[$edge])) {
 			$this->update = array(
-				'from' => new MongoDate()
+				$edge => new MongoDate()
 			);
 		}
 
-		if ($this->update['from']->sec > $this->before['to']->sec) {
+		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
+			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
 		}
 
-		$this->checkMinimumDate($this->update, 'from');
+		$this->checkMinimumDate($this->update, $edge);
 
 		$keyField = $this->getKeyField();
-		$query = array(
-			'type' => 'subscriber',
-			$keyField => $this->before[$keyField],
-			'to' => array(
-				'$lte' => $this->before['from'],
-			)
-		);
-		$previousEntry = $this->collection->query($query)->cursor()->sort(array('to' => -1))->current();
 
-		if (!empty($previousEntry) && !$previousEntry->isEmpty() && $previousEntry['from']->sec > $this->update['from']->sec) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date is less than previous end date');
+		if ($edge == 'from') {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$lte' => $this->before[$edge],
+				)
+			);
+			$sort = -1;
+			$rangeError = 'Requested start date is less than previous end date';
+		} else {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$gte' => $this->before[$edge],
+				)
+			);
+			$sort = 1;
+			$rangeError = 'Requested end date is greater than next start date';
 		}
+
+		// previous entry on move from, next entry on move to
+		$followingEntry = $this->collection->query($query)->cursor()
+			->sort(array($otherEdge => $sort))
+			->current();
+
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && (
+			($edge == 'from' && $followingEntry[$edge]->sec > $this->update[$edge]->sec) ||
+			($edge == 'to' && $followingEntry[$edge]->sec < $this->update[$edge]->sec)
+			)
+		) {
+			throw new Billrun_Exceptions_Api(0, array(), $rangeError);
+		}
+
 		
-		if ($this->before['plan_activation']->sec == $this->before['from']->sec) {
+		if ($edge == 'from' && $this->before['plan_activation']->sec == $this->before['from']->sec) {
 			$this->update['plan_activation'] = $this->update['from'];
 		}
 		
 		foreach($this->before['services'] as $key => $service) {
-			if ($service['from']->sec == $this->before['from']->sec) {
-				$this->update['services'][$key]['from'] = $this->update['from'];
+			if ($service[$edge]->sec == $this->before[$edge]->sec) {
+				$this->update['services'][$key][$edge] = $this->update[$edge];
 			}
 		}
 
@@ -123,16 +146,16 @@ class Models_Subscribers extends Models_Entity {
 		}
 		$this->trackChanges($this->query['_id']);
 
-		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
-			$update = array('to' => new MongoDate($this->update['from']->sec));
-			foreach($previousEntry['services'] as $key => $service) {
-				if ($service['to']->sec == $previousEntry['to']->sec) {
-					$update['services'][$key]['to'] = $update['to'];
+		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
+			foreach($followingEntry['services'] as $key => $service) {
+				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
+					$update['services'][$key][$otherEdge] = $update[$otherEdge];
 				}
 			}
-			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate($update);
-			$this->setBefore($previousEntry);
+			$this->setBefore($followingEntry);
 			return $this->update();
 		}
 		return true;
