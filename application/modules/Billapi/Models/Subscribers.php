@@ -148,6 +148,9 @@ class Models_Subscribers extends Models_Entity {
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
 			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
+			if ($edge == 'to' && $followingEntry['plan_activation']->sec == $this->update[$edge]->sec) {
+				$update['plan_activation'] = $this->update[$otherEdge];
+			}
 			foreach($followingEntry['services'] as $key => $service) {
 				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
 					$update['services'][$key][$otherEdge] = $update[$otherEdge];
