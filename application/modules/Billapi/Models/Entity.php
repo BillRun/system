@@ -500,7 +500,11 @@ class Models_Entity {
 			return;
 		}
 
-		if (isset($this->update['from']) || !isset($this->update['to'])) { // default is move from
+		if (!isset($this->update['from']) && !isset($this->update['to'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Move operation must have from or to input');
+		}
+		
+		if (isset($this->update['from'])) { // default is move from
 			return $this->moveEntry('from');
 		}
 
