@@ -134,6 +134,10 @@ class Models_Subscribers extends Models_Entity {
 			$this->update['plan_activation'] = $this->update['from'];
 		}
 		
+		if ($edge == 'to' && isset($this->before['plan_deactivation']->sec) && $this->before['plan_deactivation']->sec == $this->before[$edge]->sec) {
+			$this->update['plan_deactivation'] = $this->update['from'];
+		}
+		
 		foreach($this->before['services'] as $key => $service) {
 			if ($service[$edge]->sec == $this->before[$edge]->sec) {
 				$this->update['services'][$key][$edge] = $this->update[$edge];
@@ -148,9 +152,15 @@ class Models_Subscribers extends Models_Entity {
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
 			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
-			if ($edge == 'to' && $followingEntry['plan_activation']->sec == $this->update[$edge]->sec) {
-				$update['plan_activation'] = $this->update[$otherEdge];
+			if ($edge == 'to' && isset($followingEntry['plan_activation']->sec) && $followingEntry['plan_activation']->sec == $this->before[$edge]->sec) {
+				$update['plan_activation'] = $update[$otherEdge];
 			}
+			
+			// currently hypothetical case
+			if ($edge == 'from' && isset($followingEntry['plan_dectivation']->sec) && $followingEntry['plan_dectivation']->sec == $this->before[$edge]->sec) {
+				$update['plan_dectivation'] = $update[$otherEdge];
+			}
+
 			foreach($followingEntry['services'] as $key => $service) {
 				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
 					$update['services'][$key][$otherEdge] = $update[$otherEdge];
@@ -162,6 +172,18 @@ class Models_Subscribers extends Models_Entity {
 			return $this->update();
 		}
 		return true;
+	}
+	
+	public function close() {
+		if (empty($this->update)) {
+			$this->update = array();
+		}
+		if (isset($this->update['to'])) {
+			$this->update['plan_deactivation'] = $this->update['to'];
+		} else {
+			$this->update['to'] = $this->update['plan_deactivation'] = new MongoDate();
+		}
+		return parent::close();
 	}
 
 }
