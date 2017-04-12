@@ -463,12 +463,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				$subscribersColl = Billrun_Factory::db()->subscribersCollection();
 				$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
 				$accountQuery['type'] = 'account';
-				$accountQuery['aid'] = $params['aid'];
-				$subscribersColl->update($accountQuery, array('$unset' => array('payment_gateway' => 1)));	
-				$postString = $this->buildPostArray($params['aid'], $params['return_url'], $params['ok_page']);
-				return Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+				$accountQuery['aid'] = $params['aid'];	
+				$subscribersColl->update($accountQuery, array('$pull' => array('payment_gateway.former' => array('name' => array('$in' => array($this->billrunName))))));			
+				return true;
 			}
 		}
-		return $response;
+		return false;
 	}
 }

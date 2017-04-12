@@ -301,6 +301,6 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 	
 	protected function handleTokenRequestError($response, $params) {
-		return $response;
+		return false;
 	}
 }

@@ -240,7 +240,7 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	}
 	
 	protected function handleTokenRequestError($response, $params) {
-		return $response;
+		return false;
 	}
 
 }

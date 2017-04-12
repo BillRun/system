@@ -321,6 +321,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @param $response - response from the payment gateway to the request for token.
 	 * 
+	 * return Boolean - True if there's an error that was handled. 
 	 */
 	abstract protected function handleTokenRequestError($response, $params); 
 	
@@ -333,7 +334,10 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $okPage) {
+	protected function getToken($aid, $returnUrl, $okPage, $maxTries = 10) {
+		if ($maxTries < 0) {
+			throw new Exception("Payment gateway error, number of requests for token reached it's limit");
+		}
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
@@ -343,9 +347,13 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			$response = $this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage));
+			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
+				$response = $this->getToken($aid, $returnUrl, $okPage, $maxTries - 1);
+			} else {
+				$response = $result;
+			}
 		}
-
+		
 		return $response;
 	}
 

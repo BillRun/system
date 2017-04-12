@@ -226,6 +226,6 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	}
 	
 	protected function handleTokenRequestError($response, $params) {
-		return $response;
+		return false;
 	}
 }
