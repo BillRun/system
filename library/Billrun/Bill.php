@@ -625,7 +625,7 @@ abstract class Billrun_Bill {
 					$result = '2';
 				}
 				else {
-					$result = '1';
+					$result = $this->isPaid() ? '1' : '0'; 
 				}
 				break;
 

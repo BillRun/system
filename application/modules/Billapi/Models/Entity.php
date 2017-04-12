@@ -157,10 +157,17 @@ class Models_Entity {
 //		$ad = $this->getCustomFields();
 		$customFields = $this->getCustomFields();
 		$additionalFields = array_column($customFields, 'field_name');
-		$mandatorylValues = array_map(function($field) {
-			return isset($field['mandatory']) ? $field['mandatory'] : false;
-		}, $customFields);
-		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
+		$mandatoryFields = array();
+		$uniqueFields = array();
+		$defaultFieldsValues= array();
+		
+		foreach ($customFields as $customField) {
+			$fieldName = $customField['field_name'];
+			$mandatoryFields[$fieldName] =  Billrun_Util::getFieldVal($customField['mandatory'], false);
+			$uniqueFields[$fieldName] =  Billrun_Util::getFieldVal($customField['unique'], false);
+			$defaultFieldsValues[$fieldName] =  Billrun_Util::getFieldVal($customField['default_value'], false);
+		}
+	
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -169,11 +176,47 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
+			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+			}
 			if ($val) {
 				Billrun_Util::setIn($this->update, $field, $val);
+			} else if ($defaultFieldsValues[$field] !== false) {
+				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
 //		print_R($this->update);die;
+	}
+	
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+		$query = $this->getNotRevisionsOfEntity($data);
+		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		
+		return $this->collection->query($query)->count() > 0;
+	}
+	
+	/**
+	 * builds a query that gets all entities that are not revisions of the current entity
+	 * 
+	 * @param type $data
+	 */
+	protected function getNotRevisionsOfEntity($data) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		$query['$or'] = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query['$or'][] = array(
+				$fieldName => array('$ne' => $data[$fieldName]),
+			);
+		}
+		
+		if (empty($query['$or'])) {
+			unset($query['$or']);
+		}
+		
+		return $query;
 	}
 
 	protected function getCustomFields() {
