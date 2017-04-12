@@ -132,11 +132,11 @@ class Models_Subscribers extends Models_Entity {
 
 		
 		if ($edge == 'from' && $this->before['plan_activation']->sec == $this->before['from']->sec) {
-			$this->update['plan_activation'] = $this->update['from'];
+			$this->update['plan_activation'] = $this->update[$edge];
 		}
 		
 		if ($edge == 'to' && isset($this->before['plan_deactivation']->sec) && $this->before['plan_deactivation']->sec == $this->before[$edge]->sec) {
-			$this->update['plan_deactivation'] = $this->update['from'];
+			$this->update['plan_deactivation'] = $this->update[$edge];
 		}
 		
 		foreach($this->before['services'] as $key => $service) {
