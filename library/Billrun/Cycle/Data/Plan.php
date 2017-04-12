@@ -56,21 +56,26 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	// TODO: Implement
 	public function getLine() {
 		$entries = array();
-		foreach ($this->charges as $key => $value) {
-			$entry = $this->getFlatLine();
-			$entry['aprice'] = $value;
-			$entry['charge_op'] = $key;
-			$entry['stamp'] = $this->generateLineStamp($entry);
-			if($this->start && $this->cycle->start() < $this->start) {
-				$entry['start'] =  new MongoDate($this->start);
+		foreach ($this->charges as $key => $charges) {
+			$chargesArr = is_array($charges) ? $charges : array($charges);
+			foreach ($chargesArr as $charge) {
+				$entry = $this->getFlatLine();
+				$entry['aprice'] = $charge['value'];
+				$entry['charge_op'] = $key;
+				$entry['cycle'] = $charge['cycle'];
+				$entry['stamp'] = $this->generateLineStamp($entry);
+				if(!empty($charge['start']) && $this->cycle->start() < $charge['start'] ) {
+					$entry['start'] =  new MongoDate($charge['start']);
+				}
+				if(!empty($charge['end']) && $this->cycle->end() > $charge['end'] ) {
+					$entry['end'] =  new MongoDate($charge['end']);
+				}
+				
+				if(!empty($entry['vatable'])) {
+					$entry = $this->addTaxationToLine($entry);
+				}
+				$entries[] = $entry;
 			}
-			if($this->end && $this->cycle->end() > $this->end) {
-				$entry['end'] =  new MongoDate($this->end);
-			}
-			if(!empty($entry['vatable'])) {
-				$entry = $this->addTaxationToLine($entry);
-			}
-			$entries[] = $entry;
 		}
 		
 		return $entries;
@@ -93,7 +98,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
+		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key().'_'.$line['aprice']);
 	}
 	
 	protected function addTaxationToLine($entry) {
