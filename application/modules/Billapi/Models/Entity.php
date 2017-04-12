@@ -159,15 +159,15 @@ class Models_Entity {
 		$additionalFields = array_column($customFields, 'field_name');
 		$mandatoryFields = array();
 		$uniqueFields = array();
-		$defaultFieldsValues= array();
-		
+		$defaultFieldsValues = array();
+
 		foreach ($customFields as $customField) {
 			$fieldName = $customField['field_name'];
-			$mandatoryFields[$fieldName] =  Billrun_Util::getFieldVal($customField['mandatory'], false);
-			$uniqueFields[$fieldName] =  Billrun_Util::getFieldVal($customField['unique'], false);
-			$defaultFieldsValues[$fieldName] =  Billrun_Util::getFieldVal($customField['default_value'], false);
+			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
+			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
+			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], false);
 		}
-	
+
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
@@ -187,14 +187,14 @@ class Models_Entity {
 		}
 //		print_R($this->update);die;
 	}
-	
+
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
 		$query = $this->getNotRevisionsOfEntity($data);
 		$query[$field] = $val; // not revisions of same entity, but has same unique value
-		
+
 		return $this->collection->query($query)->count() > 0;
 	}
-	
+
 	/**
 	 * builds a query that gets all entities that are not revisions of the current entity
 	 * 
@@ -211,11 +211,11 @@ class Models_Entity {
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
 		}
-		
+
 		if (empty($query['$or'])) {
 			unset($query['$or']);
 		}
-		
+
 		return $query;
 	}
 
@@ -499,11 +499,11 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
 			return;
 		}
-		
+
 		if (isset($this->update['from']) || !isset($this->update['to'])) { // default is move from
 			return $this->moveEntry('from');
-		} 
-		
+		}
+
 		return $this->moveEntry('to');
 	}
 
@@ -525,29 +525,45 @@ class Models_Entity {
 		}
 
 		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
-			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec))  {
+			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
 		}
 
 		$this->checkMinimumDate($this->update, $edge);
 
 		$keyField = $this->getKeyField();
-		$query = array(
-			$keyField => $this->before[$keyField],
-			$otherEdge => array(
-				($otherEdge == 'to' ? '$lte' : '$gte') => $this->before[$edge],
-			)
-		);
-		$previousEntry = $this->collection->query($query)->cursor()->sort(array($otherEdge => ($otherEdge == 'to' ? -1 : 1)))->current();
 
-		if (!empty($previousEntry) && !$previousEntry->isEmpty() 
-			&& (
-			($edge == 'from' && $previousEntry[$edge]->sec > $this->update[$edge]->sec)
-			||
-			($edge == 'to' && $previousEntry[$otherEdge]->sec < $this->update[$otherEdge]->sec)
+		if ($edge == 'from') {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$lte' => $this->before[$edge],
+				)
+			);
+			$sort = -1;
+			$rangeError = 'Requested start date is less than previous end date';
+		} else {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$gte' => $this->before[$edge],
+				)
+			);
+			$sort = 1;
+			$rangeError = 'Requested end date is greater than next start date';
+		}
+
+		// previous entry on move from, next entry on move to
+		$followingEntry = $this->collection->query($query)->cursor()
+			->sort(array($otherEdge => $sort))
+			->current();
+
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && (
+			($edge == 'from' && $followingEntry[$edge]->sec > $this->update[$edge]->sec) ||
+			($edge == 'to' && $followingEntry[$edge]->sec < $this->update[$edge]->sec)
 			)
-			) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date is less than previous end date');
+		) {
+			throw new Billrun_Exceptions_Api(0, array(), $rangeError);
 		}
 
 		$status = $this->dbUpdate($this->query, $this->update);
@@ -556,10 +572,10 @@ class Models_Entity {
 		}
 		$this->trackChanges($this->query['_id']);
 
-		if (!empty($previousEntry) && !$previousEntry->isEmpty()) {
-			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
-			$this->setBefore($previousEntry);
+			$this->setBefore($followingEntry);
 			return $this->update();
 		}
 		return true;
