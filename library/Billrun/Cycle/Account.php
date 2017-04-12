@@ -44,6 +44,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$this->invoice->addSubscriber($subInvoice);
 		}
 		$this->invoice->updateTotals();
+		$this->invoice->applyDiscounts();
 		$this->invoice->close($min_id);
 	}
 	
