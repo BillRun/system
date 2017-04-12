@@ -158,8 +158,8 @@ class Models_Subscribers extends Models_Entity {
 			}
 			
 			// currently hypothetical case
-			if ($edge == 'from' && isset($followingEntry['plan_dectivation']->sec) && $followingEntry['plan_dectivation']->sec == $this->before[$edge]->sec) {
-				$update['plan_dectivation'] = $update[$otherEdge];
+			if ($edge == 'from' && isset($followingEntry['plan_deactivation']->sec) && $followingEntry['plan_deactivation']->sec == $this->before[$edge]->sec) {
+				$update['plan_deactivation'] = $update[$otherEdge];
 			}
 
 			foreach($followingEntry['services'] as $key => $service) {
