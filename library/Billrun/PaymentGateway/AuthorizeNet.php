@@ -459,5 +459,14 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		return true;
 	}
-
+	
+	/**
+	 * Returns True if there is a need to update the account's payment gateway structure.
+	 * 
+	 * @param array $params - array of gateway parameters
+	 * @return Boolean - True if update needed.
+	 */
+	public function needUpdateFormerGateway($params) {
+		return !empty($params['customer_profile_id']);
+	}
 }
