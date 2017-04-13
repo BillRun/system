@@ -144,6 +144,23 @@ class Billrun_Cycle_Account_Invoice {
 		return $this->key;
 	}
 
+	public function applyDiscounts() {
+		$dm = new Billrun_DiscountManager();
+		$discounts = $dm->getEligibleDiscounts($this);
+		
+		foreach($discounts as $discount) {			
+			foreach($this->subscribers as  $subscriber) {
+				if($subscriber->getData()['sid'] == $discount['sid']) {
+					$rawDiscount = $discount->getRawData();
+					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
+					continue;
+				}
+			}
+			Billrun_Factory::db()->linesCollection()->save($discount);
+		}
+		$this->updateTotals();
+	}
+        
 	/**
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
@@ -274,8 +291,18 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
-	
-	public function getAid() {
+        
+        //======================================================
+        
+        public function getAid() {
 		return $this->aid;
 	}
+	
+        public function getSubscribers() {
+            return $this->subscribers;
+        }
+        
+        public function getTotals() {
+            return $this->data['totals'];
+        }
 }

@@ -1054,35 +1054,32 @@ class ConfigModel {
 		return ucfirst($model);
 	}
 	
-	protected function getMandatoryTaxationFields($withTitles = false) {
+	protected function getTaxationFields() {
 		$ret = array(
-			'tax.service_code' => 'Taxation service code',
-			'tax.product_code' => 'Taxation product code',
-			'tax.safe_harbor_override_pct' => 'Safe Horbor override string',
+			'tax.service_code' => array('title' => 'Taxation service code' ,'mandatory' => true),
+			'tax.product_code' => array('title' => 'Taxation product code' ,'mandatory' => true),
+			'tax.safe_harbor_override_pct' => array('title' => 'Safe Horbor override string' ,'mandatory' => false),
 		);
-		if ($withTitles) {
-			return $ret;
-		}
-		return array_keys($ret);
+		return $ret;
 	}
 		
 	protected function updateTaxationSettings(&$config, $data) {
 		$mandatory = ($data['tax_type'] === 'CSI');
 		$modelsWithTaxation = $this->getModelsWithTaxation();
-		$mandatoryTaxationFields = $this->getMandatoryTaxationFields(true);
+		$mandatoryTaxationFields = $this->getTaxationFields();
 		foreach ($modelsWithTaxation as $model) {
-		   foreach ($mandatoryTaxationFields as $mandatoryField => $mandatoryFieldTitle) {
-			   $this->setMandatoryField($config, $model, $mandatoryField, $mandatoryFieldTitle, $mandatory);
+		   foreach ($mandatoryTaxationFields as $field => $fieldData) {
+			   $this->setModelField($config, $model, $field, $fieldData['title'], $mandatory && $fieldData['mandatory'], $mandatory );
 		   }
 		}
 	}
 	
-	protected function setMandatoryField(&$config, $model, $fieldName, $title, $mandatory = true) {
+	protected function setModelField(&$config, $model, $fieldName, $title, $mandatory = true, $display = true) {
 		foreach ($config[$model]['fields'] as &$field) {
 			if ($field['field_name'] === $fieldName) {
 				$field['title'] = $title;
-				$field['display'] = $mandatory;
-				$field['editable'] = $mandatory;
+				$field['display'] = $display;
+				$field['editable'] = $display;
 				$field['mandatory'] = $mandatory;
 				return;
 			}
@@ -1113,9 +1110,9 @@ class ConfigModel {
 		foreach ($data as $config) {
 			if (isset($config['taxation']) && $config['taxation']['tax_type'] === 'CSI') {
 				$modelsWithTaxation = $this->getModelsWithTaxation();
-				$mandatoryTaxationFields = $this->getMandatoryTaxationFields();
+				$mandatoryTaxationFields = array_keys(array_filter($this->getTaxationFields(),function($a){return $a['mandatory'];}));
 				foreach ($modelsWithTaxation as $model) {
-					if ($this->hasEntitiesWithoutMandatoryFields($model, $mandatoryTaxationFields)) {
+					if ($this->hasEntitiesWithoutMandatoryFields($model, $mandatoryTaxationFields )) {
 						$warnings[] = 'There are valid entities of type "' . $this->getModelName($model) . '" without mandatory fields: ' . implode(', ', $mandatoryTaxationFields);
 					}
 				}
@@ -1134,7 +1131,6 @@ class ConfigModel {
 			$query['$or'][] = array($mandatoryField => '');
 			$query['$or'][] = array($mandatoryField => array('$exists' => false));
 		}
-		
 		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
 	}
 

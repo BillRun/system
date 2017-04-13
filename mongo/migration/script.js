@@ -180,3 +180,13 @@ if (!lastConfig.taxation || !lastConfig.taxation.tax_type) {
 // BRCD-749
 db.rebalance_queue.dropIndex("sid_1");
 db.rebalance_queue.ensureIndex({"sid": 1, "billrun_key": 1}, {unique: true, "background": true})
+
+// BRCD-731
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if (!lastConfig.registration_date) {
+	var firstConfig = db.config.find().sort({_id: 1}).limit(1).pretty()[0];
+	var registrationDate = firstConfig._id.getTimestamp();
+	delete lastConfig['_id'];
+	lastConfig.registration_date = registrationDate;
+	db.config.insert(lastConfig);
+}

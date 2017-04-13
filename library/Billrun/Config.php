@@ -327,7 +327,7 @@ class Billrun_Config {
 	 * @return true if complex.
 	 */
 	public static function isComplex($obj) {
-		if(empty($obj) || is_scalar($obj)) {
+		if(empty($obj) || is_scalar($obj) || $obj instanceof MongoDate) {
 			return false;
 		}
 		

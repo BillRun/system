@@ -96,6 +96,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function afterAggregateAccount(Billrun_Cycle_Account $accountBillrun) {
+		if(Billrun_Factory::config()->getConfigValue('calcCpu.dont_auto_generate_invoice', FALSE)) { return; }
+		
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
 		if ($forkXmlGeneration && function_exists("pcntl_fork")) {
 			$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
