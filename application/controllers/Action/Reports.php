@@ -35,9 +35,7 @@ class ReportsAction extends ApiAction {
 	}
 	
 	public function totalRevenue() {
-		$from = strtotime('12 months ago');
-		$fromCycle = Billrun_Billingcycle::getOldestBillrunKey($from);
-		$toCycle = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+		list($fromCycle, $toCycle) = $this->getCyclesRange();
 		
 		$match = array(
 			'billrun_key' => array(
@@ -69,15 +67,47 @@ class ReportsAction extends ApiAction {
 	}
 	
 	public function outstandingDebt() {
-		
+		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
+			$startTime = Billrun_Billingcycle::getStartTime($cycle);
+			
+			$match = array(
+				'urt' => array(
+					'$lt' => new MongoDate($startTime),
+				),
+			);
+
+			$group = array(
+				'_id' => null,
+				'due' => array('$sum' => '$due'),
+			);
+
+			$res = Billrun_Factory::db()->billsCollection()->aggregate(
+				array('$match' => $match),
+				array('$group' => $group)
+			)->current();
+			
+			$this->response[$cycle] = isset($res['due']) ? $res['due'] : 0;
+		}
 	}
 	
 	public function totalNumOfCustomers() {
-		
+		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
+			$startTime = Billrun_Billingcycle::getStartTime($cycle);
+			$endTime = Billrun_Billingcycle::getEndTime($cycle);
+			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+			$this->response[$cycle] = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query);
+		}
 	}
 	
 	public function customerStateDistribution() {
 		
+	}
+	
+	protected function getCyclesRange() {
+		$from = strtotime('12 months ago');
+		return array(Billrun_Billingcycle::getOldestBillrunKey($from), Billrun_Billingcycle::getLastConfirmedBillingCycle());
 	}
 	
 	protected function response() {
