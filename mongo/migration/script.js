@@ -177,6 +177,10 @@ if (!lastConfig.taxation || !lastConfig.taxation.tax_type) {
 	db.config.insert(lastConfig);
 }
 
+// BRCD-749
+db.rebalance_queue.dropIndex("sid_1");
+db.rebalance_queue.ensureIndex({"sid": 1, "billrun_key": 1}, {unique: true, "background": true})
+
 // BRCD-731
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 if (!lastConfig.registration_date) {
