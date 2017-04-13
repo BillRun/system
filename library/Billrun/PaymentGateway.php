@@ -604,5 +604,15 @@ abstract class Billrun_PaymentGateway {
 	protected function checkIfCustomerExists () {
 		return false;
 	}
+	
+	/**
+	 * Returns True if there is a need to update the account's payment gateway structure.
+	 * 
+	 * @param array $params - array of gateway parameters
+	 * @return Boolean - True if update needed.
+	 */
+	public function needUpdateFormerGateway($params) {
+		return false;
+	}
 		
 }
