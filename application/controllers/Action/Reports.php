@@ -102,6 +102,36 @@ class ReportsAction extends ApiAction {
 	}
 	
 	public function customerStateDistribution() {
+		$date = '-1 month';
+		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($date);
+		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($date);
+		
+		$churnQuery = array(
+			'deactivation_date' => array(
+				'$gte' => new MongoDate($startTime),
+				'$lte' => new MongoDate($endTime),
+			),
+		);
+		$churnSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $churnQuery);
+		
+		$newQuery = array(
+			'creation_time' => array(
+				'$gte' => new MongoDate($startTime),
+				'$lte' => new MongoDate($endTime),
+			),
+			'sid' => array('$nin' => $churnSubscribers),
+		);
+		$newSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $newQuery);
+		
+		$existingQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$existingQuery['sid'] = array('$nin' => array_merge($churnSubscribers, $newSubscribers));
+		$existingSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $existingQuery);
+		
+		$this->response = array(
+			'churn' => count($churnSubscribers),
+			'new' => count($newSubscribers),
+			'existing' => count($existingSubscribers),
+		);
 		
 	}
 	
