@@ -22,18 +22,16 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($this->before)) { // this is new subscriber
 			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
 			$this->update['creation_time'] = new MongoDate();
-		} else if (isset($this->before['plan_activation']) && isset($this->update['plan']) 
-			&& isset($this->before['plan']) && $this->before['plan'] !== $this->update['plan']) { // plan was changed
+		} else if (isset($this->before['plan_activation']) && isset($this->update['plan']) && isset($this->before['plan']) && $this->before['plan'] !== $this->update['plan']) { // plan was changed
 			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
 		} else { // plan was not changed
 			$this->update['plan_activation'] = $this->before['plan_activation'];
 		}
-		
+
 		//transalte to and from fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
-				
+
 		$this->verifyServices();
-		
 	}
 
 	public function get() {
@@ -51,26 +49,26 @@ class Models_Subscribers extends Models_Entity {
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
 		return array_merge($accountFields, $customFields);
 	}
-	
+
 	/**
 	 * Verfiy services are corrrect before update is applied tothe subscrition.
 	 */
 	protected function verifyServices() {
-		if(empty($this->update)) {
+		if (empty($this->update)) {
 			return FALSE;
 		}
-		foreach($this->update['services'] as  &$service) {
-			if(gettype($service) =='string') {
+		foreach ($this->update['services'] as &$service) {
+			if (gettype($service) == 'string') {
 				$service = array('name' => $service);
 			}
 			if (empty($this->before)) { // this is new subscriber
-				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];				
-			} 
+				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
+			}
 			//to  can't be more then the updated 'to' of the subscription
 			$service['to'] = isset($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 		}
 	}
-	
+
 	/**
 	 * move from date of entity including change the previous entity to field
 	 * 
@@ -88,8 +86,7 @@ class Models_Subscribers extends Models_Entity {
 			);
 		}
 
-		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
-			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
+		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) || ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
 		}
 
@@ -130,16 +127,16 @@ class Models_Subscribers extends Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), $rangeError);
 		}
 
-		
+
 		if ($edge == 'from' && $this->before['plan_activation']->sec == $this->before['from']->sec) {
 			$this->update['plan_activation'] = $this->update[$edge];
 		}
-		
+
 		if ($edge == 'to' && isset($this->before['plan_deactivation']->sec) && $this->before['plan_deactivation']->sec == $this->before[$edge]->sec) {
 			$this->update['plan_deactivation'] = $this->update[$edge];
 		}
-		
-		foreach($this->before['services'] as $key => $service) {
+
+		foreach ($this->before['services'] as $key => $service) {
 			if ($service[$edge]->sec == $this->before[$edge]->sec) {
 				$this->update['services'][$key][$edge] = $this->update[$edge];
 			}
@@ -156,13 +153,13 @@ class Models_Subscribers extends Models_Entity {
 			if ($edge == 'to' && isset($followingEntry['plan_activation']->sec) && $followingEntry['plan_activation']->sec == $this->before[$edge]->sec) {
 				$update['plan_activation'] = $update[$otherEdge];
 			}
-			
+
 			// currently hypothetical case
 			if ($edge == 'from' && isset($followingEntry['plan_deactivation']->sec) && $followingEntry['plan_deactivation']->sec == $this->before[$edge]->sec) {
 				$update['plan_deactivation'] = $update[$otherEdge];
 			}
 
-			foreach($followingEntry['services'] as $key => $service) {
+			foreach ($followingEntry['services'] as $key => $service) {
 				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
 					$update['services'][$key][$otherEdge] = $update[$otherEdge];
 				}
@@ -174,7 +171,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return true;
 	}
-	
+
 	public function close() {
 		if (empty($this->update)) {
 			$this->update = array();
@@ -185,6 +182,34 @@ class Models_Subscribers extends Models_Entity {
 			$this->update['to'] = $this->update['plan_deactivation'] = new MongoDate();
 		}
 		return parent::close();
+	}
+
+	/**
+	 * future entity was removed - need to update the to of the previous change
+	 */
+	protected function reopenPreviousEntry() {
+		$key = $this->getKeyField();
+		$previousEntryQuery = array(
+			$key => $this->before[$key],
+		);
+		$previousEntrySort = array(
+			'_id' => -1
+		);
+		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
+				->sort($previousEntrySort)->limit(1)->current();
+		if (!$previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+			$update = array(
+				'to' => $this->before['to'],
+			);
+			if ($previousEntry['plan_deactivation']->sec == $previousEntry['to']->sec) {
+				$update['plan_deactivation'] = null;
+			}
+			$this->setUpdate($update);
+			$this->setBefore($previousEntry);
+			return $this->update();
+		}
+		return TRUE;
 	}
 
 }
