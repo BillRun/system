@@ -279,9 +279,20 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = simplexml_load_string($result);
 			$customerId = (string) $xmlObj->customerProfileId;
-			if (empty($customerId)) {
-				$errorMessage = (string) $xmlObj->messages->message->text;
-				throw new Exception($errorMessage);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if ($resultCode == 'Error') {
+				$errorCode = (string) $xmlObj->messages->message->code;
+				$errorMessage = (string) $xmlObj->messages->message->text;	
+				if ($errorCode == 'E00039') {
+					$errorArray = preg_grep("/^[0-9]+$/", explode(' ', $errorMessage));
+					if (count($errorArray) ==! 1) {
+						throw new Exception($errorMessage);
+					}
+					$customerId = current($errorArray);
+				}
+				if (empty($customerId)) {
+					throw new Exception($errorMessage);
+				}
 			}
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
