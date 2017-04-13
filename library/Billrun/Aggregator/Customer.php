@@ -195,7 +195,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_accounts', true);
+		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
@@ -403,6 +403,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$billrunData['aid'] = $aid;
 		$billrunData['attributes'] = $accountData['attributes'];
+		$billrunData['override_mode'] = $this->overrideMode;
 		$invoice = new Billrun_Cycle_Account_Invoice($billrunData);
 
 		// Check if already exists.

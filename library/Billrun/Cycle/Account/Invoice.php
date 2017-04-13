@@ -51,7 +51,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * If true need to override data in billrun collection, 
 	 * @var boolean
 	 */
-	protected $overrideAccounts;
+	protected $overrideMode = true;
 	
 	/**
 	 * 
@@ -61,7 +61,9 @@ class Billrun_Cycle_Account_Invoice {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$this->overrideAccounts = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_accounts', true);
+		if (isset($options['override_mode'])) {
+			$this->overrideMode = $options['override_mode'];
+		}
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 	}
@@ -96,12 +98,12 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function load($force) {
 		$this->loadData();
-		if (!$this->data->isEmpty() && !$this->overrideAccounts) {
+		if (!$this->data->isEmpty() && !$this->overrideMode) {
 			$this->exists = !$force;
 			return;
 		}
 		$invoiceId = null;
-		if ($this->overrideAccounts && !$this->data->isEmpty()) {
+		if ($this->overrideMode && !$this->data->isEmpty()) {
 			$invoiceId = isset($this->data['invoice_id']) ? $this->data['invoice_id'] : null;
 		}
 		$this->reset($invoiceId);
@@ -167,7 +169,7 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
-		if (!$this->overrideAccounts || !isset($invoiceRawData['invoice_id'])) {
+		if (!$this->overrideMode || !isset($invoiceRawData['invoice_id'])) {
 			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
 		} else {
 			$newRawData = $rawDataWithSubs;
