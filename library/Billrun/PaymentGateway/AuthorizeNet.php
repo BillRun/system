@@ -218,7 +218,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	 * Inquire Transaction by transaction Id to check status of a payment.
 	 * 
 	 * @param string $txId - String that represents the transaction.
-	 * @return array - array of the response from PayPal
+	 * @return array - array of the response from Authorize.Net
 	 */
 	protected function getCheckoutDetails($txId) {
 		$credentials = $this->getGatewayCredentials();
@@ -233,7 +233,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 						  </getTransactionDetailsRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for pending payment status: " . $transDetails, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $transDetails, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response for Authorize.Net for pending payment status request: " . $result, Zend_Log::DEBUG);
 		}
 		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
@@ -274,7 +276,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							</createCustomerProfileRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response for Authorize.Net for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);

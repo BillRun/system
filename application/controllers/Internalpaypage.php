@@ -64,7 +64,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
 			if ($prevPgName != $request['payment_gateway']) {
-				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'], Zend_Log::INFO);
+				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'] . " for account: " . $request['aid'], Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log("Creating payment gateway " . $request['payment_gateway'], Zend_Log::INFO);
 			}

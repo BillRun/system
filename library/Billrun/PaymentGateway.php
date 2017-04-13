@@ -165,7 +165,7 @@ abstract class Billrun_PaymentGateway {
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
-			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl, Zend_Log::DEBUG);
+			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
 			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
@@ -325,7 +325,7 @@ abstract class Billrun_PaymentGateway {
 			$postString = $postArray;
 		}
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Requesting token from " . $this->billrunName, Zend_Log::DEBUG);
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 
