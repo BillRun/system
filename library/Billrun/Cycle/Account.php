@@ -253,7 +253,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			
 			// Update all the details.
 			$name = $subPlan['plan'];
-			$from = $subPlan['plan_activation']->sec;
+			$from = max($subPlan['plan_activation']->sec,$subPlan['from']->sec);
 			$to = $subPlan['to']->sec;
 		}
 		// Add the last value.
@@ -282,10 +282,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$services = array();
 		$servicesData = array();
 		$sto = 0;
+		$sstart = PHP_INT_MAX;
 		foreach ($current as $subscriber) {
 			$sto = $subscriber['sto'];
 			$sfrom = $subscriber['sfrom'];
-			
+			//Find the earliest instance of the subscriber 
+			$sstart = min($sfrom,$sstart);			
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
 			
@@ -322,6 +324,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		
 		foreach($services as $service) {
+				if($service['start'] < $sstart) {
+					$service['start'] < $sstart;
+				}
 				$servicesAggregatorData[$service['end']][] = $service;
 		}
 		
