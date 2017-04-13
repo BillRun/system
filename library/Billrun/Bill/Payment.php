@@ -484,6 +484,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
+			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
@@ -531,12 +532,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				continue;
 			}
 			$txId = $payment->getPaymentGatewayTransactionId();
+			Billrun_Factory::log("Checking status of pending payments", Zend_Log::INFO);
 			$status = $paymentGateway->verifyPending($txId);
 			if ($paymentGateway->isPending($status)) { // Payment is still pending
+				Billrun_Factory::log("Payment with transaction id=" . $txId . ' is still pending', Zend_Log::INFO);
 				$payment->updateLastPendingCheck();
 				continue;
 			}
 			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			Billrun_Factory::log("Updating payment with transaction id=" . $txId . ' to status ' . $response['stage'], Zend_Log::INFO);
 			self::updateAccordingToStatus($response, $payment, $gatewayName);
 		}
 	}

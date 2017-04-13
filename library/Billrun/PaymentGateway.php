@@ -165,8 +165,10 @@ abstract class Billrun_PaymentGateway {
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
+			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
+			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
 			return array('content'=> $this->htmlForm, 'content_type' => 'html');
 		}
 	}
@@ -323,6 +325,7 @@ abstract class Billrun_PaymentGateway {
 			$postString = $postArray;
 		}
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 
@@ -343,9 +346,9 @@ abstract class Billrun_PaymentGateway {
 		}
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-		}
-		if ($this->getResponseDetails($result) === FALSE) {
-			throw new Exception("Operation Failed. Try Again...");
+			if ($this->getResponseDetails($result) === FALSE) {
+				throw new Exception("Operation Failed. Try Again...");
+			}
 		}
 		if (empty($this->saveDetails['aid'])) {
 			$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
@@ -363,9 +366,9 @@ abstract class Billrun_PaymentGateway {
 		$query['type'] = "account";
 		$setQuery = $this->buildSetQuery();       
 		$this->subscribers->update($query, array('$set' => $setQuery));
+		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
 		$account = $this->subscribers->query($query)->cursor()->current();
 		$returnUrl = $account['tenant_return_url'];
-
 		return $returnUrl;
 	}
 

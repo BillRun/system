@@ -33,6 +33,7 @@ class InternalPaypageController extends ExternalPaypageController {
 		}
 
 		if ($request['action'] !== 'updatePaymentGateway') {
+			Billrun_Factory::log("Creating new payment gateway " . $request['payment_gateway'],  Zend_Log::INFO);
 			$create = new Billrun_ActionManagers_Subscribers_Create();
 			if (isset($request['services']) && is_array($request['services'])) {
 				$request['services'] =  array_map(function($srv) { return array('name'=>$srv); }, $request['services']);
@@ -62,6 +63,11 @@ class InternalPaypageController extends ExternalPaypageController {
 			$account->load(array('aid' => $request['aid']));
 			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
+			if ($prevPgName != $request['payment_gateway']) {
+				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'] . " for account: " . $request['aid'], Zend_Log::INFO);
+			} else {
+				Billrun_Factory::log("Creating payment gateway " . $request['payment_gateway'], Zend_Log::INFO);
+			}
 			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
 			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
 				if (!isset($accountPg['former'])) { 

@@ -564,6 +564,12 @@ abstract class Billrun_Bill {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
 						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						if (is_null($gateway)) {
+							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
+						} else {
+							Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
+							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging accont=' . $aid, Zend_Log::DEBUG);
+						}
 						try {
 							$paymentStatus = $gateway->pay($gatewayDetails);
 						} catch (Exception $e) {
