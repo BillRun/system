@@ -489,7 +489,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		
 		if (!static::release()) {
-			Billrun_Factory::log("Problem in releasing operation", Zend_Log::NOTICE);
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 			return;
 		}
 		
