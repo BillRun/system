@@ -132,8 +132,8 @@ class Models_Subscribers extends Models_Entity {
 			$this->update['plan_activation'] = $this->update[$edge];
 		}
 
-		if ($edge == 'to' && isset($this->before['plan_deactivation']->sec) && $this->before['plan_deactivation']->sec == $this->before[$edge]->sec) {
-			$this->update['plan_deactivation'] = $this->update[$edge];
+		if ($edge == 'to' && isset($this->before['deactivation_date']->sec) && $this->before['deactivation_date']->sec == $this->before[$edge]->sec) {
+			$this->update['deactivation_date'] = $this->update[$edge];
 		}
 
 		foreach ($this->before['services'] as $key => $service) {
@@ -155,8 +155,8 @@ class Models_Subscribers extends Models_Entity {
 			}
 
 			// currently hypothetical case
-			if ($edge == 'from' && isset($followingEntry['plan_deactivation']->sec) && $followingEntry['plan_deactivation']->sec == $this->before[$edge]->sec) {
-				$update['plan_deactivation'] = $update[$otherEdge];
+			if ($edge == 'from' && isset($followingEntry['deactivation_date']->sec) && $followingEntry['deactivation_date']->sec == $this->before[$edge]->sec) {
+				$update['deactivation_date'] = $update[$otherEdge];
 			}
 
 			foreach ($followingEntry['services'] as $key => $service) {
@@ -177,9 +177,9 @@ class Models_Subscribers extends Models_Entity {
 			$this->update = array();
 		}
 		if (isset($this->update['to'])) {
-			$this->update['plan_deactivation'] = $this->update['to'];
+			$this->update['deactivation_date'] = $this->update['to'];
 		} else {
-			$this->update['to'] = $this->update['plan_deactivation'] = new MongoDate();
+			$this->update['to'] = $this->update['deactivation_date'] = new MongoDate();
 		}
 		return parent::close();
 	}
@@ -202,8 +202,8 @@ class Models_Subscribers extends Models_Entity {
 			$update = array(
 				'to' => $this->before['to'],
 			);
-			if ($previousEntry['plan_deactivation']->sec == $previousEntry['to']->sec) {
-				$update['plan_deactivation'] = null;
+			if ($previousEntry['deactivation_date']->sec == $previousEntry['to']->sec) {
+				$update['deactivation_date'] = null;
 			}
 			$this->setUpdate($update);
 			$this->setBefore($previousEntry);
