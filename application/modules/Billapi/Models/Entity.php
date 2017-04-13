@@ -314,9 +314,9 @@ class Models_Entity {
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
-		$now = new MongoDate();
+
 		if (!isset($this->update['from'])) {
-			$this->update['from'] = $now;
+			$this->update['from'] = new MongoDate();
 		}
 
 		$this->protectKeyField();
@@ -328,11 +328,8 @@ class Models_Entity {
 			return false;
 		}
 
-		$closeAndNewPreUpdateOperation = array(
-			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec)
-			)
-		);
+		$closeAndNewPreUpdateOperation = $this->getCloseAndNewPreUpdateCommand();
+		
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
 		if (!isset($res['nModified']) || !$res['nModified']) {
 			return false;
@@ -344,6 +341,19 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
+	}
+	
+	/**
+	 * method to get the db command that run on close and new operation
+	 * 
+	 * @return array db update command
+	 */
+	protected function getCloseAndNewPreUpdateCommand() {
+		return array(
+			'$set' => array(
+				'to' => new MongoDate($this->update['from']->sec)
+			)
+		);
 	}
 
 	/**

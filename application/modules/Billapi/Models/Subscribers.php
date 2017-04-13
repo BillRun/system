@@ -212,4 +212,17 @@ class Models_Subscribers extends Models_Entity {
 		return TRUE;
 	}
 
+	/**
+	 * method to get the db command that run on close and new operation
+	 * 
+	 * @return array db update command
+	 */
+	protected function getCloseAndNewPreUpdateCommand() {
+		$ret = parent::getCloseAndNewPreUpdateCommand();
+		if (isset($this->before['deactivation_date'])) {
+			$ret['$unset'] = array('deactivation_date' => 1);
+		}
+		return $ret;
+	}
+
 }
