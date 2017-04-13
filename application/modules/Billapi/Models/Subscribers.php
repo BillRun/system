@@ -202,8 +202,8 @@ class Models_Subscribers extends Models_Entity {
 			$update = array(
 				'to' => $this->before['to'],
 			);
-			if ($previousEntry['deactivation_date']->sec == $previousEntry['to']->sec) {
-				$update['deactivation_date'] = null;
+			if (isset($this->before['deactivation_date']) && $this->before['deactivation_date']->sec == $this->before['to']->sec) {
+				$update['deactivation_date'] = $this->before['to'];
 			}
 			$this->setUpdate($update);
 			$this->setBefore($previousEntry);
