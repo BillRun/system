@@ -374,7 +374,7 @@ abstract class Billrun_PaymentGateway {
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => $this->transactionId, "aid" => $aid);
+		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => $aid);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		if (!$paymentRow->isEmpty()) {
 			if (isset($paymentRow['done'])) {
@@ -398,14 +398,26 @@ abstract class Billrun_PaymentGateway {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 
 		// Get is started
-		$query = array("name" => $this->billrunName, "tx" => $txId, "aid" => $this->saveDetails['aid']);
-		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => $this->saveDetails['aid']);
+		$paymentRow = $paymentColl->query($query)->cursor();
+		if ($paymentRow->count() > 1) {
+			foreach ($paymentRow as $row) {
+				$maxTimestamp = 0;
+				$rowTimestamp = $row['t'];
+				if ($rowTimestamp > $maxTimestamp) {
+					$maxTimestamp = $rowTimestamp;
+					$payment = $row;
+				}
+			}
+		}
+
+		$paymentRow = is_null($payment) ? $paymentRow->current() : $payment;
 		if ($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
 			// but no indication for charge start
 			return false;
 		}
-
+		
 		// Check how long has passed.
 		$timePassed = time() - $paymentRow['t'];
 
@@ -433,7 +445,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected function getAidFromProxy($txId) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => $txId);
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		return $paymentRow['aid'];
 	}
