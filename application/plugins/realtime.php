@@ -209,7 +209,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row = $lineToRebalance;
 		$row['billrun_pretend'] = true;
 		$row['usagev'] = $realUsagev;
-		$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+		$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
 		return $calcRow->update();
 	}
 	

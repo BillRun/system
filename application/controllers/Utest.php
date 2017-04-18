@@ -549,7 +549,7 @@ class UtestController extends Yaf_Controller_Abstract {
 
 		$output['call_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.call_scenario', ""));
 		$output['data_scenario'] = str_replace('\n', "\n", $this->conf->getConfigValue('test.data_scenario', ""));
-		$output['charging_types'] = $this->conf->getConfigValue('test.charging_type', array());
+		$output['connection_types'] = $this->conf->getConfigValue('test.connection_type', array());
 		$output['languages'] = $this->conf->getConfigValue('test.language', array());
 		$output['service_codes'] = $this->conf->getConfigValue('test.service_codes', array());
 		$output['imsi'] = $this->conf->getConfigValue('test.imsi', '');
