@@ -61,9 +61,6 @@ class Billrun_Cycle_Account_Invoice {
 	public function __construct($options = array()) {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrun_coll = Billrun_Factory::db()->billrunCollection();
-		if (isset($options['override_mode'])) {
-			$this->overrideMode = $options['override_mode'];
-		}
 		$this->constructByOptions($options);
 		$this->populateInvoiceWithAccountData($options['attributes']);
 	}
@@ -77,7 +74,9 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Returning an empty billrun!", Zend_Log::NOTICE);
 			return;
 		}
-		
+		if (isset($options['override_mode'])) {
+			$this->overrideMode = $options['override_mode'];
+		}
 		$this->aid = $options['aid'];
 		$this->key = $options['billrun_key'];
 		$force = (isset($options['autoload']) && $options['autoload']);
