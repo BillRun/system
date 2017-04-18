@@ -30,7 +30,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 			if (!empty($price)) {
 				$charges[] = array('value' => $price['price'] * $quantity,
 					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
-					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->deactivation),
+					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
 					'cycle' => $tariff['from']);
 			}
 		}
@@ -43,7 +43,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	protected function setMonthlyCover() {
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
 		$formatStart = date(Billrun_Base::base_dateformat, strtotime('-1 day', $this->cycle->start()));
-		$formatEnd = date(Billrun_Base::base_dateformat, min( (empty($this->deactivation) ? PHP_INT_MAX : $this->deactivation), $this->cycle->end() - 1) );
+		$formatEnd = date(Billrun_Base::base_dateformat, min( (empty($this->deactivation) ? PHP_INT_MAX : $this->deactivation+86399), $this->cycle->end() - 1) );
 		
 		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
 		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);

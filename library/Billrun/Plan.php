@@ -463,27 +463,34 @@ class Billrun_Plan extends Billrun_Service {
 	 * @return the unix time of the  monthly fraction from activation.
 	 */
 	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE) {
-		if(empty($cycleFraction)) {
+		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
 		$activation  = strtotime(date('Y-m-d 00:00:00', $activationTime));
-		$addedTime = $isStart ? 0 : 0;
+		$dayInSec = Billrun_Utils_Time::daysToSeconds(1);
+		$addedDays = 0;
 		$baseMonth = date('m',$activation);
 		$baseYear = date('Y',$activation);
-		$i = $cycleFraction;
+		$i = $cycleFraction ;
 		for(; $i >=1; $i-=1) {
 			$addMonths= ($baseMonth + floor($i));
-			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths % 12).'-'.($addMonths% 12).'-01',$activation)));
-			$addedTime +=  $daysInMonth * 86400 + $daysInMonth * ($i % 1) ;
-		}
-		if( $i != 0 ) {
-			$val = $isStart ? $i : $cycleFraction;
-			$addMonths= ($baseMonth + floor($val));
-			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths % 12).'-'.($addMonths% 12).'-01',$activation)));
-			$addedTime +=  $daysInMonth * (($val) - floor($val))* 86400;
+			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
+			$addedDays +=  $daysInMonth;
 		}
 		
-		return $activation + (($addedTime));
+		if( $i != 0 ) {	
+			//add the starting month  fraction
+			$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
+			$addMonths= ($baseMonth + floor($startFraction) );
+			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
+			$addedDays +=  $daysInMonth * (($startFraction));
+			//based on the starting month fraction  retrive the  current month fraction
+			$endFriction = $i - $startFraction;
+			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
+			$addedDays +=  $daysInMonth * (($endFriction) );
+		}
+		
+		return $activation + (($addedDays * $dayInSec) );
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
