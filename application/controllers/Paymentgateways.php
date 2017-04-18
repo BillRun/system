@@ -50,7 +50,7 @@ class PaymentGatewaysController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
 
