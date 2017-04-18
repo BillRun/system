@@ -57,12 +57,14 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	public function getLine() {
 		$entries = array();
 		foreach ($this->charges as $key => $charges) {
-			$chargesArr = is_array($charges) ? $charges : array($charges);
+			$chargesArr = is_array($charges) && isset($charges[0]) ? $charges : array($charges);
 			foreach ($chargesArr as $charge) {
 				$entry = $this->getFlatLine();
 				$entry['aprice'] = $charge['value'];
 				$entry['charge_op'] = $key;
-				$entry['cycle'] = $charge['cycle'];
+				if(isset($charge['cycle'])) {
+					$entry['cycle'] = $charge['cycle'];
+				}
 				$entry['stamp'] = $this->generateLineStamp($entry);
 				if(!empty($charge['start']) && $this->cycle->start() < $charge['start'] ) {
 					$entry['start'] =  new MongoDate($charge['start']);

@@ -53,7 +53,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $this->deactivation);
 		
 		return array( 'value' => -$lastUpfrontCharge * $refundFraction, 
-			'start' => $cycle->start(), 
+			'start' => $this->activation, 
 			'end' => $this->deactivation);
 	}
 }
