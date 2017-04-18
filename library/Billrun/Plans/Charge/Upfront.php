@@ -39,7 +39,11 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 		if($fraction === null) {
 			return null;
 		}
-		return array('value'=> $price * $fraction, 'start' => $this->activation, 'end' => $this->deactivation);
+		return array(
+			'value'=> $price * $fraction, 
+			'start' => $this->cycle->start(), 
+			'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end()
+			);
 	}
 
 	protected function getPriceForcycle($cycle) {
