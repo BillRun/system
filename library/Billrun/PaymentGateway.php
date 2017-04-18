@@ -345,7 +345,7 @@ abstract class Billrun_PaymentGateway {
 			$postString = $postArray;
 		}
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Requesting token from " . $this->billrunName, Zend_Log::DEBUG);
+			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
 				$response = $this->getToken($aid, $returnUrl, $okPage, $maxTries - 1);
@@ -633,6 +633,16 @@ abstract class Billrun_PaymentGateway {
 	}
 	
 	protected function checkIfCustomerExists () {
+		return false;
+	}
+	
+	/**
+	 * Returns True if there is a need to update the account's payment gateway structure.
+	 * 
+	 * @param array $params - array of gateway parameters
+	 * @return Boolean - True if update needed.
+	 */
+	public function needUpdateFormerGateway($params) {
 		return false;
 	}
 	

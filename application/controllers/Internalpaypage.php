@@ -64,7 +64,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			$accountPg = $account->payment_gateway;		
 			$prevPgName = isset($accountPg['active']['name']) ? $accountPg['active']['name'] : $request['payment_gateway'];
 			if ($prevPgName != $request['payment_gateway']) {
-				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'], Zend_Log::INFO);
+				Billrun_Factory::log("Changing payment gateway from " . $prevPgName . ' to ' . $request['payment_gateway'] . " for account: " . $request['aid'], Zend_Log::INFO);
 			} else {
 				Billrun_Factory::log("Creating payment gateway " . $request['payment_gateway'], Zend_Log::INFO);
 			}
@@ -92,8 +92,13 @@ class InternalPaypageController extends ExternalPaypageController {
 					'params' => $pgParams['pgAccountDetails']
 				);
 				$previousPg[$index] = $currentPg;
-				$setValues['payment_gateway']['former'] = $previousPg;
-				$account->closeAndNew($setValues);
+				if ($prevPaymentGateway->needUpdateFormerGateway($pgAccountDetails)) {
+					$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+					$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+					$accountQuery['type'] = 'account';
+					$accountQuery['aid'] = $request['aid'];
+					$subscribersColl->update($accountQuery, array('$set' => array('payment_gateway.former' => $previousPg)));
+				}
 				$prevPaymentGateway->deleteAccountInPg($pgAccountDetails);
 			}
 		}

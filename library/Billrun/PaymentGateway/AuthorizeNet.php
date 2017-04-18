@@ -218,7 +218,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	 * Inquire Transaction by transaction Id to check status of a payment.
 	 * 
 	 * @param string $txId - String that represents the transaction.
-	 * @return array - array of the response from PayPal
+	 * @return array - array of the response from Authorize.Net
 	 */
 	protected function getCheckoutDetails($txId) {
 		$credentials = $this->getGatewayCredentials();
@@ -233,7 +233,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 						  </getTransactionDetailsRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for pending payment status: " . $transDetails, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $transDetails, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response for Authorize.Net for pending payment status request: " . $result, Zend_Log::DEBUG);
 		}
 		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
@@ -276,14 +278,25 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			Billrun_Factory::log("Response from Authorize.Net: " . $result, Zend_Log::DEBUG);			
+			Billrun_Factory::log("Response for Authorize.Net for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
 		if (function_exists("simplexml_load_string")) {
 			$xmlObj = @simplexml_load_string($result);
 			$customerId = (string) $xmlObj->customerProfileId;
-			if (empty($customerId)) {
-				$errorMessage = (string) $xmlObj->messages->message->text;
-				throw new Exception($errorMessage);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if ($resultCode == 'Error') {
+				$errorCode = (string) $xmlObj->messages->message->code;
+				$errorMessage = (string) $xmlObj->messages->message->text;	
+				if ($errorCode == 'E00039') {
+					$errorArray = preg_grep("/^[0-9]+$/", explode(' ', $errorMessage));
+					if (count($errorArray) ==! 1) {
+						throw new Exception($errorMessage);
+					}
+					$customerId = current($errorArray);
+				}
+				if (empty($customerId)) {
+					throw new Exception($errorMessage);
+				}
 			}
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
@@ -449,7 +462,16 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		return true;
 	}
-
+	
+	/**
+	 * Returns True if there is a need to update the account's payment gateway structure.
+	 * 
+	 * @param array $params - array of gateway parameters
+	 * @return Boolean - True if update needed.
+	 */
+	public function needUpdateFormerGateway($params) {
+		return !empty($params['customer_profile_id']);
+	}
 	protected function validateStructureForCharge($structure) {
 		return !empty($structure['customer_profile_id']) && !empty($structure['payment_profile_id']);
 	}
