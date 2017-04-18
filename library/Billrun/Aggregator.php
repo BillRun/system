@@ -40,10 +40,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		return $this->isValid;
 	}
 	
-	// TODO: Make this function abstract!!!!!!!!
-	protected function beforeAggregate() {
-		
-	}
+	protected abstract function beforeAggregate($data);
 	
 	// TODO: Make this function abstract!!!!!!!!
 	// The results of this function are returned from the aggregate function
@@ -82,7 +79,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 			throw new Exception("Aggregator internal error.");
 		}
 		
-		$this->beforeAggregate();
+		$this->beforeAggregate($data);
 		
 		$aggregated = array();
 		

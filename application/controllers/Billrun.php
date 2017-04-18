@@ -86,7 +86,7 @@ class BillrunController extends ApiController {
 			throw new Exception("Can't Run");
 		}
 		$customerAggregatorOptions = array(
-			'override_accounts' => $aids,
+			'force_accounts' => $aids,
 		);
 		$options = array(
 			'type' =>  'customer',

@@ -48,6 +48,12 @@ class Billrun_Cycle_Account_Invoice {
 	protected $subscribers = array();
 	
 	/**
+	 * If true need to override data in billrun collection, 
+	 * @var boolean
+	 */
+	protected $overrideMode = true;
+	
+	/**
 	 * 
 	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
@@ -68,7 +74,9 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Returning an empty billrun!", Zend_Log::NOTICE);
 			return;
 		}
-		
+		if (isset($options['override_mode'])) {
+			$this->overrideMode = $options['override_mode'];
+		}
 		$this->aid = $options['aid'];
 		$this->key = $options['billrun_key'];
 		$force = (isset($options['autoload']) && $options['autoload']);
@@ -89,12 +97,15 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function load($force) {
 		$this->loadData();
-		if (!$this->data->isEmpty()) {
+		if (!$this->data->isEmpty() && !$this->overrideMode) {
 			$this->exists = !$force;
 			return;
 		}
-		
-		$this->reset();
+		$invoiceId = null;
+		if ($this->overrideMode && !$this->data->isEmpty()) {
+			$invoiceId = isset($this->data['invoice_id']) ? $this->data['invoice_id'] : null;
+		}
+		$this->reset($invoiceId);
 	}
 	
 	/**
@@ -174,7 +185,11 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
-		$newRawData = $this->setInvoicID($rawDataWithSubs, $invoiceId);
+		if (!$this->overrideMode || !isset($invoiceRawData['invoice_id'])) {
+			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
+		} else {
+			$newRawData = $rawDataWithSubs;
+		}
 		$this->data->setRawData($newRawData);		
 
 		$ret = $this->billrun_coll->save($this->data);
@@ -207,10 +222,9 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param integer $invoiceId - Min invoice id
 	 * @return array Raw data with the invoice id
 	 */
-	protected function setInvoicID(array $invoiceRawData, $invoiceId) {
+	protected function setInvoiceID(array $invoiceRawData, $invoiceId) {
 		$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);
-
+		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);	
 		$invoiceRawData['invoice_id'] = $currentId;
 		return $invoiceRawData;
 	}
@@ -258,10 +272,13 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Resets the billrun data. If an invoice id exists, it will be kept.
 	 */
-	public function reset() {
+	public function reset($invoiceId) {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
+		if (!empty($invoiceId)) {
+			$empty_billrun_entry['invoice_id'] = $invoiceId;
+		}
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
