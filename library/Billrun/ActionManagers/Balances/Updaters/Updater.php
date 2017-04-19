@@ -373,7 +373,12 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater extends Billrun_
 	 * @return Mongodloid_Entity - Balance stored before the update.
 	 */
 	protected function storeBalanceBeforeUpdate($query, $balancesColl) {
-		$balance = $balancesColl->query($query)->cursor()->current();
+		if (stripos(get_class($this->updateOperation), 'set') && !key_exists('_id', $query) && !key_exists('id', $query)) {
+			$balance = new Mongodloid_Entity();
+		} else {
+			$balance = $balancesColl->query($query)->cursor()->current();
+		}
+		
 		$this->balanceBefore[$query['pp_includes_external_id']] = $balance;
 		return $balance;
 	}
