@@ -50,7 +50,7 @@ class PaymentGatewaysController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
 
@@ -161,12 +161,14 @@ class PaymentGatewaysController extends ApiController {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
 		$handleResponse = $paymentGateway->handleOkPageData($transactionId);
+		Billrun_Factory::log("Token received from " . $name . ", transaction: " . $transactionId, Zend_Log::DEBUG);
 		if ($handleResponse !== true) {
 			$returnUrl = $handleResponse;
 		} else {
 			$additionalParams = $paymentGateway->addAdditionalParameters($request);
 			$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
 		}
+		Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
 		$this->getView()->outputMethod = 'header';
 		$this->getView()->output = "Location: " . $returnUrl;
 	}

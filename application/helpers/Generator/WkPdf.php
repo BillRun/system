@@ -80,6 +80,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('usage_line_types',  Billrun_Factory::config()->getFileTypes());
 		$this->view->assign('flat_line_types',  Billrun_Factory::config()->getConfigValue(self::$type . '.flat_line_types', array('flat','service','credit')));
 		$this->view->assign('tax_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.tax_template', '/application/views/invoices/tax/tax.phtml'));
+		$this->view->assign('discount_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.discount_template', '/application/views/invoices/discounts/discounts.phtml'));
 		$this->view->assign('simple_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.simple_sumup_template', '/application/views/invoices/sumup/simple_sumup.phtml'));
 		$this->view->assign('complex_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.complex_sumup_template', '/application/views/invoices/sumup/complex_sumup.phtml'));
 		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));

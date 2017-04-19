@@ -47,7 +47,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 								'request_type' => '/.*/',
 							),
 							'update' => array(
-								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'charging_type', 'aid', 'sid', 'msisdn'),
+								'$setOnInsert' => array('arate', 'arate_key', 'usaget', 'imsi', 'session_id', 'urt', 'plan', 'connection_type', 'aid', 'sid', 'msisdn'),
 								'$set' => array('process_time', 'granted_return_code'),
 								'$inc' => array('usagev', 'duration', 'apr', 'out_balance_usage', 'in_balance_usage', 'aprice'),
 							),

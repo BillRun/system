@@ -21,7 +21,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $data;
 	
 	protected $rates = array();
-		
+        
 	/**
 	 * 
 	 * @param array $data - Subscriber data
@@ -116,6 +116,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	/**
+	 * TODO remove 20170321
 	 * Add pricing and usage counters to a non credit record subscriber.
 	 * @param array $counters keys - usage type. values - amount of usage. Currently supports only arrays of one element
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
@@ -123,42 +124,42 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param boolean $vatable is the line vatable or not
 	 * @param string $billrun_key the billrun_key of the billrun
 	 */
-	protected function addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, &$sraw, $zone, $plan_key, $category_key, $zone_key) {
-		if (!empty($counters)) {
-			if (!(isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters))) { // volume is partially priced (in & over plan)
-				$volume_priced = current($counters);
-			} else {
-				$volume_priced = $pricingData['over_plan'];
-				$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
-				$planZone['totals'][key($counters)]['usagev'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
-				$planZone['totals'][key($counters)]['cost'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
-				$planZone['totals'][key($counters)]['count'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
-				$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
-			}
-
-			$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
-			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
-			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
-			//TODO remove this (ggsn) when there's time 2017-01-29
-			if ($row['type'] == 'ggsn') {
-				// TODO: What is this magic number 06? There should just be a ggsn row class
-				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
-					$data_generation = 'usage_4g';
-				} else {
-					$data_generation = 'usage_3g';
-				}
-				$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
-				$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
-				$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
-			}
-		}
-		if ($plan_key != 'in_plan' || $zone_key == 'service') {
-			$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
-		}
-		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
-	}
+//	protected function addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, &$sraw, $zone, $plan_key, $category_key, $zone_key) {
+//		if (!empty($counters)) {
+//			if (!(isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters))) { // volume is partially priced (in & over plan)
+//				$volume_priced = current($counters);
+//			} else {
+//				$volume_priced = $pricingData['over_plan'];
+//				$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
+//				$planZone['totals'][key($counters)]['usagev'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
+//				$planZone['totals'][key($counters)]['cost'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
+//				$planZone['totals'][key($counters)]['count'] = Billrun_Util::getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
+//				$planZone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+//			}
+//
+//			$zone['totals'][key($counters)]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev'], 0) + $volume_priced;
+//			$zone['totals'][key($counters)]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost'], 0) + $pricingData['aprice'];
+//			$zone['totals'][key($counters)]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count'], 0) + 1;
+//			//TODO remove this (ggsn) when there's time 2017-01-29
+//			if ($row['type'] == 'ggsn') {
+//				// TODO: What is this magic number 06? There should just be a ggsn row class
+//				if (isset($row['rat_type']) && $row['rat_type'] == '06') {
+//					$data_generation = 'usage_4g';
+//				} else {
+//					$data_generation = 'usage_3g';
+//				}
+//				$zone['totals'][key($counters)][$data_generation]['usagev'] = $this->getFieldVal($zone['totals'][key($counters)]['usagev_' . $data_generation], 0) + $volume_priced;
+//				$zone['totals'][key($counters)][$data_generation]['cost'] = $this->getFieldVal($zone['totals'][key($counters)]['cost_' . $data_generation], 0) + $pricingData['aprice'];
+//				$zone['totals'][key($counters)][$data_generation]['count'] = $this->getFieldVal($zone['totals'][key($counters)]['count_' . $data_generation], 0) + 1;
+//			}
+//		}
+//		if ($plan_key != 'in_plan' || $zone_key == 'service') {
+//			$zone['cost'] = $this->getFieldVal($zone['cost'], 0) + $pricingData['aprice'];
+//		}
+//		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
+//	}
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $count) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $count, $tax_data) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
@@ -167,6 +168,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
+                                foreach($tax_data as $tax ) {
+                                    @$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+                                }
 				return;
 			}
 		}
@@ -239,7 +243,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			return;
 		}
 		$rate = $this->getRowRate($row);
-		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev']);
+		$this->updateBreakdown($breakdownKey, $rate, $pricingData['aprice'], $row['usagev'],$row['tax_data']['taxes']);
 		
 		// TODO: apply arategroup to new billrun object
 		if (isset($row['arategroup'])) {
@@ -496,4 +500,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		
 		return $ret;
 	}
+        
+        public function getTotals() {
+            return $this->data['totals'];
+        }
 }

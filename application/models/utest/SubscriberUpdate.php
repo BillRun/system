@@ -45,8 +45,8 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 		$service_provider = Billrun_Util::filter_var($this->controller->getRequest()->get('service_provider'), FILTER_SANITIZE_STRING);
 		$enable_service_provider = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-service_provider'), FILTER_SANITIZE_STRING);
 
-		$charging_type = Billrun_Util::filter_var($this->controller->getRequest()->get('charging_type'), FILTER_SANITIZE_STRING);
-		$enable_charging_type = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-charging_type'), FILTER_SANITIZE_STRING);
+		$connection_type = Billrun_Util::filter_var($this->controller->getRequest()->get('connection_type'), FILTER_SANITIZE_STRING);
+		$enable_connection_type = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-connection_type'), FILTER_SANITIZE_STRING);
 
 		$language = Billrun_Util::filter_var($this->controller->getRequest()->get('language'), FILTER_SANITIZE_STRING);
 		$enable_lang = Billrun_Util::filter_var($this->controller->getRequest()->get('enable-language'), FILTER_SANITIZE_STRING);
@@ -101,8 +101,8 @@ class utest_SubscriberUpdateModel extends utest_AbstractUtestModel {
 					'enable' => $enable_service_provider
 				),
 				'charging_type' => array(
-					'value' => $charging_type,
-					'enable' => $enable_charging_type
+					'value' => $connection_type,
+					'enable' => $enable_connection_type
 				),
 				'language' => array(
 					'value' => $language,

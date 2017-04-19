@@ -19,7 +19,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 			Yaf_Application::app()->getDispatcher()->setDefaultController('Cli');
 		}
 	}
-
+	
 	public function _initPlugin(Yaf_Dispatcher $dispatcher) {
 
 		// set include paths of the system.

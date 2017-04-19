@@ -1,0 +1,100 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * This class defines a query logic that is comparable to mongo query but  can apply to php arrays
+ *
+ * @author eran
+ */
+class Billrun_Utils_Arrayquery_Query {
+	
+	const MAX_ARRAY_LENGTH = 1024;
+	
+	static protected $mapping = array(
+		'$gt' => '_gt',
+		'$gte' => '_gte',
+		'$lt' => '_lt',
+		'$lte' => '_lte',
+		'$eq' => '_equal',
+		'$neq' => '_neq',
+		'$in' => '_in',
+		'$nin' => '_nin',
+		'$all' => '_covers',
+		'$and' => '_and',
+		'$or' => '_or',
+		'$not' => '_not',
+		'$regex' => '_regex',
+		'*' => '_search',
+		'**' => '_deepSearch',
+	);
+	
+	
+	
+	public static function query($array, $rawQuery) {
+		if(count($array) > static::MAX_ARRAY_LENGTH) {
+			Billrun_Factory::log('Cannot query  array bigger than : '.static::MAX_ARRAY_LENGTH,  Zend_Log::Alert);
+			return FALSE;
+		}
+		$query = static::translateQueryKeys($rawQuery);		
+		return static::_query($array, $query);
+	}
+	
+	public static function exists($array, $rawQuery) {
+		if(count($array) > static::MAX_ARRAY_LENGTH) {
+			Billrun_Factory::log('Cannot query  array bigger than : '.static::MAX_ARRAY_LENGTH,  Zend_Log::Alert);
+			return FALSE;
+		}
+		$query = static::translateQueryKeys($rawQuery);	
+		return static::_exists($array, $query);
+	}
+	
+	protected  static function translateQueryKeys($query,$separator = '.') {
+		$translatedQuery = array();
+		foreach($query as  $key => $value) {
+			$pos = strpos($key, $separator);
+			if($pos) {
+				$left = substr($key,$pos+1); 
+				$key = substr($key,0,$pos);
+				$value = static::translateQueryKeys(array( $left => $value ), $separator);
+			}			
+			$translatedQuery[$key] = is_array($value) ?
+										array_merge(Billrun_Util::getFieldVal($translatedQuery[$key],array()),static::translateQueryKeys( $value , $separator)) 
+										: $value;
+		}
+		return $translatedQuery;
+	}
+	
+	protected static function _query($array, $query) {	
+		
+		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',static::$mapping));
+		$ret =  $expression->evaluate($array, $query) ? $array : array();
+		if(empty($ret)) {
+			foreach($array as $key => $value) {
+				if($expression->evaluate($value, $query)) {
+					$ret[] = $value;
+				} else if(is_array($value) && isset($query[$key])&& !empty($tmpRet = self::query($value, $query[$key])) ) {
+					$ret[$key]= $tmpRet;
+				}
+			}
+			
+		}
+		return $ret;
+	}
+	
+	protected static function _exists($array, $query) {
+		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',static::$mapping));
+		$ret = $expression->evaluate($array, $query) ? TRUE : FALSE;
+		if(empty($ret)) {
+			foreach($array as $value) {
+				$ret |= $expression->evaluate($value, $query);
+				if($ret) {	break;	}
+			}
+		}
+		return $ret;
+	}
+}

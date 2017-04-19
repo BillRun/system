@@ -218,16 +218,24 @@ abstract class Billrun_Bill {
 			}, $results), $results);
 	}
 
+	/**
+	 * Return total / total waiting due for account
+	 * @param int $aid
+	 * @param boolean $notFormatted
+	 * @return array
+	 */
 	public static function getTotalDueForAccount($aid, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
-			return array('total' => current($results)['total'], 'without_waiting' => current($results)['total2']);
+			$total =  current($results)['total'];
+			$totalWaiting = current($results)['total2'];
 		} else if ($notFormatted) {
-			return 0;
+			$total = $totalWaiting = 0;
 		} else {
-			return Billrun_Util::getChargableAmount(0);
+			$total = $totalWaiting = Billrun_Util::getChargableAmount(0);
 		}
+		return array('total' => $total, 'without_waiting' => $totalWaiting);
 	}
 
 	public static function payUnpaidBillsByOverPayingBills($aid) {
@@ -564,6 +572,12 @@ abstract class Billrun_Bill {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
 						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						if (is_null($gateway)) {
+							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
+						} else {
+							Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
+							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
+						}
 						try {
 							$paymentStatus = $gateway->pay($gatewayDetails);
 						} catch (Exception $e) {

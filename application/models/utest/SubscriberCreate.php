@@ -28,7 +28,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 		$msisdn = Billrun_Util::filter_var($this->controller->getRequest()->get('msisdn'), FILTER_SANITIZE_STRING);
 		$plan = Billrun_Util::filter_var($this->controller->getRequest()->get('plan'), FILTER_SANITIZE_STRING);
 		$service_provider = Billrun_Util::filter_var($this->controller->getRequest()->get('service_provider'), FILTER_SANITIZE_STRING);
-		$charging_type = Billrun_Util::filter_var($this->controller->getRequest()->get('charging_type'), FILTER_SANITIZE_STRING);
+		$connection_type = Billrun_Util::filter_var($this->controller->getRequest()->get('connection_type'), FILTER_SANITIZE_STRING);
 		$language = Billrun_Util::filter_var($this->controller->getRequest()->get('language'), FILTER_SANITIZE_STRING);
 
 		$params = array(
@@ -38,7 +38,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 			'sid' => $sid,
 			'plan' => $plan,
 			'service_provider' => $service_provider,
-			'charging_type' => $charging_type,
+			'charging_type' => $connection_type,
 			'language' => $language,
 		);
 
@@ -58,7 +58,7 @@ class utest_SubscriberCreateModel extends utest_AbstractUtestModel {
 			"sid" => $params['sid'],
 			"plan" => $params['plan'],
 			"service_provider" => $params['service_provider'],
-			"charging_type" => $params['charging_type'],
+			"connection_type" => $params['connection_type'],
 			"language" => $params['language']
 		);
 		$request = array(

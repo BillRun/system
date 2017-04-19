@@ -403,6 +403,10 @@ img.billrun-logo {
 	width: 400px;
 }
 
+/* Emphsize the  sub-total */
+.subtotal {
+	font-weight: bold;
+}
 .small-text {
 	font-size:12px;
 }

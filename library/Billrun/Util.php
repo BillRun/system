@@ -104,6 +104,17 @@ class Billrun_Util {
 		
 		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
+        
+        /**
+	 * generate array  stamp only  for specific field  within the array
+	 * @param array $ar array to generate the stamp from
+	 * @return string the array stamp
+	 */
+	public static function generateFilteredArrayStamp( $ar, $filter = FALSE ) {
+		$releventKeys = !empty($filter) ?  array_flip( $filter ) : FALSE ;
+		$filteredArray = $releventKeys ? array_intersect_key( $ar, $releventKeys  ) : $ar ;
+		return Billrun_Util::generateArrayStamp($filteredArray);
+	}
 
 	/**
 	 * generate a random number of reqested length based on microtime

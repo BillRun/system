@@ -455,11 +455,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
 		if (!static::lock()) {
-			$this->_controller->addOutput("Charging is already running");
+			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
-		}
-		if (!Billrun_Bill_Payment::removePayments()) { // removePayments if this is a rerun
-			throw new Exception('Error removing payments before rerun');
 		}
 		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
 		$involvedAccounts = array();
@@ -479,20 +476,25 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
+			$gatewayDetails = $subscriber['payment_gateway']['active'];
+			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {			
+				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
+				continue;
+			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
+			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
 		
 		if (!static::release()) {
-			$this->_controller->addOutput("Problem in releasing operation");
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
 			return;
 		}
 		
@@ -506,7 +508,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param String $gatewayName - name of the payment gateway.
 	 * 
 	 */
-	public function updateAccordingToStatus($response, $payment, $gatewayName) {
+	public static function updateAccordingToStatus($response, $payment, $gatewayName) {
 		if ($response['stage'] == "Completed") { // payment succeeded 
 			$payment->updateConfirmation();
 			$payment->setPaymentStatus($response['status'], $gatewayName);
@@ -534,12 +536,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				continue;
 			}
 			$txId = $payment->getPaymentGatewayTransactionId();
+			Billrun_Factory::log("Checking status of pending payments", Zend_Log::INFO);
 			$status = $paymentGateway->verifyPending($txId);
 			if ($paymentGateway->isPending($status)) { // Payment is still pending
+				Billrun_Factory::log("Payment with transaction id=" . $txId . ' is still pending', Zend_Log::INFO);
 				$payment->updateLastPendingCheck();
 				continue;
 			}
 			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			Billrun_Factory::log("Updating payment with transaction id=" . $txId . ' to status ' . $response['stage'], Zend_Log::INFO);
 			self::updateAccordingToStatus($response, $payment, $gatewayName);
 		}
 	}

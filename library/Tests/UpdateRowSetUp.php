@@ -44,7 +44,7 @@ class Tests_UpdateRowSetUp {
 				continue;
 			}
 			$data = $this->fixDates($parsedData['data']);
-			$coll = Billrun_Factory::db()->$parsedData['collection']();
+			$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 			$coll->batchInsert($data);
 		}
 
