@@ -234,5 +234,13 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 	public function handleOkPageData($txId) {
 		return true;
 	}
+	
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['card_token']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		return false;
+	}
 
 }
