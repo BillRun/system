@@ -92,7 +92,7 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 					json_encode(array(
 						'operation' => 'set',
 						'value' => 0,
-						'expiration_date' => new MongoDate(strtotime('5 minutes ago')),
+						'expiration_date' => new MongoDate(),
 					)),
 				'additional' => json_encode($this->additional),
 			);
