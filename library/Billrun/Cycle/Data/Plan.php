@@ -57,7 +57,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	public function getLine() {
 		$entries = array();
 		foreach ($this->charges as $key => $charges) {
-			$chargesArr = is_array($charges) && isset($charges[0]) ? $charges : array($charges);
+			$chargesArr = is_array($charges) && isset($charges[0]) || count($charges) == 0 ? $charges : array($charges);
 			foreach ($chargesArr as $charge) {
 				$entry = $this->getFlatLine();
 				$entry['aprice'] = $charge['value'];
