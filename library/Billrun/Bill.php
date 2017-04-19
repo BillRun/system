@@ -369,6 +369,7 @@ abstract class Billrun_Bill {
 				$amount += array_sum($this->data['paid_by']['rec']);
 			}
 			$this->data['total_paid'] = $amount;
+			$this->data['left_to_pay'] = $this->getLeftToPay();
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
