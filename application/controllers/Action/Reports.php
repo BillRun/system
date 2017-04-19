@@ -36,6 +36,7 @@ class ReportsAction extends ApiAction {
 	
 	public function totalRevenue() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		$this->response = array();
 		
 		$match = array(
 			'billrun_key' => array(
@@ -55,19 +56,28 @@ class ReportsAction extends ApiAction {
 			'due' => '$due',
 		);
 		
+		$sort = array(
+			'billrun_key' => 1,
+		);
+		
 		$bills = Billrun_Factory::db()->billsCollection()->aggregate(
 			array('$match' => $match),
 			array('$group' => $group),
-			array('$project' => $project)
+			array('$project' => $project),
+			array('$sort' => $sort)
 		);
 		
 		foreach ($bills as $bill) {
-			$this->response[$bill['billrun_key']] = $bill['due'];
+			$this->response[] = array(
+				billrun_key => $bill['billrun_key'],
+				due => $bill['due'],
+			);
 		}
 	}
 	
 	public function outstandingDebt() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		$this->response = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			
@@ -87,17 +97,24 @@ class ReportsAction extends ApiAction {
 				array('$group' => $group)
 			)->current();
 			
-			$this->response[$cycle] = isset($res['due']) ? $res['due'] : 0;
+			$this->response[] = array(
+				billrun_key => $cycle,
+				due => isset($res['due']) ? $res['due'] : 0,
+			);
 		}
 	}
 	
 	public function totalNumOfCustomers() {
 		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		$this->response = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
 			$endTime = Billrun_Billingcycle::getEndTime($cycle);
 			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
-			$this->response[$cycle] = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query);
+			$this->response[] = array(
+				billrun_key => $cycle,
+				customers_num => count(Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query)),
+			);
 		}
 	}
 	
@@ -128,11 +145,10 @@ class ReportsAction extends ApiAction {
 		$existingSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $existingQuery);
 		
 		$this->response = array(
-			'churn' => count($churnSubscribers),
-			'new' => count($newSubscribers),
-			'existing' => count($existingSubscribers),
+			array(state => 'existing', customers_num => count($existingSubscribers)),
+			array(state => 'new', customers_num => count($newSubscribers)),
+			array(state => 'churn', customers_num => count($churnSubscribers)),
 		);
-		
 	}
 	
 	protected function getCyclesRange() {
@@ -145,7 +161,7 @@ class ReportsAction extends ApiAction {
 			array(
 				'status' => $this->status,
 				'desc' => $this->desc,
-				'details' => array($this->response),
+				'details' => $this->response,
 			)
 		));
 		return true;
