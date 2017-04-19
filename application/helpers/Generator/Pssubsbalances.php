@@ -60,7 +60,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return true;
+		return isset($this->transactions[$line['subscriber_no']][$line['balance_id']]);
 	}
 	
 	protected function loadTransactions($skip,$limit) {
@@ -86,13 +86,12 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	// 
 
 	protected function flattenBalances($sid, $parameters, &$line) {
-		//$balances = $this->getBalancesForSid($sid);
 		return $this->flattenArray(array($line->getRawData()), $parameters, $line);
 	}
 	
 	protected function lastBalanceTransactionDate($sid, $parameters, $line) {
 		return isset($this->transactions[$sid][$line[$parameters['field']]]) ? 
-                                $this->translateUrt($this->transactions[$sid][$parameters[$parameters['field']]], $parameters) :
+                                $this->translateUrt($this->transactions[$sid][$line[$parameters['field']]], $parameters) :
                                 '';
 	}
 }
