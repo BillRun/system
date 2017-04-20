@@ -48,6 +48,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
 		if(isset($this->taxDataResults[$line['stamp']])) {
 			$line['tax_data'] = $this->taxDataResults[$line['stamp']];
+
 		} else {
 			$singleData = $this->constructSingleRowData($line, $subscriber, $account);
 			$data = $this->constructRequestData($this->thirdpartyConfig['request'],array('data'=> array($singleData), 'config'=>$this->config));
@@ -58,7 +59,9 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 				return FALSE;
 			}
 		}
-			return $line;
+		
+		$line['final_charge']  = $line['tax_data']['total_amount'] + $line['aprice'];
+		return $line;
 	}
 	
 	protected function queryAPIforTaxes($data) {
