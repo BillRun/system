@@ -504,6 +504,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		// Write down the invoice data.
 		foreach ($this->acounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);
+			$this->save($account->getAppliedDiscounts());
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));
 		}
 		
@@ -981,7 +982,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$billrunRemoveQuery = $billrunQuery;
 		} else {
 			$aids = array_intersect($notBilledAids, $aids);
-			$linesRemoveQuery = array('aid' => array('$in' => $aids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
+										'billrun' => $billrunKey, 
+										'$or' => array(
+											array( 'type' => array('$in' => array('service', 'flat')) ),
+											array( 'type'=>'credit','usaget'=>'discount' )
+											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
 		$this->lines->remove($linesRemoveQuery);
