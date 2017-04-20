@@ -23,7 +23,7 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 			return 1;
 		} 
 
-		// subscriber deactivates and should be charged for a partial month
+		// subscriber activates in the middle of the cycle and should be charged for a partial month
 		if ($this->activation > $this->cycle->start()) {
 			return 1 + Billrun_Plan::calcFractionOfMonthUnix($this->cycle->key(), $this->activation, $this->deactivation);
 		}
@@ -50,8 +50,10 @@ class Billrun_Plans_Charge_Upfront_Month extends Billrun_Plans_Charge_Upfront {
 		}
 		
 		$lastUpfrontCharge = $this->getPriceForcycle($cycle);
-		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $this->deactivation) ;
+		$refundFraction = 1- Billrun_Plan::calcFractionOfMonthUnix($cycle->key(), $this->activation, $this->deactivation);
 		
-		return -$lastUpfrontCharge * $refundFraction;
+		return array( 'value' => -$lastUpfrontCharge * $refundFraction, 
+			'start' => $this->activation, 
+			'end' => $this->deactivation);
 	}
 }

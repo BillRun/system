@@ -594,6 +594,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'$project' => array(
 				'plan' => '$name',
 				'upfront' => 1,
+				'prorated' => 1,
 				'vatable' => 1,
 				'price' => 1,
 				'recurrence.periodicity' => 1,
