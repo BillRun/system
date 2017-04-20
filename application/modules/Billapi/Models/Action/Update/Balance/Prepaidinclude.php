@@ -30,7 +30,13 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * the charging value to update
 	 * @var type 
 	 */
-	protected $chargeValue;
+	protected $chargingValue;
+
+	/**
+	 * the charging limit for the prepaid include
+	 * @var type 
+	 */
+	protected $chargingLimit;
 
 	/**
 	 * query to form on update
@@ -49,6 +55,12 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @var array
 	 */
 	protected $after = null;
+
+	/**
+	 * the balance entry after
+	 * @var array
+	 */
+	protected $normalizeValue = 0;
 
 	/**
 	 * expiration date
@@ -72,13 +84,15 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include value not defined in input');
 		}
 
-		$this->chargeValue = (int) $params['value'];
+		$this->chargingValue = (int) $params['value'];
 		$this->init();
 
 		// this should be done after init (load before state)
 		if (isset($params['expiration_date'])) {
 			$this->setTo($params['expiration_date']);
 		}
+		
+		$this->chargingLimit = $this->getChargingLimit();;
 	}
 
 	public function getBefore() {
@@ -102,7 +116,23 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			$this->to = new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1);
 		}
 	}
+	
+	/**
+	 * method to get the limit of the charging
+	 * 
+	 * @return number
+	 */
+	protected function getChargingLimit() {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['plan'] = $this->subscriber['plan'];
+		$plan = Billrun_Factory::db()->plansCollection()->$query($query)->cursor()->current();
 
+		if (isset($plan['pp_threshold'][$this->data['pp_includes_external_id']])) {
+			return $plan['pp_threshold'][$this->data['pp_includes_external_id']];
+		}
+		return (-1) * PHP_INT_MAX;
+	}
+	
 	protected function init() {
 		$this->query = array(
 			'sid' => $this->subscriber['sid'],
@@ -125,6 +155,17 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		}
 	}
 
+	public function preValidate() {
+		if (parent::preValidate() === false) {
+			return false;
+		}
+
+		$balanceValue = $this->getBalanceValue($this->before);
+		if (!$this->data['unlimited'] && $this->chargingLimit < ($balanceValue + $this->chargingValue)) {
+			return false;
+		}
+		return true;
+	}
 	/**
 	 * 
 	 * @param type $ppQuery
@@ -147,15 +188,6 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	}
 
 	public function update() {
-		switch ($this->data['charging_by']) :
-			case 'cost':
-			case 'usagev':
-				$key = 'balance.totals.' . $this->data['charging_by_usaget'] . '.' . $this->data['charging_by'];
-				break;
-			case 'total_cost':
-			default:
-				$key = 'balance.cost';
-		endswitch;
 		$update = array(
 			'$setOnInsert' => array(
 				'from' => new MongoDate(),
@@ -169,19 +201,21 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			),
 		);
 
+		$field =  $this->getChargingField();
+
 		switch ($this->operation) :
 			case 'new':
 				$this->query['rand'] = rand(0, 1000000); // this will make the FAM to always insert
-			// do not break here, need to set value
+				// do not break here, need to set value
 			case 'set':
 				$update['$set'] = array(
-					$key => $this->chargeValue,
+					$field => $this->chargingValue,
 				);
 				break;
 			case 'inc':
 			default:
 				$update['$inc'] = array(
-					$key => $this->chargeValue,
+					$field => $this->chargingValue,
 				);
 
 				break;
@@ -206,6 +240,64 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'upsert' => true,
 		);
 		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($this->query, $update, null, $findAndModify);
+		$this->handleMaxBalanceAfterUpdate();
+	}
+	
+	/**
+	 * method to handle maximum charging limit of balance
+	 * @return type
+	 */
+	protected function handleMaxBalanceAfterUpdate() {
+		if (!isset($this->after['_id'])) {
+			return;
+		}
+		
+		$balanceValue = $this->getBalanceValue($this->after);
+		// value is negative
+		if ($this->chargingLimit > $balanceValue) { 
+			return;
+		}
+		
+		$query = array('_id' => $this->after['_id']);
+		$update = array(
+			'$set' => array(
+				$this->getChargingField() => $this->chargingLimit,
+			)
+		);
+		
+		$options = array(
+			'upsert' => false,
+			'new' => true,
+		);
+		
+		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
+		$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
+	}
+	
+	protected function getChargingField() {
+		switch ($this->data['charging_by']) :
+			case 'cost':
+			case 'usagev':
+				$key = 'balance.totals.' . $this->data['charging_by_usaget'] . '.' . $this->data['charging_by'];
+				break;
+			case 'total_cost':
+			default:
+				$key = 'balance.cost';
+		endswitch;
+		
+		return $key;
+	}
+	
+	public function getBalanceValue($balance) {
+		switch ($this->data['charging_by']) :
+			case 'cost':
+			case 'usagev':
+				return $balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']];
+				break;
+			case 'total_cost':
+			default:
+				return $balance['balance']['cost'];
+		endswitch;
 	}
 
 	protected function preload() {
@@ -244,7 +336,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		if (is_null($afterValue)) {
 			$afterValue = $this->getBalanceAfter();
 		}
-		return $afterValue - $this->chargeValue;
+		return $afterValue - $this->chargingValue;
 	}
 
 	protected function getBalanceAfter() {
