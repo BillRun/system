@@ -200,6 +200,10 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 				'pp_includes_name' => isset($this->data['name']) ? $this->data['name'] : $this->data['pp_includes_name'],
 			),
 		);
+		
+		if (isset($this->subscriber['service_provider'])) {
+			$update['$setOnInsert']['service_provider'] = $this->subscriber['service_provider'];
+		}
 
 		$field =  $this->getChargingField();
 
@@ -325,7 +329,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'balance_after' => $this->getBalanceAfter(),
 			'balance_normalized' => $this->normalizeValue,
 		);
-		if (isset($this->data['service_provider'])) { // backward compatibility
+		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
