@@ -18,6 +18,8 @@ class ReportsAction extends ApiAction {
 	
 	use Billrun_Traits_Api_UserPermissions;
 	
+	static $DESCRIPTION_LIMIT = 8;
+	
 	protected $request = null;
 	protected $status = true;
 	protected $desc = 'success';
@@ -34,8 +36,7 @@ class ReportsAction extends ApiAction {
 		return $this->response();
 	}
 	
-	public function totalRevenue() {
-		list($fromCycle, $toCycle) = $this->getCyclesRange();
+	protected function getRevenue($fromCycle, $toCycle) {
 		$this->response = array();
 		
 		$match = array(
@@ -67,12 +68,24 @@ class ReportsAction extends ApiAction {
 			array('$sort' => $sort)
 		);
 		
+		$data = array();
+		
 		foreach ($bills as $bill) {
+			$data[$bill['billrun_key']] = $bill['due'];
+		}
+		
+		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$this->response[] = array(
-				billrun_key => $bill['billrun_key'],
-				due => $bill['due'],
+				'billrun_key' => $cycle,
+				'due' => isset($data[$cycle]) ? $data[$cycle] : 0,
 			);
 		}
+	}
+
+
+	public function totalRevenue() {
+		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		$this->getRevenue($fromCycle, $toCycle);
 	}
 	
 	public function outstandingDebt() {
@@ -98,8 +111,8 @@ class ReportsAction extends ApiAction {
 			)->current();
 			
 			$this->response[] = array(
-				billrun_key => $cycle,
-				due => isset($res['due']) ? $res['due'] : 0,
+				'billrun_key' => $cycle,
+				'due' => isset($res['due']) ? $res['due'] : 0,
 			);
 		}
 	}
@@ -112,8 +125,8 @@ class ReportsAction extends ApiAction {
 			$endTime = Billrun_Billingcycle::getEndTime($cycle);
 			$query = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 			$this->response[] = array(
-				billrun_key => $cycle,
-				customers_num => count(Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query)),
+				'billrun_key' => $cycle,
+				'customers_num' => count(Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query)),
 			);
 		}
 	}
@@ -145,10 +158,92 @@ class ReportsAction extends ApiAction {
 		$existingSubscribers = Billrun_Factory::db()->subscribersCollection()->distinct('sid', $existingQuery);
 		
 		$this->response = array(
-			array(state => 'existing', customers_num => count($existingSubscribers)),
-			array(state => 'new', customers_num => count($newSubscribers)),
-			array(state => 'churn', customers_num => count($churnSubscribers)),
+			array('state' => 'existing', 'customers_num' => count($existingSubscribers)),
+			array('state' => 'new', 'customers_num' => count($newSubscribers)),
+			array('state' => 'churn', 'customers_num' => count($churnSubscribers)),
 		);
+	}
+	
+	public function revenueOverTime() {
+		$toCycle = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+		$currentYear = date('Y', Billrun_Billingcycle::getStartTime($toCycle));
+		$fromCycle = ($currentYear - 1) . '01';
+		$this->getRevenue($fromCycle, $toCycle);
+	}
+	
+	public function revenueByPlan() {
+		$this->response = array();
+		$billrunKey = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+		$prevBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($billrunKey);
+		
+		$match = array(
+			'billrun_key' => array('$in' => array($billrunKey, $prevBillrunKey)),
+			'type' => 'inv',
+			'billed' => 1,
+		);
+		
+		$unwind = '$subs';
+		
+		$group = array(
+			'_id' => array(
+				'plan' => '$subs.plan',
+				'billrun_key' => '$billrun_key',
+			),
+			'amount' => array('$sum' => '$subs.totals.after_vat'),
+		);
+		
+		$project = array(
+			'plan' => '$_id.plan',
+			'billrun_key' => '$_id.billrun_key',
+			'amount' => '$amount',
+		);
+		
+		$sort = array(
+			'billrun_key' => -1,
+			'amount' => -1,
+		);
+		
+		$revenues = Billrun_Factory::db()->billrunCollection()->aggregate(
+			array('$match' => $match),
+			array('$unwind' => $unwind),
+			array('$group' => $group),
+			array('$project' => $project),
+			array('$sort' => $sort)
+		);
+		
+		$sortedRevenues = array();
+		
+		$othersAmount = 0;
+		$othersPrevAmount = 0;
+		
+		foreach($revenues as $revenue) {
+			if ($revenue['billrun_key'] === $billrunKey) {
+				if (count($sortedRevenues) < self::$DESCRIPTION_LIMIT) {
+					$sortedRevenues[$revenue['plan']] = array('amount' => $revenue['amount']);
+				} else {
+					$othersAmount += $revenue['amount'];
+				}
+			} else {
+				if (isset($sortedRevenues[$revenue['plan']])) {
+					$sortedRevenues[$revenue['plan']]['prev'] = $revenue['amount'];
+				} else {
+					$othersPrevAmount += $revenue['amount'];
+				}
+			}
+		}
+		
+		$sortedRevenues['others'] = array(
+			'amount' => $othersAmount,
+			'prev' => $othersPrevAmount,
+		);
+		
+		foreach ($sortedRevenues as $plan => $revenue) {
+			$this->response[] = array(
+				'plan' => $plan,
+				'amount' => $revenue['amount'],
+				'prev_amount' => isset($revenue['prev']) ? $revenue['prev'] : 0,
+			);
+		}
 	}
 	
 	protected function getCyclesRange() {
