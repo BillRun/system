@@ -107,11 +107,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 				$this->redirectUrl = $xmlObj->response->doDeal->mpiHostedPageUrl;
 			} else {
-				Billrun_Factory::log("Redirecting to: " . 'Error Code: ' . $xmlObj->response->result . '<br />' .
-					'Message: ' . $xmlObj->response->message . '<br />' .
-					'Addition Info: ' . $xmlObj->response->additionalInfo, Zend_Log::DEBUG);
-
-				$this->forceRedirect($this->returnUrlOnError . '&message=' . $this->buildMessageObjectUrl('Can\'t Create Transaction', 'danger'));
+				Billrun_Factory::log("Error: " . 'Error Code: ' . $xmlObj->response->result .
+					'Message: ' . $xmlObj->response->message .
+					'Addition Info: ' . $xmlObj->response->additionalInfo, Zend_Log::ALERT);
+				throw new Exception('Can\'t Create Transaction');
 			}
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");

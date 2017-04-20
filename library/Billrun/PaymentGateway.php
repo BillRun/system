@@ -382,18 +382,23 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->getResponseDetails($result) === FALSE) {
-				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-				$this->forceRedirect($this->returnUrlOnError. '&message={"content": Operation Failed. Try Again..., "type": danger}');
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
+				throw new Exception('Operation Failed. Try Again...');
 			}
 		}
 		if (!$this->validatePaymentProcess($txId)) {
-			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-			$this->forceRedirect($this->returnUrlOnError. '&message={"content": Too much time passed, "type": danger}');
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: Too much time passed', Zend_Log::ALERT);
+			throw new Exception('Too much time passed');
 		}
-		return $this->saveAndRedirect($tenantUrl);
+		$this->savePaymentGateway();
+		return $tenantUrl;
 	}
 
-	protected function saveAndRedirect($tenantUrl) {
+	/**
+	 * Saving payment gateway structure to the relevant account.
+	 * 
+	 */
+	protected function savePaymentGateway() {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = (int) $this->saveDetails['aid'];
 		$query['type'] = "account";
@@ -403,7 +408,6 @@ abstract class Billrun_PaymentGateway {
 		}
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
-		return $tenantUrl;
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -691,14 +695,8 @@ abstract class Billrun_PaymentGateway {
 		return $gateway->validateStructureForCharge($gatewayDetails);
 	}
 			
-	/**
-	 * returns message to present to the user.
-	 * 
-	 * @param String $content - the message itself
-	 * @param String $type - represent the type of the message (i.e: success, danger, warning...)
-	 * @return json structure string which represents the message.
-	 */
-	protected function buildMessageObjectUrl($content, $type) {
-		return json_encode(array('content' => $content , 'type' => $type));
+	public function getReturnUrlOnError() {
+		return $this->returnUrlOnError;
 	}
+	
 }

@@ -177,7 +177,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 					)
 			);
 		} catch(Exception $e) {
-			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl('Error creating customer!', 'danger'));
+			throw new Exception('Error creating customer!');
 		}
 		
 		return $customer;

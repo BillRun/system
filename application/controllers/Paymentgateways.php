@@ -101,7 +101,11 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery = $this->getAccountQuery($aid);
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
-		$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		try {
+			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+		} catch (Exception $e) {
+			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+		}
 		if ($result['content_type'] == 'url') {
 			$this->getView()->output = $result['content'];
 			$this->getView()->outputMethod = 'header';
@@ -166,7 +170,11 @@ class PaymentGatewaysController extends ApiController {
 			$returnUrl = $handleResponse;
 		} else {
 			$additionalParams = $paymentGateway->addAdditionalParameters($request);
-			$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+			try {
+				$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+			} catch (Exception $e) {
+				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			}
 		}
 		Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
 		$this->getView()->outputMethod = 'header';
@@ -192,5 +200,17 @@ class PaymentGatewaysController extends ApiController {
 		$this->setOutput(array("SUCCESS", TRUE));
 	}
 
+	/**
+	 * redirect the user to given url an returns message to present to the user.
+	 * 
+	 * @param String $redirectUrl - the url to redirect to
+	 * @param String $content - the message itself
+	 * @param String $type - represent the type of the message (i.e: success, danger, warning...)
+	 * @return json structure string which represents the message.
+	 */
+	protected function forceRedirectWithMessage($redirectUrl, $content, $type) {
+		$messageObj = json_encode(array('content' => $content , 'type' => $type));
+		$this->forceRedirect($redirectUrl . '&message=' . $messageObj);
+	}
 	
 }

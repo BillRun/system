@@ -75,8 +75,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$token = (string) $xmlObj->token;
 			if (empty($token)) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
-				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-				$this->forceRedirect($this->returnUrlOnError . '&message=' . $this->buildMessageObjectUrl($errorMessage, 'danger'));
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+				throw new Exception($errorMessage);
 			}
 			$this->htmlForm = $this->createHtmlRedirection($token);
 		} else {
@@ -108,8 +108,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
-				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-				$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($errorMessage, 'danger'));
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+				throw new Exception($errorMessage);
 			}
 			$customerProfile = $xmlObj->profile;
 			$this->saveDetails['aid'] = (int) $customerProfile->merchantCustomerId;
@@ -292,14 +292,14 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 				if ($errorCode == 'E00039') {
 					$errorArray = preg_grep("/^[0-9]+$/", explode(' ', $errorMessage));
 					if (count($errorArray) ==! 1) {
-						Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-						$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($errorMessage, 'danger')); 
+						Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+						throw new Exception($errorMessage); 
 					}
 					$customerId = current($errorArray);
 				}
 				if (empty($customerId)) {
-					Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-					$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($errorMessage, 'danger'));
+					Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+					throw new Exception($errorMessage);
 				}
 			}
 		} else {
@@ -425,8 +425,8 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
-				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
-				$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($errorMessage, 'danger'));
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+				throw new Exception($errorMessage);
 			}
 			$customerProfile = $xmlObj->profile;
 			$aid = (int) $customerProfile->merchantCustomerId;
