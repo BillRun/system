@@ -88,8 +88,7 @@ class ReportsAction extends ApiAction {
 		$this->getRevenue($fromCycle, $toCycle);
 	}
 	
-	public function outstandingDebt() {
-		list($fromCycle, $toCycle) = $this->getCyclesRange();
+	protected function getDebt($fromCycle, $toCycle) {
 		$this->response = array();
 		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
 			$startTime = Billrun_Billingcycle::getStartTime($cycle);
@@ -115,6 +114,11 @@ class ReportsAction extends ApiAction {
 				'due' => isset($res['due']) ? $res['due'] : 0,
 			);
 		}
+	}
+	
+	public function outstandingDebt() {
+		list($fromCycle, $toCycle) = $this->getCyclesRange();
+		$this->getDebt($fromCycle, $toCycle);
 	}
 	
 	public function totalNumOfCustomers() {
@@ -244,6 +248,46 @@ class ReportsAction extends ApiAction {
 				'prev_amount' => isset($revenue['prev']) ? $revenue['prev'] : 0,
 			);
 		}
+	}
+	
+	public function agingDebt() {
+		$from = strtotime('12 months ago');
+		$fromCycle = Billrun_Billingcycle::getBillrunKeyByTimestamp($from);
+		$toCycle = Billrun_Billingcycle::getPreviousBillrunKey(Billrun_Billingcycle::getLastConfirmedBillingCycle());
+		$this->response = array();
+		for ($cycle = $fromCycle; $cycle <= $toCycle; $cycle = Billrun_Billingcycle::getFollowingBillrunKey($cycle)) {
+			$startTime = Billrun_Billingcycle::getStartTime($cycle);
+			$endTime = Billrun_Billingcycle::getEndTime($cycle);
+			
+			$match = array(
+				'invoice_date' => array(
+					'$lte' => new MongoDate($endTime),
+					'$gte' => new MongoDate($startTime),
+				),
+			);
+
+			$group = array(
+				'_id' => null,
+				'left_to_pay' => array('$sum' => '$left_to_pay'),
+			);
+
+			$res = Billrun_Factory::db()->billsCollection()->aggregate(
+				array('$match' => $match),
+				array('$group' => $group)
+			)->current();
+			
+			$this->response[] = array(
+				'billrun_key' => $cycle,
+				'left_to_pay' => isset($res['left_to_pay']) ? $res['left_to_pay'] : 0,
+			);
+		}
+	}
+	
+	public function debtOverTime() {
+		$toCycle = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+		$currentYear = date('Y', Billrun_Billingcycle::getStartTime($toCycle));
+		$fromCycle = ($currentYear - 1) . '01';
+		$this->getDebt($fromCycle, $toCycle);
 	}
 	
 	protected function getCyclesRange() {
