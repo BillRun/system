@@ -78,6 +78,21 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 	/**
 	 * @todo
 	 */
+	public function preValidate() {
+		if(parent::preValidate() === false) {
+			return false;
+		}
+		foreach ($this->data as $prepaidInclude) {
+			if ($prepaidInclude->preValidate() === false) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @todo
+	 */
 	public function update() {
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->update();
