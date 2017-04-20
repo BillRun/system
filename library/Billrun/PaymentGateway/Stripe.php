@@ -170,12 +170,16 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected function createCustomer($additionalParams) {
 		$credentials = $this->getGatewayCredentials();
 		$this->setApiKey($credentials['secret_key']);
-		$customer = \Stripe\Customer::create(array(
-				'card' => $additionalParams['token'],
-				'email' => $additionalParams['email']
-				)
-		);
-
+		try {
+			$customer = \Stripe\Customer::create(array(
+					'card' => $additionalParams['token'],
+					'email' => $additionalParams['email']
+					)
+			);
+		} catch(Exception $e) {
+			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl('Error creating customer!', 'danger'));
+		}
+		
 		return $customer;
 	}
 

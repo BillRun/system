@@ -87,6 +87,12 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $completionCodes;
+	
+	/**
+	 * where to redirect the user when unrecoverable error happens.
+	 * @var string
+	 */
+	protected $returnUrlOnError;
 
 	/**
 	 * html form for redirection to the payment gateway for filling details.
@@ -152,6 +158,7 @@ abstract class Billrun_PaymentGateway {
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
 		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
+		$this->updateReturnUrlOnEror($tenantReturnUrl);
 		$okPage = $this->getOkPage($request);
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage);
@@ -344,32 +351,31 @@ abstract class Billrun_PaymentGateway {
 		} else {
 			$postString = $postArray;
 		}
+		$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
+		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
+		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->getResponseDetails($result) === FALSE) {
-				throw new Exception("Operation Failed. Try Again...");
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+				$this->forceRedirect($this->returnUrlOnError. '&message={"content": Operation Failed. Try Again..., "type": danger}');
 			}
 		}
-		if (empty($this->saveDetails['aid'])) {
-			$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
-		}
 		if (!$this->validatePaymentProcess($txId)) {
-			throw new Exception("Too much time passed");
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+			$this->forceRedirect($this->returnUrlOnError. '&message={"content": Too much time passed, "type": danger}');
 		}
-		return $this->saveAndRedirect();
+		return $this->saveAndRedirect($tenantUrl);
 	}
 
-	protected function saveAndRedirect() {
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+	protected function saveAndRedirect($tenantUrl) {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = (int) $this->saveDetails['aid'];
 		$query['type'] = "account";
 		$setQuery = $this->buildSetQuery();       
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
-		$account = $this->subscribers->query($query)->cursor()->current();
-		$returnUrl = $account['tenant_return_url'];
-		return $returnUrl;
+		return $tenantUrl;
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
@@ -617,5 +623,40 @@ abstract class Billrun_PaymentGateway {
 	public function needUpdateFormerGateway($params) {
 		return false;
 	}
+	
+	/**
+	 * Updates the url to return to in case of unrecoverable error.
+	 * 
+	 * @param string $url - the url to return to.
+	 * 
+	 */
+	protected function updateReturnUrlOnEror($url) {
+		$this->returnUrlOnError = $url;
+	}
+	
+	/**
+	 * Returns the return url defined by the tenant.
+	 * 
+	 * @param $aid - account Id
+	 * @return String - tenant defined url.
+	 */
+	protected function getTenantReturnUrl($aid) {
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['aid'] = (int) $aid;
+		$query['type'] = "account";
+		$account = $this->subscribers->query($query)->cursor()->current();
+		return $account['tenant_return_url'];
+	}
 		
+	/**
+	 * returns message to present to the user.
+	 * 
+	 * @param String $content - the message itself
+	 * @param String $type - represent the type of the message (i.e: success, danger, warning...)
+	 * @return json structure string which represents the message.
+	 */
+	protected function buildMessageObjectUrl($content, $type) {
+		return json_encode(array('content' => $content , 'type' => $type));
+	}
 }

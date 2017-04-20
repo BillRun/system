@@ -54,12 +54,14 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function updateRedirectUrl($result) {
 		if (empty($result)) {
-			throw new Exception("No Response");
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl('No Response', 'danger'));
 		}
 		$resultArray = array();
 		parse_str($result, $resultArray);
 		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
-			throw new Exception($resultArray['L_LONGMESSAGE0']);
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($resultArray['L_LONGMESSAGE0'], 'danger'));
 		}
 
 		$this->redirectUrl = $this->conf['redirect_url'] . $resultArray['TOKEN'];
@@ -85,12 +87,14 @@ class Billrun_PaymentGateway_PayPal_ExpressCheckout extends Billrun_PaymentGatew
 
 	protected function getResponseDetails($result) {
 		if (empty($result)) {
-			throw new Exception("No Response");
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl('No Response', 'danger'));
 		}
 		$resultArray = array();
 		parse_str($result, $resultArray);
 		if (!isset($resultArray['ACK']) || $resultArray['ACK'] != "Success") {
-			throw new Exception($resultArray['L_LONGMESSAGE0']);
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::DEBUG);
+			$this->forceRedirect($this->returnUrlOnError. '&message=' . $this->buildMessageObjectUrl($resultArray['L_LONGMESSAGE0'], 'danger'));
 		}
 		$this->saveDetails['billing_agreement_id'] = $resultArray['BILLINGAGREEMENTID'];
 	}
