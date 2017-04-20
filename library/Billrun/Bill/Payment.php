@@ -476,10 +476,14 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
+			$gatewayDetails = $subscriber['payment_gateway']['active'];
+			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {			
+				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
+				continue;
+			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];

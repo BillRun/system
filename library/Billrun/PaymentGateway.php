@@ -315,7 +315,24 @@ abstract class Billrun_PaymentGateway {
 	 */
 	abstract protected function isHtmlRedirect();
 	
-		/**
+	/**
+	 * Checks that it's all the necessary details for charging exist.
+	 * 
+	 * @param Array $gateway - array with payment gateway details.
+	 * @return Boolean - True if valid structure of the payment gateway.
+	 */
+	abstract protected function validateStructureForCharge($gatewayDetails); 
+	
+	/**
+	 * Handles errors that come back from the payment gateway.
+	 * 
+	 * @param $response - response from the payment gateway to the request for token.
+	 * 
+	 * return Boolean - True if there's an error that was handled. 
+	 */
+	abstract protected function handleTokenRequestError($response, $params); 
+	
+	/**
 	 * Redirect to the payment gateway page of card details.
 	 * 
 	 * @param $aid - Account id of the client.
@@ -324,7 +341,10 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $okPage) {
+	protected function getToken($aid, $returnUrl, $okPage, $maxTries = 10) {
+		if ($maxTries < 0) {
+			throw new Exception("Payment gateway error, number of requests for token reached it's limit");
+		}
 		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
@@ -334,9 +354,14 @@ abstract class Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
+				$response = $this->getToken($aid, $returnUrl, $okPage, $maxTries - 1);
+			} else {
+				$response = $result;
+			}
 		}
-
-		return $result;
+		
+		return $response;
 	}
 
 	/**
@@ -372,7 +397,10 @@ abstract class Billrun_PaymentGateway {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = (int) $this->saveDetails['aid'];
 		$query['type'] = "account";
-		$setQuery = $this->buildSetQuery();       
+		$setQuery = $this->buildSetQuery();
+		if (!$this->validateStructureForCharge($setQuery['payment_gateway.active'])) {
+			throw new Exception("Non valid payment gateway for aid = " . $query['aid'], Zend_Log::ALERT);
+		}
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
 		return $tenantUrl;
@@ -648,7 +676,21 @@ abstract class Billrun_PaymentGateway {
 		$account = $this->subscribers->query($query)->cursor()->current();
 		return $account['tenant_return_url'];
 	}
-		
+	
+	/**
+	 * Checks if the it's chargeable payment gateway. 
+	 * @param Array $gatewayDetails - array with payment gateway details.
+	 *
+	 * @return Boolean - True if it's possible to charge according to the passed details.
+	 */
+	public static function isValidGatewayStructure($gatewayDetails) {
+		if (empty($gatewayDetails) || empty($gatewayDetails['name'])) {
+			return false;
+		}
+		$gateway = self::getInstance($gatewayDetails['name']);
+		return $gateway->validateStructureForCharge($gatewayDetails);
+	}
+			
 	/**
 	 * returns message to present to the user.
 	 * 

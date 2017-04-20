@@ -224,4 +224,12 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	public function handleOkPageData($txId) {
 		return true;
 	}
+	
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['customer_id']) && !empty($structure['token']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		return false;
+	}
 }

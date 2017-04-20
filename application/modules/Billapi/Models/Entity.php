@@ -880,9 +880,9 @@ class Models_Entity {
 	 * 
 	 * @return bool
 	 */
-	static function isEarlyExpiration($record, $status) {
+	protected static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return $record['from']->sec > $record['to']->sec;
+			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
 	}

@@ -39,7 +39,7 @@ class ClearCallAction extends ApiAction {
 	 */
 	protected static function getOpenCalls() {
 
-		$additionalDataToLoad = array('calling_number', 'call_id', 'sid', 'aid', 'charging_type', 'usaget', 'time_date', 'time_zone', 'granted_return_code');
+		$additionalDataToLoad = array('calling_number', 'call_id', 'sid', 'aid', 'connection_type', 'usaget', 'time_date', 'time_zone', 'granted_return_code');
 		$query = self::getOpenCallsQuery($additionalDataToLoad);
 		return Billrun_Factory::db()->linesCollection()->aggregate($query);
 	}
@@ -55,7 +55,7 @@ class ClearCallAction extends ApiAction {
 			'sid' => $call['sid'],
 			'aid' => $call['aid'],
 			'urt' => $call['urt'],
-			'charging_type' => $call['charging_type'],
+			'connection_type' => $call['connection_type'],
 			'usaget' => $call['usaget'],
 		);
 		return Billrun_Factory::balance($options)->get('balance');
