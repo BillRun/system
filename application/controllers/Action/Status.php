@@ -27,7 +27,7 @@ class StatusAction extends ApiAction {
 		$cgColl = Billrun_Factory::db()->creditproxyCollection();
 		
 		// Get is started
-		$query = array("tx" => $tx, "aid" => $aid);
+		$query = array("tx" => (string) $tx, "aid" => $aid);
 		$cgRow = $cgColl->query($query)->cursor()->current();
 		if($cgRow->isEmpty()) {
 			// Received message for completed charge, 
