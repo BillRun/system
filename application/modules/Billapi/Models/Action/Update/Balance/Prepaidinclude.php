@@ -323,6 +323,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'balance_ref' => Billrun_Factory::db()->balancesCollection()->createRefByEntity($this->after),
 			'balance_before' => $this->getBalanceBefore(),
 			'balance_after' => $this->getBalanceAfter(),
+			'balance_normalized' => $this->normalizeValue,
 		);
 		if (isset($this->data['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
