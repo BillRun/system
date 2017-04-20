@@ -4,7 +4,7 @@
 	<td><?php echo '$' . number_format($data['after_vat'] - $data['before_vat'], 2); ?></td>
 </tr>
 <?php if(!empty($data['taxes'])) {	
-	$endKey = end(array_keys($data['taxes']));
+	$endKey = @end(array_keys($data['taxes']));
 	?>
 	<?php foreach($data['taxes'] as $key => $taxAmount) { ?>
 	<?php if($taxAmount == 0 ) { continue; } ?>

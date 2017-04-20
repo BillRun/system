@@ -168,9 +168,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
-                                foreach($tax_data as $tax ) {
-                                    @$breakdowns['taxes'][$tax['description']] += $tax['amount'];
-                                }
+				foreach($tax_data as $tax ) {
+					@$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+				}
 				return;
 			}
 		}
