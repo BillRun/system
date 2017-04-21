@@ -399,19 +399,7 @@ abstract class Billrun_PaymentGateway {
 
 		// Get is started
 		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => $this->saveDetails['aid']);
-		$paymentRow = $paymentColl->query($query)->cursor();
-		if ($paymentRow->count() > 1) {
-			foreach ($paymentRow as $row) {
-				$maxTimestamp = 0;
-				$rowTimestamp = $row['t'];
-				if ($rowTimestamp > $maxTimestamp) {
-					$maxTimestamp = $rowTimestamp;
-					$payment = $row;
-				}
-			}
-		}
-
-		$paymentRow = is_null($payment) ? $paymentRow->current() : $payment;
+		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
 			// but no indication for charge start
