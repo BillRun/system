@@ -300,8 +300,8 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 				continue;
 			}
 			foreach ($currPipeline as $pipelineOperator => $pipeline) {
-				$pipelineValue = '';
 				if (is_array($pipeline)) {
+					$pipelineValue = array();
 					foreach ($pipeline as $key => $value) {
 						$key = str_replace('__', '.', $key);
 						if (isset($value['classMethod'])) {
