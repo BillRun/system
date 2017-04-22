@@ -10,29 +10,29 @@
 				foreach ($row_fields as $filter_field_key => $field_view) {
 					$filter_field = $this->filter_fields[$filter_field_key];
 					if ($filter_field['input_type'] == 'boolean') {
-						echo "<input class=\"form-control span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->$filter_field['key']) && $this->session->$filter_field['key'] == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">"
+						echo "<input class=\"form-control span" . $field_view['width'] . "\" id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "\" type=\"checkbox\"" . (isset($this->session->{$filter_field['key']}) && $this->session->{$filter_field['key']} == "on" ? " value=\"on\" checked=\"checked\"" : "") . ">"
 						. "<label class=\"checkbox\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>";
 					} else if ($filter_field['input_type'] == 'number') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
-								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">";
+								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key'] . "\" type=\"text\" value=\"" . (isset($this->session->{$filter_field['key']}) ? $this->session->{$filter_field['key']} : $filter_field['default']) . "\">";
 					} else if ($filter_field['input_type'] == 'text') {
 						echo "&nbsp;<label class=\"control-label\" for=\"" . $filter_field['key'] . "\">" . $filter_field['display'] . "</label>
 								<input id=\"" . $filter_field['key'] . "\" class=\"form-control span" . $field_view['width'] . "\" name=\"" . $filter_field['key']
 						. "\" type=\"text\" value=\""
-						. (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default'])
+						. (isset($this->session->{$filter_field['key']}) ? $this->session->{$filter_field['key']} : $filter_field['default'])
 						. "\">";
 					} else if ($filter_field['input_type'] == 'date') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
 								<div class=\"input-group date\" id=\"datetimepicker_" . $filter_field['key'] . "\" data-date=\"" . $filter_field['default'] . "\" data-date-format=\"YYYY-MM-DD HH:mm:ss\">
-								<input name=\"" . $filter_field['key'] . "\" class=\"form-control\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->$filter_field['key']) ? $this->session->$filter_field['key'] : $filter_field['default']) . "\">
+								<input name=\"" . $filter_field['key'] . "\" class=\"form-control\" size=\"16\" type=\"text\" value=\"" . (isset($this->session->{$filter_field['key']}) ? $this->session->{$filter_field['key']} : $filter_field['default']) . "\">
 								<span class=\"input-group-addon\"><span class=\"glyphicon glyphicon-calendar\"></span></span>
 								</div>";
 					} else if ($filter_field['input_type'] == 'multiselect') {
 						echo "&nbsp;<label class=\"control-label\">" . $filter_field['display'] . "</label>
 						<select id=\"" . $filter_field['key'] . "\" name=\"" . $filter_field['key'] . "[]\" class=\"form-control multiselect\"" . (isset($filter_field['singleselect']) ? "" : " multiple=\"multiple\"") . ">";
 						foreach ($filter_field['values'] as $value => $name) {
-							if (is_array($this->session->$filter_field['key'])) {
-								if (in_array($value, $this->session->$filter_field['key'])) {
+							if (is_array($this->session->{$filter_field['key']})) {
+								if (in_array($value, $this->session->{$filter_field['key']})) {
 									$selected = " selected";
 								} else {
 									$selected = "";
