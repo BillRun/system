@@ -681,8 +681,10 @@ class AdminController extends Yaf_Controller_Abstract {
 		$view_path = $path . '/views/' . strtolower($this->getRequest()->getControllerName());
 		$view = new Yaf_View_Simple($view_path);
 
-		foreach ($params as $key => $val) {
-			$view->assign($key, $val);
+		if (!is_null($params)) {
+			foreach ($params as $key => $val) {
+				$view->assign($key, $val);
+			}
 		}
 
 		return $view->render($viewName . '.phtml', $params);
