@@ -317,7 +317,7 @@ class CronController extends Yaf_Controller_Abstract {
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
 	}
 	
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
 }
