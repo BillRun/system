@@ -387,6 +387,11 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
+		
+		if ($options['w'] == 0 && $this->_db->compareServerVersion('3.4', '>=')) {
+			$options['w'] = 1;
+		}
+		
 		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
 			$batch = new MongoInsertBatch($this->_collection);
 			foreach($a as $doc) {
@@ -417,7 +422,12 @@ class Mongodloid_Collection {
 			$options['j'] = $this->j;
 		}
 
-		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
+		if ($a instanceof Mongodloid_Entity) {
+			$i = $a->getRawData();
+		} else {
+			$i = $a;
+		}
+		return $this->_collection->insert($i , $options);
 	}
 
 	/**
