@@ -431,10 +431,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public static function loadPending() {
 		$lastTimeChecked = Billrun_Factory::config()->getConfigValue('PaymentGateways.orphan_check_time');
 		$paymentsOrphan = new MongoDate(strtotime('-' . $lastTimeChecked, time()));
-		$query = array(
-			'waiting_for_confirmation' => true,
-			'last_checked_pending' => array('$lte' => $paymentsOrphan)
-		);
+		if (empty(self::$aids)) {
+			$query = array(
+				'waiting_for_confirmation' => true,
+				'last_checked_pending' => array('$lte' => $paymentsOrphan)
+			);
+		} else {
+			$query = array(
+				'waiting_for_confirmation' => true,
+				'last_checked_pending' => array('$lte' => $paymentsOrphan),
+				'aid' => array('$in' => self::$aids)
+			);
+		}
 		$payments = Billrun_Bill_Payment::queryPayments($query);
 		$res = array();
 		foreach ($payments as $payment) {
@@ -527,7 +535,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	public static function checkPendingStatus(){
+	public static function checkPendingStatus($pendingOptions){
+		if (!empty($pendingOptions['aids'])) {
+			self::$aids = Billrun_Util::verify_array($pendingOptions['aids'], 'int');
+		}
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment->getPaymentGatewayName();

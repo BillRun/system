@@ -166,14 +166,18 @@ class BillrunController extends ApiController {
 	public function chargeAccountAction() {
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
+		$mode = $request->get('mode');
+		if ((!is_null($mode) && ($mode != 'pending')) || (is_null($mode))) {
+			$mode = '';
+		}
 		$aidsArray = explode(',', $aids);
 		if (!empty($aids) && is_null($aidsArray)) {
 			throw new Exception('aids parameter must be array of integers');
 		}
 		if (is_null($aids)) {
-			$success = self::processCharge();
+			$success = self::processCharge($mode);
 		} else {
-			$success = self::processCharge($aidsArray);
+			$success = self::processCharge($mode, $aidsArray);
 		}
 		$output = array (
 			'status' => $success ? 1 : 0,
@@ -332,7 +336,7 @@ class BillrunController extends ApiController {
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 	
-	protected function processCharge($aids = array()) {
+	protected function processCharge($mode, $aids = array()) {
 		if (!empty($aids)) {
 			$aidsArray = array_diff(Billrun_util::verify_array($aids, 'int'), array(0));
 			if (empty($aidsArray)) {
@@ -341,9 +345,9 @@ class BillrunController extends ApiController {
 			$aids = implode(',', $aidsArray);			
 		}
 		if (!empty($aids)) {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids;
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge ' . 'aids=' . $aids . ' ' . $mode;
 		} else {
-			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge';
+			$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --charge' . ' ' . $mode;
 		}
 		return Billrun_Util::forkProcessCli($cmd);
 	}

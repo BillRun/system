@@ -173,20 +173,6 @@ class PaymentGatewaysController extends ApiController {
 		$this->getView()->output = "Location: " . $returnUrl;
 	}
 
-	/**
-	 * handling making the payments against the payment gateways and checking status of pending payments.
-	 * 
-	 */
-	public function payAction() {
-		$request = $this->getRequest();
-		$stamp = $request->get('stamp');
-		if (is_null($stamp) || !Billrun_Util::isBillrunKey($stamp)) {
-			return $this->setError("Illegal stamp", $request);
-		}
-		Billrun_Bill_Payment::checkPendingStatus();
-		Billrun_Bill_Payment::makePayment($stamp);
-	}
-
 	public function successAction() {
 		$this->getView()->outputMethod = 'print_r';
 		$this->setOutput(array("SUCCESS", TRUE));
