@@ -297,6 +297,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				foreach($subscriber['services'] as  $tmpService) {
 					 $serviceData = array( 'name' => $tmpService['name'],
 											'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+											'plan' => $subscriber['plan'],
 											'start'=> $tmpService['from']->sec,
 											'end'=> min($tmpService['to']->sec, $endTime ) );
 					 
