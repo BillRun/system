@@ -25,7 +25,7 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 		$this->transactions = array();
 		parent::__construct($options);
 		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type); //strtotime(Billrun_Factory::config()->getConfigValue('prepaidsubscribers.transaction_horizion','-48 hours'), $this->startTime);
+		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type);
 		$this->loadPlans();
 	}
 	
@@ -60,31 +60,11 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 		$page = 0;
 		
 		do {
-//			$this->loadTransactions($subscribersLimit * $page, $subscribersLimit);
-//			$this->buildAggregationQuery();
-//			
-//			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
-//			$this->data = $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true));
 			$this->data = $this->getNextDataChunk($subscribersLimit * $page, $subscribersLimit);
-			
-//			$sids = array();
-//			foreach ($this->data as $line) {
-//				if ($this->isLineEligible($line)) {
-//					$sids[] = $line['subscriber_no'];
-//				}
-//			}
 			$sids = $this->getAllDataSids($this->data);
 			
 			$this->loadBalancesForBulk($sids);
 
-//			$hasData = false;
-//			foreach ($this->data as $line) {
-//				$hasData = true;
-//				$translatedLine = $this->translateCdrFields($line, $this->translations);
-//				if ($this->isLineEligible($translatedLine)) {
-//					$this->writeRowToFile($translatedLine, $this->fieldDefinitions);
-//				}
-//			}
 			$hasData = $this->writeDataLines($this->data);
 			$page++;
 		} while ($hasData);

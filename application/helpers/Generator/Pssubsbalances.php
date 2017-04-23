@@ -41,29 +41,8 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		$page = 0;
 		
 		do {
-//			$this->loadTransactions($subscribersLimit * $page, $subscribersLimit);
-//			$this->buildAggregationQuery();
-//			Billrun_Factory::log('Running bulk of records ' . $subscribersLimit * $page . '-' . $subscribersLimit * ($page+1));
-//			$this->data = $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true));
 			$this->data =$this->getNextDataChunk($subscribersLimit * $page, $subscribersLimit);
 			
-//			$sids = array();
-//			foreach ($this->data as $line) {
-//				if ($this->isLineEligible($line)) {
-//					$sids[] = $line['subscriber_no'];
-//				}
-//			}
-			//$sids = $this->getAllDataSids($this->data);
-			//$this->loadBalancesForBulk($sids);
-
-//			$hasData = false;
-//			foreach ($this->data as $line) {
-//				$hasData = true;
-//				$translatedLine = $this->translateCdrFields($line, $this->translations);
-//				if ($this->isLineEligible($translatedLine)) {
-//					$this->writeRowToFile($translatedLine, $this->fieldDefinitions);
-//				}
-//			}
 			$hasData = $this->writeDataLines($this->data);
 			$page++;
 		} while ($hasData);
@@ -81,14 +60,38 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return true;
+		return isset($this->transactions[$line['subscriber_no']][$line['balance_id']]);
 	}
+	
+	protected function loadTransactions($skip,$limit) {
+		Billrun_Factory::log("loading transactions...");
+        unset($this->transactions);
+		$this->transactions = array();
+		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
+                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'pp_includes_external_id' => array('$exists'=> 1) )),
+                            array('$sort'=>array('sid'=>1,'urt'=>1)),
+                            array('$project' => array('sid'=>1,'urt'=>1,'pp_includes_external_id' => 1,
+                                                    )),
+                    array('$group'=>array('_id'=>array('s'=>'$sid','id'=> '$pp_includes_external_id'), 'sid'=> array('$first'=>'$sid'), 'balance_id'=> array('$first'=>'$pp_includes_external_id'), 'urt' =>array('$last'=>'$urt') )),
+					array('$skip' => $skip),
+					array('$limit' => $limit)
+                ), array('allowDiskUse' => true));
+		foreach ($transactions as $transaction) {
+			$this->transactions[$transaction['sid']][$transaction['balance_id']] = $transaction['urt'];
+		}
+		Billrun_Factory::log("Done loading transactions.");
+    }
 
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
 	protected function flattenBalances($sid, $parameters, &$line) {
-		//$balances = $this->getBalancesForSid($sid);
 		return $this->flattenArray(array($line->getRawData()), $parameters, $line);
+	}
+	
+	protected function lastBalanceTransactionDate($sid, $parameters, $line) {
+		return isset($this->transactions[$sid][$line[$parameters['field']]]) ? 
+                                $this->translateUrt($this->transactions[$sid][$line[$parameters['field']]], $parameters) :
+                                '';
 	}
 }
