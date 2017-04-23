@@ -190,3 +190,10 @@ if (!lastConfig.registration_date) {
 	lastConfig.registration_date = registrationDate;
 	db.config.insert(lastConfig);
 }
+
+//BRCD-776
+db.lines.find({tax_data:{$exists:1},final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(line){
+	line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
+	db.lines.save(line);
+});
+
