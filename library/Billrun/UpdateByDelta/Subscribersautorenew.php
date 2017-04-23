@@ -63,6 +63,12 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 				return 1;
 			}
 		}
+		
+		if ($expected['from'] != $existing['from'] || $expected['to'] != $existing['to']) {
+			$expected['next_renew_date'] = Billrun_Utils_Autorenew::getNextRenewDate($expected['from']->sec);
+			$expected['remain'] = Billrun_Utils_Autorenew::countMonths(time(), $expected['to']->sec);
+			$expected['done'] = Billrun_Utils_Autorenew::countMonths($expected['from']->sec, time());
+		}
 
 		// Update the record.
 		return $this->updateRecordByDiff($existing, @array_diff_assoc($expected, $existing));
