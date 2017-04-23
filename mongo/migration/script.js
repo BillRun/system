@@ -196,3 +196,4 @@ db.lines.find({tax_data:{$exists:1},final_charge:{$exists:0},aprice:{$exists:1}}
 	line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
 	db.lines.save(line);
 });
+
