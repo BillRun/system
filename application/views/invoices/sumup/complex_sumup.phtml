@@ -12,7 +12,7 @@
 	<tbody>
 		<?php
 			$subscriptionList = $this->buildSubscriptionListFromLines($this->lines);
-			$endKey = end(array_keys($subscriptionList));
+			$endKey = @end(array_keys($subscriptionList));
 			foreach ($subscriptionList as $key =>$aggregated) { ?>	
 			<tr class="">
 				<td class='desc'><?php echo $aggregated['desc']; ?></td>

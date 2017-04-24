@@ -982,7 +982,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
 			$billrunRemoveQuery = $billrunQuery;
 		} else {
-			$aids = array_intersect($notBilledAids, $aids);
+			$aids =array_values(array_intersect($notBilledAids, $aids));
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
 										'billrun' => $billrunKey, 
 										'$or' => array(

@@ -310,8 +310,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		// generate the tenant logo.
 		$logo = $gridFsColl->find(array('billtype'=>'logo'))->sort(array('uploadDate'=>-1))->limit(1)->getNext();
 		if( $logo ) {
-			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . $logo->getFilename();
-			if(file_put_contents($exportPath, $logo->getBytes()) === FALSE) {
+			if(!($logo instanceof MongoGridFSFile)) {
+				$logo = new MongoGridFSFile($gridFsColl, $logo);
+			}
+			$exportPath = dirname($this->logo_path) . DIRECTORY_SEPARATOR . ($logo instanceof MongoGridFSFile ? $logo->getFilename() : $logo['filename'] );
+			$fileData = $logo->getBytes();
+			
+			if(file_put_contents($exportPath, $fileData) === FALSE) {
 				Billrun_Factory::log("Failed to export logo from DB to {$exportPath}");
 			}
 			$this->logo_path = $exportPath;
