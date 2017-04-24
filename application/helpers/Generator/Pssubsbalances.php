@@ -72,11 +72,12 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		$transactions = $this->db->archiveCollection()->aggregateWithOptions(array(
                             array('$match' => array(
 													'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
-													'balance_ref' => array('$exists'=> 1),
+													'balance_ref' => array('$type'=> 3),
+													'balance_after' => array('$exists'=> 1),
 													)),
 							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
-                            array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>'$balance_ref' )),
+                            array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
                     array('$group'=>array(
 							'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
 							'sid'=> array('$first'=>'$sid'),
