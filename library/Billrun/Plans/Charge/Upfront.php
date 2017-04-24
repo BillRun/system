@@ -32,14 +32,18 @@ abstract class Billrun_Plans_Charge_Upfront extends Billrun_Plans_Charge_Base {
 	 * Get the price of the current plan.
 	 * @return int, null if no charge
 	 */
-	public function getPrice() {
+	public function getPrice($quantity = 1) {
 		
 		$price = $this->getPriceForcycle($this->cycle);
 		$fraction = $this->getFractionOfMonth();
 		if($fraction === null) {
 			return null;
 		}
-		return $price * $fraction;
+		return array(
+			'value'=> $price * $fraction, 
+			'start' => $this->activation, 
+			'end' => $this->deactivation < $this->cycle->end() ? $this->deactivation : $this->cycle->end()
+			);
 	}
 
 	protected function getPriceForcycle($cycle) {

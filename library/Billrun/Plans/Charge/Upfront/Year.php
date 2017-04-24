@@ -81,11 +81,11 @@ class Billrun_Plans_Charge_Upfront_Year extends Billrun_Plans_Charge_Upfront {
 			return null;
 		}
 		
-		$lastUpfrontCharge = $this->getPrice();
+		$lastUpfrontCharge = $this->getPrice()['value'];
 		$formatActivation = date(Billrun_Base::base_dateformat, $this->activation);
 		$formatDeactivation = date(Billrun_Base::base_dateformat, $this->deactivation);
 		$monthsDiff = Billrun_Plan::getMonthsDiff($formatActivation, $formatDeactivation);
 		$refundFraction = 1 - ((floor($monthsDiff) % 12) + $monthsDiff - floor($monthsDiff));
-		return -$lastUpfrontCharge * $refundFraction;
+		return array('value' => -$lastUpfrontCharge * $refundFraction);
 	}
 }

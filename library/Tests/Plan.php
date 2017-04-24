@@ -279,7 +279,7 @@ class Tests_Plan extends UnitTestCase {
 			$endOffset = $test['end'];
 			$result = Billrun_Plan::getPriceByTariff($tariff, $startOffset, $endOffset);
 			$expected = $test['expected'];
-			$this->assertEqual($result, $expected, $test['msg'] . " expected: " . $expected . " result: " . $result);
+			$this->assertEqual($result['price'], $expected, $test['msg'] . " expected: " . $expected . " result: " . $result);
 			$testCase++;
 		}
     }
