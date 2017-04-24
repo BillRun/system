@@ -114,8 +114,10 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 			'source_ref' => Billrun_Factory::db()->plansCollection()->createRefByEntity($this->data),
 			'aid' => $this->subscriber['aid'],
 			'sid' => $this->subscriber['sid'],
-			'charging_value' => $this->data['charging_value'],
 		);
+		if (isset($this->data['charging_value'])) {
+			$row['charging_value'] = $this->data['charging_value'];
+		}
 		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
