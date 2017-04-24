@@ -90,6 +90,8 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		// this should be done after init (load before state)
 		if (isset($params['expiration_date'])) {
 			$this->setTo($params['expiration_date']);
+		} else {
+			$this->setTo();
 		}
 		
 		$this->chargingLimit = $this->getChargingLimit();;
@@ -103,7 +105,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		return $this->after;
 	}
 
-	protected function setTo($expirationDate) {
+	protected function setTo($expirationDate = null) {
 		if (isset($this->data['unlimited']) && $this->data['unlimited']) {
 			$this->to = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		} else if ($expirationDate instanceof MongoDate) {
