@@ -161,7 +161,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		}
 
 		$balanceValue = $this->getBalanceValue($this->before);
-		if (!$this->data['unlimited'] && $this->chargingLimit < ($balanceValue + $this->chargingValue)) {
+		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
 			return false;
 		}
 		return true;
@@ -296,11 +296,12 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		switch ($this->data['charging_by']) :
 			case 'cost':
 			case 'usagev':
-				return $balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']];
+				return isset($balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']]) ?
+					$balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']] : 0;
 				break;
 			case 'total_cost':
 			default:
-				return $balance['balance']['cost'];
+				return isset($balance['balance']['cost']) ? $balance['balance']['cost'] : 0;
 		endswitch;
 	}
 
