@@ -830,6 +830,7 @@ class Models_Entity {
 		$status = self::getStatus($record, $collection);
 		$earlyExpiration = self::isEarlyExpiration($record, $status);
 		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
+		$movableDates = self::isDatesMovable($record['from']->sec, $record['to']->sec);
 		$record['revision_info'] = array(
 			"status" => $status,
 			"early_expiration" => $earlyExpiration,
@@ -837,8 +838,18 @@ class Models_Entity {
 			"closeandnewable" => $isCurrentCycle,
 			"movable" => $isCurrentCycle,
 			"removable" => $isCurrentCycle,
+			"movable_from" => $movableDates['from'],
+			"movable_to" => $movableDates['to']
 		);
 		return $record;
+	}
+	
+	protected static function isDatesMovable($from, $to) {
+		$fromBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($from);
+		$toBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($to);
+		$movableDates['from'] = Billrun_Billingcycle::isCycleConfirmed($fromBillrunKey) ? false : true;
+		$movableDates['to'] = Billrun_Billingcycle::isCycleConfirmed($toBillrunKey) ? false : true;
+		return $movableDates;
 	}
 
 	/**
