@@ -37,7 +37,7 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
@@ -146,7 +146,7 @@ class Mongodloid_Collection {
 
 		$options = array('w' => $w);
 		
-		if ($this->_db->compareServerVersion('3.4', '<')) {
+		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
@@ -383,7 +383,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
@@ -418,7 +418,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 		
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
