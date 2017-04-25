@@ -25,7 +25,7 @@ class Mongodloid_Collection {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
@@ -57,6 +57,9 @@ class Mongodloid_Collection {
 		if ($params == self::DROP_DUPLICATES)
 			$ps['dropDups'] = true;
 
+		// I'm so sorry :(
+		if (Mongo::VERSION == '1.0.1')
+			$ps = (bool) $ps['unique'];
 
 		return $this->_collection->ensureIndex($fields, $ps);
 	}
@@ -96,7 +99,7 @@ class Mongodloid_Collection {
 
 		$options = array('w' => $w);
 		
-		if ($this->_db->compareServerVersion('3.4', '<')) {
+		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
@@ -288,7 +291,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
@@ -323,7 +326,7 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 		
-		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<')) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
@@ -432,7 +435,7 @@ class Mongodloid_Collection {
 		}
 	}
 	
-	public function distinct($key, array $query = array()) {
+	public function distinct($key, array $query = null) {
 		return $this->_collection->distinct($key, $query);
 	}
 
