@@ -50,9 +50,11 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function getReportCandiateMatchQuery() {
-		return  array(	'from' => array('$lt' => new MongoDate($this->startTime)),
-						'to' => array('$gt' => new MongoDate($this->startTime)),
-						'sid'=> array('$in' => array_keys($this->transactions)) );
+		$retQuery = array(	'from' => array('$lt' => new MongoDate($this->startTime)),
+							'to' => array('$gt' => isset($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime) ),
+							'sid' => array('$in' => array_keys($this->transactions)),
+				);
+		return $retQuery;
 	}
 
 	protected function getReportFilterMatchQuery() {
@@ -60,27 +62,40 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return isset($this->transactions[$line['subscriber_no']][$line['balance_id']]);
+		return isset($this->transactions[$line['subscriber_no']][(string)$line['balance_ref']]);
 	}
 	
 	protected function loadTransactions($skip,$limit) {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
 		$this->transactions = array();
-		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'pp_includes_external_id' => array('$exists'=> 1) )),
+		$transactions = $this->db->archiveCollection()->aggregateWithOptions(array(
+                            array('$match' => array(
+													'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
+													'balance_ref' => array('$type'=> 3),
+													'balance_after' => array('$exists'=> 1),
+													)),
+							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
                             array('$sort'=>array('sid'=>1,'urt'=>1)),
-                            array('$project' => array('sid'=>1,'urt'=>1,'pp_includes_external_id' => 1,
-                                                    )),
-                    array('$group'=>array('_id'=>array('s'=>'$sid','id'=> '$pp_includes_external_id'), 'sid'=> array('$first'=>'$sid'), 'balance_id'=> array('$first'=>'$pp_includes_external_id'), 'urt' =>array('$last'=>'$urt') )),
+                            array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
+                    array('$group'=>array(
+							'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
+							'sid'=> array('$first'=>'$sid'),
+							'balance_ref'=> array('$first'=>'$balance_ref'),
+							'urt' =>array('$max'=>'$urt') 
+						)),
 					array('$skip' => $skip),
 					array('$limit' => $limit)
                 ), array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
-			$this->transactions[$transaction['sid']][$transaction['balance_id']] = $transaction['urt'];
+			$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = $transaction['urt'];
 		}
 		Billrun_Factory::log("Done loading transactions.");
     }
+	
+	protected function isInitialRun() {
+		return isset($this->releventTransactionTimeStamp) && !$this->releventTransactionTimeStamp->sec && empty($this->transactions);
+	}
 
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
@@ -89,9 +104,12 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		return $this->flattenArray(array($line->getRawData()), $parameters, $line);
 	}
 	
-	protected function lastBalanceTransactionDate($sid, $parameters, $line) {
-		return isset($this->transactions[$sid][$line[$parameters['field']]]) ? 
-                                $this->translateUrt($this->transactions[$sid][$line[$parameters['field']]], $parameters) :
-                                '';
+	protected function lastBalanceTransactionDate($sid, $parameters, $balanceLine) {
+		foreach($parameters['fields'] as  $field) {
+			if(isset($this->transactions[$sid][(string)$balanceLine[$field]]) ) {
+                                return $this->translateUrt($this->transactions[$sid][(string)$balanceLine[$field]], $parameters);
+			}
+		}
+		return '';
 	}
 }
