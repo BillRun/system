@@ -15,14 +15,14 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 
 	protected $taxDataResults = array();
-        protected $thirdpartyConfig = array();
+    protected $thirdpartyConfig = array();
         
-        public function __construct($options = array()) {
-            parent::__construct($options);
-            $this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
+    public function __construct($options = array()) {
+		parent::__construct($options);
+		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
 	}
 
-        public static function isConfigComplete($config) {
+	public static function isConfigComplete($config) {
 		return true;
 	}
 	
