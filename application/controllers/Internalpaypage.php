@@ -70,6 +70,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			}
 			$prevPaymentGateway = Billrun_PaymentGateway::getInstance($prevPgName);			
 			if ($prevPaymentGateway->isUpdatePgChangesNeeded()) {
+				$PrevPgParams = array();
 				if (!isset($accountPg['former'])) { 
 					$previousPg = array();
 				} else {

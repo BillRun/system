@@ -52,7 +52,13 @@ class Billrun_Cycle_Account_Invoice {
 	 * @var boolean
 	 */
 	protected $overrideMode = true;
-	
+	/**
+	 * Hold all the discounts that are  applied to the account.
+	 * @var array 
+	 */
+	protected $discounts= array();
+
+
 	/**
 	 * 
 	 * @param type $options
@@ -157,17 +163,16 @@ class Billrun_Cycle_Account_Invoice {
 
 	public function applyDiscounts() {
 		$dm = new Billrun_DiscountManager();
-		$discounts = $dm->getEligibleDiscounts($this);
+		$this->discounts = $dm->getEligibleDiscounts($this);
 		
-		foreach($discounts as $discount) {			
+		foreach($this->discounts as $discount) {			
 			foreach($this->subscribers as  $subscriber) {
 				if($subscriber->getData()['sid'] == $discount['sid']) {
 					$rawDiscount = $discount->getRawData();
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
-					continue;
+					continue 2;
 				}
 			}
-			Billrun_Factory::db()->linesCollection()->save($discount);
 		}
 		$this->updateTotals();
 	}
@@ -322,4 +327,8 @@ class Billrun_Cycle_Account_Invoice {
         public function getTotals() {
             return $this->data['totals'];
         }
+		
+		public function getAppliedDiscounts() {
+			return $this->discounts;
+		}
 }

@@ -3,7 +3,7 @@
 <?php 
 $displayTotal = FALSE;
 if(!empty($data['discounts']['lines'])) {
-	$endKey = end(array_keys($data['discounts']['lines']));
+	$endKey = @end(array_keys($data['discounts']['lines']));
 	foreach($data['discounts']['lines'] as  $amount) { 
 		if($amount != 0 ) { $displayTotal = TRUE; break; }
 	}	

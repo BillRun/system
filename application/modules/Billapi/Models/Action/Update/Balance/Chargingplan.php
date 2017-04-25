@@ -78,6 +78,21 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 	/**
 	 * @todo
 	 */
+	public function preValidate() {
+		if(parent::preValidate() === false) {
+			return false;
+		}
+		foreach ($this->data as $prepaidInclude) {
+			if ($prepaidInclude->preValidate() === false) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @todo
+	 */
 	public function update() {
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->update();
@@ -90,6 +105,24 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 	 * @todo
 	 */
 	protected function createBillingLines() {
+		$row = array(
+			'source' => 'billapi',
+			'type' => 'balance',
+			'usaget' => 'balance',
+			'charging_type' => $this->updateType,
+			'urt' => new MongoDate(),
+			'source_ref' => Billrun_Factory::db()->plansCollection()->createRefByEntity($this->data),
+			'aid' => $this->subscriber['aid'],
+			'sid' => $this->subscriber['sid'],
+		);
+		if (isset($this->data['charging_value'])) {
+			$row['charging_value'] = $this->data['charging_value'];
+		}
+		if (isset($this->subscriber['service_provider'])) { // backward compatibility
+			$row['service_provider'] = $this->data['service_provider'];
+		}
+		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
+		Billrun_Factory::db()->linesCollection()->insert($row);
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->createBillingLines();
 		}

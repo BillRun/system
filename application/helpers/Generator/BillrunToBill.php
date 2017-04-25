@@ -93,6 +93,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		}
 		else {
 			$bill['total_paid'] = 0;
+			$bill['left_to_pay'] = $bill['due'];
 			$bill['vatable_left_to_pay'] = $invoice['totals']['before_vat'];
 		}
 		if(!empty($invoice['attributes']['suspend_debit'])) {

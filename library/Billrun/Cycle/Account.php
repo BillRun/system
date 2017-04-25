@@ -307,7 +307,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				$serviceCompare = function  ($a, $b)  {
 					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
 					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
-					return $aStamp - $bStamp;
+					return strcmp($aStamp , $bStamp);
 				};
 				
 				$removedServices  = array_udiff($services, $currServices, $serviceCompare);
@@ -342,5 +342,9 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	
 	public function getInvoice() {
 		return $this->invoice;
+	}
+	
+	public function getAppliedDiscounts() {
+		return $this->invoice->getAppliedDiscounts();
 	}
 }

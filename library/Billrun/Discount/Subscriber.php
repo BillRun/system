@@ -120,27 +120,28 @@ class Billrun_Discount_Subscriber extends Billrun_Discount {
         return $usageTotals;
     }
 
-	protected function mapFlatArrayToStructure($flatArray,$structuredArray) {
-		if(!is_array($structuredArray)) {
+	protected function mapFlatArrayToStructure($flatArray, $structuredArray) {
+		if (!is_array($structuredArray)) {
 			return $structuredArray;
 		}
 		$retArray = array();
-		foreach($flatArray as $key => $value) {
-			if(isset($structuredArray[$key])) {
-				if(is_array($structuredArray[$key])) {
+		$structuredArrayKeys = array_keys($structuredArray);
+		foreach ($flatArray as $key => $value) {
+			if (isset($structuredArray[$key])) {
+				if (is_array($structuredArray[$key])) {
 					foreach ($structuredArray[$key] as $mapKey => $mapping) {
 						$retArray[$mapKey] = $this->mapFlatArrayToStructure($value, $mapping);
 					}
 				} else {
 					$retArray[$structuredArray[$key]] = $value;
 				}
-			} else if(count($structuredArray) == 1 && reset(array_keys($structuredArray)) == '*'){
-				$retArray[$key] = array( $this->mapFlatArrayToStructure($value, reset($structuredArray)) => $value);
+			} else if (count($structuredArray) == 1 && reset($structuredArrayKeys) == '*') {
+				$retArray[$key] = array($this->mapFlatArrayToStructure($value, reset($structuredArray)) => $value);
 			} else {
 				$retArray[$key] = $value;
 			}
 		}
-		
+
 		return $retArray;
 	}
 

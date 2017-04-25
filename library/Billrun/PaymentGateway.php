@@ -87,6 +87,12 @@ abstract class Billrun_PaymentGateway {
 	 * @var string
 	 */
 	protected $completionCodes;
+	
+	/**
+	 * where to redirect the user when unrecoverable error happens.
+	 * @var string
+	 */
+	protected $returnUrlOnError;
 
 	/**
 	 * html form for redirection to the payment gateway for filling details.
@@ -152,6 +158,7 @@ abstract class Billrun_PaymentGateway {
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
 		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
+		$this->updateReturnUrlOnEror($tenantReturnUrl);
 		$okPage = $this->getOkPage($request);
 		if ($this->needRequestForToken()){
 			$response = $this->getToken($aid, $tenantReturnUrl, $okPage);
@@ -165,7 +172,7 @@ abstract class Billrun_PaymentGateway {
 		// Signal starting process.
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
-			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl, Zend_Log::DEBUG);
+			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
 			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
@@ -369,23 +376,29 @@ abstract class Billrun_PaymentGateway {
 		} else {
 			$postString = $postArray;
 		}
+		$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
+		$tenantUrl = $this->getTenantReturnUrl($this->saveDetails['aid']);
+		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->getResponseDetails($result) === FALSE) {
-				throw new Exception("Operation Failed. Try Again...");
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
+				throw new Exception('Operation Failed. Try Again...');
 			}
 		}
-		if (empty($this->saveDetails['aid'])) {
-			$this->saveDetails['aid'] = $this->getAidFromProxy($txId);
-		}
 		if (!$this->validatePaymentProcess($txId)) {
-			throw new Exception("Too much time passed");
+			Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: Too much time passed', Zend_Log::ALERT);
+			throw new Exception('Too much time passed');
 		}
-		return $this->saveAndRedirect();
+		$this->savePaymentGateway();
+		return $tenantUrl;
 	}
 
-	protected function saveAndRedirect() {
-		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+	/**
+	 * Saving payment gateway structure to the relevant account.
+	 * 
+	 */
+	protected function savePaymentGateway() {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
 		$query['aid'] = (int) $this->saveDetails['aid'];
 		$query['type'] = "account";
@@ -395,14 +408,11 @@ abstract class Billrun_PaymentGateway {
 		}
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
-		$account = $this->subscribers->query($query)->cursor()->current();
-		$returnUrl = $account['tenant_return_url'];
-		return $returnUrl;
 	}
 
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => $this->transactionId, "aid" => $aid);
+		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => $aid);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		if (!$paymentRow->isEmpty()) {
 			if (isset($paymentRow['done'])) {
@@ -426,14 +436,14 @@ abstract class Billrun_PaymentGateway {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 
 		// Get is started
-		$query = array("name" => $this->billrunName, "tx" => $txId, "aid" => $this->saveDetails['aid']);
-		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId, "aid" => $this->saveDetails['aid']);
+		$paymentRow = $paymentColl->query($query)->cursor()->sort(array('t' => -1))->limit(1)->current();
 		if ($paymentRow->isEmpty()) {
 			// Received message for completed charge, 
 			// but no indication for charge start
 			return false;
 		}
-
+		
 		// Check how long has passed.
 		$timePassed = time() - $paymentRow['t'];
 
@@ -461,7 +471,7 @@ abstract class Billrun_PaymentGateway {
 	 */
 	protected function getAidFromProxy($txId) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
-		$query = array("name" => $this->billrunName, "tx" => $txId);
+		$query = array("name" => $this->billrunName, "tx" => (string) $txId);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
 		return $paymentRow['aid'];
 	}
@@ -647,6 +657,31 @@ abstract class Billrun_PaymentGateway {
 	}
 	
 	/**
+	 * Updates the url to return to in case of unrecoverable error.
+	 * 
+	 * @param string $url - the url to return to.
+	 * 
+	 */
+	protected function updateReturnUrlOnEror($url) {
+		$this->returnUrlOnError = $url;
+	}
+	
+	/**
+	 * Returns the return url defined by the tenant.
+	 * 
+	 * @param $aid - account Id
+	 * @return String - tenant defined url.
+	 */
+	protected function getTenantReturnUrl($aid) {
+		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['aid'] = (int) $aid;
+		$query['type'] = "account";
+		$account = $this->subscribers->query($query)->cursor()->current();
+		return $account['tenant_return_url'];
+	}
+	
+	/**
 	 * Checks if the it's chargeable payment gateway. 
 	 * @param Array $gatewayDetails - array with payment gateway details.
 	 *
@@ -660,4 +695,8 @@ abstract class Billrun_PaymentGateway {
 		return $gateway->validateStructureForCharge($gatewayDetails);
 	}
 			
+	public function getReturnUrlOnError() {
+		return $this->returnUrlOnError;
+	}
+	
 }
