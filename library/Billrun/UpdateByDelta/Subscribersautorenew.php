@@ -68,12 +68,19 @@ class Billrun_UpdateByDelta_Subscribersautorenew extends Billrun_UpdateByDelta_U
 			!empty($existing['from']->sec) && !empty($existing['to']->sec) && 
 			($expected['from']->sec != $existing['from']->sec || $expected['to']->sec != $existing['to']->sec)) {
 			$expected['next_renew_date'] = Billrun_Utils_Autorenew::getNextRenewDate($expected['from']->sec);
-			if ($expected['from']->sec < time()) {
+			
+			$current = time();
+			$total_renewals = Billrun_Utils_Autorenew::countMonths($expected['from']->sec, $expected['to']->sec);
+			if ($expected['from']->sec < $current && $expected['to']->sec > $current) {
 				$expected['done'] = Billrun_Utils_Autorenew::countMonths($expected['from']->sec, time());
+				$expected['remain'] = $total_renewals - $expected['done'];
+			} else if ($expected['from']->sec < $current && $expected['to']->sec <= $current) {
+				$expected['done'] = $total_renewals;
+				$expected['remain'] = 0;
 			} else {
 				$expected['done'] = 0;
+				$expected['remain'] = $total_renewals;
 			}
-			$expected['remain'] = Billrun_Utils_Autorenew::countMonths($expected['from']->sec, $expected['to']->sec) - $expected['done'];
 		}
 
 		// Update the record.
