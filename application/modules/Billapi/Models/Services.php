@@ -17,8 +17,11 @@ class Models_Services extends Models_Entity {
 	protected $errorCode = 999999;
 
 	protected function init($params) {
-		parent::init($params);		
-		$this->validatePrice();
+		parent::init($params);
+		$actionsExcludeValidation = array('move', 'close');
+		if (!in_array($this->action, $actionsExcludeValidation)) {
+			$this->validatePrice();
+		}
 	}
 	
 	/**
