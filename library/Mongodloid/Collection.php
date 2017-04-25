@@ -57,10 +57,6 @@ class Mongodloid_Collection {
 		if ($params == self::DROP_DUPLICATES)
 			$ps['dropDups'] = true;
 
-		// I'm so sorry :(
-		if (Mongo::VERSION == '1.0.1')
-			$ps = (bool) $ps['unique'];
-
 		return $this->_collection->ensureIndex($fields, $ps);
 	}
 
