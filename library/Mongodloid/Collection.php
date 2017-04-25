@@ -431,7 +431,7 @@ class Mongodloid_Collection {
 		}
 	}
 	
-	public function distinct($key, array $query = null) {
+	public function distinct($key, array $query = array()) {
 		return $this->_collection->distinct($key, $query);
 	}
 
