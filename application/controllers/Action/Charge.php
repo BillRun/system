@@ -31,12 +31,13 @@ class ChargeAction extends Action_Base {
 		if (!empty($extraParams)) {
 			$options = array_merge($extraParams, $options);
 		}
+		$this->getController()->addOutput("Checking pending payments...");
 		Billrun_Bill_Payment::checkPendingStatus($options);
 		if (!isset($options['pending'])) {
-			$this->getController()->addOutput("Starting to charge unpaid payments");
+			$this->getController()->addOutput("Starting to charge unpaid payments...");
 			Billrun_Bill_Payment::makePayment($options);
-			$this->getController()->addOutput("Charging Done");
 		}
+		$this->getController()->addOutput("Charging Done");
 	}
 
 }
