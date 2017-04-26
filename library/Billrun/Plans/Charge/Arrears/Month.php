@@ -26,7 +26,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 
 		$charges = array();
 		foreach ($this->price as $tariff) {
-			$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset);
+			$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset ,$this->activation);
 			if (!empty($price)) {
 				$charges[] = array('value' => $price['price'] * $quantity,
 					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),

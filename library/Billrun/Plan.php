@@ -324,7 +324,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @param type $endOffset
 	 * @return int
 	 */
-	public static function getPriceByTariff($tariff, $startOffset, $endOffset) {
+	public static function getPriceByTariff($tariff, $startOffset, $endOffset ,$activation = FALSE) {
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
@@ -332,8 +332,13 @@ class Billrun_Plan extends Billrun_Service {
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
-		if ($tariff['from'] > $startOffset) {
+		if ($tariff['from'] > $startOffset) {			
 			$startPricing = $tariff['from'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if($endOffset -1 == $startOffset && $activation && $startOffset > 0) {
+				$startFratcion = 1 - ( $startOffset-floor($startOffset));
+				$startPricing += ($startFratcion * date('t',$activation)) / date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1) - $startFratcion;
+			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
