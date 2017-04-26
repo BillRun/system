@@ -342,6 +342,11 @@ class Billrun_Plan extends Billrun_Service {
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $endPricing > 0) {
+				$endFratcion = 1 - ( $endOffset-floor($endOffset));
+				$endPricing += ($endFratcion * date('t',$activation)) / date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1) - $endFratcion;
+			}
 		}
 
 		return array('start' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $startPricing,
