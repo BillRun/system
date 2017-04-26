@@ -336,16 +336,18 @@ class Billrun_Plan extends Billrun_Service {
 			$startPricing = $tariff['from'];
 			// HACK :  fix for the month length differance between the  activation and the  plan change
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
-				$startFratcion = 1 - ( $startOffset-floor($startOffset));
-				$startPricing += ($startFratcion * date('t',$activation)) / date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1) - $startFratcion;
+				$startFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-3601);
+				$startPricing += (($startFratcion * date('t',$activation)) /  $currentDays - $startFratcion) ;
 			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
 			// HACK :  fix for the month length differance between the  activation and the  plan change
-			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $endPricing > 0) {
-				$endFratcion = 1 - ( $endOffset-floor($endOffset));
-				$endPricing += ($endFratcion * date('t',$activation)) / date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1) - $endFratcion;
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+				$endFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-3601);
+				$endPricing += (($endFratcion * date('t',$activation)) / $currentDays - $endFratcion) ;
 			}
 		}
 
@@ -500,7 +502,9 @@ class Billrun_Plan extends Billrun_Service {
 			$addedDays +=  $daysInMonth * (($endFriction) );
 		}
 		
-		return $activation + (($addedDays * $dayInSec) );
+		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
+		
+		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff;
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
