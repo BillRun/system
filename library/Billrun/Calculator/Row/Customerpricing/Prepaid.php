@@ -18,12 +18,14 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 
 	protected function init() {
 		parent::init();
-		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.ok');
+		$this->loadSubscriberBalance();
+		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok');
 		$this->initMinBalanceValues();
-		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance'])) { // If it's a prepaid row, but not rebalance
-			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
+		if (!(isset($this->row['prepaid_rebalance']) && $this->row['prepaid_rebalance']) && $this->balance) { // If it's a prepaid row, but not rebalance
 			$this->row['usagev'] = Billrun_Rates_Util::getPrepaidGrantedVolume($this->row, $this->rate, $this->balance, $this->usaget, $this->balance->getBalanceChargingTotalsKey($this->usaget), $this->getCallOffset(), $this->min_balance_cost, $this->min_balance_volume, $this->row['urt']->sec);
+			$this->row['apr'] = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->row['usaget'], $this->row['usagev'], $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 		} else {
+			$this->row['apr'] = 0;
 			$this->row['usagev'] = 0;
 		}
 	}
@@ -50,7 +52,9 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 				'usagev' => $granted_volume,
 			);
 		}
-		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_available_balances');
+		$this->row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.no_available_balances');
+		$this->row['usagev'] = 0;
+		$this->row['apr'] = 0;
 		return parent::handleNoBalance();
 	}
 
@@ -77,6 +81,85 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		if ($ret === false) { // on prepaid there is no retry for the event, so the upper layer will declare this event as not priced
 			return true;
 		}
+		return $ret;
+	}
+	
+	/**
+	 * In case balance is in over charge (due to prepaid mechanism), 
+	 * adds a refund row to the balance.
+	 * 
+	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 * @param type $realUsagev
+	 * @param type $lineToRebalance
+	 * @param type $originalRow
+	 */	
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
+		$usaget = $lineToRebalance['usaget'];
+		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
+		
+		// Update subscribers balance
+		$balanceRef = $lineToRebalance->get('balance_ref', true);
+		if (!$balanceRef) {
+			$balance = null;
+		} else {
+			// Update balance usagev
+			$balances_coll = Billrun_Factory::db()->balancesCollection();
+			$balance = $balances_coll->getRef($balanceRef);
+			if (is_array($balance['tx']) && empty($balance['tx'])) { //TODO: this is a hack because tx is saved as [] instead of {}
+				$balance['tx'] = new stdClass();
+			}
+			$balance->collection($balances_coll);
+			$balance_totals_key =  $this->balance->getBalanceTotalsKey($lineToRebalance);
+			
+			$rebalanceData = array(
+				'usagev' => $rebalanceUsagev,
+				'in_balance_usage' => $rebalanceUsagev,
+			);
+			
+			if (!is_null($balance['balance.totals.' . $balance_totals_key . '.usagev'])) {
+				$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
+			} else {
+				$realPricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev);
+				$chargedPricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev - $rebalanceUsagev);
+				$rebalanceCost = ($realPricingData['aprice'] - $chargedPricingData['aprice']);
+				if (!is_null($balance['balance.totals.' . $balance_totals_key . '.cost'])) {
+					$balance['balance.totals.' . $balance_totals_key . '.cost'] += $rebalanceCost;
+				} else {
+					$balance['balance.cost'] += $rebalanceCost;
+				}
+				
+				$rebalanceData['apr'] = $rebalanceData['aprice'] = $rebalanceCost;
+			}
+			
+			$balance->save();
+		}
+		
+		$originalRow['usagev_offset'] += $rebalanceUsagev;
+		
+		$updateLinesQuery = $this->getUpdateLineUpdateQuery($rebalanceData);
+		$updateArchiveQuery = $this->getUpdateLineUpdateQuery(array_merge($rebalanceData, $this->getAdditionalUsagevFieldsForArchive($rebalanceUsagev, $lineToRebalance)));
+		
+		// Update line in archive
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
+		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateArchiveQuery);
+
+		// Update line in Lines collection will be done by Unify calculator
+		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
+		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
+		$lines_coll = Billrun_Factory::db()->linesCollection();
+		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
+		$lines_coll->update($findQuery, $updateLinesQuery, $options);
+	}
+	
+	protected function getAdditionalUsagevFieldsForArchive($usagev, $lineToRebalance) {
+		$ret = array();
+		$availableFields = array('in_group', 'out_group', 'in_plan', 'out_plan');
+		foreach ($availableFields as $field) {
+			if (isset($lineToRebalance[$field])) {
+				$ret[$field] = $usagev;
+			}
+		}
+		
 		return $ret;
 	}
 

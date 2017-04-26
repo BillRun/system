@@ -70,7 +70,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		if (isset($this->granted['usagev'])) {
 			$minUsage = $this->granted['usagev'];
 		} else {
-			$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float')); // float avoid set type to int
+			$minUsage = (float) Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minUsage', 3, 'float')); // float avoid set type to int
 		}
 
 		if (isset($this->granted['cost'])) {
@@ -167,7 +167,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return string
 	 */
-	protected function getBalanceTotalsKey($pricingData) {
+	public function getBalanceTotalsKey($pricingData) {
 		return $this->getBalanceChargingTotalsKey($this->row['usaget']);
 	}
 
