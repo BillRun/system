@@ -15,6 +15,8 @@
  */
 class Billrun_Billingcycle {
     
+	protected static $billingCycleCol = null;
+    
 	/**
 	 * Table holding the values of the charging end dates.
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
@@ -153,7 +155,8 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * 
 	 */
-    public static function removeBeforeRerun($billingCycleCol, $billrunKey) {
+    public static function removeBeforeRerun($billrunKey) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		$countersColl = Billrun_Factory::db()->countersCollection();
@@ -181,7 +184,8 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
+	protected function hasCycleStarted($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
 		if ($keyCount < 1) {
@@ -198,7 +202,8 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
+	public static function hasCycleEnded($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
 		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
@@ -216,11 +221,11 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billingCycleCol, $billrunKey, $size) {
-		if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
+	public static function isCycleRunning($billrunKey, $size) {
+		if (!self::hasCycleStarted($billrunKey, $size)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size)) {
 			return false;
 		}
 		return true;
@@ -258,7 +263,8 @@ class Billrun_Billingcycle {
 	 * 
 	 *  @return cycle completion percentage 
 	 */
-	public static function getCycleCompletionPercentage($billingCycleCol, $billrunKey, $size) {
+	public static function getCycleCompletionPercentage($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
 		);
@@ -268,7 +274,7 @@ class Billrun_Billingcycle {
 			'end_time' => array('$exists' => true)
 		);
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
-		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size)) {
 			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
 			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
@@ -319,6 +325,48 @@ class Billrun_Billingcycle {
 			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
 		}
 		return 0;
+	}
+	
+	public static function getCycleStatus($billrunKey, $size = null) {
+		if (is_null($size)) {
+			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
+		}
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		
+		if ($billrunKey == $currentBillrunKey) {
+			return 'current';
+		}
+		if ($billrunKey > $currentBillrunKey) {
+			return 'future';
+		}
+		if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
+			return 'to_run';
+		} 
+		
+		if ($cycleRunning) {
+			return 'running';
+		}
+		
+		if (!$cycleConfirmed && $cycleEnded) {
+			return 'finished';
+		}
+		
+		if ($cycleEnded && $cycleConfirmed) {
+			return 'confirmed';
+		}
+
+		return '';
+	}
+	
+	public static function getBillingCycleColl() {
+		if (is_null(self::$billingCycleCol)) {
+			self::$billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
+		}
+		
+		return self::$billingCycleCol;
 	}
 	
 	/**
