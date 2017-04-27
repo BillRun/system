@@ -175,6 +175,52 @@ class ReportsAction extends ApiAction {
 		$this->getRevenue($fromCycle, $toCycle);
 	}
 	
+	public function planByCustomers() {
+		$current = $this->planByCustomersQuery();
+		$lastMonth = $this->planByCustomersQuery(strtotime("-1 month"));
+		foreach ($current as $plan => $amout) {
+			$this->response[] = array(
+				'plan' => $plan,
+				'amount' => $amout,
+				'prev_amount' => isset($lastMonth[$plan]) ? $lastMonth[$plan] : 0,
+			);
+		}
+	}
+	
+	public function planByCustomersQuery($time = null) {
+		$plans = array();
+
+		$match = Billrun_Utils_Mongo::getDateBoundQuery($time);
+		$match['type'] = 'subscriber';
+
+		$group = array(
+			'_id' => '$plan', 
+			'count' => array('$sum' => 1)
+		);
+		
+		$project = array(
+			'_id' => 0,
+			'plan' => '$_id',
+			'amount' => '$count'
+		);
+		
+		$sort = array(
+			'amount' => -1
+		);
+		
+		$revenues = Billrun_Factory::db()->subscribersCollection()->aggregate(
+			array('$match' => $match),
+			array('$group' => $group),
+			array('$project' => $project),
+			array('$sort' => $sort)
+		);
+		
+		foreach ($revenues as $revenue) {
+			$plans[$revenue['plan']] = $revenue['amount'];
+		}
+		return $plans;
+	}
+	
 	public function revenueByPlan() {
 		$this->response = array();
 		$billrunKey = Billrun_Billingcycle::getLastConfirmedBillingCycle();
