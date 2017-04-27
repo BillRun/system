@@ -73,7 +73,6 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$isFreeLine = false;
 		Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$this->row, &$isFreeLine));
 		return $this->row['free_line'] = boolval($isFreeLine);
-		;
 	}
 
 	public function update() {
@@ -151,6 +150,13 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 		$lines_coll->update($findQuery, $updateLinesQuery, $options);
 	}
 	
+	/**
+	 * gets all fields that needs to be rebalanced by volume
+	 * 
+	 * @param type $usagev
+	 * @param type $lineToRebalance
+	 * @return array
+	 */
 	protected function getAdditionalUsagevFieldsForArchive($usagev, $lineToRebalance) {
 		$ret = array();
 		$availableFields = array('in_group', 'out_group', 'in_plan', 'out_plan');

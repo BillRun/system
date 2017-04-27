@@ -101,6 +101,12 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$lines_coll->update($findQuery, $updateQuery, $options);
 	}
 	
+	/**
+	 * see Billrun_Calculator_Row_Customerpricing::isRebalanceRequired
+	 * currently, there is no support for postpay rebalance
+	 * 
+	 * @return boolean
+	 */
 	protected function isRebalanceRequired() {
 		return false;
 	}
