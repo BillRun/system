@@ -735,6 +735,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if ($this->isReblanceOnLastRequestOnly()) {
 			$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 			$query = $this->getRebalanceQuery($this->row);
+			if (!$query) {
+				return 0;
+			}
 			$line = $lines_archive_coll->aggregate($query)->current();
 			return $line['sum'];
 		}
@@ -749,6 +752,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function getRebalanceQuery($lineToRebalance) {
 		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
+		if (!$sessionQuery) {
+			Billrun_Factory::log('Customerpricing getSessionIdQuery - cannot find previous lines. details: ' . print_R($lineToRebalance, 1));
+			return false;
+		}
 		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
 		return array(
 			array(
@@ -773,7 +780,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if (isset($row['session_id'])) {
 			return array('session_id' => $row['session_id']);
 		}
-		return array();
+		return false;
 	}
 
 	/**
