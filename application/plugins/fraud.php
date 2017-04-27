@@ -630,14 +630,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if ($arate['key'] == 'INTERNET_VF') {
 			$lineTime =  date(Billrun_Base::base_dateformat, $row['urt']->sec);
-			$lineYear = date('Y', strtotime($lineTime));
-			$yearDay = date('z', strtotime($lineTime));
 			$sid = $row['sid'];
-			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
-				$rowVfDays = $this->queryVFDaysApi($sid, $lineTime);
-			} else {
-				$rowVfDays = $this->cachedResults[$sid][$lineYear . $yearDay];
-			}		
+			$rowVfDays = $this->queryVFDaysApi($sid, $lineTime);
 			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' && $rowVfDays <= Billrun_Factory::config()->getConfigValue('fraud.usageabroad.days')) {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
 				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
@@ -655,8 +649,14 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected function queryVFDaysApi($sid, $lineTime) {
 		$url = Billrun_Factory::config()->getConfigValue('fraud.vfdays.url');
+		$lineYear = date('Y', strtotime($lineTime));
+		$yearDay = date('z', strtotime($lineTime));
 		try {
-			$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
+			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
+				$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
+			} else {
+				return $this->cachedResults[$sid][$lineYear . $yearDay];
+			}
 		} catch(Exception $e) {
 			return 0;
 		}
@@ -664,11 +664,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$resultArray['status']) { 
 			return 0;
 		}
-		$lineYear = date('Y', strtotime($lineTime));
-		$yearDay = date('z', strtotime($lineTime));
-		if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
-			$this->cachedResults[$sid][$lineYear . $yearDay] = $resultArray['details']['days'];
-		}
+		$this->cachedResults[$sid][$lineYear . $yearDay] = $resultArray['details']['days'];
 		return $resultArray['details']['days'];
 	}
 
