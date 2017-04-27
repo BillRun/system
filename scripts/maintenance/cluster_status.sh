@@ -5,7 +5,7 @@ stat='mongo --port 27018 admin -uadmin -pqsef1#2$ --eval "tojson(rs.status());" 
 stat2='mongo --port 27018 admin -uadmin -pqsef1#2$ --quiet --eval "db.serverStatus().version;"'
 echo "Let's report from pri nodes..."
 echo ""
-for i in {1..9}
+for i in {1..10}
 do
         ipad=`printf %02d $i`
         echo "$ipad" `ssh pri$ipad.gt $stat`
@@ -15,7 +15,7 @@ done
 echo ""
 echo "Let's report from slv nodes..."
 echo ""
-for i in {1..9}
+for i in {1..10}
 do
         ipad=`printf %02d $i`
         echo "$ipad" `ssh slv$ipad.gt $stat`
