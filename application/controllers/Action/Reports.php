@@ -182,7 +182,7 @@ class ReportsAction extends ApiAction {
 		
 		$match = array(
 			'billrun_key' => array('$in' => array($billrunKey, $prevBillrunKey)),
-			'type' => 'inv',
+//			'type' => 'inv',
 			'billed' => 1,
 		);
 		
