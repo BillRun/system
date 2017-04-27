@@ -696,7 +696,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	}
 
 	/**
-	 * Gets the Line that needs to be updated (on rebalance)
+	 * Gets the Line that needs to be updated (on rebalance) from archive collection
 	 */
 	protected function getLineToUpdate() {
 		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
@@ -797,16 +797,17 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	}
 
 	/**
-	 * gets the pricing data required for the rebalance
+	 * gets the price of the rebalance
 	 * 
 	 * @param type $lineToRebalance
 	 * @param type $realUsagev
 	 * @return type
 	 */
-	protected function getRebalancePricingData($lineToRebalance, $realUsagev) {
-		$charges = Billrun_Rates_Util::getTotalCharge($this->getRowRate($lineToRebalance), $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
-		$pricingData = array($this->pricingField => $charges);
-		return $pricingData;
+	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
+		$realPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
+		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
+		return $realPricing - $chargedPricing;
 	}
 
 	/**
@@ -820,7 +821,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param type $rebalancePricingData
 	 * @return type
 	 */
-	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget, $rebalancePricingData) {
+	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget) {
+		$rebalancePricingData  = $this->getLinePricingData($realUsagev, $usaget, $rate,  $this->plan);
 		$rebalanceData = array(
 			'usagev' => $rebalanceUsagev,
 			'aprice' => $lineToRebalance['aprice'] - $rebalancePricingData['aprice'],

@@ -93,9 +93,6 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	 * @param type $originalRow
 	 */	
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
-		$usaget = $lineToRebalance['usaget'];
-		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref', true);
 		if (!$balanceRef) {
@@ -118,9 +115,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 			if (!is_null($balance['balance.totals.' . $balance_totals_key . '.usagev'])) {
 				$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
 			} else {
-				$realPricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev);
-				$chargedPricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev - $rebalanceUsagev);
-				$rebalanceCost = ($realPricingData['aprice'] - $chargedPricingData['aprice']);
+				$rebalanceCost = $this->getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev);
 				if (!is_null($balance['balance.totals.' . $balance_totals_key . '.cost'])) {
 					$balance['balance.totals.' . $balance_totals_key . '.cost'] += $rebalanceCost;
 				} else {
@@ -151,7 +146,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	}
 	
 	/**
-	 * gets all fields that needs to be rebalanced by volume
+	 * gets all fields that needs to be rebalanced by volume in the archive collection
 	 * 
 	 * @param type $usagev
 	 * @param type $lineToRebalance
@@ -159,7 +154,7 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	 */
 	protected function getAdditionalUsagevFieldsForArchive($usagev, $lineToRebalance) {
 		$ret = array();
-		$availableFields = array('in_group', 'out_group', 'in_plan', 'out_plan');
+		$availableFields = array('in_group', 'out_group', 'over_group', 'in_plan', 'out_plan', 'over_plan');
 		foreach ($availableFields as $field) {
 			if (isset($lineToRebalance[$field])) {
 				$ret[$field] = $usagev;
