@@ -324,7 +324,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @param type $endOffset
 	 * @return int
 	 */
-	public static function getPriceByTariff($tariff, $startOffset, $endOffset) {
+	public static function getPriceByTariff($tariff, $startOffset, $endOffset ,$activation = FALSE) {
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
@@ -332,11 +332,23 @@ class Billrun_Plan extends Billrun_Service {
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
-		if ($tariff['from'] > $startOffset) {
+		if ($tariff['from'] > $startOffset) {			
 			$startPricing = $tariff['from'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+				$startFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$startPricing += ((($startFratcion * date('t',$activation)+1) /  $currentDays) - $startFratcion);
+			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+				$endFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$endPricing += (( ($endFratcion * date('t',$activation)+1) / $currentDays) - $endFratcion);
+			}
 		}
 
 		return array('start' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $startPricing,
@@ -490,7 +502,9 @@ class Billrun_Plan extends Billrun_Service {
 			$addedDays +=  $daysInMonth * (($endFriction) );
 		}
 		
-		return $activation + (($addedDays * $dayInSec) );
+		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
+		
+		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff;
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
