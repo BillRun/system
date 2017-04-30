@@ -178,10 +178,10 @@ class ReportsAction extends ApiAction {
 	public function planByCustomers() {
 		$current = $this->planByCustomersQuery();
 		$lastMonth = $this->planByCustomersQuery(strtotime("-1 month"));
-		foreach ($current as $plan => $amout) {
+		foreach ($current as $plan => $amount) {
 			$this->response[] = array(
 				'plan' => $plan,
-				'amount' => $amout,
+				'amount' => $amount,
 				'prev_amount' => isset($lastMonth[$plan]) ? $lastMonth[$plan] : 0,
 			);
 		}
