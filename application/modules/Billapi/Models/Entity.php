@@ -837,8 +837,15 @@ class Models_Entity {
 			"closeandnewable" => $isCurrentCycle,
 			"movable" => $isCurrentCycle,
 			"removable" => $isCurrentCycle,
+			"movable_from" => self::isDateMovable($record['from']->sec),
+			"movable_to" => self::isDateMovable($record['to']->sec)
 		);
 		return $record;
+	}
+	
+	protected static function isDateMovable($timestamp) {
+		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($timestamp);	
+		return (Billrun_Billingcycle::getCycleStatus($billrunKey) != 'confirmed');
 	}
 
 	/**
