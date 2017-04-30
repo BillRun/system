@@ -658,6 +658,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				return $this->cachedResults[$sid][$lineYear . $yearDay];
 			}
 		} catch(Exception $e) {
+			Billrun_Factory::log('Fraud server not responding', Zend_Log::WARN);
 			return 0;
 		}
 		$resultArray = json_decode($result, true);
