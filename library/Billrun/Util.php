@@ -1482,6 +1482,11 @@ class Billrun_Util {
 		return is_numeric($value) && ($value == intval($value));
 	}
 	
+	public static function IsUnixTimestampValue($value) {
+		return self::IsIntegerValue($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
+	}
+	
+	
 	public static function setHttpSessionTimeout($timeout = null) {
 		if (!is_null($timeout)) {
 			$sessionTimeout = $timeout;

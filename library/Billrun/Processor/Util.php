@@ -29,6 +29,11 @@ class Billrun_Processor_Util {
 			return null;
 		}
 		$dateValue = $userFields[$dateField];
+		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
+			$datetime = new DateTime();
+			$datetime->setTimestamp($dateValue);
+			return $datetime;
+		}
 		$withTimeField = false;
 		if (!empty($timeField) && isset($userFields[$timeField])) {
 			$dateValue .= ' ' . $userFields[$timeField];
