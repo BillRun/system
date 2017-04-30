@@ -961,11 +961,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	protected function beforeAggregate($accounts) {
-		if ($this->overrideMode) {
+		if ($this->overrideMode && $accounts) {
 			$aids = array();
 			foreach ($accounts as $account) {
 				$aids[] = $account->getInvoice()->getAid();
-			}		
+			}
 			$billrunKey = $this->billrun->key();
 			$this->removeBeforeAggregate($billrunKey, $aids);
 		}
