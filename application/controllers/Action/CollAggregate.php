@@ -74,7 +74,7 @@ class AggregateAction extends ApiAction {
 					)
 				);
 
-				$this->getController()->setOutput($ret);				
+				$this->getController()->setOutput($ret);
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
 			return TRUE;
