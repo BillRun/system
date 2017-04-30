@@ -499,12 +499,12 @@ class Billrun_Plan extends Billrun_Service {
 			//based on the starting month fraction  retrive the  current month fraction
 			$endFriction = $i - $startFraction;
 			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
-			$addedDays +=  $daysInMonth * (($endFriction) );
+			$addedDays +=  $daysInMonth * ( $endFriction );
 		}
 		
 		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
 		
-		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff;
+		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff + ($isStart ? 0 : -1);
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {

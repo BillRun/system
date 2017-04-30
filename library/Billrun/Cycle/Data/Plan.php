@@ -69,7 +69,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 				if(!empty($charge['start']) && $this->cycle->start() < $charge['start'] ) {
 					$entry['start'] =  new MongoDate($charge['start']);
 				}
-				if(!empty($charge['end']) && $this->cycle->end() > $charge['end'] ) {
+				if(!empty($charge['end']) && $this->cycle->end()-1 > $charge['end'] ) {
 					$entry['end'] =  new MongoDate($charge['end']);
 				}
 				
