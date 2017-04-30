@@ -65,7 +65,16 @@ class AggregateAction extends ApiAction {
 				}, $entities);
 
 				Billrun_Factory::log()->log("query success", Zend_Log::INFO);
-				$this->response($request, $entities);
+				$ret = array(
+					array(
+						'status' => 1,
+						'desc' => 'success',
+						'input' => $request,
+						'details' => $entities,
+					)
+				);
+
+				$this->getController()->setOutput($ret);
 				
 		} catch (Exception $e) {
 			$this->setError($e->getMessage(), $request);
@@ -109,38 +118,22 @@ class AggregateAction extends ApiAction {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 	
-	protected function response($request, $entities) {
+	protected function render($tpl, array $parameters = null) {
+		$request = $this->getRequest()->getRequest();
 		if (isset($request['response_type']) && $request['response_type'] === 'csv') {
-			$this->responseCsv($request, $entities);
+			return $this->renderCsv($request, $parameters);
 		}
-		
-		$this->getController()->setOutput(array(
-			array(
-				'status' => 1,
-				'desc' => 'success',
-				'input' => $request,
-				'details' => $entities,
-			),
-		));
-	}
-	
-	function responseCsv($request, $entities) {
-		$filename = isset($request['file_name']) ? $request['file_name'] : 'aggregated';
-		$delimiter = ',';
-		$f = fopen('php://output', 'w');
-		if (count($entities) > 0) {
-			fputcsv($f, array_keys($entities[0]), $delimiter);
-		}
-		foreach ($entities as $entity) {
-			fputcsv($f, array_values($entity), $delimiter);
-		}
-		fseek($f, 0);
-		header("Cache-Control: max-age=0");
-		header("Content-type: application/csv");
-		header('Content-disposition: inline; filename="' . $filename . '.csv"');
-		fpassthru($f);
-		echo stream_get_contents($f);
-		die();
+		return parent::render($tpl, $parameters);
 	}
 
+	protected function renderCsv($request, array $parameters = null) {
+		$filename = isset($request['file_name']) ? $request['file_name'] : 'aggregated';
+		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$this->getController()->setOutputVar('headers', $headers);
+		$resp = $this -> getResponse();
+		$resp->setHeader("Cache-Control", "max-age=0");
+		$resp->setHeader("Content-type",  "application/csv");
+		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');
+		return $this->getView()->render('api/aggregatecsv.phtml', $parameters);
+	}
 }
