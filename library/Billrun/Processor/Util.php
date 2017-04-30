@@ -15,7 +15,7 @@
 class Billrun_Processor_Util {
 
 	/**
-	 * Gets the datetime from the givven row
+	 * Gets the datetime from the given row
 	 * 
 	 * @param type $userFields
 	 * @param string $dateField
