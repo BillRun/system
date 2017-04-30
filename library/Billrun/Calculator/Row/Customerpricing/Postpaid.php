@@ -41,10 +41,10 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 	 * adds a refund row to the balance.
  	 * currently, there is no support for postpay rebalance
 	 * 
-	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
-	 * @param type $realUsagev
-	 * @param type $lineToRebalance
-	 * @param type $originalRow
+	 * @param float $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 * @param float $realUsagev
+	 * @param array $lineToRebalance
+	 * @param array $originalRow
 	 */	
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		$usaget = $lineToRebalance['usaget'];

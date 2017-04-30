@@ -87,10 +87,10 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	 * In case balance is in over charge (due to prepaid mechanism), 
 	 * adds a refund row to the balance.
 	 * 
-	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
-	 * @param type $realUsagev
-	 * @param type $lineToRebalance
-	 * @param type $originalRow
+	 * @param flaot $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 * @param float $realUsagev
+	 * @param array $lineToRebalance
+	 * @param array $originalRow
 	 */	
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		// Update subscribers balance
@@ -148,8 +148,8 @@ class Billrun_Calculator_Row_Customerpricing_Prepaid extends Billrun_Calculator_
 	/**
 	 * gets all fields that needs to be rebalanced by volume in the archive collection
 	 * 
-	 * @param type $usagev
-	 * @param type $lineToRebalance
+	 * @param float $usagev
+	 * @param array $lineToRebalance
 	 * @return array
 	 */
 	protected function getAdditionalUsagevFieldsForArchive($usagev, $lineToRebalance) {

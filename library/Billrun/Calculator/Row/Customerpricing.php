@@ -243,6 +243,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		return true;
 	}
 
+	/**
+	 * initial the minimum values allowed for finding a balance 
+	 */
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
 			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 3, 'float'))); // float avoid set type to int
@@ -252,16 +255,26 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	/**
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
-	 * @param type $db_ref
+	 * @param array $row
 	 */
 	public function getRowRate($row) {
 		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
 	}
 
+	/**
+	 * set the call offset with the value received
+	 * 
+	 * @param float $val
+	 */
 	public function setCallOffset($val) {
 		$this->call_offset = $val;
 	}
 
+	/**
+	 * returns the call offset value
+	 * 
+	 * @return float
+	 */
 	public function getCallOffset() {
 		return $this->call_offset;
 	}
@@ -670,7 +683,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * gets the current configuration according to the file type
 	 * 
-	 * @return type
+	 * @return array
 	 */
 	protected function getConfig() {
 		if (empty($this->config)) {
@@ -799,9 +812,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * gets the price of the rebalance
 	 * 
-	 * @param type $lineToRebalance
-	 * @param type $realUsagev
-	 * @return type
+	 * @param array $lineToRebalance
+	 * @param float $realUsagev
+	 * @return float
 	 */
 	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
 		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
@@ -813,13 +826,12 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * gets the data required for the rebalance
 	 * 
-	 * @param type $lineToRebalance
-	 * @param type $rate
-	 * @param type $rebalanceUsagev
-	 * @param type $realUsagev
-	 * @param type $usaget
-	 * @param type $rebalancePricingData
-	 * @return type
+	 * @param array $lineToRebalance
+	 * @param array $rate
+	 * @param float $rebalanceUsagev
+	 * @param float $realUsagev
+	 * @param string $usaget
+	 * @return array
 	 */
 	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget) {
 		$rebalancePricingData  = $this->getLinePricingData($realUsagev, $usaget, $rate,  $this->plan);
@@ -841,8 +853,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * return whether we need to consider intervals when rebalancing usagev balance
 	 * 
-	 * @param type $this->row
-	 * @return type
+	 * @return boolean
 	 * @todo move hard-coded values to configuration
 	 */
 	protected function needToRebalanceUsagev() {
@@ -852,7 +863,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	/**
 	 * Gets the update query to update subscriber's Line
 	 * 
-	 * @param type $rebalanceData
+	 * @param array $rebalanceData
+	 * @return array
 	 * @todo We need to update usagevc, in_plan, out_plan, in_group, usagesb
 	 */
 	protected function getUpdateLineUpdateQuery($rebalanceData) {
