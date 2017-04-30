@@ -128,7 +128,9 @@ class AggregateAction extends ApiAction {
 	protected function renderCsv($request, array $parameters = null) {
 		$filename = isset($request['file_name']) ? $request['file_name'] : 'aggregated';
 		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
+		$this->getController()->setOutputVar('delimiter', $delimiter);
 		$resp = $this -> getResponse();
 		$resp->setHeader("Cache-Control", "max-age=0");
 		$resp->setHeader("Content-type",  "application/csv");

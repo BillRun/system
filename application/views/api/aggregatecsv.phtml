@@ -8,12 +8,11 @@
 
 $entities = current($this->output)['details'];
 $headers = $this->output->headers;
+$delimiter = $this->output->delimiter;
 
 if (empty($headers) && count($entities) > 0) {
 	$headers = array_keys($entities[0]);
 }
-
-$delimiter = ',';
 
 echo implode($delimiter, $headers) . PHP_EOL;
 
