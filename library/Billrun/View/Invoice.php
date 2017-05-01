@@ -144,4 +144,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 				(empty($item['start']) || empty($item['end']) ? '' : ' - ') .
 				(empty($item['end'])   ? '' : 'Ending '.date(date($this->date_format,$item['end']->sec)));
 	}
+	
+	protected function currencySymbol() {
+		return Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
+	}
 }
