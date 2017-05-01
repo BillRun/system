@@ -19,7 +19,8 @@ echo implode($delimiter, $headers) . PHP_EOL;
 foreach ($entities as $entity) {
 	$line = array();
 	foreach ($headers as $header) {
-		echo (isset($entity[$header]) ? $entity[$header] : '') . $delimiter;
+		$val = Billrun_Util::getIn($entity, $header, null);
+		echo (!is_null($val) ? $val : '') . $delimiter;
 	}
 	echo PHP_EOL;
 }
