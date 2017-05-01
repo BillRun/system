@@ -43,6 +43,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var int
 	 */
 	protected $min_time;
+	
+	protected $cachedResults;
 
 	public function __construct() {
 		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time() + Billrun_Factory::config()->getConfigValue('fraud.minTimeOffset', 5400))); // minus 1.5 hours
@@ -627,7 +629,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if ($arate['key'] == 'INTERNET_VF') {
-			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED') {
+			$lineTime =  date(Billrun_Base::base_dateformat, $row['urt']->sec);
+			$sid = $row['sid'];
+			$rowVfDays = $this->queryVFDaysApi($sid, $lineTime);
+			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' && $rowVfDays <= Billrun_Factory::config()->getConfigValue('fraud.usageabroad.days')) {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
 				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
 				$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
@@ -640,6 +645,28 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$pricingData = $update = array();
 			}
 		}
+	}
+	
+	protected function queryVFDaysApi($sid, $lineTime) {
+		$url = Billrun_Factory::config()->getConfigValue('fraud.vfdays.url');
+		$lineYear = date('Y', strtotime($lineTime));
+		$yearDay = date('z', strtotime($lineTime));
+		try {
+			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
+				$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
+			} else {
+				return $this->cachedResults[$sid][$lineYear . $yearDay];
+			}
+		} catch(Exception $e) {
+			Billrun_Factory::log('Fraud server not responding', Zend_Log::WARN);
+			return 0;
+		}
+		$resultArray = json_decode($result, true);
+		if (!$resultArray['status']) { 
+			return 0;
+		}
+		$this->cachedResults[$sid][$lineYear . $yearDay] = $resultArray['details']['days'];
+		return $resultArray['details']['days'];
 	}
 
 }
