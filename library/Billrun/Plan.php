@@ -497,14 +497,14 @@ class Billrun_Plan extends Billrun_Service {
 			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
 			$addedDays +=  $daysInMonth * (($startFraction));
 			//based on the starting month fraction  retrive the  current month fraction
-			$endFriction = $i - $startFraction;
+			$endFraction = $i - $startFraction;
 			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
-			$addedDays +=  $daysInMonth * (($endFriction) );
+			$addedDays +=  $daysInMonth * ( $endFraction );
 		}
 		
 		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
 		
-		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff;
+		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff + ($isStart ? 0 : -1);
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
