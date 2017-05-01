@@ -553,12 +553,20 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
-		$syscmd = $cmd . " > /dev/null & ";
-		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
-			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
+		if (!defined('STDERR')) {
+			define('STDERR', fopen('php://stderr', 'w'));
 		}
-		if (system($syscmd) === FALSE) {
-			error_log("Can't fork PHP process");
+		$syscmd = $cmd . " > /dev/null & ";
+		$descriptorspec = array(
+			2 => STDERR,
+		);
+		$process = proc_open($syscmd, $descriptorspec, $pipes);
+		if ($process === FALSE) {
+			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
+			return false;
+		}
+		if (proc_close($process) === -1) {
+			Billrun_Factory::log('CLI command returned with error ',Zend_Log::ERR);
 			return false;
 		}
 		return true;
