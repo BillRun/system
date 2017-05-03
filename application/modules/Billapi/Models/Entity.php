@@ -844,11 +844,7 @@ class Models_Entity {
 	}
 	
 	protected static function isDateMovable($timestamp) {
-		if ($timestamp > strtotime('+50 years')) { // TODO temporary performance fix
-			return true;
-		}
-		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($timestamp);	
-		return (Billrun_Billingcycle::getCycleStatus($billrunKey) != 'confirmed');
+		return Billrun_Billingcycle::getMinimumMoveDate() <= $timestamp;
 	}
 
 	/**

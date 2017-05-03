@@ -34,6 +34,12 @@ class Billrun_Billingcycle {
 	 * @var array
 	 */
 	protected static $cycleStatuses = array();
+	
+	/**
+	 * Gets the minimum date for moving entities in time
+	 * @var int
+	 */
+	protected static $minimumMoveDate = null;
 
 
 	/**
@@ -379,4 +385,23 @@ class Billrun_Billingcycle {
 		
 		return self::$billingCycleCol;
 	}
+	
+	public static function getLastNonRerunnableCycle() {
+		$query = array('billed' => 1);
+		$sort = array("billrun_key" => -1);
+		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return FALSE;
+		}
+		return $entry['billrun_key'];
+	}
+
+	public static function getMinimumMoveDate() {
+		if (!is_null(self::$minimumMoveDate)) {
+			return self::$minimumMoveDate;
+		}
+		self::$minimumMoveDate = ($billrunKey = self::getLastNonRerunnableCycle()) ? self::getEndTime($billrunKey) : 0;
+		return self::$minimumMoveDate;
+	}
+
 }
