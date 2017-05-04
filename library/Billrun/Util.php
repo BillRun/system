@@ -557,6 +557,9 @@ class Billrun_Util {
 			define('STDERR', fopen('php://stderr', 'w'));
 		}
 		$syscmd = $cmd . " > /dev/null & ";
+		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
+		}
 		$descriptorspec = array(
 			2 => STDERR,
 		);
