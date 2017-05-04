@@ -13,7 +13,8 @@
 		<?php
 			$subscriptionList = $this->buildSubscriptionListFromLines($this->lines);
 			$endKey = @end(array_keys($subscriptionList));
-			foreach ($subscriptionList as $key =>$aggregated) { ?>	
+			foreach ($subscriptionList as $key =>$aggregated) { ?>
+			<?php  if($aggregated['type'] == 'refunds' && !$this->show_refunds_details) { continue; } ?>
 			<tr class="">
 				<td class='desc'><?php echo $aggregated['desc']; ?></td>
 				<td class='qty'><?php echo $aggregated['count']; ?></td>
