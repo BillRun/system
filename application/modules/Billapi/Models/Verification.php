@@ -49,7 +49,14 @@ trait Models_Verification {
 					'options' => [],
 				);
 				if (!$isGenerated) {
-					$knownParams[$name] = $params[$name];
+					if ($param['type'] == 'array' && (is_string($params[$name]) || is_numeric($params[$name]))) {
+						$val = array(
+							'$in' => array($params[$name])
+						);
+					} else {
+						$val = $params[$name];
+					}
+					$knownParams[$name] = $val;
 				} else { // on generate field the value will be automatically generate
 					$knownParams[$name] = null;
 				}
