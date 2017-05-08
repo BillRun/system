@@ -110,7 +110,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 			} else {
 				$this->data['costs']['service'][$vat_key] += $pricingData['aprice'];
 			}
-		} else {
+		} else if(!in_array($row['type'] , Billrun_Factory::config()->getFileTypes())){
 			Billrun_Factory::log("Updating unknown type: " . $row['type']);
 		}
 	}
