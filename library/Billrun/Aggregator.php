@@ -50,30 +50,35 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 */
 	protected abstract function afterAggregate($results);
 	
-	// TODO: Make this function abstract!!!!!!!!
+	/**
+	 * Actions to do before loading
+	 */
 	protected function beforeLoad() {
 		
 	}
-	
-	// TODO: Make this function abstract!!!!!!!!
-	protected abstract function afterLoad($data);
+	/**
+	 * Actions to do after loading
+	 */
+	protected function afterLoad($data) {
+		
+	}
 	
 	/**
-	 * Internal log logic
+	 * load aggregation data and prefom loading actions
 	 * @return type
 	 */
-	private function _load() {
+	public function load() {
 		$this->beforeLoad();
-		$data = $this->load();
-		$this->afterLoad($data);
-		return $data;
+		$this->data = $this->loadData();
+		$this->afterLoad($this->data);
+		return $this->data;
 	}
 	
 	/**
 	 * execute aggregate
 	 */
 	public function aggregate() {
-		$data = $this->_load();
+		$data = empty($this->data) ?  $this->load() : $this->data;
 		if(!is_array($data)) {
 			// TODO: Create an aggregator exception.
 			throw new Exception("Aggregator internal error.");
@@ -100,7 +105,7 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 * Loads an array of aggregateable records.
 	 * @return Billrun_Aggregator_Aggregateable
 	 */
-	abstract public function load();
+	abstract protected function loadData();
 
 	/**
 	 * update the billing line with stamp to avoid another aggregation

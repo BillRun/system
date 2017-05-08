@@ -114,7 +114,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $billrun;
 	
-	protected $acounts;
+	protected $accounts;
 	
 	/**
 	 * True if Cycle process
@@ -232,7 +232,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	/**
 	 * load the data to aggregate
 	 */
-	public function load() {
+	protected function loadData() {
 		if(!$this->canLoad) {
 			return;
 		}
@@ -484,7 +484,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		
 		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
-		$this->acounts = &$data;
+		$this->accounts = &$data;
 	}
 	
 	protected function clearForAcountPreload($data) {
@@ -502,7 +502,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function afterAggregate($results) {
 		Billrun_Factory::log("Writing the invoice data!");
 		// Write down the invoice data.
-		foreach ($this->acounts as $account) {
+		foreach ($this->accounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);
 			$this->save($account->getAppliedDiscounts());
 			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));

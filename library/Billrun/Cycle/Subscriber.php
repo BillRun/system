@@ -102,8 +102,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 * @return Aggregated data.
 	 */
 	public function aggregate($data = array()) {
-		$aggregatedPlans = $this->aggregatePlans();
-		$aggregatedServices = $this->aggregateServices();
+		Billrun_Factory::log("Aggregating plans!");	
+		$aggregatedPlans = $this->generalAggregate($this->records['plans'], Billrun_Cycle_Data_Plan::class);
+		Billrun_Factory::log("Aggregating services!");
+		$aggregatedServices = $this->generalAggregate($this->records['services'], Billrun_Cycle_Data_Service::class);
 		
 		$results = array_merge($aggregatedPlans, $aggregatedServices);
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
@@ -111,36 +113,12 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->invoice->addLines($results);
 		return $results;
 	}
-
-	/**
-	 * Aggregate the plan data
-	 * @return type
-	 */
-	protected function aggregatePlans() {
-		$plans = $this->records['plans'];
-		$aggregator = new Billrun_Cycle_Plan();
-		Billrun_Factory::log("Aggregating plans!");		
-		return $this->generalAggregate($plans, $aggregator);
-	}
-	
-	/**
-	 * Aggreagte the services
-	 * @return type
-	 */
-	protected function aggregateServices() {
-		$services = $this->records['services'];
-		$aggregator = new Billrun_Cycle_Service();
-		Billrun_Factory::log("Aggregating services!");
-		return $this->generalAggregate($services, $aggregator);
-	}
-	
 	/**
 	 * This function wraps general internal aggregation logic
 	 * @param type $data
-	 * @param type $aggregator
 	 * @return type
 	 */
-	protected function generalAggregate($data, $aggregator) {
+	protected function generalAggregate($data, $generatorClassName) {
 		if(!$data) {
 			Billrun_Factory::log("generalAggregate received empty data!");
 			return array();
@@ -149,8 +127,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$results = array();
 			
 		foreach ($data as $current) {
-			// Add the stump line.
-			$results = array_merge($results, $aggregator->aggregate($current));
+			$billableLinesGenerator = new $generatorClassName($current);
+			$results = array_merge($results, $billableLinesGenerator->getBillableLines());
 		}
 		return $results;
 	}
