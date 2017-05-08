@@ -134,6 +134,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $overrideMode;
 	
+	/**
+	 *
+	 * @var Mongodloid_Collection
+	 */
+	protected $subscribersColl;
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -196,6 +202,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
+		$this->subscribersColl = Billrun_Factory::db()->subscribersCollection();
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
@@ -438,7 +445,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * This function constructs the account attributes for a billrun cycle account
 	 * @param array $subscriberPlan - Current subscriber plan.
 	 */
-	protected function constructAccountAttributes($subscriberPlan) {
+	protected function constructAccountAttributes($subscriberPlan) {				
+		$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$accountQuery['type'] = 'account';
+		$accountQuery['aid'] = $subscriberPlan['id']['aid'];
+		$accountDetails = $this->subscribersColl->query($accountQuery)->cursor()->current();
 		$firstname = $subscriberPlan['id']['first_name'];
 		$lastname = $subscriberPlan['id']['last_name'];
 		
@@ -448,11 +459,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		//Add basic account data
 		$accountData = array(
+			'customer_id' => $accountDetails['aid'],
+			'company_name' => $accountDetails['company_name'],
 			'firstname' => $firstname,
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
-			'payment_details' => $paymentDetails
+			'payment_details' => $paymentDetails,
+			'country' => $accountDetails['country'],
+			'zipcode' => $accountDetails['zip_code'],
+			'email' => $accountDetails['email'],
+			'telephone' => $accountDetails['telephone'],
+			'invoice_date' => $accountDetails['invoice_date']
 		);
 		
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
