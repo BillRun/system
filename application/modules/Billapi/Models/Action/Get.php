@@ -38,6 +38,17 @@ class Models_Action_Get extends Models_Action {
 	 * @var array
 	 */
 	protected $sort = array();
+	
+	protected function __construct(array $params = array()) {
+		if (isset($params['request'])) {
+			$this->request = $params['request'];
+		}
+		
+		if (isset($params['settings']) && isset($params['settings']['query_parameters'])) {
+			$params['settings']['query_parameters'] = array_merge($params['settings']['query_parameters'], $this->getQueryCustomFields());
+		}
+		return parent::__construct($params);
+	}
 
 	public function execute() {
 //		if (!empty($this->request['query'])) {
@@ -100,6 +111,29 @@ class Models_Action_Get extends Models_Action {
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
 		}
 		return $records;
+	}
+	
+	/**
+	 * add option to query also by custom fields
+	 */
+	protected function getQueryCustomFields() {
+		$ret = array();
+		$customFieldsKey = $this->getCustomFieldsKey();
+		$customFields = Billrun_Factory::config()->getConfigValue("$customFieldsKey.fields", array());
+		foreach ($customFields as $field) {
+			if ($field['display']) {
+				$ret [] = array(
+					'name' => $field['field_name'],
+					'type' => 'string',
+				);
+			}
+		}
+		
+		return $ret;
+	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName();
 	}
 
 	/**
