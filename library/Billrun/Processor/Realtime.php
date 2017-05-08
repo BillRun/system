@@ -21,16 +21,13 @@ class Billrun_Processor_Realtime extends Billrun_Processor {
 	 * @return true
 	 */
 	public function parse() {
-		// real-time have only one event (currently)
-		reset($this->data['data']);
-		$rowKey = key($this->data['data']);
-		$row = &$this->data['data'][$rowKey];
-		$row['usaget'] = $this->getLineUsageType($row);
-		$row['usagev'] = $this->getLineVolume($row);
-		if (!isset($row['urt'])) {
-			$row['urt'] = new MongoDate();
+		foreach ($this->data['data'] as &$row) {
+			$row['usaget'] = $this->getLineUsageType($row);
+			$row['usagev'] = $this->getLineVolume($row);
+			if (!isset($row['urt'])) {
+				$row['urt'] = new MongoDate();
+			}
 		}
-
 		return true;
 	}
 
