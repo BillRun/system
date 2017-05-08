@@ -538,9 +538,9 @@ class Models_Entity {
 			);
 		}
 
-		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
-			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
+		if (($edge == 'from' && $this->update[$edge]->sec >= $this->before[$otherEdge]->sec) 
+			|| ($edge == 'to' && $this->update[$edge]->sec <= $this->before[$otherEdge]->sec)) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than or equal to end date');
 		}
 
 		$this->checkMinimumDate($this->update, $edge);
