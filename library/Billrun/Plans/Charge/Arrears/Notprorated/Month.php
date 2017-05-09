@@ -21,7 +21,7 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 		$charges = array();
 
 		foreach ($this->price as $tariff) {
-			$price = Billrun_Plan::getPriceByTariff($tariff, max(0, floor($this->startOffset)), ceil($this->endOffset));
+			$price = Billrun_Plan::getPriceByTariff($tariff, max(0, floor($this->startOffset+1)), floor($this->endOffset+1));
 			if (!empty($price)) {
 				$charges[] = array('value' => $price['price'], 'cycle' => $tariff['from']);
 			}

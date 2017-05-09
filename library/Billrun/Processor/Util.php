@@ -15,7 +15,7 @@
 class Billrun_Processor_Util {
 
 	/**
-	 * Gets the datetime from the givven row
+	 * Gets the datetime from the given row
 	 * 
 	 * @param type $userFields
 	 * @param string $dateField
@@ -29,6 +29,11 @@ class Billrun_Processor_Util {
 			return null;
 		}
 		$dateValue = $userFields[$dateField];
+		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
+			$datetime = new DateTime();
+			$datetime->setTimestamp($dateValue);
+			return $datetime;
+		}
 		$withTimeField = false;
 		if (!empty($timeField) && isset($userFields[$timeField])) {
 			$dateValue .= ' ' . $userFields[$timeField];

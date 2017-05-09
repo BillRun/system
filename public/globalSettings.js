@@ -41,7 +41,7 @@ var globalSetting = {
       itemsType: 'plans',
     },
     charging_plan: {
-      collection: 'plans',
+      collection: 'prepaidgroups',
       uniqueField: 'name',
       itemName: 'buckets group',
       itemType: 'charging_plan',

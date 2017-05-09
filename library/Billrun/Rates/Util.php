@@ -307,12 +307,7 @@ class Billrun_Rates_Util {
 			return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
 		}
 
-		$usagevDefault = Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.usagev", 0);
-		if ($usagevDefault) {
-			return $usagevDefault;
-		}
-
-		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 3), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
+		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 5), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
 	}
 
 	/**

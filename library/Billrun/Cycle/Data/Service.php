@@ -17,7 +17,8 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		if(!isset($options['name'], $options['cycle'])) {
 			throw new InvalidArgumentException("Received empty service!");
 		}
-		$this->plan = $options['name'];
+		$this->name = $options['name'];
+		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
 		$this->constructOptions($options);
@@ -29,17 +30,15 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	 */
 	protected function getFlatLine() {
 		$flatLine = parent::getFlatLine();	
-		$planValue = $flatLine['plan'];
-		unset($flatLine['plan']);
-		$flatLine['service'] = $planValue;
-		$flatLine['name'] = $planValue;
+		$flatLine['service'] = $this->name;
+		$flatLine['name'] = $this->name;
 		$flatLine['usagev'] = $this->quantity;
 		$flatLine['type'] = 'service';
 		return $flatLine;
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->plan . $this->cycle->start() . $this->cycle->key());
+		return md5($line['usagev'].$line['charge_op']. $line['aid'] . $line['sid'] . $this->name . $this->cycle->start() . $this->cycle->key());
 	}
 
 }
