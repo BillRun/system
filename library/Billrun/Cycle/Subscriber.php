@@ -109,6 +109,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		$results = array_merge($aggregatedPlans, $aggregatedServices);
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
+		//TODO add usage aggregation per subscriber here
 		// Write the results to the invoice
 		$this->invoice->addLines($results);
 		return $results;
@@ -162,9 +163,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
 		$mongoServices = Billrun_Util::getFieldVal($data["mongo_services"], array());
-		/**
-		 * @var Billrun_DataTypes_CycleTime $cycle
-		 */
+		
 		$cycle = $data['cycle'];
 		$stumpLine = $data['line_stump'];
 		

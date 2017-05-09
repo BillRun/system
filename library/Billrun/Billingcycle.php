@@ -15,6 +15,8 @@
  */
 class Billrun_Billingcycle {
 	
+	const PRECISION = 0.005;
+	
 	protected static $billingCycleCol = null;
     
 	/**

@@ -12,6 +12,7 @@
 class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 	protected $plan = null;
+	protected $name = null;
 	protected $start = 0;
 	protected $end = PHP_INT_MAX;
 	protected $cycle;
@@ -22,7 +23,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			Billrun_Factory::log("Invalid aggregate plan data!");
 			return;
 		}
-
+		$this->name = $options['plan'];
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
@@ -62,7 +63,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	protected function getFlatLine() {
 		$flatEntry = array(
 			'plan' => $this->plan,
-			'name' => $this->plan,
+			'name' => $this->name,
 			'process_time' => new MongoDate(),
 			'usagev' => 1
 		);
@@ -78,7 +79,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 	protected function generateLineStamp($line) {
 		return md5($line['charge_op'] . '_' . $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key() . '_' . $line['aprice']);
 	}
-
+	
+	//TODO move this to the account/subscriber lines addition logic and work in batch mode.
 	protected function addTaxationToLine($entry) {
 		$entryWithTax = FALSE;
 		for ($i = 0; $i < 3 && !$entryWithTax; $i++) {//Try 3 times to tax the line.

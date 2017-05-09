@@ -483,7 +483,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->clearForAcountPreload($data);
 		}
 		
-		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
 		$this->accounts = &$data;
 	}
 	
@@ -499,14 +498,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $dataKeys;
 	}
 	
+	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
+			$aggregatedEntity->writeInvoice($this->min_invoice_id);
+			$this->save($aggregatedEntity->getAppliedDiscounts());
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity));
+			$this->save($aggregatedResults);
+			
+			return $aggregatedResults;
+	}
+	
 	protected function afterAggregate($results) {
 		Billrun_Factory::log("Writing the invoice data!");
-		// Write down the invoice data.
-		foreach ($this->accounts as $account) {
-			$account->writeInvoice($this->min_invoice_id);
-			$this->save($account->getAppliedDiscounts());
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));
-		}
 		
 		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 		$end_msg .="Processed " . (count($results)) . " accounts";
@@ -520,6 +523,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($results, &$this));
+		return $results;
 	}
 	
 	protected function sendEndMail($msg) {

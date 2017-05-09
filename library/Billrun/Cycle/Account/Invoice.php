@@ -247,33 +247,25 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	public function updateTotals() {
 		$rawData = $this->data->getRawData();
-		/*
-
-		  if ($vatable) {
-		  $rawData['totals']['vatable'] = $pricingData['aprice'];
-		  $vat = self::getVATByBillrunKey($billrun_key);
-		  $price_after_vat = $pricingData['aprice'] + $pricingData['aprice'] * $vat;
-		  } else {
-		  $price_after_vat = $pricingData['aprice'];
-		  }
-		  $rawData['totals']['before_vat'] =  $this->getFieldVal($rawData,array('totals','before_vat'),0 ) + $pricingData['aprice'];
-		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
-		  $rawData['totals']['vatable'] = $pricingData['aprice'];
-		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
-			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
-			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+		
+		$newTotals = array(
+			'before_vat' => 0,
+			'after_vat' => 0,
+			'after_vat_rounded' => 0,
+			'vatable' => 0,
+			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
-			'refund'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
-			'charge'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
-			'past_balance'=>array('after_vat'=> 0),
+			'refund' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'past_balance' => array('after_vat' => 0),
 		);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
 		}
 		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
 		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
-		if($pastBalance['total'] <  -0.005 ) {
+		if($pastBalance['total'] < -Billrun_Billingcycle::PRECISION  ) {
 			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
 		$rawData['totals'] = $newTotals;

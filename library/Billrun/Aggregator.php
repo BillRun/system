@@ -38,19 +38,20 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 
 	public function isValid() {
 		return $this->isValid;
+	}	
+
+	/**
+	 * load aggregation data and prefom loading actions
+	 * @return type
+	 */
+	public function load() {
+		$this->beforeLoad();
+		$this->data = $this->loadData();
+		$this->afterLoad($this->data);
+		return $this->data;
 	}
 	
-	protected abstract function beforeAggregate($data);
-	
-	// TODO: Make this function abstract!!!!!!!!
-	// The results of this function are returned from the aggregate function
-	/**
-	 * 
-	 * @param array $results - Array of aggregate results
-	 */
-	protected abstract function afterAggregate($results);
-	
-	/**
+		/**
 	 * Actions to do before loading
 	 */
 	protected function beforeLoad() {
@@ -63,16 +64,13 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		
 	}
 	
-	/**
-	 * load aggregation data and prefom loading actions
-	 * @return type
+		/**
+	 * load the data to aggregate
+	 * Loads an array of aggregateable records.
+	 * @return Billrun_Aggregator_Aggregateable
 	 */
-	public function load() {
-		$this->beforeLoad();
-		$this->data = $this->loadData();
-		$this->afterLoad($this->data);
-		return $this->data;
-	}
+	abstract protected function loadData();
+	
 	
 	/**
 	 * execute aggregate
@@ -83,29 +81,38 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 			// TODO: Create an aggregator exception.
 			throw new Exception("Aggregator internal error.");
 		}
-		
+		Billrun_Factory::dispatcher()->trigger('beforeAggregate', array($data, &$this));
 		$this->beforeAggregate($data);
 		
 		$aggregated = array();
 		
 		// Go through the aggregateable
 		foreach ($data as $aggregateable) {
-			$result = $aggregateable->aggregate();
-			
+			$result = $this->aggregatedEntity($aggregateable->aggregate(), $aggregateable);
 			$aggregated = array_merge($aggregated, $result);
 		}
 		
-		$this->save($aggregated);
+		//$this->save($aggregated);
 		Billrun_Factory::log("Done aggregating!");
+		Billrun_Factory::dispatcher()->trigger('afterAggregate', array($data, &$this));
 		return $this->afterAggregate($aggregated);
 	}
-
+	
+	protected abstract function beforeAggregate($data);
 	/**
-	 * load the data to aggregate
-	 * Loads an array of aggregateable records.
-	 * @return Billrun_Aggregator_Aggregateable
+	 * Actions to be taken/alter each aggregated entity.
+	 * @return the altered aggregated entity
 	 */
-	abstract protected function loadData();
+	protected function aggregatedEntity($aggregatedResults,$aggregatedEntity) {
+		return $aggregatedResults;
+	}
+	
+	/**
+	 * The results of this function are returned from the aggregate function
+	 * @param array $results - Array of aggregate results
+	 */
+	protected abstract function afterAggregate($results);
+
 
 	/**
 	 * update the billing line with stamp to avoid another aggregation

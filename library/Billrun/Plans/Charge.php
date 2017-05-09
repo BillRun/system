@@ -57,7 +57,7 @@ class Billrun_Plans_Charge {
 	 */
 	protected function getChargeObject($plan) {
 		$object = __CLASS__;
-
+		//TODO change this to configurtion based mapping
 		//Should  the  charge be  upfornt or  arrears
 		$object .=!empty($plan['upfront']) ? '_Upfront' : '_Arrears';
 		//Should the charge  be unprorated?
