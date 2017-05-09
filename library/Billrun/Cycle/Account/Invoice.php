@@ -266,9 +266,15 @@ class Billrun_Cycle_Account_Invoice {
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'refund'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'charge'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'past_balance'=>array('after_vat'=> 0),
 		);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
+		}
+		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
+		if($pastBalance['total'] <  -0.005 ) {
+			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
