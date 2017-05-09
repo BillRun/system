@@ -12,6 +12,7 @@
  * @package  Application
  * @subpackage Plugins
  * @since    5.3
+ * @deprecated since version 5.5
  */
 class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 
