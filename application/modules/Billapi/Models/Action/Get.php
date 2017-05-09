@@ -121,7 +121,7 @@ class Models_Action_Get extends Models_Action {
 		$customFieldsKey = $this->getCustomFieldsKey();
 		$customFields = Billrun_Factory::config()->getConfigValue("$customFieldsKey.fields", array());
 		foreach ($customFields as $field) {
-			if ($field['display']) {
+			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
 				$ret [] = array(
 					'name' => $field['field_name'],
 					'type' => 'string',
