@@ -40,8 +40,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['plans']) && is_array($input['plans']) &&
-			   isset($input['mongo_plans']) && is_array($input['mongo_plans']) &&
-			   isset($input['cycle']) && is_a($input['cycle'], 'Billrun_DataTypes_CycleTime') &&
 			   isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Subscriber_Invoice') &&
 			   (!isset($input['services']) || is_array($input['services'])); 
 	}
@@ -162,16 +160,16 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['services'] = array();
 		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
-		$mongoServices = Billrun_Util::getFieldVal($data["mongo_services"], array());
+		$mongoServices = $this->aggregator->getServices();
 		
-		$cycle = $data['cycle'];
+		$cycle = $this->aggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 		
 		foreach ($services as &$arrService) {
 			// Plan name
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
-				Billrun_Factory::log("Ignoring inactive plan: " . print_r($arrService,1));
+				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1));
 				continue;
 			}
 			
@@ -197,12 +195,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			return;
 		}
 		$this->plan = $plans[count($plans) - 1]['plan'];
-		$mongoPlans = Billrun_Util::getFieldVal($data["mongo_plans"], array());
+		$mongoPlans = $this->aggregator->getPlans();
 		
-		/**
-		 * @var Billrun_DataTypes_CycleTime $cycle
-		 */
-		$cycle = $data['cycle'];
+		$cycle = $this->aggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 		
 		foreach ($plans as &$value) {

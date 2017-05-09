@@ -20,6 +20,8 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	 */
 	protected $records;
 	
+	protected $aggregator = null;
+	
 	/**
 	 * Create a new instance of the common aggregatable class.
 	 * @param array $data - Input data
@@ -27,13 +29,13 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	 * lines, empty by default.
 	 * @throws Exception
 	 */
-	public function __construct($data) {
+	public function __construct($data, $cycleAggregator) {
 		// Validate
 		if(!$this->validate($data)) {
 			// TODO: Swap with an actual aggregator exception
 			throw new Exception("Internal aggregator error construction data is invalid.");
 		}
-		
+		$this->aggregator = $cycleAggregator;
 		$this->constructRecords($data);
 	}
 

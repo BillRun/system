@@ -56,7 +56,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	protected function validate($input) {
 		// TODO: Complete
 		return isset($input['subscribers']) && is_array($input['subscribers']) &&
-			   isset($input['rates']) && is_array($input['rates']) &&
 			   isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Account_Invoice');
 	}
 
@@ -68,10 +67,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->invoice = $data['invoice'];
 		$this->records = array();
 		$subscribers = $data['subscribers'];
-		$cycle = $data['cycle'];
-		$plans = &$data['plans'];
-		$services = &$data['services'];
-		$rates = &$data['rates'];
+		$cycle = $this->aggregator->getCycle();
 		
 		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
 		
@@ -93,7 +89,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 				Billrun_Factory::log("SID " . $sid . " not in filtered!");
 			}
 			
-			$aggregatableRecords[] = $this->constructForSid($subscriberList, $filteredSid, $plans, $services, $rates, $cycle, $invoiceData);;
+			$aggregatableRecords[] = $this->constructForSid($subscriberList, $filteredSid, $invoiceData);;
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -109,11 +105,11 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $invoiceData Invoice
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
-	protected function constructForSid($sorted, $filtered, &$plans, &$services, &$rates, $cycle, $invoiceData) {		
+	protected function constructForSid($sorted, $filtered, $invoiceData) {		
 		$aggregateable = reset($sorted);
 		$changes = array(	'plans'=>array(),
 							'services'=> array() );
-		$invoice = new Billrun_Cycle_Subscriber_Invoice($rates, $invoiceData);
+		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->aggregator->getRates(), $invoiceData);
 		foreach ($sorted as $sub) {
 			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
@@ -126,12 +122,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$aggregateable['services'] = $changes['services'];
 		
 		$aggregateable['invoice'] = &$invoice;
-		$aggregateable['mongo_plans'] = &$plans;
-		$aggregateable['mongo_services'] = &$services;
-		$aggregateable['mongo_rates'] = &$rates;
-		$aggregateable['cycle'] = &$cycle;
-		$aggregateable['line_stump'] = $this->getLineStump($sub, $cycle);
-		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable);
+		$aggregateable['line_stump'] = $this->getLineStump($sub, $this->aggregator->getCycle());
+		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable, $this->aggregator);
 
 		return $cycleSub;
 	}
