@@ -28,7 +28,13 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-        
+	
+	/**
+	 * Cycle statuses cache (by page size)
+	 * @var array
+	 */
+	protected static $cycleStatuses = array();
+
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
@@ -331,34 +337,38 @@ class Billrun_Billingcycle {
 		if (is_null($size)) {
 			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		}
+		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
+			return self::$cycleStatuses[$billrunKey][$size];
+		}
 		$currentBillrunKey = self::getBillrunKeyByTimestamp();
 		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
 		$cycleRunning = self::isCycleRunning($billrunKey, $size);
 		
+		$cycleStatus = '';
 		if ($billrunKey == $currentBillrunKey) {
-			return 'current';
+			$cycleStatus = 'current';
 		}
-		if ($billrunKey > $currentBillrunKey) {
-			return 'future';
+		else if ($billrunKey > $currentBillrunKey) {
+			$cycleStatus = 'future';
 		}
-		if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
-			return 'to_run';
+		else if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
+			$cycleStatus = 'to_run';
 		} 
 		
-		if ($cycleRunning) {
-			return 'running';
+		else if ($cycleRunning) {
+			$cycleStatus = 'running';
 		}
 		
-		if (!$cycleConfirmed && $cycleEnded) {
-			return 'finished';
+		else if (!$cycleConfirmed && $cycleEnded) {
+			$cycleStatus = 'finished';
 		}
 		
-		if ($cycleEnded && $cycleConfirmed) {
-			return 'confirmed';
+		else if ($cycleEnded && $cycleConfirmed) {
+			$cycleStatus = 'confirmed';
 		}
-
-		return '';
+		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
+		return $cycleStatus;
 	}
 	
 	public static function getBillingCycleColl() {
@@ -368,4 +378,15 @@ class Billrun_Billingcycle {
 		
 		return self::$billingCycleCol;
 	}
+	
+	public static function getLastNonRerunnableCycle() {
+		$query = array('billed' => 1);
+		$sort = array("billrun_key" => -1);
+		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return FALSE;
+		}
+		return $entry['billrun_key'];
+	}
+
 }

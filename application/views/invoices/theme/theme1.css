@@ -413,4 +413,6 @@ img.billrun-logo {
 
 .table-default-primary.complex-sumup-wrapper {
 	max-width:800px;
+	page-break-inside: auto;
+	
 }
