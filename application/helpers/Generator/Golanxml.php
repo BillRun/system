@@ -619,6 +619,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			foreach ($subscriber_roaming as $zone_key => $zone) {
 				$this->writer->startElement('BREAKDOWN_SUBTOPIC');
 				$this->writer->writeAttribute('name', '');
+				unset($roaming_sms);
 				foreach ($this->rates as $rate){
 					if ($rate['key'] == $zone_key){
 						$roaming_sms = $rate;
