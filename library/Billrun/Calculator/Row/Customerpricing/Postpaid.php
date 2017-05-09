@@ -37,13 +37,14 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 	}
 	
 	/**
-	 * In case balance is in over charge (due to prepaid mechanism), 
+	 * In case balance is in over charge, 
 	 * adds a refund row to the balance.
+ 	 * currently, there is no support for postpay rebalance
 	 * 
-	 * @param type $rebalanceUsagev amount of balance (usagev) to return to the balance
-	 * @param type $realUsagev
-	 * @param type $lineToRebalance
-	 * @param type $originalRow
+	 * @param float $rebalanceUsagev amount of balance (usagev) to return to the balance
+	 * @param float $realUsagev
+	 * @param array $lineToRebalance
+	 * @param array $originalRow
 	 */	
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		$usaget = $lineToRebalance['usaget'];
@@ -70,11 +71,11 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			}
 		}
 		
-		$rebalancePricingData = $this->getRebalancePricingData($lineToRebalance, $realUsagev);
+		$rebalanceData = $this->getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget);
 		
 		// Update balance cost
 		if ($balance) {
-			$rebalanceAprice = ($lineToRebalance['aprice'] - $rebalancePricingData['aprice']);
+			$rebalanceAprice = ($lineToRebalance['aprice'] - $rebalanceData['aprice']);
 			$balance['balance.cost'] -= $rebalanceAprice;
 			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
@@ -86,7 +87,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		
 		$originalRow['usagev_offset'] += $rebalanceUsagev;
 		
-		$rebalanceData = $this->getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget, $rebalancePricingData);
 		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceData);
 		
 		// Update line in archive
@@ -101,6 +101,12 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$lines_coll->update($findQuery, $updateQuery, $options);
 	}
 	
+	/**
+	 * see Billrun_Calculator_Row_Customerpricing::isRebalanceRequired
+	 * currently, there is no support for postpay rebalance
+	 * 
+	 * @return boolean
+	 */
 	protected function isRebalanceRequired() {
 		return false;
 	}

@@ -76,6 +76,9 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 				if(!empty($entry['vatable'])) {
 					$entry = $this->addTaxationToLine($entry);
 				}
+				if (!empty($this->plan)) {
+					$entry['plan'] = $this->plan;
+				}
 				$entries[] = $entry;
 			}
 		}
