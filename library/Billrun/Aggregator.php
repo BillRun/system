@@ -113,26 +113,6 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 	 */
 	protected abstract function afterAggregate($results);
 
-
-	/**
-	 * update the billing line with stamp to avoid another aggregation
-	 *
-	 * @param int $sid the subscriber id to update
-	 * @param Mongodloid_Entity $line the billing line to update
-	 *
-	 * @return boolean true on success else false
-	 */
-	abstract protected function updateBillingLine($sid, $item);
-
-	/**
-	 * method to update the billrun by the billing line (row)
-	 * @param Mongodloid_Entity $billrun the billrun line
-	 * @param Mongodloid_Entity $line the billing line
-	 *
-	 * @return boolean true on success else false
-	 */
-	abstract protected function updateBillrun($billrun, $row);
-
 	/**
 	 * load the subscriber billrun raw (aggregated)
 	 * if not found, create entity with default values

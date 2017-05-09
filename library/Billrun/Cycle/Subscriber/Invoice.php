@@ -317,13 +317,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param array $aggregated array of aggregated subscribers.
 	 * @return array the stamps of the lines used to create the billrun
 	 */
-	public function addLines($aggregated) {
+	public function addLines($lines) {
 		$sid = $this->data['sid'];
 		$aid = $this->data['aid'];
+		
 		Billrun_Factory::log("Querying subscriber " . $aid . ":" . $sid . " for lines...", Zend_Log::DEBUG);
-		$subLines = $this->loadSubscriberLines();
-
-		$lines = array_merge($subLines, $aggregated);
 		Billrun_Factory::log("Processing account Lines $aid:$sid" . " lines: " . count($lines), Zend_Log::DEBUG);
 
 		$updatedLines = $this->processLines(array_values($lines));
@@ -417,48 +415,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->addLine($counters, $row, $pricingData, $vatable);
 		$this->updateCosts($pricingData, $row, $vatable);
 	}
-	
-	/**
-	 * Gets all the account lines for this billrun from the db
-	 * @return an array containing all the  accounts with thier lines.
-	 */
-	public function loadSubscriberLines() {
-		$ret = array();
-		$sid = $this->data['sid'];
-		$aid = $this->data['aid'];
-		$query = array(
-			'aid' => $aid,
-			'sid' => $sid,
-			'billrun' => $this->data['key']
-		);
-
-		$requiredFields = array('aid' => 1, 'sid' => 1);
-		$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
-
-		$sort = array(
-			'urt' => 1,
-		);
-
-		Billrun_Factory::log('Querying for subscriber ' . $aid . ':' . $sid . ' lines', Zend_Log::DEBUG);
-		$addCount = $bufferCount = 0;
-		$linesCol = Billrun_Factory::db()->linesCollection();
-		$fields = array_merge($filter_fields, $requiredFields);
-		$limit = Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000);
-
-		do {
-			$bufferCount += $addCount;
-			$cursor = $linesCol->query($query)->cursor()->fields($fields)
-					->sort($sort)->skip($bufferCount)->limit($limit);
-			foreach ($cursor as $line) {
-				$ret[$line['stamp']] = $line->getRawData();
-			}
-		} while (($addCount = $cursor->count(true)) > 0);
-		Billrun_Factory::log('Finished querying for account ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
-		
-		return $ret;
-	}
         
-        public function getTotals() {
-            return $this->data['totals'];
-        }
+	public function getTotals() {
+		return $this->data['totals'];
+	}
 }

@@ -105,13 +105,17 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		Billrun_Factory::log("Aggregating services!");
 		$aggregatedServices = $this->generalAggregate($this->records['services'], Billrun_Cycle_Data_Service::class);
 		
+		$usageLines = $this->loadSubscriberLines();
 		$results = array_merge($aggregatedPlans, $aggregatedServices);
 		Billrun_Factory::log("Subscribers aggregated " . count($results) . ' lines');
 		//TODO add usage aggregation per subscriber here
 		// Write the results to the invoice
-		$this->invoice->addLines($results);
+		$this->invoice->addLines(array_merge($usageLines,$results));
 		return $results;
 	}
+	
+	
+	
 	/**
 	 * This function wraps general internal aggregation logic
 	 * @param type $data
@@ -136,6 +140,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		if(isset($data['next_plan'])) {
 			$this->nextPlan = $data['next_plan'];
 		}
+		
+		$this->sid = $data['sid'];
+		$this->aid = $data['aid'];
 		
 		$this->constructServices($data);
 		$this->constructPlans($data);
@@ -215,5 +222,45 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			$planData['line_stump'] = $stumpLine;
 			$this->records['plans'][] = $planData;
 		}
+	}
+	
+	/**
+	 * Gets all the account lines for this billrun from the db
+	 * @return an array containing all the  accounts with thier lines.
+	 */
+	public function loadSubscriberLines() {
+		$ret = array();
+		$sid = $this->sid;
+		$aid = $this->aid;
+		$query = array(
+			'aid' => $aid,
+			'sid' => $sid,
+			'billrun' => $this->aggregator->getCycle()->key()
+		);
+
+		$requiredFields = array('aid' => 1, 'sid' => 1);
+		$filter_fields = Billrun_Factory::config()->getConfigValue('billrun.filter_fields', array());
+
+		$sort = array(
+			'urt' => 1,
+		);
+
+		Billrun_Factory::log('Querying for subscriber ' . $aid . ':' . $sid . ' lines', Zend_Log::DEBUG);
+		$addCount = $bufferCount = 0;
+		$linesCol = Billrun_Factory::db()->linesCollection();
+		$fields = array_merge($filter_fields, $requiredFields);
+		$limit = Billrun_Factory::config()->getConfigValue('billrun.linesLimit', 10000);
+
+		do {
+			$bufferCount += $addCount;
+			$cursor = $linesCol->query($query)->cursor()->fields($fields)
+					->sort($sort)->skip($bufferCount)->limit($limit);
+			foreach ($cursor as $line) {
+				$ret[$line['stamp']] = $line->getRawData();
+			}
+		} while (($addCount = $cursor->count(true)) > 0);
+		Billrun_Factory::log('Finished querying for account ' . $aid . ':' . $sid . ' lines: ' . count($ret), Zend_Log::DEBUG);
+		
+		return $ret;
 	}
 }

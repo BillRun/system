@@ -222,7 +222,7 @@ class Billrun_Billingcycle {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
 		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
-		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -405,5 +405,20 @@ class Billrun_Billingcycle {
 		self::$minimumMoveDate = ($billrunKey = self::getLastNonRerunnableCycle()) ? self::getEndTime($billrunKey) : 0;
 		return self::$minimumMoveDate;
 	}
+	
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
+		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
+			$zeroPages = 1;
+		}
+		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
+		$cycleCount = $cycleCol->query($cycleQuery)->count();
+		
+		if ($cycleCount >= $zeroPages) {
+			Billrun_Factory::log("Finished going over all the pages", Zend_Log::DEBUG);
+			return true;
+		}		
+		return false;
+	}
+	
 
 }

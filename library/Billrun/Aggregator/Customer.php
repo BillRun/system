@@ -214,6 +214,72 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return new Billrun_DataTypes_CycleTime($this->getStamp());
 	}
 	
+	public function getPlans() {
+		if(empty($this->plansCache)) {
+			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
+			$pipelines[] = $this->getPlansProjectPipeline();
+			$coll = Billrun_Factory::db()->plansCollection();
+			$res = iterator_to_array($coll->aggregate($pipelines));
+
+			$this->plansCache = (!is_array($res) || empty($res)) ? array()
+																 : $this->keySortArray($res, 'plan');
+		} 
+		
+		return $this->plansCache;
+	}
+	
+	public function getServices() {
+		if(empty($this->servicesCache)) {
+			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
+			$coll = Billrun_Factory::db()->servicesCollection();
+			$res = iterator_to_array($coll->aggregate($pipelines));
+
+			$this->servicesCache =  (!is_array($res) || empty($res)) ? array()
+																	 : $this->keySortArray($res, 'name');
+		}
+		return $this->servicesCache;
+	}
+	
+	public function getRates() {
+		if(empty($this->ratesCache)) {
+			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
+
+			$coll = Billrun_Factory::db()->ratesCollection();
+			$res = iterator_to_array($coll->aggregate($pipelines));
+			
+			$this->ratesCache = (!is_array($res) || empty($res)) ? array() 
+																 : $this->keySortArray($res, '_id');
+		}
+		return $this->ratesCache;
+	}
+	
+	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		$notBilled = $billrunColl->query($billrunQuery)->cursor();
+		$notBilledAids = array();
+		foreach ($notBilled as $account) {
+			$notBilledAids[] = $account['aid'];
+		}
+		if (empty($aids)) {
+			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$billrunRemoveQuery = $billrunQuery;
+		} else {
+			$aids =array_values(array_intersect($notBilledAids, $aids));
+			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
+										'billrun' => $billrunKey, 
+										'$or' => array(
+											array( 'type' => array('$in' => array('service', 'flat')) ),
+											array( 'type'=>'credit','usaget'=>'discount' )
+											));
+			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		}
+		$linesColl->remove($linesRemoveQuery);
+		$billrunColl->remove($billrunRemoveQuery);
+	}
+
+	
 	//--------------------------------------------------------------------
 	
 	protected function buildBillrun($options) {
@@ -250,6 +316,20 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$accounts = $this->parseToAccounts($data, $this);
 		
 		return $accounts;
+	}
+	
+	protected function afterLoad($data) {
+		if (!$this->recreateInvoices && $this->isCycle){			
+			$this->handleInvoices($data);
+		}
+
+		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
+
+		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
+		
+		if ($this->bulkAccountPreload) {
+			$this->clearForAcountPreload($data);
+		}
 	}
 
 	protected function keySortArray($array, $indxKey) {
@@ -429,20 +509,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->billingCycle->update($query, $update);
 	}
 	
-	protected function afterLoad($data) {
-		if (!$this->recreateInvoices && $this->isCycle){			
-			$this->handleInvoices($data);
-		}
-
-		Billrun_Factory::log("Acount entities loaded: " . count($data), Zend_Log::INFO);
-
-		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
-		
-		if ($this->bulkAccountPreload) {
-			$this->clearForAcountPreload($data);
-		}
-	}
-	
 	protected function clearForAcountPreload($data) {
 		Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_Log::INFO);
 		$dataKeys = array_keys($data);
@@ -488,45 +554,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
 		}
 	}
-
-	public function getPlans() {
-		if(empty($this->plansCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
-			$pipelines[] = $this->getPlansProjectPipeline();
-			$coll = Billrun_Factory::db()->plansCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
-
-			$this->plansCache = (!is_array($res) || empty($res)) ? array()
-																 : $this->keySortArray($res, 'plan');
-		} 
-		
-		return $this->plansCache;
-	}
-	
-	public function getServices() {
-		if(empty($this->servicesCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
-			$coll = Billrun_Factory::db()->servicesCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
-
-			$this->servicesCache =  (!is_array($res) || empty($res)) ? array()
-																	 : $this->keySortArray($res, 'name');
-		}
-		return $this->servicesCache;
-	}
-	
-	public function getRates() {
-		if(empty($this->ratesCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
-
-			$coll = Billrun_Factory::db()->ratesCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
-			
-			$this->ratesCache = (!is_array($res) || empty($res)) ? array() 
-																 : $this->keySortArray($res, '_id');
-		}
-		return $this->ratesCache;
-	}
 	
 	/**
 	 * 
@@ -571,7 +598,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param int $aid - Account id, null by deafault
 	 * @return array 
 	 */
-	public function aggregateMongo($cycle, $page, $size, $aid = null) {
+	protected function aggregateMongo($cycle, $page, $size, $aid = null) {
 		if ($aid) {
 			$page = 0;
 			$size = 1;
@@ -769,27 +796,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	/**
-	 *
-	 * @param type $sid
-	 * @param type $item
-	 * @deprecated update of billing line is done in customer pricing stage
-	 */
-	protected function updateBillingLine($sid, $item) {
-		
-	}
-
-	/**
-	 * method to update the billrun by the billing line (row)
-	 * @param Mongodloid_Entity $billrun the billrun line
-	 * @param Mongodloid_Entity $line the billing line
-	 *
-	 * @return boolean true on success else false
-	 */
-	protected function updateBillrun($billrun, $line) {
-		
-	}
-
-	/**
 	 * HACK TO MAKE THE BILLLRUN FASTER
 	 * Get a rate from the row
 	 * @param Mongodloid_Entity the row to get rate from
@@ -805,21 +811,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 	}
 	
-	// TODO: Move to Billrun_Billingcycle
-	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
-		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
-			$zeroPages = 1;
-		}
-		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
-		$cycleCount = $cycleCol->query($cycleQuery)->count();
-		
-		if ($cycleCount >= $zeroPages) {
-			Billrun_Factory::log("Finished going over all the pages", Zend_Log::DEBUG);
-			return true;
-		}		
-		return false;
-	}
-	
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle
@@ -830,7 +821,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Factory::log()->log("Failed getting next page, retries exhausted", Zend_Log::ALERT);
 			return false;
 		}
-		if ($this->isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
+		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
 			 return false;
 		}
 		
@@ -927,32 +918,5 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
-	}
-	
-	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
-		$linesColl = Billrun_Factory::db()->linesCollection();
-		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-		$notBilled = $billrunColl->query($billrunQuery)->cursor();
-		$notBilledAids = array();
-		foreach ($notBilled as $account) {
-			$notBilledAids[] = $account['aid'];
-		}
-		if (empty($aids)) {
-			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
-			$billrunRemoveQuery = $billrunQuery;
-		} else {
-			$aids =array_values(array_intersect($notBilledAids, $aids));
-			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
-										'billrun' => $billrunKey, 
-										'$or' => array(
-											array( 'type' => array('$in' => array('service', 'flat')) ),
-											array( 'type'=>'credit','usaget'=>'discount' )
-											));
-			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-		}
-		$linesColl->remove($linesRemoveQuery);
-		$billrunColl->remove($billrunRemoveQuery);
-	}
-	
+	}	
 }
