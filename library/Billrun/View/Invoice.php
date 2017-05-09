@@ -98,6 +98,10 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $subscriptionList;
 	}
 	
+	public function currencySymbol() {
+		return Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
+	}
+	
 	protected function getLineRatePrice($rate, $line) {
 		$pricePerUsage = 0;		
 		if(isset($rate['price'][0]['price'])) {
@@ -112,7 +116,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+			$rate = MongoDBRef::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
+			$rate = $rate->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ? 
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
@@ -143,5 +148,5 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return (empty($item['start']) ? '' : 'Starting '.date(date($this->date_format,$item['start']->sec))) .
 				(empty($item['start']) || empty($item['end']) ? '' : ' - ') .
 				(empty($item['end'])   ? '' : 'Ending '.date(date($this->date_format,$item['end']->sec)));
-	}
+	}	
 }

@@ -88,6 +88,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y'));
 		$this->view->assign('span_date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.span_date_format', 'd/m'));
 		$this->view->assign('use_complex_sumup',  Billrun_Factory::config()->getConfigValue(self::$type . '.use_complex_sumup', FALSE));
+		$this->view->assign('show_refunds_details',  Billrun_Factory::config()->getConfigValue(self::$type . '.show_refunds_details', FALSE));
 		$this->view->assign('tanent_css', $this->tanent_css);
 		$this->view->assign('font_awesome_css_path', $this->font_awesome_css_path);
 		$this->prepareGraphicsResources();
