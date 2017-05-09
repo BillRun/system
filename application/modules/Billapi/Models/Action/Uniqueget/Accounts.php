@@ -28,5 +28,9 @@ class Models_Action_Uniqueget_Accounts extends Models_Action_Uniqueget {
 	protected function getCollectionName() {
 		return 'subscribers';
 	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName() . ".account";
+	}
 
 }

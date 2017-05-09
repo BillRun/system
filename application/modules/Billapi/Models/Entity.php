@@ -94,12 +94,12 @@ class Models_Entity {
 	protected $action = 'change';
 
 	/**
-	 * minimum update datetime (unix timestamp)
+	 * Gets the minimum date for moving entities in time (unix timestamp)
 	 * 
 	 * @var int
 	 */
-	static protected $minUpdateDatetime;
-
+	protected static $minUpdateDatetime = null;
+	
 	/**
 	 * the change action applied on the entity
 	 * 
@@ -373,8 +373,8 @@ class Models_Entity {
 	 * @return unix timestamp
 	 */
 	protected static function getMinimumUpdateDate() {
-		if (empty(self::$minUpdateDatetime)) {
-			self::$minUpdateDatetime = Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getLastClosedBillingCycle());
+		if (is_null(self::$minUpdateDatetime)) {
+			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 		}
 		return self::$minUpdateDatetime;
 	}
@@ -538,9 +538,9 @@ class Models_Entity {
 			);
 		}
 
-		if (($edge == 'from' && $this->update[$edge]->sec > $this->before[$otherEdge]->sec) 
-			|| ($edge == 'to' && $this->update[$edge]->sec < $this->before[$otherEdge]->sec)) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than end date');
+		if (($edge == 'from' && $this->update[$edge]->sec >= $this->before[$otherEdge]->sec) 
+			|| ($edge == 'to' && $this->update[$edge]->sec <= $this->before[$otherEdge]->sec)) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than or equal to end date');
 		}
 
 		$this->checkMinimumDate($this->update, $edge);
@@ -844,8 +844,7 @@ class Models_Entity {
 	}
 	
 	protected static function isDateMovable($timestamp) {
-		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($timestamp);	
-		return (Billrun_Billingcycle::getCycleStatus($billrunKey) != 'confirmed');
+		return self::getMinimumUpdateDate() <= $timestamp;
 	}
 
 	/**

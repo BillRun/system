@@ -116,5 +116,25 @@ class AggregateAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+	
+	protected function render($tpl, array $parameters = null) {
+		$request = $this->getRequest()->getRequest();
+		if (isset($request['response_type']) && $request['response_type'] === 'csv') {
+			return $this->renderCsv($request, $parameters);
+		}
+		return parent::render($tpl, $parameters);
+	}
 
+	protected function renderCsv($request, array $parameters = null) {
+		$filename = isset($request['file_name']) ? $request['file_name'] : 'aggregated';
+		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
+		$this->getController()->setOutputVar('headers', $headers);
+		$this->getController()->setOutputVar('delimiter', $delimiter);
+		$resp = $this -> getResponse();
+		$resp->setHeader("Cache-Control", "max-age=0");
+		$resp->setHeader("Content-type",  "application/csv");
+		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');
+		return $this->getView()->render('api/aggregatecsv.phtml', $parameters);
+	}
 }
