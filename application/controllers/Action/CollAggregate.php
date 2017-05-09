@@ -55,15 +55,12 @@ class AggregateAction extends ApiAction {
 			});
 			
 			if (!empty($lookups)) {
-				$lookupError = array_map(function($lookup) use ($config) {
-					$collectionName = $lookup['$lookup']['from'];
-					if (!in_array($collectionName, Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
-						return true;
-					}
-					return false;
-				}, $lookups);
+				$lookupError = array_filter($lookups, function($lookup) use ($config) {
+					$collectionName = Billrun_Util::getFieldVal($lookup['$lookup']['from'], false);
+					return (!in_array($collectionName, Billrun_Util::getFieldVal($config['permitted_collections'], array())));
+				});
 				
-				if (in_array(true, $lookupError)) {
+				if (!empty($lookupError)) {
 					$this->setError('Illegal collection name in lookup pipeline', $request);
 					return TRUE;
 				}
