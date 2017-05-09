@@ -34,13 +34,6 @@ class Billrun_Billingcycle {
 	 * @var array
 	 */
 	protected static $cycleStatuses = array();
-	
-	/**
-	 * Gets the minimum date for moving entities in time
-	 * @var int
-	 */
-	protected static $minimumMoveDate = null;
-
 
 	/**
 	 * returns the end timestamp of the input billing period
@@ -394,14 +387,6 @@ class Billrun_Billingcycle {
 			return FALSE;
 		}
 		return $entry['billrun_key'];
-	}
-
-	public static function getMinimumMoveDate() {
-		if (!is_null(self::$minimumMoveDate)) {
-			return self::$minimumMoveDate;
-		}
-		self::$minimumMoveDate = ($billrunKey = self::getLastNonRerunnableCycle()) ? self::getEndTime($billrunKey) : 0;
-		return self::$minimumMoveDate;
 	}
 
 }
