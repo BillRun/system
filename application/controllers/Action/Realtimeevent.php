@@ -138,6 +138,7 @@ class RealtimeeventAction extends ApiAction {
 			$line["mscc_data"][0]['usagev'] = ( isset($line['usagev']) ? $line['usagev'] : 0);
 			$current["mscc_data"][] = $line["mscc_data"][0];
 		}
+		$current['session_id'] = $this->event['session_id']; // returns the original session_id of the request to the unified response (and not the modified one)
 		return $current;
 	}
 
@@ -147,6 +148,8 @@ class RealtimeeventAction extends ApiAction {
 				$new_event = $this->event;
 				$new_event["mscc_data"] = array(0 => $mscc_service);
 				$new_event['usaget'] = $this->usaget;
+				$new_event['session_id'] .= $mscc_service['rating_group'];  // each one of the splitting events should have different session_id (for rebalance and unify purposes)
+				$new_event['stamp'] = Billrun_Util::generateArrayStamp($new_event);
 
 				$this->events[] = $new_event;
 			}
@@ -236,11 +239,10 @@ class RealtimeeventAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 
 		foreach ($this->events as $event) {
-
 			$processor->addDataRow($event);
-			$processor->process();
-			$allLines[] = current($processor->getAllLines());
 		}
+		$processor->process();
+		$allLines = $processor->getAllLines();
 
 		$unifiedAnswer = $this->unifyLines($allLines);
 		return $unifiedAnswer;
