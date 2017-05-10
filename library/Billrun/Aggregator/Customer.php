@@ -63,11 +63,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected $min_invoice_id = 101;
 
-	/**
-	 *
-	 * @var boolean is customer price vatable by default
-	 */
-	protected $vatable = true;
 	protected $rates;
 	protected $testAcc = false;
 
@@ -133,6 +128,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @var boolean
 	 */
 	protected $overrideMode;
+	/**
+	 *  Is the run is fake (for example to get a current balance in the middle of the month)
+	 */
+	protected $fakeCycle = false;
 	
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -156,15 +155,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if (isset($options['size']) && $options['size']) {
 			$this->size = (int)$options['size'];
 		}
-		if (isset($options['aggregator']['vatable'])) {
-			$this->vatable = $options['aggregator']['vatable'];
-		}
 
 		if (isset($options['aggregator']['test_accounts'])) {
 			$this->testAcc = $options['aggregator']['test_accounts'];
-		}
-		if (isset($options['aggregator']['min_invoice_id'])) {
-			$this->min_invoice_id = (int) $options['aggregator']['min_invoice_id'];
 		}
 
 		if (isset($options['aggregator']['memory_limit_in_mb'])) {
@@ -174,13 +167,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'];
 			}
 		}
-		if (isset($options['aggregator']['bulk_account_preload'])) {
-			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_preload'];
-		}
-
-		if (isset($options['aggregator']['force_accounts'])) {
-			$this->forceAccountIds = $options['aggregator']['force_accounts'];
-		}
+		
+		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
+		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
+		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'], $this->forceAccountIds);
+		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], $this->fakeCycle);
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
@@ -191,16 +182,14 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
 		}
-		
+				
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
 		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
-			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
-			$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
-			$pageResult = $this->getPage($maxProcesses, $zeroPages);
+			$pageResult = $this->getPage();
 			if ($pageResult === FALSE) {
 				return;
 			}
@@ -524,18 +513,21 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$aggregatedEntity->writeInvoice($this->min_invoice_id);
-			//Save Account services / plans
-			$this->save($aggregatedResults);
-			//Save Account discounts.
-			$this->save($aggregatedEntity->getAppliedDiscounts());
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity));
+			if(!$this->fakeCycle) {
+				$aggregatedEntity->save();
+				//Save Account services / plans
+				$this->save($aggregatedResults);
+				//Save Account discounts.
+				$this->save($aggregatedEntity->getAppliedDiscounts());
+			}
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity,$aggregatedResults));
 			return $aggregatedResults;
 	}
 	
 	protected function afterAggregate($results) {
 		Billrun_Factory::log("Writing the invoice data!");
 		
-		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
+		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 		$end_msg .="Processed " . (count($results)) . " accounts";
 		Billrun_Factory::log($end_msg, Zend_Log::INFO);
 		$this->sendEndMail($end_msg);
@@ -816,84 +808,21 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param the number of max tries to get the next page in the billing cycle
 	 * @return number of the next page that should be taken
 	 */
-	protected function getPage($maxProcesses, $zeroPages, $retries = 100) {
-		if ($retries <= 0) { // 100 is arbitrary number and should be enough
-			Billrun_Factory::log()->log("Failed getting next page, retries exhausted", Zend_Log::ALERT);
-			return false;
-		}
+	protected function getPage($retries = 100) {	
+		
+		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
 			 return false;
 		}
+		$pagerConfiguration = array(
+			'maxProcesses' => Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit',10),
+			'size' => $this->size,
+			'identifingQuery' => array('billrun_key' => $this->stamp),
+			
+		);
+		$pager = new Billrun_Cycle_Paging( $pagerConfiguration, $this->billingCycle );
 		
-		$host = gethostname();
-		if(!$this->validateMaxProcesses($host, $maxProcesses)) {
-			return false;
-		}
-		
-		$nextPage = $this->getNextPage();
-		if($nextPage === false) {
-			Billrun_Factory::log("getPage: Failed getting next page.");
-			return false;
-		}
-		
-		if($this->checkExists($nextPage, $host)) {
-			$error = "Page number ". $nextPage ." already exists.";
-			Billrun_Factory::log($error . " Trying Again...", Zend_Log::NOTICE);
-			return $this->getPage($maxProcesses, $zeroPages, $retries - 1);
-		}
-		
-		return $nextPage;
-	}
-	
-	/**
-	 * Validate the max processes config valus
-	 * @param string $host - Host name value
-	 * @param int $maxProcesses - The max number of proccesses
-	 * @return boolean true if valid
-	 */
-	protected function validateMaxProcesses($host, $maxProcesses) {
-		$query = array('billrun_key' => $this->stamp, 'page_size' => $this->size, 'host' => $host,'end_time' => array('$exists' => false));
-		$processCount = $this->billingCycle->query($query)->count();
-		if ($processCount >= $maxProcesses) {
-			Billrun_Factory::log("Host ". $host. "is already running max number of [". $maxProcesses . "] processes", Zend_Log::DEBUG);
-			return false;
-		}
-		return true;
-	}
-	
-	/**
-	 * Get the next page index
-	 * @return boolean|int
-	 */
-	protected function getNextPage() {
-		$cycleQuery = array('billrun_key' => $this->stamp, 'page_size' => $this->size);
-		$currentDocument = $this->billingCycle->query($cycleQuery)->cursor()->sort(array('page_number' => -1))->limit(1)->current();
-		if (is_null($currentDocument)) {
-			Billrun_Factory::log("getNexPage: failed to retrieve document");
-			return false;
-		}
-		
-		// First page
-		if (!isset($currentDocument['page_number'])) {
-			return 0;
-		} 
-		
-		return $currentDocument['page_number'] + 1;
-	}
-	
-	/**
-	 * Check if 
-	 * @param type $nextPage
-	 * @param type $host
-	 * @return type
-	 */
-	protected function checkExists($nextPage, $host) {
-		$query = array('billrun_key' => $this->stamp, 'page_number' => $nextPage, 'page_size' => $this->size);
-		$modifyQuery = array_merge($query, array('host' => $host, 'start_time' => new MongoDate()));
-		$modify = array('$setOnInsert' => $modifyQuery);
-		$checkExists = $this->billingCycle->findAndModify($query,$modify,null, array("upsert" => true));
-		
-		return !$checkExists->isEmpty();
+		return $pager->getPage($zeroPages, $retries);
 	}
 	
 	protected function addAccountFieldsToBillrun($billrun, $account) {

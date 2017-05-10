@@ -340,4 +340,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	public function getAppliedDiscounts() {
 		return $this->invoice->getAppliedDiscounts();
 	}
+	
+	//--------------------------------------------------
+	
+	public function save() {
+		$this->invoice->save();
+	}
+		
+	
 }

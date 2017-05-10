@@ -182,11 +182,10 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param int $invoiceId minimum invoice id to start from
 	 */
 	public function close($invoiceId) {
-		if(!$this->subscribers && !$this->data['subs']) {
+		if(!$this->isAccountActive()) {
 			Billrun_Factory::log("Deactivated account: " . $this->aid, Zend_Log::INFO);
 			return;
 		}
-		
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
@@ -197,12 +196,6 @@ class Billrun_Cycle_Account_Invoice {
 		}
 		$this->data->setRawData($newRawData);		
 
-		$ret = $this->billrun_coll->save($this->data);
-		if (!$ret) {
-			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
-		} else {
-			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
-		}
 	}
 
 	/**
@@ -298,6 +291,21 @@ class Billrun_Cycle_Account_Invoice {
 		$this->data->setRawData($rawData);
 	}
 	
+	public function save() {
+		if(!$this->isAccountActive()) {
+			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
+			return;
+		}
+		$ret = $this->billrun_coll->save($this->data);
+		if (!$ret) {
+			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
+		} else {
+			Billrun_Factory::log("Created invoice " . $ret . " for account " . $this->aid, Zend_Log::INFO);
+		}
+	}
+	
+	//-----------------------------------------------------------
+	
 	/**
 	 * Init the date values of the invoice.
 	 */
@@ -312,9 +320,13 @@ class Billrun_Cycle_Account_Invoice {
 		$this->data->setRawData($initData);
 	}
         
-        //======================================================
-        
-        public function getAid() {
+    //======================================================
+    
+	function isAccountActive() {		
+			return $this->subscribers || $this->data['subs'];
+	}
+	
+    public function getAid() {
 		return $this->aid;
 	}
 	
