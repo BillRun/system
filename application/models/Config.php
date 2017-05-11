@@ -753,7 +753,12 @@ class ConfigModel {
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
-			$volumeFields = $fileSettings['processor']['volume_field'];
+			if (is_array($fileSettings['processor']['volume_field'])) {
+				$volumeFields = $fileSettings['processor']['volume_field'];
+			}
+			else {
+				$volumeFields = array($fileSettings['processor']['volume_field']);
+			}
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
 			if (!isset($fileSettings['processor']['usaget_mapping'])) {
 				$fileSettings['processor']['usaget_mapping'] = array();
@@ -885,9 +890,6 @@ class ConfigModel {
 		}
 		if (empty($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
-		}
-		if (!is_array($processorSettings['volume_field'])) {
-			throw new Exception('Please supply volume fields to sum');
 		}
 		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
 			throw new Exception('Missing processor usage type mapping rules');
