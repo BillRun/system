@@ -127,9 +127,4 @@ abstract class Billrun_Aggregator extends Billrun_Base {
 		return $object;
 	}
 
-	/**
-	 * 
-	 * @param array $aggregated - Array of results
-	 */
-	protected abstract function save($aggregated);
 }

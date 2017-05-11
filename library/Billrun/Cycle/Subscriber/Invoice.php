@@ -21,6 +21,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 	protected $data;
 	
 	protected $rates = array();
+	
+	protected $invoicedLines = array();
         
 	/**
 	 * 
@@ -232,6 +234,8 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->data['totals']['after_vat'] = Billrun_Util::getFieldVal($this->data['totals']['after_vat'], 0) + $priceAfterVat;
 		$this->data['totals'][$breakdownKey]['before_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['before_vat'], 0) + $pricingData['aprice'];
 		$this->data['totals'][$breakdownKey]['after_vat'] = Billrun_Util::getFieldVal($this->data['totals'][$breakdownKey]['after_vat'], 0) + $priceAfterVat;
+		
+		$this->invoicedLines[$row['stamp']] = $row;
 	}
 
 	/**
@@ -415,8 +419,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		$this->addLine($counters, $row, $pricingData, $vatable);
 		$this->updateCosts($pricingData, $row, $vatable);
 	}
-        
+     
+	//--------------------------------------------------------------------------
+	
 	public function getTotals() {
 		return $this->data['totals'];
+	}
+	
+	public function getInvoicedLines() {
+		return $this->invoicedLines;
 	}
 }

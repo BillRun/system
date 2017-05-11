@@ -131,8 +131,8 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 
 		$generator = Billrun_Generator::getInstance($options);
-		$generator->load();
-		$generator->generate();
+		$generator->setData(array(new Mongodloid_Entity($accountInvoice->getRawData())));
+		$generator->generate($accountInvoice->getInvoicedLines());
 	}
 
 	protected function releaseZombies($waitNum) {

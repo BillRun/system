@@ -58,10 +58,9 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected $discounts= array();
 
+	protected $invoicedLines = array();
 
 	/**
-	 * 
-	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
 	 */
 	public function __construct($options = array()) {
@@ -231,7 +230,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Gets the current billrun document raw data
 	 * @return Mongodloid_Entity
 	 */
-	public function getRawData() {
+		public function getRawData() {
 		return $this->data->getRawData();
 	}
 
@@ -322,23 +321,31 @@ class Billrun_Cycle_Account_Invoice {
         
     //======================================================
     
-	function isAccountActive() {		
-			return $this->subscribers || $this->data['subs'];
+	function isAccountActive() {
+		return $this->subscribers || $this->data['subs'];
 	}
-	
-    public function getAid() {
+
+	public function getAid() {
 		return $this->aid;
 	}
+
+	public function getSubscribers() {
+		return $this->subscribers;
+	}
+
+	public function getTotals() {
+		return $this->data['totals'];
+	}
+
+	public function getAppliedDiscounts() {
+		return $this->discounts;
+	}
 	
-        public function getSubscribers() {
-            return $this->subscribers;
-        }
-        
-        public function getTotals() {
-            return $this->data['totals'];
-        }
-		
-		public function getAppliedDiscounts() {
-			return $this->discounts;
+	public function getInvoicedLines() {
+		$invoicedLines =  $this->invoicedLines;
+		foreach($this->subscribers as $subscriber) {
+			$invoicedLines += $subscriber->getInvoicedLines(); //+ works as the array is  actually hashed by the line stamp
 		}
+		return $invoicedLines;
+	}
 }

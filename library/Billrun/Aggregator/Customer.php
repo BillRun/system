@@ -149,13 +149,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		$this->buildBillrun($options);
 		
-		if (isset($options['aggregator']['size']) && $options['aggregator']['size']) {
-			$this->size = (int)$options['aggregator']['size'];
-		}
-		if (isset($options['size']) && $options['size']) {
-			$this->size = (int)$options['size'];
-		}
-
 		if (isset($options['aggregator']['test_accounts'])) {
 			$this->testAcc = $options['aggregator']['test_accounts'];
 		}
@@ -167,7 +160,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$this->memory_limit = $options['aggregator']['memory_limit_in_mb'];
 			}
 		}
-		
+
+		$this->size = (int) Billrun_Util::getFieldVal($options['aggregator']['size'],$this->size);
+		$this->size = (int) Billrun_Util::getFieldVal($options['size'],$this->size);//Override the configuration size settings.		
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
 		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'], $this->forceAccountIds);
@@ -513,14 +508,15 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$aggregatedEntity->writeInvoice($this->min_invoice_id);
-			if(!$this->fakeCycle) {
-				$aggregatedEntity->save();
+			if(!$this->fakeCycle) {				
 				//Save Account services / plans
-				$this->save($aggregatedResults);
+				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
-				$this->save($aggregatedEntity->getAppliedDiscounts());
+				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save the billrun document
+				$aggregatedEntity->save();
 			}
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity,$aggregatedResults));
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults));
 			return $aggregatedResults;
 	}
 	
@@ -767,7 +763,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $insertRow;
 	}
 
-	protected function save($results) {
+	protected function saveLines($results) {
 		if(empty($results)) {
 			Billrun_Factory::log("Empty aggregate customer results, skipping save");
 			return;

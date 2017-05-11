@@ -20,11 +20,11 @@ class Billrun_Cycle_Paging {
 			'maxProcesses' => 20,
 		);
 	protected $options = array();
-	protected $collection = null;
+	protected $pagerCollection = null;
 	
 	public function __construct($options, $pagingCollection) {
 		$this->options = Billrun_Util::getFieldVal($options, $this->defaultOptions);
-		$this->collection = $pagingCollection;
+		$this->pagerCollection = $pagingCollection;
 		$this->host = gethostname();
 	}
 	
@@ -66,7 +66,7 @@ class Billrun_Cycle_Paging {
 	 */
 	protected function validateMaxProcesses() {
 		$query = array_merge( $this->identifingQuery, array('page_size' => $this->size, 'host'=> $this->host,'end_time' => array('$exists' => false)) );
-		$processCount = $this->collection->query($query)->count();
+		$processCount = $this->pagerCollection->query($query)->count();
 		if ($processCount >= $this->maxProcesses) {
 			Billrun_Factory::log("Host ". $host. "is already running max number of [". $this->maxProcesses . "] processes", Zend_Log::DEBUG);
 			return false;
@@ -80,7 +80,7 @@ class Billrun_Cycle_Paging {
 	 */
 	protected function getNextPage() {
 		$query = array_merge($this->identifingQuery,array('page_size' => $this->size));
-		$currentDocument = $this->collection->query($query)->cursor()->sort(array('page_number' => -1))->limit(1)->current();
+		$currentDocument = $this->pagerCollection->query($query)->cursor()->sort(array('page_number' => -1))->limit(1)->current();
 		if (is_null($currentDocument)) {
 			Billrun_Factory::log("getNexPage: failed to retrieve document");
 			return false;
@@ -104,7 +104,7 @@ class Billrun_Cycle_Paging {
 		$query = array_merge($this->identifingQuery, array('page_number' => $nextPage, 'page_size' => $this->size));
 		$modifyQuery = array_merge($query, array('host' => $this->host, 'start_time' => new MongoDate()));
 		$modify = array('$setOnInsert' => $modifyQuery);
-		$checkExists = $this->collection->findAndModify($query, $modify, null, array("upsert" => true));
+		$checkExists = $this->pagerCollection->findAndModify($query, $modify, null, array("upsert" => true));
 		
 		return !$checkExists->isEmpty();
 	}
