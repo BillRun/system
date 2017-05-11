@@ -133,6 +133,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected $fakeCycle = false;
 	
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -471,7 +472,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function constructAccountAttributes($subscriberPlan) {
 		$firstname = $subscriberPlan['id']['first_name'];
 		$lastname = $subscriberPlan['id']['last_name'];
-		
 		$paymentDetails = 'No payment details';
 		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
 			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
@@ -482,7 +482,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
-			'payment_details' => $paymentDetails
+			'payment_details' => $paymentDetails,
 		);
 		
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
