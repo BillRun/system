@@ -524,7 +524,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
 			$aggregatedEntity->writeInvoice($this->min_invoice_id);
-			if(!$this->fakeCycle) {				
+			if(!$this->fakeCycle) {
+				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				$this->saveLines($aggregatedResults);
 				//Save Account discounts.
@@ -537,7 +538,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 	
 	protected function afterAggregate($results) {
-		Billrun_Factory::log("Writing the invoice data!");
+		
 		
 		$end_msg = "Finished iterating page {$this->page} of size {$this->size}. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
 		$end_msg .="Processed " . (count($results)) . " accounts";
@@ -602,22 +603,22 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 		}
 	}
-
-	/**
-	 * HACK TO MAKE THE BILLLRUN FASTER
-	 * Get a rate from the row
-	 * @param Mongodloid_Entity the row to get rate from
-	 * @return Mongodloid_Entity the rate of the row
-	 */
-	protected function getRowRate($row) {
-		$raw_rate = $row->get('arate', true);
-		$id_str = strval($raw_rate['$id']);
-		if (isset($this->rates[$id_str])) {
-			return $this->rates[$id_str];
-		} else {
-			return $row->get('arate', false);
-		}
-	}
+	
+//	/**
+//	 * HACK TO MAKE THE BILLLRUN FASTER
+//	 * Get a rate from the row
+//	 * @param Mongodloid_Entity the row to get rate from
+//	 * @return Mongodloid_Entity the rate of the row
+//	 */
+//	protected function getRowRate($row) {
+//		$raw_rate = $row->get('arate', true);
+//		$id_str = strval($raw_rate['$id']);
+//		if (isset($this->rates[$id_str])) {
+//			return $this->rates[$id_str];
+//		} else {
+//			return $row->get('arate', false);
+//		}
+//	}
 	
 	/**
 	 * Finding which page is next in the biiling cycle

@@ -104,7 +104,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->prepereView();
 		
 		foreach ($this->billrun_data as $object) {
-			$this->generateAccountInvoices($object, $lines);
+			if(isset($object['invoice_id'])) {
+				$this->generateAccountInvoices($object, $lines);
+			}
 		}
 	}
 	
