@@ -166,7 +166,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
 		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'], $this->forceAccountIds);
-		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], $this->fakeCycle);
+		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'],$this->fakeCycle));
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
@@ -191,6 +191,17 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->page = $pageResult;
 		}
 
+		$aggregateOptions = array(
+			'passthrough_fields' => Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array())
+		);
+		// If the accounts should not be overriden, filter the existing ones before.
+		if (!$this->overrideMode) {
+			// Get the aid exclusion query
+			$aggregateOptions['exclusion_query'] = $this->billrun->existingAccountsQuery();
+		}
+		//This class will define the account/subscriber/plans aggregation logic for the cycle
+		$this->aggregationLogic = new Billrun_Cycle_AggregatePipeline($aggregateOptions);
+		
 		$this->isValid = true;
 	}
 	
@@ -200,43 +211,36 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	
 	public function getPlans() {
 		if(empty($this->plansCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
-			$pipelines[] = $this->getPlansProjectPipeline();
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
+			$pipelines[] = $this->aggregationLogic->getPlansProjectPipeline();
 			$coll = Billrun_Factory::db()->plansCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->plansCache =  $this->toKeyHashedArray($res,'plan');
+		}
 
-			$this->plansCache = (!is_array($res) || empty($res)) ? array()
-																 : $this->keySortArray($res, 'plan');
-		} 
-		
 		return $this->plansCache;
 	}
 	
 	public function getServices() {
 		if(empty($this->servicesCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->servicesCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
-
-			$this->servicesCache =  (!is_array($res) || empty($res)) ? array()
-																	 : $this->keySortArray($res, 'name');
+			$res =  $this->aggregatePipelines($pipelines,$coll);
+			$this->servicesCache = $this->toKeyHashedArray($res , 'name');
 		}
 		return $this->servicesCache;
 	}
 	
 	public function getRates() {
 		if(empty($this->ratesCache)) {
-			$pipelines[] = $this->getPlansMatchPipeline(new Billrun_DataTypes_MongoCycleTime($this->getCycle()));
-
+			$pipelines[] = $this->aggregationLogic->getCycleDateMatchPipeline($this->getCycle());
 			$coll = Billrun_Factory::db()->ratesCollection();
-			$res = iterator_to_array($coll->aggregate($pipelines));
-			
-			$this->ratesCache = (!is_array($res) || empty($res)) ? array() 
-																 : $this->keySortArray($res, '_id');
+			$res = $this->aggregatePipelines($pipelines,$coll);
+			$this->ratesCache = $this->toKeyHashedArray($res, '_id');
 		}
 		return $this->ratesCache;
 	}
-	
+
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
@@ -312,20 +316,23 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		Billrun_Factory::dispatcher()->trigger('afterAggregatorLoadData', array('aggregator' => $this));
 		
 		if ($this->bulkAccountPreload) {
-			$this->clearForAcountPreload($data);
+			$this->clearForAccountPreload($data);
 		}
 	}
 
-	protected function keySortArray($array, $indxKey) {
-		$sorted = array();
+	/**
+	 * Map a regular array to an array the is  keyed by a given field in the array records
+	 */
+	protected function toKeyHashedArray($array, $indxKey) {
+		$hashed = array();
 		foreach ($array as $value) {
 			$key = strval($value[$indxKey]);
 			$translatedDates = Billrun_Utils_Mongo::convertRecordMongoDatetimeFields($value);
-			$sorted[$key] = $translatedDates;
+			$hashed[$key] = $translatedDates;
 		}
-		return $sorted;
+		return $hashed;
 	}
-	
+
 	/**
 	 * Get the raw data
 	 * @param Billrun_DataTypes_CycleTime $cycle
@@ -486,6 +493,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return  $accountData;
 	}
 	
+	/**
+	 * 
+	 * @param type $data
+	 */
 	protected function handleInvoices($data) {
 		$query = array('billrun_key' => $this->stamp, 'page_number' => (int)$this->page, 'page_size' => $this->size);
 		$dataCount = count($data);
@@ -493,7 +504,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$this->billingCycle->update($query, $update);
 	}
 	
-	protected function clearForAcountPreload($data) {
+	/**
+	 * 
+	 * @param type $data
+	 * @return type
+	 */
+	protected function clearForAccountPreload($data) {
 		Billrun_Factory::log('loading accounts that will be needed to be preloaded...', Zend_Log::INFO);
 		$dataKeys = array_keys($data);
 		//$existingAccounts = array();			
@@ -542,42 +558,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			Billrun_Util::sendMail("BillRun customer aggregate page finished", $msg, $recipients);
 		}
 	}
-	
-	/**
-	 * 
-	 * @param Billrun_DataTypes_MongoCycleTime $cycle
-	 * @return type
-	 */
-	// TODO: Move this function to a "collection aggregator class"
-	protected function getPlansMatchPipeline($cycle) {
-		return array(
-			'$match' => array(
-				'from' => array(
-					'$lt' => $cycle->end()
-					),
-				'to' => array(
-					'$gt' => $cycle->start()
-					)
-				)
-			);
-	}
-	
-	// TODO: Move this function to a "collection aggregator class"
-	protected function getPlansProjectPipeline() {
-		return array(
-			'$project' => array(
-				'plan' => '$name',
-				'upfront' => 1,
-				'prorated' => 1,
-				'vatable' => 1,
-				'price' => 1,
-				'recurrence.periodicity' => 1,
-				'plan_activation' => 1,
-				'plan_deactivation' => 1
-			)
-		);
-	}
-	
+
 	/**
 	 * Aggregate mongo with a query
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
@@ -587,108 +568,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @return array 
 	 */
 	protected function aggregateMongo($cycle, $page, $size, $aid = null) {
-		if ($aid) {
-			$page = 0;
-			$size = 1;
-		}
-		if (is_null($page)) {
-			$page = 0;
-		}
-		$pipelines[] = $this->getMatchPiepline($cycle);
-		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
-		}
-		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
-		$pipelines[] = array(
-			'$group' => array_merge($addedPassthroughFields['group'],array(
-				'_id' => array(
-					'aid' => '$aid',
-				),
-				'sub_plans' => array(
-					'$push' => array(
-						'type' => '$type',
-						'sid' => '$sid',
-						'plan' => '$plan',
-						'from' => '$from',
-						'to' => '$to',
-						'plan_activation' => '$plan_activation',
-						'plan_deactivation' => '$plan_deactivation',
-						'first_name' => '$firstname',
-						'last_name' => '$lastname',
-						'address' => '$address',
-						'services' => '$services'
-					),
-				),
-				'card_token' => array(
-					'$first' => '$card_token'
-				),
-			)),
-		);
-		$pipelines[] = array(
-			'$skip' => $page * $size,
-		);
-		$pipelines[] = array(
-			'$limit' => intval($size),
-		);
-		$pipelines[] = array(
-			'$unwind' => '$sub_plans',
-		);
-		$pipelines[] = array(
-			'$group' => array_merge($addedPassthroughFields['second_group'], array(
-				'_id' => array(
-					'aid' => '$_id.aid',
-					'sid' => '$sub_plans.sid',
-					'plan' => '$sub_plans.plan',
-					'first_name' => '$sub_plans.first_name',
-					'last_name' => '$sub_plans.last_name',
-					'type' => '$sub_plans.type',
-					'address' => '$sub_plans.address',
-					'services' => '$sub_plans.services'
-				),
-				'plan_dates' => array(
-					'$push' => array(
-						'plan' => '$sub_plans.plan',
-						'from' => '$sub_plans.from',
-						'to' => '$sub_plans.to',
-						'plan_activation' => '$sub_plans.plan_activation',
-						'plan_deactivation' => '$sub_plans.plan_deactivation',
-					),
-				),
-				'card_token' => array(
-					'$first' => '$card_token'
-				),
-			)),
-		);
-		
-		$pipelines[] = $this->getSortPipeline();
-
-		$pipelines[] = array(
-			'$project' => array(
-				'_id' => 0,
-				'id' => '$_id',
-				'plan_dates' => 1,
-				'card_token' => 1,
-				'passthrough' => $addedPassthroughFields['project'],
-			)
-		);
-		$coll = Billrun_Factory::db()->subscribersCollection();
-		return $this->aggregatePipelines($pipelines, $coll);
-	}
-	
-	protected function getAddedPassthroughValuesQuery() {
-		$passthroughFields = Billrun_Factory::config()->getConfigValue(static::$type . '.aggregator.passthrough_data', array());
-		$group = array();
-		$group2 = array();
-		$project = array();
-		foreach ($passthroughFields as $subscriberField) {
-			$group[$subscriberField] = array('$addToSet' => '$' . $subscriberField);
-			$group2[$subscriberField] = array('$first' => '$' . $subscriberField);
-			$project[$subscriberField] = array('$arrayElemAt' => array('$' . $subscriberField, 0));
-		}
-		if (!$project) {
-			$project = 1;
-		}
-		return array('group' => $group, 'project' => $project, 'second_group' => $group2);
+		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aid);
+		$collection = Billrun_Factory::db()->subscribersCollection();
+		return $this->aggregatePipelines($pipelines, $collection);
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
@@ -699,68 +581,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return array();
 		} 	
 		return $results;
-	}
-	
-	/**
-	 * 
-	 * @param Billrun_DataTypes_MongoCycleTime $mongoCycle
-	 * @return type
-	 */
-	protected function getMatchPiepline($mongoCycle) {
-		$match = array(
-			'$match' => array(
-				'$or' => array(
-					array_merge( // Account records
-						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
-					),
-					array(// Subscriber records
-						'type' => 'subscriber',
-						'plan' => array(
-							'$exists' => 1
-						),
-						'$or' => array(
-							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
-							array(// searches for a next plan. used for plans paid upfront
-								'from' => array(
-									'$lte' => $mongoCycle->end(),
-								),
-								'to' => array(
-									'$gt' => $mongoCycle->end(),
-								),
-							),
-						)
-					)
-				)
-			)
-		);
-
-
-		// If the accounts should not be overriden, filter the existing ones before.
-		if (!$this->overrideMode) {
-			// Get the aid exclusion query
-			$exclusionQuery = $this->billrun->existingAccountsQuery();
-			$match['$match']['aid'] = $exclusionQuery;
-		}
-
-		return $match;
-	}
-	
-	protected function getSortPipeline() {
-		return array(
-			'$sort' => array(
-				'_id.aid' => 1,
-				'_id.sid' => 1,
-				'_id.type' => -1,
-				'_id.plan' => 1,
-				
-				// TODO: We might want to uncomment this
-//				'plan_dates.from' => 1,
-			),
-		);
-	}
-
-	protected function saveCredit($credit, $billrun_key) {
-		return $insertRow;
 	}
 
 	protected function saveLines($results) {
