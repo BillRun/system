@@ -192,8 +192,12 @@ if (!lastConfig.registration_date) {
 }
 
 //BRCD-776
-db.lines.find({tax_data:{$exists:1},final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(line){
-	line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
+db.lines.find({final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(line){
+	if (typeof line.tax_data !== 'undefined') {
+		line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
+	} else {
+		line['final_charge']=line['aprice'];	
+	}
 	db.lines.save(line);
 });
 
