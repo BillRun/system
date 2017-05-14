@@ -1494,7 +1494,7 @@ class Billrun_Util {
 	}
 	
 	public static function IsUnixTimestampValue($value) {
-		return self::IsIntegerValue($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
+		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
 	}
 	
 	

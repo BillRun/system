@@ -48,10 +48,25 @@ class AggregateAction extends ApiAction {
 			}
 			if (empty($request['collection']) || !in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
-				return TRUE;		
+				return TRUE;
 			}
+			$lookups = array_filter($pipelines, function($pipeline) {
+				return key($pipeline) == '$lookup';
+			});
 			
-				$collection = $request['collection'];
+			if (!empty($lookups)) {
+				$lookupError = array_filter($lookups, function($lookup) use ($config) {
+					$collectionName = Billrun_Util::getFieldVal($lookup['$lookup']['from'], false);
+					return (!in_array($collectionName, Billrun_Util::getFieldVal($config['permitted_collections'], array())));
+				});
+				
+				if (!empty($lookupError)) {
+					$this->setError('Illegal collection name in lookup pipeline', $request);
+					return TRUE;
+				}
+			}
+
+			$collection = $request['collection'];
 			
 			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
 			
