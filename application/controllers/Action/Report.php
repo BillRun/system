@@ -38,7 +38,7 @@ class ReportAction extends ApiAction {
 		$page = $this->request->getRequest('page', 0);
 		$size = $this->request->getRequest('size', -1);
 		$this->{$action}($query, $page, $size);
-		return $this->response();
+		$this->response();
 	}
 	
 	public function generateReport($query, $page, $size) {
@@ -63,5 +63,26 @@ class ReportAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
 	}
+	
+	protected function render($tpl, array $parameters = null) {
+		$request = $this->getRequest()->getRequest();
+		$type = $this->request->getRequest('type', '');
+		if($type === 'csv') {
+			return $this->renderCsv($request, $parameters);
+		}
+		return parent::render('index', $parameters);
+	}
 
+	protected function renderCsv($request, array $parameters = null) {
+		$filename = isset($request['file_name']) ? $request['file_name'] : 'report';
+		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
+		$this->getController()->setOutputVar('headers', $headers);
+		$this->getController()->setOutputVar('delimiter', $delimiter);
+		$resp = $this -> getResponse();
+		$resp->setHeader("Cache-Control", "max-age=0");
+		$resp->setHeader("Content-type",  "application/csv; charset=UTF-8");
+		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');
+		return $this->getView()->render('api/aggregatecsv.phtml', $parameters);
+	}
 }
