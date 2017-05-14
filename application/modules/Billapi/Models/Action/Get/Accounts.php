@@ -24,5 +24,9 @@ class Models_Action_Get_Accounts extends Models_Action_Get {
 	protected function getCollectionName() {
 		return 'subscribers';
 	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName() . ".account";
+	}
 
 }
