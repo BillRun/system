@@ -28,7 +28,7 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-	
+        
 	/**
 	 * Cycle statuses cache (by page size)
 	 * @var array
@@ -379,7 +379,41 @@ class Billrun_Billingcycle {
 		return self::$billingCycleCol;
 	}
 	
-	public static function getLastNonRerunnableCycle() {
+	/**
+	 * Gets the newest confirmed billrun key
+	 * 
+	 * @return billrun key or 197001  if a confirmed cycle was not found
+	 */
+	public static function getLastConfirmedBillingCycle() {
+		$maxIterations = 12;
+		$billrunKey = self::getLastClosedBillingCycle();
+		for ($i = 0; $i < $maxIterations; $i++) { // To avoid infinite loop
+			if (self::isCycleConfirmed($billrunKey)) {
+				return $billrunKey;
+			}
+			$date = strtotime(($i + 1) . ' months ago');
+			$billrunKey = self::getBillrunKeyByTimestamp($date);
+		}
+		return '197001';
+	}
+	
+	/**
+	 * Gets the oldest available billrun key (tenant creation or key from time received)
+	 * 
+	 * @param $startTime - string time to create billrun key from
+	 * @return billrun key
+	 */
+	public static function getOldestBillrunKey($startTime) {
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
+		if (!$registrationDate) {
+			return $lastBillrunKey;
+		}
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
+		return max(array($registrationBillrunKey, $lastBillrunKey));
+	}
+
+public static function getLastNonRerunnableCycle() {
 		$query = array('billed' => 1);
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
@@ -388,5 +422,4 @@ class Billrun_Billingcycle {
 		}
 		return $entry['billrun_key'];
 	}
-
 }
