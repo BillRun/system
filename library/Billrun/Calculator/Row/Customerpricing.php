@@ -144,7 +144,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 
 		$pricingData['billrun'] = $this->row['urt']->sec <= $this->activeBillrunEndTime ? $this->activeBillrun : $this->nextActiveBillrun;
-		$pricingData['final_charge'] = isset($pricingData[$this->pricingField]) ? $pricingData[$this->pricingField] : 0;
 		return $pricingData;
 	}
 
