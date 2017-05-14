@@ -112,13 +112,14 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			return floatval($config['realtime']['default_values'][$row['record_type']]);
 		}
 		
+		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
+			return 0;
+		}
+		
 		if (isset($config['realtime']['default_values']['default'])) {
 			return floatval($config['realtime']['default_values']['default']);
 		}
 		
-		if ($row['request_type'] == intval(Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.FINAL_REQUEST'))) {
-			return 0;
-		}
 		return floatval(Billrun_Factory::config()->getConfigValue('realtimeevent.' . $row['request_type'] .'.defaultValue', Billrun_Factory::config()->getConfigValue('realtimeevent.defaultValue', 0)));
 	}
 

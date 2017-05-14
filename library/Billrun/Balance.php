@@ -61,9 +61,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 
 		$this->init($values); // this for override behaviour by the inheritance classes
 
-		$balance_values = $this->load();
-
-		$this->setRawData($balance_values);
+		$this->reload();
 	}
 
 	/**
@@ -89,14 +87,14 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			} else { // fallback to default postpaid balance
 				$class = 'Billrun_Balance_Postpaid';
 			}
-			$instance[$stamp] = new $class($params);
+			self::$instance[$stamp] = new $class($params);
 		} else {
 			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
-				$instance[$stamp]->load();
+				self::$instance[$stamp]->reload();
 			}
 		}
 
-		return $instance[$stamp];
+		return self::$instance[$stamp];
 	}
 
 	/**
@@ -119,13 +117,24 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function load() {
 		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". connection_type: " . $this->connection_type, Zend_Log::DEBUG);
 		$query = $this->getBalanceLoadQuery();
-		return $this->collection()
+		$retEntity = $this->collection()
 				->query($query)
 				->cursor()
 				->sort($this->loadQuerySort())
 				->setReadPreference('RP_PRIMARY')
 				->limit(1)
 				->current();
+		
+		if (!$retEntity instanceof Mongodloid_Entity || $retEntity->isEmpty()) {
+			return array();
+		}
+		
+		return $retEntity->getRawData();
+	}
+	
+	public function reload() {
+		$balance_values = $this->load();
+		$this->setRawData($balance_values);
 	}
 
 	protected function loadQuerySort() {
@@ -217,7 +226,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @return string
 	 */
-	abstract protected function getBalanceTotalsKey($pricingData);
+	abstract public function getBalanceTotalsKey($pricingData);
 
 	public function getBalanceChargingTotalsKey($usaget) {
 		return $this->chargingTotalsKey = $usaget;
