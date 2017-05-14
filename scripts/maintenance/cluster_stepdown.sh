@@ -3,7 +3,7 @@
 shard=$1
 #echo $shard
 
-for i in {1..9}
+for i in {1..10}
 do
 	ipad=`printf %02d $i`
 	full_shard=$shard$ipad.gt
