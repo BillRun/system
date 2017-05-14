@@ -42,9 +42,8 @@ class ReportAction extends ApiAction {
 	}
 	
 	public function generateReport($query, $page, $size) {
-		$debug = true;
 		$parsed_query = json_decode($query, TRUE);
-		$nextPageData = (!$debug && $size !== -1) ? $this->model->applyFilter($parsed_query, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
+		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_query, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
 		$this->response = $this->model->applyFilter($parsed_query, $page, $size);
 		$this->next_page = count($nextPageData) > 0; 
 	}
