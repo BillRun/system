@@ -134,6 +134,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $overrideMode;
 	
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -441,7 +442,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function constructAccountAttributes($subscriberPlan) {
 		$firstname = $subscriberPlan['id']['first_name'];
 		$lastname = $subscriberPlan['id']['last_name'];
-		
 		$paymentDetails = 'No payment details';
 		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
 			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
@@ -452,7 +452,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
-			'payment_details' => $paymentDetails
+			'payment_details' => $paymentDetails,
 		);
 		
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
@@ -961,19 +961,21 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	}
 	
 	protected function beforeAggregate($accounts) {
-		if ($this->overrideMode) {
+		if ($this->overrideMode && $accounts) {
 			$aids = array();
 			foreach ($accounts as $account) {
 				$aids[] = $account->getInvoice()->getAid();
-			}		
+			}
 			$billrunKey = $this->billrun->key();
-			$this->removeBeforeAggregate($billrunKey, $aids);
+			self::removeBeforeAggregate($billrunKey, $aids);
 		}
 	}
 	
-	public function removeBeforeAggregate($billrunKey, $aids = array()) {
+	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-		$notBilled = $this->billrunCol->query($billrunQuery)->cursor();
+		$notBilled = $billrunColl->query($billrunQuery)->cursor();
 		$notBilledAids = array();
 		foreach ($notBilled as $account) {
 			$notBilledAids[] = $account['aid'];
@@ -991,8 +993,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 											));
 			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		}
-		$this->lines->remove($linesRemoveQuery);
-		$this->billrunCol->remove($billrunRemoveQuery);
+		$linesColl->remove($linesRemoveQuery);
+		$billrunColl->remove($billrunRemoveQuery);
 	}
 	
 }

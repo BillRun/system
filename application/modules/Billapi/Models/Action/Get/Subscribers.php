@@ -20,5 +20,9 @@ class Models_Action_Get_Subscribers extends Models_Action_Get {
 		$this->query['type'] = 'subscriber';
 		return parent::runQuery();
 	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName() . ".subscriber";
+	}
 
 }

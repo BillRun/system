@@ -553,12 +553,23 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
+		if (!defined('STDERR')) {
+			define('STDERR', fopen('php://stderr', 'w'));
+		}
 		$syscmd = $cmd . " > /dev/null & ";
 		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
 			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
 		}
-		if (system($syscmd) === FALSE) {
-			error_log("Can't fork PHP process");
+		$descriptorspec = array(
+			2 => STDERR,
+		);
+		$process = proc_open($syscmd, $descriptorspec, $pipes);
+		if ($process === FALSE) {
+			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
+			return false;
+		}
+		if (proc_close($process) === -1) {
+			Billrun_Factory::log('CLI command returned with error ',Zend_Log::ERR);
 			return false;
 		}
 		return true;
@@ -1483,7 +1494,7 @@ class Billrun_Util {
 	}
 	
 	public static function IsUnixTimestampValue($value) {
-		return self::IsIntegerValue($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
+		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
 	}
 	
 	
