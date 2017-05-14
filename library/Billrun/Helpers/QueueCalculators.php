@@ -69,6 +69,8 @@ class Billrun_Helpers_QueueCalculators {
 								$processor->setQueueRowStep($entity['stamp'], $calc_name);
 								$processor->addAdvancedPropertiesToQueueRow($line);
 							}
+						} else {
+							$this->stuckInQueue[$line['stamp']] = true;
 						}
 						$this->calcPricingCase($entity, $calc_name);
 					} else {
