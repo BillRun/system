@@ -30,8 +30,8 @@ class Billrun_Processor_Util {
 		}
 		$dateValue = $userFields[$dateField];
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
-			$datetime = new DateTime();
-			$datetime->setTimestamp($dateValue);
+			$dateIntValue = intval($dateValue);
+			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
 			return $datetime;
 		}
 		$withTimeField = false;

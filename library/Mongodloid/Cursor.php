@@ -145,7 +145,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
 	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
 	 * 
-	 * @return Mongodloid_Collection self object
+	 * @return Mongodloid_Cursor self object
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (method_exists($this->_cursor, 'setReadPreference')) {
