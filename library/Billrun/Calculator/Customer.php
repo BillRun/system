@@ -439,6 +439,16 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $row;
 	}
 	
+	protected function getPlanIncludedServices($planName) {
+		$plansQuery = array('name' => $planName);
+		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
+		if($plan->isEmpty() || empty($plan->get('include')) || empty($services = $plan->get('include')['services'])) {
+			return array();
+		}
+		
+		return $services;
+	}
+	
 	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
 		foreach($services as $service) {
@@ -446,7 +456,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = $service['name'];
 			}
 		}
-		return $retServices;;
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan']);
+		return array_merge($retServices, $planIncludedServices);
 	}
 	
 }
