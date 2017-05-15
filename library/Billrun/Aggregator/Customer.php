@@ -163,11 +163,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$this->size = (int) Billrun_Util::getFieldVal($options['aggregator']['size'],$this->size);
-		$this->size = (int) Billrun_Util::getFieldVal($options['size'],$this->size);//Override the configuration size settings.		
+		$this->size = (int) Billrun_Util::getFieldVal($options['size'],$this->size);//Override the configuration size settings.
+		
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
 		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'], $this->forceAccountIds);
-		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'],$this->fakeCycle));
+		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
@@ -448,24 +449,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 	
 	/**
-	 * Construct the account data
-	 * @param string $key - Billrun key
-	 * @param int $aid - Current account id
-	 * @param array $subscriberPlan - Current subscriber plan
-	 * @return type
-	 */
-	protected function constructAccountData($key, $aid, $subscriberPlan) {
-		$vat = self::getVATByBillrunKey($key);
-		$accountData = array(
-			'aid' => $aid,
-			'vat' => $vat,
-			'billrun_key' => $key,
-		);
-		
-		$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
-	}
-	
-	/**
 	 * This function constructs the account attributes for a billrun cycle account
 	 * @param array $subscriberPlan - Current subscriber plan.
 	 */
@@ -520,6 +503,18 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return $dataKeys;
 	}
+	
+	protected function beforeAggregate($accounts) {
+		if ($this->overrideMode && $accounts) {
+			$aids = array();
+			foreach ($accounts as $account) {
+				$aids[] = $account->getInvoice()->getAid();
+			}
+			$billrunKey = $this->billrun->key();
+			self::removeBeforeAggregate($billrunKey, $aids);
+		}
+	}
+
 	
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
@@ -604,22 +599,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 	}
 	
-//	/**
-//	 * HACK TO MAKE THE BILLLRUN FASTER
-//	 * Get a rate from the row
-//	 * @param Mongodloid_Entity the row to get rate from
-//	 * @return Mongodloid_Entity the rate of the row
-//	 */
-//	protected function getRowRate($row) {
-//		$raw_rate = $row->get('arate', true);
-//		$id_str = strval($raw_rate['$id']);
-//		if (isset($this->rates[$id_str])) {
-//			return $this->rates[$id_str];
-//		} else {
-//			return $row->get('arate', false);
-//		}
-//	}
-	
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle
@@ -642,27 +621,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		return $pager->getPage($zeroPages, $retries);
 	}
 	
-	protected function addAccountFieldsToBillrun($billrun, $account) {
-		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
-		$billrun->populateInvoiceWithAccountData($account, $options);
-	}
-	
 	protected function shouldRunAggregate($stamp) {
 		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
 		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
 			return false;
 		}
 		return true;
-	}
-	
-	protected function beforeAggregate($accounts) {
-		if ($this->overrideMode && $accounts) {
-			$aids = array();
-			foreach ($accounts as $account) {
-				$aids[] = $account->getInvoice()->getAid();
-			}
-			$billrunKey = $this->billrun->key();
-			self::removeBeforeAggregate($billrunKey, $aids);
-		}
 	}	
 }
