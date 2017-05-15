@@ -372,7 +372,7 @@ class Models_Entity {
 	 * 
 	 * @return unix timestamp
 	 */
-	protected static function getMinimumUpdateDate() {
+	public static function getMinimumUpdateDate() {
 		if (is_null(self::$minUpdateDatetime)) {
 			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 		}
