@@ -36,11 +36,17 @@ class ConfigModel {
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
         
-        /**
+	/**
 	 * reserved names of File Types.
 	 * @var array
 	 */
-        protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	
+	/**
+	 * Valid file type names regex
+	 * @var string
+	 */
+	protected $fileTypesRegex = '/^[a-zA-Z0-9_]+$/';
 
 	public function __construct() {
 		// load the config data from db
@@ -664,9 +670,12 @@ class ConfigModel {
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
 		$completeFileSettings = FALSE;
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
-                if ($this->isReservedFileTypeName($fileType)) {
-                    throw new Exception($fileType . ' is a reserved BillRun file type');
-                }
+		if (!$this->isLegalFileTypeName($fileType)) {
+			throw new Exception('"' . $fileType . '" is an illegal file type name. You may use only alphabets, numbers and underscores');
+		}
+		if ($this->isReservedFileTypeName($fileType)) {
+			throw new Exception($fileType . ' is a reserved BillRun file type');
+		}
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
 		}
@@ -753,7 +762,13 @@ class ConfigModel {
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
-			$uniqueFields[] = $volumeField = $fileSettings['processor']['volume_field'];
+			if (is_array($fileSettings['processor']['volume_field'])) {
+				$volumeFields = $fileSettings['processor']['volume_field'];
+			}
+			else {
+				$volumeFields = array($fileSettings['processor']['volume_field']);
+			}
+			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
 			if (!isset($fileSettings['processor']['usaget_mapping'])) {
 				$fileSettings['processor']['usaget_mapping'] = array();
 			}
@@ -882,7 +897,7 @@ class ConfigModel {
 		if (!isset($processorSettings['date_field'])) {
 			throw new Exception('Missing processor date field');
 		}
-		if (!isset($processorSettings['volume_field'])) {
+		if (empty($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
 		}
 		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
@@ -1037,10 +1052,14 @@ class ConfigModel {
 		$this->setConfig($saveData);
 	}
         
-        protected function isReservedFileTypeName($name) {
-            $lowCaseName = strtolower($name);
-            return in_array($lowCaseName, $this->reservedFileTypeName);
-        }
+	protected function isReservedFileTypeName($name) {
+		$lowCaseName = strtolower($name);
+		return in_array($lowCaseName, $this->reservedFileTypeName);
+	}
+        
+	protected function isLegalFileTypeName($name) {
+		return preg_match($this->fileTypesRegex, $name);
+	}
 	
 	protected function getModelsWithTaxation() {
 		return array('plans', 'services', 'rates');

@@ -201,3 +201,24 @@ db.lines.find({final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(li
 	db.lines.save(line);
 });
 
+// Set "Account ID" as the title for "aid" field
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
+	delete lastConfig['_id'];
+	var found_aid = false;
+	lastConfig.subscribers.account.fields.forEach(function (field) {
+		if (field.field_name == "aid") {
+			found_aid = true;
+			field.title = "Account ID";
+		}
+	})
+	if (!found_aid) {
+		lastConfig.subscribers.account.fields.push({
+					"field_name" : "aid",
+					"generated" : true,
+					"unique" : true,
+					"editable" : false
+				});
+	}
+	db.config.insert(lastConfig);
+}
