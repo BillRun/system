@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 $entities = current($this->output)['details'];
 $headers = $this->output->headers;
 $delimiter = $this->output->delimiter;
@@ -20,7 +19,7 @@ foreach ($entities as $entity) {
 	$line = array();
 	foreach ($headers as $header) {
 		$val = Billrun_Util::getIn($entity, $header, null);
-		echo (!is_null($val) ? $val : '') . $delimiter;
+		echo (!is_null($val) ? (strpos($val, $delimiter) === false ? $val : '"' . addslashes($val) . '"') : '') . $delimiter;
 	}
 	echo PHP_EOL;
 }
