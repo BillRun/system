@@ -28,8 +28,8 @@ class AuthAction extends ApiAction  {
 				$result = $this->login($params);
 				break;
 		}
-
-		//A small protective messure
+	
+	//A small protective messure
 		unset($params['password']);
 		
 		$this->getController()->setOutput(array(array(
@@ -79,6 +79,11 @@ class AuthAction extends ApiAction  {
 	//				}
 					$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity->getRawData()));
+					
+					$additionalParams = array(
+						'ip' => $ip,
+					);
+					Billrun_AuditTrail_Util::trackChanges('login', 'login_' . $username, 'Login', null, null, $additionalParams);
 
 					return array( 'user' => Billrun_Factory::user()->getUsername(), 'permissions' => Billrun_Factory::user()->getPermissions());
 
