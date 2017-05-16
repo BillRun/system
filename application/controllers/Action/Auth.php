@@ -29,7 +29,7 @@ class AuthAction extends ApiAction  {
 				break;
 		}
 	
-	//A small protective messure
+		//A small protective messure
 		unset($params['password']);
 		
 		$this->getController()->setOutput(array(array(
