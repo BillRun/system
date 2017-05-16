@@ -28,7 +28,7 @@ class AuthAction extends ApiAction  {
 				$result = $this->login($params);
 				break;
 		}
-	
+
 		//A small protective messure
 		unset($params['password']);
 		
