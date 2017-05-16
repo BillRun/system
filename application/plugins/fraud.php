@@ -631,8 +631,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($arate['key'] == 'INTERNET_VF') {
 			$lineTime =  date(Billrun_Base::base_dateformat, $row['urt']->sec);
 			$sid = $row['sid'];
-			$rowVfDays = $this->queryVFDaysApi($sid, $lineTime);
-			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' && $rowVfDays <= Billrun_Factory::config()->getConfigValue('fraud.usageabroad.days')) {
+			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' && 
+				is_numeric($rowVfDays = $this->queryVFDaysApi($sid, $lineTime)) &&
+				$rowVfDays <= Billrun_Factory::config()->getConfigValue('fraud.usageabroad.days')) {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
 				$pricingData = array('arategroup' => $pricingData['arategroup'], 'usagesb' => $pricingData['usagesb']);
 				$update['$set'] = array('tx.' . $row['stamp'] => $pricingData);
