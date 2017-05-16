@@ -1127,7 +1127,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * method to check if user is authorize to resource
 	 *
-	 * @param string $permission the permission require authorization
+	 * @param string/array $permission the permission require authorization
 	 *
 	 * @return boolean true if have access, else false
 	 *
@@ -1149,7 +1149,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
 	 *
-	 * @param string $permission the permission required to the page
+	 * @param string/array $permission the permission required to the page
 	 *
 	 * @return boolean true if have access, else false
 	 *
