@@ -72,7 +72,13 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 	}
 
 	protected function getReportCandiateMatchQuery() {
-		return  array('from' => array('$lt' => new MongoDate($this->startTime)),'to' => array('$gt' => new MongoDate($this->startTime)),'sid'=> array('$in' => array_keys($this->transactions)));
+		$releventTransactionTimeStamp = isset($this->releventTransactionTimeStamp) && empty($this->data)  ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime);
+		return  array(	'from' => array('$lt' => new MongoDate($this->startTime)),
+						'to' => array('$gt' => new MongoDate($this->startTime)),
+						'$or' => array(
+								array('sid'=> array('$in' => array_keys($this->transactions))),
+								array( 'last_update' => array('$lte' => new MongoDate($this->startTime), '$gt' => $releventTransactionTimeStamp )),
+							));
 	}
 
 	protected function getReportFilterMatchQuery() {

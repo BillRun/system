@@ -28,9 +28,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected $legitimateFileExtension = "";
 	protected $startTime = 0;
 	protected $reportLinesStamps = array();
+	protected $ignoreStamp = false;
 
-	public function __construct($options) {
-
+	public function __construct($options) {		
 		$this->startTime = $this->getStartTime($options);
 		$this->db = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue(Billrun_Factory::config()->getConfigValue(static::$type . '.generator.db', 'archive.db'), array()));
 
@@ -40,6 +40,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		}
 
 		$config = Billrun_Factory::config()->getConfigValue(static::$type . '.generator', array());
+		$this->ignoreStamp = Billrun_Util::getFieldVal($config['ignore_stamp'],false);
 
 		foreach ($config['match'] as $idx => $query) {
 			foreach ($query as $key => $val) {
@@ -131,7 +132,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			);
 		}
 
-		//Billrun_Factory::log(json_encode($this->aggregation_array));
+		$this->logQueries($this->aggregation_array);
 	}
 
 	/**
@@ -155,7 +156,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getLastRunDate($type) {
-		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
+		$before = new MongoDate( $this->ignoreStamp ? $this->startTime : strtotime($this->getStamp()) );
+		Billrun_Factory::log(json_encode(array('source' => $type,'type' => $type,'generated_time'=>array('$lte'=> $before))));
+		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type,'generated_time'=>array('$lte'=> $before)))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
 		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof MongoDate) ? new MongoDate(0) : $lastRun['generated_time'];
 	}
 
@@ -255,6 +258,12 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected function markFileAsDone() {
 		rename($this->file_path, preg_replace("/{$this->tmpFileIndicator}$/", $this->legitimateFileExtension, $this->file_path));
 	}
+	
+	protected function logQueries($aggregationPipeline) {
+		if(Billrun_Factory::config()->getConfigValue(static::$type.'.generator.log_queries',false)) {
+			Billrun_Factory::log('Running aggregation : ' .json_encode($aggregationPipeline));
+		}
+	}
 
 	//----------- File handling functions ------------------
 
@@ -291,7 +300,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	 * @param type $str
 	 */
 	protected function writeToFile($str, $overwrite = false) {
-		if( parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES")) === FALSE) {
+		if( parent::writeToFile(mb_convert_encoding($str, "UTF-8", "HTML-ENTITIES"),$overwrite) === FALSE) {
 			throw new Exception('Failed to write to : '.$this->file_path);
 		}
 	}

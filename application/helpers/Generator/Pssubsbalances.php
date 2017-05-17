@@ -37,7 +37,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		if (!empty($this->headers)) {
 			$this->writeHeaders();
 		}
-		$subscribersLimit = Billrun_Factory::config()->getConfigValue('prepaidsubscribers.generator.subscribers_limit', 10000);
+		$subscribersLimit = Billrun_Factory::config()->getConfigValue(static::$type.'.generator.subscribers_limit', 10000);
 		$page = 0;
 		
 		do {
@@ -69,24 +69,25 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
 		$this->transactions = array();
-		$transactions = $this->db->archiveCollection()->aggregateWithOptions(array(
+		$aggregationPipeline = array(
                             array('$match' => array(
 													'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
 													'balance_ref' => array('$type'=> 3),
 													'balance_after' => array('$exists'=> 1),
 													)),
 							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
-                            array('$sort'=>array('sid'=>1,'urt'=>1)),
                             array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
-                    array('$group'=>array(
-							'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
-							'sid'=> array('$first'=>'$sid'),
-							'balance_ref'=> array('$first'=>'$balance_ref'),
-							'urt' =>array('$max'=>'$urt') 
-						)),
-					array('$skip' => $skip),
-					array('$limit' => $limit)
-                ), array('allowDiskUse' => true));
+							array('$group'=>array(
+									'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
+									'sid'=> array('$first'=>'$sid'),
+									'balance_ref'=> array('$first'=>'$balance_ref'),
+									'urt' =>array('$max'=>'$urt') 
+								)),
+							array('$skip' => $skip),
+							array('$limit' => $limit)
+						);
+		$this->logQueries($aggregationPipeline);
+		$transactions = $this->db->archiveCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = $transaction['urt'];
 		}
