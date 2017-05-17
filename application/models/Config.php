@@ -119,8 +119,8 @@ class ConfigModel {
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
  				return $pgSettings;
- 			}
- 			throw new Exception('Unknown payment gateway ' . $data['name']);
+			}
+			throw new Exception('Unknown payment gateway ' . $data['name']);
 		} else if ($category == 'export_generators') {
 			 if (!is_array($data)) {
  				Billrun_Factory::log("Invalid data for export_generators.");
@@ -271,12 +271,32 @@ class ConfigModel {
 				$generatorSettings = $data;
 			}
 			$this->setExportGeneratorSettings($updatedData, $generatorSettings);
-			$generatorSettings = $this->validateExportGeneratorSettings($updatedData, $data);	
- 			if (!$generatorSettings){
- 				return 0;
- 			}
+			$generatorSettings = $this->validateExportGeneratorSettings($updatedData, $data);
+			if (!$generatorSettings) {
+				return 0;
+			}
+		} else if ($category === 'shared_secret') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for shared secret.");
+				return 0;
+			}
+			if (empty($data['name'])) {
+				throw new Exception('Missing name');
+			}
+			if (empty($data['from']) || empty($data['to'])) {
+				throw new Exception('Missing creation/expiration dates');
+			}
+			if (!isset($data['key'])) {
+				$data['key'] = bin2hex(openssl_random_pseudo_bytes(16));
+				$data['crc'] = hash("crc32b", $data['key']);
+			}
+			$this->setSharedSecretSettings($updatedData, $data);
+			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);
+			if (!$sharedSettings) {
+				return 0;
+			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
-				throw new Exception($data . ' is illegal usage type');
+			throw new Exception($data . ' is illegal usage type');
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -556,6 +576,15 @@ class ConfigModel {
  				}
  			}
  		}
+		if ($category === 'shared_secret') {
+ 			if (isset($data['key'])) {
+ 				if (count($data) != 1) {
+					throw new Exception('Can remove only one secret at a time');
+ 				} else {
+					$this->unsetSharedSecretSettings($updatedData, $data['key']);
+ 				}
+ 			}
+ 		}
  
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
@@ -625,13 +654,30 @@ class ConfigModel {
  				return;
  			}
  		}
- 		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
- 	}
-	
-	
+		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
+	}
+
+	protected function setSharedSecretSettings(&$config, $sharedSecretData) {
+		$key = $sharedSecretData['key'];
+		foreach ($config['shared_secret'] as &$secret) {
+			if ($secret['key'] == $key) {
+				$secret = $sharedSecretData;
+				return;
+			}
+		}
+		$config['shared_secret'] = array_merge($config['shared_secret'], array($sharedSecretData));
+	}
+
+	protected function validateSharedSecretSettings(&$config, $secret) {
+		if ($secret['from'] > $secret['to']) {
+			throw new Exception('Illegal dates');
+		}
+		return true;
+	}
+
 	protected function setExportGeneratorSettings(&$config, $egSettings) {
- 		$exportGenerator = $egSettings['name'];
- 		foreach ($config['export_generators'] as &$someEgSettings) {
+		$exportGenerator = $egSettings['name'];
+		foreach ($config['export_generators'] as &$someEgSettings) {
  			if ($someEgSettings['name'] == $exportGenerator) {
  				$someEgSettings = $egSettings;
  				return;
@@ -666,6 +712,12 @@ class ConfigModel {
 			return $ele;
 		}, $config['export_generators']);	
 	}
+	
+	protected function unsetSharedSecretSettings(&$config, $secret) {
+ 		$config['shared_secret'] = array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
+ 			return $secretSettings['key'] !== $secret;
+ 		});
+ 	}
  
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
 		$completeFileSettings = FALSE;
