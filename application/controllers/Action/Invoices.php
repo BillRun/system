@@ -76,6 +76,9 @@ class AccountInvoicesAction extends ApiAction {
 			);
 			$invoice = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->current();
 			$invoiceId = $invoice['invoice_id'];
+			if (empty($invoiceId)) {
+				return 'Invoice Id not found';
+			}
 		}
 		
 		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
@@ -87,18 +90,20 @@ class AccountInvoicesAction extends ApiAction {
 			$generator->load();
 			$generator->generate();
 		}
-		
-		$cont = file_get_contents($pdf);
-		if ($cont) {
-			header('Content-disposition: inline; filename="'.$file_name.'"');
-			header('Cache-Control: public, must-revalidate, max-age=0');
-			header('Pragma: public');
-			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
-			header('Content-Type: application/pdf');
-			Billrun_Factory::log('Transfering invoice content from : '.$pdf .' to http connection');
-			echo $cont;
-		} 
-		echo "File not found";
+		if (!file_exists($pdf)){
+			echo "Invoice not found";
+		} else {
+			$cont = file_get_contents($pdf);
+			if ($cont) {
+				header('Content-disposition: inline; filename="'.$file_name.'"');
+				header('Cache-Control: public, must-revalidate, max-age=0');
+				header('Pragma: public');
+				header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+				header('Content-Type: application/pdf');
+				Billrun_Factory::log('Transfering invoice content from : '.$pdf .' to http connection');
+				echo $cont;
+			} 
+		}
 		die();
 	}
 	
