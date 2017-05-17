@@ -724,38 +724,12 @@ class Models_Entity {
 		if ($newId) {
 			$this->after = $this->loadById($newId);
 		}
-
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => $this->action,
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => $this->collectionName,
-				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
-				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] :
-				(isset($this->before[$field]) ? $this->before[$field] : null),
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		
+		$old = !is_null($this->before) ? $this->before->getRawData() : null;
+		$new = !is_null($this->after) ? $this->after->getRawData() : null;
+		$key = isset($this->update[$field]) ? $this->update[$field] :
+				(isset($this->before[$field]) ? $this->before[$field] : null);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
 	}
 
 	/**

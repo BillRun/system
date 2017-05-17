@@ -360,36 +360,8 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @return true on success log change else false
 	 */
 	protected function trackChanges() {
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => 'update',
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => 'balances',
-				'old' => $this->before->getRawData(),
-				'new' => $this->after->getRawData(),
-				'key' => $this->subscriber['aid'] . '_' . $this->subscriber['sid'],
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . $this->subscriber['sid'], 
+			'balances', $this->before->getRawData(), $this->after->getRawData());
 	}
 
 }
