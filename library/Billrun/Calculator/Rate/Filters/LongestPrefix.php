@@ -17,7 +17,7 @@ class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_R
 	protected function updateMatchQuery(&$match, $row) {
 		$match = array_merge(
 			$match, 
-			array($this->params['rate_key'] => $this->getPrefixMatchQuery($row['uf'][$this->params['line_key']]))
+			array($this->params['rate_key'] => $this->getPrefixMatchQuery($this->getRowFieldValue($row, $this->params['line_key'])))
 		);
 	}
 	
