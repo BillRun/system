@@ -62,7 +62,7 @@ class BalancesAction extends ApiAction {
 			),
 		);
 
-		$this->setCacheLifeTime(28800); // 8 hours
+		$this->setCacheLifeTime(7200); // 2 hours
 		$results = $this->cache($cacheParams);
 
 		Billrun_Factory::log()->log("balances query success", Zend_Log::INFO);
