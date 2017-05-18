@@ -3,9 +3,8 @@
 ###  script arguments as follow:
 ###  1) billrun_key
 ###  2) billrun path
-###  3) unix user
-###  4) db username (optional)
-###  5) db password
+###  3) db username (optional)
+###  4) db password
 
 if [ $1 ]; then
         billrun_key=$1;
@@ -22,16 +21,9 @@ else
 fi
 
 if [ $3 ]; then
-        unix_user=$3;
-else
-	echo "please supply the unix user"
-	exit 2
-fi
-
-if [ $4 ]; then
-        username=$4;
-	if [ $5 ]; then
-        	password=$5;
+        username=$3;
+	if [ $4 ]; then
+        	password=$4;
 	else
 		echo "please supply a password"
 		exit 3
@@ -88,4 +80,4 @@ if [ "$username" != "" ]; then
 	auth_str="-u $username -p$password"
 fi
 
-mongo --quiet --eval "$js_code" billrun $auth_str | sudo -u $unix_user tee $billrun_dir"/files/"$billrun_key"_leftover_aggregator_input" > /dev/null
+mongo --quiet --eval "$js_code" billrun $auth_str | tee $billrun_dir"/files/"$billrun_key"_leftover_aggregator_input" > /dev/null
