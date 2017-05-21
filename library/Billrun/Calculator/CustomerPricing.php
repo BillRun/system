@@ -846,7 +846,18 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 */
 	public function removeBalanceTx($row) {
+		if (!isset($row['balance_ref'])) {
+			Billrun_Factory::log("No balance reference to remove lock", Zend_Log::WARN);
+			return;
+		}
+		
 		$balanceRef = Billrun_Factory::db()->balancesCollection()->getRef($row['balance_ref']);
+		
+		if (empty($balanceRef) || $balanceRef->isEmpty()) {
+			Billrun_Factory::log("Balance reference is empty to remove lock", Zend_Log::WARN);
+			return;
+		}
+		
 		$query = array(
 			'_id' => $balanceRef->getId()->getMongoID(),
 		);
