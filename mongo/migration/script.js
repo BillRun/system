@@ -222,3 +222,42 @@ if ((typeof lastConfig) !== "undefined") {
 	}
 	db.config.insert(lastConfig);
 }
+
+// Update realtime response fields
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fileTypes = lastConfig['file_types'];
+for (var i in fileTypes) {
+	if (fileTypes[i].response && fileTypes[i].response.fields) {
+		fileTypes[i].response.fields = [
+			{
+				"response_field_name": "requestType",
+				"row_field_name": "request_type"
+			},
+			{
+				"response_field_name": "sessionId",
+				"row_field_name": "session_id"
+			},
+			{
+				"response_field_name": "returnCode",
+				"row_field_name": "granted_return_code"
+			},
+			{
+				"response_field_name": "sid",
+				"row_field_name": "sid"
+			},
+			{
+				"response_field_name": "grantedVolume",
+				"row_field_name": "usagev"
+			},
+			{
+				"response_field_name": "pretend",
+				"row_field_name": "billrun_pretend"
+			}
+		];
+	}
+}
+
+
+lastConfig.file_types = fileTypes;
+db.config.insert(lastConfig);
