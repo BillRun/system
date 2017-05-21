@@ -111,7 +111,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	/**
 	 * call offset
 	 * 
-	 * @param int $balance
+	 * @param int $call_offset
 	 */
 	protected $call_offset = 0;
 
@@ -302,6 +302,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::log("couldn't get balance for subscriber: " . $row['sid'], Zend_Log::INFO);
 			$row['usagev'] = 0;
 			$row['apr'] = 0;
+			unset($this->balance);
 			return false;
 		} else {
 			Billrun_Factory::log("Found balance  for subscriber " . $row['sid'], Zend_Log::DEBUG);
@@ -845,8 +846,20 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $row
 	 */
 	public function removeBalanceTx($row) {
+		if (!isset($row['balance_ref'])) {
+			Billrun_Factory::log("No balance reference to remove lock", Zend_Log::WARN);
+			return;
+		}
+		
+		$balanceRef = Billrun_Factory::db()->balancesCollection()->getRef($row['balance_ref']);
+		
+		if (empty($balanceRef) || $balanceRef->isEmpty()) {
+			Billrun_Factory::log("Balance reference is empty to remove lock", Zend_Log::WARN);
+			return;
+		}
+		
 		$query = array(
-			'_id' => $this->balance->getId()->getMongoID(),
+			'_id' => $balanceRef->getId()->getMongoID(),
 		);
 		$values = array(
 			'$unset' => array(
