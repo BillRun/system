@@ -75,10 +75,10 @@ class AccountInvoicesAction extends ApiAction {
 				'billrun_key' => $billrun_key
 			);
 			$invoice = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->current();
-			$invoiceId = $invoice['invoice_id'];
-			if (empty($invoiceId)) {
-				return 'Invoice Id not found';
+			if ($invoice->isEmpty()) {
+				return 'Invoice was not found';
 			}
+			$invoiceId = $invoice['invoice_id'];
 		}
 		
 		$files_path = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
