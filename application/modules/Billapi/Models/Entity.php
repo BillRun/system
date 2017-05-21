@@ -318,6 +318,12 @@ class Models_Entity {
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
 		}
+		
+		if (!is_null($this->before)) {
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$this->update = array_merge($prevEntity, $this->update);
+		}
 
 		$this->protectKeyField();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
