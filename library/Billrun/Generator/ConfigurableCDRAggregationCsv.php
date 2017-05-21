@@ -156,9 +156,8 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	}
 
 	protected function getLastRunDate($type) {
-		$before = new MongoDate( $this->ignoreStamp ? $this->startTime : strtotime($this->getStamp()) );
-		Billrun_Factory::log(json_encode(array('source' => $type,'type' => $type,'generated_time'=>array('$lte'=> $before))));
-		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type,'generated_time'=>array('$lte'=> $before)))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
+		$before = new MongoDate( $this->ignoreStamp ? $this->startTime : strtotime($this->getStamp()) );		
+		$lastRun = $this->db->logCollection()->query(array('source' => $type,'type' => $type,'generated_time'=>array('$lt'=> $before)))->cursor()->sort(array('generated_time' => -1))->limit(1)->current();
 		return empty($lastRun['generated_time']) || !($lastRun['generated_time'] instanceof MongoDate) ? new MongoDate(0) : $lastRun['generated_time'];
 	}
 
