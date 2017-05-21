@@ -220,9 +220,7 @@ class Billrun_Cycle_AggregatePipeline {
 				'_id.sid' => 1,
 				'_id.type' => -1,
 				'_id.plan' => 1,
-				
-				// TODO: We might want to uncomment this
-//				'plan_dates.from' => 1,
+				'plan_dates.from' => 1,
 			),
 		);
 	}

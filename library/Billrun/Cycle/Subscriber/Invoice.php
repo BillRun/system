@@ -85,9 +85,9 @@ class Billrun_Cycle_Subscriber_Invoice {
 		if (isset($pricingData['over_plan']) && $pricingData['over_plan']) {
 			if (!isset($this->data['costs']['over_plan'][$vat_key])) {
 				$this->data['costs']['over_plan'][$vat_key] = $pricingData['aprice'];
-			} else {
+				} else {
 				$this->data['costs']['over_plan'][$vat_key] += $pricingData['aprice'];
-			}
+				}
 		} else if (isset($pricingData['out_plan']) && $pricingData['out_plan']) {
 			if (!isset($this->data['costs']['out_plan'][$vat_key])) {
 				$this->data['costs']['out_plan'][$vat_key] = $pricingData['aprice'];
@@ -99,7 +99,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 				$this->data['costs']['flat'][$vat_key] = $pricingData['aprice'];
 			} else {
 				$this->data['costs']['flat'][$vat_key] += $pricingData['aprice'];
-			}
+		}
 		} else if ($row['type'] == 'credit') {
 			if (!isset($this->data['costs']['credit'][$row['usaget']][$vat_key])) {
 				$this->data['costs'][$row['usaget']][$vat_key] = $pricingData['aprice'];
@@ -287,25 +287,16 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return type
 	 */
 	public function updateTotals($newTotals) {
+		$totalsKeys = array('flat','service','refund','charge','usage');
+		foreach($totalsKeys as $totalsKey) {
+			$newTotals[$totalsKey]['before_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['before_vat'], 0);
+			$newTotals[$totalsKey]['after_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['after_vat'], 0);
+			$newTotals[$totalsKey]['vatable'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['vatable'], 0);
+		}
 		$newTotals['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['before_vat'], 0);
 		$newTotals['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['after_vat'], 0);
-		$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
 		$newTotals['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['vatable'], 0);
-		$newTotals['flat']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['flat']['before_vat'], 0);
-		$newTotals['flat']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['flat']['after_vat'], 0);
-		$newTotals['flat']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['flat']['vatable'], 0);
-		$newTotals['service']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['service']['before_vat'], 0);
-		$newTotals['service']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['service']['after_vat'], 0);
-		$newTotals['service']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['service']['vatable'], 0);
-		$newTotals['refund']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['before_vat'], 0);
-		$newTotals['refund']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['after_vat'], 0);
-		$newTotals['refund']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['refund']['vatable'], 0);
-		$newTotals['charge']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['before_vat'], 0);
-		$newTotals['charge']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['after_vat'], 0);
-		$newTotals['charge']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['charge']['vatable'], 0);
-		$newTotals['usage']['before_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['before_vat'], 0);
-		$newTotals['usage']['after_vat'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['after_vat'], 0);
-		$newTotals['usage']['vatable'] += Billrun_Util::getFieldVal($this->data['totals']['usage']['vatable'], 0);
+		$newTotals['after_vat_rounded'] = round($newTotals['after_vat'], 2);
 
 		if(!empty($this->data['totals']['taxes'])) {
 			foreach($this->data['totals']['taxes'] as $key => $taxAmount) {

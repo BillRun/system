@@ -544,7 +544,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$cycleQuery = array('billrun_key' => $this->stamp, 'page_number' => $this->page, 'page_size' => $this->size);
 			$cycleUpdate = array('$set' => array('end_time' => new MongoDate()));
 			$this->billingCycle->update($cycleQuery, $cycleUpdate);
-		}		
+		}
+		if(Billrun_Billingcycle::hasCycleEnded($this->getCycle()->key(), $this->size)) {
+			Billrun_Factory::dispatcher()->trigger('afterCycleDone', array($this->data, $this->getCycle(), &$this));
+		}
 		return $results;
 	}
 	
