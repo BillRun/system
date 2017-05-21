@@ -20,7 +20,7 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 	 */
 	protected $records;
 	
-	protected $aggregator = null;
+	protected $cycleAggregator = null;
 	
 	/**
 	 * Create a new instance of the common aggregatable class.
@@ -35,7 +35,7 @@ abstract class Billrun_Cycle_Common implements Billrun_Aggregator_Aggregateable 
 			// TODO: Swap with an actual aggregator exception
 			throw new Exception("Internal aggregator error construction data is invalid.");
 		}
-		$this->aggregator = $cycleAggregator;
+		$this->cycleAggregator = $cycleAggregator;
 		$this->constructRecords($data);
 	}
 

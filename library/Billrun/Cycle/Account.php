@@ -67,7 +67,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->invoice = $data['invoice'];
 		$this->records = array();
 		$subscribers = $data['subscribers'];
-		$cycle = $this->aggregator->getCycle();
+		$cycle = $this->cycleAggregator->getCycle();
 		
 		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
 		
@@ -109,7 +109,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$aggregateable = reset($sorted);
 		$changes = array(	'plans'=>array(),
 							'services'=> array() );
-		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->aggregator->getRates(), $invoiceData);
+		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
 		foreach ($sorted as $sub) {
 			$filterKey = "" . $sub['sto'] . "";
 			if(isset($filtered[$filterKey])) {
@@ -122,8 +122,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$aggregateable['services'] = $changes['services'];
 		
 		$aggregateable['invoice'] = &$invoice;
-		$aggregateable['line_stump'] = $this->getLineStump($sub, $this->aggregator->getCycle());
-		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable, $this->aggregator);
+		$aggregateable['line_stump'] = $this->getLineStump($sub, $this->cycleAggregator->getCycle());
+		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable, $this->cycleAggregator);
 
 		return $cycleSub;
 	}

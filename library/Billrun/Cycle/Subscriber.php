@@ -167,9 +167,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['services'] = array();
 		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
-		$mongoServices = $this->aggregator->getServices();
+		$mongoServices = $this->cycleAggregator->getServices();
 		
-		$cycle = $this->aggregator->getCycle();
+		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 		
 		foreach ($services as &$arrService) {
@@ -202,9 +202,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			return;
 		}
 		$this->plan = $plans[count($plans) - 1]['plan'];
-		$mongoPlans = $this->aggregator->getPlans();
+		$mongoPlans = $this->cycleAggregator->getPlans();
 		
-		$cycle = $this->aggregator->getCycle();
+		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 		
 		foreach ($plans as &$value) {
@@ -235,7 +235,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
-			'billrun' => $this->aggregator->getCycle()->key()
+			'billrun' => $this->cycleAggregator->getCycle()->key()
 		);
 
 		$requiredFields = array('aid' => 1, 'sid' => 1);
