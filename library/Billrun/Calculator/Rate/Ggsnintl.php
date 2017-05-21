@@ -115,7 +115,7 @@ class Billrun_Calculator_Rate_Ggsnintl extends Billrun_Calculator_Rate {
 				foreach ($address_list['sgsn_address'] as $address){
 					$ip_and_mask = explode('/',$address); 
 					$network = $ip_and_mask[0];
-					$mask = $ip_and_mask[1];
+					$mask = isset($ip_and_mask[1]) ? $ip_and_mask[1] : 32;
 					if(Utilities_IpFunctions::cidr_match($row['sgsn_address'], $network, $mask)){
 						return array('key' => $key, 'provider' => $provider);
 					}
