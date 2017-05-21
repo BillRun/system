@@ -167,13 +167,14 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->records['services'] = array();
 		
 		$services = Billrun_Util::getFieldVal($data["services"], array());
+		//Get services active at billing cycle date
 		$mongoServices = $this->cycleAggregator->getServices();
 		
 		$cycle = $this->cycleAggregator->getCycle();
 		$stumpLine = $data['line_stump'];
 		
 		foreach ($services as &$arrService) {
-			// Plan name
+			// Service name
 			$index = $arrService['name'];
 			if(!isset($mongoServices[$index])) {
 				Billrun_Factory::log("Ignoring inactive service: " . print_r($arrService,1));

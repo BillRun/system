@@ -249,7 +249,7 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 			$to = $subPlan['to']->sec;
 		}
 		// Add the last value.
-		$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
+		$toAdd = array("plan" => $name,'name'=>$name, "start" => $from, "end" => $to);
 		
 		if($to > $endTime) {
 			$to = $endTime;
@@ -261,6 +261,71 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	}
 	
 	/**
+	 * Build the services start and  end records for  a given subscriber
+	 * @param type $subscriber
+	 * @param type $previousServices
+	 * @return type
+	 */
+	protected function buildServicesSubAggregator($subscriber, $previousServices, $endTime) {
+		$currServices = array();
+		$retServices = &$previousServices;
+		$sto = $subscriber['sto'];
+		$sfrom = $subscriber['sfrom'];
+		
+		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
+			foreach($subscriber['services'] as  $tmpService) {
+				 $serviceData = array( 'name' => $tmpService['name'],
+										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+										'plan' => $subscriber['plan'],
+										'start'=> $tmpService['from']->sec,
+										'end'=> min($tmpService['to']->sec, $endTime ) );
+
+				$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
+				$currServices[$stamp] = $serviceData; 
+			}
+			// Function to Check for removed services in the current subscriber record.
+			$serviceCompare = function  ($a, $b)  {
+				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
+				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
+				return strcmp($aStamp , $bStamp);
+			};
+
+			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
+			foreach($removedServices as $stamp => $removed) {
+				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
+					$retServices[$stamp]['end'] = $sto;
+				} elseif ( $sfrom < $removed['end'] ) {
+					$retServices[$stamp]['end'] = $sfrom;
+				}
+			}
+			$retServices = array_merge($retServices, $currServices);
+		}
+		return $retServices;
+	}
+	
+	protected function getServicesIncludedInPlan($plansData) {
+		$mongoPlans = $this->cycleAggregator->getPlans();
+		$includedServices = array();
+		if(!empty($plansData['plans']) ) {			
+			foreach($plansData['plans'] as $planData) {
+				if(!empty($mongoPlans[$planData['plan']]['include']['services'])) {
+					foreach($mongoPlans[$planData]['include']['services'] as $srvName) {
+						$includedServices[] = array(
+												'name'=> $srvName,
+												'quantity' => 1,
+												'plan' => $planData['plan'],
+												'start' => $planData['start'],
+												'end' => $planData['end'],
+												'included' => 1,
+											);
+					}
+				}
+			}
+		}
+		return $includedServices;
+	}
+	
+	/**
 	 * Create a subscriber aggregator from an array of subscriber records.
 	 * @param array $current - Array of subscriber records.
 	 * @param int $endTime
@@ -268,55 +333,23 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 */
 	protected function buildSubAggregator(array $current, $endTime) {		
 		$servicesAggregatorData = array();
-		
-		
+			
 		$subscriberPlans = array();
 		$services = array();
-		$servicesData = array();
-		$sto = 0;
 		$sstart = PHP_INT_MAX;
 		foreach ($current as $subscriber) {
-			$sto = $subscriber['sto'];
-			$sfrom = $subscriber['sfrom'];
 			//Find the earliest instance of the subscriber 
-			$sstart = min($sfrom,$sstart);			
+			$sstart = min($subscriber['sfrom'], $sstart);			
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
 			
-			// Get the services.
-			$currServices = array();
-			if(isset($subscriber['services']) && is_array($subscriber['services'])) {
-				foreach($subscriber['services'] as  $tmpService) {
-					 $serviceData = array( 'name' => $tmpService['name'],
-											'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
-											'plan' => $subscriber['plan'],
-											'start'=> $tmpService['from']->sec,
-											'end'=> min($tmpService['to']->sec, $endTime ) );
-					 
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
-					$currServices[$stamp] = $serviceData; 
-				}
-				// Check for removed services in the current subscriber record.
-				$serviceCompare = function  ($a, $b)  {
-					$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
-					$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
-					return strcmp($aStamp , $bStamp);
-				};
-				
-				$removedServices  = array_udiff($services, $currServices, $serviceCompare);
-				foreach($removedServices as $stamp => $removed) {
-					if($sto < $removed['end'] && $sto <= $services[$stamp]['end']) {
-						$services[$stamp]['end'] = $sto;
-					} elseif ( $sfrom < $removed['end'] ) {
-						$services[$stamp]['end'] = $sfrom;
-					}
-				}
-				$services = array_merge($services,$currServices);
-			}	
+			// Get the services for the subscriber.
+			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);	
 			
 		}
 		
 		foreach($services as $service) {
+				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
 				if($service['start'] < $sstart) {
 					$service['start'] < $sstart;
 				}
@@ -324,10 +357,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		}
 		
 		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);
-		
+				
 		// Merge the results
 		foreach ($servicesAggregatorData as $key => $value) {
 			$planAggregatorData[$key]['services'] = $value;
+		}
+		
+		//Added services  that are included in the plan
+		foreach($planAggregatorData as $key =>$plansData) {
+			$planAggregatorData[$key]['services'] = array_merge(
+														$this->getServicesIncludedInPlan($plansData),
+														Billrun_Util::getFieldVal($planAggregatorData[$key]['services'],array())
+													);
 		}
 		
 		return $planAggregatorData;
