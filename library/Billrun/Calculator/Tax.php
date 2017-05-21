@@ -27,20 +27,24 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$current = $row instanceof Mongodloid_Entity ? $row->getRawData() : $row;
-		if( $problemField = $this->isLineDataComplete($current) ) {
-			Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
-			return FALSE;
-		}
+		if (!$this->isLineTaxable($current)) {
+			$newData = $current;
+			$newData['final_charge'] = $newData['aprice'];
+		} else {
+			if( $problemField = $this->isLineDataComplete($current) ) {
+				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );
+				return FALSE;
+			}
+			$subscriber = new Billrun_Subscriber_Db();
+			$subscriber->load(array('sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
+			$account = new Billrun_Account_Db();
+			$account->load(array('aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
+			$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData(),$account->getCustomerData());
 		
-		$subscriber = new Billrun_Subscriber_Db();
-		$subscriber->load(array('sid'=>$current['sid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
-		$account = new Billrun_Account_Db();
-		$account->load(array('aid'=>$current['aid'],'time'=>date('Ymd H:i:sP',$current['urt']->sec)));
-		$newData = $this->updateRowTaxInforamtion($current, $subscriber->getSubscriberData(),$account->getCustomerData());
-		
-		//If we could not find the taxing information.
-		if($newData == FALSE) {
-			return FALSE;
+			//If we could not find the taxing information.
+			if($newData == FALSE) {
+				return FALSE;
+			}
 		}
 		
 		if($row instanceof Mongodloid_Entity ) {
@@ -48,9 +52,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row = $newData;
 		}
-
+		
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
-		return $row;;
+		return $row;
 	}
 
 	/**
@@ -95,10 +99,13 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		//Line is legitimate if it has rated usag
+		return true;
+	}	
+	
+	protected function isLineTaxable($line) {
 		$rate =  Billrun_Rates_Util::getRateByRef( $line instanceof Mongodloid_Entity ? $line->get('arate', true): $line['arate']);
 		return !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'] ; // all rated lines that are taxable
-	}	
+	}
 	
 	protected function isLineDataComplete($line) {
 		$missingFields = array_diff( array('aid'), array_keys($line) );
