@@ -321,10 +321,10 @@ class Models_Entity {
 		
 		if (!is_null($this->before)) {
 			$prevEntity = $this->before->getRawData();
-            unset($prevEntity['_id']);
+			unset($prevEntity['_id']);
 			$this->update = array_merge($prevEntity, $this->update);
 		}
-		
+
 		$this->protectKeyField();
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$this->verifyLastEntry();
