@@ -172,16 +172,16 @@ class Models_Entity {
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
-			if ($val) {
+			if ($val !== FALSE) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($defaultFieldsValues[$field] !== false) {
+			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
@@ -311,18 +311,16 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
-		if ($this->preCheckUpdate() !== TRUE) {
-			return false;
-		}
-
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
 		}
-		
 		if (!is_null($this->before)) {
 			$prevEntity = $this->before->getRawData();
 			unset($prevEntity['_id']);
 			$this->update = array_merge($prevEntity, $this->update);
+		}
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
 		}
 
 		$this->protectKeyField();
