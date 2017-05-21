@@ -163,7 +163,7 @@ class CreatetenantAction extends ApiAction {
 	}
 
 	protected function createSecret() {
-		$key = bin2hex(openssl_random_pseudo_bytes(16));
+		$key = Billrun_Utils_Security::generateSecretKey();
 		$crc = hash("crc32b", $key);
 		return array(
 			'key' => $key,

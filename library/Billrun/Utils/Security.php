@@ -52,17 +52,23 @@ class Billrun_Utils_Security {
 		$signature = $request[self::SIGNATURE_FIELD];
 
 		// Get the secret
-		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
-		if(!self::validateSecret($secret)) {
-			return false;
-		}
-		
-		$data = $request;
-		unset($data[self::SIGNATURE_FIELD]);
-		$hashResult = self::sign($data, $secret);
-		
-		if(hash_equals($signature, $hashResult)) {
-			return true;
+		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
+		$today = time();
+		foreach ($secrets as $secret) {
+			if (!(strtotime($secret['from']) < $today && strtotime($secret['to']) > $today)) {
+				continue;
+			}
+			if (!self::validateSecret($secret)) {
+				continue;
+			}
+
+			$data = $request;
+			unset($data[self::SIGNATURE_FIELD]);
+			$hashResult = self::sign($data, $secret['key']);
+
+			if (hash_equals($signature, $hashResult)) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -84,13 +90,17 @@ class Billrun_Utils_Security {
 	 * @return boolean - True if the secret is valid.
 	 */
 	protected static function validateSecret($secret) {
-		if(empty($secret) || !is_string($secret)) {
+		if(empty($secret['key']) || !is_string($secret['key'])) {
 			return false;
 		}
-		$crc = Billrun_Factory::config()->getConfigValue("shared_secret.crc");
-		$calculatedCrc = hash("crc32b", $secret);
+		$crc = $secret['crc'];
+		$calculatedCrc = hash("crc32b", $secret['key']);
 		
 		// Validate checksum
 		return hash_equals($crc, $calculatedCrc);
+	}
+	
+	public static function generateSecretKey() {
+		return bin2hex(openssl_random_pseudo_bytes(16));
 	}
 }
