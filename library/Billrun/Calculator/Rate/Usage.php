@@ -187,8 +187,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	
 	protected function getBasicMatchRateQuery($row, $usaget) {
 		$sec = $row['urt']->sec;
+		$usec = $row['urt']->usec;
 		return array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery($sec),
+			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
 			array('rates.' . $usaget => array('$exists' => true))
 		);
 	}

@@ -57,27 +57,28 @@ class Billrun_Utils_Mongo {
 	 * @param boolean $onlyFuture - If true, the query is bounded only with the 'to'
 	 *							    field, enabling to query future records.
 	 *								False by default. 
+	 * @param int $microSeconds Microseconds to use for bounding the query.
 	 * @return array - Array with the to and from clauses
 	 */
-	public static function getDateBoundQuery($sec = NULL, $onlyFuture = false) {
+	public static function getDateBoundQuery($sec = NULL, $onlyFuture = false, $microSeconds = 0) {
 		$now = is_null($sec) ? time() : $sec;
 		if ($onlyFuture) {
 			return array(
 				'to' => array(
-					'$gt' => new MongoDate($now),
+					'$gt' => new MongoDate($now, $microSeconds),
 				),
 			);
 		}
 		return array(
 			'to' => array(
-				'$gt' => new MongoDate($now),
+				'$gt' => new MongoDate($now, $microSeconds),
 			),
 			'from' => array(
-				'$lte' => new MongoDate($now),
+				'$lte' => new MongoDate($now, $microSeconds),
 			)
 		);
 	}
-	
+
 	/**
 	 * Get a value from an array by a mongo format key, seperated with dots.
 	 * @param array $array - Array to get value of.
