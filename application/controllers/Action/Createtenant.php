@@ -163,12 +163,7 @@ class CreatetenantAction extends ApiAction {
 	}
 
 	protected function createSecret() {
-		$key = Billrun_Utils_Security::generateSecretKey();
-		$crc = hash("crc32b", $key);
-		return array(
-			'key' => $key,
-			'crc' => $crc
-		);
+		return Billrun_Utils_Security::generateSecretKey();
 	}
 
 	protected function addDbConfigData(&$dbConfig) {

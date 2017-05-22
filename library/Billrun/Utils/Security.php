@@ -53,9 +53,12 @@ class Billrun_Utils_Security {
 
 		// Get the secret
 		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
+		if(!is_array(current($secrets))) {  //for backward compatibility 
+			$secrets = array($secrets);
+		}
 		$today = time();
 		foreach ($secrets as $secret) {
-			if (!(strtotime($secret['from']) < $today && strtotime($secret['to']) > $today)) {
+			if (isset($secret['from']) && isset($secret['to']) && !(strtotime($secret['from']) < $today && strtotime($secret['to']) > $today)) {
 				continue;
 			}
 			if (!self::validateSecret($secret)) {
@@ -101,6 +104,8 @@ class Billrun_Utils_Security {
 	}
 	
 	public static function generateSecretKey() {
-		return bin2hex(openssl_random_pseudo_bytes(16));
+		$key = bin2hex(openssl_random_pseudo_bytes(16));
+		$crc = hash("crc32b", $key);
+		return array('key' => $key, 'crc' => $crc);
 	}
 }

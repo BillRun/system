@@ -287,8 +287,9 @@ class ConfigModel {
 				throw new Exception('Missing creation/expiration dates');
 			}
 			if (!isset($data['key'])) {
-				$data['key'] = Billrun_Utils_Security::generateSecretKey();
-				$data['crc'] = hash("crc32b", $data['key']);
+				$secret = Billrun_Utils_Security::generateSecretKey();
+				$data['key'] = $secret['key'];
+				$data['crc'] = $secret['crc'];
 			}
 			$this->setSharedSecretSettings($updatedData, $data);
 			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);

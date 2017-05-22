@@ -222,7 +222,9 @@ if ((typeof lastConfig) !== "undefined") {
 // Update shared secret structure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
-var ele = [];
-ele.push(lastConfig.shared_secret);
-lastConfig.shared_secret = ele;
-db.config.insert(lastConfig);
+if (typeof lastConfig.shared_secret.key != 'undefined') {
+	var ele = [];
+	ele.push(lastConfig.shared_secret);
+	lastConfig.shared_secret = ele;
+	db.config.insert(lastConfig);
+}
