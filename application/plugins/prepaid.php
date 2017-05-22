@@ -143,7 +143,11 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$balance_before = $this->getBalanceValue($balance);
 			$balance_usage = $this->getBalanceUsage($balance, $row);
 			$pricingData["balance_before"] = $balance_before;
-			$pricingData["balance_after"] = $balance_before + $balance_usage;
+			if (!$this->isFreeLine($row)) { // volume balance should only update if the line is not free
+				$pricingData["balance_after"] = $balance_before + $balance_usage;
+			} else {
+				$pricingData["balance_after"] = $balance_before;
+			}
 			$pricingData["usage_unit"] = $balance->get('charging_by_usaget_unit');
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberAfterBalance', array($row, $balance, $pricingData["balance_before"], $pricingData["balance_after"]));
 		} catch (Exception $ex) {
@@ -175,7 +179,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if ($balance && $balance['charging_by_usaget'] == 'total_cost' || $balance['charging_by_usaget'] == 'cost' || $balance['charging_by'] == 'cost') {
 				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceCost;
 			} else {
-				$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
+				if (!$this->isFreeLine($lineToRebalance)) { // volume balance should only update if the line is not free
+					$lineUpdateQuery['$inc']['balance_after'] = $rebalanceUsagev;
+				}
 				if (!empty($realUsagevAfterCeiling)) {
 					$lineUpdateQuery['$inc']['real_usagev'] = $realUsagevAfterCeiling;
 					$lineUpdateQuery['$inc']['usagev'] = $rebalanceUsagev;
@@ -357,7 +363,9 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 						$realUsagevAfterCeiling -= $lineToRebalance['call_offset'];
 					}
 				}
-				$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
+				if (!$this->isFreeLine($lineToRebalance)) { // volume balance should only update if the line is not free
+					$balance['balance.totals.' . $balanceTotalKeys . '.usagev'] += $rebalanceUsagev;
+				}
 			} else if (!is_null($balance->get('balance.totals.' . $balanceTotalKeys . '.cost'))) {
 				$balance['balance.totals.' . $balanceTotalKeys . '.cost'] += $rebalanceCost;
 			} else {
@@ -526,6 +534,16 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return $event['transaction_id'];
 		}
 		return Billrun_Util::generateRandomNum(18);
+	}
+	
+	/**
+	 * Checks if a line was marked as free of charge
+	 * 
+	 * @param array $line
+	 * @return true if free, false otherwise
+	 */
+	protected function isFreeLine($line) {
+		return isset($line['free_line']) && $line['free_line'];
 	}
 
 }
