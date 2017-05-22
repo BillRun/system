@@ -82,28 +82,31 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 		Billrun_Factory::log("loading balances...");
 		unset($this->balances);
 		$this->balances = array();
+		$query = array('sid' => array('$in' => $sids), 'from' => array('$lt' => $this->startMongoTime), 'to' => array('$gt' => $this->startMongoTime));
+		$this->logQueries($query);
 		$balances = $this->db->balancesCollection()
-			->query(array('sid' => array('$in' => $sids), 'from' => array('$lt' => $this->startMongoTime), 'to' => array('$gt' => $this->startMongoTime)));
+			->query($query);
 		foreach ($balances as $balance) {
 			$this->balances[$balance['sid']][] = $balance;
 		}
 		Billrun_Factory::log("Done loading balances.");
 	}
 
-    protected function loadTransactions($skip,$limit) {
+    protected function loadTransactions($skip, $limit) {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
 		$this->transactions = array();
-		$transactions = $this->db->linesCollection()->aggregateWithOptions(array(
-                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ) )),
-                            array('$sort'=>array('sid'=>1,'urt'=>1)),
+		$aggregationPipeline = array(
+                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'sid'=> array('$gt' => 0) )),
                             array('$project' => array('sid'=>1,'urt'=>1,
                                                         'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
                                                     )),
-                    array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$last'=>'$urt') )),
-					array('$skip' => $skip),
-					array('$limit' => $limit)
-                ), array('allowDiskUse' => true));
+							array('$group'=>array('_id'=>array('s'=>'$sid','t'=>'$type'), 'sid'=> array('$first'=>'$sid'), 'type'=> array('$first'=>'$type'), 'urt' =>array('$max'=>'$urt') )),
+							array('$skip' => $skip),
+							array('$limit' => $limit)
+						);
+		$this->logQueries($aggregationPipeline);
+		$transactions = $this->db->linesCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
 		foreach ($transactions as $transaction) {
 			$this->transactions[$transaction['sid']][$transaction['type']] = $transaction['urt'];
 		}
