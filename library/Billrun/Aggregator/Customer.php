@@ -163,7 +163,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 
 		$this->size = (int) Billrun_Util::getFieldVal($options['aggregator']['size'],$this->size);
-		$this->size = (int) Billrun_Util::getFieldVal($options['size'],$this->size);//Override the configuration size settings.
+		//Override the configuration size settings with  the  size  provided in the arguments.
+		$this->size = (int) Billrun_Util::getFieldVal($options['size'],$this->size);
 		
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
@@ -371,48 +372,41 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected function parseToAccounts($outputArr) {
 		$accounts = array();
-		$lastAid = null;
-		$accountData = array();
 		$billrunData = array(
 			'billrun_key' => $this->getCycle()->key(),
-			'autoload' => !empty($this->overrideMode));
+			'autoload' => !empty($this->overrideMode)
+			);
+		
 		foreach ($outputArr as $subscriberPlan) {
-			$aid = $subscriberPlan['id']['aid'];
-			
-			// If the aid is different, store the account.
-			if($accountData && $lastAid && ($lastAid != $aid)) {	
-				$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid);
-				if($accountToAdd) {
-					$accounts[] = $accountToAdd;
-				}
-				$accountData = array();
-			}
-			
-			$lastAid = $aid;
-			
+			$aid = (string)$subscriberPlan['id']['aid'];
+			$accountData = array();
 			$type = $subscriberPlan['id']['type'];
+			
 			if ($type === 'account') {
 				$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
-				continue;
-			}
-			
-			if (($type === 'subscriber') && $accountData) {
+			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
 				$raw['plans'] = $subscriberPlan['plan_dates'];
-				$raw['from'] = $subscriberPlan['plan_dates'][0]['from'];
-				$raw['to'] = $subscriberPlan['plan_dates'][count($subscriberPlan['plan_dates']) - 1]['to'];
+				foreach($subscriberPlan['plan_dates'] as $dates) {
+					$raw['from'] = new MongoDate(min($dates['from']->sec,  Billrun_Util::getFieldVal($raw['from']->sec, new MongoDate(PHP_INT_MAX))->sec ));
+					$raw['to'] = new MongoDate(max($dates['to']->sec,Billrun_Util::getFieldVal($raw['to']->sec,new MongoDate(0))->sec ));
+				}
 				$accountData['subscribers'][] = $raw;
+			} else {
+				Billrun_Factory::log('Recevied a record form cycle aggregate with unknown type.',Zend_Log::ERR);
 			}
+			$accounts[$aid] = array_merge_recursive(Billrun_Util::getFieldVal($accounts[$aid],array()),$accountData);
 		}
 		
-		if($accountData) {
-			$accountToAdd = $this->getAccount($billrunData, $accountData, $lastAid);
+		$accountsToRet = array();
+		foreach($accounts as $aid => $accountData) {
+			$accountToAdd = $this->getAccount($billrunData, $accountData, intval($aid));
 			if($accountToAdd) {
-				$accounts[] = $accountToAdd;
+				$accountsToRet[] = $accountToAdd;
 			}
 		}
-		
-		return $accounts;
+				
+		return $accountsToRet;
 	}
 	
 	/**

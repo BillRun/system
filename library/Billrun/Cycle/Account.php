@@ -68,28 +68,18 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$this->records = array();
 		$subscribers = $data['subscribers'];
 		$cycle = $this->cycleAggregator->getCycle();
-		
+
 		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
-		
-		// Filter subscribers.
-		$filtered = $this->constructSubscriberData($sorted, $cycle);
+	
 
 		// Subscriber invoice
 		$invoiceData = array();
 		$invoiceData['key'] = $cycle->key();
-		
+
 		$aggregatableRecords = array();
 		foreach ($sorted as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
-			
-			$filteredSid = array();
-			if(isset($filtered[$sid])) {
-				$filteredSid = $filtered[$sid];
-			} else {
-				Billrun_Factory::log("SID " . $sid . " not in filtered!");
-			}
-			
-			$aggregatableRecords[] = $this->constructForSid($subscriberList, $filteredSid, $invoiceData);;
+			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData);;
 		}
 		Billrun_Factory::log("Constructed: " . count($aggregatableRecords));
 		$this->records = $aggregatableRecords;
@@ -105,25 +95,15 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @param array $invoiceData Invoice
 	 * @return Billrun_Cycle_Subscriber Aggregateable subscriber
 	 */
-	protected function constructForSid($sorted, $filtered, $invoiceData) {		
-		$aggregateable = reset($sorted);
-		$changes = array(	'plans'=>array(),
-							'services'=> array() );
+	protected function constructSubscriber($sorted, $invoiceData) {
+
 		$invoice = new Billrun_Cycle_Subscriber_Invoice($this->cycleAggregator->getRates(), $invoiceData);
-		foreach ($sorted as $sub) {
-			$filterKey = "" . $sub['sto'] . "";
-			if(isset($filtered[$filterKey])) {
-				$changes = array_merge_recursive($changes, $filtered[$filterKey]); 
-			} else {
-				Billrun_Factory::log("Key not in dictionary. " . $filterKey);
-			}
-		}
-		$aggregateable['plans'] = $changes['plans'];
-		$aggregateable['services'] = $changes['services'];
 		
-		$aggregateable['invoice'] = &$invoice;
-		$aggregateable['line_stump'] = $this->getLineStump($sub, $this->cycleAggregator->getCycle());
-		$cycleSub =  new Billrun_Cycle_Subscriber($aggregateable, $this->cycleAggregator);
+		$subConstratorData['history'] = $sorted;
+		$subConstratorData['subscriber_info'] = reset($sorted);
+		$subConstratorData['subscriber_info']['invoice'] = &$invoice;
+		$subConstratorData['subscriber_info']['line_stump'] = $this->getLineStump(end($sorted), $this->cycleAggregator->getCycle());
+		$cycleSub =  new Billrun_Cycle_Subscriber($subConstratorData, $this->cycleAggregator);
 
 		return $cycleSub;
 	}
@@ -193,186 +173,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		return $subscriber;
 	}
 	
-	/**
-	 * Construct subscriber data
-	 * Consructs the plans and services to be aggregated with the subscriber data
-	 * @param type $subscribers
-	 * @param Billrun_DataTypes_CycleTime $cycle
-	 * @return array
-	 */
-	protected function constructSubscriberData($subscribers, $cycle) {
-		$filtered = array();
-		
-		foreach ($subscribers as $sid => $current) {
-			$filtered[$sid] = $this->buildSubAggregator($current, $cycle->end());
-		}
-		
-		return $filtered;
-	}
-	
-	/**
-	 * Build the aggregator plan data array
-	 * @param array $plans
-	 * @param $endTime
-	 * @return array
-	 */
-	protected function buildPlansSubAggregator(array $plans, $endTime) {
-		$name = null;
-		$from = null;
-		$to = null;
-		$aggregatorData = array();
-		//sort plans history by date
-		usort($plans, function($a, $b){ return $a['to']->sec - $b['to']->sec;});
-		// Go through the plans
-		foreach ($plans as $subPlan) {
-			// First iteration.
-			if($name === null) {
-				$name = $subPlan['plan'];
-				$from = $subPlan['plan_activation']->sec;
-				$to = $subPlan['to']->sec;
-				continue;
-			}
-			$currName = $subPlan['plan'];
-			// If it is the same plan name, continue
-			if($name == $currName) {
-				$to = $subPlan['to']->sec;
-				continue;
-			}
-			
-			// It is a different plan name, construct the aggregator plan record
-			$toAdd = array("plan" => $name, "start" => $from, "end" => $to);
-			$aggregatorData["$to"]['plans'][] = $toAdd;
-			
-			// Update all the details.
-			$name = $subPlan['plan'];
-			$from = max($subPlan['plan_activation']->sec,$subPlan['from']->sec);
-			$to = $subPlan['to']->sec;
-		}
-		// Add the last value.
-		$toAdd = array("plan" => $name,'name'=>$name, "start" => $from, "end" => $to);
-		
-		if($to > $endTime) {
-			$to = $endTime;
-			Billrun_Factory::log("Taking the end time! " . $endTime);
-		}
-		$aggregatorData["$to"]['plans'][] = $toAdd;
-			
-		return $aggregatorData;
-	}
-	
-	/**
-	 * Build the services start and  end records for  a given subscriber
-	 * @param type $subscriber
-	 * @param type $previousServices
-	 * @return type
-	 */
-	protected function buildServicesSubAggregator($subscriber, $previousServices, $endTime) {
-		$currServices = array();
-		$retServices = &$previousServices;
-		$sto = $subscriber['sto'];
-		$sfrom = $subscriber['sfrom'];
-		
-		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
-			foreach($subscriber['services'] as  $tmpService) {
-				 $serviceData = array( 'name' => $tmpService['name'],
-										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
-										'plan' => $subscriber['plan'],
-										'start'=> $tmpService['from']->sec,
-										'end'=> min($tmpService['to']->sec, $endTime ) );
-
-				$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
-				$currServices[$stamp] = $serviceData; 
-			}
-			// Function to Check for removed services in the current subscriber record.
-			$serviceCompare = function  ($a, $b)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
-				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
-				return strcmp($aStamp , $bStamp);
-			};
-
-			$removedServices  = array_udiff($previousServices, $currServices, $serviceCompare);
-			foreach($removedServices as $stamp => $removed) {
-				if($sto < $removed['end'] && $sto <= $retServices[$stamp]['end']) {
-					$retServices[$stamp]['end'] = $sto;
-				} elseif ( $sfrom < $removed['end'] ) {
-					$retServices[$stamp]['end'] = $sfrom;
-				}
-			}
-			$retServices = array_merge($retServices, $currServices);
-		}
-		return $retServices;
-	}
-	
-	protected function getServicesIncludedInPlan($plansData) {
-		$mongoPlans = $this->cycleAggregator->getPlans();
-		$includedServices = array();
-		if(!empty($plansData['plans']) ) {			
-			foreach($plansData['plans'] as $planData) {
-				if(!empty($mongoPlans[$planData['plan']]['include']['services'])) {
-					foreach($mongoPlans[$planData]['include']['services'] as $srvName) {
-						$includedServices[] = array(
-												'name'=> $srvName,
-												'quantity' => 1,
-												'plan' => $planData['plan'],
-												'start' => $planData['start'],
-												'end' => $planData['end'],
-												'included' => 1,
-											);
-					}
-				}
-			}
-		}
-		return $includedServices;
-	}
-	
-	/**
-	 * Create a subscriber aggregator from an array of subscriber records.
-	 * @param array $current - Array of subscriber records.
-	 * @param int $endTime
-	 * @todo: Rewrite this function better
-	 */
-	protected function buildSubAggregator(array $current, $endTime) {		
-		$servicesAggregatorData = array();
-			
-		$subscriberPlans = array();
-		$services = array();
-		$sstart = PHP_INT_MAX;
-		foreach ($current as $subscriber) {
-			//Find the earliest instance of the subscriber 
-			$sstart = min($subscriber['sfrom'], $sstart);			
-			// Get the plans
-			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
-			
-			// Get the services for the subscriber.
-			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);	
-			
-		}
-		
-		foreach($services as $service) {
-				//Adjust serives that mistakenly started before the subscriber existed to start at the  same time  of the subscriber creation
-				if($service['start'] < $sstart) {
-					$service['start'] < $sstart;
-				}
-				$servicesAggregatorData[$service['end']][] = $service;
-		}
-		
-		$planAggregatorData = $this->buildPlansSubAggregator($subscriberPlans, $endTime);
-				
-		// Merge the results
-		foreach ($servicesAggregatorData as $key => $value) {
-			$planAggregatorData[$key]['services'] = $value;
-		}
-		
-		//Added services  that are included in the plan
-		foreach($planAggregatorData as $key =>$plansData) {
-			$planAggregatorData[$key]['services'] = array_merge(
-														$this->getServicesIncludedInPlan($plansData),
-														Billrun_Util::getFieldVal($planAggregatorData[$key]['services'],array())
-													);
-		}
-		
-		return $planAggregatorData;
-	}
 	
 	public function getInvoice() {
 		return $this->invoice;
