@@ -129,34 +129,23 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * @return type
 	 */
 	protected function sortSubscribers($subscribers, $endTime) {
-		$sorted = array();
+//		$sorted = $subscribers;
 		
-		foreach ($subscribers as $subscriber) {
-			if(!isset($subscriber['sid'])) {
-				Billrun_Factory::log("Invalid subscriber record in filter subscribers!", Zend_Log::NOTICE);
-				continue;
+		foreach ($subscribers as &$subscriberRecs) {
+			foreach ($subscriberRecs as &$subscriberRecord) {
+				$subscriberRecord = $this->handleSubscriberDates($subscriberRecord, $endTime);
 			}
-			
-			$sid = $subscriber['sid'];
-			$sorted[$sid][] = $this->handleSubscriberDates($subscriber, $endTime);
 		}
 		//sort each of the subscriber histort from past to present
-		foreach($sorted as  $sid => &$subHistory) {			
-			usort($subHistory, function($a, $b){ return $a['sto'] - $b['sto'];});
-		}
-		return $sorted;
+//		foreach($subscribers as  &$subHistory) {			
+//			usort($subHistory, function($a, $b){ return $a['sto'] - $b['sto'];});
+//		}
+		return $subscribers;
 	}
 	
 	protected function handleSubscriberDates($subscriber, $endTime) {
 		$to = $subscriber['to'];
-		if(isset($subscriber['to']->sec)) {
-			$to = $subscriber['to']->sec;
-		}
-		
 		$from = $subscriber['from'];
-		if(isset($subscriber['from']->sec)) {
-			$from= $subscriber['from']->sec;
-		}
 
 		if($to > $endTime) {
 			$to = $endTime;

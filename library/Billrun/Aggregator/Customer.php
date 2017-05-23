@@ -379,23 +379,21 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = (string)$subscriberPlan['id']['aid'];
-			$accountData = array();
 			$type = $subscriberPlan['id']['type'];
 			
 			if ($type === 'account') {
-				$accountData['attributes'] = $this->constructAccountAttributes($subscriberPlan);
+				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
 			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
 				$raw['plans'] = $subscriberPlan['plan_dates'];
 				foreach($subscriberPlan['plan_dates'] as $dates) {
-					$raw['from'] = new MongoDate(min($dates['from']->sec,  Billrun_Util::getFieldVal($raw['from']->sec, new MongoDate(PHP_INT_MAX))->sec ));
-					$raw['to'] = new MongoDate(max($dates['to']->sec,Billrun_Util::getFieldVal($raw['to']->sec,new MongoDate(0))->sec ));
+					$raw['from'] = min($dates['from']->sec,  Billrun_Util::getFieldVal($raw['from'],PHP_INT_MAX) );
+					$raw['to'] = max($dates['to']->sec,Billrun_Util::getFieldVal($raw['to'],0) );
 				}
-				$accountData['subscribers'][] = $raw;
+				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else {
 				Billrun_Factory::log('Recevied a record form cycle aggregate with unknown type.',Zend_Log::ERR);
 			}
-			$accounts[$aid] = array_merge_recursive(Billrun_Util::getFieldVal($accounts[$aid],array()),$accountData);
 		}
 		
 		$accountsToRet = array();
