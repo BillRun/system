@@ -222,3 +222,10 @@ if ((typeof lastConfig) !== "undefined") {
 	}
 	db.config.insert(lastConfig);
 }
+
+// subscribers / discounts indexes fixes
+db.subscribers.dropIndex('sid_1_from_1_to_1');
+db.subscribers.ensureIndex({'sid': 1 , 'from' : 1, 'aid' : 1}, { unique: true, sparse: true, background: true });
+db.discounts.ensureIndex({'key':1, 'from': 1}, { unique: true, background: true });
+db.discounts.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
+db.discounts.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
