@@ -335,7 +335,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								}
 								$concat['data']['credits'] = $credits;
 							}
-
+							
+							if (isset($subscriber['addons']) && is_array($subscriber['addons'])) {
+								foreach ($subscriber['addons'] as $service) {
+									$usaget = $service['type'];
+									$this->services[$service['service_name']] = $usaget;
+									$subscriber[$usaget] = $service;
+								}
+							}
+												
 							$service_types = array();
 							foreach ($this->services as $service_name => $usaget) {
 								if (isset($subscriber[$usaget])) {
