@@ -37,6 +37,9 @@
 	},
 	"template_token":{},
 	"payment_gateways":[],
+	"events" : {
+		"pricing" : []
+	},
 	"taxation" :{
 		"tax_type": "vat",
 		 "CSI": {
