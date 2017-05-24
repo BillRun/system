@@ -205,19 +205,5 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			
 		return $retData;
 	}
-	
-	protected function getRateForLine($line) {
-		$rate = FALSE;
-		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
-		} else {
-			$flatRate = $line['type'] == 'flat' ? 
-				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
-				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
-			$rate = $flatRate->getData();
-		}
-		return $rate;			
-	}
-	
 
 }
