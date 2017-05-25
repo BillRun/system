@@ -77,7 +77,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 													'balance_after' => array('$exists'=> 1),
 													)),
 			                array('$sort' => array('urt'=>1, 'sid'=>1 )),
-							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
+							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 ,'balance_after' => 1)),
 							array('$group'=>array(
 									'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
 									'sid'=> array('$first'=>'$sid'),
@@ -110,7 +110,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	protected function lastBalanceTransactionBalance($sid, $parameters, $balanceLine) {
 		foreach($parameters['fields'] as  $field) {
 			if(isset($this->transactions[$sid][(string)$balanceLine[$field]]) ) {
-                                return $this->transactions[$sid][(string)$balanceLine[$field]]['balance'];
+                                return -1 * $this->transactions[$sid][(string)$balanceLine[$field]]['balance'];
 			}
 		}
 		return '';
