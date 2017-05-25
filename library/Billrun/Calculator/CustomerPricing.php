@@ -1005,6 +1005,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @param type $usageType
 	 */
 	protected function getPrepaidGrantedVolume($row, $rate, $balance, $usageType, $balanceTotalKeys = null) {
+		if ($this->isFreeLine($row)) {
+			return $row['usagev'];
+		}
  		if (empty($balanceTotalKeys)) {
  			$balanceTotalKeys = $usageType;
  		}
