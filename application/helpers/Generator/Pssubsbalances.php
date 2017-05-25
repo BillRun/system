@@ -110,7 +110,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	protected function lastBalanceTransactionBalance($sid, $parameters, $balanceLine) {
 		foreach($parameters['fields'] as  $field) {
 			if(isset($this->transactions[$sid][(string)$balanceLine[$field]]) ) {
-                                return $this->transactions[$sid][(string)$balanceLine[$field]]['balance'];
+                                return -1 * $this->transactions[$sid][(string)$balanceLine[$field]]['balance'];
 			}
 		}
 		return '';
