@@ -637,9 +637,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			$isFreeLine = false;
 			Billrun_Factory::dispatcher()->trigger('isFreeLine', array(&$row, &$isFreeLine));
-			if ($isFreeLine) {
-				$row['free_line'] = true;
-			}
+			$row['free_line'] = $isFreeLine;
 			return $isFreeLine;
 		}
 		return false;
