@@ -69,15 +69,12 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		$subscribers = $data['subscribers'];
 		$cycle = $this->cycleAggregator->getCycle();
 
-		$sorted = $this->sortSubscribers($subscribers, $cycle->end());
-	
-
 		// Subscriber invoice
 		$invoiceData = array();
 		$invoiceData['key'] = $cycle->key();
 
 		$aggregatableRecords = array();
-		foreach ($sorted as $sid => $subscriberList) {
+		foreach ($subscribers as $sid => $subscriberList) {
 			Billrun_Factory::log("Constructing records for sid " . $sid);
 			$aggregatableRecords[] = $this->constructSubscriber($subscriberList, $invoiceData);;
 		}
@@ -110,8 +107,8 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	
 	protected function getLineStump(array $subscriber, Billrun_DataTypes_CycleTime $cycle) {
 		$flatEntry = array(
-			'aid' => $subscriber['aid'],
-			'sid' => $subscriber['sid'],
+			'aid' => intval($subscriber['aid']),
+			'sid' => intval($subscriber['sid']),
 			'source' => 'billrun',
 			'billrun' => $cycle->key(),
 			'type' => 'flat',
@@ -121,47 +118,6 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 		
 		return $flatEntry;
 	}
-	
-	/**
-	 * 
-	 * @param type $subscribers
-	 * @param type $endTime
-	 * @return type
-	 */
-	protected function sortSubscribers($subscribers, $endTime) {
-//		$sorted = $subscribers;
-		
-		foreach ($subscribers as &$subscriberRecs) {
-			foreach ($subscriberRecs as &$subscriberRecord) {
-				$subscriberRecord = $this->handleSubscriberDates($subscriberRecord, $endTime);
-			}
-		}
-		//sort each of the subscriber histort from past to present
-//		foreach($subscribers as  &$subHistory) {			
-//			usort($subHistory, function($a, $b){ return $a['sto'] - $b['sto'];});
-//		}
-		return $subscribers;
-	}
-	
-	protected function handleSubscriberDates($subscriber, $endTime) {
-		$to = $subscriber['to'];
-		$from = $subscriber['from'];
-
-		if($to > $endTime) {
-			$to = $endTime;
-			Billrun_Factory::log("Taking the end time! " . $endTime);
-		}
-		
-		$subscriber['firstname'] = $subscriber['first_name'];
-		$subscriber['lastname'] = $subscriber['last_name'];
-		$subscriber['sfrom'] = $from;
-		$subscriber['sto'] = $to;
-		$subscriber['from'] = date(Billrun_Base::base_datetimeformat, $from);
-		$subscriber['to'] = date(Billrun_Base::base_datetimeformat, $to);
-		
-		return $subscriber;
-	}
-	
 	
 	public function getInvoice() {
 		return $this->invoice;

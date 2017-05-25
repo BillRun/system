@@ -32,16 +32,6 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	protected $plan;
 	
-	public function __construct($data, $cycleAggregator) {
-		$this->cycleAggregator = $cycleAggregator;
-		$constructedData = $this->constructSubscriberData($data['history'], $cycleAggregator->getCycle()->end());
-		$dataForAggration = $data['subscriber_info'];
-		$dataForAggration['plans'] = $constructedData['plans'];
-		$dataForAggration['services'] = $constructedData['services'];
-		
-		parent::__construct($dataForAggration, $cycleAggregator);
-	}
-	
 	/**
 	 * Validate the input
 	 * @param array $input
@@ -49,9 +39,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	 */
 	protected function validate($input) {
 		// TODO: Complete
-		return isset($input['plans']) && is_array($input['plans']) &&
-			   isset($input['invoice']) && is_a($input['invoice'], 'Billrun_Cycle_Subscriber_Invoice') &&
-			   (!isset($input['services']) || is_array($input['services'])); 
+		return isset($input['history']) && is_array($input['history']) &&
+			   isset($input['subscriber_info']['invoice']) && is_a($input['subscriber_info']['invoice'], 'Billrun_Cycle_Subscriber_Invoice'); 
 	}
 	
 	/**
@@ -187,16 +176,22 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 	}
 	
 	protected function constructRecords($data) {
-		if(isset($data['next_plan'])) {
-			$this->nextPlan = $data['next_plan'];
+
+		$constructedData = $this->constructSubscriberData($data['history'], $this->cycleAggregator->getCycle()->end());
+		$dataForAggration = $data['subscriber_info'];
+		$dataForAggration['plans'] = $constructedData['plans'];
+		$dataForAggration['services'] = $constructedData['services'];
+		
+		if(isset($dataForAggration['next_plan'])) {
+			$this->nextPlan = $dataForAggration['next_plan'];
 		}
 		
-		$this->sid = $data['sid'];
-		$this->aid = $data['aid'];
+		$this->sid = intval($dataForAggration['sid']);
+		$this->aid = intval($dataForAggration['aid']);
 		
-		$this->constructServices($data);
-		$this->constructPlans($data);
-		$this->constructInvoice($data);
+		$this->constructServices($dataForAggration);
+		$this->constructPlans($dataForAggration);
+		$this->constructInvoice($dataForAggration);
 	}
 
 	protected function constructInvoice($data) {
@@ -204,8 +199,8 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		
 		$this->invoice->setData('aid', $data['aid']);
 		$this->invoice->setData('sid', $data['sid']);
-		$this->invoice->setData('firstname', $data['firstname']);
-		$this->invoice->setData('lastname', $data['lastname']);
+		$this->invoice->setData('firstname', $data['first_name']);
+		$this->invoice->setData('lastname', $data['last_name']);
 		$this->invoice->setData('plan', $data['plan']);
 	}
 	
@@ -423,6 +418,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$substart = PHP_INT_MAX;
 		$subend = 0;
 		foreach ($current as $subscriber) {
+			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
 			//Find the earliest instance of the subscriber 
 			$substart = min($subscriber['sfrom'], $substart);
 			$subend = max($subscriber['sto'], $subend);
@@ -459,5 +455,22 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		ksort($planAggregatorData,SORT_NUMERIC);
 		
 		return array_reverse($planAggregatorData);
+	}
+	
+	protected function handleSubscriberDates($subscriber, $endTime) {
+		$to = $subscriber['to'];
+		$from = $subscriber['from'];
+
+		if($to > $endTime) {
+			$to = $endTime;
+			Billrun_Factory::log("Taking the end time! " . $endTime);
+		}
+		
+		$subscriber['sfrom'] = $from;
+		$subscriber['sto'] = $to;
+		$subscriber['from'] = date(Billrun_Base::base_datetimeformat, $from);
+		$subscriber['to'] = date(Billrun_Base::base_datetimeformat, $to);
+		
+		return $subscriber;
 	}
 }
