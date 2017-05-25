@@ -201,7 +201,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$this->invoice->setData('sid', $data['sid']);
 		$this->invoice->setData('firstname', $data['first_name']);
 		$this->invoice->setData('lastname', $data['last_name']);
-		$this->invoice->setData('plan', $data['plan']);
+		//$this->invoice->setData('plan', $data['plan']);
 	}
 	
 	/**
@@ -358,9 +358,10 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'plan' => $subscriber['plan'],
 										'start'=> $tmpService['from']->sec,
 										'end'=> min($tmpService['to']->sec, $endTime ) );
-
-				$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
-				$currServices[$stamp] = $serviceData; 
+				 if($serviceData['start'] !== $serviceData['end']) {
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
+					$currServices[$stamp] = $serviceData; 
+				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
 			$serviceCompare = function  ($a, $b)  {
