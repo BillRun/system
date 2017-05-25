@@ -77,7 +77,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 													'balance_after' => array('$exists'=> 1),
 													)),
 			                array('$sort' => array('urt'=>1, 'sid'=>1 )),
-							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 )),
+							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 ,'balance_after' => 1)),
 							array('$group'=>array(
 									'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
 									'sid'=> array('$first'=>'$sid'),
