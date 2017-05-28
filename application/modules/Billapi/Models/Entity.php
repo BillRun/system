@@ -255,6 +255,24 @@ class Models_Entity {
 	public function update() {
 		$this->action = 'update';
 
+		$this->checkUpdate();
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * Performs the changepassword action by a query and data to update
+	 * @param array $query
+	 * @param array $data
+	 */
+	public function changePassword() {
+		$this->action = 'changepassword';
+		
+		$this->checkUpdate();
+		return true;
+	}
+	
+	protected function checkUpdate() {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
@@ -268,8 +286,6 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
-		return true;
 	}
 
 	/**
