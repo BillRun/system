@@ -28,8 +28,9 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 	 */
 	protected function getRateQuery($row, $usaget, $type) {
 		$sec = $row['urt']->sec;
+		$usec = $row['urt']->usec;
 		$match = array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery($sec),
+			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
 			array('key' => $row['rate'])
 		);
 		$group = $this->getBasicGroupRateQuery($row);

@@ -33,6 +33,8 @@ class Billrun_Helpers_QueueCalculators {
 	protected $realtime = false;
 	
 	protected $calculatorFailed = false;
+	
+	protected $stuckInQueue = array();
 
 	public function __construct($options) {
 		$this->options = $options;
@@ -54,7 +56,7 @@ class Billrun_Helpers_QueueCalculators {
 			}
 			$queue_data = $processor->getQueueData();
 			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
-			$calc->prepareData($data['data']);
+			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
 					$line['realtime'] = $this->realtime;
@@ -67,6 +69,8 @@ class Billrun_Helpers_QueueCalculators {
 								$processor->setQueueRowStep($entity['stamp'], $calc_name);
 								$processor->addAdvancedPropertiesToQueueRow($line);
 							}
+						} else {
+							$this->stuckInQueue[$line['stamp']] = true;
 						}
 						$this->calcPricingCase($entity, $calc_name);
 					} else {
@@ -77,6 +81,8 @@ class Billrun_Helpers_QueueCalculators {
 						}
 					}
 					$line = $entity->getRawData();
+				} else {
+					$this->stuckInQueue[$line['stamp']] = true;
 				}
 
 				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {

@@ -30,7 +30,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		//TODO  query the API  with lines
 		$queryData = array();
 		foreach($lines as $line) {
-			if(!$this->isLineLegitimate($line)) { continue; }
+			if(!$this->isLineTaxable($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();
@@ -205,19 +205,5 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 			
 		return $retData;
 	}
-	
-	protected function getRateForLine($line) {
-		$rate = FALSE;
-		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
-		} else {
-			$flatRate = $line['type'] == 'flat' ? 
-				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
-				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
-			$rate = $flatRate->getData();
-		}
-		return $rate;			
-	}
-	
 
 }

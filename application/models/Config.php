@@ -53,6 +53,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
 		$this->loadConfig();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
 
 	public function getOptions() {
@@ -137,6 +138,8 @@ class ConfigModel {
 			$tokens = Billrun_Factory::templateTokens()->getTokens();
 			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
 			return $tokens;
+		} else if ($category == 'minimum_entity_start_date'){
+			return Models_Entity::getMinimumUpdateDate();
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
