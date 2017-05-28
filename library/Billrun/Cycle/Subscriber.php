@@ -421,7 +421,9 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		foreach ($current as $subscriber) {
 			$subscriber = $this->handleSubscriberDates($subscriber, $endTime);
 			//Find the earliest instance of the subscriber 
-			$substart = min($subscriber['sfrom'], $substart);
+			foreach(Billrun_Util::getFieldVal($subscriber['plans'],array()) as  $subPlan) {
+				$substart = min($subPlan['plan_activation'], $substart);
+			}
 			$subend = max($subscriber['sto'], $subend);
 			// Get the plans
 			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
