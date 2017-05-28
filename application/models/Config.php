@@ -288,8 +288,7 @@ class ConfigModel {
 			}
 			if (!isset($data['key'])) {
 				$secret = Billrun_Utils_Security::generateSecretKey();
-				$data['key'] = $secret['key'];
-				$data['crc'] = $secret['crc'];
+				$data = array_merge($data, $secret);
 			}
 			$this->setSharedSecretSettings($updatedData, $data);
 			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);

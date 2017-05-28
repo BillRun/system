@@ -110,11 +110,11 @@ class InternalPaypageController extends ExternalPaypageController {
 		}
 		$today = time();
 		foreach ($secrets as $shared) {
-			if (strtotime($shared['from']) < $today && strtotime($shared['to']) > $today) {
+			if (!isset($shared['from']) || !isset($shared['to'])) {  //for backward compatibility 
 				$secret = $shared;
 				break;
 			}
-			if (!isset($shared['from']) && !isset($shared['to'])) {  //for backward compatibility 
+			if (strtotime($shared['from']) < $today && strtotime($shared['to']) > $today) {
 				$secret = $shared;
 				break;
 			}
