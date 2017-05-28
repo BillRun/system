@@ -32,14 +32,17 @@ class Billrun_User {
 
 	/**
 	 * Check if the user is allowed to perform an operation
-	 * @param string $permission read/write/admin
+	 * 
+	 * http://php.net/manual/en/function.array-merge.php Example #3 array_merge() with non-array types
+	 * @param string \ array $permission read/write/admin
 	 * @return boolean
 	 */
 	public function allowed($permission, $page = null) {
+		$permissions = array_merge((array)$permission, array('admin'));
 		if (isset($this->entity['roles'][$page])) {
-			return (boolean) array_intersect($this->entity['roles'][$page], array($permission, 'admin'));
+			return (boolean) array_intersect($this->entity['roles'][$page], $permissions);
 		}
-		return (boolean) array_intersect($this->entity['roles'], array($permission, 'admin'));
+		return (boolean) array_intersect($this->entity['roles'], $permissions);
 	}
 
 	public function valid() {

@@ -90,6 +90,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected $nextActiveBillrun;
 
+	/**
+	 * current configuration
+	 * 
+	 * @var type 
+	 */
+	protected $config = null;
+
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
 		$planSettings = array(
@@ -101,9 +108,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 		$this->pricingField = $this->calculator->getPricingField(); // todo remove this coupling
-		$this->activeBillrunEndTime = $this->calculator->getActiveBillrunEndTime(); // todo remove this coupling
-		$this->activeBillrun = $this->calculator->getActiveBillrun(); // todo remove this coupling
-		$this->nextActiveBillrun = $this->calculator->getNextActiveBillrun(); // todo remove this coupling
 	}
 
 	/**
@@ -122,11 +126,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$this->countConcurrentRetries = 0;
 		//TODO  change this to be configurable.
 		$pricingData = array();
-		$volume =$this->usagev;
+		$volume = $this->usagev;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance)) {
 			if (isset($this->row['prepriced']) && $this->row['prepriced']) {
-				$charges = (float)$this->row[$this->pricingField];
+				$charges = (float) $this->row[$this->pricingField];
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 			}
@@ -142,8 +146,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		if (!$this->isBillable($this->rate)) {
 			return $pricingData;
 		}
-
-		$pricingData['billrun'] = $this->row['urt']->sec <= $this->activeBillrunEndTime ? $this->activeBillrun : $this->nextActiveBillrun;
 
 		return $pricingData;
 	}
@@ -241,25 +243,38 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		return true;
 	}
 
+	/**
+	 * initial the minimum values allowed for finding a balance 
+	 */
 	protected function initMinBalanceValues() {
 		if (empty($this->min_balance_volume) || empty($this->min_balance_volume)) {
-			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 0, 'float'))); // float avoid set type to int
+			$this->min_balance_volume = abs(Billrun_Factory::config()->getConfigValue('balance.minUsage.' . $this->usaget, Billrun_Factory::config()->getConfigValue('balance.minUsage', 3, 'float'))); // float avoid set type to int
 			$this->min_balance_cost = Billrun_Rates_Util::getTotalChargeByRate($this->rate, $this->usaget, $this->min_balance_volume, $this->plan->getName(), $this->getCallOffset(), $this->row['urt']->sec);
 		}
 	}
 
 	/**
 	 * gets an array which represents a db ref (includes '$ref' & '$id' keys)
-	 * @param type $db_ref
+	 * @param array $row
 	 */
 	public function getRowRate($row) {
 		return Billrun_Rates_Util::getRateByRef($row->get('arate', true));
 	}
 
+	/**
+	 * set the call offset with the value received
+	 * 
+	 * @param float $val
+	 */
 	public function setCallOffset($val) {
 		$this->call_offset = $val;
 	}
 
+	/**
+	 * returns the call offset value
+	 * 
+	 * @return float
+	 */
 	public function getCallOffset() {
 		return $this->call_offset;
 	}
@@ -374,7 +389,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$balanceId = (string) $this->balance->getId();
 		if ($plan->isRateInEntityGroup($rate, $usageType)) {
 			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
-			
+
 			$balanceType = key($groupVolumeLeft); // usagev or cost
 			$value = current($groupVolumeLeft);
 			if ($balanceType == 'cost') {
@@ -383,7 +398,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			} else {
 				$valueToCharge = $volume - $value;
 			}
-			
+
 			if ($valueToCharge < 0) {
 				$valueToCharge = 0;
 				$ret['in_group'] = $ret['in_plan'] = $volume;
@@ -565,6 +580,300 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 		return array($keyRequired => $valueRequired); // volume/cost left to charge
+	}
+
+	/**
+	 * a trigger that occurs before the balance update is done (and precedents calculations).
+	 * allows to add more logic before the update
+	 * 
+	 * @return boolean
+	 */
+	public function preUpdate() {
+		if (!isset($this->row['realtime']) || !$this->row['realtime']) {
+			return false;
+		}
+		if (!isset($this->row['usagev_offset'])) {
+			$this->row['usagev_offset'] = $this->getRowCurrentUsagev();
+		}
+
+		if ($this->isRebalanceRequired()) {
+			$this->rebalance();
+		}
+		return true;
+	}
+
+	/**
+	 * gets the current usagev used so far
+	 * 
+	 * @return float
+	 */
+	protected function getRowCurrentUsagev() {
+		try {
+			if ($this->isPostpayChargeRequest()) {
+				return 0;
+			}
+			$lines_coll = Billrun_Factory::db()->linesCollection();
+			$query = $this->getRowCurrentUsagevQuery();
+			$line = current(iterator_to_array($lines_coll->aggregate($query)));
+		} catch (Exception $ex) {
+			Billrun_Factory::log($ex->getCode() . ': ' . $ex->getMessage());
+		}
+		return isset($line['sum']) ? $line['sum'] : 0;
+	}
+
+	/**
+	 * gets the current usagev query (for getRowCurrentUsagev function)
+	 * 
+	 * @return array
+	 */
+	protected function getRowCurrentUsagevQuery() {
+		$query = array(
+			array(
+				'$match' => array(
+					"sid" => $this->row['sid'],
+					"session_id" => $this->row['session_id'],
+				)
+			),
+			array(
+				'$group' => array(
+					'_id' => null,
+					'sum' => array('$sum' => '$usagev'),
+				)
+			)
+		);
+		return $query;
+	}
+
+	/**
+	 * checks whether the request is a  one time charge requests
+	 * 
+	 * @return boolean
+	 */
+	protected function isPostpayChargeRequest() {
+		return $this->row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST');
+	}
+
+	/**
+	 * checks if the line needs to run the rebalance mechanism
+	 * 
+	 * @return boolean
+	 */
+	protected function isRebalanceRequired() {
+		if ($this->isPostpayChargeRequest()) {
+			return false;
+		}
+		if ($this->isReblanceOnLastRequestOnly()) {
+			$rebalanceTypes = array('final_request');
+		} else {
+			$rebalanceTypes = array('final_request', 'update_request');
+		}
+		return ($this->row['realtime'] && in_array($this->row['record_type'], $rebalanceTypes));
+	}
+
+	/**
+	 * checks whether the rebalance should occur on every request or only at the last (final) request
+	 * 
+	 * @return boolean
+	 */
+	protected function isReblanceOnLastRequestOnly() {
+		$config = $this->getConfig($this->row);
+		return (isset($config['realtime']['rebalance_on_final']) && $config['realtime']['rebalance_on_final']);
+	}
+
+	/**
+	 * gets the current configuration according to the file type
+	 * 
+	 * @return array
+	 */
+	protected function getConfig() {
+		if (empty($this->config)) {
+			$this->config = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true);
+		}
+		return $this->config;
+	}
+
+	/**
+	 * make a rebalance to the row
+	 * 
+	 */
+	protected function rebalance() {
+		$lineToRebalance = $this->getLineToUpdate()->current();
+		$realUsagev = $this->getRealUsagev();
+		$chargedUsagev = $this->getChargedUsagev($this->row, $lineToRebalance);
+		if ($chargedUsagev !== null) {
+			$rebalanceUsagev = $realUsagev - $chargedUsagev;
+			if (($rebalanceUsagev) < 0) {
+				$this->handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $this->row);
+			}
+		}
+	}
+
+	/**
+	 * Gets the Line that needs to be updated (on rebalance) from archive collection
+	 */
+	protected function getLineToUpdate() {
+		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
+		$findQuery = array(
+			"sid" => $this->row['sid'],
+			"session_id" => $this->row['session_id'],
+		);
+		$sort = array(
+			'sid' => 1,
+			'session_id' => 1,
+			'_id' => -1,
+		);
+		$line = $lines_archive_coll->query($findQuery)->cursor()->sort($sort)->limit(1);
+		return $line;
+	}
+
+	/**
+	 * Gets the real usagev of the user (known only on the next API call)
+	 * 
+	 * @return float
+	 */
+	protected function getRealUsagev() {
+		$config = $this->getConfig();
+		if (!isset($this->row['uf'][$config['realtime']['used_usagev_field']])) {
+			return 0;
+		}
+		return $this->row['uf'][$config['realtime']['used_usagev_field']];
+	}
+
+	/**
+	 * Gets the amount of usagev that was charged
+	 * 
+	 * @return flaot
+	 */
+	protected function getChargedUsagev($lineToRebalance) {
+		if ($this->isReblanceOnLastRequestOnly()) {
+			$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
+			$query = $this->getRebalanceQuery($this->row);
+			if (!$query) {
+				return 0;
+			}
+			$line = $lines_archive_coll->aggregate($query)->current();
+			return $line['sum'];
+		}
+		return $lineToRebalance['usagev'];
+	}
+
+	/**
+	 * gets the query used in getChargedUsagev
+	 * 
+	 * @param type $lineToRebalance
+	 * @return array
+	 */
+	protected function getRebalanceQuery($lineToRebalance) {
+		$sessionQuery = $this->getSessionIdQuery($lineToRebalance->getRawData());
+		if (!$sessionQuery) {
+			Billrun_Factory::log('Customerpricing getSessionIdQuery - cannot find previous lines. details: ' . print_R($lineToRebalance, 1));
+			return false;
+		}
+		$findQuery = array_merge(array("sid" => $lineToRebalance['sid']), $sessionQuery);
+		return array(
+			array(
+				'$match' => $findQuery
+			),
+			array(
+				'$group' => array(
+					'_id' => 'sid',
+					'sum' => array('$sum' => '$usagev')
+				)
+			)
+		);
+	}
+
+	/**
+	 * gets a query which represents the session id of the row (to find previous lines that are related to the current line)
+	 * 
+	 * @param array $row
+	 * @return array
+	 */
+	protected function getSessionIdQuery($row) {
+		if (isset($row['session_id'])) {
+			return array('session_id' => $row['session_id']);
+		}
+		return false;
+	}
+
+	/**
+	 * handles the rebalance it self
+	 * 
+	 * @param type $rebalanceUsagev
+	 * @param type $realUsagev
+	 * @param type $lineToRebalance
+	 * @param type $originalRow
+	 * @return boolean
+	 */
+	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
+		return true;
+	}
+
+	/**
+	 * gets the price of the rebalance
+	 * 
+	 * @param array $lineToRebalance
+	 * @param float $realUsagev
+	 * @return float
+	 */
+	protected function getRebalanceCost($lineToRebalance, $realUsagev, $rebalanceUsagev) {
+		$lineToRebalanceRate = $this->getRowRate($lineToRebalance);
+		$realPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
+		$chargedPricing = Billrun_Rates_Util::getTotalCharge($lineToRebalanceRate, $lineToRebalance['usaget'], $realUsagev - $rebalanceUsagev, $lineToRebalance['plan'], 0, $lineToRebalance['urt']->sec);
+		return $realPricing - $chargedPricing;
+	}
+
+	/**
+	 * gets the data required for the rebalance
+	 * 
+	 * @param array $lineToRebalance
+	 * @param array $rate
+	 * @param float $rebalanceUsagev
+	 * @param float $realUsagev
+	 * @param string $usaget
+	 * @return array
+	 */
+	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget) {
+		$rebalancePricingData  = $this->getLinePricingData($realUsagev, $usaget, $rate,  $this->plan);
+		$rebalanceData = array(
+			'usagev' => $rebalanceUsagev,
+			'aprice' => $lineToRebalance['aprice'] - $rebalancePricingData['aprice'],
+		);
+
+		foreach ($rebalancePricingData as $rebalanceKey => $rebalanceVal) {
+			if ($rebalanceKey === 'arategroup') {
+				continue;
+			}
+			$rebalanceData[$rebalanceKey] = $rebalanceVal - $lineToRebalance[$rebalanceKey];
+		}
+
+		return $rebalanceData;
+	}
+
+	/**
+	 * return whether we need to consider intervals when rebalancing usagev balance
+	 * 
+	 * @return boolean
+	 * @todo move hard-coded values to configuration
+	 */
+	protected function needToRebalanceUsagev() {
+		return ($this->row['realtime'] && $this->row['record_type'] === 'final_request');
+	}
+
+	/**
+	 * Gets the update query to update subscriber's Line
+	 * 
+	 * @param array $rebalanceData
+	 * @return array
+	 * @todo We need to update usagevc, in_plan, out_plan, in_group, usagesb
+	 */
+	protected function getUpdateLineUpdateQuery($rebalanceData) {
+		unset($rebalanceData['billrun']);
+		$ret = array('$inc' => $rebalanceData);
+		foreach ($rebalanceData as $rebalanceKey => $rebalanceValue) {
+			$ret['$inc']['rebalance_' . $rebalanceKey] = $rebalanceValue;
+		}
+		return $ret;
 	}
 
 }

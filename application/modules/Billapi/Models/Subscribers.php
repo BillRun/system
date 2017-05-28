@@ -57,15 +57,17 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($this->update)) {
 			return FALSE;
 		}
-		foreach ($this->update['services'] as &$service) {
-			if (gettype($service) == 'string') {
-				$service = array('name' => $service);
+		if (!empty($this->update['services'])) {
+			foreach ($this->update['services'] as &$service) {
+				if (gettype($service) == 'string') {
+					$service = array('name' => $service);
+				}
+				if (empty($this->before)) { // this is new subscriber
+					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
+				}
+				//to can't be more then the updated 'to' of the subscription
+				$service['to'] = !empty($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 			}
-			if (empty($this->before)) { // this is new subscriber
-				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
-			}
-			//to can't be more then the updated 'to' of the subscription
-			$service['to'] = !empty($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 		}
 	}
 

@@ -172,16 +172,16 @@ class Models_Entity {
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
-			if ($val) {
+			if ($val !== FALSE) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($defaultFieldsValues[$field] !== false) {
+			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
@@ -311,12 +311,16 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
-		if ($this->preCheckUpdate() !== TRUE) {
-			return false;
-		}
-
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
+		}
+		if (!is_null($this->before)) {
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$this->update = array_merge($prevEntity, $this->update);
+		}
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
 		}
 
 		$this->protectKeyField();
@@ -372,7 +376,7 @@ class Models_Entity {
 	 * 
 	 * @return unix timestamp
 	 */
-	protected static function getMinimumUpdateDate() {
+	public static function getMinimumUpdateDate() {
 		if (is_null(self::$minUpdateDatetime)) {
 			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 		}
@@ -724,38 +728,12 @@ class Models_Entity {
 		if ($newId) {
 			$this->after = $this->loadById($newId);
 		}
-
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => $this->action,
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => $this->collectionName,
-				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
-				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] :
-				(isset($this->before[$field]) ? $this->before[$field] : null),
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		
+		$old = !is_null($this->before) ? $this->before->getRawData() : null;
+		$new = !is_null($this->after) ? $this->after->getRawData() : null;
+		$key = isset($this->update[$field]) ? $this->update[$field] :
+				(isset($this->before[$field]) ? $this->before[$field] : null);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
 	}
 
 	/**
@@ -863,7 +841,7 @@ class Models_Entity {
 			return self::FUTURE;
 		}
 		// For active records, check if it has furure revisions
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];

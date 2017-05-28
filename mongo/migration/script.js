@@ -192,8 +192,82 @@ if (!lastConfig.registration_date) {
 }
 
 //BRCD-776
-db.lines.find({tax_data:{$exists:1},final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(line){
-	line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
+db.lines.find({final_charge:{$exists:0},aprice:{$exists:1}}).forEach(function(line){
+	if (typeof line.tax_data !== 'undefined') {
+		line['final_charge']=line['aprice']+line['tax_data']['total_amount'];
+	} else {
+		line['final_charge']=line['aprice'];	
+	}
 	db.lines.save(line);
 });
 
+// Set "Account ID" as the title for "aid" field
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
+	delete lastConfig['_id'];
+	var found_aid = false;
+	lastConfig.subscribers.account.fields.forEach(function (field) {
+		if (field.field_name == "aid") {
+			found_aid = true;
+			field.title = "Account ID";
+		}
+	})
+	if (!found_aid) {
+		lastConfig.subscribers.account.fields.push({
+					"field_name" : "aid",
+					"generated" : true,
+					"unique" : true,
+					"editable" : false
+				});
+	}
+	db.config.insert(lastConfig);
+}
+
+// Update shared secret structure
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (typeof lastConfig.shared_secret.key != 'undefined') {
+	var ele = [];
+	ele.push(lastConfig.shared_secret);
+	lastConfig.shared_secret = ele;
+	db.config.insert(lastConfig);
+}
+
+// Update realtime response fields
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fileTypes = lastConfig['file_types'];
+for (var i in fileTypes) {
+	if (fileTypes[i].response && fileTypes[i].response.fields) {
+		fileTypes[i].response.fields = [
+			{
+				"response_field_name": "requestType",
+				"row_field_name": "request_type"
+			},
+			{
+				"response_field_name": "sessionId",
+				"row_field_name": "session_id"
+			},
+			{
+				"response_field_name": "returnCode",
+				"row_field_name": "granted_return_code"
+			},
+			{
+				"response_field_name": "sid",
+				"row_field_name": "sid"
+			},
+			{
+				"response_field_name": "grantedVolume",
+				"row_field_name": "usagev"
+			},
+			{
+				"response_field_name": "pretend",
+				"row_field_name": "billrun_pretend"
+			}
+		];
+	}
+}
+
+
+lastConfig.file_types = fileTypes;
+db.config.insert(lastConfig);

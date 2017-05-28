@@ -21,7 +21,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	}
 
 	protected function load() {
-		$ret = parent::load()->getRawData();
+		$ret = parent::load();
 		if (empty($ret)) { // on postpaid we create the balance if not exists
 			$ret = $this->getDefaultBalance($this->row);
 		}
@@ -183,8 +183,9 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @return string
 	 */
-	protected function getBalanceTotalsKey($pricingData) {
-		if (isset($pricingData['in_plan']) || isset($pricingData['over_plan'])) {
+	public function getBalanceTotalsKey($pricingData) {
+		if (isset($pricingData['in_plan']) || isset($pricingData['over_plan']) ||
+			isset($pricingData['in_group']) || isset($pricingData['over_group'])) {
 			return $this->row['usaget'];
 		}
 		return 'out_plan_' . $this->row['usaget'];

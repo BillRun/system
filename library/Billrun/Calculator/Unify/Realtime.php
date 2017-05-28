@@ -31,7 +31,7 @@ class Billrun_Calculator_Unify_Realtime extends Billrun_Calculator_Unify {
 			return array(
 				$type => array(
 					'required' => array(
-						'fields' => array('session_id', 'urt', 'request_num', 'request_type'),
+						'fields' => array('session_id', 'urt', 'request_type'),
 						'match' => array(
 							'request_type' => '/1|2|3/',
 						),

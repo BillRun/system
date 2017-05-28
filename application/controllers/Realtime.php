@@ -67,7 +67,6 @@ class RealtimeController extends ApiController {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
 		$this->event['request_type'] = $this->getRequestType();
-		$this->event['request_num'] = $this->getRequestNum();
 		$recordType = $this->getDataRecordType($this->event);
 		if ($recordType != 'postpay_charge_request') {
 			$this->event['session_id'] = $this->getSessionId();
@@ -117,19 +116,6 @@ class RealtimeController extends ApiController {
 			return (isset($this->event['uf']['request_type']) ? $this->event['uf']['request_type'] : null);
 		}
 		return $this->event['uf'][$requestTypeField];
-	}
-	
-	/**
-	 * Gets the request num from the request
-	 * 
-	 * @return string request num
-	 */
-	protected function getRequestNum() {
-		if (!isset($this->config['realtime']['request_num_field'])) {
-			return (isset($this->event['uf']['request_num']) ? $this->event['uf']['request_num'] : null);
-		}
-		$requestNumField = $this->config['realtime']['request_num_field'];
-		return $this->event['uf'][$requestNumField];
 	}
 
 	/**

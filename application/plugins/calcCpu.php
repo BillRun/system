@@ -47,9 +47,6 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$data = &$processor->getData();
-		if ($realtime) {
-			$this->reuseExistingFields($data, $options);
-		}
 		$this->queueCalculators = new Billrun_Helpers_QueueCalculators($options);
 		if (!$this->queueCalculators->run($processor, $data)) {
 			return false;
@@ -148,6 +145,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $data
 	 * @param type $options
 	 * @todo do this with one query
+	 * @todo if use is required, fix session_id to work with new conventions
 	 */
 	protected function reuseExistingFields(&$data, $options) {
 		$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());

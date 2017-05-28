@@ -36,17 +36,24 @@ class ConfigModel {
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
         
-        /**
+	/**
 	 * reserved names of File Types.
 	 * @var array
 	 */
-        protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	
+	/**
+	 * Valid file type names regex
+	 * @var string
+	 */
+	protected $fileTypesRegex = '/^[a-zA-Z0-9_]+$/';
 
 	public function __construct() {
 		// load the config data from db
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
 		$this->loadConfig();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
 
 	public function getOptions() {
@@ -113,8 +120,8 @@ class ConfigModel {
  			}
  			if ($pgSettings = $this->getPaymentGatewaySettings($currentConfig, $data['name'])) {
  				return $pgSettings;
- 			}
- 			throw new Exception('Unknown payment gateway ' . $data['name']);
+			}
+			throw new Exception('Unknown payment gateway ' . $data['name']);
 		} else if ($category == 'export_generators') {
 			 if (!is_array($data)) {
  				Billrun_Factory::log("Invalid data for export_generators.");
@@ -131,6 +138,8 @@ class ConfigModel {
 			$tokens = Billrun_Factory::templateTokens()->getTokens();
 			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
 			return $tokens;
+		} else if ($category == 'minimum_entity_start_date'){
+			return Models_Entity::getMinimumUpdateDate();
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -265,12 +274,32 @@ class ConfigModel {
 				$generatorSettings = $data;
 			}
 			$this->setExportGeneratorSettings($updatedData, $generatorSettings);
-			$generatorSettings = $this->validateExportGeneratorSettings($updatedData, $data);	
- 			if (!$generatorSettings){
- 				return 0;
- 			}
+			$generatorSettings = $this->validateExportGeneratorSettings($updatedData, $data);
+			if (!$generatorSettings) {
+				return 0;
+			}
+		} else if ($category === 'shared_secret') {
+			if (!is_array($data)) {
+				Billrun_Factory::log("Invalid data for shared secret.");
+				return 0;
+			}
+			if (empty($data['name'])) {
+				throw new Exception('Missing name');
+			}
+			if (empty($data['from']) || empty($data['to'])) {
+				throw new Exception('Missing creation/expiration dates');
+			}
+			if (!isset($data['key'])) {
+				$secret = Billrun_Utils_Security::generateSecretKey();
+				$data = array_merge($data, $secret);
+			}
+			$this->setSharedSecretSettings($updatedData, $data);
+			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);
+			if (!$sharedSettings) {
+				return 0;
+			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
-				throw new Exception($data . ' is illegal usage type');
+			throw new Exception($data . ' is illegal usage type');
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -550,6 +579,15 @@ class ConfigModel {
  				}
  			}
  		}
+		if ($category === 'shared_secret') {
+ 			if (isset($data['key'])) {
+ 				if (count($data) != 1) {
+					throw new Exception('Can remove only one secret at a time');
+ 				} else {
+					$this->unsetSharedSecretSettings($updatedData, $data['key']);
+ 				}
+ 			}
+ 		}
  
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
@@ -619,13 +657,30 @@ class ConfigModel {
  				return;
  			}
  		}
- 		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
- 	}
-	
-	
+		$config['payment_gateways'] = array_merge($config['payment_gateways'], array($pgSettings));
+	}
+
+	protected function setSharedSecretSettings(&$config, $sharedSecretData) {
+		$key = $sharedSecretData['key'];
+		foreach ($config['shared_secret'] as &$secret) {
+			if ($secret['key'] == $key) {
+				$secret = $sharedSecretData;
+				return;
+			}
+		}
+		$config['shared_secret'] = array_merge($config['shared_secret'], array($sharedSecretData));
+	}
+
+	protected function validateSharedSecretSettings(&$config, $secret) {
+		if ($secret['from'] > $secret['to']) {
+			throw new Exception('Illegal dates');
+		}
+		return true;
+	}
+
 	protected function setExportGeneratorSettings(&$config, $egSettings) {
- 		$exportGenerator = $egSettings['name'];
- 		foreach ($config['export_generators'] as &$someEgSettings) {
+		$exportGenerator = $egSettings['name'];
+		foreach ($config['export_generators'] as &$someEgSettings) {
  			if ($someEgSettings['name'] == $exportGenerator) {
  				$someEgSettings = $egSettings;
  				return;
@@ -660,13 +715,22 @@ class ConfigModel {
 			return $ele;
 		}, $config['export_generators']);	
 	}
+	
+	protected function unsetSharedSecretSettings(&$config, $secret) {
+ 		$config['shared_secret'] = array_filter($config['shared_secret'], function($secretSettings) use ($secret) {
+ 			return $secretSettings['key'] !== $secret;
+ 		});
+ 	}
  
 	protected function validateFileSettings(&$config, $fileType, $allowPartial = TRUE) {
 		$completeFileSettings = FALSE;
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
-                if ($this->isReservedFileTypeName($fileType)) {
-                    throw new Exception($fileType . ' is a reserved BillRun file type');
-                }
+		if (!$this->isLegalFileTypeName($fileType)) {
+			throw new Exception('"' . $fileType . '" is an illegal file type name. You may use only alphabets, numbers and underscores');
+		}
+		if ($this->isReservedFileTypeName($fileType)) {
+			throw new Exception($fileType . ' is a reserved BillRun file type');
+		}
 		if (!$this->isLegalFileSettingsKeys(array_keys($fileSettings))) {
 			throw new Exception('Incorrect file settings keys.');
 		}
@@ -753,7 +817,12 @@ class ConfigModel {
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
-			$volumeFields = $fileSettings['processor']['volume_field'];
+			if (is_array($fileSettings['processor']['volume_field'])) {
+				$volumeFields = $fileSettings['processor']['volume_field'];
+			}
+			else {
+				$volumeFields = array($fileSettings['processor']['volume_field']);
+			}
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
 			if (!isset($fileSettings['processor']['usaget_mapping'])) {
 				$fileSettings['processor']['usaget_mapping'] = array();
@@ -885,9 +954,6 @@ class ConfigModel {
 		}
 		if (empty($processorSettings['volume_field'])) {
 			throw new Exception('Missing processor volume field');
-		}
-		if (!is_array($processorSettings['volume_field'])) {
-			throw new Exception('Please supply volume fields to sum');
 		}
 		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
 			throw new Exception('Missing processor usage type mapping rules');
@@ -1041,10 +1107,14 @@ class ConfigModel {
 		$this->setConfig($saveData);
 	}
         
-        protected function isReservedFileTypeName($name) {
-            $lowCaseName = strtolower($name);
-            return in_array($lowCaseName, $this->reservedFileTypeName);
-        }
+	protected function isReservedFileTypeName($name) {
+		$lowCaseName = strtolower($name);
+		return in_array($lowCaseName, $this->reservedFileTypeName);
+	}
+        
+	protected function isLegalFileTypeName($name) {
+		return preg_match($this->fileTypesRegex, $name);
+	}
 	
 	protected function getModelsWithTaxation() {
 		return array('plans', 'services', 'rates');
