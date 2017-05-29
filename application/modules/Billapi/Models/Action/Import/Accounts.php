@@ -19,23 +19,19 @@ class Models_Action_Import_Accounts extends Models_Action {
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $item) {
-			if(empty($item['account_import_id'])) {
-				$output[$key] = 'Mandatory update parameter account_import_id missing';
-			} else {
-				$params = array(
-					'collection' => 'accounts',
-					'request' => array(
-						'action' => 'create',
-						'update' => json_encode($item),
-					),
-				);
-				try {
-					$entityModel = new Models_Accounts($params);
-					$entityModel->create();
-					$output[$key] = true;
-				} catch (Exception $exc) {
-					$output[$key] = $exc->getMessage();
-				}
+			$params = array(
+				'collection' => 'accounts',
+				'request' => array(
+					'action' => 'create',
+					'update' => json_encode($item),
+				),
+			);
+			try {
+				$entityModel = new Models_Accounts($params);
+				$entityModel->create();
+				$output[$key] = true;
+			} catch (Exception $exc) {
+				$output[$key] = $exc->getMessage();
 			}
 		}
 		return $output;

@@ -19,31 +19,33 @@ class Models_Action_Import_Subscribers extends Models_Action {
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $item) {
-			if(empty($item['account_import_id'])) {
-				$output[$key] = 'Mandatory update parameter account_unique missing';
+			if(empty($item['__LINKER__'])) {
+				$output[$key] = 'Mandatory update parameter linker missing';
 			} else {
 				$accountQuery = array(
 					"type" => "account",
-					"account_import_id" => $item['account_import_id'],
-				);
+					$item['__LINKER__']['field'] => $item['__LINKER__']['value'],
+				);			
 				$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
 				if(!$account || $account->isEmpty()) {
-					$output[$key] = "Account with import ID {$item['account_import_id']} not exist";
-				}
-				$item['aid'] = $account->get('aid');
-				$params = array(
-					'collection' => 'subscribers',
-					'request' => array(
-						'action' => 'create',
-						'update' => json_encode($item),
-					),
-				);
-				try {
-					$entityModel = new Models_Subscribers($params);
-					$entityModel->create();
-					$output[$key] = true;
-				} catch (Exception $exc) {
-					$output[$key] = $exc->getMessage();
+					$output[$key] = "Account with for subscriber not exist";
+				} else {
+					unset($item['__LINKER__']);
+					$item['aid'] = $account->get('aid');			
+					$params = array(
+						'collection' => 'subscribers',
+						'request' => array(
+							'action' => 'create',
+							'update' => json_encode($item),
+						),
+					);
+					try {
+						$entityModel = new Models_Subscribers($params);
+						$entityModel->create();
+						$output[$key] = true;
+					} catch (Exception $exc) {
+						$output[$key] = $exc->getMessage();
+					}
 				}
 			}
 		}
