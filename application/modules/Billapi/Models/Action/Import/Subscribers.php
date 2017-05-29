@@ -14,23 +14,32 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Import_Accounts extends Models_Action {
+class Models_Action_Import_Subscribers extends Models_Action {
 
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $item) {
 			if(empty($item['account_import_id'])) {
-				$output[$key] = 'Mandatory update parameter account_import_id missing';
+				$output[$key] = 'Mandatory update parameter account_unique missing';
 			} else {
+				$accountQuery = array(
+					"type" => "account",
+					"account_import_id" => $item['account_import_id'],
+				);
+				$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
+				if(!$account || $account->isEmpty()) {
+					$output[$key] = "Account with import ID {$item['account_import_id']} not exist";
+				}
+				$item['aid'] = $account->get('aid');
 				$params = array(
-					'collection' => 'accounts',
+					'collection' => 'subscribers',
 					'request' => array(
 						'action' => 'create',
 						'update' => json_encode($item),
 					),
 				);
 				try {
-					$entityModel = new Models_Accounts($params);
+					$entityModel = new Models_Subscribers($params);
 					$entityModel->create();
 					$output[$key] = true;
 				} catch (Exception $exc) {
