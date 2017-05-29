@@ -20,12 +20,15 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 	
 	protected $balances = array();
 	protected $plans = array();
+	protected $initialRun = FALSE;
 
 	public function __construct($options) {
 		$this->transactions = array();
+		$this->initialRun = Billrun_Util::getFieldVal($options['stamp'], FALSE) == 'initial_run';
 		parent::__construct($options);
+		$this->ignoreStamp |= $this->initialRun;
 		$this->startMongoTime = new MongoDate($this->startTime);
-		$this->releventTransactionTimeStamp = $this->getLastRunDate(static::$type);
+		$this->releventTransactionTimeStamp = $this->initialRun ? new MongoDate(0) : $this->getLastRunDate(static::$type);
 		$this->loadPlans();
 	}
 	
@@ -48,9 +51,22 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 	
 	function getNextDataChunk($skip,$size) {
 		Billrun_Factory::log('Running bulk of records ' . $skip . '-' . ($skip + $size));
-		$this->loadTransactions($skip, $size);
-		$this->buildAggregationQuery();
-		return $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true));
+		if ( $this->isInitialRun()) {
+			$this->buildAggregationQuery();
+			$retData = $this->collection->aggregateWithOptions(array_merge($this->aggregation_array,array(array('$skip'=>$skip)),array(array('$limit'=>$size))), array('allowDiskUse' => true));
+			$sids= array();
+			foreach($retData as $dataEntry) {
+				$sids[$dataEntry['subscriber_no']] =$dataEntry['subscriber_no'];
+			}
+			$this->loadTransactions($skip, $size,array_values($sids));
+			return $retData;
+			
+			
+		} else  {
+			$this->loadTransactions($skip, $size);
+			$this->buildAggregationQuery();
+			return $this->collection->aggregateWithOptions($this->aggregation_array, array('allowDiskUse' => true));
+		}
 	}
 	
 	function getAllDataSids($data) {
@@ -78,6 +94,10 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
+	protected function isInitialRun() {
+		return !empty($this->initialRun);
+	}
+	
 	protected function loadBalancesForBulk($sids) {
 		Billrun_Factory::log("loading balances...");
 		unset($this->balances);
@@ -92,12 +112,13 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 		Billrun_Factory::log("Done loading balances.");
 	}
 
-    protected function loadTransactions($skip, $limit) {
+    protected function loadTransactions($skip, $limit,$sids=array()) {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
+		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
 		$this->transactions = array();
 		$aggregationPipeline = array(
-                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'sid'=> array('$gt' => 0) )),
+                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'sid'=> $sidsQuery )),
                             array('$project' => array('sid'=>1,'urt'=>1,
                                                         'type'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'recharge', 'else'=> 'transaction')),
                                                     )),

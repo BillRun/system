@@ -52,8 +52,10 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	protected function getReportCandiateMatchQuery() {
 		$retQuery = array(	'from' => array('$lt' => new MongoDate($this->startTime)),
 							'to' => array('$gt' => isset($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime) ),
-							'sid' => array('$in' => array_keys($this->transactions)),
 				);
+		if(!$this->isInitialRun()) {
+			$retQuery['sid']= array('$in' => array_keys($this->transactions));
+		}
 		return $retQuery;
 	}
 
@@ -62,16 +64,17 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return isset($this->transactions[$line['subscriber_no']][(string)$line['balance_ref']]);
+		return $this->isInitialRun() || isset($this->transactions[$line['subscriber_no']][(string)$line['balance_ref']]);
 	}
 	
-	protected function loadTransactions($skip,$limit) {
+	protected function loadTransactions($skip,$limit,$sids= array()) {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
+		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
 		$this->transactions = array();
 		$aggregationPipeline = array(
                             array('$match' => array(
-													'sid' => array('$gt'=> 0),
+													'sid' => $sidsQuery,
 													'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
 													'balance_ref' => array('$type'=> 3),
 													'balance_after' => array('$exists'=> 1),
@@ -95,10 +98,6 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		}
 		Billrun_Factory::log("Done loading transactions.");
     }
-	
-	protected function isInitialRun() {
-		return isset($this->releventTransactionTimeStamp) && !$this->releventTransactionTimeStamp->sec && empty($this->transactions);
-	}
 
 	// ------------------------------------ Helpers -----------------------------------------
 	// 

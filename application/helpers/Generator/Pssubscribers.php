@@ -47,10 +47,6 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 	}
 
 	//--------------------------------------------  Protected ------------------------------------------------
-
-	protected function getStartTime($options) {
-		return strtotime(date('Y-m-d 00:00:00P'));
-	}	
 	
 	protected function writeRows() {
 		if (!empty($this->headers)) {
@@ -73,12 +69,13 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 
 	protected function getReportCandiateMatchQuery() {
 		$releventTransactionTimeStamp = isset($this->releventTransactionTimeStamp) && empty($this->data)  ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime);
-		return  array(	'from' => array('$lt' => new MongoDate($this->startTime)),
-						'to' => array('$gt' => new MongoDate($this->startTime)),
-						'$or' => array(
-								array('sid'=> array('$in' => array_keys($this->transactions))),
-								array( 'last_update' => array('$lte' => new MongoDate($this->startTime), '$gt' => $releventTransactionTimeStamp )),
-							));
+		$retQuery =  array(	'from' => array('$lt' => new MongoDate($this->startTime)),
+						'to' => array('$gt' => $releventTransactionTimeStamp),						
+						);
+		if(!$this->isInitialRun()) {
+			$retQuery['sid']= array('$in' => array_keys($this->transactions));
+		}
+		return $retQuery;
 	}
 
 	protected function getReportFilterMatchQuery() {
@@ -86,7 +83,7 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return ( !empty($line['last_recharge_date']) || !empty($line['last_trans_date']) );
+		return $this->isInitialRun() || ( !empty($line['last_recharge_date']) || !empty($line['last_trans_date']) );
 	}
 
 	// ------------------------------------ Helpers -----------------------------------------
