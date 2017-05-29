@@ -253,6 +253,10 @@ for (var i in fileTypes) {
 				"row_field_name": "granted_return_code"
 			},
 			{
+				"response_field_name": "stamp",
+				"row_field_name": "stamp"
+			},
+			{
 				"response_field_name": "sid",
 				"row_field_name": "sid"
 			},
