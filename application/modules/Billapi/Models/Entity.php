@@ -240,6 +240,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			$this->afterSubscriberAction($status, $this->update);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
 		} else {
@@ -342,6 +343,7 @@ class Models_Entity {
 //		$oldId = $this->query['_id'];
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
+		$this->afterSubscriberAction($status, $this->update);
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
@@ -869,6 +871,16 @@ class Models_Entity {
 			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
+	}
+	
+	/**
+	 * Deals with changes need to be done after subscriber create/closeAndNew/move in specific cases.
+	 * 
+	 * @param array $status - Insert Status.
+	 * 
+	 */
+	protected function afterSubscriberAction($status, $update) {
+		return;
 	}
 
 }

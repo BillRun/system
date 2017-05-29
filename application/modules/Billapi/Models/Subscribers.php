@@ -145,6 +145,10 @@ class Models_Subscribers extends Models_Entity {
 		}
 
 		$status = $this->dbUpdate($this->query, $this->update);
+		if ($edge == 'from' && $followingEntry->isEmpty()) {
+			$update = array_merge($this->update, array('aid'=>$this->before['aid']));
+			$this->afterSubscriberAction($status, $update);
+		}
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
@@ -226,5 +230,23 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return $ret;
 	}
+	
+	protected function afterSubscriberAction($status, $update) {
+		if (isset($status['ok']) && $status['ok']) {
+			$query = Billrun_Utils_Mongo::getDateBoundQuery();
+			$query['type'] = 'account';
+			$query['aid'] = $update['aid'];
+			$account = $this->collection->query($query)->cursor()->current();
+			if ($account->isEmpty()) {
+				Billrun_Factory::log("There isn't an active account matching the subscriber.", Zend_Log::ERR);
+			}
+			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
+				$account['from'] = $update['from'];
+				$this->dbUpdate($query, $account->getRawData());
+			}
+		}
+		return;
+	}
+
 
 }
