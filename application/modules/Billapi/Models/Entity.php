@@ -258,11 +258,17 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-
+		
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
+		}
+		if (isset($this->update['from'])) {
+			unset($this->update['from']);
+		}
+		if (isset($this->update['to'])) {
+			unset($this->update['to']);
 		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
