@@ -271,3 +271,19 @@ for (var i in fileTypes) {
 
 lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
+
+
+// BRCD-368 Importer - chenge account and subscriber fieds settings
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
+	delete lastConfig['_id'];
+	// set subscriber plan_activation display false
+	var plan_activation_index = lastConfig.subscribers.subscriber.fields.findIndex(function (field) {
+		return field.field_name == "plan_activation" && typeof field.editable === "undefined"
+	});
+	if(plan_activation_index !== -1) {
+		lastConfig.subscribers.subscriber.fields[plan_activation_index].editable = false;
+	}
+
+	db.config.insert(lastConfig);
+}
