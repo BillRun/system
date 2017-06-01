@@ -227,6 +227,9 @@ if ((typeof lastConfig) !== "undefined") {
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 if (typeof lastConfig.shared_secret.key != 'undefined') {
+	lastConfig.shared_secret.name = 'key1';
+	lastConfig.shared_secret.from = lastConfig.registration_date;
+	lastConfig.shared_secret.to = new Date('2117/09/02');
 	var ele = [];
 	ele.push(lastConfig.shared_secret);
 	lastConfig.shared_secret = ele;
