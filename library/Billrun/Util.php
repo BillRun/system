@@ -1585,7 +1585,7 @@ class Billrun_Util {
 	 * @param mixed $value - new value to set
 	 */
 	public static function setIn(&$arr, $keys, $value) {
-		if (!$arr) {
+		if (!is_array($arr)) {
 			return;
 		}
 		
