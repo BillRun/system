@@ -11,7 +11,7 @@ require_once APPLICATION_PATH . '/application/modules/Billapi/controllers/Billap
  * Billapi controller for getting BillRun entities
  *
  * @package  Billapi
- * @since    5.3
+ * @since    5.5
  */
 class ImportController extends BillapiController {
 	
@@ -39,7 +39,6 @@ class ImportController extends BillapiController {
 					break; 
 				}
 			}
-			//Check if all fail -> return status 0 instead of 2
 			$this->output->details = $results;
 			return $res;
 		} catch (Exception $ex) {

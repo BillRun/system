@@ -12,7 +12,7 @@
  * This is accounts unique get
  *
  * @package  Billapi
- * @since    5.3
+ * @since    5.5
  */
 class Models_Action_Import extends Models_Action {
 
