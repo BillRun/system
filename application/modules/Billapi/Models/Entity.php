@@ -117,7 +117,7 @@ class Models_Entity {
 	}
 
 	public function __construct($params) {
-		if ($params['collection'] == 'accounts') {
+		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
 			$this->collectionName = $params['collection'];
