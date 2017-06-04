@@ -28,6 +28,7 @@ fi
 
 CLIENTS=$1/conf/tenants/*.ini
 LOCKS=$1/scripts/locks/
+CYCLE_SCRIPT=$1/scripts/pseudo_cron_cycle.sh
 
 # Go through the files
 for f in $CLIENTS
@@ -39,26 +40,8 @@ do
 			continue
 		fi
 
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_receive_all.lock" -c "php $INDEX --env $ENV --tenant $TENANT --receive --type all"
-		echo "Invoked receiving for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_process_all.lock" -c "php $INDEX --env $ENV --tenant $TENANT --process --type all"
-		echo "Invoked processing for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_customer.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type customer"
-		echo "Invoked customer calculator for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_rate.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type Rate_Usage"
-		echo "Invoked rating calculator for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_customer_pricing.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type customerPricing"
-		echo "Invoked customer pricing calculator for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_tax.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type tax"
-		echo "Invoked tax calculator for "$TENANT" file"
-
-		flock -n $LOCKS"/pseudo_cron_"$TENANT"_calculate_rebalance.lock" -c "php $INDEX --env $ENV --tenant $TENANT --calculate --type rebalance"
-		echo "Invoked rebalance calculator for "$TENANT" file"
+		echo "Running calculators for "$TENANT" file"
+		flock -n $LOCKS"/pseudo_cron_"$TENANT".lock" -c "sh $CYCLE_SCRIPT $TENANT $ENV $INDEX"
 	else
 		echo "No tenants found"
 	fi	
