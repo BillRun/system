@@ -30,7 +30,10 @@ class Models_Subscribers extends Models_Entity {
 
 		//transalte to and from fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
-
+		if ($this->action == 'create' && !isset($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		
 		$this->verifyServices();
 	}
 
