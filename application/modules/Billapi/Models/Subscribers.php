@@ -140,7 +140,7 @@ class Models_Subscribers extends Models_Entity {
 
 		foreach ($this->before['services'] as $key => $service) {
 			if ($service[$edge]->sec == $this->before[$edge]->sec) {
-				$this->update['services'][$key][$edge] = $this->update[$edge];
+				$this->update["services.$key.$edge"] = $this->update[$edge];
 			}
 		}
 
@@ -163,7 +163,7 @@ class Models_Subscribers extends Models_Entity {
 
 			foreach ($followingEntry['services'] as $key => $service) {
 				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
-					$update['services'][$key][$otherEdge] = $update[$otherEdge];
+					$update["services.$key.$otherEdge"] = $update[$otherEdge];
 				}
 			}
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
