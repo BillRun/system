@@ -114,7 +114,7 @@ class InternalPaypageController extends ExternalPaypageController {
 				$secret = $shared;
 				break;
 			}
-			if (strtotime($shared['from']) < $today && strtotime($shared['to']) > $today) {
+			if ($shared['from']->sec < $today && $shared['to']->sec > $today) {
 				$secret = $shared;
 				break;
 			}
