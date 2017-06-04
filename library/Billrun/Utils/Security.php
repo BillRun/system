@@ -58,7 +58,7 @@ class Billrun_Utils_Security {
 		}
 		$today = time();
 		foreach ($secrets as $secret) {
-			if (isset($secret['from']) && isset($secret['to']) && !(strtotime($secret['from']) <= $today && strtotime($secret['to']) > $today)) {
+			if (isset($secret['from']) && isset($secret['to']) && !($secret['from']->sec <= $today && $secret['to']->sec > $today)) {
 				continue;
 			}
 			if (!self::validateSecret($secret)) {
