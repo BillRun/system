@@ -368,7 +368,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorCode = (string) $xmlObj->messages->message->code;
-				if ($errorCode == 'E00040') {			
+				if ($errorCode == 'E00040') {	// Error: Record not found(non-existing customer)
 					return;
 				}
 				$errorMessage = (string) $xmlObj->messages->message->text;
