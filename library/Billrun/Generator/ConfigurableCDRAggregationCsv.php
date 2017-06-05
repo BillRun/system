@@ -462,5 +462,9 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	protected function getGenerationTime($value, $parameters, $line) {
 		return $this->translateUrt(new MongoDate($this->startTime), $parameters);
 	}
+	protected function generateFilteredArrayStamp($array,$filter=array()) {
+		$filteredArray = array_intersect_key($array, array_flip($filter));
+		return Billrun_Util::generateArrayStamp($filteredArray);
+	}
 
 }

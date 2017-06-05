@@ -57,10 +57,10 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 		
 		do {
 			$this->data = $this->getNextDataChunk($subscribersLimit * $page, $subscribersLimit);
-			$sids = $this->getAllDataSids($this->data);
+			//$sids = $this->getAllDataSids($this->data);
 			
-			$this->loadBalancesForBulk($sids);
-
+			//$this->loadBalancesForBulk($sids);
+			$this->data = $this->unifySubscriberRecords($this->data);
 			$hasData = $this->writeDataLines($this->data);
 			$page++;
 		} while ($hasData);
@@ -70,10 +70,15 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 	protected function getReportCandiateMatchQuery() {
 		$releventTransactionTimeStamp = isset($this->releventTransactionTimeStamp) && empty($this->data)  ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime);
 		$retQuery =  array(	'from' => array('$lt' => new MongoDate($this->startTime)),
-						'to' => array('$gt' => $releventTransactionTimeStamp),						
+							'to' => array('$gt' => new MongoDate($this->startTime)),						
 						);
 		if(!$this->isInitialRun()) {
-			$retQuery['sid']= array('$in' => array_keys($this->transactions));
+			
+			if(empty($this->transactions)) {
+				$retQuery['from'] = array('$gt'=> $releventTransactionTimeStamp,'$lt' => new MongoDate($this->startTime));
+			} else {
+				$retQuery['sid']= array('$in' => array_keys($this->transactions));
+			}
 		}
 		return $retQuery;
 	}
@@ -83,9 +88,24 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return $this->isInitialRun() || ( !empty($line['last_recharge_date']) || !empty($line['last_trans_date']) );
+		return $this->isInitialRun() || ( !empty($line['last_recharge_date']) || !empty($line['last_trans_date']) ) || empty($this->transactions);
 	}
 
+	protected function unifySubscriberRecords($nonUniqueData) {
+		$retData = array();
+		foreach($nonUniqueData as $cdr) {
+			$cdr = ($cdr instanceof Mongodloid_Entity) ? $cdr->getRawData() : $cdr;
+			$stamp = $this->generateFilteredArrayStamp($cdr  ,array('ban','subscriber_no','creation_date','sp_id','cos_id','imsi','lang_id'));
+			if(!empty($retData[$stamp])) {
+				$retData[$stamp]['last_trans_date'] = max($retData[$stamp]['last_trans_date'],$cdr['last_trans_date']);
+				$retData[$stamp]['last_recharge_date'] = max($retData[$stamp]['last_recharge_date'],$cdr['last_recharge_date']);
+			} else {
+				$retData[$stamp] = $cdr;
+			}
+		}
+		return array_values($retData);
+	}
+	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
