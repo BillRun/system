@@ -415,7 +415,7 @@ class Models_Entity {
 	protected function canEntityBeDeleted() {
 		return true;
 	}
-
+	
 	/**
 	 * method to check if the current query allocate the last entry
 	 * 
@@ -526,6 +526,32 @@ class Models_Entity {
 		}
 
 		return $this->moveEntry('to');
+	}
+	
+	public function reopen() {
+		$this->action = 'reopen';
+
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+			return false;
+		}
+		
+		if (!isset($this->update['from'])) {
+			throw new Billrun_Exceptions_Api(2, array(), 'reopen "from" field is missing');
+		}
+		
+		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
+		if (!$lastRevision || !isset($lastRevision['to']) || $lastRevision['to']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
+		}
+		
+		$prevEntity = $this->before->getRawData();
+		$this->update = array_merge($prevEntity, $this->update);
+		unset($this->update['_id']);
+		$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		$status = $this->insert($this->update);
+		$newId = $this->update['_id'];
+		$this->trackChanges($newId);
+		return isset($status['ok']) && $status['ok'];
 	}
 
 	/**
@@ -872,6 +898,20 @@ class Models_Entity {
 			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
+	}
+	
+	/**
+	 * gets the last revision of the entity (might be expired, active, future)
+	 * 
+	 * @param array $entity
+	 */
+	public function getLastRevisionOfEntity($entity) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query[$fieldName] = $entity[$fieldName];
+		}
+		$sort = array('_id' => -1);
+		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
 	}
 
 }
