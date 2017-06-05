@@ -231,14 +231,19 @@ class Models_Subscribers extends Models_Entity {
 		return $ret;
 	}
 	
+	/**
+	 * Deals with changes need to be done after subscriber create/closeAndNew/move in specific cases.
+	 * 
+	 * @param array $status - Insert Status.
+	 * 
+	 */
 	protected function afterSubscriberAction($status, $update) {
 		if (isset($status['ok']) && $status['ok']) {
-			$query = Billrun_Utils_Mongo::getDateBoundQuery();
 			$query['type'] = 'account';
 			$query['aid'] = $update['aid'];
-			$account = $this->collection->query($query)->cursor()->current();
+			$account = $this->collection->query($query)->cursor()->sort(array('from' => 1))->limit(1)->current();
 			if ($account->isEmpty()) {
-				Billrun_Factory::log("There isn't an active account matching the subscriber.", Zend_Log::ERR);
+				Billrun_Factory::log("There isn't an account matching the subscriber.", Zend_Log::ERR);
 			}
 			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
 				$account['from'] = $update['from'];
@@ -248,5 +253,17 @@ class Models_Subscribers extends Models_Entity {
 		return;
 	}
 
-
+	protected function insert(&$data) {
+		$status = parent::insert($data);
+		$this->afterSubscriberAction($status, $data);
+	}
+	
+	protected function dbUpdate($query, $data) {
+		$query['_id'] = $data['_id'];
+		unset($data['_id']);
+		$update = array(
+			'$set' => $data,
+		);
+		return $this->collection->update($query, $update);
+	}
 }
