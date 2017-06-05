@@ -69,6 +69,12 @@ class ReportModel {
 		if(!empty($project)) {
 			$aggregate[] = array('$project' => $project);
 		}
+		
+		$sort = $this->getSort($query);
+		if(!empty($sort)) {
+			$aggregate[] = array('$sort' => $sort);
+		}
+		
 		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		foreach ($results as $result) {
@@ -235,7 +241,7 @@ class ReportModel {
 				}
 			}
 		}
-		return array('$and' => $matchs);
+		return !empty($matchs) ? array('$and' => $matchs) : array();
 	}
 	
 	protected function getSkip($size = -1, $page = -1) {
@@ -266,5 +272,18 @@ class ReportModel {
 				$project['_id'] = 0;
 		}
 		return $project;
+	}
+	
+	protected function getSort($query) {
+		$sort = $query['sort'];
+		if(empty($sort)) {
+			return array();
+		}
+		
+		$output = array();
+		foreach ($sort as $fieldName => $sortType) {
+			$output[$fieldName] = $sortType > 0 ? 1 : -1 ;
+		}
+		return $output;
 	}
 }
