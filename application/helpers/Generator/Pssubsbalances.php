@@ -72,6 +72,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
         unset($this->transactions);
 		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
 		$this->transactions = array();
+		
 		if(empty($this->transactionsCursor) || !Billrun_Factory::config()->getConfigValue(static::$type.'.generator.presist_transactions_cursor',1)){
 			$aggregationPipeline = array(
 								array('$match' => array(
@@ -87,18 +88,8 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 										'sid'=> array('$first'=>'$sid'),
 										'balance_ref'=> array('$first'=>'$balance_ref'),
 										'urt' =>array('$max'=>'$urt'),
-										//'balance' =>  array('$push'=> array('balance'=>'$balance_after','urt'=>'$urt'))
 										'balance' =>  array('$last'=> '$balance_after')
 									)),
-	//							array('$unwind'=>'$balance'),
-	//							array('$sort' => array('balance.urt'=>1)),
-	//							array('$group'=>array(
-	//									'_id'=>'$_id', 
-	//									'sid'=> array('$first'=>'$sid'),
-	//									'balance_ref'=> array('$first'=>'$balance_ref'),
-	//									'urt' =>array('$max'=>'$urt'),
-	//									'balance' =>  array('$last'=> '$balance.balance')
-	//								)),
 							);
 			if(!Billrun_Factory::config()->getConfigValue(static::$type.'.generator.presist_transactions_cursor',1)) {
 				$aggregationPipeline[] = array('$skip' => $skip);
@@ -107,14 +98,29 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 			$this->logQueries($aggregationPipeline);
 			$this->transactionsCursor = $this->db->archiveCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
 			$this->transactionsCursor->rewind();
+			//Load sms transactions from lines as they are not inserted in the archive.	
+			$aggregationPipeline[0]['$match']['type'] = 'smsrt';	
+			$this->smsTransactionsCursor = $this->db->linesCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
 			Billrun_Factory::log("Transactions query done.");
 		}
+		$iterationLimit = $limit;
 		while ($transaction = $this->transactionsCursor->current()) {
 			$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = array( 'urt'=>$transaction['urt'], 'balance' => $transaction['balance']);
 			$this->transactionsCursor->next();
-			if(!--$limit ) { break; }
+			if(!--$iterationLimit ) { break; }
 			
 		}
+		
+		$iterationLimit = $limit;
+		while ($transaction = $this->smsTransactionsCursor->current()) {
+			if(empty($this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']]) || 
+				$transaction['urt'] > $this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']]['urt']) {
+				$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = array( 'urt'=>$transaction['urt'], 'balance' => $transaction['balance']);
+			} 				
+			$this->smsTransactionsCursor->next();
+			if(!--$iterationLimit ) { break; }
+		}
+		
 		Billrun_Factory::log("Done loading transactions.");
     }
 
