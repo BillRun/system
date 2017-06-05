@@ -285,3 +285,9 @@ for (var i in fileTypes) {
 
 lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
+
+// BRCD-832 rename entity name from lines to usage
+db.reports.find({"entity": "lines"}).forEach(function (obj) {
+	obj.entity = "usage";
+	db.reports.save(obj);
+});
