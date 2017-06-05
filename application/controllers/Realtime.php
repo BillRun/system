@@ -57,7 +57,7 @@ class RealtimeController extends ApiController {
 			$requestBody = file_get_contents("PHP://input");
 		}
 
-		$this->event['uf'] = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+		$this->event['uf'] = $decoder->decode($requestBody);
 	}
 
 	/**
