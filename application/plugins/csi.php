@@ -31,7 +31,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
 		$queryData = array();
 		foreach($lines as $line) {
-			if(!$this->isLineLegitimate($line)) { continue; }
+			if(!$taxCalacualtor->isLineLegitimate($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();
@@ -74,8 +74,9 @@ class csiPlugin extends Billrun_Plugin_Base {
 //		if($generator->getType() != 'tax') {
 //			return;
 //		}
-		Billrun_Factory::log(json_encode(array('billrun'=>$generator->getStamp(),'tax_data'=>array('exists'=> 1))));
-		$taxedLines = Billrun_Factory::db()->linesCollection()->query(array('billrun'=>$generator->getStamp(),'tax_data'=>array('$exists'=> 1)))->cursor();//->fields(array('tax_data'=>1));
+		$this->config = Billrun_Factory::config()->getConfigValue('taxation', array());
+		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
+		$taxedLines = Billrun_Factory::db()->linesCollection()->query(array('billrun'=>$generator->getStamp(),'tax_data'=>array('$exists'=> 1),'final_charge'=>array('$ne'=>0)))->cursor();//->fields(array('tax_data'=>1));
 		//open taxation file
 		$outputFile = fopen('/tmp/'.date('Ymd').'_csi_taxes.csv','w');
 		if(empty($outputFile)) {
@@ -83,8 +84,12 @@ class csiPlugin extends Billrun_Plugin_Base {
 			return;
 		}
 		//write retrived taxed lines to the file
+		$this->writeTaxToFile(array_combine($this->thirdpartyConfig['cycle_report_fields'], $this->thirdpartyConfig['cycle_report_fields']),$outputFile);
 		foreach($taxedLines as  $taxedLine) {
 			foreach($taxedLine['tax_data']['taxes'] as $tax) {
+				foreach($this->thirdpartyConfig['line_fields_for_tax_report'] as $fieldKey) {
+					$tax[$fieldKey] = $taxedLine[$fieldKey];
+				}
 				$this->writeTaxToFile($tax,$outputFile);
 			}
 		}
@@ -174,8 +179,15 @@ class csiPlugin extends Billrun_Plugin_Base {
 			if($tax_data['passflag'] == 1 || $this->thirdpartyConfig['apply_optional_charges'] && $tax_data['passflag'] == 0) {
 				$retTaxData['total_amount'] += $tax_data['taxamount'];
 				$retTaxData['total_tax'] += $calculatedTaxRate;
-			}			
-			$retTaxData['taxes'][] = array_merge($tax_data, array( 'tax'=> $calculatedTaxRate,
+			}
+			$taxDataToSave = $tax_data;
+			foreach($this->thirdpartyConfig['unneeded_tax_fields'] as $field) {
+				if(isset($taxDataToSave[$field])) {
+					unset($taxDataToSave[$field]);
+				}
+			}
+
+			$retTaxData['taxes'][] = array_merge($taxDataToSave, array( 'tax'=> $calculatedTaxRate,
 																'amount' => $tax_data['taxamount'] ,
 																'type' => $tax_data['taxtype'],
 																'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
@@ -249,6 +261,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 	}
 	
 	protected function writeTaxToFile($taxLine, $fileHandle) {
-		fputcsv($fileHandle,array_values($taxLine));
+		$filteredLine = array_map( function ($key)  use ($taxLine){ return $taxLine[$key]; }, $this->thirdpartyConfig['cycle_report_fields']);;
+		fputcsv($fileHandle, $filteredLine);
 	}
 }
