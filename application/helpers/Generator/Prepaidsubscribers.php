@@ -112,33 +112,8 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 		Billrun_Factory::log("Done loading balances.");
 	}
 
-    protected function loadTransactions($skip, $limit,$sids=array()) {
-		Billrun_Factory::log("loading transactions...");
-        unset($this->transactions);
-		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
-		$this->transactions = array();
-		$aggregationPipeline = array(
-                            array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'sid'=> $sidsQuery )),
-							array('$sort' => array( 'sid'=> 1,'urt'=> 1) ),
-                            array('$project' => array('sid'=>1,'urt'=>1,
-                                                        'recharge_urt'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'$urt', 'else'=> null)),
-														'trans_urt'=>array('$cond' => array('if' => array('$ne'=>array('$type','balance')), 'then'=>'$urt', 'else'=> null)),
-                                                    )),
-							array('$group'=>array('_id'=>array('s'=>'$sid'), 'sid'=> array('$first'=>'$sid'), 'trans_urt' =>array('$max'=>'$trans_urt'), 'recharge_urt' => array('$max'=>'$recharge_urt') )),
-							array('$skip' => $skip),
-							array('$limit' => $limit)
-						);
-		$this->logQueries($aggregationPipeline);
-		$transactions = $this->db->linesCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
-		foreach ($transactions as $transaction) {
-			$this->transactions[$transaction['sid']]= array(
-																'recharge'=> $transaction['recharge_urt'],
-																'transaction'=> $transaction['trans_urt'],
-															);
-		}
-		Billrun_Factory::log("Done loading transactions.");
-    }
-	
+ 
+	abstract protected function loadTransactions($skip, $limit,$sids=array());
         
 	protected function countBalances($sid, $parameters, &$line) {
 

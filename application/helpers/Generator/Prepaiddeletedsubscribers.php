@@ -89,5 +89,8 @@ class Generator_Prepaiddeletedsubscribers extends Generator_Prepaidsubscribers {
 		return true;
 	}
 
+	protected function loadTransactions($skip, $limit, $sids = array()) {
+		$this->transactions = array();
+	}
 
 }
