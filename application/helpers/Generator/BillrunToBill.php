@@ -58,6 +58,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		foreach ($this->data as $invoice) {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
 		}
+		if(empty($this->invoices)) {
+			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
+		}
 	}
 	
 	/**
