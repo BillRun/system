@@ -540,7 +540,7 @@ class Models_Entity {
 		}
 		
 		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
-		if (!$lastRevision || !isset($lastRevision['to']) || $lastRevision['to']->sec > $this->update['from']->sec) {
+		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
 		}
 		
@@ -895,9 +895,20 @@ class Models_Entity {
 	 */
 	protected static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return $record['to']->sec < strtotime("+10 years");
+			return self::isItemExpired($record);
 		}
 		return false;
+	}
+	
+	/**
+	 * checks if item is not "unlimited", which means it has an expiration date
+	 * 
+	 * @param array $item
+	 * @param string $expiredField
+	 * @return boolean
+	 */
+	protected static function isItemExpired($item, $expiredField = 'to') {
+		return $item[$expiredField]->sec < strtotime("+10 years");
 	}
 	
 	/**
