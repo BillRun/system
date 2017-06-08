@@ -144,9 +144,12 @@ abstract class Generator_Prepaidsubscribers extends Billrun_Generator_Configurab
 		return $value * $parameters;
 	}
 
-	protected function lastSidTransactionDate($sid, $parameters, $line) {
-		return isset($this->transactions[$sid][$parameters['field']]) ? 
-                                $this->translateUrt($this->transactions[$sid][$parameters['field']], $parameters) :
+	protected function lastSidTransactionDate($txid, $parameters, $line) {
+		if(is_array($txid) ) {
+			$txid = implode("_", $txid);
+		}
+		return isset($this->transactions[$txid][$parameters['field']]) ? 
+                                $this->translateUrt($this->transactions[$txid][$parameters['field']], $parameters) :
                                 '';
 	}
 	

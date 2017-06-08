@@ -67,7 +67,7 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 		$this->markFileAsDone();
 	}
 
-   protected function loadTransactions($skip, $limit,$sids=array()) {
+   protected function loadTransactions($skip, $limit,$sids=array()) {	   
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
 		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
@@ -76,11 +76,11 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 			$aggregationPipeline = array(
 								array('$match' => array('urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),'sid'=> $sidsQuery )),
 								//array('$sort' => array( 'sid'=> 1,'urt'=> 1) ),
-								array('$project' => array('sid'=>1,'urt'=>1,
+								array('$project' => array('sid'=>1,'aid'=>1,'urt'=>1,
 															'recharge_urt'=>array('$cond' => array('if' => array('$eq'=>array('$type','balance')), 'then'=>'$urt', 'else'=> null)),
 															'trans_urt'=>array('$cond' => array('if' => array('$ne'=>array('$type','balance')), 'then'=>'$urt', 'else'=> null)),
 														)),
-								array('$group'=>array('_id'=>array('s'=>'$sid'), 'sid'=> array('$first'=>'$sid'), 'trans_urt' =>array('$max'=>'$trans_urt'), 'recharge_urt' => array('$max'=>'$recharge_urt') )),
+								array('$group'=>array('_id'=>array('s'=>'$sid','a'=>'$aid'),'aid'=> array('$first'=>'$aid'), 'sid'=> array('$first'=>'$sid'), 'trans_urt' =>array('$max'=>'$trans_urt'), 'recharge_urt' => array('$max'=>'$recharge_urt') )),
 							);
 			$this->logQueries($aggregationPipeline);
 			if(!Billrun_Factory::config()->getConfigValue(static::$type.'.generator.presist_transactions_cursor',1)) {
@@ -91,11 +91,12 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 			$this->transactionsCursor->rewind();
 		}
 		$iterationLimit = $limit;
-		while ($transaction = $this->transactionsCursor->current()) {
-			$this->transactions[$transaction['sid']]= array(
+		while (($transaction = $this->transactionsCursor->current()) && !$transaction->isEmpty()) {
+			$this->transactions[$transaction['sid'].'_'.$transaction['aid']]= array(
 																'recharge'=> $transaction['recharge_urt'],
 																'transaction'=> $transaction['trans_urt'],
 															);
+			$this->loadedSids[] = $transaction['sid'];
 			$this->transactionsCursor->next();
 			if(!--$iterationLimit ) { break; }
 		}
@@ -109,10 +110,12 @@ class Generator_Pssubscribers extends Generator_Prepaidsubscribers {
 						);
 		if(!$this->isInitialRun()) {
 			
-			if(empty($this->transactions)) {
+			if(empty($this->transactions) && !empty($this->loadedSids)) {
 				$retQuery['from'] = array('$gt'=> $releventTransactionTimeStamp,'$lt' => new MongoDate($this->startTime));
+				$retQuery['sid'] = array('$nin' => $this->loadedSids);
 			} else {
-				$retQuery['sid']= array('$in' => array_keys($this->transactions));
+				$retQuery['sid']= array('$in' => array_map(function($v) {return intval(preg_replace('/_.*/', '', $v));}, array_keys($this->transactions)) );
+				$retQuery['aid']= array('$in' => array_map(function($v) {return intval(preg_replace('/\d*_/', '', $v));}, array_keys($this->transactions)) );
 			}
 		}
 		return $retQuery;
