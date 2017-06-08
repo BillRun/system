@@ -20,9 +20,11 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	
 	protected $balances = array();
 	protected $plans = array();
+	protected $gracePeriod = 3600;
 
 	public function __construct($options) {
 		parent::__construct($options);
+		$this->gracePeriod=  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.to_grace_period', 3600);
 	}
 	
 	public function getNextFileData() {
@@ -50,8 +52,9 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function getReportCandiateMatchQuery() {
+		
 		$retQuery = array(	'from' => array('$lt' => new MongoDate($this->startTime)),
-							'to' => array('$gt' => !empty($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime) ),
+							'to' => array('$gt' => new MongoDate( (!empty($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp->sec : $this->startTime) - $this->gracePeriod) ),
 				);
 		if(!$this->isInitialRun()) {
 			$retQuery['sid']= array('$in' => array_keys($this->transactions));
