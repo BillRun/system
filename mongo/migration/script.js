@@ -285,3 +285,6 @@ for (var i in fileTypes) {
 
 lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
+
+// update balances collection with compatibility to extended balance period
+db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1})
