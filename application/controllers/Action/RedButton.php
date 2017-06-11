@@ -15,16 +15,16 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    4.6
  */
 class RedButtonAction extends ApiAction {
-	
+
 	protected $request = null;
 	protected $response = null;
 	protected $params = null;
-	protected $configColl = null;
-	protected static $RG_CONFIG_FIELD = 'rg_conversion';
+	protected $rg_config_field = '';
 
 	public function execute() {
 		Billrun_Factory::log("Execute Red Button action", Zend_Log::INFO);
 		$this->request = $this->getRequest()->getRequest();
+		$this->rg_config_field = Billrun_Factory::config()->getConfigValue('rating_group_conversion.rg_config_field', 'rg_conversion');
 		$action = $this->request['action'];
 		if (!method_exists($this, $action)) {
 			$errorMsg = 'Cannot find red button action: "' . $action . '"';
@@ -32,7 +32,6 @@ class RedButtonAction extends ApiAction {
 			return;
 		}
 		
-		$this->configColl = Billrun_Factory::db()->configCollection();
 		$this->{$action}();
 	}
 	
@@ -67,13 +66,18 @@ class RedButtonAction extends ApiAction {
 				return;
 		}
 		
-		$currentConf[self::$RG_CONFIG_FIELD] = $ratingGroupConversion;
-		$this->configColl->insert($currentConf);
+		$currentConf[$this->rg_config_field] = $ratingGroupConversion;
+		$configColl = Billrun_Factory::db()->configCollection();
+		$ret = $configColl->insert($currentConf);
+		if (!isset($ret['ok']) || !$ret['ok']) {
+			$this->setError('Rating Group Conversion  - error saving to DB. details: ' . print_R($ret, 1), $this->request);
+			return;
+		}
 		$this->responseSuccess("Rating Group Conversion $mode Successfully");
 	}
 	
 	protected function getRatingGroupParams() {
-		return array('mcc', 'from_rg', 'to_rg');
+		return Billrun_Factory::config()->getConfigValue('rating_group_conversion.rating_group_params', array());
 	}
 	
 	protected function validateRatingGroupConversionParmas() {
@@ -102,15 +106,36 @@ class RedButtonAction extends ApiAction {
 	}
 	
 	protected function getLastConfigRatingGroupConversion() {
-		$currentConf = $this->configColl
-			->query()
-			->cursor()->setReadPreference('RP_PRIMARY')
-			->sort(array('_id' => -1))
-			->limit(1)
-			->current()
-			->getRawData();
-		unset($currentConf['_id']);
-		return isset($currentConf[self::$RG_CONFIG_FIELD]) ? $currentConf[self::$RG_CONFIG_FIELD] : array();
+		return Billrun_Factory::config()->getConfigValue($this->rg_config_field, array());
+	}
+	
+	protected function getRatingGroupConversionsLog() {
+		$limit = isset($this->request['limit']) ? $this->request['limit'] : 10;
+		$logCollection = Billrun_Factory::db()->logCollection();
+		$query = array(
+			'source' => 'api',
+			'type' => 'redbutton',
+			'request.action' => 'ratingGroupConversion',
+			'request.mode' => array('$in' => array('on', 'off')),
+		);
+		$sort = array('process_time' => -1);
+		$conversions = $logCollection->find($query)->sort($sort)->limit($limit);
+		$ret = array();
+		foreach ($conversions as $conversion) {
+			$ret[] = array_merge(array(
+				'time' => $conversion['process_time'],
+				'mode' => $conversion['request']['mode'],
+				'user' => $conversion['user_name'] ? $conversion['user_name'] : 'API',
+			),
+			json_decode($conversion['request']['params'], JSON_OBJECT_AS_ARRAY));
+		}
+		
+		$this->getController()->setOutput(array(array('status' => 1, 'response' => $ret)));
+	}
+
+	protected function getRatingGroupConversions() {
+		$ret = $this->getLastConfigRatingGroupConversion();
+		$this->getController()->setOutput(array(array('status' => 1, 'response' => $ret)));
 	}
 	
 	protected function responseSuccess($msg = 'success') {
