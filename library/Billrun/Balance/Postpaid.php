@@ -37,7 +37,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function getDefaultBalance($options) {
 		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-		if (isset($options['balance_start_time']) && ($timestamp = strtotime((string) $options['balance_start_time'])) !== false) {
+		if (isset($options['balance_start_time']) && ($timestamp = strtotime((string) $options['balance_start_time'], $options['urt']->sec)) !== false) {
 			$from = $timestamp;
 			$start_period = $options['balance_start_time'];
 		} else {
@@ -45,7 +45,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$start_period = "default";
 		}
 		
-		if (isset($options['balance_period']) && ($timestamp = strtotime((string) $options['balance_period'])) !== false) {
+		if (isset($options['balance_period']) && ($timestamp = strtotime((string) $options['balance_period'], $options['urt']->sec)) !== false) {
 			$to = $timestamp;
 			$period = $options['balance_period'];
 		} else {
