@@ -389,5 +389,17 @@ class Billrun_Service {
 		}
 		return $results['s'];
 	}
+	
+	/**
+	 * method to return service group settings (like start time and period)
+	 * 
+	 * @return array setting of service period (if available)
+	 */
+	public function getGroupSettings($groupName) {
+		if (!isset($this->data['include']['groups'][$groupName]['settings'])) {
+			return array();
+		}
+		return (array) $this->data['include']['groups'][$groupName]['settings'];
+	}
 
 }

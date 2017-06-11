@@ -37,8 +37,17 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function getDefaultBalance($options) {
 		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-		$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
-		$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
+		if (isset($options['balance_start_time']) && ($timestamp = strtotime((string) $options['balance_start_time'])) !== false) {
+			$from = $timestamp;
+		} else {
+			$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
+		}
+		
+		if (isset($options['balance_period']) && ($timestamp = strtotime((string) $options['balance_period'])) !== false) {
+			$to = $timestamp;
+		} else {
+			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
+		}
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec);
 	}
