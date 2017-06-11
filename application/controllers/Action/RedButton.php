@@ -24,14 +24,16 @@ class RedButtonAction extends ApiAction {
 	public function execute() {
 		Billrun_Factory::log("Execute Red Button action", Zend_Log::INFO);
 		$this->request = $this->getRequest()->getRequest();
-		$this->rg_config_field = Billrun_Factory::config()->getConfigValue('rating_group_conversion.rg_config_field', 'rg_conversion');
 		$action = $this->request['action'];
-		if (!method_exists($this, $action)) {
+		$availableActions = Billrun_Factory::config()->getConfigValue('rating_group_conversion.actions', array());
+		if (!in_array($action, $availableActions) || !method_exists($this, $action)) {
 			$errorMsg = 'Cannot find red button action: "' . $action . '"';
 			$this->setError($errorMsg, $this->request);
 			return;
 		}
 		
+		$this->rg_config_field = Billrun_Factory::config()->getConfigValue('rating_group_conversion.rg_config_field', 'rg_conversion');
+		$this->configColl = Billrun_Factory::db()->configCollection();
 		$this->{$action}();
 	}
 	
@@ -67,8 +69,7 @@ class RedButtonAction extends ApiAction {
 		}
 		
 		$currentConf[$this->rg_config_field] = $ratingGroupConversion;
-		$configColl = Billrun_Factory::db()->configCollection();
-		$ret = $configColl->insert($currentConf);
+		$ret = $this->configColl->insert($currentConf);
 		if (!isset($ret['ok']) || !$ret['ok']) {
 			$this->setError('Rating Group Conversion  - error saving to DB. details: ' . print_R($ret, 1), $this->request);
 			return;
@@ -106,7 +107,15 @@ class RedButtonAction extends ApiAction {
 	}
 	
 	protected function getLastConfigRatingGroupConversion() {
-		return Billrun_Factory::config()->getConfigValue($this->rg_config_field, array());
+		$currentConf = $this->configColl
+			->query()
+			->cursor()->setReadPreference('RP_PRIMARY')
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		unset($currentConf['_id']);
+		return isset($currentConf[$this->rg_config_field]) ? $currentConf[$this->rg_config_field] : array();
 	}
 	
 	protected function getRatingGroupConversionsLog() {
