@@ -103,6 +103,18 @@ app.factory('Database', ['$http', function ($http) {
 				params = {};
 			return $http.get(baseUrl + '/admin/getRatesWithSameMsc', {params: params});
 		}
+		
+		function getActiveRgConversionsDetails() {
+			return $http.get(baseUrl + '/api/redbutton?action=getRatingGroupConversions');
+		}
+		
+		function getRgConversionsLogDetails() {
+			return $http.get(baseUrl + '/api/redbutton?action=getRatingGroupConversionsLog');
+		}
+		
+		function removeRgConversion(conversion) {
+			return $http.get(baseUrl + '/api/redbutton?action=ratingGroupConversion&mode=off&params=' + JSON.stringify(conversion));
+		}
 
 		return {
 			getEntity: getEntity,
@@ -124,6 +136,9 @@ app.factory('Database', ['$http', function ($http) {
 			removeServiceProvider: removeServiceProvider,
 			getRatesWithSamePrefix: getRatesWithSamePrefix,
 			getRatesWithSameMcc: getRatesWithSameMcc,
-			getRatesWithSameMsc: getRatesWithSameMsc
+			getRatesWithSameMsc: getRatesWithSameMsc,
+			getActiveRgConversionsDetails: getActiveRgConversionsDetails,
+			getRgConversionsLogDetails: getRgConversionsLogDetails,
+			removeRgConversion: removeRgConversion,
 		};
 	}]);

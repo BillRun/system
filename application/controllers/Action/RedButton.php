@@ -131,6 +131,7 @@ class RedButtonAction extends ApiAction {
 		$conversions = $logCollection->find($query)->sort($sort)->limit($limit);
 		$ret = array();
 		foreach ($conversions as $conversion) {
+			$conversion['request']['params'] = preg_replace('/\$\$/', '', $conversion['request']['params']);
 			$ret[] = array_merge(array(
 				'time' => $conversion['process_time'],
 				'mode' => $conversion['request']['mode'],

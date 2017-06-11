@@ -79,6 +79,10 @@ app.run(function ($rootScope, $http) {
 		templateUrl: 'views/partials/collectionList.html',
 		controller: 'ListController',
 		controllerAs: 'vm'
+	}).when('/rg_conversions', {
+		templateUrl: 'views/rg_conversions.html',
+		controller: 'RgConversionsController',
+		controllerAs: 'vm'
 	}).when('/:collection/:action/:id?', {
 		templateUrl: function (urlattr) {
 			return 'views/' + urlattr.collection + '/edit.html';
