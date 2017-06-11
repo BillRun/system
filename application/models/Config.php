@@ -964,8 +964,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
-					throw new Exception('Illegal usaget mapping at index ' . $index);
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
 		}
