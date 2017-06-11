@@ -24,5 +24,9 @@ class Models_Action_Uniqueget_Subscribers extends Models_Action_Uniqueget {
 	protected function initGroup() {
 		$this->group = 'sid';
 	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName() . ".subscriber";
+	}
 
 }

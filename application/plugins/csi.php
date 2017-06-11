@@ -31,7 +31,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
 		$queryData = array();
 		foreach($lines as $line) {
-			if(!$taxCalacualtor->isLineLegitimate($line)) { continue; }
+			if(!$taxCalacualtor->isLineTaxable($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();

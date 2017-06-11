@@ -14,6 +14,8 @@
  * @todo Create unit tests for this module
  */
 class Billrun_Billingcycle {
+	
+	protected static $billingCycleCol = null;
     
 	/**
 	 * Table holding the values of the charging end dates.
@@ -27,6 +29,12 @@ class Billrun_Billingcycle {
 	 */
 	protected static $cycleStartTable = null;
         
+	/**
+	 * Cycle statuses cache (by page size)
+	 * @var array
+	 */
+	protected static $cycleStatuses = array();
+
 	/**
 	 * returns the end timestamp of the input billing period
 	 * @param type $key
@@ -153,7 +161,8 @@ class Billrun_Billingcycle {
 	 * @param string $billrunKey - Billrun key
 	 * 
 	 */
-    public static function removeBeforeRerun($billingCycleCol, $billrunKey) {
+    public static function removeBeforeRerun($billrunKey) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
 		$countersColl = Billrun_Factory::db()->countersCollection();
@@ -181,7 +190,8 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected function hasCycleStarted($billingCycleCol, $billrunKey, $size) {
+	protected function hasCycleStarted($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();
 		if ($keyCount < 1) {
@@ -198,7 +208,8 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle is ended.
 	 */
-	public static function hasCycleEnded($billingCycleCol, $billrunKey, $size) {
+	public static function hasCycleEnded($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
 		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
@@ -216,11 +227,11 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if generated all the bills from billrun objects
 	 */
-	public static function isCycleRunning($billingCycleCol, $billrunKey, $size) {
-		if (!self::hasCycleStarted($billingCycleCol, $billrunKey, $size)) {
+	public static function isCycleRunning($billrunKey, $size) {
+		if (!self::hasCycleStarted($billrunKey, $size)) {
 			return false;
 		}
-		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size)) {
 			return false;
 		}
 		return true;
@@ -258,7 +269,8 @@ class Billrun_Billingcycle {
 	 * 
 	 *  @return cycle completion percentage 
 	 */
-	public static function getCycleCompletionPercentage($billingCycleCol, $billrunKey, $size) {
+	public static function getCycleCompletionPercentage($billrunKey, $size) {
+		$billingCycleCol = self::getBillingCycleColl();
 		$totalPagesQuery = array(
 			'billrun_key' => $billrunKey
 		);
@@ -268,7 +280,7 @@ class Billrun_Billingcycle {
 			'end_time' => array('$exists' => true)
 		);
 		$finishedPages = $billingCycleCol->query($finishedPagesQuery)->count();
-		if (self::hasCycleEnded($billingCycleCol, $billrunKey, $size)) {
+		if (self::hasCycleEnded($billrunKey, $size)) {
 			$completionPercentage = round(($finishedPages / $totalPages) * 100, 2);
 		} else {
 			$completionPercentage = round(($finishedPages / ($totalPages + 1)) * 100, 2);
@@ -319,5 +331,95 @@ class Billrun_Billingcycle {
 			return round((self::getNumberOfGeneratedBills($billrunKey) / $generatedInvoices) * 100, 2);
 		}
 		return 0;
+	}
+	
+	public static function getCycleStatus($billrunKey, $size = null) {
+		if (is_null($size)) {
+			$size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
+		}
+		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
+			return self::$cycleStatuses[$billrunKey][$size];
+		}
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
+		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		
+		$cycleStatus = '';
+		if ($billrunKey == $currentBillrunKey) {
+			$cycleStatus = 'current';
+		}
+		else if ($billrunKey > $currentBillrunKey) {
+			$cycleStatus = 'future';
+		}
+		else if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
+			$cycleStatus = 'to_run';
+		} 
+		
+		else if ($cycleRunning) {
+			$cycleStatus = 'running';
+		}
+		
+		else if (!$cycleConfirmed && $cycleEnded) {
+			$cycleStatus = 'finished';
+		}
+		
+		else if ($cycleEnded && $cycleConfirmed) {
+			$cycleStatus = 'confirmed';
+		}
+		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
+		return $cycleStatus;
+	}
+	
+	public static function getBillingCycleColl() {
+		if (is_null(self::$billingCycleCol)) {
+			self::$billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
+		}
+		
+		return self::$billingCycleCol;
+	}
+	
+	/**
+	 * Gets the newest confirmed billrun key
+	 * 
+	 * @return billrun key or 197001  if a confirmed cycle was not found
+	 */
+	public static function getLastConfirmedBillingCycle() {
+		$maxIterations = 12;
+		$billrunKey = self::getLastClosedBillingCycle();
+		for ($i = 0; $i < $maxIterations; $i++) { // To avoid infinite loop
+			if (self::isCycleConfirmed($billrunKey)) {
+				return $billrunKey;
+			}
+			$date = strtotime(($i + 1) . ' months ago');
+			$billrunKey = self::getBillrunKeyByTimestamp($date);
+		}
+		return '197001';
+	}
+	
+	/**
+	 * Gets the oldest available billrun key (tenant creation or key from time received)
+	 * 
+	 * @param $startTime - string time to create billrun key from
+	 * @return billrun key
+	 */
+	public static function getOldestBillrunKey($startTime) {
+		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
+		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
+		if (!$registrationDate) {
+			return $lastBillrunKey;
+		}
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
+		return max(array($registrationBillrunKey, $lastBillrunKey));
+	}
+
+public static function getLastNonRerunnableCycle() {
+		$query = array('billed' => 1);
+		$sort = array("billrun_key" => -1);
+		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return FALSE;
+		}
+		return $entry['billrun_key'];
 	}
 }

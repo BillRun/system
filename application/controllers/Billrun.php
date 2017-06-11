@@ -15,8 +15,6 @@
  */
 class BillrunController extends ApiController {
 
-	protected $billingCycleCol = null;
-
 	/**
 	 * 
 	 * @var int
@@ -24,7 +22,6 @@ class BillrunController extends ApiController {
 	protected $size;
 
 	public function init() {
-		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
 		parent::init();
 	}
@@ -44,14 +41,14 @@ class BillrunController extends ApiController {
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
 		}
-		if (Billrun_Billingcycle::isCycleRunning($this->billingCycleCol, $billrunKey, $this->size)) {
+		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
 			throw new Exception("Already Running");
 		}
-		if ($this->getCycleStatus($billrunKey) == 'finished') {
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
-			Billrun_Billingcycle::removeBeforeRerun($this->billingCycleCol, $billrunKey);
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
 		}
 
 		$success = self::processCycle($billrunKey);
@@ -81,7 +78,7 @@ class BillrunController extends ApiController {
 		if (empty($aids)) {
 			throw new Exception("Illgal account id's");
 		}
-		$status = $this->getCycleStatus($billrunKey);
+		$status = Billrun_Billingcycle::getCycleStatus($billrunKey);
 		if (!in_array($status, array('to_run', 'finished'))) {
 			throw new Exception("Can't Run");
 		}
@@ -124,7 +121,7 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size) && (!Billrun_Billingcycle::isCycleConfirmed($billrunKey) || !empty($invoices))){
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size) && (!Billrun_Billingcycle::isCycleConfirmed($billrunKey) || !empty($invoices))){
 			if (is_null($invoices)) {
 				$success = self::processConfirmCycle($billrunKey);
 			} else {
@@ -201,7 +198,7 @@ class BillrunController extends ApiController {
 			$setting['billrun_key'] = $billrunKey;
 			$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
 			$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-			$setting['cycle_status'] = $this->getCycleStatus($billrunKey);
+			$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
 			$settings[] = $setting;
 		}
 
@@ -225,11 +222,11 @@ class BillrunController extends ApiController {
 		}
 		$setting['start_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getStartTime($billrunKey));
 		$setting['end_date'] = date(Billrun_Base::base_datetimeformat, Billrun_Billingcycle::getEndTime($billrunKey));
-		$setting['cycle_status'] = $this->getCycleStatus($billrunKey);
-		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($this->billingCycleCol, $billrunKey, $this->size);
+		$setting['cycle_status'] = Billrun_Billingcycle::getCycleStatus($billrunKey);
+		$setting['completion_percentage'] = Billrun_Billingcycle::getCycleCompletionPercentage($billrunKey, $this->size);
 		$setting['generated_invoices'] = Billrun_Billingcycle::getNumberOfGeneratedInvoices($billrunKey);
 		$setting['generated_bills'] = Billrun_Billingcycle::getNumberOfGeneratedBills($billrunKey);
-		if (Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size)) {
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size)) {
 			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey);
 		}
 		$output = array(
@@ -265,7 +262,7 @@ class BillrunController extends ApiController {
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
 		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($endTime - 1);
-		$lastBillrunKey = $this->getLastBillrunKey($startTime);
+		$lastBillrunKey = Billrun_Billingcycle::getOldestBillrunKey($startTime);
 
 		while ($currentBillrunKey >= $lastBillrunKey && $limit < 100) {
 			$billrunKeys[] = $currentBillrunKey;
@@ -275,48 +272,7 @@ class BillrunController extends ApiController {
 
 		return $billrunKeys;
 	}
-	
-	protected function getLastBillrunKey($startTime) {
-		$lastBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($startTime);
-		$registrationDate = Billrun_Factory::config()->getConfigValue('registration_date');
-		if (!$registrationDate) {
-			return $lastBillrunKey;
-		}
-		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
-		return max(array($registrationBillrunKey, $lastBillrunKey));
-	}
 
-	public function getCycleStatus($billrunKey) {
-		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
-		$cycleConfirmed = Billrun_Billingcycle::isCycleConfirmed($billrunKey);
-		$cycleEnded = Billrun_Billingcycle::hasCycleEnded($this->billingCycleCol, $billrunKey, $this->size);
-		$cycleRunning = Billrun_Billingcycle::isCycleRunning($this->billingCycleCol, $billrunKey, $this->size);
-		
-		if ($billrunKey == $currentBillrunKey) {
-			return 'current';
-		}
-		if ($billrunKey > $currentBillrunKey) {
-			return 'future';
-		}
-		if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
-			return 'to_run';
-		} 
-		
-		if ($cycleRunning) {
-			return 'running';
-		}
-		
-		if (!$cycleConfirmed && $cycleEnded) {
-			return 'finished';
-		}
-		
-		if ($cycleEnded && $cycleConfirmed) {
-			return 'confirmed';
-		}
-
-		return '';
-	}
-	
 	protected function processConfirmCycle($billrunKey, $invoicesId = array()) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
