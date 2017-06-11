@@ -39,17 +39,21 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 		if (isset($options['balance_start_time']) && ($timestamp = strtotime((string) $options['balance_start_time'])) !== false) {
 			$from = $timestamp;
+			$start_period = $options['balance_start_time'];
 		} else {
 			$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
+			$start_period = "default";
 		}
 		
 		if (isset($options['balance_period']) && ($timestamp = strtotime((string) $options['balance_period'])) !== false) {
 			$to = $timestamp;
+			$period = $options['balance_period'];
 		} else {
 			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
+			$period = "default";
 		}
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec);
+		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec, $start_period, $period);
 	}
 
 	/**
@@ -62,7 +66,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $urt line time
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt) {
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default") {
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
@@ -72,9 +76,11 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'to' => array(
 				'$gte' => new MongoDate($urt),
 			),
+			'start_period' => $start_period,
+			'period' => $period,
 		);
 		$update = array(
-			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan),
+			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period),
 		);
 		$options = array(
 			'upsert' => true,
@@ -100,7 +106,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param Billrun_Plan $current_plan
 	 * @return array
 	 */
-	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan) {
+	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period = "default", $period = "default") {
 		$planRef = $plan->createRef();
 		$connectionType = $plan->get('connection_type');
 		$planDescription = $plan->get('description');
@@ -111,6 +117,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'sid' => $sid,
 			'current_plan' => $planRef,
 			'connection_type' => $connectionType,
+			'start_period' => $start_period,
+			'period' => $period,
 			'plan_description' => $planDescription,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
