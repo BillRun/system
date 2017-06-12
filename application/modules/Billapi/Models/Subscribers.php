@@ -246,7 +246,7 @@ class Models_Subscribers extends Models_Entity {
 				Billrun_Factory::log("There isn't an account matching the subscriber.", Zend_Log::ERR);
 			}
 			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
-				$query['from'] = $account['from'];
+				$query['_id'] = $account['_id'];
 				$account['from'] = $update['from'];
 				$this->dbUpdate($query, $account->getRawData());
 			}
@@ -257,13 +257,5 @@ class Models_Subscribers extends Models_Entity {
 	protected function insert(&$data) {
 		$status = parent::insert($data);
 		$this->afterSubscriberAction($status, $data);
-	}
-	
-	protected function dbUpdate($query, $data) {
-		unset($data['_id']);
-		$update = array(
-			'$set' => $data,
-		);
-		return $this->collection->update($query, $update);
 	}
 }
