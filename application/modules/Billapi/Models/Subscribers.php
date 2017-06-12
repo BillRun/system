@@ -148,6 +148,10 @@ class Models_Subscribers extends Models_Entity {
 		}
 
 		$status = $this->dbUpdate($this->query, $this->update);
+		if ($edge == 'from' && $followingEntry->isEmpty()) {
+			$update = array_merge($this->update, array('aid'=>$this->before['aid']));
+			$this->afterSubscriberAction($status, $update);
+		}
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
@@ -229,5 +233,32 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Deals with changes need to be done after subscriber create/closeAndNew/move in specific cases.
+	 * 
+	 * @param array $status - Insert Status.
+	 * 
+	 */
+	protected function afterSubscriberAction($status, $update) {
+		if (isset($status['ok']) && $status['ok']) {
+			$query['type'] = 'account';
+			$query['aid'] = $update['aid'];
+			$account = $this->collection->query($query)->cursor()->sort(array('from' => 1))->limit(1)->current();
+			if ($account->isEmpty()) {
+				Billrun_Factory::log("There isn't an account matching the subscriber.", Zend_Log::ERR);
+			}
+			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
+				$query['_id'] = $account['_id'];
+				$account['from'] = $update['from'];
+				$this->dbUpdate($query, $account->getRawData());
+			}
+		}
+		return;
+	}
 
+	protected function insert(&$data) {
+		$status = parent::insert($data);
+		$this->afterSubscriberAction($status, $data);
+	}
 }
