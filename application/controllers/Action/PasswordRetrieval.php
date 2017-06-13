@@ -36,7 +36,8 @@ class PasswordRetrievalAction extends ApiAction {
 			$signed = Billrun_Utils_Security::addSignature($data, $secret['key']);
 			$params = array(
 				'sig' => $signed['_sig_'],
-				't' => $signed['_t_']
+				't' => $signed['_t_'],
+				'user' => $email,
 			);
 			$url = $this->buildPasswordChangeUrl($request, $id, $params);
 			$resetMessage = $this->buildResetMessage($url);
@@ -68,7 +69,7 @@ class PasswordRetrievalAction extends ApiAction {
 		$urlTemplate = Billrun_Factory::config()->getConfigValue('billrun.changepassword.url');
 		$pageRoot = $request->getServer()['HTTP_HOST'];
 		$protocol = empty($request->getServer()['HTTPS']) ? 'http' : 'https';
-		$returnPage = sprintf($urlTemplate, $protocol, $pageRoot, $id, $data['sig'], $data['t']);
+		$returnPage = sprintf($urlTemplate, $protocol, $pageRoot, $id, $data['sig'], $data['t'], $data['user']);
 
 		return $returnPage;
 	}
