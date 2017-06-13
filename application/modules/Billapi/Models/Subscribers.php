@@ -30,7 +30,10 @@ class Models_Subscribers extends Models_Entity {
 
 		//transalte to and from fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
-
+		if ($this->action == 'create' && !isset($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		
 		$this->verifyServices();
 	}
 
@@ -57,15 +60,17 @@ class Models_Subscribers extends Models_Entity {
 		if (empty($this->update)) {
 			return FALSE;
 		}
-		foreach ($this->update['services'] as &$service) {
-			if (gettype($service) == 'string') {
-				$service = array('name' => $service);
+		if (!empty($this->update['services'])) {
+			foreach ($this->update['services'] as &$service) {
+				if (gettype($service) == 'string') {
+					$service = array('name' => $service);
+				}
+				if (empty($this->before)) { // this is new subscriber
+					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
+				}
+				//to can't be more then the updated 'to' of the subscription
+				$service['to'] = !empty($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 			}
-			if (empty($this->before)) { // this is new subscriber
-				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
-			}
-			//to can't be more then the updated 'to' of the subscription
-			$service['to'] = !empty($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
 		}
 	}
 
@@ -138,11 +143,15 @@ class Models_Subscribers extends Models_Entity {
 
 		foreach ($this->before['services'] as $key => $service) {
 			if ($service[$edge]->sec == $this->before[$edge]->sec) {
-				$this->update['services'][$key][$edge] = $this->update[$edge];
+				$this->update["services.$key.$edge"] = $this->update[$edge];
 			}
 		}
 
 		$status = $this->dbUpdate($this->query, $this->update);
+		if ($edge == 'from' && $followingEntry->isEmpty()) {
+			$update = array_merge($this->update, array('aid'=>$this->before['aid']));
+			$this->afterSubscriberAction($status, $update);
+		}
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
@@ -161,7 +170,7 @@ class Models_Subscribers extends Models_Entity {
 
 			foreach ($followingEntry['services'] as $key => $service) {
 				if ($service[$otherEdge]->sec == $followingEntry[$otherEdge]->sec) {
-					$update['services'][$key][$otherEdge] = $update[$otherEdge];
+					$update["services.$key.$otherEdge"] = $update[$otherEdge];
 				}
 			}
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
@@ -224,5 +233,33 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Deals with changes need to be done after subscriber create/closeAndNew/move in specific cases.
+	 * 
+	 * @param array $status - Insert Status.
+	 * 
+	 */
+	protected function afterSubscriberAction($status, $update) {
+		if (isset($status['ok']) && $status['ok']) {
+			$query['type'] = 'account';
+			$query['aid'] = $update['aid'];
+			$account = $this->collection->query($query)->cursor()->sort(array('from' => 1))->limit(1)->current();
+			if ($account->isEmpty()) {
+				Billrun_Factory::log("There isn't an account matching the subscriber.", Zend_Log::ERR);
+			}
+			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
+				$account['from'] = $update['from'];
+				$accountDetails = $account->getRawData();
+				$query['_id'] = $accountDetails['_id'];
+				$this->dbUpdate($query, $accountDetails);
+			}
+		}
+		return;
+	}
 
+	protected function insert(&$data) {
+		$status = parent::insert($data);
+		$this->afterSubscriberAction($status, $data);
+	}
 }

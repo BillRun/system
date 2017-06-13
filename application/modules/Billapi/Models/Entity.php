@@ -172,16 +172,16 @@ class Models_Entity {
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
-			if ($val) {
+			if ($val !== FALSE) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($defaultFieldsValues[$field] !== false) {
+			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
@@ -207,6 +207,9 @@ class Models_Entity {
 		}
 		$query['$or'] = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			if (!isset($data[$fieldName])) {
+				continue;
+			}
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
@@ -277,11 +280,17 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-
+		
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
+		}
+		if (isset($this->update['from'])) {
+			unset($this->update['from']);
+		}
+		if (isset($this->update['to'])) {
+			unset($this->update['to']);
 		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
@@ -328,12 +337,16 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
-		if ($this->preCheckUpdate() !== TRUE) {
-			return false;
-		}
-
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
+		}
+		if (!is_null($this->before)) {
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$this->update = array_merge($prevEntity, $this->update);
+		}
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
 		}
 
 		$this->protectKeyField();
@@ -389,7 +402,7 @@ class Models_Entity {
 	 * 
 	 * @return unix timestamp
 	 */
-	protected static function getMinimumUpdateDate() {
+	public static function getMinimumUpdateDate() {
 		if (is_null(self::$minUpdateDatetime)) {
 			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 		}
@@ -854,7 +867,7 @@ class Models_Entity {
 			return self::FUTURE;
 		}
 		// For active records, check if it has furure revisions
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];

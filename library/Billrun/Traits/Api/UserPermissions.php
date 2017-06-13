@@ -63,7 +63,7 @@ trait Billrun_Traits_Api_UserPermissions {
 	/**
 	 * method to check if user is authorize to resource
 	 *
-	 * @param string $permission the permission require authorization
+	 * @param string/array $permission the permission require authorization
 	 *
 	 * @return boolean true if have access, else false
 	 *

@@ -53,6 +53,7 @@ class ConfigModel {
 		$this->collection = Billrun_Factory::db()->configCollection();
 		$this->options = array('receive', 'process', 'calculate');
 		$this->loadConfig();
+		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
 	}
 
 	public function getOptions() {
@@ -137,6 +138,8 @@ class ConfigModel {
 			$tokens = Billrun_Factory::templateTokens()->getTokens();
 			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
 			return $tokens;
+		} else if ($category == 'minimum_entity_start_date'){
+			return Models_Entity::getMinimumUpdateDate();
 		}
 		
 		return $this->_getFromConfig($currentConfig, $category, $data);
@@ -288,9 +291,10 @@ class ConfigModel {
 			}
 			if (!isset($data['key'])) {
 				$secret = Billrun_Utils_Security::generateSecretKey();
-				$data['key'] = $secret['key'];
-				$data['crc'] = $secret['crc'];
+				$data = array_merge($data, $secret);
 			}
+			$data['from'] = new MongoDate(strtotime($data['from']));
+			$data['to'] = new MongoDate(strtotime($data['to']));
 			$this->setSharedSecretSettings($updatedData, $data);
 			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);
 			if (!$sharedSettings) {
@@ -962,8 +966,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
-					throw new Exception('Illegal usaget mapping at index ' . $index);
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
 		}
