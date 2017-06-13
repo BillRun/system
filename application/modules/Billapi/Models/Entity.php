@@ -24,6 +24,8 @@ class Models_Entity {
 	const ACTIVE = 'active';
 	const ACTIVE_WITH_FUTURE = 'active_with_future';
 
+	const UNLIMITED_DATE = '+149 years';
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -239,7 +241,7 @@ class Models_Entity {
 			$this->update['from'] = new MongoDate();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
@@ -547,7 +549,7 @@ class Models_Entity {
 		$prevEntity = $this->before->getRawData();
 		$this->update = array_merge($prevEntity, $this->update);
 		unset($this->update['_id']);
-		$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
