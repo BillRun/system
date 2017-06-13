@@ -238,9 +238,6 @@ class Models_Entity {
 		if (empty($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime('+149 years'));
 		}
-		if (empty($this->update['deactivation_date'])) {
-			$this->update['deactivation_date'] = $this->update['to'];
-		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);

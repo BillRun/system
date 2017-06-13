@@ -226,5 +226,26 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return $ret;
 	}
+	
+	public function create() {
+		$this->action = 'create';
+		unset($this->update['_id']);
+		if (empty($this->update['from'])) {
+			$this->update['from'] = new MongoDate();
+		}
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		if (empty($this->update['deactivation_date'])) {
+			$this->update['deactivation_date'] = $this->update['to'];
+		}
+		if ($this->duplicateCheck($this->update)) {
+			$status = $this->insert($this->update);
+			$this->trackChanges($this->update['_id']);
+			return isset($status['ok']) && $status['ok'];
+		} else {
+			throw new Billrun_Exceptions_Api(0, array(), 'Entity already exists');
+		}
+	}
 
 }
