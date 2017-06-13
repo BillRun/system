@@ -70,7 +70,11 @@
                    "min": 0,
                    "max": 23
              }
-        }
+        },
+		"detailed_invoices":{
+			"v": false,
+			"t": "Boolean"
+		}
     },
     "subscribers": {
         "types": [
