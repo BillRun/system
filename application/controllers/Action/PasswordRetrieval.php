@@ -24,7 +24,7 @@ class PasswordRetrievalAction extends ApiAction {
 		$email = $request->get('email');
 		$user = Billrun_Factory::db()->usersCollection()->query(array('username' => $email))->cursor()->current();
 		if ($user->isEmpty()) {
-			return $this->setError("The user is not exists, please try again", $request);
+			return $this->setError("User not found", $request);
 		}
 		$id = $user->getRawData()['_id']->{'$id'};
 		$action = $request->get('action');
@@ -32,21 +32,7 @@ class PasswordRetrievalAction extends ApiAction {
 			$data = array(
 				'_id' => $id,
 			);
-			$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
-			if (!is_array(current($secrets))) {  //for backward compatibility 
-				$secrets = array($secrets);
-			}
-			$today = time();
-			foreach ($secrets as $shared) {
-				if (!isset($shared['from']) && !isset($shared['to'])) {  //for backward compatibility 
-					$secret = $shared;
-					break;
-				}
-				if ($shared['from']->sec < $today && $shared['to']->sec > $today) {
-					$secret = $shared;
-					break;
-				}
-			}
+			$secret = Billrun_Utils_Security::getValidSharedKey();
 			$signed = Billrun_Utils_Security::addSignature($data, $secret['key']);
 			$params = array(
 				'sig' => $signed['_sig_'],
@@ -54,7 +40,8 @@ class PasswordRetrievalAction extends ApiAction {
 			);
 			$url = $this->buildPasswordChangeUrl($request, $id, $params);
 			$resetMessage = $this->buildResetMessage($url);
-			Billrun_Util::sendMail("BillRun Reset Password", $resetMessage, array($email));
+			Billrun_Factory::log("Request to change password from " . $email,  Zend_Log::INFO);
+			Billrun_Util::sendMail("BillRun(R) Cloud Password Reset", $resetMessage, array($email), array(), true);
 		}
 	
 		$this->getController()->setOutput(array(array(
@@ -65,7 +52,16 @@ class PasswordRetrievalAction extends ApiAction {
 	}
 
 	protected function buildResetMessage($url) {
-		return "Hello,\n\n" . "Click here to reset yout password:" . $url;
+		$linkTimeLimit =  Billrun_Factory::config()->getConfigValue('changepassword.email.link_expire', '24 hours');
+		$logoLocation =  Billrun_Factory::config()->getConfigValue('changepassword.email.logo', '24 hours');
+		return 	'<img src="' . $logoLocation . '" style="vertical-align:bottom">' .
+				"<br><br>Hello,<br><br>" . "You recently requested a password reset.<br><br>" . 
+				"To change your BillRun® Cloud password, please click here:<br><br>" .  $url .
+				"<br><br>The link will expire in " . $linkTimeLimit . 
+				"<br><br>If you ignore this message, your password won't be changed." .
+				"<br><br>If you didn't request a password reset, " .
+				'<a href="mailto:<cloud_support@billrun.com>?subject=<I suspect someone is trying to steal my password>">let us know</a>' .
+				"<br><br>Thanks for using BillRun® Cloud!The BillRun® Team";
 	}
 	
 	protected function buildPasswordChangeUrl($request, $id, $data) {

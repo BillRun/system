@@ -104,21 +104,7 @@ class InternalPaypageController extends ExternalPaypageController {
 			}
 		}
 		
-		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
-		if(!is_array(current($secrets))) {  //for backward compatibility 
-			$secrets = array($secrets);
-		}
-		$today = time();
-		foreach ($secrets as $shared) {
-			if (strtotime($shared['from']) < $today && strtotime($shared['to']) > $today) {
-				$secret = $shared;
-				break;
-			}
-			if (!isset($shared['from']) && !isset($shared['to'])) {  //for backward compatibility 
-				$secret = $shared;
-				break;
-			}
-		}
+		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$data = array(
 			"aid" => $request['aid'],
 			"name" => $request['payment_gateway'],

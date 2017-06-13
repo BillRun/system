@@ -269,6 +269,7 @@ class Models_Entity {
 		$this->action = 'changepassword';
 		
 		$this->checkUpdate();
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
 		return true;
 	}
 	
