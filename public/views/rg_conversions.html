@@ -3,54 +3,90 @@
 		Active Rating Group Conversions
     </h2>
     <p>
-        <button type='button' ng-click='vm.newRgConversion()' class='btn btn-primary'>
+        <button type='button' ng-click='vm.newRgConversion()' class='btn btn-primary'  ng-if='!vm.edit_mode'>
             Add Rating Group Conversion
         </button>
     </p>
-	<div>
-		<table class="table table-bordered">
-			<thead>
-				<tr>
-					<th>From Rating Group</th>
-					<th>To Rating Group</th>
-					<th>MCC</th>
-					<th>Remove</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr ng-repeat="conversion in vm.rg_conversions">
-					<td>{{conversion.from_rg}}</td>
-					<td>{{conversion.to_rg}}</td>
-					<td>{{conversion.mcc}}</td>
-					<td><i class="glyphicon glyphicon-trash" ng-click="vm.removeRgConversion(conversion)"></i></td>
-				</tr>
-			</tbody>
-		</table>
+	<div ng-if="!vm.edit_mode">
+		<div>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>From Rating Group</th>
+						<th>To Rating Group</th>
+						<th>MCC</th>
+						<th>Remove</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="conversion in vm.rg_conversions">
+						<td>{{conversion.from_rg}}</td>
+						<td>{{conversion.to_rg}}</td>
+						<td>{{conversion.mcc}}</td>
+						<td><i class="glyphicon glyphicon-trash" ng-click="vm.removeRgConversion(conversion)"></i></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<br/><br/>
+		<h2>
+			Rating Group Conversions History
+		</h2>
+		<div>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>Date</th>
+						<th>Mode</th>
+						<th>From Rating Group</th>
+						<th>To Rating Group</th>
+						<th>MCC</th>
+						<th>User</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="conversion in vm.rg_conversions_log">
+						<td>{{conversion.time}}</td>
+						<td> <span ng-class="conversion.mode === 'ON' ? 'label label-success' : 'label label-danger'">{{conversion.mode}}</span></td>
+						<td>{{conversion.from_rg}}</td>
+						<td>{{conversion.to_rg}}</td>
+						<td>{{conversion.mcc}}</td>
+						<td>{{conversion.user}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
-	<br/><br/>
-	<h2>
-		Rating Group Conversions History
-	</h2>
-	<div>
-		<table class="table table-bordered">
-			<thead>
-				<tr>
-					<th>Date</th>
-					<th>Mode</th>
-					<th>From Rating Group</th>
-					<th>To Rating Group</th>
-					<th>User</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr ng-repeat="conversion in vm.rg_conversions_log">
-					<td>{{conversion.time}}</td>
-					<td> <span ng-class="conversion.mode === 'ON' ? 'label label-success' : 'label label-danger'">{{conversion.mode}}</span></td>
-					<td>{{conversion.from_rg}}</td>
-					<td>{{conversion.to_rg}}</td>
-					<td>{{conversion.user}}</td>
-				</tr>
-			</tbody>
-		</table>
+	<div ng-if="vm.edit_mode">
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>From Rating Group</label>
+			</div>
+			<div class='col-md-3'>
+				<input type='text' ng-model='vm.current_entity.from_rg' class='form-control' />
+			</div>
+		</div>
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>To Rating Group</label>
+			</div>
+			<div class='col-md-3'>
+				<input type='text' ng-model='vm.current_entity.to_rg' class='form-control' />
+			</div>
+		</div>
+		<div class='row'>
+			<div class='col-md-3'>
+				<label>MCC</label>
+			</div>
+			<div class='col-md-3'>
+				<select class='form-control' ng-model='vm.current_entity.mcc'>
+					<option ng-repeat="mcc in vm.availableMccs">{{mcc}}</option>
+				</select>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn" ng-click='vm.cancel()'>Cancel</button>
+			<button type='submit' class="btn btn-primary" ng-click='vm.createRgConversion()'>Create</button>
+		</div>
 	</div>
 </div>

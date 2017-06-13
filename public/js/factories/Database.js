@@ -116,6 +116,11 @@ app.factory('Database', ['$http', function ($http) {
 			return $http.get(baseUrl + '/api/redbutton?action=ratingGroupConversion&mode=off&params=' + JSON.stringify(conversion));
 		}
 
+		function createRgConversion(conversion) {
+			console.log(conversion);
+			return $http.get(baseUrl + '/api/redbutton?action=ratingGroupConversion&mode=on&params=' + JSON.stringify(conversion));
+		}
+
 		return {
 			getEntity: getEntity,
 			saveEntity: saveEntity,
@@ -140,5 +145,6 @@ app.factory('Database', ['$http', function ($http) {
 			getActiveRgConversionsDetails: getActiveRgConversionsDetails,
 			getRgConversionsLogDetails: getRgConversionsLogDetails,
 			removeRgConversion: removeRgConversion,
+			createRgConversion: createRgConversion
 		};
 	}]);

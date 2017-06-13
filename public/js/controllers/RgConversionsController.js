@@ -9,37 +9,28 @@ function RgConversionsController(Database, Utils) {
 	angular.element('.active').removeClass('active');
 	angular.element('.menu-item-rg_conversions').addClass('active');
 
-//	vm.edit_mode = false;
-//	vm.newent = false;
+	vm.edit_mode = false;
+	vm.availableMccs = ['ISRAEL', 'ROAMING'];
 
-//	vm.newBandwidthCap = function () {
-//		vm.current_entity = {
-//			cap_name: "",
-//			service: "",
-//			speed: 0
-//		};
-//		vm.newent = true;
-//		vm.edit_mode = true;
-//	};
-	vm.save = function () {
-		Database.saveBandwidthCap({data: vm.current_entity, newent: vm.newent}).then(function (res) {
-			if (res.data.status) {
-				vm.newent = false;
-				vm.edit_mode = false;
-				vm.bandwidthCaps[vm.current_entity.cap_name] = res.data.data;
-			}
+	vm.newRgConversion = function () {
+		vm.current_entity = {
+			from_rg: "92",
+			to_rg: "93",
+			mcc: "ISRAEL"
+		};
+		vm.edit_mode = true;
+	};
+
+	vm.createRgConversion = function () {
+		Database.createRgConversion(vm.current_entity).then(function (res) {
+			vm.edit_mode = false;
+			vm.init();
 		});
 	};
-//	vm.cancel = function () {
-//		vm.edit_mode = false;
-//		vm.newent = false;
-//	};
-//	vm.edit = function (cap_name) {
-//		vm.edit_mode = true;
-//		vm.newent = false;
-//		vm.current_entity = vm.bandwidthCaps[cap_name];
-//		vm.current_entity.cap_name = cap_name;
-//	};
+	
+	vm.cancel = function () {
+		vm.edit_mode = false;
+	};
 
 	vm.removeRgConversion = function (conversion) {
 		var r = confirm("Are you sure you want to remove conversion of '" + conversion.mcc + "' from rating group '"
