@@ -65,6 +65,9 @@ class Models_Subscribers extends Models_Entity {
 				if (gettype($service) == 'string') {
 					$service = array('name' => $service);
 				}
+				if (gettype($service['from']) == 'string') {
+					$service['from'] = new MongoDate(strtotime($service['from']));
+				}
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
