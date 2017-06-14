@@ -22,7 +22,7 @@ class ReportAction extends ApiAction {
 	
 	protected $model = null;
 	protected $request = null;
-	protected $status = true;
+	protected $status = 1;
 	protected $desc = 'success';
 	protected $next_page = true;
 	protected $response = array();

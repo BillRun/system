@@ -41,6 +41,7 @@ class ReportModel {
 	 * @return type
 	 */
 	public function applyFilter($query, $page, $size) {
+		return [];// TEMP, UNDER DEV !
 		$collection = Billrun_Factory::db()->{$this->getCollection($query) . "Collection"}();
 		
 		$aggregate = array();
