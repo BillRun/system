@@ -211,6 +211,10 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		if (isset($rate['key'])) {
 			$added_values[$this->ratingKeyField] = $rate['key'];
 		}
+		
+		if (isset($row['rating_group_conversion'])) {
+			$added_values['rating_group_conversion'] = $row['rating_group_conversion'];
+		}
 
 		if ($rate) {
 			// TODO: push plan to the function to enable market price by plan

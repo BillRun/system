@@ -130,6 +130,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/PrepaidIncludesController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
+		$this->addJs($this->baseUrl . '/js/controllers/RgConversionsController.js');
 	}
 	
 	protected function initSession() {

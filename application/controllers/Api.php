@@ -164,6 +164,11 @@ class ApiController extends Yaf_Controller_Abstract {
 			return;
 		}
 		$this->logColl = Billrun_Factory::db()->logCollection();
+		$userName = false;
+		if ($request->action != 'realtime') {
+			$user = Billrun_Factory::user();
+			$userName = $user ? $user->getUsername() : false;
+		}
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
@@ -174,6 +179,7 @@ class ApiController extends Yaf_Controller_Abstract {
 			'server_host' => Billrun_Util::getHostName(),
 			'server_pid' => Billrun_Util::getPid(),
 			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'user_name' => $userName,
 			'rand' => rand(1, 1000000),
 			'time' => (microtime(1) - $this->start_time) * 1000,
 		);
