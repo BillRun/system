@@ -50,7 +50,7 @@ class redbuttonPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return;
 		}
 	
-		$conversionRatingGroup = $rg_conversion[0]['to_rg'];
+		$conversionRatingGroup = (int)current($rg_conversion)['to_rg'];
 		foreach ($query as &$pipe) {
 			if (!isset($pipe['$match']['params.rating_group'])) {
 				continue;
