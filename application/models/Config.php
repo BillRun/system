@@ -293,6 +293,8 @@ class ConfigModel {
 				$secret = Billrun_Utils_Security::generateSecretKey();
 				$data = array_merge($data, $secret);
 			}
+			$data['from'] = new MongoDate(strtotime($data['from']));
+			$data['to'] = new MongoDate(strtotime($data['to']));
 			$this->setSharedSecretSettings($updatedData, $data);
 			$sharedSettings = $this->validateSharedSecretSettings($updatedData, $data);
 			if (!$sharedSettings) {
@@ -964,8 +966,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
-					throw new Exception('Illegal usaget mapping at index ' . $index);
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
 		}
