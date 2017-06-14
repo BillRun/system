@@ -25,7 +25,9 @@ class redbuttonPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @return void
 	 */
 	public function extendRateParamsQuery(&$query, &$row, &$calculator) {
-		$this->convertRatingGroups($query, $row);
+		if ($row['usaget'] === 'data') {
+			$this->convertRatingGroups($query, $row);
+		}
 	}
 	
 	protected function convertRatingGroups(&$query, &$row) {

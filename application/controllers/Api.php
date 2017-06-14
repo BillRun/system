@@ -164,8 +164,11 @@ class ApiController extends Yaf_Controller_Abstract {
 			return;
 		}
 		$this->logColl = Billrun_Factory::db()->logCollection();
-		$user = Billrun_Factory::user();
-		$userName = $user ? $user->getUsername() : false;
+		$userName = false;
+		if ($request->action != 'realtime') {
+			$user = Billrun_Factory::user();
+			$userName = $user ? $user->getUsername() : false;
+		}
 		$saveData = array(
 			'source' => 'api',
 			'type' => $request->action,
