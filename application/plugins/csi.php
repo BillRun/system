@@ -70,31 +70,25 @@ class csiPlugin extends Billrun_Plugin_Base {
 	}
 	
 	
-	public function afterExportCycleReports($data,&$generator) {
-//		if($generator->getType() != 'tax') {
-//			return;
-//		}
+	public function getTaxationReport($cycleKey) {
+		if(Billrun_Factory::config()->getConfigValue('taxation.tax_type','') !== 'CSI') {
+			return FALSE;
+		}
 		$this->config = Billrun_Factory::config()->getConfigValue('taxation', array());
 		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
-		$taxedLines = Billrun_Factory::db()->linesCollection()->query(array('billrun'=>$generator->getStamp(),'tax_data'=>array('$exists'=> 1),'final_charge'=>array('$ne'=>0)))->cursor();//->fields(array('tax_data'=>1));
-		//open taxation file
-		$outputFile = fopen('/tmp/'.date('Ymd').'_csi_taxes.csv','w');
-		if(empty($outputFile)) {
-			Billrun_Factory::log('Failed to open taxation file!',Zend_Log::ERR);
-			return;
-		}
-		//write retrived taxed lines to the file
-		$this->writeTaxToFile(array_combine($this->thirdpartyConfig['cycle_report_fields'], $this->thirdpartyConfig['cycle_report_fields']),$outputFile);
+		$taxedLines = Billrun_Factory::db()->linesCollection()->query(array('billrun'=>(string)$cycleKey,'tax_data'=>array('$exists'=> 1),'final_charge'=>array('$ne'=>0)))->cursor();
+
+		$taxes =array();
 		foreach($taxedLines as  $taxedLine) {
 			foreach($taxedLine['tax_data']['taxes'] as $tax) {
 				foreach($this->thirdpartyConfig['line_fields_for_tax_report'] as $fieldKey) {
 					$tax[$fieldKey] = $taxedLine[$fieldKey];
 				}
-				$this->writeTaxToFile($tax,$outputFile);
+				$taxes[] = $tax;
 			}
 		}
-		//close the  taxation file after all the taxes were written to it.
-		fclose($outputFile);
+		
+		return array('headers'=>$this->thirdpartyConfig['cycle_report_fields'], 'data' => $taxes);
 	}
 	//===================================================================
 	
@@ -258,10 +252,5 @@ class csiPlugin extends Billrun_Plugin_Base {
 			$rate = $flatRate->getData();
 		}
 		return $rate;			
-	}
-	
-	protected function writeTaxToFile($taxLine, $fileHandle) {
-		$filteredLine = array_map( function ($key)  use ($taxLine){ return $taxLine[$key]; }, $this->thirdpartyConfig['cycle_report_fields']);;
-		fputcsv($fileHandle, $filteredLine);
 	}
 }

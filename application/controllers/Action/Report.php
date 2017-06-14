@@ -48,6 +48,14 @@ class ReportAction extends ApiAction {
 		$this->next_page = count($nextPageData) > 0; 
 	}
 	
+	public function taxationReport($query, $page, $size) {	
+		$parsed_query = json_decode($query, TRUE);
+		$reportData = Billrun_Factory::chain()->trigger('getTaxationReport',array($parsed_query['billrun_key']));
+		$this->response =  $reportData['data'];
+		$this->getRequest()->setParam('headers', $reportData['headers']);
+		$this->next_page = false; 
+	}
+	
 	protected function response() {
 		$this->getController()->setOutput(array(
 			array(
@@ -65,7 +73,7 @@ class ReportAction extends ApiAction {
 	}
 	
 	protected function render($tpl, array $parameters = null) {
-		$request = $this->getRequest()->getRequest();
+		$request = array_merge($this->getRequest()->getParams(),$this->getRequest()->getRequest());
 		$type = $this->request->getRequest('type', '');
 		if($type === 'csv') {
 			return $this->renderCsv($request, $parameters);
@@ -74,7 +82,7 @@ class ReportAction extends ApiAction {
 	}
 
 	protected function renderCsv($request, array $parameters = null) {
-		$filename = isset($request['file_name']) ? $request['file_name'] : 'report';
+		$filename = isset($request['file_name']) ? $request['file_name'] : date('Ymd').'_report';
 		$headers = isset($request['headers']) ? $request['headers'] : array();
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
