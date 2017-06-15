@@ -178,7 +178,8 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
 			if ($val !== FALSE) {
