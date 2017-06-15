@@ -84,11 +84,15 @@ class csiPlugin extends Billrun_Plugin_Base {
 				foreach($this->thirdpartyConfig['line_fields_for_tax_report'] as $fieldKey) {
 					$tax[$fieldKey] = $taxedLine[$fieldKey];
 				}
-				$taxes[] = $tax;
+				$fillterTax = array();
+				foreach($this->thirdpartyConfig['cycle_report_fields'] as $LineKey =>  $headerKey ) {
+					$fillterTax[$headerKey] = $tax[$LineKey];
+				}
+				$taxes[] = $fillterTax;
 			}
 		}
 		
-		return array('headers'=>$this->thirdpartyConfig['cycle_report_fields'], 'data' => $taxes);
+		return array('headers'=>array_values($this->thirdpartyConfig['cycle_report_fields']), 'data' => $taxes);
 	}
 	//===================================================================
 	
