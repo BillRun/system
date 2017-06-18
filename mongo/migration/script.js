@@ -286,6 +286,11 @@ for (var i in fileTypes) {
 lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
 
+// BRCD-832 rename entity name from lines to usage
+db.reports.find({"entity": "lines"}).forEach(function (obj) {
+	obj.entity = "usage";
+	db.reports.save(obj);
+});
 
 // BRCD-368 Importer - chenge account and subscriber fieds settings
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
