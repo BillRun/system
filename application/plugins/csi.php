@@ -70,6 +70,20 @@ class csiPlugin extends Billrun_Plugin_Base {
 	}
 	
 	
+	public function onAddManualTaxationToRow(&$line, $subscriber, $account,&$taxCalacualtor) {
+		if($taxCalacualtor->getType() != 'tax') {
+			return;
+		}
+		$this->config = Billrun_Factory::config()->getConfigValue('taxation', array());
+		$this->thirdpartyConfig = Billrun_Util::getFieldVal($this->config[$this->config['tax_type']],array());
+		
+		foreach(Billrun_Factory::config()->getConfigValue("taxation.{$this->config['tax_type']}.added_manual_taxes", array()) as $title =>  $precent) {
+			//$taxRate = Billrun_Factory::db()->query(array_merge(array('key'=>$taxRateKey,"rates.{$line['usaget']}"=>array('$exists'=>1)),  Billrun_Utils_Mongo::getDateBoundQuery($line['urt']->sec)))->cursor()->limit(1)->current();
+			$line = $this->addTaxRateToLine($line, $precent, $title);
+		}
+		return $line;
+	}
+	
 	public function getTaxationReport($cycleKey) {
 		if(Billrun_Factory::config()->getConfigValue('taxation.tax_type','') !== 'CSI') {
 			return FALSE;
@@ -81,6 +95,10 @@ class csiPlugin extends Billrun_Plugin_Base {
 		$taxes =array();
 		foreach($taxedLines as  $taxedLine) {
 			foreach($taxedLine['tax_data']['taxes'] as $tax) {
+				if(!empty($tax['dont_report_to_thirdparty'])) { 
+					continue; 
+				}
+				
 				foreach($this->thirdpartyConfig['line_fields_for_tax_report'] as $fieldKey) {
 					$tax[$fieldKey] = $taxedLine[$fieldKey];
 				}
@@ -256,5 +274,19 @@ class csiPlugin extends Billrun_Plugin_Base {
 			$rate = $flatRate->getData();
 		}
 		return $rate;			
+	}
+	
+	protected function addTaxRateToLine($line, $addedTaxPercent ,$title) {
+		$addTax = $line['aprice'] * $addedTaxPercent;
+		
+		$line['tax_data']['total_amount'] += $addTax;
+		$line['tax_data']['total_rate'] = $line['tax_data']['total_amount'] / $line['aprice'];
+		$line['tax_data']['taxes'][] = array( 'tax'=> $addedTaxPercent,
+											'amount' => $addTax ,
+											'type' => 'manual',
+											'description' => $title,
+											'pass_to_customer' => 1,
+											'dont_report_to_thirdparty' => 1);
+		return $line;
 	}
 }
