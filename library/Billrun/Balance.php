@@ -127,9 +127,10 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $subscriber_id the subscriber ID.
 	 * @param type $billrun_key the  billrun key that the balance refer to.
 	 * @param type $plan_ref the subscriber plan.
+	 * @param type $to end date of this package - if package exists.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null ,$to = null) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		
@@ -137,8 +138,15 @@ class Billrun_Balance implements ArrayAccess {
 			'sid' => $sid,
 			'billrun_month' => $billrun_key,
 		);
+		$data = self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref);
+		if (!is_null($from)) {
+			$data['from'] = new MongoDate($from);
+		}
+		if (!is_null($to)) {
+			$data['to'] = new MongoDate($to);
+		}
 		$update = array(
-			'$setOnInsert' => self::getEmptySubscriberEntry($billrun_key, $aid, $sid, $plan_ref),
+			'$setOnInsert' => $data,
 		);
 		$options = array(
 			'upsert' => true,

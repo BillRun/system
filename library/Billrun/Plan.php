@@ -312,7 +312,7 @@ class Billrun_Plan {
 			if (isset($this->data['include']['groups'][$groupSelected]['limits'])) {
 				// on some cases we have limits to unlimited
 				$limits = $this->data['include']['groups'][$groupSelected]['limits'];
-				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, $subscriberBalance));
+				Billrun_Factory::dispatcher()->trigger('planGroupRule', array(&$rateUsageIncluded, &$groupSelected, $limits, $this, $usageType, $rate, &$subscriberBalance));
 				if ($rateUsageIncluded === FALSE) {
 					$this->unsetGroup($this->getPlanGroup());
 				}

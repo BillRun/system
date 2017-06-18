@@ -771,6 +771,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (!is_array($arr) || empty($arr)) {
 			return false;
 		}
+		
+		foreach ($arr as $key => $sub) { // mock data - delete when commiting
+			$arr[$key]['extra_data'] = array(array('package' => 'ROAM1', 'start_date'  => "20170528", 'num_of_days' => 14), array('package' => 'ROAM1', 'start_date'  => "20170601", 'num_of_days' => 14)); 
+		}
 
 		return $arr;
 	}
