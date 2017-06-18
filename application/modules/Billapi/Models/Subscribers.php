@@ -52,6 +52,10 @@ class Models_Subscribers extends Models_Entity {
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
 		return array_merge($accountFields, $customFields);
 	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".subscriber.fields";
+	}
 
 	/**
 	 * Verfiy services are corrrect before update is applied tothe subscrition.
@@ -264,5 +268,15 @@ class Models_Subscribers extends Models_Entity {
 	protected function insert(&$data) {
 		$status = parent::insert($data);
 		$this->afterSubscriberAction($status, $data);
+	}
+
+	public function create() {
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		if (empty($this->update['deactivation_date'])) {
+			$this->update['deactivation_date'] = $this->update['to'];
+		}
+		parent::create();
 	}
 }

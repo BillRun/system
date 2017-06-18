@@ -303,6 +303,7 @@ class ConfigModel {
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
 			throw new Exception($data . ' is illegal usage type');
 		} else {
+			$this->preUpdateConfig($category, $data, $updatedData[$category]);
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
 			}
@@ -316,6 +317,180 @@ class ConfigModel {
 		}
 
 		return $saveResult;
+	}
+		
+	/**
+	 * runs before update of configuration, validates that data is correct
+	 * 
+	 * @param string category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on success, throws error in case of an error
+	 * @todo re-factor after fields move from subscribers.account.fields => accounts.fields
+	 */
+	protected function preUpdateConfig($category, $data, $prevData) {
+		if ($this->isCustomFieldsConfig($category, $data)) {
+			if ($category === 'subscribers') { // TODO: hack. While account is still under subscribers, also validate accounts
+				$this->validateCustomFields('accounts', $data, $prevData);
+			}
+			$this->validateCustomFields($category, $data, $prevData);
+		}
+		return true;
+	}
+	
+	/**
+	 * validates that fields attributes (mandatory/unique) really are set as defined for existing entities
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on validation success
+	 * @throws Exception on validation failure
+	 */
+	protected function validateCustomFields($category, $data, $prevData) {
+		$params = array(
+			'no_init' => true,
+			'collection' => $category,
+		);
+		$entityModel = Models_Entity::getInstance($params);
+		$customFieldsPath = $entityModel->getCustomFieldsPath();
+		$fieldsPath = substr($customFieldsPath, strpos($customFieldsPath, ".") + 1); // we are already inside the $category
+		
+		$mandatoryFields = array();
+		$uniqueFields = array();
+		foreach (Billrun_Util::getIn($data, $fieldsPath, array()) as $field) {
+			$fieldName = $field['field_name'];
+			$prevField = false;
+			foreach (Billrun_Util::getIn($prevData, $fieldsPath, array()) as $f) {
+				if ($f['field_name'] === $fieldName) {
+					$prevField = $f;
+					break;
+				}
+			}
+
+			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
+				$mandatoryFields[] = $fieldName;
+			}
+
+			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
+				$uniqueFields[] = $fieldName;
+			}
+		}
+
+		if (!$this->validateMandatoryFields($entityModel, $mandatoryFields)) {
+			throw new Exception('cannot make field\s [' . implode(', ', $mandatoryFields) .'] mandatory because there is an entity missing one of those fields');
+		}
+
+		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
+			throw new Exception('cannot make field\s [' . implode(', ', $uniqueFields) .'] unique because for one of those fields there is more than one entity with the same value');
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * checks if the field is now set to true, but previously was not set or was set to false
+	 * 
+	 * @param string $fieldName
+	 * @param array $field
+	 * @param array $prevField
+	 * @return boolean
+	 */
+	protected function isFieldNewlySet($fieldName, $field, $prevField) {
+		if (!$prevField) {
+			return true;
+		}
+		return (isset($field[$fieldName]) && $field[$fieldName]) &&
+			(!isset($prevField[$fieldName]) || !$prevField[$fieldName]);
+	}
+	
+	/**
+	 * checks that all existing entities of type model have all fields marked as mandatories
+	 * 
+	 * @param Models_Entity $entityModel
+	 * @param array $mandatoryFields
+	 * @return boolean
+	 */
+	protected function validateMandatoryFields(Models_Entity $entityModel, $mandatoryFields) {
+		if (empty($mandatoryFields)) {
+			return true;
+		}
+		
+		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
+		$mandatoryQuery['$or'] = array();
+		foreach ($mandatoryFields as $field) {
+			$fieldName = $field['field_name'];
+			$mandatoryQuery['$or'][] = array($fieldName => '');
+			$mandatoryQuery['$or'][] = array($fieldName => array('$exists' => false));
+		}
+		
+		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
+	}
+	
+	/**
+	 * checks that all existing entities of type model have all fields marked as unique different from each other
+	 * 
+	 * @param Models_Entity $entityModel
+	 * @param array $uniqueFields
+	 * @return boolean
+	 */
+	protected function validateUniqueFields(Models_Entity $entityModel, $uniqueFields) {
+		if (empty($uniqueFields)) {
+			return true;
+		}
+		
+		$basicMatch = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
+		$sort = array('t.from' => 1);
+		$match2 = array(
+			's' => array('$gt' => 1),
+		);
+		
+		foreach ($uniqueFields as $field) {
+			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
+			$project = array(
+				$field => 1,
+				't.from' => '$from',
+				't.to' => '$to',
+			);
+			
+			$group = array(
+				'_id' => '$' . $field,
+				'ts' => array('$push' => '$t'),
+				's' => array('$sum' => 1),
+			);
+			
+			$results = $entityModel->getCollection()->aggregate(
+				array('$match' => $match),
+				array('$project' => $project),
+				array('$sort' => $sort),
+				array('$group' => $group),
+				array('$match' => $match2)
+			);
+			
+			foreach ($results as $result) {
+				$prevRange = null;
+				foreach ($result['ts'] as $range) {
+					if ($prevRange && $prevRange['to']->sec >= $range['from']->sec) {
+						return false;
+					}
+					
+					$prevRange = $range;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * checks if the updated category is of  a custom field
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @return boolean
+	 */
+	protected function isCustomFieldsConfig($category, $data) {
+		return in_array($category, array('subscribers', 'accounts'));
 	}
 	
 	public function validateConfig($category, $data) {

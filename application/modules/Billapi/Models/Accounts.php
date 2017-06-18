@@ -37,5 +37,9 @@ class Models_Accounts extends Models_Entity {
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".account.fields", array());
 		return array_merge($accountFields, $customFields);
 	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".account.fields";
+	}
 
 }
