@@ -269,4 +269,14 @@ class Models_Subscribers extends Models_Entity {
 		$status = parent::insert($data);
 		$this->afterSubscriberAction($status, $data);
 	}
+
+	public function create() {
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		if (empty($this->update['deactivation_date'])) {
+			$this->update['deactivation_date'] = $this->update['to'];
+		}
+		parent::create();
+	}
 }
