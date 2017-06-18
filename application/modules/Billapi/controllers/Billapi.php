@@ -55,6 +55,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	public function init() {
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
+		$this->params['options'] = json_decode($request->get('options', '{}'), JSON_OBJECT_AS_ARRAY);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $this->collection . '.ini');
 		$this->action = strtolower($request->getParam('action'));
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
