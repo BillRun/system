@@ -43,6 +43,10 @@ class RealtimeController extends ApiController {
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
 		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
+		if (!$this->config) {
+			Billrun_Factory::log('File type cannot be loaded', Zend_Log::ALERT);
+			throw new Billrun_Exceptions_Api(10000, 'Cannot load file type');
+		}
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
 				'decoder' => $this->config['parser']['type']
 		));
