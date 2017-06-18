@@ -86,7 +86,8 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	}
 
 	protected function runOperation() {
-		$entityModel = $this->getModel();
+		$this->params['collection'] = $this->collection;
+		$entityModel = Models_Entity::getInstance($this->params);
 		$this->output->status = 1;
 		$this->output->details = $entityModel->{$this->action}();
 		$entity = $entityModel->getAfter();
@@ -96,21 +97,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 			$this->output->entity = $entity;
 		}
 	}
-
-	/**
-	 * Get the right model, depending on the requested collection
-	 * @return \Models_Entity
-	 */
-	protected function getModel() {
-		$modelPrefix = 'Models_';
-		$className = $modelPrefix . ucfirst($this->collection);
-		if (!@class_exists($className)) {
-			$className = $modelPrefix . 'Entity';
-		}
-		$this->params['collection'] = $this->collection;
-		return new $className($this->params);
-	}
-
+	
 	/**
 	 * Get the relevant billapi config depending on the requested collection + action
 	 * @return array

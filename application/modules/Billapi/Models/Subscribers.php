@@ -52,6 +52,10 @@ class Models_Subscribers extends Models_Entity {
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
 		return array_merge($accountFields, $customFields);
 	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".subscriber.fields";
+	}
 
 	/**
 	 * Verfiy services are corrrect before update is applied tothe subscrition.
