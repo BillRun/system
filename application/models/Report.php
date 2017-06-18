@@ -196,8 +196,9 @@ class ReportModel {
 					);
 					break;
 				case 'in':
+				case 'nin':
 					$formatedExpression = array(
-						'$in' => explode(',',$value)
+						"\${$op}" => explode(',',$value)
 					);
 					break;
 				case 'eq':
