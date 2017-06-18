@@ -202,8 +202,12 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
-		$query = $this->getNotRevisionsOfEntity($data);
-		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
+		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		$startTime = strtotime($data['from']);
+		$endTime = strtotime($data['to']);
+		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$query = array('$and' => array($nonRevisionsQuery, $uniqueQuery, $overlapingDatesQuery));
 
 		return $this->collection->query($query)->count() > 0;
 	}
