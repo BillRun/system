@@ -112,10 +112,46 @@ class ReportModel {
 		return $value;
 	}
 	
-	protected function formatInputValue($value, $key) {				
+	protected function formatInputMatchOp($op, $field, $value) {
+		if($field === 'billrun') {
+			switch ($value) {
+				case 'confirmed':
+					return 'lte';
+				default:
+					return $op;
+			}
+		}
+		return $op;
+	}
+	
+	protected function formatInputMatchValue($value, $field) {	
+		if($field === 'billrun') {
+			switch ($value) {
+				case 'current':
+					return Billrun_Billrun::getActiveBillrun();
+				case 'first_unconfirmed':
+					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
+					return Billrun_Billingcycle::getFollowingBillrunKey($last);
+				case 'last_confirmed':
+					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+				case 'confirmed':
+					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+				default:
+					return $value;
+			}
+		}
 		$arrayToConvert = array($value);
 		Billrun_Utils_Mongo::convertQueryMongoDates($arrayToConvert);
 		return $arrayToConvert[0];
+	}
+	
+	protected function formatInputMatchField($field) {				
+		switch ($field) {
+			case 'billrun_status':
+				return 'billrun';
+			default:
+				return $field;
+		}
 	}
 	
 	protected function getCollection($report) {
@@ -172,10 +208,10 @@ class ReportModel {
 	protected function getMatch($report) {
 		$matchs = array();
 		foreach ($report['conditions'] as $condition) {
-			$field = $condition['field'];
 			$inputValue = $condition['value'];
-			$op = $condition['op'];
-			$value = $this->formatInputValue($inputValue, $field);		
+			$field = $this->formatInputMatchField($condition['field']);
+			$op = $this->formatInputMatchOp($condition['op'], $field, $inputValue);
+			$value = $this->formatInputMatchValue($inputValue, $field);		
 			switch ($op) {
 				case 'like':
 					$formatedExpression = array(
