@@ -24,7 +24,7 @@ trait Models_Verification {
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
-	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true) {
+	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true, $requestOptions = array()) {
 		$options = array();
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
@@ -63,6 +63,7 @@ trait Models_Verification {
 				unset($params[$name]);
 			}
 			if ($options['fields']) {
+				$options['method'] = ($type === 'query_parameters' && isset($requestOptions['query_method']) ? $requestOptions['query_method'] : 'and');
 				$translatorModel = new Api_TranslatorModel($options);
 				$ret = $translatorModel->translate($knownParams);
 				$translated[$type] = $ret['data'];

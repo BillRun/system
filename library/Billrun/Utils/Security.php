@@ -108,4 +108,24 @@ class Billrun_Utils_Security {
 		$crc = hash("crc32b", $key);
 		return array('key' => $key, 'crc' => $crc);
 	}
+	
+	public static function getValidSharedKey() {
+		$secrets = Billrun_Factory::config()->getConfigValue("shared_secret");
+		if (!is_array(current($secrets))) {  //for backward compatibility 
+			$secrets = array($secrets);
+		}
+		$today = time();
+		foreach ($secrets as $shared) {
+			if (!isset($shared['from']) && !isset($shared['to'])) {  //for backward compatibility 
+				$secret = $shared;
+				break;
+			}
+			if ($shared['from']->sec < $today && $shared['to']->sec > $today) {
+				$secret = $shared;
+				break;
+			}
+		}
+		return $secret;
+	}
+
 }

@@ -76,5 +76,12 @@
         "mandatory": true
       }
     ]
+  },
+  "billrun" : {
+	"detailed_invoices":{
+		"v": false,
+		"t": "Boolean"
+	}
+
   }
 }

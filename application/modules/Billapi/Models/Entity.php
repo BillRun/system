@@ -106,15 +106,28 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
+	
+	public static function getInstance($params) {
+		$modelPrefix = 'Models_';
+		$className = $modelPrefix . ucfirst($params['collection']);
+		if (!@class_exists($className)) {
+			$className = $modelPrefix . 'Entity';
+		}
+		return new $className($params);
+	}
 
 	public function __construct($params) {
-		if ($params['collection'] == 'accounts') {
+		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
 			$this->collectionName = $params['collection'];
 		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $params['collection'] . '.ini');
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
+		if (isset($params['no_init']) && $params['no_init']) {
+			return;
+		}
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -189,8 +202,12 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
-		$query = $this->getNotRevisionsOfEntity($data);
-		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
+		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		$startTime = strtotime($data['from']);
+		$endTime = strtotime($data['to']);
+		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$query = array('$and' => array($nonRevisionsQuery, $uniqueQuery, $overlapingDatesQuery));
 
 		return $this->collection->query($query)->count() > 0;
 	}
@@ -225,6 +242,10 @@ class Models_Entity {
 	protected function getCustomFields() {
 		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
 	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".fields";
+	}
 
 	/**
 	 * Create a new entity
@@ -258,21 +279,44 @@ class Models_Entity {
 	public function update() {
 		$this->action = 'update';
 
+		$this->checkUpdate();
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * Performs the changepassword action by a query and data to update
+	 * @param array $query
+	 * @param array $data
+	 */
+	public function changePassword() {
+		$this->action = 'changepassword';
+		
+		$this->checkUpdate();
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
+		return true;
+	}
+	
+	protected function checkUpdate() {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-
+		
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
+		if (isset($this->update['from'])) {
+			unset($this->update['from']);
+		}
+		if (isset($this->update['to'])) {
+			unset($this->update['to']);
+		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
-		return true;
 	}
 
 	/**
@@ -872,6 +916,23 @@ class Models_Entity {
 			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
+	}
+	
+	public function getCollectionName() {
+		return $this->collectionName;
+	}
+	
+	public function getCollection() {
+		return $this->collection;
+	}
+	
+	public function getMatchSubQuery() {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		
+		return $query;
 	}
 
 }
