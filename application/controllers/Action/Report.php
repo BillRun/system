@@ -48,8 +48,8 @@ class ReportAction extends ApiAction {
 		$this->next_page = count($nextPageData) > 0; 
 	}
 	
-	public function taxationReport($query, $page, $size) {	
-		$parsed_query = json_decode($query, TRUE);
+	public function taxationReport($report, $page, $size) {	
+		$parsed_query = json_decode($report, TRUE);
 		$reportData = Billrun_Factory::chain()->trigger('getTaxationReport',array($parsed_query['billrun_key']));
 		$this->response =  $reportData['data'];
 		$this->getRequest()->setParam('headers', json_encode($reportData['headers']));
