@@ -22,7 +22,7 @@ class ReportAction extends ApiAction {
 	
 	protected $model = null;
 	protected $request = null;
-	protected $status = true;
+	protected $status = 1;
 	protected $desc = 'success';
 	protected $next_page = true;
 	protected $response = array();
@@ -34,17 +34,17 @@ class ReportAction extends ApiAction {
 		if (!method_exists($this, $action)) {
 			return $this->setError('Report controller - cannot find action: ' . $action);
 		}
-		$query = $this->request->getRequest('query', null);
+		$report = $this->request->getRequest('report', null);
 		$page = $this->request->getRequest('page', 0);
 		$size = $this->request->getRequest('size', -1);
-		$this->{$action}($query, $page, $size);
+		$this->{$action}($report, $page, $size);
 		$this->response();
 	}
 	
-	public function generateReport($query, $page, $size) {
-		$parsed_query = json_decode($query, TRUE);
-		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_query, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
-		$this->response = $this->model->applyFilter($parsed_query, $page, $size);
+	public function generateReport($report, $page, $size) {
+		$parsed_report = json_decode($report, TRUE);
+		$this->response = $this->model->applyFilter($parsed_report, $page, $size);
+		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_report, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
 		$this->next_page = count($nextPageData) > 0; 
 	}
 	
@@ -75,7 +75,7 @@ class ReportAction extends ApiAction {
 
 	protected function renderCsv($request, array $parameters = null) {
 		$filename = isset($request['file_name']) ? $request['file_name'] : 'report';
-		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$headers = isset($request['headers']) ? json_decode($request['headers'], TRUE) : array();
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
 		$this->getController()->setOutputVar('delimiter', $delimiter);

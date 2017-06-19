@@ -30,7 +30,10 @@ class Models_Subscribers extends Models_Entity {
 
 		//transalte to and from fields
 		Billrun_Utils_Mongo::convertQueryMongoDates($this->update);
-
+		if ($this->action == 'create' && !isset($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		
 		$this->verifyServices();
 	}
 
@@ -49,6 +52,10 @@ class Models_Subscribers extends Models_Entity {
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".subscriber.fields", array());
 		return array_merge($accountFields, $customFields);
 	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".subscriber.fields";
+	}
 
 	/**
 	 * Verfiy services are corrrect before update is applied tothe subscrition.
@@ -61,6 +68,9 @@ class Models_Subscribers extends Models_Entity {
 			foreach ($this->update['services'] as &$service) {
 				if (gettype($service) == 'string') {
 					$service = array('name' => $service);
+				}
+				if (gettype($service['from']) == 'string') {
+					$service['from'] = new MongoDate(strtotime($service['from']));
 				}
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
@@ -145,6 +155,10 @@ class Models_Subscribers extends Models_Entity {
 		}
 
 		$status = $this->dbUpdate($this->query, $this->update);
+		if ($edge == 'from' && $followingEntry->isEmpty()) {
+			$update = array_merge($this->update, array('aid'=>$this->before['aid']));
+			$this->afterSubscriberAction($status, $update);
+		}
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
@@ -226,5 +240,43 @@ class Models_Subscribers extends Models_Entity {
 		}
 		return $ret;
 	}
+	
+	/**
+	 * Deals with changes need to be done after subscriber create/closeAndNew/move in specific cases.
+	 * 
+	 * @param array $status - Insert Status.
+	 * 
+	 */
+	protected function afterSubscriberAction($status, $update) {
+		if (isset($status['ok']) && $status['ok']) {
+			$query['type'] = 'account';
+			$query['aid'] = $update['aid'];
+			$account = $this->collection->query($query)->cursor()->sort(array('from' => 1))->limit(1)->current();
+			if ($account->isEmpty()) {
+				Billrun_Factory::log("There isn't an account matching the subscriber.", Zend_Log::ERR);
+			}
+			if (isset($update['from']) && isset($account['from']) && $update['from'] < $account['from']) {
+				$account['from'] = $update['from'];
+				$accountDetails = $account->getRawData();
+				$query['_id'] = $accountDetails['_id'];
+				$this->dbUpdate($query, $accountDetails);
+			}
+		}
+		return;
+	}
 
+	protected function insert(&$data) {
+		$status = parent::insert($data);
+		$this->afterSubscriberAction($status, $data);
+	}
+
+	public function create() {
+		if (empty($this->update['to'])) {
+			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		if (empty($this->update['deactivation_date'])) {
+			$this->update['deactivation_date'] = $this->update['to'];
+		}
+		parent::create();
+	}
 }

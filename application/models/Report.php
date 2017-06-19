@@ -28,7 +28,7 @@ class ReportModel {
 	 * @param array $params of parameters to preset the object
 	 */
 	public function __construct(array $params = array()) { 
-		$config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
+		$this->config = Billrun_Factory::config()->getConfigValue('api.config.aggregate');
 	}
 	
 	
@@ -40,17 +40,17 @@ class ReportModel {
 	 * @param type $size
 	 * @return type
 	 */
-	public function applyFilter($query, $page, $size) {
-		$collection = Billrun_Factory::db()->{$this->getCollection($query) . "Collection"}();
+	public function applyFilter($report, $page, $size) {
+		$collection = Billrun_Factory::db()->{$this->getCollection($report) . "Collection"}();
 		
 		$aggregate = array();
 		
-		$match = $this->getMatch($query);
+		$match = $this->getMatch($report);
 		if(!empty($match)) {
 			$aggregate[] = array('$match' => $match);
 		}
 
-		$group = $this->getGroup($query);
+		$group = $this->getGroup($report);
 		if(!empty($group)) {
 			$aggregate[] = array('$group' => $group);
 		}
@@ -65,11 +65,17 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
 		
-		$project = $this->getProject($query);
+		$project = $this->getProject($report);
 		if(!empty($project)) {
 			$aggregate[] = array('$project' => $project);
 		}
-		$results = $collection->aggregate($aggregate);
+		
+		$sort = $this->getSort($report);
+		if(!empty($sort)) {
+			$aggregate[] = array('$sort' => $sort);
+		}
+		
+		$results = $collection->aggregate($aggregate);	
 		$rows = [];
 		foreach ($results as $result) {
 			$row = $result->getRawData();
@@ -112,21 +118,31 @@ class ReportModel {
 		return $arrayToConvert[0];
 	}
 	
-	protected function getCollection($query) {
-		return $query['collection'];
+	protected function getCollection($report) {
+		if(empty($report['entity'])) {
+			throw new Exception("Report entity is empty");
+		}
+		switch ($report['entity']) {
+			case 'usage':
+				return 'lines';
+			case 'subscription':
+				return 'subscribers';
+			case 'customer':
+				return 'subscribers';
+			default:
+				throw new Exception("Invalid entity type");
+		}
 	}
 	
-	protected function getGroup($query) {
+	protected function getGroup($report) {
 		$group = array();
-		foreach ($query['groupByFields'] as $idFiled) {
-			$group['_id'][$idFiled] = "\$$idFiled";
-		}
-		  	  
-		foreach ($query['groupBy'] as $fieldLabel => $expression) {
-			foreach ($expression as $op => $value) {
+		if ($report['type'] === 1) {
+			foreach ($report['columns'] as $column) {
+				$op = $column['op'];
+				$field = $column['field_name'];
 				switch ($op) {
 					case 'count':
-						$formatedExpression = array('$sum' => 1);
+						$group[$field] = array('$sum' => 1);
 						break;
 					case 'sum':
 					case 'avg':
@@ -136,106 +152,111 @@ class ReportModel {
 					case 'min':
 					case 'push':
 					case 'addToSet':
-						$formatedExpression = array("\${$op}" => "\$$value");
+						$group[$field] = array("\${$op}" => "\$$field");
+						break;
+					case 'group':
+						$group['_id'][$field] = "\$$field";
 						break;
 					default:
 						throw new Exception("Invalid group by operator $op");
 						break;
 				}
-				$group[$fieldLabel] = $formatedExpression;
+			}
+			if (empty($group['_id'])) {
+				$group['_id'] = null;
 			}
 		}
 		return $group;
 	}
 	
-	protected function getMatch($query) {
+	protected function getMatch($report) {
 		$matchs = array();
-		foreach ($query['query'] as $match) {
-			foreach ( $match as $field => $expression) {
-				foreach ($expression as $op => $inputValue) {
-					$value = $this->formatInputValue($inputValue, $field);		
-					switch ($op) {
-						case 'like':
-							$formatedExpression = array(
-								'$regex' => "^{$value}$",
-								'$options' => 'i'
-							);
-							break;
-						case 'starts_with':
-							$formatedExpression = array(
-								'$regex' => "^{$value}",
-								'$options' => 'i'
-							);
-							break;
-						case 'ends_with':
-							$formatedExpression = array(
-								'$regex' => "{$value}$",
-								'$options' => 'i'
-							);
-							break;
-						case 'in':
-							$formatedExpression = array(
-								'$in' => explode(',',$value)
-							);
-							break;
-						case 'eq':
-							if (get_class($value) === 'MongoDate') {
-								$date = strtotime(substr($inputValue, 0, 10));
-								$beginOfDay = strtotime("midnight", $date);
-								$endOfDay   = strtotime("tomorrow", $date) - 1;
-								$formatedExpression = array(
-									'$gte' => new MongoDate($beginOfDay),
-									'$lt' => new MongoDate($endOfDay),
-								);
-							} else {
-								$formatedExpression = array(
-									'$eq' => $value
-								);
-							}
-							break;
-						case 'lt':
-						case 'lte':
-							if (get_class($value) === 'MongoDate') {
-								$date = strtotime(substr($inputValue, 0, 10));
-								$endOfDay   = strtotime("tomorrow", $date) - 1;
-								$formatedExpression = array(
-									"\${$op}" => new MongoDate($endOfDay),
-								);
-							} else {
-								$formatedExpression = array(
-									"\${$op}" => $value
-								);
-							}
-							break;
-						case 'gt':
-						case 'gte':
-							if (get_class($value) === 'MongoDate') {
-								$date = strtotime(substr($inputValue, 0, 10));
-								$beginOfDay = strtotime("midnight", $date);
-								$formatedExpression = array(
-									"\${$op}" => new MongoDate($beginOfDay),
-								);
-							} else {
-								$formatedExpression = array(
-									"\${$op}" => $value
-								);
-							}
-						break;	
-						case 'ne':
-						case 'exists':
-							$formatedExpression = array(
-								"\${$op}" => $value
-							);
-							break;
-						default:
-							throw new Exception("Invalid filter operator $op");
-							break;
+		foreach ($report['conditions'] as $condition) {
+			$field = $condition['field'];
+			$inputValue = $condition['value'];
+			$op = $condition['op'];
+			$value = $this->formatInputValue($inputValue, $field);		
+			switch ($op) {
+				case 'like':
+					$formatedExpression = array(
+						'$regex' => "^{$value}$",
+						'$options' => 'i'
+					);
+					break;
+				case 'starts_with':
+					$formatedExpression = array(
+						'$regex' => "^{$value}",
+						'$options' => 'i'
+					);
+					break;
+				case 'ends_with':
+					$formatedExpression = array(
+						'$regex' => "{$value}$",
+						'$options' => 'i'
+					);
+					break;
+				case 'in':
+				case 'nin':
+					$formatedExpression = array(
+						"\${$op}" => explode(',',$value)
+					);
+					break;
+				case 'eq':
+					if (get_class($value) === 'MongoDate') {
+						$date = strtotime(substr($inputValue, 0, 10));
+						$beginOfDay = strtotime("midnight", $date);
+						$endOfDay = strtotime("tomorrow", $date) - 1;
+						$formatedExpression = array(
+							'$gte' => new MongoDate($beginOfDay),
+							'$lt' => new MongoDate($endOfDay),
+						);
+					} else {
+						$formatedExpression = array(
+							'$eq' => $value
+						);
 					}
-					$matchs[][$field] = $formatedExpression;
-				}
+					break;
+				case 'lt':
+				case 'lte':
+					if (get_class($value) === 'MongoDate') {
+						$date = strtotime(substr($inputValue, 0, 10));
+						$endOfDay = strtotime("tomorrow", $date) - 1;
+						$formatedExpression = array(
+							"\${$op}" => new MongoDate($endOfDay),
+						);
+					} else {
+						$formatedExpression = array(
+							"\${$op}" => $value
+						);
+					}
+					break;
+				case 'gt':
+				case 'gte':
+					if (get_class($value) === 'MongoDate') {
+						$date = strtotime(substr($inputValue, 0, 10));
+						$beginOfDay = strtotime("midnight", $date);
+						$formatedExpression = array(
+							"\${$op}" => new MongoDate($beginOfDay),
+						);
+					} else {
+						$formatedExpression = array(
+							"\${$op}" => $value
+						);
+					}
+				break;	
+				case 'ne':
+				case 'exists':
+					$formatedExpression = array(
+						"\${$op}" => $value
+					);
+					break;
+				default:
+					throw new Exception("Invalid filter operator $op");
+					break;
 			}
+			$matchs[][$field] = $formatedExpression;
 		}
-		return array('$and' => $matchs);
+		return !empty($matchs) ? array('$and' => $matchs) : array();
 	}
 	
 	protected function getSkip($size = -1, $page = -1) {
@@ -249,22 +270,29 @@ class ReportModel {
 		return intval($size);
 	}
 	
-	protected function getProject($query) {
-		$project = $query['project'];
-		// required project value to be set or the table will be empty.
-		if(empty($project)) {
-			throw new Exception("Empty display fields list");
+	protected function getProject($report) {
+		$project = array('_id' => 0); 
+		if(empty($report['columns'])) {
+			throw new Exception("Columns list is empty, nothing to display");
 		}
-		// fix mongoDB group by _id if exist
-		foreach ($project as $fieldName => $show) {
-			if(in_array($fieldName, $query['groupByFields'])) {
-				$project[$fieldName] = '$_id.' . $fieldName;
+		foreach ($report['columns'] as $column) {
+			// fix mongoDB group by _id if exist
+			if ($report['type'] === 1 && $column['op'] === 'group') {
+				$project[$column['key']] = '$_id.' . $column['field_name'];
+			} else {
+				$project[$column['key']] = "\${$column['field_name']}";
 			}
 		}
-			
-		if (!isset($project['_id'])) {
-				$project['_id'] = 0;
-		}
 		return $project;
+	}
+	
+	protected function getSort($report) {
+		$sorts = array();
+		if(!empty($report['sorts'])) {
+			foreach ($report['sorts'] as $sort) {
+				$sorts[$sort['field']] = $sort['op'] > 0 ? 1 : -1 ;
+			}
+		}
+		return $sorts;
 	}
 }
