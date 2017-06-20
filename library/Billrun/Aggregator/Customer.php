@@ -457,6 +457,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
+			'email' => $subscriberPlan['id']['email'],
 			'payment_details' => $paymentDetails,
 		);
 		
