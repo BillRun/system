@@ -72,7 +72,6 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		}
 		return $line;
 	}
-
 	
 	protected function queryAPIforTaxes($data) {
 
@@ -229,6 +228,4 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 											'dont_report_to_thirdparty' => 1);
 		return $line;
 	}
-
-
 }
