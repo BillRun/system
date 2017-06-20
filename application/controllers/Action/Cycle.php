@@ -105,6 +105,10 @@ class CycleAction extends Action_Base {
 			$this->executeChildProcess($options);
 			break;
 		}
+		
+		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
+		$status = 0;
+		pcntl_wait($status);
 	}
 	
 	protected function executeParentProcess($processInterval) {
