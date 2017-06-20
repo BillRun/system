@@ -107,7 +107,7 @@ class CycleAction extends Action_Base {
 		}
 		
 		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
-		$status = array();
+		$status = 0;
 		pcntl_wait($status);
 	}
 	
