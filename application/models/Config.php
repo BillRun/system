@@ -398,7 +398,7 @@ class ConfigModel {
 	 */
 	protected function isFieldNewlySet($fieldName, $field, $prevField) {
 		if (!$prevField) {
-			return true;
+			return (isset($field[$fieldName]) && $field[$fieldName]);
 		}
 		return (isset($field[$fieldName]) && $field[$fieldName]) &&
 			(!isset($prevField[$fieldName]) || !$prevField[$fieldName]);
