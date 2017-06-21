@@ -92,7 +92,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @return void
 	 */
-	public function afterAggregateAccount(Billrun_Cycle_Account $accountBillrun) {
+	public function afterAggregateAccount(Billrun_Cycle_Account $accountBillrun, $aggregatedResults, $aggragator) {
 		if(Billrun_Factory::config()->getConfigValue('calcCpu.dont_auto_generate_invoice', FALSE)) { return; }
 		
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
@@ -117,16 +117,20 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 		Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in sync mode', Zend_Log::INFO);
-		$this->invoiceExport($accountBillrun->getInvoice());
+		$this->invoiceExport($accountBillrun->getInvoice(), $aggragator);
 	}
 
-	protected function invoiceExport($accountInvoice) {
+	protected function invoiceExport($accountInvoice, $aggragator) {
 		$options = array(
-			'type' => 'invoice_export',
+			'type' => 'wkPdf',
 			'stamp' => $accountInvoice->getBillrunKey(),
 			'accounts' => array($accountInvoice->getAid()),
 		);
-
+		
+		if($aggragator->isFakeCycle()) {
+			$options['export_directory'] = DIRECTORY_SEPARATOR. 'tmp' .DIRECTORY_SEPARATOR;
+		}
+		
 		$generator = Billrun_Generator::getInstance($options);
 		$generator->setData(array(new Mongodloid_Entity($accountInvoice->getRawData())));
 		$generator->generate($accountInvoice->getInvoicedLines());

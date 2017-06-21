@@ -180,7 +180,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
 	 */
-	public function close($invoiceId) {
+	public function close($invoiceId,$isFake = FALSE) {
 		if(!$this->isAccountActive()) {
 			Billrun_Factory::log("Deactivated account: " . $this->aid, Zend_Log::INFO);
 			return;
@@ -188,9 +188,12 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
-		if (!$this->overrideMode || !isset($invoiceRawData['invoice_id'])) {
-			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
+		if (!$isFake && (!$this->overrideMode || !isset($invoiceRawData['invoice_id']))) {
+				$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
 		} else {
+			if($isFake) {
+				$rawDataWithSubs['invoice_id'] = $invoiceId;
+			}
 			$newRawData = $rawDataWithSubs;
 		}
 		$this->data->setRawData($newRawData);		
