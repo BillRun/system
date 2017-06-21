@@ -200,6 +200,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 						'plan_deactivation' => '$plan_deactivation',
 						'firstname' => '$firstname',
 						'lastname' => '$lastname',
+						'email' => '$email',
 						'address' => '$address',
 						'services' => '$services'
 					),
@@ -227,6 +228,7 @@ class Billrun_Subscriber_Db extends Billrun_Subscriber {
 					'first_name' => '$sub_plans.firstname',
 					'last_name' => '$sub_plans.lastname',
 					'type' => '$sub_plans.type',
+					'email' => '$sub_plans.email',
 					'address' => '$sub_plans.address',
 					'services' => '$sub_plans.services'
 				),
