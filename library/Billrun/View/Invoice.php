@@ -19,21 +19,27 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	/*
 	 * get and set lines of the account
 	 */
-	public function add_lines() {
+	public function setLines($accountLines) {
+		foreach ($accountLines as $line) {
+			$sid = (string)$line['sid'];
+			if (empty($this->lines[$sid])) {
+				$this->lines[$sid] = array();
+			}
+			array_push($this->lines[$sid], $line instanceof Mongodloid_Entity ? $line : new Mongodloid_Entity($line));
+		}
+	}
+	
+	public function loadLines() {
 		$lines_collection = Billrun_Factory::db()->linesCollection();
 		$this->lines = array();
 		$aid = $this->data['aid'];
 		$billrun_key = $this->data['billrun_key'];
 		$query = array('aid' => $aid, 'billrun' => $billrun_key);
 		$accountLines = $lines_collection->query($query);
-		foreach ($accountLines as $line) {
-			$sid = (string)$line['sid'];
-			if (empty($this->lines[$sid])) {
-				$this->lines[$sid] = array();
-			}
-			array_push($this->lines[$sid], $line);
-		}
+		$this->setLines($accountLines);
 	}
+	
+	
 	
 	public function getLineUsageName($line) {
 		$usageName = '';
