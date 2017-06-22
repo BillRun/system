@@ -149,6 +149,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
 					$oldUsage = $exhaustedBalance['balance']['totals'][$row['usaget']]['usagev'];
 					$exhaustedBalancesKeys[] = array(
+						'service_name' => $exhaustedBalance['service_name'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'usage_before' => array(
 							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
@@ -170,6 +171,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					Billrun_Factory::log()->log('Failure to update roaming balance of sid : ' . $row['sid'] . ' line stamp : ' . $row['stamp'] . ' billrun month : ' . $this->balanceToUpdate['billrun_month'],  Zend_Log::ALERT);
 				}
 				$balancesIncludeRow[] = array(
+					'service_name' => $this->balanceToUpdate['service_name'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
 					'usage_before' => array(
 						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'], 
