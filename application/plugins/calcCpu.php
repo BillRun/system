@@ -107,7 +107,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if ($pid == 0) {
 						Billrun_Util::resetForkProcess();
 						Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
-						$this->invoiceExport($accountBillrun->getInvoice());
+						$this->invoiceExport($accountBillrun->getInvoice(), $aggragator);
 						exit(0); // exit from child process after finish creating xml; continue on parent
 					}
 					$this->childProcesses++;
@@ -122,13 +122,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	protected function invoiceExport($accountInvoice, $aggragator) {
 		$options = array(
-			'type' => 'wkPdf',
+			'type' => 'invoice_export',
 			'stamp' => $accountInvoice->getBillrunKey(),
 			'accounts' => array($accountInvoice->getAid()),
 		);
 		
 		if($aggragator->isFakeCycle()) {
-			$options['export_directory'] = DIRECTORY_SEPARATOR. 'tmp' .DIRECTORY_SEPARATOR;
+			$options['temp_pdf'] = true;
 		}
 		
 		$generator = Billrun_Generator::getInstance($options);

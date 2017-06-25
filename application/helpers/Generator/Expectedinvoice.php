@@ -25,12 +25,6 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 
 
 	/**
-	 *
-	 * @var array the updated account data received from the CRM
-	 */
-	protected $account_data = array();
-
-	/**
 	 * the balance date
 	 * @var string a formatted date string
 	 */
@@ -46,23 +40,12 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 	public function __construct($options) {
 		$options['auto_create_dir'] = false;
 		parent::__construct($options);
-		self::$type = 'balance';
 		$this->aid = Billrun_Util::getFieldVal($options['aid'], 0);
 		$this->now = time();
 	}
 
-	public function load() {
-//		foreach ($this->account_data as $subscriber) {
-//			if (!Billrun_Factory::db()->rebalance_queueCollection()->query(array('sid' => $subscriber->sid), array('sid' => 1))
-//					->cursor()->current()->isEmpty()) {
-//				$subscriber_status = "REBALANCE";
-//				$billrun->addSubscriber($subscriber, $subscriber_status);
-//				continue;
-//			}
-//		}
-
-
-	}
+	// Theres nothing  to load  in this  generator  ans it`s data  is based on the  customer aggregator logic	
+	public function load() {}
 
 	public function generate() {
 		$options = array(
@@ -74,7 +57,9 @@ class Generator_Expectedinvoice extends Billrun_Generator {
 		$generator = Billrun_Aggregator::getInstance($options);
 		$generator->load();
 		if($generator->aggregate()) {
-			return  "/tmp/{$this->stamp}/pdf/{$this->stamp}_{$this->aid}_0.pdf";
+			return Generator_WkPdf::getTempDir($this->stamp) . "/pdf/{$this->stamp}_{$this->aid}_0.pdf";
+		} else {
+			throw new Exception("Couldn't generatre invoice for {$this->aid} for {$this->stamp} billing cycle.",0);
 		}
 		return FALSE;
 	}
