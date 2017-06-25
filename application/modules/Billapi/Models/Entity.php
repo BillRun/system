@@ -240,7 +240,8 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()),
+			function($customField) {return !Billrun_Util::getFieldVal($customField['system'], false);});
 	}
 	
 	public function getCustomFieldsPath() {
@@ -306,12 +307,6 @@ class Models_Entity {
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
-		}
-		if (isset($this->update['from'])) {
-			unset($this->update['from']);
-		}
-		if (isset($this->update['to'])) {
-			unset($this->update['to']);
 		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
