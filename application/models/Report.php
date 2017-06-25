@@ -154,6 +154,20 @@ class ReportModel {
 		}
 	}
 	
+	protected function getDefaultEntityMatch($entity) {
+		$defaultEntityMatch = array();
+		switch ($entity) {
+			case 'subscription':
+				$defaultEntityMatch[] = array("type" => "subscriber");
+				return $defaultEntityMatch;
+			case 'customer':
+				$defaultEntityMatch[] = array("type" => "account");
+				return $defaultEntityMatch;
+			default:
+				return $defaultEntityMatch;
+		}
+	}
+	
 	protected function getCollection($report) {
 		if(empty($report['entity'])) {
 			throw new Exception("Report entity is empty");
@@ -208,7 +222,7 @@ class ReportModel {
 	}
 	
 	protected function getMatch($report) {
-		$matchs = array();
+		$matchs = $this->getDefaultEntityMatch($report['entity']);
 		foreach ($report['conditions'] as $condition) {
 			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field']);
