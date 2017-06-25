@@ -246,13 +246,15 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+			$roamingPackage['service_name'] = $balance['service_name'];
+			$roamingPackage['package_id'] = $balance['package_id'];
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			if (isset($rule['priority'])) {
 				$priority = (int) $rule['priority'];
 			} else {
 				$priority = null;
 			}
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring, $roamingPackage);
 			return $rule;
 		}
 	}
@@ -405,7 +407,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $event_type the event type
 	 * @param bool $recurring is the event is recurring
 	 */
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false, $roamingPackage = null) {
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = (float) $value;
@@ -442,7 +444,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$newEvent['priority'] = (int) $priority;
 		}
-
+		
+		if (!is_null($roamingPackage)) {
+			foreach ($roamingPackage as $key => $value) {
+				$newEvent[$key] = $value;
+			}
+		}
+		
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
