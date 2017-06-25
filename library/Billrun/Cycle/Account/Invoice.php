@@ -188,12 +188,10 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
-		if (!$isFake && (!$this->overrideMode || !isset($invoiceRawData['invoice_id']))) {
-				$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
+		if (!$isFake ) {
+			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
 		} else {
-			if($isFake) {
-				$rawDataWithSubs['invoice_id'] = $invoiceId;
-			}
+			$rawDataWithSubs['invoice_id'] = $invoiceId;
 			$newRawData = $rawDataWithSubs;
 		}
 		$this->data->setRawData($newRawData);		
@@ -223,9 +221,11 @@ class Billrun_Cycle_Account_Invoice {
 	 * @return array Raw data with the invoice id
 	 */
 	protected function setInvoiceID(array $invoiceRawData, $invoiceId) {
-		$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);	
-		$invoiceRawData['invoice_id'] = $currentId;
+		if( !$this->overrideMode || !isset($invoiceRawData['invoice_id'])  ) {
+			$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
+			$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);
+			$invoiceRawData['invoice_id'] = $currentId;
+		}
 		return $invoiceRawData;
 	}
 	
