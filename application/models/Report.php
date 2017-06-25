@@ -154,14 +154,20 @@ class ReportModel {
 		}
 	}
 	
-	protected function getDefaultEntityMatch($entity) {
+	protected function getDefaultEntityMatch($report) {
 		$defaultEntityMatch = array();
-		switch ($entity) {
+		switch ($report['entity']) {
 			case 'subscription':
-				$defaultEntityMatch[] = array("type" => "subscriber");
+				$defaultEntityMatch[]['type'] = "subscriber";
+				$activeQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$defaultEntityMatch[]['to'] = $activeQuery['to'];
+				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
 			case 'customer':
-				$defaultEntityMatch[] = array("type" => "account");
+				$defaultEntityMatch[]['type'] = "account";
+				$activeQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$defaultEntityMatch[]['to'] = $activeQuery['to'];
+				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
@@ -222,7 +228,7 @@ class ReportModel {
 	}
 	
 	protected function getMatch($report) {
-		$matchs = $this->getDefaultEntityMatch($report['entity']);
+		$matchs = $this->getDefaultEntityMatch($report);
 		foreach ($report['conditions'] as $condition) {
 			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field']);
