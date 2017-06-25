@@ -92,9 +92,11 @@ class ReportModel {
 				if(count(array_filter(array_keys($value), 'is_string'))  === 0){
 					$formatedValues = array();
 					foreach ($value as $val) {
-						$formatedValues[] = $this->formatOutputValue($val, $key);
+						if($val != ""){ // ignore empty values						
+							$formatedValues[] = $this->formatOutputValue($val, $key);
+						}
 					}
-					$output[$key] = implode(',',$formatedValues);
+					$output[$key] = implode(', ',$formatedValues);
 				} else { // is associative array like _id or subfields
 					foreach ($value as $value_key => $val) {
 						$formatedKey = ($key == '_id') ? $value_key : $key . '.' . $value_key;
@@ -124,7 +126,7 @@ class ReportModel {
 		return $op;
 	}
 	
-	protected function formatInputMatchValue($value, $field) {	
+	protected function formatInputMatchValue($value, $field, $type) {	
 		if($field === 'billrun') {
 			switch ($value) {
 				case 'current':
@@ -140,9 +142,7 @@ class ReportModel {
 					return $value;
 			}
 		}
-		$arrayToConvert = array($value);
-		Billrun_Utils_Mongo::convertQueryMongoDates($arrayToConvert);
-		return $arrayToConvert[0];
+		return $value;
 	}
 	
 	protected function formatInputMatchField($field) {				
@@ -176,9 +176,11 @@ class ReportModel {
 			foreach ($report['columns'] as $column) {
 				$op = $column['op'];
 				$field = $column['field_name'];
+				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
+				$field_key = str_replace(".", "__", $field);
 				switch ($op) {
 					case 'count':
-						$group[$field] = array('$sum' => 1);
+						$group[$field_key] = array('$sum' => 1);
 						break;
 					case 'sum':
 					case 'avg':
@@ -188,10 +190,10 @@ class ReportModel {
 					case 'min':
 					case 'push':
 					case 'addToSet':
-						$group[$field] = array("\${$op}" => "\$$field");
+						$group[$field_key] = array("\${$op}" => "\$$field");
 						break;
 					case 'group':
-						$group['_id'][$field] = "\$$field";
+						$group['_id'][$field_key] = "\$$field";
 						break;
 					default:
 						throw new Exception("Invalid group by operator $op");
@@ -208,10 +210,10 @@ class ReportModel {
 	protected function getMatch($report) {
 		$matchs = array();
 		foreach ($report['conditions'] as $condition) {
-			$inputValue = $condition['value'];
+			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field']);
-			$op = $this->formatInputMatchOp($condition['op'], $field, $inputValue);
-			$value = $this->formatInputMatchValue($inputValue, $field);		
+			$op = $this->formatInputMatchOp($condition['op'], $field, $condition['value']);
+			$value = $this->formatInputMatchValue($condition['value'], $field, $type);		
 			switch ($op) {
 				case 'like':
 					$formatedExpression = array(
@@ -233,18 +235,35 @@ class ReportModel {
 					break;
 				case 'in':
 				case 'nin':
+					//TODO: add support for dates
+					if ($type === 'number') {
+						$values = array_map('floatval', explode(',', $value));
+					} else {
+						$values = explode(',',$value);
+					}
 					$formatedExpression = array(
-						"\${$op}" => explode(',',$value)
+						"\${$op}" => $values
 					);
 					break;
+				case 'ne':
 				case 'eq':
-					if (get_class($value) === 'MongoDate') {
-						$date = strtotime(substr($inputValue, 0, 10));
+					if ($type === 'date') {
+						$date = strtotime(substr($value, 0, 10));
 						$beginOfDay = strtotime("midnight", $date);
 						$endOfDay = strtotime("tomorrow", $date) - 1;
+						$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
+						$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
 						$formatedExpression = array(
-							'$gte' => new MongoDate($beginOfDay),
-							'$lt' => new MongoDate($endOfDay),
+							'$gte' => new MongoDate($gteDate),
+							'$lt' => new MongoDate(),
+						);
+					} elseif ($type === 'number') {
+						$formatedExpression = array(
+							'$eq' => floatval($value)
+						);
+					} elseif ($type === 'boolean') {
+						$formatedExpression = array(
+							'$ne' => (bool)$value
 						);
 					} else {
 						$formatedExpression = array(
@@ -254,25 +273,19 @@ class ReportModel {
 					break;
 				case 'lt':
 				case 'lte':
-					if (get_class($value) === 'MongoDate') {
-						$date = strtotime(substr($inputValue, 0, 10));
-						$endOfDay = strtotime("tomorrow", $date) - 1;
-						$formatedExpression = array(
-							"\${$op}" => new MongoDate($endOfDay),
-						);
-					} else {
-						$formatedExpression = array(
-							"\${$op}" => $value
-						);
-					}
-					break;
 				case 'gt':
 				case 'gte':
 					if (get_class($value) === 'MongoDate') {
-						$date = strtotime(substr($inputValue, 0, 10));
-						$beginOfDay = strtotime("midnight", $date);
+						$date = strtotime(substr($value, 0, 10));
+						$queryDate = ($op === 'lt' || $op === 'lte')
+							? strtotime("tomorrow", $date) - 1
+							: strtotime("midnight", $date);
 						$formatedExpression = array(
-							"\${$op}" => new MongoDate($beginOfDay),
+							"\${$op}" => new MongoDate($queryDate),
+						);
+					} elseif ($type === 'number') {
+						$formatedExpression = array(
+							"\${$op}" => floatval($value)
 						);
 					} else {
 						$formatedExpression = array(
@@ -280,10 +293,9 @@ class ReportModel {
 						);
 					}
 				break;	
-				case 'ne':
 				case 'exists':
 					$formatedExpression = array(
-						"\${$op}" => $value
+						"\${$op}" => (bool)$value
 					);
 					break;
 				default:
@@ -307,17 +319,25 @@ class ReportModel {
 	}
 	
 	protected function getProject($report) {
-		$project = array('_id' => 0); 
+		$project = array('_id' => 0);
+		$isReportGrouped = $report['type'] === 1;
 		if(empty($report['columns'])) {
 			throw new Exception("Columns list is empty, nothing to display");
 		}
 		foreach ($report['columns'] as $column) {
-			// fix mongoDB group by _id if exist
-			if ($report['type'] === 1 && $column['op'] === 'group') {
-				$project[$column['key']] = '$_id.' . $column['field_name'];
-			} else {
-				$project[$column['key']] = "\${$column['field_name']}";
+			$field_name = $column['field_name'];
+			if ($isReportGrouped) {
+				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
+				$field_name = str_replace('.', '__', $column['field_name']);
+				if($column['op'] === 'group') {
+					// fix mongoDB group by _id if exist
+					$field_name = '_id.' . $field_name;
+				}
 			}
+			$project[$column['key']] = array(
+				'$ifNull' => array("\${$field_name}", '')
+			);
+
 		}
 		return $project;
 	}
