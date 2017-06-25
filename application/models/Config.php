@@ -923,7 +923,7 @@ class ConfigModel {
 				if (isset($fileSettings['customer_identification_fields'])) {
 					$updatedFileSettings['customer_identification_fields'] = $this->validateCustomerIdentificationConfiguration($fileSettings['customer_identification_fields']);
 					if (isset($fileSettings['rate_calculators'])) {
-						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators']);
+						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators'], $config);
 						if (isset($fileSettings['receiver'])) {
 							$updatedFileSettings['receiver'] = $this->validateReceiverConfiguration($fileSettings['receiver']);
 							$completeFileSettings = TRUE;
@@ -1173,10 +1173,11 @@ class ConfigModel {
 		return $customerIdentificationSettings;
 	}
 
-	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings) {
+	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings, &$config) {
 		if (!is_array($rateCalculatorsSettings)) {
 			throw new Exception('Rate calculators settings is not an array');
 		}
+		$longestPrefixParams = array();
 		foreach ($rateCalculatorsSettings as $usaget => $rateRules) {
 			foreach ($rateRules as $rule) {
 				if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
@@ -1185,9 +1186,21 @@ class ConfigModel {
 				if (!in_array($rule['type'], $this->ratingAlgorithms)) {
 					throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
 				}
+				if ($rule['type'] === 'longestPrefix') {
+					$longestPrefixParams[] = $rule['rate_key'];
+				}
 			}
 		}
+		$this->validateLongestPrefixRateConfiguration($config, $longestPrefixParams);
 		return $rateCalculatorsSettings;
+	}
+	
+	protected function validateLongestPrefixRateConfiguration(&$config, $longestPrefixParams) {
+		foreach ($config['rates']['fields'] as &$field) {
+			if (in_array($field['field_name'], $longestPrefixParams)) {
+				$field['multiple'] = true;
+			}
+		}
 	}
 
 	protected function validateReceiverConfiguration($receiverSettings) {
