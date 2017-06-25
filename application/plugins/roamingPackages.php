@@ -150,6 +150,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$oldUsage = $exhaustedBalance['balance']['totals'][$row['usaget']]['usagev'];
 					$exhaustedBalancesKeys[] = array(
 						'service_name' => $exhaustedBalance['service_name'],
+						'package_id' =>  $exhaustedBalance['service_id'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'usage_before' => array(
 							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
@@ -172,6 +173,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 				$balancesIncludeRow[] = array(
 					'service_name' => $this->balanceToUpdate['service_name'],
+					'package_id' =>  $this->balanceToUpdate['service_id'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
 					'usage_before' => array(
 						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'], 
@@ -226,8 +228,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				continue;
 			}
 			$UsageIncluded += (int) $plan->get('include.groups.' . $package['service_name'])[$usageType];
-			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to);
-			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name']);
+			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
+			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name'], $package['balance_priority']);
 		}
 		
 		$roamingQuery = array(
@@ -245,7 +247,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
 			),
 		);
-		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('to' => 1));
+		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
+		if ($roamingBalances->current()->isEmpty()) {
+			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::ALERT);
+		}
 		foreach ($roamingBalances as $balance) {	
 			$subRaw = $balance->getRawData();
 			$stamp = strval($this->row['stamp']);
@@ -283,9 +288,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $to - unixtimestamp representing the end date of the package.
 	 * 
 	 */
-	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName) {
+	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName, $balancePriority) {
 		$planRef = $plan->createRef();
-		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
+		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
 	}
 		
 	protected function validateSuccessfulUpdate($row, $pricingData, $query, $update, $arate, $calculator, $updateResult) {

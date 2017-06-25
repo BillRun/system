@@ -130,7 +130,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $to end date of this package - if package exists.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null ,$to = null, $serviceId = null, $serviceName = null) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null ,$to = null, $serviceId = null, $serviceName = null, $balancePriority = null) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		
@@ -150,6 +150,9 @@ class Billrun_Balance implements ArrayAccess {
 		}
 		if (!is_null($serviceName)) {
 			$data['service_name'] = $serviceName;
+		}
+		if (!is_null($balancePriority)) {
+			$data['balance_priority'] = $balancePriority;
 		}
 		
 		$update = array(
