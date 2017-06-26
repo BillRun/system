@@ -34,8 +34,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->filePermissions = Billrun_Util::getFieldVal( $options['file_permisison'], 0666 );		
 		
 		//handle accounts both as  an array and as a comma seperated list (CSV row)
-		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return is_array($acts) ? $acts : explode(',',$acts); });
-		
+		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return Billrun_Util::verify_array(is_array($acts) ? $acts : explode(',',$acts), 'int'); });
+
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 
 		$this->logo_path = $this->getLogoPath();
