@@ -74,6 +74,10 @@
 		"detailed_invoices":{
 			"v": false,
 			"t": "Boolean"
+		},
+		"email_after_confirmation":{
+			"v": false,
+			"t": "Boolean"
 		}
     },
     "subscribers": {
@@ -89,33 +93,42 @@
             "fields": [{
                 "field_name": "sid",
                 "generated": true,
+                "system": true,
                 "unique": true,
                 "editable": false,
                 "display": false
             }, {
                 "field_name": "aid",
                 "mandatory": true,
+                "system": true,
                 "editable": false,
                 "display": false
             }, {
                 "field_name": "firstname",
+                "system": true,
                 "mandatory": true
             }, {
                 "field_name": "lastname",
+                "system": true,
                 "mandatory": true
             }, {
                 "field_name": "plan",
+                "system": true,
                 "mandatory": true
             }, {
                 "field_name": "plan_activation",
+                "system": true,
                 "mandatory": false
             }, {
                 "field_name": "address",
+                "system": true,
                 "mandatory": true
             }, {
                 "field_name": "country"
+                "system": true,
             }, {
                 "field_name":"services",
+                "system": true,
                 "mandatory": false
             }]
         },
@@ -123,26 +136,32 @@
             "fields": [{
                 "field_name": "aid",
                 "generated": true,
+                "system": true,
                 "unique": true,
                 "editable": false
             }, {
                 "field_name": "firstname",
                 "mandatory": true,
+				"system": true,
                 "title": "First name",
                 "show_in_list" : true
             }, {
                 "field_name": "lastname",
                 "mandatory": true,
+				"system": true,
                 "title": "Last name",
                 "show_in_list" : true
             }, {
                 "field_name": "email",
-                "mandatory": true
+                "mandatory": true,
+				"system": true
             }, {
                 "field_name": "country",
+                "system": true,
                 "mandatory": true
             }, {
                 "field_name": "address",
+                "system": true,
                 "mandatory": true,
                 "title": "Address"
             },
@@ -159,14 +178,17 @@
             },
             {
                 "field_name": "payment_gateway",
+                "system": true,
                 "editable": false,
          "display": true
             }, {
                 "field_name": "personal_id",
+                "system": true,
                 "editable": false,
                 "display": false
             }, {
                 "field_name": "salutation",
+                "system": true,
                 "editable": true,
                 "display": true,
                 "title": "Salutation"
@@ -176,43 +198,54 @@
     "rates": {
         "fields": [{
             "field_name": "key",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "from",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "to",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "description",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "rates",
+            "system": true,
             "mandatory": true
         }]
     },
     "plans": {
         "fields": [{
             "field_name": "from",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "to",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "name",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "price",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "description",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "upfront",
+            "system": true,
             "mandatory": true,
             "type": "boolean"
         }]
@@ -220,23 +253,29 @@
    "services": {
         "fields": [{
             "field_name": "from",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "to",
+            "system": true,
             "mandatory": true,
             "type": "date"
         }, {
             "field_name": "name",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "price",
+            "system": true,
             "mandatory": true
         }, {
             "field_name": "description",
+            "system": true,
             "mandatory": true
         }, {
-            "field_name": "include"
+            "field_name": "include",
+            "system": true
         } ]
     },
     "file_types": [],

@@ -57,6 +57,10 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	public function generate() {
 		foreach ($this->data as $invoice) {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
+			$sendCycleNotification = Billrun_Factory::config()->getConfigValue('billrun.email_after_confirmation', false);
+			if ($sendCycleNotification){
+				$this->sendInvoiceByMail($invoice);
+			}
 		}
 	}
 	
@@ -182,6 +186,49 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			'filtration' => (empty($this->invoices) ? 'all' : $this->invoices),
 			'end_time' => array('$exists' => false)
 		);
+	}
+	
+	protected function buildEmailBody($firstName, $lastName, $amount) {
+		$msg = "Hello " . $lastName . " " . $firstName . ",\n";
+		$msg .="Your total sum is: " . $amount;
+		return $msg;
+	}
+	
+	protected function sendInvoiceByMail($invoice) {
+		$attachments = array();
+		$firstName = $invoice['attributes']['firstname'];
+		$lastName = $invoice['attributes']['lastname'];
+		$amount = $invoice['totals']['after_vat_rounded'];
+		$email = $invoice['attributes']['email'];
+		$msg = $this->buildEmailBody($firstName, $lastName, $amount);
+		$subject = "Billrun invoice for " . date(Billrun_Base::base_dateformat, $invoice['invoice_date']->sec);
+		$invoiceData = $invoice->getRawData();
+		$invoiceFile = $this->getInvoicePDF($invoiceData);
+		if ($invoiceFile) {
+			$attachment = new Zend_Mime_Part($invoiceFile);
+			$attachment->type = 'application/pdf';
+			$attachment->disposition = Zend_Mime::DISPOSITION_ATTACHMENT;
+			$attachment->encoding = Zend_Mime::ENCODING_BASE64;
+			$attachment->filename = $invoiceData['billrun_key'] . '_' . $invoiceData['aid'] . '_' . $invoiceData['invoice_id'] . ".pdf";
+			array_push($attachments, $attachment);
+		}
+		Billrun_Util::sendMail($subject, $msg, array($email), $attachments);
+	}
+	
+	protected function getInvoicePDF($invoiceData) {
+		$aid = $invoiceData['aid'];
+		$billrunKey = $invoiceData['billrun_key'];
+		$invoiceId = $invoiceData['invoice_id'];	
+		$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+		$fileName = $billrunKey . '_' . $aid . '_' . $invoiceId . ".pdf";
+		$pdf = $filesPath . $billrunKey . '/pdf/' . $fileName;
+		header('Content-disposition: inline; filename="'.$fileName.'"');
+		header('Cache-Control: public, must-revalidate, max-age=0');
+		header('Pragma: public');
+		header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+		header('Content-Type: application/pdf');
+		$cont = file_get_contents($pdf);
+		return $cont;
 	}
 	
 }

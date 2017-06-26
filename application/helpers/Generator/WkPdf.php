@@ -99,12 +99,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * an html file for each invoice is created
 	 * for each html a pdf invoice file is generated using wkhtmltopdf tool
 	 */
-	public function generate() {
+	public function generate($lines = FALSE) {
 		
 		$this->prepereView();
 		
 		foreach ($this->billrun_data as $object) {
-			$this->generateAccountInvoices($object);
+			if(isset($object['invoice_id'])) {
+				$this->generateAccountInvoices($object, $lines);
+			}
 		}
 	}
 	
@@ -124,6 +126,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page);
 	}
 	
+	public function setData($billrunData) {
+		$this->billrun_data = $billrunData;
+	}
+	
 	/**
 	 * Generate account invoice.
 	 * @param type $account the account to generate an invoice for.
@@ -136,7 +142,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$this->view->assign('data',$account);
 			$this->view->assign('details_keys',$this->getDetailsKeys());
 			if(empty($lines)) {
-				$this->view->add_lines();
+				$this->view->loadLines();
+			} else {
+				$this->view->setLines($lines);
 			}
 			
 			$file_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".html";

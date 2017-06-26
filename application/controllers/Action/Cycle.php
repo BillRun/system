@@ -87,7 +87,7 @@ class CycleAction extends Action_Base {
 
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 				
-		while(!Billrun_Aggregator_Customer::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
+		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
 			$pid = pcntl_fork();
 			if ($pid == -1) {
 				die('could not fork');
@@ -105,6 +105,10 @@ class CycleAction extends Action_Base {
 			$this->executeChildProcess($options);
 			break;
 		}
+		
+		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
+		$status = 0;
+		pcntl_wait($status);
 	}
 	
 	protected function executeParentProcess($processInterval) {
