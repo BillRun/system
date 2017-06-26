@@ -385,3 +385,51 @@ if ((typeof lastConfig) !== "undefined") {
 
 	db.config.insert(lastConfig);
 }
+
+// BRCD-851 - add system flag to all system fields
+var systemFields = ['sid', 'aid', 'firstname', 'lastname', 'plan', 'plan_activation', 'address', 'country', 'services'];
+var conf = lastConfig['subscribers']['subscriber']['fields'];
+for (var i in conf) {
+	if (systemFields.indexOf(conf[i]['field_name']) !== -1) {
+		conf[i]['system'] = true;
+	}
+}
+lastConfig['subscribers']['subscriber']['fields'] = conf;
+
+var systemFields = ['aid', 'firstname', 'lastname', 'email', 'country', 'address', 'zip_code', 'payment_gateway', 'personal_id','salutation'];
+var conf = lastConfig['subscribers']['account']['fields'];
+for (var i in conf) {
+	if (systemFields.indexOf(conf[i]['field_name']) !== -1) {
+		conf[i]['system'] = true;
+	}
+}
+lastConfig['subscribers']['account']['fields'] = conf;
+
+var systemFields = ['key', 'from', 'to', 'description', 'rates'];
+var conf = lastConfig['rates']['fields'];
+for (var i in conf) {
+	if (systemFields.indexOf(conf[i]['field_name']) !== -1) {
+		conf[i]['system'] = true;
+	}
+}
+lastConfig['rates']['fields'] = conf;
+
+var systemFields = ['from', 'to', 'name', 'price', 'description', 'upfront'];
+var conf = lastConfig['plans']['fields'];
+for (var i in conf) {
+	if (systemFields.indexOf(conf[i]['field_name']) !== -1) {
+		conf[i]['system'] = true;
+	}
+}
+lastConfig['plans']['fields'] = conf;
+
+var systemFields = ['from', 'to', 'name', 'price', 'description', 'include'];
+var conf = lastConfig['services']['fields'];
+for (var i in conf) {
+	if (systemFields.indexOf(conf[i]['field_name']) !== -1) {
+		conf[i]['system'] = true;
+	}
+}
+lastConfig['services']['fields'] = conf;
+
+db.config.insert(lastConfig);
