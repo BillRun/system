@@ -210,7 +210,10 @@ class Models_Entity {
 		$startTime = strtotime($data['from']);
 		$endTime = strtotime($data['to']);
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
-		$query = array('$and' => array($nonRevisionsQuery, $uniqueQuery, $overlapingDatesQuery));
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
 
 		return $this->collection->query($query)->count() > 0;
 	}
