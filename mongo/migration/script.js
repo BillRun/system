@@ -307,6 +307,28 @@ if ((typeof lastConfig) !== "undefined") {
 	db.config.insert(lastConfig);
 }
 
+// BRCD-878: add rates custom fields
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+var additionalParams = db.rates.find({},{params:1});
+var params = [];
+for (var i = 0; i < additionalParams.length(); i++) {
+	if (typeof additionalParams[i].params === 'undefined') {
+		continue;
+	}
+	var keys = Object.keys(additionalParams[i].params);
+	for (var j in keys) {
+		params.push(keys[j]);
+	}
+}
+var p = [...new Set(params)];
+var fields = lastConfig['rates']['fields'];
+for (var i in p) {
+	fields.push({"field_name": "params." + p[i], "multiple":true, "title":p[i], "display":true, "editable":true});
+}
+lastConfig['rates']['fields'] = fields;
+db.config.insert(lastConfig);
 
 // Add firstname/lastname/email account system field if it doesn't yet exist - BRCD-724
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
