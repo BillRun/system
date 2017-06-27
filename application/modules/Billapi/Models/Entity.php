@@ -182,6 +182,9 @@ class Models_Entity {
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		if (is_null($defaultFields)) {
+			$defaultFields = array();
+		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
