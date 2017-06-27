@@ -266,6 +266,9 @@ class Models_Entity {
 		if (empty($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime('+149 years'));
 		}
+		if (empty($this->update['creation_time'])) {
+			$this->update['creation_time'] = $this->update['from'];
+		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);
@@ -603,6 +606,14 @@ class Models_Entity {
 					'$lte' => $this->before[$edge],
 				)
 			);
+			$queryCreation = array(
+					$keyField => $this->before[$keyField],
+			);
+			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+			if ($this->update[$edge] < $firstRevision[$edge]) {
+				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+			}
+			
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
 		} else {
@@ -615,7 +626,7 @@ class Models_Entity {
 			$sort = 1;
 			$rangeError = 'Requested end date is greater than next start date';
 		}
-
+		
 		// previous entry on move from, next entry on move to
 		$followingEntry = $this->collection->query($query)->cursor()
 			->sort(array($otherEdge => $sort))
