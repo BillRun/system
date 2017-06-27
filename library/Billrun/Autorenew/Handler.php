@@ -68,6 +68,7 @@ class Billrun_Autorenew_Handler {
 		$orQuery[] = $monthQuery;
 		$queryDate = array('$or' => $orQuery);
 		$queryDate['remain'] = array('$gt' => 0);
+		$queryDate['to'] = array('$gt' => new MongoDate());
 		return $queryDate;
 	}
 
