@@ -86,7 +86,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		foreach ($items as &$item) {
 			$query = array('stamp' => array('$in' => $item['lines_stamps']));
 			$values = array('$set' => array('event_stamp' => $item['event_stamp']));
-			$options = array('multiple' => 1);
+			$options = array('multiple' => true);
 			$ret[] = $lines->update($query, $values, $options);
 		}
 		return $ret;
