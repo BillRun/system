@@ -10,7 +10,7 @@
  * Billapi users model for user entity
  *
  * @package  Billapi
- * @since    5.3
+ * @since    5.6
  */
 class Models_Users extends Models_Entity {
 
