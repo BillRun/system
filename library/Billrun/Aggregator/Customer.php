@@ -351,13 +351,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return $result;
 		}
 		
-		$data = array();
-		foreach ($this->forceAccountIds as $account_id) {
-			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+		foreach ($this->forceAccountIds as $accountId) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($accountId, $mongoCycle->key())) {
 				continue;
 			}
-			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
-		}
+			$accountIds[] = intval($accountId);
+		}			
+		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
 		$result['data'] = $data;
 		return $result;
 	}
@@ -556,11 +556,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
-	 * @param int $aid - Account id, null by deafault
+	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	protected function aggregateMongo($cycle, $page, $size, $aid = null) {
-		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aid);
+	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
+		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines, $collection);
 	}
