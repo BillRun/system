@@ -182,6 +182,9 @@ class Models_Entity {
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		if (is_null($defaultFields)) {
+			$defaultFields = array();
+		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
@@ -207,7 +210,10 @@ class Models_Entity {
 		$startTime = strtotime($data['from']);
 		$endTime = strtotime($data['to']);
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
-		$query = array('$and' => array($nonRevisionsQuery, $uniqueQuery, $overlapingDatesQuery));
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
 
 		return $this->collection->query($query)->count() > 0;
 	}
@@ -240,7 +246,8 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()),
+			function($customField) {return !Billrun_Util::getFieldVal($customField['system'], false);});
 	}
 	
 	public function getCustomFieldsPath() {
@@ -306,12 +313,6 @@ class Models_Entity {
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
-		}
-		if (isset($this->update['from'])) {
-			unset($this->update['from']);
-		}
-		if (isset($this->update['to'])) {
-			unset($this->update['to']);
 		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {

@@ -109,7 +109,7 @@ trait Billrun_Traits_FileActions {
 		);
 		$log = Billrun_Factory::db()->logCollection();
 		try {
-			$result = $log->update($query, $update, array('upsert' => 1));
+			$result = $log->update($query, $update, array('upsert' => true));
 		} catch (Exception $e) {
 			if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 				Billrun_Factory::log("Billrun_Traits_FileActions::lockFileForReceive - Trying to relock  a file the was already beeen locked : " . $filename . " with stamp of : {$logData['stamp']}", Zend_Log::DEBUG);
@@ -118,7 +118,7 @@ trait Billrun_Traits_FileActions {
 			}
 			return FALSE;
 		}
-		return $result['n'] == 1 && $result['ok'] == 1;
+		return $result['ok'] == 1 && $result['updatedExisting'] === false;
 	}
 
 	/**

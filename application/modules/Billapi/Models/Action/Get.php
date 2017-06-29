@@ -103,8 +103,11 @@ class Models_Action_Get extends Models_Action {
 			$ret->sort((array) $this->sort);
 		}
 
-		$records =  array_values(iterator_to_array($ret));
+		$records = array_values(iterator_to_array($ret));
 		foreach($records as  &$record) {
+			if (isset($record['invoice_id'])) {
+				$record['invoice_id'] = (int)$record['invoice_id'];
+			}
 			if ((empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) && isset($record['from'], $record['to'])) {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
 			}
