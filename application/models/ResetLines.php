@@ -264,7 +264,7 @@ class ResetLinesModel {
 				}
 			}
 		}
-		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => 1)); // err null
+		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
