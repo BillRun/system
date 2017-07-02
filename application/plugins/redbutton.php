@@ -45,7 +45,7 @@ class redbuttonPlugin extends Billrun_Plugin_BillrunPluginBase {
 			function ($conversion) use ($ratingGroup, $mcc) {
 				return ($conversion['from_rg'] == $ratingGroup) &&
 					(($conversion['mcc'] == 'ROAMING') ||
-					($conversion['mcc'] == 'ISRAEL' &&  strpos($mcc , '425') === 0));
+					($conversion['mcc'] == 'ISRAEL' && strpos($mcc , '425') === 0));
 			}
 		);
 		if (!$rg_conversion) {
