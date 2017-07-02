@@ -19,6 +19,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $line_type = null;
 	protected $cached_results = array();
 	protected $count_days;
+	protected $roamingSms = false;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
 		if (isset($row['type'])) {
@@ -26,6 +27,9 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
 				$this->line_time = date("YmdHis",  $timestamp);	
+				if (isset($row['roaming'])) {
+					$this->roamingSms = true;
+				}
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
@@ -60,7 +64,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$line_month = substr($this->line_time, 4, 2);
 		$line_day = substr($this->line_time, 6, 2);
 		$dayKey = $line_year . $line_month . $line_day;
-		if($this->line_type == 'tap3') {
+		if($this->line_type == 'tap3' || $this->roamingSms) {
 			$results = $this->loadSidLines($sid, $limits, $plan, $groupSelected);
 		} else if ($this->line_type == 'nrtrde' || $this->line_type == 'ggsn') {
 			$results = $this->loadSidNrtrdeLines($sid, $limits, $plan, $groupSelected);

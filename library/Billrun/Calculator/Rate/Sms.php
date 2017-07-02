@@ -32,6 +32,8 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @var array 'regex_to_look_for_in_number' => 'replacment_string'
 	 */
 	protected $prefixTranslation = array(0 => array('^0+' => ''), 1 => array('[^\d]' => ''));
+	
+	protected $roaming_sms_rates;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -40,6 +42,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 		ksort($this->prefixTranslation);
 		$this->loadRates();
+		$this->loadRoamingSmsRates();
 	}
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
@@ -54,7 +57,7 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
-		return $row['type'] == 'mmsc' ? 'mms' : 'sms';
+		return $row['usaget'];
 	}
 
 	/**
@@ -63,8 +66,8 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 * @return type
 	 */
 	protected function shouldLineBeRated($row) {
-		return ($row['type'] == 'smpp' && $row['record_type'] == '1') || // also remove these numbers before commiting
-				($row['type'] == 'smsc' && $row['record_type'] == '1' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
+		return ($row['type'] == 'smpp' && $row['record_type'] == '2') || // also remove these numbers before commiting
+				($row['type'] == 'smsc' && $row['record_type'] == '2' && $row["cause_of_terminition"] == "100" && preg_match("/^0*9725[82]/", $row["calling_msc"]) ) ||
 				($row['type'] == 'mmsc' && ('S' == $row['action']) && $row['final_state'] == 'S' && preg_match('/^\+\d+\/TYPE\s*=\s*.*golantelecom/', $row['mm_source_addr']));
 	}
 
@@ -73,17 +76,24 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 	 */
 	protected function getLineRate($row, $usage_type) {
 		if ($this->shouldLineBeRated($row)) {
-			$matchedRate = $this->rates['UNRATED'];
-			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
+			$matchedRate = $this->rates['UNRATED'];
+			$without_called_msc = true;
+			$called_msc = $row['called_msc'];
+			$called_number = $this->extractNumber($row);
 			$called_number_prefixes = Billrun_Util::getPrefixes($called_number);
+			if ($usage_type == 'sms' && !preg_match('/^0*972/', $called_number)) {
+				$without_called_msc = false;
+			}
 			foreach ($called_number_prefixes as $prefix) {
 				if (isset($this->rates[$prefix])) {
 					foreach ($this->rates[$prefix] as $rate) {
 						if (isset($rate['rates'][$usage_type]) && (!isset($rate['params']['fullEqual']) || $prefix == $called_number)) {
 							if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
-								$matchedRate = $rate;
-								break 2;
+								if ($without_called_msc || $this->checkCalledMsc($rate, $called_msc)){
+									$matchedRate = $rate;
+									break 2;
+								}	
 							}
 						}
 					}
@@ -126,6 +136,37 @@ abstract class Billrun_Calculator_Rate_Sms extends Billrun_Calculator_Rate {
 		}
 
 		return $str;
+	}
+	
+	protected function loadRoamingSmsRates(){
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rates = Billrun_Factory::db()->ratesCollection()->query($this->rates_query)->cursor();
+		$this->roaming_sms_rates = array();
+		foreach ($rates as $rate) {
+				$rate->collection($rates_coll);
+				if (isset($rate['kt_prefixes'])) {
+					foreach ($rate['kt_prefixes'] as $prefix) {
+						$this->roaming_sms_rates[$prefix][] = $rate;
+					}
+				} else if ($rate['key'] == 'UNRATED') {
+					$this->roaming_sms_rates['UNRATED'] = $rate;
+				}
+		}
+	}
+	
+	
+	protected function getAdditionalProperties() {
+		return array_merge(array('alpha3'), parent::getAdditionalProperties());
+	}
+	
+	
+	protected function checkCalledMsc($rate, $called_msc) {
+		if (isset($rate['params']['called_msc'])){
+			$called_msc_regex = $rate['params']['called_msc'];
+		} else {
+			return true;
+		}
+		return preg_match($called_msc_regex, $called_msc);
 	}
 
 }
