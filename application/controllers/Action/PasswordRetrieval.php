@@ -61,8 +61,8 @@ class PasswordRetrievalAction extends ApiAction {
 				"<br><br>The link will expire in " . $linkTimeLimit . 
 				"<br><br>If you ignore this message, your password won't be changed." .
 				"<br><br>If you didn't request a password reset, " .
-				'<a href="mailto:<cloud_support@billrun.com>?subject=<I suspect someone is trying to steal my password>">let us know</a>' .
-				"<br><br>Thanks for using BillRun® Cloud!The BillRun® Team";
+				'<a href="mailto:<cloud_support@billrun.com>?subject=<I suspect someone is trying to steal my password>">let us know</a>.' .
+				"<br><br>Thanks for using BillRun® Cloud! The BillRun® team";
 	}
 	
 	protected function buildPasswordChangeUrl($request, $id, $data) {
