@@ -200,7 +200,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	
 	protected function checkFailure($data) {
 		if( $data->{'status'} == 'FAIL') {
-		Billrun_Factory::log('Failed when quering the taxation API : '. print_r($data->{'error_codes'},1));
+		Billrun_Factory::log('Failed when querying the taxation API : '. print_r($data->{'error_codes'},1));
 		}
 		return $data;
 	}
