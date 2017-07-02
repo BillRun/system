@@ -610,9 +610,6 @@ class Models_Entity {
 					$keyField => $this->before[$keyField],
 			);
 			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-			if ($this->update[$edge] < $firstRevision[$edge]) {
-				$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
-			}
 			
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
@@ -643,6 +640,9 @@ class Models_Entity {
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
+		}
+		if (!is_null($firstRevision) && $this->update['_id'] == $firstRevision->getId()->__toString()) {
+			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
 		}
 		$this->trackChanges($this->query['_id']);
 
