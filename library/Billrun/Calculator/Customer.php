@@ -144,6 +144,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					}
 				}
 			}
+		}		
+		foreach (array_keys($subscriber->getCustomerOpionalData()) as $key) {
+			$subscriber_field = $subscriber->{$key};
+			$row[$key] = $subscriber_field;
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
 		return $row;
@@ -179,7 +183,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$save = array(
 			'$set' => array(),
 		);
-		$saveProperties = array_merge(array('last_vlr', 'alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()));
+		$saveProperties = array_merge(array('last_vlr', 'alpha3'), array_keys(Billrun_Factory::subscriber()->getAvailableFields()), array_keys(Billrun_Factory::subscriber()->getCustomerExtraData()), array_keys(Billrun_Factory::subscriber()->getCustomerOpionalData()));
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -232,7 +236,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					$line_params['stamp'] = $row['stamp'];
 					$line_params['EXTRAS'] = 0;
 					if (($row['type'] == 'tap3' && $row['usaget'] != 'sms') || $row['type'] == 'ggsn' || isset($row['roaming'])) {
-						$line_params['roaming'] = 1;
+						$line_params['irp'] = 1;
 					}
 					foreach ($subscriber_extra_data as $key) {
 						if ($this->isExtraDataRelevant($row, $key)) {

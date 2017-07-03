@@ -34,7 +34,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @var array
 	 */
-	protected $roamingPackages = array("ADD_ON_ROAMING_2GB", "ADD_ON_ROAMING_2GB_CALLS", "ADD_ON_ROAMING_1GB");
+	protected $roamingPackages = array("IRP_2GB", "IRP_2GB_W_CALLS_SMS", "IRP_1GB", "IRP_IRD");
 	
 
 	protected $package = null;

@@ -46,6 +46,12 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @var array
 	 */
 	protected $customerExtraData = array();
+	
+	/**
+	 * optional fields for the customer
+	 * @var array
+	 */
+	protected $optionalFields= array();
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -54,6 +60,9 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		if (isset($options['extra_data'])) {
 			$this->customerExtraData = $options['extra_data'];
+		}
+		if (isset($options['optionalFields'])) {
+			$this->optionalFields = $options['optionalFields'];
 		}
 	}
 
@@ -88,6 +97,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		else if (array_key_exists($name, $this->customerExtraData) && isset ($this->data['extra_data'][$name])) {
 			return $this->data['extra_data'][$name];
+		} else if (array_key_exists($name, $this->optionalFields) && array_key_exists($name, $this->data)) {
+			return $this->data[$name];
 		}
 		return null;
 	}
@@ -150,6 +161,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 */
 	public function getCustomerExtraData() {
 		return $this->customerExtraData;
+	}
+	
+	/**
+	 * Returns optional fields for the customer
+	 * @return array
+	 */
+	public function getCustomerOpionalData() {
+		return $this->optionalFields;
 	}
 
 }
