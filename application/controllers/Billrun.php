@@ -22,6 +22,8 @@ class BillrunController extends ApiController {
 	 * @var int
 	 */
 	protected $size;
+	
+	protected $permissionReadAction = array('cycles', 'chargeStatus', 'cycle');
 
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
@@ -33,7 +35,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function completeCycleAction() {
-		$this->allowed();
+		$this->enforcePermissions('completeCycle');
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -68,7 +70,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function specificCycleAction() {
-		$this->allowed();
+		$this->enforcePermissions('specificCycle');
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -116,7 +118,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function confirmCycleAction() {
-		$this->allowed();
+		$this->enforcePermissions('confirmCycle');
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
 		if (!empty($invoices)) {
@@ -146,6 +148,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function chargeStatusAction() {
+		$this->enforcePermissions('chargeStatus');
 		$setting['status'] = $this->isChargeAllowed();
 		$setting['owed_amount'] = $this->getOwedAmount();
 
@@ -166,7 +169,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function chargeAccountAction() {
-		$this->allowed();
+		$this->enforcePermissions('chargeAccount');
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
 		$mode = $request->get('mode');
@@ -195,6 +198,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cyclesAction() {
+		$this->enforcePermissions('cycles');
 		$request = $this->getRequest();
 		$params['from'] = $request->get('from');
 		$params['to'] = $request->get('to');
@@ -221,6 +225,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cycleAction() {
+		$this->enforcePermissions('cycle');
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -351,6 +356,20 @@ class BillrunController extends ApiController {
 	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
+	/**
+	 * method to enforce permissions, if applied by configuration
+	 * 
+	 * @param string $action action required to do.
+	 */
+	protected function enforcePermissions($action) {
+		$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;	
+		if (in_array($action, $this->permissionReadAction)) {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		}
+
+		$this->allowed();
 	}
 	
 }
