@@ -14,7 +14,9 @@
  *
  */
 class BillrunController extends ApiController {
-
+	
+	use Billrun_Traits_Api_UserPermissions;
+		
 	/**
 	 * 
 	 * @var int
@@ -31,6 +33,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function completeCycleAction() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -65,6 +68,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function specificCycleAction() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -112,6 +116,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function confirmCycleAction() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
 		if (!empty($invoices)) {
@@ -161,6 +166,7 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function chargeAccountAction() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
 		$mode = $request->get('mode');
@@ -342,4 +348,9 @@ class BillrunController extends ApiController {
 		}
 		return false;
 	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
 }
