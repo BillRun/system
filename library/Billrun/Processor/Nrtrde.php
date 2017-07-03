@@ -138,7 +138,9 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row['usagev'] = $this->getLineVolume($row,$row['usaget']);
 		
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
-		$this->data['data'][] = $row;
+		if ($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') { // filter usaget sms because that sms transferred from billing.
+			$this->data['data'][] = $row;
+		}
 		return $row;
 	}
 	
