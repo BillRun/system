@@ -452,7 +452,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 									'calc_time' => false,
 									'calc_name' => false,
 								);
-				if(isset($line['aid']) && isset($line['sid']) && !isset($line['roaming'])) {
+				if(isset($line['aid']) && isset($line['sid']) && Billrun_Factory::config()->getConfigValue('fraud.queue.set_calc_name_customer', false)) {
 					$queueLine['aid'] =  $line['aid'];
 					$queueLine['sid'] =  $line['sid'];
 					$queueLine['calc_name'] = 'customer';
