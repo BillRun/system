@@ -69,7 +69,7 @@ class PlansModel extends TabledateModel {
 			$attribute = "rates." . $type . ".plans";
 			$query = array($attribute => $source_ref);
 			$update = array('$push' => array($attribute => $dest_ref));
-			$params = array("multiple" => 1);
+			$params = array("multiple" => true);
 			$rates_col->update($query, $update, $params);
 		}
 	}

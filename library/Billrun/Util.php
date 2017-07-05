@@ -949,11 +949,12 @@ class Billrun_Util {
 	 * Returns an array value if it is set
 	 * @param mixed $field the array value
 	 * @param mixed $defVal the default value to return if $field is not set
+	 * @param callable $callback a callback function to run on the field in case it is set and return its value
 	 * @return mixed the array value if it is set, otherwise returns $defVal
 	 */
-	static public function getFieldVal(&$field, $defVal) {
+	static public function getFieldVal(&$field, $defVal, $callback = false) {
 		if (isset($field)) {
-			return $field;
+			return $callback ? call_user_func($callback, $field) : $field;
 		}
 		return $defVal;
 	}

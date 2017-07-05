@@ -94,6 +94,7 @@ class Billrun_Cycle_AggregatePipeline {
 						'plan_deactivation' => '$plan_deactivation',
 						'first_name' => '$firstname',
 						'last_name' => '$lastname',
+						'email' => '$email',
 						'address' => '$address',
 						'services' => '$services'
 					),
@@ -121,6 +122,7 @@ class Billrun_Cycle_AggregatePipeline {
 					'first_name' => '$sub_plans.first_name',
 					'last_name' => '$sub_plans.last_name',
 					'type' => '$sub_plans.type',
+					'email' => '$sub_plans.email',
 					'address' => '$sub_plans.address',
 					'services' => '$sub_plans.services'
 				),
