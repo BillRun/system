@@ -40,7 +40,7 @@ class PackagesAction extends ApiAction {
 		if ($results->isEmpty()) {
 			return $this->setError("There isn't a matching package", $request);
 		}
-		$callsUsage = $results['balance']['totals']['call']['usagev'];
+		$callsUsage = $results['balance']['totals']['call']['usagev'] + $results['balance']['totals']['incoming_call']['usagev'];
 		$smsUsage = $results['balance']['totals']['sms']['usagev'];
 		$dataUsage = $results['balance']['totals']['data']['usagev'];
 		$packageUsage = array(
