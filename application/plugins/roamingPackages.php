@@ -86,6 +86,22 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected $row;
 	
+	/**
+	 * usage types to join together.
+	 * 
+	 * @var string
+	 */
+	protected $joinedUsageTypes = null;
+	
+	/**
+	 * usage type name for multiple usage types in one package.
+	 * 
+	 * @var string
+	 */
+	protected $joinedField = null;
+	
+	protected $coefficient;
+	
 	
 	
 	public function __construct() {
@@ -94,11 +110,12 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if (($row['type'] == 'nrtrde' && $row['usaget'] == 'call') || $row['type'] == 'ggsn' || isset($row['roaming'])) {
+		if (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn' || isset($row['roaming'])) {
 			if (isset($row['urt'])) {
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
 				$this->extraUsage = $row['usagev'];
+				$this->coefficient = 1;
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
@@ -106,38 +123,44 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($row['packages'])) {
 				$this->ownedPackages = $row['packages'];
 			}
+			
+			if ($row['usaget'] == 'sms') {
+				$this->coefficient = $this->coefficient * 60;
+				$this->extraUsage = $row['usagev'] * $this->coefficient;
+			}
 			$this->exhaustedBalances = array();
 			$this->balanceToUpdate = null;
-			$this->row = $row;	
+			$this->package = null;
+			$this->joinedUsageTypes = null;
+			$this->joinedField= null;
+			$this->row = $row;
 		}
 	}
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
-		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && $row['usaget'] == 'call') || $row['type'] == 'ggsn') || isset($row['roaming'])) {
+		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming'])) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['roaming_package'] = $this->package;
-			$updatedUsage = 0;		
+			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
 				if (isset($this->balanceToUpdate['balance']['totals'][$row['usaget']])) {
-					$roamingUsagev = $this->balanceToUpdate['balance']['totals'][$row['usaget']]['usagev'] + $this->extraUsage;
-					$roamingCount = $this->balanceToUpdate['balance']['totals'][$row['usaget']]['count'] + 1;
+					$roamingUsagev = $this->balanceToUpdate['balance']['totals'][$row['usaget']]['usagev'] + floor($this->extraUsage / $this->coefficient);
 				} else {
-					$roamingUsagev = $this->extraUsage;
-					$roamingCount = 1;
+					$roamingUsagev = floor($this->extraUsage / $this->coefficient);
 				}
-				$updatedUsage = array(
-					'balance.totals.' . $row['usaget'] . '.usagev' => $roamingUsagev,
-					'balance.totals.' . $row['usaget'] . '.cost' => 0,
-					'balance.totals.' . $row['usaget'] . '.count' => $roamingCount,
-					'tx.' . $row['stamp'] => array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => $roamingUsagev)
-				); 
 				$roamingQuery = array(
 					'sid' => $row['sid'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month']
 				);
-				$roamingUpdate = array(
-					'$set' => $updatedUsage,
-				);
+				
+				$roamingUpdate['$set']['balance.totals.' . $row['usaget'] . '.usagev'] = $roamingUsagev;
+				$roamingUpdate['$set']['balance.totals.' . $row['usaget'] . '.cost'] = 0;
+				$roamingUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
+				$roamingUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => $roamingUsagev);
+				if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
+					$oldJoinedUsage = isset($this->balanceToUpdate['balance']['totals'][$this->joinedField]['usagev']) ? $this->balanceToUpdate['balance']['totals'][$this->joinedField]['usagev'] : 0;
+					$roamingUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + $this->extraUsage;	
+				}
 		
 				$ret = $this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));	
 			}
@@ -152,17 +175,22 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 						'package_id' =>  $exhaustedBalance['service_id'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'usage_before' => array(
-							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
+							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'],
+							'incoming_call' => $exhaustedBalance['balance']['totals']['incoming_call']['usagev'], 
 							'sms' => $exhaustedBalance['balance']['totals']['sms']['usagev'], 
 							'data' => $exhaustedBalance['balance']['totals']['data']['usagev']
 						)
 					);
-					$usageLeft = $exhausted['usage_left'];
+					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.usagev'] = $oldUsage + $usageLeft;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.cost'] = 0;
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;	
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => $oldUsage + $usageLeft);
+					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
+						$oldJoinedUsage = isset($exhaustedBalance['balance']['totals'][$this->joinedField]['usagev']) ? $exhaustedBalance['balance']['totals'][$this->joinedField]['usagev'] : 0;
+						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + floor($this->extraUsage / $this->coefficient);	
+					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
 			}
@@ -175,7 +203,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'package_id' =>  $this->balanceToUpdate['service_id'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
 					'usage_before' => array(
-						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'], 
+						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'],
+						'incoming_call' => $this->balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
 						'sms' => $this->balanceToUpdate['balance']['totals']['sms']['usagev'], 
 						'data' => $this->balanceToUpdate['balance']['totals']['data']['usagev']
 					)
@@ -189,7 +218,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && $row['usaget'] == 'call') || $row['type'] == 'ggsn') || isset($row['roaming'])) {	
+		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming'])) {	
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
@@ -217,6 +246,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		});
 		if (empty($matchedPackages)) {
 			return;
+		}
+		if (isset($limits['joined_usage_types']) && isset($limits['joined_field'])) {
+			$this->joinedUsageTypes = $limits['joined_usage_types'];
+			$this->joinedField = $limits['joined_field'];
+			if (in_array($usageType, $this->joinedUsageTypes)) {
+				$usageType = $this->joinedField;
+			}
 		}
 		$UsageIncluded = 0;
 		$subscriberSpent = 0;
@@ -250,7 +286,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($roamingBalances->current()->isEmpty()) {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::ALERT);
 		}
-		foreach ($roamingBalances as $balance) {	
+		foreach ($roamingBalances as $balance) {
 			$subRaw = $balance->getRawData();
 			$stamp = strval($this->row['stamp']);
 			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;	
@@ -259,7 +295,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
 				$usageLeft = (int) $plan->get('include.groups.' . $balancePackage)[$usageType] - $balance['balance']['totals'][$usageType]['usagev'];
 				$volume = $usageLeft - $this->extraUsage;
-				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $usageType . '.usagev', $subscriberSpent);
+				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $this->row['usaget'] . '.usagev', floor($subscriberSpent / $this->coefficient));
 				if ($volume > 0) {
 					$this->balanceToUpdate = $balance;
 					break;
@@ -270,8 +306,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
-		if (!empty($UsageIncluded)) {
-			$rateUsageIncluded = $UsageIncluded;
+		$roundedUsage = floor($UsageIncluded / $this->coefficient);
+		if (!empty($UsageIncluded) && $roundedUsage > 0) {
+			$rateUsageIncluded = $roundedUsage;
 		} else {
 			$rateUsageIncluded = 0;
 		}
@@ -289,7 +326,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName, $balancePriority) {
 		$planRef = $plan->createRef();
-		Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
+		if (!is_null($this->joinedField)) { 
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority, $this->joinedField);
+		} else {
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
+		}
 	}
 		
 	protected function validateSuccessfulUpdate($row, $pricingData, $query, $update, $arate, $calculator, $updateResult) {

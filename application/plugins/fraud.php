@@ -231,11 +231,11 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($usaget == 'data' && $rule['unit'] == 'BYTE') {
 			$before = $balance['usage_before']['data'];
 			$after = $before + $row['usagev'];
-		} else if (in_array($usaget, array('call', 'sms')) && $rule['unit'] == 'SMSEC') {
-			$callUsageBefore = $balance['usage_before']['call'];
+		} else if (in_array($usaget, array('call', 'sms', 'incoming_call')) && $rule['unit'] == 'SMSEC') {
+			$callUsageBefore = $balance['usage_before']['call'] + $balance['usage_before']['incoming_call'];
 			$smsUsageBefore = $balance['usage_before']['sms'];
-			$before	= $callUsageBefore + $smsUsageBefore * 60;
-			$currentUsage = ($usaget == 'call') ? $row['usagev'] : $row['usagev'] * 60;
+			$before	= $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
+			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
 			$after = $before + $currentUsage;
 		}
 		if (!isset($before)) {

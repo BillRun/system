@@ -129,7 +129,7 @@ class Billrun_Balance implements ArrayAccess {
 	 * @param type $plan_ref the subscriber plan.
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null, $to = null, $serviceId = null, $serviceName = null, $balancePriority = null) {
+	public static function createBalanceIfMissing($aid, $sid, $billrun_key, $plan_ref, $from = null, $to = null, $serviceId = null, $serviceName = null, $balancePriority = null, $joinedField = null) {
 		$ret = false;
 //		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
 		
@@ -155,7 +155,12 @@ class Billrun_Balance implements ArrayAccess {
 		if (!is_null($balancePriority)) {
 			$data['balance_priority'] = $balancePriority;
 		}
-		
+		if (!is_null($joinedField)) {
+			$data['balance']['totals'][$joinedField]['usagev'] = 0;
+			$data['balance']['totals'][$joinedField]['cost'] = 0;
+			$data['balance']['totals'][$joinedField]['count'] = 0;
+		}
+
 		$update = array(
 			'$setOnInsert' => $data,
 		);
