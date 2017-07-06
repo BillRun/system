@@ -127,7 +127,7 @@ class Mongodloid_Collection {
 
 	/**
 	 * Create a query instance based on the current collection.
-	 * @return type
+	 * @return Mongodloid_Query
 	 */
 	public function query() {
 		$query = new Mongodloid_Query($this);
