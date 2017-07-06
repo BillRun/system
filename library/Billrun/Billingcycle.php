@@ -30,7 +30,7 @@ class Billrun_Billingcycle {
 	 * @var Billrun_DataTypes_CachedChargingTimeTable
 	 */
 	protected static $cycleStartTable = null;
-	
+        
 	/**
 	 * Cycle statuses cache (by page size)
 	 * @var array
@@ -438,6 +438,25 @@ class Billrun_Billingcycle {
 			return true;
 		}		
 		return false;
+	}
+
+	/**
+	 * Returns accounts ids who have a confirmed invoice for the given cycle
+	 * @param string $billrunKey
+	 * @return array
+	 */
+	public static function getConfirmedAccountIds($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'billrun_key' => $billrunKey,
+			'billed' => 1,
+		);
+		$fields = array(
+			'aid' => 1,
+		);
+		$confirmedInvoices = $billrunColl->find($query, $fields);
+		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
+		return $aids;
 	}
 	
 }
