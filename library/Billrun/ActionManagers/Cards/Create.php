@@ -119,7 +119,7 @@ class Billrun_ActionManagers_Cards_Create extends Billrun_ActionManagers_Cards_A
 	protected function cleanInnerHash($bulkOptions) {
 		$updateQuery = array('inner_hash' => $this->inner_hash);
 		$updateValues = array('$unset' => array('inner_hash' => 1));
-		$updateOptions = array_merge($bulkOptions, array('multiple' => 1));
+		$updateOptions = array_merge($bulkOptions, array('multiple' => true));
 		return Billrun_Factory::db()->cardsCollection()->update($updateQuery, $updateValues, $updateOptions);
 	}
 

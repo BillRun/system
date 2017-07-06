@@ -154,6 +154,26 @@ class ReportModel {
 		}
 	}
 	
+	protected function getDefaultEntityMatch($report) {
+		$defaultEntityMatch = array();
+		switch ($report['entity']) {
+			case 'subscription':
+				$defaultEntityMatch[]['type'] = "subscriber";
+				$activeQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$defaultEntityMatch[]['to'] = $activeQuery['to'];
+				$defaultEntityMatch[]['from'] = $activeQuery['from'];
+				return $defaultEntityMatch;
+			case 'customer':
+				$defaultEntityMatch[]['type'] = "account";
+				$activeQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$defaultEntityMatch[]['to'] = $activeQuery['to'];
+				$defaultEntityMatch[]['from'] = $activeQuery['from'];
+				return $defaultEntityMatch;
+			default:
+				return $defaultEntityMatch;
+		}
+	}
+	
 	protected function getCollection($report) {
 		if(empty($report['entity'])) {
 			throw new Exception("Report entity is empty");
@@ -208,7 +228,7 @@ class ReportModel {
 	}
 	
 	protected function getMatch($report) {
-		$matchs = array();
+		$matchs = $this->getDefaultEntityMatch($report);
 		foreach ($report['conditions'] as $condition) {
 			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field']);

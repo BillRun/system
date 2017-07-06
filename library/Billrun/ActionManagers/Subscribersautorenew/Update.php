@@ -70,9 +70,6 @@ class Billrun_ActionManagers_Subscribersautorenew_Update extends Billrun_ActionM
 		$updateResult = null;
 		try {
 			$updateResult = $this->collection->update($this->query, $this->updateQuery, $options);
-			$count = $updateResult['nModified'] + (isset($updateResult['nUpserted']) ? $updateResult['nUpserted'] : 0);
-			$found = $updateResult['n'];
-			$success = $this->handleResult($count, $found);
 		} catch (\MongoException $e) {
 			$success = false;
 			$errorCode = 10;
