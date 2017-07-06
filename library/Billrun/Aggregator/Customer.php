@@ -144,10 +144,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->recreateInvoices = $options['aggregator']['recreate_invoices'];
 		}
 		
-		if (isset($options['aggregator']['page'])) {
-			$this->page = (int)$options['aggregator']['page'];
-		}
-		
 		$this->buildBillrun($options);
 		
 		if (isset($options['aggregator']['test_accounts'])) {
@@ -175,7 +171,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
 		}
-				
+		
+		if ((isset($options['aggregator']['page']) || isset($options['page'])) && !$this->isCycle) {
+			$this->page = isset($options['page']) ? (int) $options['page'] : (int) $options['aggregator']['page'];
+		}
+			
 		if (!$this->shouldRunAggregate($options['stamp'])) {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
