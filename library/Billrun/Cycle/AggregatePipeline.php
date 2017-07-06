@@ -75,7 +75,7 @@ class Billrun_Cycle_AggregatePipeline {
 		}
 		$pipelines[] = $this->getMatchPipeline($cycle);
 		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
+			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => intval($aid));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
@@ -206,10 +206,18 @@ class Billrun_Cycle_AggregatePipeline {
 			)
 		);
 
-
 		// If the accounts should not be overriden, filter the existing ones before.
 		if ($this->exclusionQuery) {
 			$match['$match']['aid'] = $this->exclusionQuery;
+		}
+
+		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
+		if ($confirmedAids) {
+			$match['$match']['$and'][] = array(
+				'aid' => array(
+					'$nin' => $confirmedAids,
+				)
+			);
 		}
 
 		return $match;
