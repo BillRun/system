@@ -27,7 +27,7 @@ class ChangepasswordController extends BillapiController {
 		$emailTimeout = Billrun_Factory::config()->getConfigValue('changepassword.email.link_expire', '24 hours');
 		$timeLimit = strtotime('-' . $emailTimeout);
 		if ($adjustedRequest[Billrun_Utils_Security::TIMESTAMP_FIELD] < $timeLimit) {
-			throw new Exception('Your password reset link has expired. Please request reset password again.');
+			throw new Exception('Your password reset link has expired. Please request password reset again.');
 		}
 		if (Billrun_Utils_Security::validateData($adjustedRequest)) { // validation by secret
 			return true;
@@ -36,7 +36,7 @@ class ChangepasswordController extends BillapiController {
 			Billrun_Factory::log("No permissions settings for API call.", Zend_Log::ERR);
 			throw new Exception('Error');
 		}
-		throw new Exception('Oops! Something went wrong. Please request reset password again.');
+		throw new Exception('Oops! Something went wrong. Please request password reset again.');
 	}
 
 }
