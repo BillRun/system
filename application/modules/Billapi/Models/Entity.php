@@ -606,11 +606,7 @@ class Models_Entity {
 					'$lte' => $this->before[$edge],
 				)
 			);
-			$queryCreation = array(
-					$keyField => $this->before[$keyField],
-			);
-			$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
-			
+
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
 		} else {
@@ -641,8 +637,8 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		if (!is_null($firstRevision) && $this->update['_id'] == $firstRevision->getId()->__toString()) {
-			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		if ($edge == 'from') {
+			$this->updateCreationTime($keyField, $edge);
 		}
 		$this->trackChanges($this->query['_id']);
 
@@ -942,6 +938,16 @@ class Models_Entity {
 		}
 		
 		return $query;
+	}
+	
+	protected function updateCreationTime($keyField, $edge) {
+		$queryCreation = array(
+			$keyField => $this->before[$keyField],
+		);
+		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+		if ($this->update['_id'] == strval($firstRevision->getId())) {
+			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		}
 	}
 
 }
