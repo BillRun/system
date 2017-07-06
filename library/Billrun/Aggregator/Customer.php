@@ -736,29 +736,25 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getMatchPiepline($mongoCycle) {
 		$match = array(
 			'$match' => array(
-				'$and' => array(
-					array(
+				'$or' => array(
+					array_merge(// Account records
+						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
+					),
+					array(// Subscriber records
+						'type' => 'subscriber',
+						'plan' => array(
+							'$exists' => 1
+						),
 						'$or' => array(
-							array_merge(// Account records
-								array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
-							),
-							array(// Subscriber records
-								'type' => 'subscriber',
-								'plan' => array(
-									'$exists' => 1
+							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
+							array(// searches for a next plan. used for plans paid upfront
+								'from' => array(
+									'$lte' => $mongoCycle->end(),
 								),
-								'$or' => array(
-									Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
-									array(// searches for a next plan. used for plans paid upfront
-										'from' => array(
-											'$lte' => $mongoCycle->end(),
-										),
-										'to' => array(
-											'$gt' => $mongoCycle->end(),
-										),
-									),
-								)
-							)
+								'to' => array(
+									'$gt' => $mongoCycle->end(),
+								),
+							),
 						)
 					)
 				)
@@ -769,7 +765,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		if (!$this->overrideMode) {
 			// Get the aid exclusion query
 			$exclusionQuery = $this->billrun->existingAccountsQuery();
-			$match['$match']['$and'][0]['aid'] = $exclusionQuery;
+			$match['$match']['aid'] = $exclusionQuery;
 		}
 
 		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
