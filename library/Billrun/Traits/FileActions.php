@@ -87,8 +87,8 @@ trait Billrun_Traits_FileActions {
 	}
 
 	/**
-	 * Method to check if the file is allready being received 
-	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process allready received the file.
+	 * Method to check if the file is already being received 
+	 * @return bollean true  if the file wasn't receive and can be fetched to the workspace or false if another process already received the file.
 	 */
 	protected function lockFileForReceive($filename, $type, $more_fields = array(), $orphan_window = false) {
 		$orphan_window = $orphan_window ? $orphan_window : $this->file_fetch_orphan_time;

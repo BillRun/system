@@ -180,7 +180,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
 		}
-				
+		
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
@@ -308,7 +308,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		return $accounts;
 	}
-	
+
 	protected function afterLoad($data) {
 		if (!$this->recreateInvoices && $this->isCycle){			
 			$this->handleInvoices($data);
@@ -322,7 +322,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->clearForAccountPreload($data);
 		}
 	}
-
+	
 	/**
 	 * Map a regular array to an array the is  keyed by a given field in the array records
 	 */
@@ -335,7 +335,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return $hashed;
 	}
-
+	
 	/**
 	 * Get the raw data
 	 * @param Billrun_DataTypes_CycleTime $cycle
@@ -403,7 +403,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$accountsToRet[] = $accountToAdd;
 			}
 		}
-				
+		
 		return $accountsToRet;
 	}
 	
@@ -506,8 +506,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
-	}
-
+		}
+		
 	
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
@@ -574,7 +574,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		} 	
 		return $results;
 	}
-
+	
 	protected function saveLines($results) {
 		if(empty($results)) {
 			Billrun_Factory::log("Empty aggregate customer results, skipping save");
@@ -594,7 +594,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			}
 		}
 	}
-	
+
 	/**
 	 * Finding which page is next in the biiling cycle
 	 * @param the number of max tries to get the next page in the billing cycle
@@ -604,13 +604,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		if (Billrun_Billingcycle::isBillingCycleOver($this->billingCycle, $this->stamp, $this->size, $zeroPages) === TRUE){
-			 return false;
+			return false;
 		}
 		$pagerConfiguration = array(
 			'maxProcesses' => Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit',10),
 			'size' => $this->size,
 			'identifingQuery' => array('billrun_key' => $this->stamp),
-			
+		
 		);
 		$pager = new Billrun_Cycle_Paging( $pagerConfiguration, $this->billingCycle );
 		
@@ -623,5 +623,5 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return false;
 		}
 		return true;
-	}	
+	}
 }
