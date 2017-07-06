@@ -801,7 +801,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert(&$data) {
-		$ret = $this->collection->insert($data, array('w' => 1, 'j' => 1));
+		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
 		return $ret;
 	}
 
