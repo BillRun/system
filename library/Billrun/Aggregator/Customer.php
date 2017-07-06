@@ -623,7 +623,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		}
 		$pipelines[] = $this->getMatchPiepline($cycle);
 		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
+			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => intval($aid));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
@@ -736,42 +736,54 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function getMatchPiepline($mongoCycle) {
 		$match = array(
 			'$match' => array(
-				'$or' => array(
-					array_merge( // Account records
-						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
-					),
-					array(// Subscriber records
-						'type' => 'subscriber',
-						'plan' => array(
-							'$exists' => 1
-						),
+				'$and' => array(
+					array(
 						'$or' => array(
-							Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
-							array(// searches for a next plan. used for plans paid upfront
-								'from' => array(
-									'$lte' => $mongoCycle->end(),
-								),
-								'to' => array(
-									'$gt' => $mongoCycle->end(),
-								),
+							array_merge(// Account records
+								array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
 							),
+							array(// Subscriber records
+								'type' => 'subscriber',
+								'plan' => array(
+									'$exists' => 1
+								),
+								'$or' => array(
+									Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec),
+									array(// searches for a next plan. used for plans paid upfront
+										'from' => array(
+											'$lte' => $mongoCycle->end(),
+										),
+										'to' => array(
+											'$gt' => $mongoCycle->end(),
+										),
+									),
+								)
+							)
 						)
 					)
 				)
 			)
 		);
 
-
 		// If the accounts should not be overriden, filter the existing ones before.
 		if (!$this->overrideMode) {
 			// Get the aid exclusion query
 			$exclusionQuery = $this->billrun->existingAccountsQuery();
-			$match['$match']['aid'] = $exclusionQuery;
+			$match['$match']['$and'][0]['aid'] = $exclusionQuery;
+		}
+
+		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
+		if ($confirmedAids) {
+			$match['$match']['$and'][] = array(
+				'aid' => array(
+					'$nin' => $confirmedAids,
+				)
+			);
 		}
 
 		return $match;
 	}
-	
+
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(

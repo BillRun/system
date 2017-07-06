@@ -413,7 +413,7 @@ class Billrun_Billingcycle {
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
-public static function getLastNonRerunnableCycle() {
+	public static function getLastNonRerunnableCycle() {
 		$query = array('billed' => 1);
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
@@ -421,5 +421,24 @@ public static function getLastNonRerunnableCycle() {
 			return FALSE;
 		}
 		return $entry['billrun_key'];
+	}
+	
+	/**
+	 * Returns accounts ids who have a confirmed invoice for the given cycle
+	 * @param string $billrunKey
+	 * @return array
+	 */
+	public static function getConfirmedAccountIds($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'billrun_key' => $billrunKey,
+			'billed' => 1,
+		);
+		$fields = array(
+			'aid' => 1,
+		);
+		$confirmedInvoices = $billrunColl->find($query, $fields);
+		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
+		return $aids;
 	}
 }

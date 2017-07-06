@@ -37,7 +37,7 @@ class ResetLinesAction extends ApiAction {
 			return $this->setError('Illegal billrun key', $request);
 		}
 		if($billrun_key <= Billrun_Billingcycle::getLastClosedBillingCycle()) {
-			return $this->setError("Billrun {$billrun_key} allready closed", $request);
+			return $this->setError("Billrun {$billrun_key} already closed", $request);
 		}
 		
 		// Warning: will convert half numeric strings / floats to integers
