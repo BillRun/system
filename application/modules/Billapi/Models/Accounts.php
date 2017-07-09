@@ -17,9 +17,6 @@ class Models_Accounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
-		if (empty($this->before)) { // this is new account
-			$this->update['creation_time'] = new MongoDate();
-		}
 	}
 
 	public function get() {

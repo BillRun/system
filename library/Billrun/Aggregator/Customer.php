@@ -144,10 +144,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->recreateInvoices = $options['aggregator']['recreate_invoices'];
 		}
 		
-		if (isset($options['aggregator']['page'])) {
-			$this->page = (int)$options['aggregator']['page'];
-		}
-		
 		$this->buildBillrun($options);
 		
 		if (isset($options['aggregator']['test_accounts'])) {
@@ -168,14 +164,18 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		
 		$this->bulkAccountPreload = (int) Billrun_Util::getFieldVal($options['aggregator']['bulk_account_preload'],$this->bulkAccountPreload);		
 		$this->min_invoice_id = (int) Billrun_Util::getFieldVal($options['aggregator']['min_invoice_id'],$this->min_invoice_id);
-		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'], $this->forceAccountIds);
+		$this->forceAccountIds = Billrun_Util::getFieldVal($options['aggregator']['force_accounts'],  Billrun_Util::getFieldVal($options['force_accounts'],$this->forceAccountIds));
 		$this->fakeCycle = Billrun_Util::getFieldVal($options['aggregator']['fake_cycle'], Billrun_Util::getFieldVal($options['fake_cycle'], $this->fakeCycle));
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
 		}
-				
+		
+		if ((isset($options['aggregator']['page']) || isset($options['page'])) && !$this->isCycle) {
+			$this->page = isset($options['page']) ? (int) $options['page'] : (int) $options['aggregator']['page'];
+		}
+			
 		if (!$this->shouldRunAggregate($options['stamp'])) {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
@@ -270,6 +270,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		$billrunColl->remove($billrunRemoveQuery);
 	}
 
+	public function isFakeCycle() {
+		return $this->fakeCycle;
+	}
 	
 	//--------------------------------------------------------------------
 	
@@ -351,13 +354,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return $result;
 		}
 		
-		$data = array();
-		foreach ($this->forceAccountIds as $account_id) {
-			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+		foreach ($this->forceAccountIds as $accountId) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($accountId, $mongoCycle->key())) {
 				continue;
 			}
-			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
-		}
+			$accountIds[] = intval($accountId);
+		}			
+		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
 		$result['data'] = $data;
 		return $result;
 	}
@@ -511,8 +514,8 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
 			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
-			$aggregatedEntity->writeInvoice($this->min_invoice_id);
-			if(!$this->fakeCycle) {
+			if(!$this->isFakeCycle()) {
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id );
 				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
 				//Save Account services / plans
 				$this->saveLines($aggregatedResults);
@@ -520,8 +523,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
 				//Save the billrun document
 				$aggregatedEntity->save();
+			} else {
+				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() );
 			}
-			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults));
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
 			return $aggregatedResults;
 	}
 	
@@ -556,11 +561,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
-	 * @param int $aid - Account id, null by deafault
+	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	protected function aggregateMongo($cycle, $page, $size, $aid = null) {
-		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aid);
+	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
+		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines, $collection);
 	}
