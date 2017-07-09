@@ -235,7 +235,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					$line_params['stamp'] = $row['stamp'];
 					$line_params['EXTRAS'] = 0;
 					if (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn' || isset($row['roaming'])) {
-						$line_params['irp'] = 1;
+						$line_params['IRP'] = 1;
 					}
 					foreach ($subscriber_extra_data as $key) {
 						if ($this->isExtraDataRelevant($row, $key)) {
