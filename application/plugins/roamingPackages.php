@@ -139,7 +139,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->joinedField= null;
 			$this->row = $row;
 			
-			$this->ownedPackages = array(array('type' => "roaming_2gb", 'service_name' => 'IRP_2GB_W_CALLS_SMS', 'from_date'  => "2017-04-18 00:00:00", 'to_date' => "2017-08-02 00:00:00", 'id' => 123854, 'balance_priority' => 1)); 
 		}
 	}
 	
