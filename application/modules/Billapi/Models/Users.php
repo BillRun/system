@@ -53,4 +53,16 @@ class Models_Users extends Models_Entity {
 			return in_array('admin', $userToDelete['roles']);
 		}
 	}
+	
+	public function create() {
+		if (!$this->isValidUsername($this->update['username'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Username must be in format of an ' . $this->config['username']['type']);
+		}
+		parent::create();
+	}
+	
+	protected function isValidUsername($username) {
+		return preg_match($this->config['username']['regex'], $username);
+	}
+	
 }
