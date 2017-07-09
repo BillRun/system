@@ -23,6 +23,9 @@ class AccountInvoicesAction extends ApiAction {
 				case 'download':
 					$retValue = $this->downloadPDF($request);
 					break;
+				case 'expected_invoice':
+					$retValue = $this->generateExpectedInvoices($request);
+					break;
 				case 'search' :
 				default :
 					$retValue = $this->searchIvoicesForAid($request);
@@ -105,6 +108,33 @@ class AccountInvoicesAction extends ApiAction {
 			} 
 		}
 		die();
+	}
+	
+	protected function generateExpectedInvoices($request) {
+		$params = $request->getRequest();
+		$options = array(
+			'type' => 'expectedinvoice',
+			'aid' => $params['aid'],
+			'stamp' => $params['billrun_key'],
+		);
+		$generator = Billrun_Generator::getInstance($options);
+		$generator->load();
+		$pdfPath = $generator->generate();
+		$cont = file_get_contents($pdfPath);
+		if ($cont) {
+			header('Content-disposition: inline; filename="'.$file_name.'"');
+			header('Cache-Control: public, must-revalidate, max-age=0');
+			header('Pragma: public');
+			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
+			header('Content-Type: application/pdf');
+			Billrun_Factory::log('Transfering invoice content from : '.$pdfPath .' to http connection');
+			echo $cont;
+			die();
+		}  else {
+			$this->setError('Failed when trying to generate expected invoice' , $request->getPost());
+			Billrun_Factory::log('Failed when trying to generate expected invoice to : '.$pdfPath );
+		}
+
 	}
 	
 	protected function queryIvoices($query, $sort = FALSE) {

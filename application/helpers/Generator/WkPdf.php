@@ -46,8 +46,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/',
-			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/',
-			'tmp' => $this->getTempDir(),
+			'pdf' =>  (empty(Billrun_Util::getFieldVal( $options['temp_pdf'], FALSE)) ? $this->export_directory : $this->getTempDir($this->stamp)).DIRECTORY_SEPARATOR.'pdf/',
+			'tmp' => $this->getTempDir($this->stamp),
 		);
 		
 		$this->tmp_paths = array(
@@ -159,7 +159,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			
 			$this->updateHtmlDynamicData($account);
 			
-			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
+			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id']." to : $pdf" ,Zend_Log::INFO);
 			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
 	}
@@ -212,7 +212,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		file_put_contents($this->tmp_paths['footer'], $footerContent);
 	}
 	
-	protected function getCompanyName() {
+	protected static function getCompanyName() {
 		return Billrun_Util::getCompanyName();
 	}
 	
@@ -292,8 +292,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * Retrive and create tenant temporary direcotory
 	 * @return string the  directory path
 	 */
-	protected function getTempDir() {
-		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', $this->getCompanyName()) . DIRECTORY_SEPARATOR. $this->stamp . DIRECTORY_SEPARATOR;
+	public static function getTempDir($stamp) {
+		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', static::getCompanyName()) . DIRECTORY_SEPARATOR. $stamp . DIRECTORY_SEPARATOR;
 		if(!file_exists($tmpdirPath)) {
 			mkdir($tmpdirPath, 0775, true);
 		}
@@ -308,7 +308,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if(!defined('APPLICATION_MULTITENANT')  || !APPLICATION_MULTITENANT ) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
 		} 
-		return $this->getTempDir() .DIRECTORY_SEPARATOR. 'logo.png'; 
+		return $this->getTempDir($this->stamp) .DIRECTORY_SEPARATOR. 'logo.png'; 
 	}
 	
 	/**
