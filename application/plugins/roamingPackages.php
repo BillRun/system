@@ -99,11 +99,17 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $joinedField = null;
-	
+
 	protected $coefficient;
 	
-	
-	
+	/**
+	 * usage need to subtract from the balances in case of rebalance.
+	 * 
+	 * @var array
+	 */
+	protected $rebalanceUsageSubtract = array();
+
+
 	public function __construct() {
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -132,6 +138,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->joinedUsageTypes = null;
 			$this->joinedField= null;
 			$this->row = $row;
+			
+			$this->ownedPackages = array(array('type' => "roaming_2gb", 'service_name' => 'IRP_2GB_W_CALLS_SMS', 'from_date'  => "2017-04-18 00:00:00", 'to_date' => "2017-08-02 00:00:00", 'id' => 123854, 'balance_priority' => 1)); 
 		}
 	}
 	
@@ -168,10 +176,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
 					$oldUsage = $exhaustedBalance['balance']['totals'][$row['usaget']]['usagev'];
+					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(
 						'service_name' => $exhaustedBalance['service_name'],
 						'package_id' =>  $exhaustedBalance['service_id'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
+						'added_usage' => $usageLeft,
+						'added_joined_usage' => (!is_null($this->joinedField) && in_array($row['usaget'], $this->joinedUsageTypes)) ? array('joined_field' => $this->joinedField, 'usage' => $this->extraUsage) : null,
 						'usage_before' => array(
 							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
 							'incoming_call' => $exhaustedBalance['balance']['totals']['incoming_call']['usagev'], 
@@ -179,7 +190,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 							'data' => $exhaustedBalance['balance']['totals']['data']['usagev']
 						)
 					);
-					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.usagev'] = $oldUsage + $usageLeft;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.cost'] = 0;
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
@@ -187,7 +197,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => $oldUsage + $usageLeft);
 					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
 						$oldJoinedUsage = isset($exhaustedBalance['balance']['totals'][$this->joinedField]['usagev']) ? $exhaustedBalance['balance']['totals'][$this->joinedField]['usagev'] : 0;
-						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + floor($this->extraUsage / $this->coefficient);	
+						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + $this->extraUsage;	
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
@@ -199,7 +209,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$balancesIncludeRow[] = array(
 					'service_name' => $this->balanceToUpdate['service_name'],
 					'package_id' =>  $this->balanceToUpdate['service_id'],
-					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
+					'billrun_month' => $this->balanceToUpdate['billrun_month'],
+					'added_usage' => floor($this->extraUsage / $this->coefficient),
+					'added_joined_usage' => (!is_null($this->joinedField) && in_array($row['usaget'], $this->joinedUsageTypes)) ? array('joined_field' => $this->joinedField, 'usage' => $this->extraUsage) : null,
 					'usage_before' => array(
 						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'],
 						'incoming_call' => $this->balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
@@ -377,4 +389,81 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$this->balances->update($query, $update);
 	}
+	
+	
+	/**
+	 * method to update roaming balances once the regular balance was removed.
+	 * 
+	 */
+	public function afterResetBalances($rebalanceSids) {
+		if (empty($this->rebalanceUsageSubtract)) {
+			return;
+		}
+		$balancesColl = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
+		$sidsAsKeys = array_flip($rebalanceSids);
+		$balancesToUpdate = array_intersect_key($this->rebalanceUsageSubtract, $sidsAsKeys);			
+		$queryBalances = array(
+			'sid' => array('$in' => array_keys($balancesToUpdate)),
+		);	
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		foreach ($balancesToUpdate as $sid => $packageUsage) {
+			foreach ($packageUsage as $packageId => $usageByUsaget) {
+				$balanceToUpdate = $this->getRelevantBalance($balances, $packageId);
+				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
+				
+				$query = array(
+					'sid' => $sid,
+					'service_id' => $packageId,
+				);
+				
+				$balancesColl->update($query, $updateData);
+			}
+		}
+			
+		$this->rebalanceUsageSubtract = array();
+	}
+	
+	/**
+	 * method to calculate the usage need to be subtracted from the roaming balance.
+	 * 
+	 * @param type $line
+	 * 
+	 */
+	public function beforeResetLines($line) {
+		if (!isset($line['roaming_balances'])) {
+			return;
+		}	
+		foreach ($line['roaming_balances'] as $roamingBalance) {
+			$packageId = $roamingBalance['package_id'];
+			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']] : 0;
+			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']] = $aggregatedUsage + $roamingBalance['added_usage'];
+			if (!is_null($roamingBalance['added_joined_usage'])) {
+				$joinedField = $roamingBalance['added_joined_usage']['joined_field'];
+				$joinedUsage = $roamingBalance['added_joined_usage']['usage'];
+				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField] : 0;
+				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField] = $aggregatedJoinedUsage + $joinedUsage;
+			}
+		}
+	}
+	
+	protected function getRelevantBalance($balances, $packageId) {
+		foreach ($balances as $balance) {
+			$rawData = $balance->getRawData();
+			if ($rawData['service_id'] == $packageId) {
+				return $rawData;
+			}
+		}
+	}
+	
+	protected function buildUpdateBalance($balance, $volumeToSubstract) {
+		$update = array();
+		foreach ($volumeToSubstract as $usaget => $usagev) {
+			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
+				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev;
+				$update['$inc']['balance.totals.' . $usaget . '.count'] = -1;
+			}
+		}
+		return $update;
+	}
+
 }
