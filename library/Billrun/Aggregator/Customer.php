@@ -144,10 +144,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->recreateInvoices = $options['aggregator']['recreate_invoices'];
 		}
 		
-		if (isset($options['aggregator']['page'])) {
-			$this->page = (int)$options['aggregator']['page'];
-		}
-		
 		$this->buildBillrun($options);
 		
 		if (isset($options['aggregator']['test_accounts'])) {
@@ -175,7 +171,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
 		}
-				
+		
+		if ((isset($options['aggregator']['page']) || isset($options['page'])) && !$this->isCycle) {
+			$this->page = isset($options['page']) ? (int) $options['page'] : (int) $options['aggregator']['page'];
+		}
+			
 		if (!$this->shouldRunAggregate($options['stamp'])) {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
@@ -351,13 +351,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			return $result;
 		}
 		
-		$data = array();
-		foreach ($this->forceAccountIds as $account_id) {
-			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+		foreach ($this->forceAccountIds as $accountId) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($accountId, $mongoCycle->key())) {
 				continue;
 			}
-			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
-		}
+			$accountIds[] = intval($accountId);
+		}			
+		$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size, $accountIds);
 		$result['data'] = $data;
 		return $result;
 	}
@@ -556,11 +556,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
-	 * @param int $aid - Account id, null by deafault
+	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	protected function aggregateMongo($cycle, $page, $size, $aid = null) {
-		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aid);
+	protected function aggregateMongo($cycle, $page, $size, $aids = null) {
+		$pipelines = $this->aggregationLogic->getCustomerAggregationForPage($cycle, $page, $size, $aids);
 		$collection = Billrun_Factory::db()->subscribersCollection();
 		return $this->aggregatePipelines($pipelines, $collection);
 	}
