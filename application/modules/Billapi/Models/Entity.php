@@ -269,6 +269,9 @@ class Models_Entity {
 		if (empty($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime('+149 years'));
 		}
+		if (empty($this->update['creation_time'])) {
+			$this->update['creation_time'] = $this->update['from'];
+		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
 			$this->trackChanges($this->update['_id']);
@@ -606,6 +609,7 @@ class Models_Entity {
 					'$lte' => $this->before[$edge],
 				)
 			);
+
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
 		} else {
@@ -618,7 +622,7 @@ class Models_Entity {
 			$sort = 1;
 			$rangeError = 'Requested end date is greater than next start date';
 		}
-
+		
 		// previous entry on move from, next entry on move to
 		$followingEntry = $this->collection->query($query)->cursor()
 			->sort(array($otherEdge => $sort))
@@ -635,6 +639,9 @@ class Models_Entity {
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
+		}
+		if ($edge == 'from') {
+			$this->updateCreationTime($keyField, $edge);
 		}
 		$this->trackChanges($this->query['_id']);
 
@@ -934,6 +941,16 @@ class Models_Entity {
 		}
 		
 		return $query;
+	}
+	
+	protected function updateCreationTime($keyField, $edge) {
+		$queryCreation = array(
+			$keyField => $this->before[$keyField],
+		);
+		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+		if ($this->update['_id'] == strval($firstRevision->getId())) {
+			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		}
 	}
 
 }

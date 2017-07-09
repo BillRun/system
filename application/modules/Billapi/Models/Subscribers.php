@@ -21,7 +21,6 @@ class Models_Subscribers extends Models_Entity {
 		// TODO: move to translators?
 		if (empty($this->before)) { // this is new subscriber
 			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
-			$this->update['creation_time'] = new MongoDate();
 		} else if (isset($this->before['plan_activation']) && isset($this->update['plan']) && isset($this->before['plan']) && $this->before['plan'] !== $this->update['plan']) { // plan was changed
 			$this->update['plan_activation'] = isset($this->update['from']) ? $this->update['from'] : new MongoDate();
 		} else { // plan was not changed

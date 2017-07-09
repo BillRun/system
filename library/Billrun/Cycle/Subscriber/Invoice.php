@@ -30,7 +30,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @param integer $sid
 	 * @param integer $aid
 	 */
-	public function __construct(&$rates, $data, $sid = 0, $aid = 0) {
+	public function __construct($rates, $data, $sid = 0, $aid = 0) {
 		$this->rates = &$rates;
 		if(!$data) {
 			$this->data = $this->createClosedSubscriber($sid, $aid);
