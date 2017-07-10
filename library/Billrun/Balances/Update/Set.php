@@ -74,6 +74,8 @@ class Billrun_Balances_Update_Set extends Billrun_Balances_Update_Operation {
 	public function update($coll, $query, $update, $options) {
 		if (!key_exists('_id', $query) && !key_exists('id', $query)) {
 			$this->resetParallelBalances($coll, $query, $update, $options);
+			// need to refresh the to query as we updated old balances with current time
+			$query['to']['$gt'] = new MongoDate(time(), microtime());
 		}
 		return parent::update($coll, $query, $update, $options);
 	}
