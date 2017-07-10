@@ -68,6 +68,7 @@ class RedButtonAction extends ApiAction {
 				return;
 		}
 		
+		$currentConf = $this->getLastConfig();
 		$currentConf[$this->rg_config_field] = $ratingGroupConversion;
 		$ret = $this->configColl->insert($currentConf);
 		if (!isset($ret['ok']) || !$ret['ok']) {
@@ -106,7 +107,7 @@ class RedButtonAction extends ApiAction {
 		return true;
 	}
 	
-	protected function getLastConfigRatingGroupConversion() {
+	protected function getLastConfig() {
 		$currentConf = $this->configColl
 			->query()
 			->cursor()->setReadPreference('RP_PRIMARY')
@@ -115,6 +116,11 @@ class RedButtonAction extends ApiAction {
 			->current()
 			->getRawData();
 		unset($currentConf['_id']);
+		return $currentConf;
+	}
+
+	protected function getLastConfigRatingGroupConversion() {
+		$currentConf = $this->getLastConfig();
 		return isset($currentConf[$this->rg_config_field]) ? $currentConf[$this->rg_config_field] : array();
 	}
 	

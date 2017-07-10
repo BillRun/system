@@ -410,7 +410,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$cap_name = $data['cap_name'];
 		unset($data['cap_name']);
 		unset($data['service']);
-		$allCaps = $configColl->query(array("realtimeevent.data.slowness.bandwidth_cap" => array('$exists' => 1)))
+		$allCaps = $configColl->query()
 			->cursor()->setReadPreference('RP_PRIMARY')
 			->sort(array('_id' => -1))
 			->limit(1)
