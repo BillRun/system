@@ -30,6 +30,7 @@ class BillrunController extends ApiController {
 		if (in_array($this->getRequest()->action, $this->permissionReadAction)) {
 			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 		}
+		$this->allowed();
 		parent::init();
 	}
 
@@ -38,7 +39,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function completeCycleAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -73,7 +73,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function specificCycleAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
@@ -121,7 +120,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function confirmCycleAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$invoices = $request->get('invoices');
 		if (!empty($invoices)) {
@@ -151,7 +149,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function chargeStatusAction() {
-		$this->allowed();
 		$setting['status'] = $this->isChargeAllowed();
 		$setting['owed_amount'] = $this->getOwedAmount();
 
@@ -172,7 +169,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function chargeAccountAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$aids = $request->get('aids');
 		$mode = $request->get('mode');
@@ -201,7 +197,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cyclesAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$params['from'] = $request->get('from');
 		$params['to'] = $request->get('to');
@@ -228,7 +223,6 @@ class BillrunController extends ApiController {
 	 * 
 	 */
 	public function cycleAction() {
-		$this->allowed();
 		$request = $this->getRequest();
 		$billrunKey = $request->get('stamp');
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
