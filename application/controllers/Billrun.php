@@ -14,15 +14,23 @@
  *
  */
 class BillrunController extends ApiController {
-
+	
+	use Billrun_Traits_Api_UserPermissions;
+		
 	/**
 	 * 
 	 * @var int
 	 */
 	protected $size;
+	
+	protected $permissionReadAction = array('cycles', 'chargestatus', 'cycle');
 
 	public function init() {
 		$this->size = (int) Billrun_Factory::config()->getConfigValue('customer.aggregator.size', 100);
+		if (in_array($this->getRequest()->action, $this->permissionReadAction)) {
+			$this->permissionLevel = Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		}
+		$this->allowed();
 		parent::init();
 	}
 
@@ -342,4 +350,9 @@ class BillrunController extends ApiController {
 		}
 		return false;
 	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+
 }
