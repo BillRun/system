@@ -276,6 +276,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'target_plans' => array('$first' => '$target_plans'),
 				'group' => array('$first' => '$group'),
 				'stamps' => array('$addToSet' => '$stamp'),
+				'service_name' => array('$first' => '$service_name'),
+				'package_id' => array('$first' => '$package_id'),
 			),
 			), array(
 			'$sort' => array('priority' => 1)
@@ -297,6 +299,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				'plan' => 1,
 				'target_plans' => 1,
 				'group' => 1,
+				'service_name' => 1,
+				'package_id' => 1,
 			),
 				)
 		);

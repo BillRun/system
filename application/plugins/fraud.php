@@ -248,6 +248,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
 			$roamingPackage['service_name'] = $balance['service_name'];
 			$roamingPackage['package_id'] = $balance['package_id'];
+			$roamingPackage['channel'] = "Roaming_Package_" . $balance['package_id'];
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			if (isset($rule['priority'])) {
 				$priority = (int) $rule['priority'];
