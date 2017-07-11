@@ -28,7 +28,7 @@ class Models_Action_Import_Subscribers extends Models_Action {
 				);			
 				$account = Billrun_Factory::db()->subscribersCollection()->query($accountQuery)->cursor()->current();
 				if(!$account || $account->isEmpty()) {
-					$output[$key] = "Customer for subscriber does not exist";
+					$output[$key] = "Account for subscriber not exist";
 				} else {
 					unset($item['__LINKER__']);
 					$item['aid'] = $account->get('aid');			
