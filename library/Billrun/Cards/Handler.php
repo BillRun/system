@@ -45,7 +45,7 @@ class Billrun_Cards_Handler {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'multiple' => 1,
+			'multiple' => true,
 		);
 
 		$collection = Billrun_Factory::db()->cardsCollection();

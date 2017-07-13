@@ -62,6 +62,9 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				$this->sendInvoiceByMail($invoice);
 			}
 		}
+		if(empty($this->invoices)) {
+			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
+		}
 	}
 	
 	/**

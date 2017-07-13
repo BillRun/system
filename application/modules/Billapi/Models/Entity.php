@@ -182,6 +182,9 @@ class Models_Entity {
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		if (is_null($defaultFields)) {
+			$defaultFields = array();
+		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
@@ -207,7 +210,10 @@ class Models_Entity {
 		$startTime = strtotime($data['from']);
 		$endTime = strtotime($data['to']);
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
-		$query = array('$and' => array($nonRevisionsQuery, $uniqueQuery, $overlapingDatesQuery));
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
 
 		return $this->collection->query($query)->count() > 0;
 	}
@@ -240,7 +246,8 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()),
+			function($customField) {return !Billrun_Util::getFieldVal($customField['system'], false);});
 	}
 	
 	public function getCustomFieldsPath() {
@@ -261,6 +268,9 @@ class Models_Entity {
 		}
 		if (empty($this->update['to'])) {
 			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+		}
+		if (empty($this->update['creation_time'])) {
+			$this->update['creation_time'] = $this->update['from'];
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
@@ -306,12 +316,6 @@ class Models_Entity {
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
-		}
-		if (isset($this->update['from'])) {
-			unset($this->update['from']);
-		}
-		if (isset($this->update['to'])) {
-			unset($this->update['to']);
 		}
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
@@ -605,6 +609,7 @@ class Models_Entity {
 					'$lte' => $this->before[$edge],
 				)
 			);
+
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
 		} else {
@@ -617,7 +622,7 @@ class Models_Entity {
 			$sort = 1;
 			$rangeError = 'Requested end date is greater than next start date';
 		}
-
+		
 		// previous entry on move from, next entry on move to
 		$followingEntry = $this->collection->query($query)->cursor()
 			->sort(array($otherEdge => $sort))
@@ -634,6 +639,9 @@ class Models_Entity {
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
+		}
+		if ($edge == 'from') {
+			$this->updateCreationTime($keyField, $edge);
 		}
 		$this->trackChanges($this->query['_id']);
 
@@ -800,7 +808,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert(&$data) {
-		$ret = $this->collection->insert($data, array('w' => 1, 'j' => 1));
+		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
 		return $ret;
 	}
 
@@ -933,6 +941,16 @@ class Models_Entity {
 		}
 		
 		return $query;
+	}
+	
+	protected function updateCreationTime($keyField, $edge) {
+		$queryCreation = array(
+			$keyField => $this->before[$keyField],
+		);
+		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+		if ($this->update['_id'] == strval($firstRevision->getId())) {
+			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		}
 	}
 
 }

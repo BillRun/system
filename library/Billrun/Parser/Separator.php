@@ -70,7 +70,7 @@ class Billrun_Parser_Separator extends Billrun_Parser_Csv {
 	 */
 	public function parseLine($line) {
 
-		$row = explode($this->separator, rtrim($line, "{$this->separator}\t\n\r\0\x0B"));
+		$row = str_getcsv($line, $this->separator);
 		if (count($this->structure) > count($row)) {
 			Billrun_Factory::log('Incompatible number of fields for line ' . $line, Zend_Log::WARN);
 			$row = array_merge($row, array_fill(0, count($this->structure) - count($row), FALSE));

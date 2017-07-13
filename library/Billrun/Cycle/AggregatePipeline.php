@@ -62,20 +62,16 @@ class Billrun_Cycle_AggregatePipeline {
 	 * @param Billrun_DataTypes_MongoCycleTime $cycle - Current cycle time
 	 * @param int $page - page
 	 * @param int $size - size
-	 * @param int $aid - Account id, null by deafault
+	 * @param int $aids - Account ids, null by deafault
 	 * @return array 
 	 */
-	public function getCustomerAggregationForPage($cycle, $page, $size, $aid = null) {
-		if ($aid) {
-			$page = 0;
-			$size = 1;
-		}
+	public function getCustomerAggregationForPage($cycle, $page, $size, $aids = null) {
 		if (is_null($page)) {
 			$page = 0;
 		}
 		$pipelines[] = $this->getMatchPipeline($cycle);
-		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
+		if ($aids) {
+			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => array('$in' => $aids));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
@@ -206,10 +202,18 @@ class Billrun_Cycle_AggregatePipeline {
 			)
 		);
 
-
 		// If the accounts should not be overriden, filter the existing ones before.
 		if ($this->exclusionQuery) {
 			$match['$match']['aid'] = $this->exclusionQuery;
+		}
+
+		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
+		if ($confirmedAids) {
+			$match['$match']['$and'][] = array(
+				'aid' => array(
+					'$nin' => $confirmedAids,
+				)
+			);
 		}
 
 		return $match;
