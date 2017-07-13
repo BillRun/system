@@ -19,8 +19,11 @@ class Api_Translator_EmailModel extends Api_Translator_TypeModel {
 	 * @param mixed $data - Input data
 	 * @return mixed Translated value.
 	 */
+	
+	protected $regex = '/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/';
+	
 	public function internalTranslateField($data) {
-		if(!preg_match(Billrun_Factory::config()->getConfigValue('billrun.email.regex'), $data)) {
+		if(!preg_match($this->regex, $data)) {
 			return false;
 		}
 
