@@ -53,4 +53,5 @@ class Models_Users extends Models_Entity {
 			return in_array('admin', $userToDelete['roles']);
 		}
 	}
+	
 }
