@@ -90,7 +90,7 @@ class UsersModel extends TableModel {
 		$setArray = array('last_login' => new MongoDate());
 		
 		try{
-			Billrun_Factory::log("Start Update user last login {$setArray}", Zend_Log::INFO);
+			Billrun_Factory::log("Start Update user last login : " . print_r($setArray, 1), Zend_Log::INFO);
 			$updateQuery = $this->collection->update(array('_id' => $mongoId), array('$set' => $setArray));
 		}catch(\MongoException $e){
 			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::CRIT);
