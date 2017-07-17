@@ -59,6 +59,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 */
 	public function init() {
 		Billrun_Factory::log('Start Unit testing');
+		ini_set('display_errors', 'off');
 
 		if (Billrun_Factory::config()->isProd()) {
 			Billrun_Factory::log('Exit Unit testing. Unit testing not allowed on production');
