@@ -50,6 +50,30 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 	}
 
 	/**
+	 * get rate by params, first try to find in cache (because of real-time)
+	 * @param type $row
+	 * @return Mongodloid_Entity the matched rate or false if none found
+	 */
+	protected function getRateByParams($row) {
+		// we can use cache because we are on real-time (current time rate query)
+		$cacheKey = $this->rowDataForQuery['country_code'] . 'XYZ' . $this->rowDataForQuery['called_number']; // XYZ used to distinguish cases when the concatenation can be repeated by mistake
+		$cachePrefix = 'billrun_rate_callrt';
+		$cache = Billrun_Factory::cache();
+		if ($cache) {
+			$cachedRate = $cache->get($cacheKey, $cachePrefix);
+			if (!is_null($cachedRate) && $cachedRate !== FALSE) {
+				return new Mongodloid_Entity($cachedRate);
+			}
+		} else {
+			return parent::getRateByParams($row);
+		}
+		$rate = parent::getRateByParams($row);
+		$rateRawData = $rate->getRawData();
+		$cache->set($cacheKey, $rateRawData, $cachePrefix, strtotime('tomorrow') - 1);
+		return $rate;
+	}
+
+	/**
 	 * method to identify the destination of the call
 	 * 
 	 * @param array $row billing line
