@@ -85,6 +85,19 @@ class UsersModel extends TableModel {
 			return "{$updateQuery['nModified']} rows been modified";
 	}
 	
+	public function updateUserLastLogin($userId){
+		$mongoId =  new MongoId($userId);
+		$setArray = array('last_login' => new MongoDate());
+		
+		try{
+			Billrun_Factory::log("Start Update user last login : " . print_r($setArray, 1), Zend_Log::INFO);
+			$updateQuery = $this->collection->update(array('_id' => $mongoId), array('$set' => $setArray));
+		}catch(\MongoException $e){
+			Billrun_Factory::log()->log($e->getMessage(), Zend_Log::CRIT);
+		}
+		return "{$updateQuery['nModified']} rows been modified";
+	}
+	
 	public function getFilterFields() {
 		$filter_fields = array(
 			'username' => array(
