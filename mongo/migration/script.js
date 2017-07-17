@@ -507,8 +507,14 @@ if (prevUsageTypes) {
 		{
 			system: true,
 			type: "data",
-			uom:[{unit:1,name:"byte",label:"Byte"}, {unit:1000,name:"kb1000",label:"KB"}, {unit:1000000,name:"mb1000",label:"MB"}, {unit:1000000000,name:"gb1000",label:"GB"}, {unit:1000000000000,name:"tb1000",label:"TB"}, {unit:1024,name:"kb1024",label:"KB"}, {unit:1048576,name:"mb1024",label:"MiB"}, {unit:1073741824,name:"gb1024",label:"GiB"}, {unit:1099511627776,name:"tb1024",label:"TiB"}, {name:"automatic",label:"Automatic", function_name:"parseDataUsage"}],
+			uom:[{unit:1,name:"byte",label:"Byte"}, {unit:1000,name:"kb1000",label:"KB"}, {unit:1000000,name:"mb1000",label:"MB"}, {unit:1000000000,name:"gb1000",label:"GB"}, {unit:1000000000000,name:"tb1000",label:"TB"}, {unit:1024,name:"kb1024",label:"KiB"}, {unit:1048576,name:"mb1024",label:"MiB"}, {unit:1073741824,name:"gb1024",label:"GiB"}, {unit:1099511627776,name:"tb1024",label:"TiB"}, {name:"automatic",label:"Automatic", function_name:"parseDataUsage"}],
 			invoice_uom: "automatic"
+		},
+		{
+			system: true,
+			type: "length",
+			uom:[{unit:1,name:"mm",label:"mm"},{unit:10,name:"cm",label:"cm"},{unit:1000,name:"m",label:"m"},{unit:1000000,name:"km",label:"km"}],
+			invoice_uom: "cm"
 		},
 		{
 			system: true,
