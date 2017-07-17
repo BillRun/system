@@ -74,6 +74,14 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $discounts;
 	}
 	
+	public function getLineUsageVolume($line) {
+		$usagev = Billrun_Utils_Units::convertInvoiceVolume($line['usagev'], $line['usaget']);
+		$unit = Billrun_Utils_Units::getInvoiceUnit($line['usaget']);
+		$unitDisplay = Billrun_Utils_Units::getUnitLabel($line['usaget'], $unit);
+		return (is_numeric($usagev) ? number_format($usagev, 2) : $usagev) . ' ' . $unitDisplay;
+	}
+
+
 	public function buildSubscriptionListFromLines($lines) {
 		$subscriptionList = array();
 		$typeNames = array_flip($this->details_keys);

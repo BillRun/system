@@ -21,6 +21,9 @@ class Billrun_Utils_Units {
 	 */
 	public static function getUnitsOfMeasure($usaget) {
 		$usageTypeData = self::getUsageTypeData($usaget);
+		if (!$usageTypeData || !isset($usageTypeData['property_type'])) {
+			return array();
+		}
 		$propertyTypeData = self::getPropertyTypeData($usageTypeData['property_type']);
 		return isset($propertyTypeData['uom']) ? $propertyTypeData['uom'] : array();
 	}
@@ -49,11 +52,65 @@ class Billrun_Utils_Units {
 	 */
 	public static function convertVolumeUnits($volume, $usaget, $unit, $toBaseUnit = false) {
 		$uom = self::getUnitsOfMeasureData($usaget, $unit);
-		if (!$uom || !isset($uom['unit'])) {
+		if (!$uom) {
+			return $volume;
+		}
+		
+		if (isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) {
+			return get_class()::{$uom['function_name']}($volume, $uom);
+		}
+		
+		if (!isset($uom['unit'])) {
 			return $volume;
 		}
 
 		return ($toBaseUnit ? ($volume * $uom['unit'])  : ($volume / $uom['unit']));
+	}
+	
+	/**
+	 * gets usage type's default unit for invoice
+	 * 
+	 * @param string $usaget
+	 * @return unit if found, false otherwise
+	 */
+	public static function getInvoiceUnit($usaget) {
+		$usageTypeData = self::getUsageTypeData($usaget);
+		return isset($usageTypeData['invoice_uom']) ? $usageTypeData['invoice_uom'] : false;
+	}
+	
+	/**
+	 * gets the unit's display label
+	 * 
+	 * @param string $usaget
+	 * @param string $unit
+	 * @return string
+	 */
+	public static function getUnitLabel($usaget, $unit) {
+		$uom = self::getUnitsOfMeasureData($usaget, $unit);
+		if (
+			!$uom ||
+			(isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) ||
+			!isset($uom['label'])
+		) {
+			return '';
+		}
+		
+		return $uom['label'];
+	}
+	
+	/**
+	 * converts volume to invoice display
+	 * 
+	 * @param float $volume
+	 * @param string $usaget
+	 * @return float
+	 */
+	public static function convertInvoiceVolume($volume, $usaget) {
+		$unit = self::getInvoiceUnit($usaget);
+		if (!$unit) {
+			return $volume;
+		}
+		return self::convertVolumeUnits($volume, $usaget, $unit, false);
 	}
 	
 	/**
@@ -67,7 +124,7 @@ class Billrun_Utils_Units {
 	 */
 	protected static function arrayFind ($array, $value, $columnName, $default = array()) {
 		$index = array_search($value, array_column($array, $columnName));
-		return isset($array[$index]) ? $array[$index] : $default;
+		return $index !== false && isset($array[$index]) ? $array[$index] : $default;
 	}
 	
 	/**
@@ -108,6 +165,26 @@ class Billrun_Utils_Units {
 	protected static function getPropertyTypeData($propertyType) {
 		$propertyTypes = self::getPropertyTypes();
 		return self::arrayFind($propertyTypes, $propertyType, 'type');
+	}
+	
+	/**
+	 * assistance function to display time
+	 * 
+	 * @param float $seconds
+	 * @return string
+	 */
+	protected static function parseTime($seconds) {
+		return gmdate("H:i:s", $seconds);
+	}
+	
+	/**
+	 * assistance function to convert data usage to automatic units
+	 * 
+	 * @param int $bytes
+	 * @return string
+	 */
+	protected static function parseDataUsage($bytes) {
+		return Billrun_Util::byteFormat($bytes, '', 2, true);
 	}
 	
 }
