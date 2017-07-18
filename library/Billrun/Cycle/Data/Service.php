@@ -12,6 +12,7 @@
 class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 	
 	protected $quantity = 1;
+	protected $planIncluded = FALSE;
 	
 	public function __construct(array $options) {
 		if(!isset($options['name'], $options['cycle'])) {
@@ -21,6 +22,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
+		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
 		$this->constructOptions($options);
 	}
 	

@@ -28,6 +28,12 @@ class Api_TranslatorModel {
 	protected $activeRange;
 	
 	/**
+	 *
+	 * @var string
+	 */
+	protected $method;
+	
+	/**
 	 * Create a new instance of the data translator object.
 	 * @param array $options[active_range] -
 	 * @param array $options[fields] - Array of fields from the structure: 'name' => VALUE, 'type'=> VALUE, 'options' => ARRAY VALUE
@@ -35,6 +41,7 @@ class Api_TranslatorModel {
 	 */
 	public function __construct(array $options) {
 		$fields = $options['fields'];
+		$this->method = Billrun_Util::getFieldVal($options['method'], 'and');
 		
 		// Go through the input fields.
 		foreach ($fields as $current) {
@@ -112,6 +119,22 @@ class Api_TranslatorModel {
 			return array('success' => false, 'data' => $invalidFields);
 		}
 		
-		return array('success' => true, 'data' => $output);
+		return array('success' => true, 'data' => $this->convertOutputByMethod($output));
+	}
+	
+	/**
+	 * Converts the translated parameters to a queried one by the method received
+	 * 
+	 * @param array $output
+	 * @return array
+	 */
+	protected function convertOutputByMethod($output) {
+		if ($this->method !== 'or') {
+			$ret = $output;
+		} else {
+			$ret['$or'] = array_chunk($output, 1, true);
+		}
+		
+		return $ret;
 	}
 }

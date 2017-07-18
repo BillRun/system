@@ -52,7 +52,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row = $newData;
 		}
-		
+		$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}

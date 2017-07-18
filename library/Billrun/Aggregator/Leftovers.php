@@ -21,7 +21,7 @@ class Billrun_Aggregator_Leftovers extends Billrun_Aggregator_Customer {
 	/**
 	 * load the data to aggregate
 	 */
-	public function load() {
+	public function loadData() {
 		$billrun_key = $this->getStamp();
 		$subscriber = Billrun_Factory::subscriber();
 		$filename = $billrun_key . '_leftover_aggregator_input';

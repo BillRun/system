@@ -5,9 +5,11 @@ var globalSetting = {
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',
   datetimeFormat: "DD/MM/YYYY HH:mm",
+  datetimeLongFormat: "DD/MM/YYYY HH:mm:ss",
   dateFormat: "DD/MM/YYYY",
   timeFormat: "HH:mm",
-  apiDateTimeFormat: "YYYY-MM-DD",
+  apiDateFormat: "YYYY-MM-DD",
+  apiDateTimeFormat: "YYYY-MM-DD[T]HH:mm:ss.SSS[Z]",
   currency: '$',
   list: {
     maxItems: 100,
@@ -25,78 +27,122 @@ var globalSetting = {
   queue_calculators: ['customer', 'rate', 'pricing'],
   mail_support: 'cloud_support@billrun.com',
   logoMaxSize: 2,
+  importMaxSize: 8,
   chargingBufferDays: 5,
   reports: {
-    entities: ['lines'/*, 'subscription', 'customer'*/],
+    entities: ['usage', 'subscription', 'customer'],
     fields: {
-      lines: [
+      usage: [
         // Default settings \ Example
-        // { id: [REQUIRED], type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
+        // { id: [REQUIRED], type: 'string', searchable: true, aggregatable: true, inputConfig: {
         //    inputType: 'select',
         //    options: ['option1', 'option2'] | [{value: 'val', label: 'Label'}, ...] /* array of values or objects */
         //    callback: 'getExampleOptions', /* callback function + should be implementation */
         // } },
-        { id: 'urt', type: 'date', filter: true, display: true, groupBy: true },
-        { id: 'arate_key', type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
-          inputType: 'select',
-          callback: 'getProductsOptions'
-        } },
-        { id: 'arategroup', type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
-          inputType: 'select',
-          callback: 'getGroupsOptions',
-        } },
-        { id: 'lastname', type: 'string', filter: true, display: true, groupBy: false },
-        { id: 'firstname', type: 'string', filter: true, display: true, groupBy: false },
-        { id: 'stamp', type: 'string', filter: true, display: true, groupBy: false },
-        { id: 'billrun', type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
-          inputType: 'select',
-          callback: 'getCyclesOptions',
-        } },
-        { id: 'in_group', type: 'number', filter: true, display: true, groupBy: false },
-        { id: 'aprice', type: 'number', filter: true, display: true, groupBy: false },
-        { id: 'file', type: 'string', filter: true, display: true, groupBy: true },
-        { id: 'plan', type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
-          inputType: 'select',
-          callback: 'getPlansOptions',
-        } },
-        { id: 'billsec', type: 'number', filter: true, display: true, groupBy: false },
-        { id: 'sid', type: 'number', filter: true, display: true, groupBy: true },
-        { id: 'over_group', type: 'number', filter: true, display: true, groupBy: false },
-        { id: 'usagev', type: 'number', filter: true, display: true, groupBy: true },
-        { id: 'usaget', type: 'string', filter: true, display: true, groupBy: true, inputConfig: {
-          inputType: 'select',
-          callback: 'getUsageTypesOptions',
-        } },
-        { id: 'aid', type: 'number', filter: true, display: true, groupBy: true },
-        { id: 'process_time', type: 'string', filter: true, display: true, groupBy: false },
-        { id: 'usagesb', type: 'number', filter: true, display: true, groupBy: false },
-        { id: 'session_id', type: 'string', filter: true, display: true, groupBy: true },
-        { id: 'billrun_pretend', type: 'boolean', filter: true, display: false, groupBy: false },
+        { id: 'urt', type: 'date' },
+        { id: 'lastname' },
+        { id: 'firstname' },
+        { id: 'stamp' },
+        { id: 'in_group', type: 'number' },
+        { id: 'aprice', type: 'number' },
+        { id: 'final_charge', type: 'number' },
+        { id: 'file' },
+        { id: 'billsec', type: 'number' },
+        { id: 'sid', type: 'number' },
+        { id: 'over_group', type: 'number' },
+        { id: 'usagev', type: 'number' },
+        { id: 'aid', type: 'number' },
+        { id: 'process_time', type: 'string' },
+        { id: 'usagesb', type: 'number' },
+        { id: 'session_id', type: 'string' },
+        { id: 'billrun_pretend', type: 'boolean' },
+        { id: 'billrun_status',
+          title: 'Billing cycle status',
+          aggregatable: false,
+          inputConfig: {
+            inputType: 'select',
+            options: [
+              { value: 'current', label: 'Current' },
+              { value: 'first_unconfirmed', label: 'First Unconfirmed' },
+              { value: 'last_confirmed', label: 'Last Confirmed' },
+              { value: 'confirmed', label: 'Confirmed' },
+            ],
+          },
+        },
+        { id: 'arate_key', inputConfig: { inputType: 'select', callback: 'getProductsOptions' } },
+        { id: 'arategroup', inputConfig: { inputType: 'select', callback: 'getGroupsOptions' } },
+        { id: 'billrun', inputConfig: { inputType: 'select', callback: 'getCyclesOptions' } },
+        { id: 'plan', inputConfig: { inputType: 'select', callback: 'getPlansOptions' } },
+        { id: 'usaget', inputConfig: { inputType: 'select', callback: 'getUsageTypesOptions' } },
       ],
+      subscribers: [],
+      account: [],
     },
-    operators: [
-      { id: 'eq', title: '==', types: ['string', 'number', 'boolean', 'date'] }, // 'Equals'
-      { id: 'ne', title: '!=', types: ['string', 'number', 'boolean'] }, // 'Not equals'
-      { id: 'lt', title: '<', types: ['number', 'date'] }, // 'Less than'
-      { id: 'lte', title: '<=', types: ['number', 'date'] }, // 'Less than or equals'
-      { id: 'gt', title: '>', types: ['number', 'date'] }, // 'Greater than'
-      { id: 'gte', title: '>=', types: ['number', 'date'] }, // 'Greater than or equals'
-      { id: 'like', title: 'Contains', types: ['string', 'number'] },
-      { id: 'starts_with', title: 'Starts with', types: ['string'] },
-      { id: 'ends_with', title: 'Ends with', types: ['string'] },
-      { id: 'exists', title: 'Exists', types: ['string', 'number', 'boolean', 'date'] },
-      { id: 'in', title: 'In', types: ['string', 'number'] },
+    conditionsOperators: [
+      { id: 'eq', title: 'Equals', types: ['date', 'boolean', 'fieldid:billrun_status'] }, // 'Equals'
+      { id: 'in', title: 'Equals', types: ['string', 'number'], exclude: ['fieldid:billrun_status'] },
+      { id: 'ne', title: 'Does Not equal', types: ['boolean'] }, // 'Not equals'
+      { id: 'nin', title: 'Does Not equal', types: ['string', 'number'], exclude: ['fieldid:billrun_status'] },
+      { id: 'lt', title: '<', types: ['number', 'date', 'fieldid:billrun'] }, // 'Less than'
+      { id: 'lte', title: '<=', types: ['number', 'date', 'fieldid:billrun'] }, // 'Less than or equals'
+      { id: 'gt', title: '>', types: ['number', 'date', 'fieldid:billrun'] }, // 'Greater than'
+      { id: 'gte', title: '>=', types: ['number', 'date', 'fieldid:billrun'] }, // 'Greater than or equals'
+      { id: 'like',
+        title: 'Contains',
+        types: ['string', 'number'],
+        exclude: [
+          'fieldid:billrun_status',
+          'fieldid:billrun',
+          'fieldid:arate_key',
+          'fieldid:arategroup',
+          'fieldid:plan',
+          'fieldid:usaget',
+        ],
+      },
+      { id: 'starts_with',
+        title: 'Starts with',
+        types: ['string'],
+        exclude: [
+          'fieldid:billrun_status',
+          'fieldid:billrun',
+          'fieldid:arate_key',
+          'fieldid:arategroup',
+          'fieldid:plan',
+          'fieldid:usaget',
+        ],
+      },
+      { id: 'ends_with',
+        title: 'Ends with',
+        types: ['string'],
+        exclude: [
+          'fieldid:billrun_status',
+          'fieldid:billrun',
+          'fieldid:arate_key',
+          'fieldid:arategroup',
+          'fieldid:plan',
+          'fieldid:usaget',
+        ],
+      },
+      { id: 'exists',
+        title: 'Exists',
+        types: ['string', 'number', 'boolean', 'date'],
+        exclude: [
+          'fieldid:billrun_status',
+        ],
+        options: ['yes', 'no'],
+      },
     ],
-    groupByOperators: [
-      { id: 'sum', title: 'Sum', types: ['number'] },
-      { id: 'avg', title: 'Average', types: ['number'] },
-      { id: 'first', title: 'First', types: ['string', 'number', 'boolean', 'date'] },
-      { id: 'last', title: 'Last', types: ['string', 'number', 'boolean', 'date'] },
-      { id: 'max', title: 'Max', types: ['number', 'date'] },
-      { id: 'min', title: 'Min', types: ['number', 'date'] },
-      { id: 'push', title: 'List', types: ['string', 'number', 'boolean', 'date'] },
-      { id: 'addToSet', title: 'Unique List', types: ['string', 'number', 'boolean', 'date'] },
-      { id: 'count', title: 'Count', types: ['string', 'number', 'boolean', 'date'] },
+    aggregateOperators: [
+      { id: 'group', title: 'Group', types: ['string', 'number', 'boolean', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'sum', title: 'Sum', types: ['number'], exclude: ['fieldid:count_group'] },
+      { id: 'avg', title: 'Average', types: ['number'], exclude: ['fieldid:count_group'] },
+      { id: 'first', title: 'First', types: ['string', 'number', 'boolean', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'last', title: 'Last', types: ['string', 'number', 'boolean', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'max', title: 'Max', types: ['number', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'min', title: 'Min', types: ['number', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'push', title: 'List', types: ['string', 'number', 'boolean', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'addToSet', title: 'Unique List', types: ['string', 'number', 'boolean', 'date'], exclude: ['fieldid:count_group'] },
+      { id: 'count', title: 'Count', types: ['fieldid:count_group'] },
     ],
   },
   systemItems: {
@@ -141,6 +187,7 @@ var globalSetting = {
       itemName: 'product',
       itemType: 'product',
       itemsType: 'products',
+      settingsKey: 'rates',
     },
     discount: {
       collection: 'discounts',
@@ -152,16 +199,18 @@ var globalSetting = {
     subscription: {
       collection: 'subscribers',
       uniqueField: 'sid',
-      itemName: 'subscription',
+      itemName: 'subscriber',
       itemType: 'subscription',
       itemsType: 'subscriptions',
+      settingsKey: 'subscribers.subscriber',
     },
     customer: {
-      collection: 'subscribers',
+      collection: 'accounts',
       uniqueField: 'aid',
       itemName: 'customer',
       itemType: 'customer',
       itemsType: 'customers',
+      settingsKey: 'subscribers.account',
     },
     report: {
       collection: 'reports',
@@ -169,6 +218,13 @@ var globalSetting = {
       itemName: 'report',
       itemType: 'report',
       itemsType: 'reports',
+    },
+    usage: {
+      collection: 'lines',
+      uniqueField: 'stamp',
+      itemName: 'usage',
+      itemType: 'usage',
+      itemsType: 'usages',
     },
   },
 };

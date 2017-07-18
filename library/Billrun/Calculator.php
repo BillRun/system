@@ -197,10 +197,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		$linesCollection = Billrun_Factory::db()->linesCollection();
 		$linesCollection->save($line, 1);
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		if (!isset($line['usagev']) || $line['usagev'] === 0) {
-			$this->removeLineFromQueue($line);
-			unset($this->data[$dataKey]);
-		}
 	}
 
 	/**
@@ -337,7 +333,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 
 		// remove end of queue stack calculator
 		if (!empty($stamps)) { // last calculator
-			Billrun_Factory::log("Removing lines from queue", Zend_Log::INFO);
+			Billrun_Factory::log('Removing ' . count($stamps) . ' lines from queue', Zend_Log::INFO);
 			$query = array('stamp' => array('$in' => $stamps));
 			$queue = Billrun_Factory::db()->queueCollection();
 			$queue->remove($query);

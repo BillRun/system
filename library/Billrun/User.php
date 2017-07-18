@@ -57,8 +57,15 @@ class Billrun_User {
 		return $this->entity['username'];
 	}
 	
-	public function getMongoId() {
+	public function getMongoId($as_string = false) {
+		if ($as_string) {
+			return $this->entity['_id']->__toString();
+		}
 		return $this->entity['_id'];
 	}
-
+	
+	public function getLastLogin() {
+		return $this->entity['last_login'];
+	}
+	
 }

@@ -85,7 +85,7 @@ class Billrun_Helpers_QueueCalculators {
 					$this->stuckInQueue[$line['stamp']] = true;
 				}
 
-				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
+				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
 					$line['usagev'] = 0;
 					$line['apr'] = 0;
 					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
