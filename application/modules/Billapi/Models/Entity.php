@@ -625,7 +625,7 @@ class Models_Entity {
 		}
 		$this->trackChanges($this->query['_id']);
 
-		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
