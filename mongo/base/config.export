@@ -121,8 +121,8 @@
                 "system": true,
                 "mandatory": true
             }, {
-                "field_name": "country"
-                "system": true,
+                "field_name": "country",
+                "system": true
             }, {
                 "field_name":"services",
                 "system": true,
