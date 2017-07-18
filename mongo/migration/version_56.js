@@ -229,9 +229,9 @@ for (var i in fileTypes) {
 			if (!fileTypes[i].processor.usaget_mapping[j].unit) {
 				var usaget = fileTypes[i].processor.usaget_mapping[j].usaget;
 				var unit = 'counter';
-				if (usaget.includes('call')) {
+				if (usaget.toLowerCase().includes('call')) {
 					unit = 'seconds';
-				} else if (usaget.includes('data')) {
+				} else if (usaget.toLowerCase().includes('data')) {
 					unit = 'byte';
 				}
 				fileTypes[i].processor.usaget_mapping[j].unit = unit;
@@ -245,9 +245,9 @@ db.rates.find().forEach(function (rate) {
 	for (var usaget in rate.rates) {
 		var ratesObj = rate.rates[usaget];
 		var unit = 'counter';
-		if (usaget.includes('call')) {
+		if (usaget.toLowerCase().includes('call')) {
 			unit = 'seconds';
-		} else if (usaget.includes('data')) {
+		} else if (usaget.toLowerCase().includes('data')) {
 			unit = 'byte';
 		}
 		ratesObj.BASE.rate.forEach(function(step) {
@@ -268,9 +268,9 @@ db.plans.find().forEach(function (plan) {
 		for (var usaget  in plan.rates[rate]) {
 			var ratesObj = plan.rates[rate][usaget];
 			var unit = 'counter';
-			if (usaget.includes('call')) {
+			if (usaget.toLowerCase().includes('call')) {
 				unit = 'seconds';
-			} else if (usaget.includes('data')) {
+			} else if (usaget.toLowerCase().includes('data')) {
 				unit = 'byte';
 			}
 
@@ -297,9 +297,9 @@ db.plans.find().forEach(function (plan) {
 				var unit = 'counter';
 				if (key == 'cost') {
 					unit = '';
-				} else if (key.includes('call')) {
+				} else if (key.toLowerCase().includes('call')) {
 					unit = 'seconds';
-				} else if (key.includes('data')) {
+				} else if (key.toLowerCase().includes('data')) {
 					unit = 'byte';
 				}
 				plan.include.groups[group].unit = unit;
@@ -314,9 +314,9 @@ db.prepaidincludes.find().forEach(function (prepaidinclude) {
 	if (prepaidinclude.charging_by == "usagev" && !prepaidinclude.charging_by_usaget_unit) {
 		var usaget = prepaidinclude.charging_by_usaget;
 		var unit = 'counter';
-		if (usaget.includes('call')) {
+		if (usaget.toLowerCase().includes('call')) {
 			unit = 'seconds';
-		} else if (usaget.includes('data')) {
+		} else if (usaget.toLowerCase().includes('data')) {
 			unit = 'byte';
 		}
 		prepaidinclude.charging_by_usaget_unit = unit;
@@ -337,9 +337,9 @@ db.services.find().forEach(function (service) {
 				var unit = 'counter';
 				if (key == 'cost') {
 					unit = '';
-				} else if (key.includes('call')) {
+				} else if (key.toLowerCase().includes('call')) {
 					unit = 'seconds';
-				} else if (key.includes('data')) {
+				} else if (key.toLowerCase().includes('data')) {
 					unit = 'byte';
 				}
 				service.include.groups[group].unit = unit;
