@@ -24,6 +24,8 @@ class Models_Entity {
 	const ACTIVE = 'active';
 	const ACTIVE_WITH_FUTURE = 'active_with_future';
 
+	const UNLIMITED_DATE = '+149 years';
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -192,7 +194,8 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
 			if ($val !== FALSE) {
@@ -267,7 +270,7 @@ class Models_Entity {
 			$this->update['from'] = new MongoDate();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		}
 		if (empty($this->update['creation_time'])) {
 			$this->update['creation_time'] = $this->update['from'];
@@ -576,6 +579,35 @@ class Models_Entity {
 		return $this->moveEntry('to');
 	}
 
+	public function reopen() {
+		$this->action = 'reopen';
+
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
+			return false;
+		}
+		
+		if (!isset($this->update['from'])) {
+			throw new Billrun_Exceptions_Api(2, array(), 'reopen "from" field is missing');
+		}
+		
+		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
+		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
+		}
+		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
+		}
+		
+		$prevEntity = $this->before->getRawData();
+		$this->update = array_merge($prevEntity, $this->update);
+		unset($this->update['_id']);
+		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		$status = $this->insert($this->update);
+		$newId = $this->update['_id'];
+		$this->trackChanges($newId);
+		return isset($status['ok']) && $status['ok'];
+	}
+
 	/**
 	 * move from date of entity including change the previous entity to field
 	 * 
@@ -645,7 +677,7 @@ class Models_Entity {
 		}
 		$this->trackChanges($this->query['_id']);
 
-		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
@@ -921,7 +953,7 @@ class Models_Entity {
 	 */
 	protected static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return $record['to']->sec < strtotime("+10 years");
+			return self::isItemExpired($record);
 		}
 		return false;
 	}
@@ -951,6 +983,31 @@ class Models_Entity {
 		if ($this->update['_id'] == strval($firstRevision->getId())) {
 			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
 		}
+	}
+
+	/**
+	 * checks if item is not "unlimited", which means it has an expiration date
+	 * 
+	 * @param array $item
+	 * @param string $expiredField
+	 * @return boolean
+	 */
+	protected static function isItemExpired($item, $expiredField = 'to') {
+		return $item[$expiredField]->sec < strtotime("+10 years");
+	}
+	
+	/**
+	 * gets the last revision of the entity (might be expired, active, future)
+	 * 
+	 * @param array $entity
+	 */
+	public function getLastRevisionOfEntity($entity) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query[$fieldName] = $entity[$fieldName];
+		}
+		$sort = array('_id' => -1);
+		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
 	}
 
 }
