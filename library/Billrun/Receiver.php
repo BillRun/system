@@ -53,7 +53,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 		if (isset($options['backup_path'])) {
 			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath($options['backup_path']);
 		} else {
-			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', array('./backups/' . $this->getType())));
+			$this->backupPaths = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue($this->getType() . '.backup_path', './backups/' . $this->getType()));
 		}
 		if (isset($options['receiver']['backup_granularity']) && $options['receiver']['backup_granularity']) {
 			$this->setGranularity((int) $options['receiver']['backup_granularity']);
