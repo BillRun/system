@@ -654,6 +654,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$yearDay = date('z', strtotime($lineTime));
 		try {
 			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
+				Billrun_Factory::log('Quering Fraud server for '.$sid.' vfdays count', Zend_Log::DEBUG);
 				$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
 			} else {
 				return $this->cachedResults[$sid][$lineYear . $yearDay];
