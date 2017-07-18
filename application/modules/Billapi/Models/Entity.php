@@ -534,7 +534,7 @@ class Models_Entity {
 	public function reopen() {
 		$this->action = 'reopen';
 
-		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
 		
@@ -545,6 +545,9 @@ class Models_Entity {
 		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
+		}
+		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
 		
 		$prevEntity = $this->before->getRawData();
