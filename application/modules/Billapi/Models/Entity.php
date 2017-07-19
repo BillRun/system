@@ -143,7 +143,16 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
+		if ($params['collection'] == 'accounts') { 
+			$customFieldsPath = 'subscribers.account';
+		} else if ($params['collection'] == 'subscribers') {
+			$customFieldsPath = 'subscribers.subscriber';
+		} else {
+			$customFieldsPath = $params['collection'];
+		}
+		$customFields = Billrun_Factory::config()->getConfigValue($customFieldsPath . '.fields', array());
+		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999, true, array(), $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
 		foreach ($this->availableOperations as $operation) {
@@ -311,11 +320,11 @@ class Models_Entity {
 	}
 	
 	protected function checkUpdate() {
-		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
+		if (!$this->query || empty($this->query)) {
 			return;
 		}
 		
-		$this->protectKeyField();
+		//$this->protectKeyField();    // TODO: NOT WORKING
 
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
