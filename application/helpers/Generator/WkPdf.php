@@ -54,6 +54,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			'header' => $this->paths['tmp'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'] . 'tmp_footer.html',
 		);
+
+		$this->custom = array(
+			'header' => Billrun_Factory::config()->getConfigValue(self::$type . '.header', ''),
+			'footer' => Billrun_Factory::config()->getConfigValue(self::$type . '.footer', ''),
+		);
 		
 		//only generate bills that are 0.01 and above.
 		$this->invoice_threshold = Billrun_Util::getFieldVal($options['generator']['minimum_amount'], 0.005);
@@ -160,7 +165,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$this->updateHtmlDynamicData($account);
 			
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id']." to : $pdf" ,Zend_Log::INFO);
-			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+			exec($this->wkpdf_exec . " -R 0.1 -L 0 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
 	}
 	
@@ -189,12 +194,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$headerContent = file_get_contents($this->header_path);
 		$headerContent = str_replace("[[invoiceHeaderTemplate]]", $this->getInvoiceHeaderContent(), $headerContent);		
-		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);		
+		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);
+		$customHeader = (!empty($this->custom['header'])) ? "<div class='section-custom-header'>{$this->custom['header']}</div>" : '';
+		$headerContent = str_replace("[[invoiceCustomHeader]]", $customHeader, $headerContent);		
 		
 		$footerContent = file_get_contents($this->footer_path);
 		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateFontAwesomeStyle]]", $this->font_awesome_css_path, $footerContent);
+		$customFooter = (!empty($this->custom['footer'])) ? "<div class='section-custom-footer'>{$this->custom['footer']}</div>" : '';
+		$footerContent = str_replace("[[invoiceCustomFooter]]", $customFooter, $footerContent);	
 
 		foreach ($translations as $translation) {
 			switch ($translation) {
@@ -237,7 +246,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getInvoiceHeaderContent() {
-		//TODO : in future header should came from config
 		return "
 			{$this->tanent_css}
 			<div class='table'>
@@ -250,11 +258,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					</tbody>
 				</table>
 			</div>";
-		return Billrun_Factory::config()->getConfigValue(self::$type . '.header', '');
 	}
 	
 	protected function getInvoiceFooterContent() {
-		//TODO : in future footer should came from config
 		return "
 			{$this->tanent_css}
 			<div class='table footer'>
@@ -278,8 +284,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				</tbody>
 			  </table>
 			</div>";
-		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
 	}
+
 	/**
 	 * generate Teanat specific CSS 
 	 * @param type $css
