@@ -19,7 +19,7 @@ class ResetLinesModel {
 	 *
 	 * @var array
 	 */
-	protected $sids;
+	protected $aids;
 
 	/**
 	 *
@@ -33,8 +33,8 @@ class ResetLinesModel {
 	 */
 	protected $process_time_offset;
 
-	public function __construct($sids, $billrun_key) {
-		$this->sids = $sids;
+	public function __construct($aids, $billrun_key) {
+		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 	}
@@ -48,15 +48,15 @@ class ResetLinesModel {
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances($sids) {
+	public function resetBalances($aids) {
 		$ret = true;
 		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
-		if (!empty($this->sids) && !empty($this->billrun_key)) {
+		if (!empty($this->aids) && !empty($this->billrun_key)) {
 			$startTime = Billrun_Billingcycle::getStartTime($this->billrun_key);
 			$endTime = Billrun_Billingcycle::getEndTime($this->billrun_key);
 			$query = array_merge(
-				Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime), array('sid' => array(
-					'$in' => $sids,
+				Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime), array('aid' => array(
+					'$in' => $aids,
 				))
 			);
 			$ret = $balances_coll->remove($query); // ok ==1 && n>0
@@ -66,10 +66,10 @@ class ResetLinesModel {
 
 	/**
 	 * Get the reset lines query.
-	 * @param array $update_sids - Array of sid's to reset.
+	 * @param array $update_aids - Array of aid's to reset.
 	 * @return array Query to run in the collection for reset lines.
 	 */
-	protected function getResetLinesQuery($update_sids) {
+	protected function getResetLinesQuery($update_aids) {
 		return array(
 			'$or' => array(
 				array(
@@ -85,8 +85,8 @@ class ResetLinesModel {
 					)
 				),
 			),
-			'sid' => array(
-				'$in' => $update_sids,
+			'aid' => array(
+				'$in' => $update_aids,
 			),
 			'type' => array(
 				'$ne' => 'credit',
@@ -98,15 +98,15 @@ class ResetLinesModel {
 	}
 
 	/**
-	 * Reset lines for subscribers based on input array of SID's
-	 * @param array $update_sids - Array of subscriber ID's to reset.
+	 * Reset lines for subscribers based on input array of AID's
+	 * @param array $update_aids - Array of account ID's to reset.
 	 * @param array $advancedProperties - Array of advanced properties.
 	 * @param Mongodloid_Collection $lines_coll - The lines collection.
 	 * @param Mongodloid_Collection $queue_coll - The queue colection.
 	 * @return boolean true if successful false otherwise.
 	 */
-	protected function resetLinesForSubscribers($update_sids, $advancedProperties, $lines_coll, $queue_coll) {
-		$query = $this->getResetLinesQuery($update_sids);
+	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+		$query = $this->getResetLinesQuery($update_aids);
 		$lines = $lines_coll->query($query);
 		$stamps = array();
 		$queue_lines = array();
@@ -126,7 +126,7 @@ class ResetLinesModel {
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_sids)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids)) {
 				return false;
 			}
 		}
@@ -139,7 +139,7 @@ class ResetLinesModel {
 	protected function resetLines() {
 		$lines_coll = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
 		$queue_coll = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
-		if (empty($this->sids) || empty($this->billrun_key)) {
+		if (empty($this->aids) || empty($this->billrun_key)) {
 			// TODO: Why return true?
 			return true;
 		}
@@ -148,9 +148,9 @@ class ResetLinesModel {
 		$configFields = array('imsi', 'msisdn', 'called_number', 'calling_number');
 		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", $configFields);
 
-		while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
-			Billrun_Factory::log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
-			$this->resetLinesForSubscribers($update_sids, $advancedProperties, $lines_coll, $queue_coll);
+		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
+			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
+			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
 			$offset += 10;
 		}
 
@@ -235,10 +235,10 @@ class ResetLinesModel {
 	 * @param type $queue_coll
 	 * @param type $queue_lines
 	 * @param type $lines_coll
-	 * @param type $update_sids
+	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_sids) {
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids) {
 		$update = $this->getUpdateQuery();
 		$stamps_query = $this->getStampsQuery($stamps);
 
@@ -247,7 +247,7 @@ class ResetLinesModel {
 			return FALSE;
 		}
 
-		$ret = $this->resetBalances($update_sids); // err null
+		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
