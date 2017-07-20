@@ -40,7 +40,7 @@ class ConfigModel {
 	 * reserved names of File Types.
 	 * @var array
 	 */
-	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount', 'all');
 	
 	/**
 	 * Valid file type names regex
