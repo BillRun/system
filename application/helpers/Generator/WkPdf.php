@@ -54,10 +54,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			'header' => $this->paths['tmp'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'] . 'tmp_footer.html',
 		);
-
+		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
+		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
 		$this->custom = array(
-			'header' => Billrun_Factory::config()->getConfigValue(self::$type . '.header', ''),
-			'footer' => Billrun_Factory::config()->getConfigValue(self::$type . '.footer', ''),
+			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
+			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
 		);
 		
 		//only generate bills that are 0.01 and above.
@@ -195,14 +196,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$headerContent = file_get_contents($this->header_path);
 		$headerContent = str_replace("[[invoiceHeaderTemplate]]", $this->getInvoiceHeaderContent(), $headerContent);		
 		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);
-		$customHeader = (!empty($this->custom['header'])) ? "<div class='section-custom-header'>{$this->custom['header']}</div>" : '';
+		$customHeader = ($this->custom['header'] !== false) ? "<div class='section-custom-header'>{$this->custom['header']}</div>" : '';
 		$headerContent = str_replace("[[invoiceCustomHeader]]", $customHeader, $headerContent);		
 		
 		$footerContent = file_get_contents($this->footer_path);
 		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateFontAwesomeStyle]]", $this->font_awesome_css_path, $footerContent);
-		$customFooter = (!empty($this->custom['footer'])) ? "<div class='section-custom-footer'>{$this->custom['footer']}</div>" : '';
+		$customFooter = (!empty($this->custom['footer']) !== false) ? "<div class='section-custom-footer'>{$this->custom['footer']}</div>" : '';
 		$footerContent = str_replace("[[invoiceCustomFooter]]", $customFooter, $footerContent);	
 
 		foreach ($translations as $translation) {

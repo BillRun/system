@@ -29,7 +29,11 @@
 		"html_translation" : [
 			"company_name",
 			"date"
-		]
+		],
+		"status" : {
+			"header" : false,
+			"footer" : false
+		}
 	},
 	"menu" : {
 		"t" : "menu",
