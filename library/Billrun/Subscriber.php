@@ -99,8 +99,8 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		else if (array_key_exists($name, $this->customerExtraData) && isset ($this->data['extra_data'][$name])) {
 			return $this->data['extra_data'][$name];
-		} else if (array_key_exists($name, $this->optionalFields) && array_key_exists($name, $this->data)) {
-			return $this->data[$name];
+		} else if (array_key_exists($name, $this->optionalFields) && array_key_exists($this->optionalFields[$name], $this->data)) {
+			return $this->data[$this->optionalFields[$name]];
 		}
 
 		return null;
