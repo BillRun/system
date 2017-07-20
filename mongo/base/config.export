@@ -103,11 +103,17 @@
             }, {
                 "field_name": "firstname",
                 "system": true,
-                "mandatory": true
+                "mandatory": true,
+		"title": "First name",
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "lastname",
                 "system": true,
-                "mandatory": true
+                "mandatory": true,
+		"title": "Last name",
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "plan",
                 "system": true,
@@ -119,10 +125,16 @@
             }, {
                 "field_name": "address",
                 "system": true,
-                "mandatory": true
+                "mandatory": true,
+		"title": "First name",
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "country"
                 "system": true,
+		"title": "Country",
+		"editable": true,
+		"display": true
             }, {
                 "field_name":"services",
                 "system": true,
@@ -141,26 +153,38 @@
                 "mandatory": true,
 				"system": true,
                 "title": "First name",
-                "show_in_list" : true
+                "show_in_list" : true,
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "lastname",
                 "mandatory": true,
 				"system": true,
                 "title": "Last name",
-                "show_in_list" : true
+                "show_in_list" : true,
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "email",
                 "mandatory": true,
-				"system": true
+				"system": true,
+		"title": "E-mail",
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "country",
                 "system": true,
-                "mandatory": true
+                "mandatory": true,
+		"title": "Country",
+		"editable": true,
+		"display": true
             }, {
                 "field_name": "address",
                 "system": true,
                 "mandatory": true,
-                "title": "Address"
+                "title": "Address",
+		"editable": true,
+		"display": true
             },
             {
                 "field_name": "zip_code",
