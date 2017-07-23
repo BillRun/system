@@ -303,7 +303,6 @@ class ConfigModel {
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
 			throw new Exception($data . ' is illegal usage type');
 		} else {
-			$this->preUpdateConfig($category, $data, $updatedData[$category]);
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
 			}
@@ -330,9 +329,6 @@ class ConfigModel {
 	 */
 	protected function preUpdateConfig($category, $data, $prevData) {
 		if ($this->isCustomFieldsConfig($category, $data)) {
-			if ($category === 'subscribers') { // TODO: hack. While account is still under subscribers, also validate accounts
-				$this->validateCustomFields('accounts', $data, $prevData);
-			}
 			$this->validateCustomFields($category, $data, $prevData);
 		}
 		return true;
@@ -350,18 +346,16 @@ class ConfigModel {
 	protected function validateCustomFields($category, $data, $prevData) {
 		$params = array(
 			'no_init' => true,
-			'collection' => $category,
+			'collection' => $this->getCollectionName($category),
 		);
 		$entityModel = Models_Entity::getInstance($params);
-		$customFieldsPath = $entityModel->getCustomFieldsPath();
-		$fieldsPath = substr($customFieldsPath, strpos($customFieldsPath, ".") + 1); // we are already inside the $category
 		
 		$mandatoryFields = array();
 		$uniqueFields = array();
-		foreach (Billrun_Util::getIn($data, $fieldsPath, array()) as $field) {
+		foreach ($data as $field) {
 			$fieldName = $field['field_name'];
 			$prevField = false;
-			foreach (Billrun_Util::getIn($prevData, $fieldsPath, array()) as $f) {
+			foreach ($prevData as $f) {
 				if ($f['field_name'] === $fieldName) {
 					$prevField = $f;
 					break;
@@ -447,6 +441,7 @@ class ConfigModel {
 		
 		foreach ($uniqueFields as $field) {
 			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
+			$unwind = '$' . $field;
 			$project = array(
 				$field => 1,
 				't.from' => '$from',
@@ -461,6 +456,7 @@ class ConfigModel {
 			
 			$results = $entityModel->getCollection()->aggregate(
 				array('$match' => $match),
+				array('$unwind' => $unwind),
 				array('$project' => $project),
 				array('$sort' => $sort),
 				array('$group' => $group),
@@ -482,6 +478,18 @@ class ConfigModel {
 		return true;
 	}
 	
+	protected function getCustomFields() {
+		return array(
+			'subscribers.subscriber.fields' => 'subscribers',
+			'subscribers.account.fields' => 'accounts',
+			'rates.fields' => 'subscribers',
+		);
+	}
+	
+	protected function getCollectionName($category) {
+		return Billrun_Util::getIn($this->getCustomFields(), $category, '');
+	}
+	
 	/**
 	 * checks if the updated category is of  a custom field
 	 * 
@@ -490,7 +498,7 @@ class ConfigModel {
 	 * @return boolean
 	 */
 	protected function isCustomFieldsConfig($category, $data) {
-		return in_array($category, array('subscribers', 'accounts'));
+		return array_key_exists($category, $this->getCustomFields());
 	}
 	
 	public function validateConfig($category, $data) {
@@ -576,6 +584,7 @@ class ConfigModel {
 			return 1;
 		}
 		
+		$this->preUpdateConfig($category, $data, $valueInCategory);
 		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 	}
 	
