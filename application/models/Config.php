@@ -327,7 +327,7 @@ class ConfigModel {
 	 * @return true on success, throws error in case of an error
 	 * @todo re-factor after fields move from subscribers.account.fields => accounts.fields
 	 */
-	protected function preUpdateConfig($category, $data, $prevData) {
+	protected function preUpdateConfig($category, &$data, $prevData) {
 		if ($this->isCustomFieldsConfig($category, $data)) {
 			$this->validateCustomFields($category, $data, $prevData);
 		}
@@ -343,7 +343,7 @@ class ConfigModel {
 	 * @return true on validation success
 	 * @throws Exception on validation failure
 	 */
-	protected function validateCustomFields($category, $data, $prevData) {
+	protected function validateCustomFields($category, &$data, $prevData) {
 		$params = array(
 			'no_init' => true,
 			'collection' => $this->getCollectionName($category),
@@ -352,7 +352,7 @@ class ConfigModel {
 		
 		$mandatoryFields = array();
 		$uniqueFields = array();
-		foreach ($data as $field) {
+		foreach ($data as &$field) {
 			$fieldName = $field['field_name'];
 			$prevField = false;
 			foreach ($prevData as $f) {
@@ -361,11 +361,15 @@ class ConfigModel {
 					break;
 				}
 			}
+			
+			if ($field['unique']) {
+				$field['mandatory'] = true;
+			}
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = $fieldName;
 			}
-
+			
 			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
 				$uniqueFields[] = $fieldName;
 			}
@@ -413,9 +417,8 @@ class ConfigModel {
 		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
 		$mandatoryQuery['$or'] = array();
 		foreach ($mandatoryFields as $field) {
-			$fieldName = $field['field_name'];
-			$mandatoryQuery['$or'][] = array($fieldName => '');
-			$mandatoryQuery['$or'][] = array($fieldName => array('$exists' => false));
+			$mandatoryQuery['$or'][] = array($field => '');
+			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
 		}
 		
 		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;

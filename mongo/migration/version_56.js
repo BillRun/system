@@ -389,3 +389,33 @@ for (var i in subscriberFields) {
 lastConfig.subscribers.subscriber.fields = subscriberFields;
 
 db.config.insert(lastConfig);
+
+// BRCD-933: make all unique custom fields mandatory
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+var accountFields = lastConfig.subscribers.account.fields;
+for (var i in accountFields) {
+	if (accountFields[i].unique) {
+		accountFields[i].mandatory = true;
+	}
+}
+lastConfig.subscribers.account.fields = accountFields;
+
+var subscriberFields = lastConfig.subscribers.subscriber.fields;
+for (var i in subscriberFields) {
+	if (subscriberFields[i].unique) {
+		subscriberFields[i].mandatory = true;
+	}
+}
+lastConfig.subscribers.subscriber.fields = subscriberFields;
+
+var rateFields = lastConfig.rates.fields;
+for (var i in rateFields) {
+	if (rateFields[i].unique) {
+		rateFields[i].mandatory = true;
+	}
+}
+lastConfig.rates.fields = rateFields;
+
+db.config.insert(lastConfig);
