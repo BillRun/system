@@ -13,9 +13,25 @@
  */
 class Billrun_Utils_Arrayquery_Expression {
 	
-	protected $mapping = array();
+	protected $mapping = array(
+		'$gt' => '_gt',
+		'$gte' => '_gte',
+		'$lt' => '_lt',
+		'$lte' => '_lte',
+		'$eq' => '_equal',
+		'$ne' => '_neq',
+		'$in' => '_in',
+		'$nin' => '_nin',
+		'$all' => '_covers',
+		'$and' => '_and',
+		'$or' => '_or',
+		'$not' => '_not',
+		'$regex' => '_regex',
+		'*' => '_search',
+		'**' => '_deepSearch',
+	);
 	
-	public function __construct($mapping) {
+	public function __construct($mapping = array()) {
 		$this->loadMapping($mapping);
 	}
 	
@@ -24,7 +40,9 @@ class Billrun_Utils_Arrayquery_Expression {
 	 * @param type $mapping
 	 */
 	public function loadMapping($mapping) {
-		$this->mapping =  $mapping;
+		if ($mapping) {
+			$this->mapping =  $mapping;
+		}
 	}
 	
 	/**

@@ -15,26 +15,6 @@ class Billrun_Utils_Arrayquery_Query {
 	
 	const MAX_ARRAY_LENGTH = 1024;
 	
-	static protected $mapping = array(
-		'$gt' => '_gt',
-		'$gte' => '_gte',
-		'$lt' => '_lt',
-		'$lte' => '_lte',
-		'$eq' => '_equal',
-		'$neq' => '_neq',
-		'$in' => '_in',
-		'$nin' => '_nin',
-		'$all' => '_covers',
-		'$and' => '_and',
-		'$or' => '_or',
-		'$not' => '_not',
-		'$regex' => '_regex',
-		'*' => '_search',
-		'**' => '_deepSearch',
-	);
-	
-	
-	
 	public static function query($array, $rawQuery) {
 		if(count($array) > static::MAX_ARRAY_LENGTH) {
 			Billrun_Factory::log('Cannot query  array bigger than : '.static::MAX_ARRAY_LENGTH,  Zend_Log::Alert);
@@ -71,7 +51,7 @@ class Billrun_Utils_Arrayquery_Query {
 	
 	protected static function _query($array, $query) {	
 		
-		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',static::$mapping));
+		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',array()));
 		$ret =  $expression->evaluate($array, $query) ? $array : array();
 		if(empty($ret)) {
 			foreach($array as $key => $value) {
@@ -87,7 +67,7 @@ class Billrun_Utils_Arrayquery_Query {
 	}
 	
 	protected static function _exists($array, $query) {
-		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',static::$mapping));
+		$expression = new Billrun_Utils_Arrayquery_Expression(Billrun_Factory::config()->getConfigValue('array_query.expressions_mapping',array()));
 		$ret = $expression->evaluate($array, $query) ? TRUE : FALSE;
 		if(empty($ret)) {
 			foreach($array as $value) {

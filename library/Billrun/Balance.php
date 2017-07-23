@@ -39,7 +39,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @todo take from customer pricing
 	 */
 	public $pricingField = self::DEF_CALC_DB_FIELD;
-
+	
 	/**
 	 * constructor of balance entity
 	 * 
@@ -175,9 +175,20 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * @param array $update the update command
 	 * 
 	 * @return array update command results
+	 * @throws MongoResultException
 	 */
 	public function update($query, $update) {
-		return $this->collection()->update($query, $update, array('w' => 1));
+		$options = array(
+			'new' => TRUE,
+		);
+		$ret = $this->collection()->findAndModify($query, $update, null, $options);
+		if ($ret->isEmpty()) {
+			return FALSE;
+		}
+		$after = $ret->getRawData();
+		Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, array('aid' => $after['aid'], 'sid' => $after['sid']));
+		$this->setRawData($after);
+		return $ret;
 	}
 
 	/**

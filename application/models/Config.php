@@ -109,14 +109,14 @@ class ConfigModel {
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
 		}
-		else if ($category == 'events.pricing') {
-			if (empty($data['event_type'])) {
+		else if ($category == 'events.balance') {
+			if (empty($data['event_code'])) {
 				return Billrun_Util::getIn($currentConfig, $category, []);
 			}
-			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_type', $data['event_type'])) {
+			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_code', $data['event_code'])) {
 				return $fileSettings;
 			}
-			throw new Exception('Unknown event ' . $data['event_type']);
+			throw new Exception('Unknown event ' . $data['event_code']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
 		} else if ($category == 'payment_gateways') {
@@ -225,9 +225,9 @@ class ConfigModel {
 			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
 		}
-		else if ($category === 'events.pricing') {
+		else if ($category === 'events.balance') {
 			if ($this->validateEvent($data)) {
-				$this->setSettingsArrayElement($updatedData, $data, 'events.pricing', 'event_type');
+				$this->setSettingsArrayElement($updatedData, $data, 'events.balance', 'event_code');
 			}
 		} else if ($category === 'payment_gateways') {	
 			if (!is_array($data)) {
@@ -344,8 +344,8 @@ class ConfigModel {
 	protected function updateRoot(&$currentConfig, $data) {
 		foreach ($data as $key => $value) {
 			foreach ($value as $k => $v) {
-				Billrun_Factory::log("Data: " . print_r($data,1));
-				Billrun_Factory::log("Value: " . print_r($value,1));
+//				Billrun_Factory::log("Data: " . print_r($data,1));
+//				Billrun_Factory::log("Value: " . print_r($value,1));
 				if (!$this->_updateConfig($currentConfig, $k, $v)) {
 					return 0;
 				}
@@ -556,11 +556,11 @@ class ConfigModel {
 				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
 		}
-		else if ($category === 'events.pricing') {
-			if (empty($data['event_type'])) {
-				throw new Exception('Must supply event_type');
+		else if ($category === 'events.balance') {
+			if (empty($data['event_code'])) {
+				throw new Exception('Must supply event_code');
 			}
-			$this->unsetSettingsArrayElement($updatedData, $category, 'event_type', $data['event_type']);
+			$this->unsetSettingsArrayElement($updatedData, $category, 'event_code', $data['event_code']);
 		}
 		else if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
@@ -775,7 +775,7 @@ class ConfigModel {
 	 * @return boolean
 	 */
 	protected function validateEvent($data) {
-		if (!isset($data['event_type'])) {
+		if (!isset($data['event_code'])) {
 			throw new Exception('Invalid data for events.');
 		}
 		return TRUE;
