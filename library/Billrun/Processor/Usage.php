@@ -13,6 +13,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	protected $defaultUsaget = 'general';
 	protected $usagetMapping = null;
+	protected $usagevUnit = 'counter';
 	protected $usagevFields = array();
 	protected $dateField = null;
 	protected $dateFormat = null;
@@ -83,7 +84,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		
 		$row['urt'] = new MongoDate($datetime->format('U'));	
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
-		$row['usagev'] = $this->getLineUsageVolume($row['uf']);
+		$usagev = $this->getLineUsageVolume($row['uf']);
+		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
@@ -147,11 +149,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getLineUsageType($userFields) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
-				if (!isset($usagetMapping['pattern'],$usagetMapping['src_field'])) {
+				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field'])) {
+					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					return $usagetMapping['usaget'];
 				}
-				if (isset($userFields[$usagetMapping['src_field']]) && preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
-					return $usagetMapping['usaget'];
+				if (isset($userFields[$usagetMapping['src_field']])) {
+					if (!Billrun_Util::isValidRegex($usagetMapping['pattern'])) {
+						$usagetMapping['pattern'] = "/^" . preg_quote($usagetMapping['pattern']) . "$/";
+					}
+					if (preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
+						$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
+						return $usagetMapping['usaget'];
+					}
 				}
 			}
 		}

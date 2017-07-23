@@ -253,7 +253,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 			$linesCollection = $db->linesCollection();
 			$ret = $linesCollection->update($query, $update, array('upsert' => true, 'w' => $this->writeConcern));
-			$success = ($this->writeConcern == 0 && $ret) || (($this->writeConcern > 0 || $this->writeConcern = 'majority') && isset($ret['ok']) && $ret['ok'] && isset($ret['n']) && $ret['n'] > 0);
+			$success = ($this->writeConcern == 0 && $ret) || (($this->writeConcern > 0 || $this->writeConcern = 'majority') && isset($ret['ok']) && $ret['ok'] && isset($ret['ok']) && $ret['ok'] == 1);
 			if (!$success) {
 				$updateFailedLines[$key] = array('unified' => $row, 'lines' => $this->unifiedToRawLines[$key]['update']);
 				foreach ($this->unifiedToRawLines[$key]['update'] as $lstamp) {

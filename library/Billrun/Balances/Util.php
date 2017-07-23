@@ -115,7 +115,7 @@ class Billrun_Balances_Util {
 			)
 		);
 		$options = array(
-			'multiple' => 1,
+			'multiple' => true,
 		);
 		
 		$balances = Billrun_Factory::db()->balancesCollection();

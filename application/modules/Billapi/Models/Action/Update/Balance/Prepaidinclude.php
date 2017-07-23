@@ -115,7 +115,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		} else if (is_string($expirationDate)) {
 			$this->to = new MongoDate(strtotime($expirationDate));
 		} else { // fallback to 30 days charge (@TODO move to config)
-			$this->to = new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1);
+			$this->to = new MongoDate(strtotime('tomorrow +1 month') - 1);
 		}
 	}
 	

@@ -123,6 +123,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 		}
 	}
 
+	public function getExportDirectory() {
+		return $this->export_directory;
+	}
+	
 	/**
 	 * load the container the need to be generate
 	 */

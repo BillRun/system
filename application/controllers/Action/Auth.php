@@ -51,7 +51,12 @@ class AuthAction extends ApiAction  {
 		
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
-			  return array( 'user' => Billrun_Factory::user()->getUsername(), 'permissions' => Billrun_Factory::user()->getPermissions());
+			$userData = array(
+				'user' => Billrun_Factory::user()->getUsername(),
+				'permissions' => Billrun_Factory::user()->getPermissions(),
+				'last_login' => Billrun_Factory::user()->getLastLogin(),
+			);
+			  return $userData;
 		}		
 		
 		if(isset( $params['username'],$params['password'])) {
@@ -84,10 +89,20 @@ class AuthAction extends ApiAction  {
 						'ip' => $ip,
 					);
 					Billrun_AuditTrail_Util::trackChanges('login', 'login_' . $username, 'Login', null, null, $additionalParams);
-
-					return array( 'user' => Billrun_Factory::user()->getUsername(), 'permissions' => Billrun_Factory::user()->getPermissions());
-
-				} else {
+					
+					$userData = array(
+						'user' => Billrun_Factory::user()->getUsername(),
+						'permissions' => Billrun_Factory::user()->getPermissions(),
+						'last_login' => Billrun_Factory::user()->getLastLogin(),
+					);
+					// save user last login and update current
+					$user_model = new UsersModel();
+					$user_model->updateUserLastLogin(Billrun_Factory::user()->getMongoId(true));
+					$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
+					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity->getRawData()));
+					return $userData;
+					
+				} else { // LDAP
 					$entity = new stdClass();
 					$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this, &$entity));
 					if ($result) {
@@ -98,6 +113,7 @@ class AuthAction extends ApiAction  {
 						$entity = new stdClass();
 						$entity->username = $username;
 						$entity->roles = array();
+						$entity->last_login = null;
 						$xml = simplexml_load_string($result);
 						$groups = (array) $xml->PARAMS->IT_OUT_PARAMS->MemberOf->Group;
 						$entity->roles = array();
@@ -105,8 +121,14 @@ class AuthAction extends ApiAction  {
 							$entity->roles[] = str_ireplace('billrun_', '', $group);
 						}
 						Billrun_Factory::auth()->getStorage()->write(array('current_user' => (array) $entity));
+						
+						$userData = array(
+							'user' => Billrun_Factory::user()->getUsername(),
+							'permissions' => Billrun_Factory::user()->getPermissions(),
+							'last_login' => Billrun_Factory::user()->getLastLogin(),
+						);
 
-						return array( 'user' => Billrun_Factory::user()->getUsername(), 'permissions' => Billrun_Factory::user()->getPermissions());
+						return $userData;
 					}
 				}
 			}

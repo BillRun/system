@@ -264,10 +264,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::db()->queueCollection()->update($where, $save);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		if (!isset($line['usagev']) || $line['usagev'] === 0) {
-			$this->removeLineFromQueue($line);
-			unset($this->data[$dataKey]);
-		}
 	}
 
 	public function getPossiblyUpdatedFields() {

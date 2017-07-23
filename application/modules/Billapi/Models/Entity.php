@@ -24,6 +24,8 @@ class Models_Entity {
 	const ACTIVE = 'active';
 	const ACTIVE_WITH_FUTURE = 'active_with_future';
 
+	const UNLIMITED_DATE = '+149 years';
+
 	/**
 	 * The DB collection name
 	 * @var string
@@ -106,15 +108,28 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
+	
+	public static function getInstance($params) {
+		$modelPrefix = 'Models_';
+		$className = $modelPrefix . ucfirst($params['collection']);
+		if (!@class_exists($className)) {
+			$className = $modelPrefix . 'Entity';
+		}
+		return new $className($params);
+	}
 
 	public function __construct($params) {
-		if ($params['collection'] == 'accounts') {
+		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
 			$this->collectionName = $params['collection'];
 		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $params['collection'] . '.ini');
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
+		if (isset($params['no_init']) && $params['no_init']) {
+			return;
+		}
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -169,6 +184,9 @@ class Models_Entity {
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
+		if (is_null($defaultFields)) {
+			$defaultFields = array();
+		}
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
@@ -176,7 +194,8 @@ class Models_Entity {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
+			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
 			if ($val !== FALSE) {
@@ -189,8 +208,15 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
-		$query = $this->getNotRevisionsOfEntity($data);
-		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
+		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		$startTime = strtotime($data['from']);
+		$endTime = strtotime($data['to']);
+		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
 
 		return $this->collection->query($query)->count() > 0;
 	}
@@ -207,6 +233,9 @@ class Models_Entity {
 		}
 		$query['$or'] = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			if (!isset($data[$fieldName])) {
+				continue;
+			}
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
@@ -220,7 +249,12 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()),
+			function($customField) {return !Billrun_Util::getFieldVal($customField['system'], false);});
+	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".fields";
 	}
 
 	/**
@@ -236,7 +270,10 @@ class Models_Entity {
 			$this->update['from'] = new MongoDate();
 		}
 		if (empty($this->update['to'])) {
-			$this->update['to'] = new MongoDate(strtotime('+149 years'));
+			$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		}
+		if (empty($this->update['creation_time'])) {
+			$this->update['creation_time'] = $this->update['from'];
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
@@ -255,10 +292,29 @@ class Models_Entity {
 	public function update() {
 		$this->action = 'update';
 
+		$this->checkUpdate();
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * Performs the changepassword action by a query and data to update
+	 * @param array $query
+	 * @param array $data
+	 */
+	public function changePassword() {
+		$this->action = 'changepassword';
+		
+		$this->checkUpdate();
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
+		return true;
+	}
+	
+	protected function checkUpdate() {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-
+		
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
@@ -268,8 +324,6 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
-		return true;
 	}
 
 	/**
@@ -525,6 +579,35 @@ class Models_Entity {
 		return $this->moveEntry('to');
 	}
 
+	public function reopen() {
+		$this->action = 'reopen';
+
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
+			return false;
+		}
+		
+		if (!isset($this->update['from'])) {
+			throw new Billrun_Exceptions_Api(2, array(), 'reopen "from" field is missing');
+		}
+		
+		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
+		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
+		}
+		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
+			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
+		}
+		
+		$prevEntity = $this->before->getRawData();
+		$this->update = array_merge($prevEntity, $this->update);
+		unset($this->update['_id']);
+		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
+		$status = $this->insert($this->update);
+		$newId = $this->update['_id'];
+		$this->trackChanges($newId);
+		return isset($status['ok']) && $status['ok'];
+	}
+
 	/**
 	 * move from date of entity including change the previous entity to field
 	 * 
@@ -558,6 +641,7 @@ class Models_Entity {
 					'$lte' => $this->before[$edge],
 				)
 			);
+
 			$sort = -1;
 			$rangeError = 'Requested start date is less than previous end date';
 		} else {
@@ -570,7 +654,7 @@ class Models_Entity {
 			$sort = 1;
 			$rangeError = 'Requested end date is greater than next start date';
 		}
-
+		
 		// previous entry on move from, next entry on move to
 		$followingEntry = $this->collection->query($query)->cursor()
 			->sort(array($otherEdge => $sort))
@@ -588,9 +672,12 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
+		if ($edge == 'from') {
+			$this->updateCreationTime($keyField, $edge);
+		}
 		$this->trackChanges($this->query['_id']);
 
-		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
 			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
 			$this->setBefore($followingEntry);
@@ -753,7 +840,7 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	protected function insert(&$data) {
-		$ret = $this->collection->insert($data, array('w' => 1, 'j' => 1));
+		$ret = $this->collection->insert($data, array('w' => 1, 'j' => true));
 		return $ret;
 	}
 
@@ -866,9 +953,61 @@ class Models_Entity {
 	 */
 	protected static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return $record['to']->sec < strtotime("+10 years");
+			return self::isItemExpired($record);
 		}
 		return false;
+	}
+	
+	public function getCollectionName() {
+		return $this->collectionName;
+	}
+	
+	public function getCollection() {
+		return $this->collection;
+	}
+	
+	public function getMatchSubQuery() {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		
+		return $query;
+	}
+	
+	protected function updateCreationTime($keyField, $edge) {
+		$queryCreation = array(
+			$keyField => $this->before[$keyField],
+		);
+		$firstRevision = $this->collection->query($queryCreation)->cursor()->sort(array($edge => 1))->limit(1)->current();
+		if ($this->update['_id'] == strval($firstRevision->getId())) {
+			$this->collection->update($queryCreation, array('$set' => array('creation_time' => $this->update[$edge])), array('multiple' => 1));
+		}
+	}
+
+	/**
+	 * checks if item is not "unlimited", which means it has an expiration date
+	 * 
+	 * @param array $item
+	 * @param string $expiredField
+	 * @return boolean
+	 */
+	protected static function isItemExpired($item, $expiredField = 'to') {
+		return $item[$expiredField]->sec < strtotime("+10 years");
+	}
+	
+	/**
+	 * gets the last revision of the entity (might be expired, active, future)
+	 * 
+	 * @param array $entity
+	 */
+	public function getLastRevisionOfEntity($entity) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			$query[$fieldName] = $entity[$fieldName];
+		}
+		$sort = array('_id' => -1);
+		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
 	}
 
 }

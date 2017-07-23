@@ -1,6 +1,6 @@
 /* 
  * Idempotent migration script goes here.
- * Please try to avoid using migration script and instead make special treament in the code!
+ * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
 // BRCD-576 (Deactivate / reactivate payment gateway)
@@ -220,5 +220,89 @@ if ((typeof lastConfig) !== "undefined") {
 					"editable" : false
 				});
 	}
+	db.config.insert(lastConfig);
+}
+
+// subscribers / discounts indexes fixes
+db.subscribers.dropIndex('sid_1_from_1_to_1');
+db.subscribers.ensureIndex({'sid': 1 , 'from' : 1, 'aid' : 1}, { unique: true, sparse: true, background: true });
+db.discounts.ensureIndex({'key':1, 'from': 1}, { unique: true, background: true });
+db.discounts.ensureIndex({'from': 1, 'to': 1 }, { unique: false , sparse: true, background: true });
+db.discounts.ensureIndex({'to': 1 }, { unique: false , sparse: true, background: true });
+
+// Update shared secret structure
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (typeof lastConfig.shared_secret.key != 'undefined') {
+	lastConfig.shared_secret.name = 'key1';
+	lastConfig.shared_secret.from = lastConfig.registration_date;
+	lastConfig.shared_secret.to = new Date('2117/09/02');
+	var ele = [];
+	ele.push(lastConfig.shared_secret);
+	lastConfig.shared_secret = ele;
+	db.config.insert(lastConfig);
+}
+
+// Update realtime response fields
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fileTypes = lastConfig['file_types'];
+for (var i in fileTypes) {
+	if (fileTypes[i].response && fileTypes[i].response.fields) {
+		fileTypes[i].response.fields = [
+			{
+				"response_field_name": "requestType",
+				"row_field_name": "request_type"
+			},
+			{
+				"response_field_name": "sessionId",
+				"row_field_name": "session_id"
+			},
+			{
+				"response_field_name": "returnCode",
+				"row_field_name": "granted_return_code"
+			},
+			{
+				"response_field_name": "stamp",
+				"row_field_name": "stamp"
+			},
+			{
+				"response_field_name": "sid",
+				"row_field_name": "sid"
+			},
+			{
+				"response_field_name": "grantedVolume",
+				"row_field_name": "usagev"
+			},
+			{
+				"response_field_name": "pretend",
+				"row_field_name": "billrun_pretend"
+			}
+		];
+	}
+}
+
+
+lastConfig.file_types = fileTypes;
+db.config.insert(lastConfig);
+
+// BRCD-832 rename entity name from lines to usage
+db.reports.find({"entity": "lines"}).forEach(function (obj) {
+	obj.entity = "usage";
+	db.reports.save(obj);
+});
+
+// BRCD-368 Importer - chenge account and subscriber fieds settings
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
+	delete lastConfig['_id'];
+	// set subscriber plan_activation display false
+	var plan_activation_index = lastConfig.subscribers.subscriber.fields.findIndex(function (field) {
+		return field.field_name == "plan_activation" && typeof field.editable === "undefined"
+	});
+	if(plan_activation_index !== -1) {
+		lastConfig.subscribers.subscriber.fields[plan_activation_index].editable = false;
+	}
+
 	db.config.insert(lastConfig);
 }

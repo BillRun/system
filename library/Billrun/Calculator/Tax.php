@@ -52,7 +52,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		} else {
 			$row = $newData;
 		}
-		
+		$row['final_charge']  = $row['tax_data']['total_amount'] + $row['aprice'];
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
@@ -103,8 +103,8 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}	
 	
 	protected function isLineTaxable($line) {
-		$rate =  Billrun_Rates_Util::getRateByRef( $line instanceof Mongodloid_Entity ? $line->get('arate', true): $line['arate']);
-		return !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'] ; // all rated lines that are taxable
+		$rate = $this->getRateForLine($line);
+		return ($line['usaget'] == 'flat') || !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'] ; // all rated lines that are taxable
 	}
 	
 	protected function isLineDataComplete($line) {
@@ -119,4 +119,17 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 * @return array updated line/row with the tax data
 	 */
 	abstract protected function updateRowTaxInforamtion($line, $subscriber, $account);
+	
+	protected function getRateForLine($line) {
+		$rate = FALSE;
+		if(!empty($line['arate'])) {
+			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+		} else {
+			$flatRate = $line['type'] == 'flat' ? 
+				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
+				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
+			$rate = $flatRate->getData();
+		}
+		return $rate;			
+	}
 }
