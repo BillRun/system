@@ -93,17 +93,13 @@ class Billrun_EventsManager {
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
 				$eventValue = $rawEventSettings['value'];
 				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
-			case self::CONDITION_REACHED_CONSTANT:
-				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+			case self::CONDITION_REACHED_CONSTANT_RECURRING:
+				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
+				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
 				$eventValue = $rawEventSettings['value'];
-				$eventValueMultiple = ceil($eventValue / $valueBefore);
+				$valueBefore = ceil($rawValueBefore / $eventValue);
+				$valueAfter = ceil($rawValueAfter / $eventValue);
 				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
-
-//	const CONDITION_REACHED_CONSTANT_RECURRING = 'reached_constant_recurring';
-	
-	
-
 			default:
 				return FALSE;
 		}
