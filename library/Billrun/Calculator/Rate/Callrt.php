@@ -59,17 +59,26 @@ class Billrun_Calculator_Rate_Callrt extends Billrun_Calculator_Rate {
 		$cacheKey = $this->rowDataForQuery['country_code'] . 'XYZ' . $this->rowDataForQuery['called_number']; // XYZ used to distinguish cases when the concatenation can be repeated by mistake
 		$cachePrefix = 'billrun_rate_callrt';
 		$cache = Billrun_Factory::cache();
-		if ($cache) {
-			$cachedRate = $cache->get($cacheKey, $cachePrefix);
-			if (!is_null($cachedRate) && $cachedRate !== FALSE) {
-				return new Mongodloid_Entity($cachedRate);
+		if ($cache && preg_match('~^[a-zA-Z0-9_]+$~D', $cacheKey)) {
+			try {
+				$cachedRate = $cache->get($cacheKey, $cachePrefix);
+				if (!is_null($cachedRate) && $cachedRate !== FALSE) {
+					return new Mongodloid_Entity($cachedRate);
+				}
+			}
+			catch (Exception $ex) {
+				Billrun_Factory::log('Exception thrown while fetching rate from cache: ' . $ex->getCode() . ' - ' . $ex->getMessage(), Billrun_Log::WARN);
 			}
 		} else {
 			return parent::getRateByParams($row);
 		}
 		$rate = parent::getRateByParams($row);
 		$rateRawData = $rate->getRawData();
-		$cache->set($cacheKey, $rateRawData, $cachePrefix, strtotime('tomorrow') - 1);
+		try {
+			$cache->set($cacheKey, $rateRawData, $cachePrefix, strtotime('tomorrow') - 1);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('Exception thrown while saving rate to cache: ' . $ex->getCode() . ' - ' . $ex->getMessage(), Billrun_Log::WARN);
+		}
 		return $rate;
 	}
 
