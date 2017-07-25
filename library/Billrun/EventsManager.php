@@ -56,15 +56,16 @@ class Billrun_EventsManager {
 	}
 
 	public function trigger($eventType, $entityBefore, $entityAfter, $extraParams = array()) {
-		if (!empty($this->eventsSettings[$eventType])) {
-			foreach ($this->eventsSettings[$eventType] as $event) {
-				foreach ($event['conditions'] as $rawEventSettings) {
-					if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $entityBefore, $entityAfter)) {
-						continue 2;
-					}
+		if (empty($this->eventsSettings[$eventType])) {
+			return;
+		}
+		foreach ($this->eventsSettings[$eventType] as $event) {
+			foreach ($event['conditions'] as $rawEventSettings) {
+				if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $entityBefore, $entityAfter)) {
+					continue 2;
 				}
-				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $extraParams);
 			}
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $extraParams);
 		}
 	}
 
@@ -75,13 +76,13 @@ class Billrun_EventsManager {
 			case self::CONDITION_IS_NOT:
 				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
 			case self::CONDITION_IS_LESS_THAN:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value']);
 			case self::CONDITION_IS_LESS_THAN_OR_EQUAL:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value']);
 			case self::CONDITION_IS_GREATER_THAN:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value']);
 			case self::CONDITION_IS_GREATER_THAN_OR_EQUAL:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value']);
 			case self::CONDITION_HAS_CHANGED:
 				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL));
 			case self::CONDITION_HAS_CHANGED_TO:
@@ -133,5 +134,53 @@ class Billrun_EventsManager {
 		}
 		self::$collection->insert($event);
 	}
-
+	
+	/**
+	 * used for Cron to handle the events exists in the system
+	 */
+	public function notify() {
+		$events = $this->getEvents();
+		foreach ($events as $event) {
+			$response = Billrun_Events_Notifier::notify($event->getRawData());
+			if ($response === false) {
+				Billrun_Factory::log('Error notify event. Event details: ' . print_R($event, 1), Billrun_Log::NOTICE);
+				continue;
+			}
+			$this->addEventResponse($event, $response);
+		}
+	}
+	
+	/**
+	 * get all events that were found in the system and was not already handled
+	 * 
+	 * @return type
+	 */
+	protected function getEvents() {
+		$query = array(
+			'notify_time' => array('$exists' => false),
+		);
+		
+		return self::$collection->query($query);
+	}
+	
+	/**
+	 * add response data to event and update notification time
+	 * 
+	 * @param array $event
+	 * @param array $response
+	 * @return mongo update result.
+	 */
+	protected function addEventResponse($event, $response) {
+		$query = array(
+			'_id' => $event->getId()->getMongoId(),
+		);
+		$update = array(
+			'$set' => array(
+				'notify_time' => new MongoDate(),
+				'returned_value' => $response,
+			),
+		);
+		
+		return self::$collection->update($query, $update);
+	}
 }

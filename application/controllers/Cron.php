@@ -74,6 +74,13 @@ class CronController extends Yaf_Controller_Abstract {
 	protected function render($tpl, array $parameters = null) {
 		return parent::render('index', $parameters);
 	}
+	
+	/**
+	 * handles the events in the system
+	 */
+	public function eventsNotifierAction() {
+		Billrun_Factory::eventsManager()->notify();
+	}
 
 ///////////////////////// The next methods are for backward compatibility 
 ///////////////////////// Require to move them to plugins
