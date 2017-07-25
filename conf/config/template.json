@@ -38,7 +38,10 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"pricing" : []
+		"balance" : [],
+		"settings": {
+			"http": {}
+		}
 	},
 	"taxation" :{
 		"tax_type": "vat",
