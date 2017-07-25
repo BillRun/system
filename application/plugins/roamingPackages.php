@@ -189,7 +189,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => $oldUsage + $usageLeft);
 					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
 						$oldJoinedUsage = isset($exhaustedBalance['balance']['totals'][$this->joinedField]['usagev']) ? $exhaustedBalance['balance']['totals'][$this->joinedField]['usagev'] : 0;
-						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + $this->extraUsage;	
+						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.usagev'] = $oldJoinedUsage + $exhausted['usage_left'];;	
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
@@ -245,6 +245,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
 		});
 		if (empty($matchedPackages)) {
+			$groupSelected = FALSE;
 			return;
 		}
 		if (isset($limits['joined_usage_types']) && isset($limits['joined_field'])) {
@@ -262,7 +263,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!($this->lineTime >= $from && $this->lineTime <= $to)) {
 				continue;
 			}
-			$UsageIncluded += (int) $plan->get('include.groups.' . $package['service_name'])[$usageType];
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
 			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name'], $package['balance_priority']);
 		}
@@ -291,11 +291,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$stamp = strval($this->row['stamp']);
 			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;	
 			$balancePackage = $balance['service_name'];
+			$UsageIncluded += (int) $plan->get('include.groups.' . $package['service_name'])[$usageType];
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
 				$usageLeft = (int) $plan->get('include.groups.' . $balancePackage)[$usageType] - $balance['balance']['totals'][$usageType]['usagev'];
 				$volume = $usageLeft - $this->extraUsage;
-				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $this->row['usaget'] . '.usagev', floor($subscriberSpent / $this->coefficient));
+				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $this->row['usaget'] . '.usagev', ceil($subscriberSpent / $this->coefficient));
+				$groupSelected = $balancePackage;
 				if ($volume > 0) {
 					$this->balanceToUpdate = $balance;
 					break;
@@ -312,6 +314,12 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$rateUsageIncluded = 0;
 		}
+		
+		if(!floor($roundedUsage - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev'])) {
+			$this->balanceToUpdate = null;
+			$this->exhaustedBalances = array();
+		}
+
 	}
 	
 	/**
