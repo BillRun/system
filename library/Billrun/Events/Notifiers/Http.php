@@ -93,7 +93,9 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	 */
 	protected function getRequestBody() {
 		$additionalParams = $this->getRequestAdditionalParams();
-		return array_merge($this->event, $additionalParams, $this->params);
+		$body = array_merge($this->event, $additionalParams, $this->params);
+		unset($body['_id']);
+		return $body;
 	}
 	
 	/**
