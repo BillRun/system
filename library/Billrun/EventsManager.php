@@ -15,6 +15,7 @@ class Billrun_EventsManager {
 
 	const EVENT_TYPE_BALANCE = 'balance';
 	const CONDITION_IS = 'is';
+	const CONDITION_IN = 'in';
 	const CONDITION_IS_NOT = 'is_not';
 	const CONDITION_IS_LESS_THAN = 'is_less_than';
 	const CONDITION_IS_LESS_THAN_OR_EQUAL = 'is_less_than_or_equal';
@@ -79,6 +80,8 @@ class Billrun_EventsManager {
 		switch ($condition) {
 			case self::CONDITION_IS:
 				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+			case self::CONDITION_IN:
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$in', $rawEventSettings['value']);
 			case self::CONDITION_IS_NOT:
 				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
 			case self::CONDITION_IS_LESS_THAN:
