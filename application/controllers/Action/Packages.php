@@ -37,17 +37,18 @@ class PackagesAction extends ApiAction {
 			'service_id' => $packageId
 		);
 		$results = $balancesColl->query($query)->cursor()->current();
-		if ($results->isEmpty()) {
-			return $this->setError("There isn't a matching package", $request);
+		if (!$results->isEmpty()) {
+			$callsUsage = $results['balance']['totals']['call']['usagev'] + $results['balance']['totals']['incoming_call']['usagev'];
+			$smsUsage = $results['balance']['totals']['sms']['usagev'];
+			$dataUsage = $results['balance']['totals']['data']['usagev'];
+			$packageUsage = array(
+				'Call' => $callsUsage,
+				'Sms' => $smsUsage,
+				'Data' => $dataUsage
+			);
+		} else {
+			$packageUsage = "There isn't a matching package"; 
 		}
-		$callsUsage = $results['balance']['totals']['call']['usagev'] + $results['balance']['totals']['incoming_call']['usagev'];
-		$smsUsage = $results['balance']['totals']['sms']['usagev'];
-		$dataUsage = $results['balance']['totals']['data']['usagev'];
-		$packageUsage = array(
-			'Call' => $callsUsage,
-			'Sms' => $smsUsage,
-			'Data' => $dataUsage
-		);
 		
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
