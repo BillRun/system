@@ -383,6 +383,15 @@ tr { page-break-inside: avoid; }
 	/*font-size: 100%!important;*/
 }
 
+.footer .shell { padding-left: 0; padding-right: 0;}
+.table-default { margin-bottom: 0;}
+.section-custom-header { border-bottom: 1px solid #404041; padding:10px; }
+.section-custom-footer { border-top: 2px solid #404041; padding:10px; }
+.section-invoice-base { border-bottom:0;  }
+.section-head .section-title { border-top: 2px solid #404041; }
+.section-invoice-details { border-bottom: none; }
+.section-invoice-details .section-title-alt { border-top:0;}
+
 .section-invoice-details tbody{
 	font-size: 16px;
 }
