@@ -21,6 +21,27 @@
 class ReportModel {
 	
 	protected $config = null;
+	
+	/**
+	 *  Array of entity join map keys
+	 */
+	protected $mapJoin = array(
+		'usage' => array(
+			'subscription' => array(
+				'localField' => 'sid',
+				'foreignField' => 'sid',
+			),
+			'customer' => array(
+				'localField' => 'aid',
+				'foreignField' => 'aid',
+			),
+		),
+	);
+	
+	/**
+	 * Array of entities with revision
+	 */
+	protected $entityWithRevisions = array('subscription', 'customer');
 
 	/**
 	 * constructor
@@ -45,10 +66,40 @@ class ReportModel {
 		
 		$aggregate = array();
 		
-		$match = $this->getMatch($report);
+		$match = $this->getMatch($report, $report['entity']);
 		if(!empty($match)) {
 			$aggregate[] = array('$match' => $match);
 		}
+		
+		$join_entities = $this->getReportJoinEntities($report);
+		foreach ($join_entities as $join_entity) {
+			$lookup = $this->getLookup($join_entity, $report);
+			if(!empty($lookup)) {
+				$aggregate[] = array('$lookup' => $lookup);
+			}
+			if($join_entity === 'customer' ) {
+				$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+				if(!empty($filterByType)) {
+					$aggregate[] = array('$addFields' => $filterByType);
+				}
+			}
+			if(in_array($join_entity, $this->entityWithRevisions)) {
+				$filterByRevision = $this->getFilterByRevision($join_entity);
+				if(!empty($filterByRevision)) {
+					$aggregate[] = array('$addFields' => $filterByRevision);
+				}
+			}
+			$unwind = $this->getUnwind($join_entity);
+			if(!empty($unwind)) {
+				$aggregate[] = array('$unwind' => $unwind);
+			}
+			
+			$match = $this->getMatch($report, $join_entity);
+			if(!empty($match)) {
+				$aggregate[] = array('$match' => $match);
+			}
+		}
+
 
 		$group = $this->getGroup($report);
 		if(!empty($group)) {
@@ -74,7 +125,7 @@ class ReportModel {
 		if(!empty($sort)) {
 			$aggregate[] = array('$sort' => $sort);
 		}
-		
+
 		$results = $collection->aggregate($aggregate);	
 		$rows = [];
 		foreach ($results as $result) {
@@ -145,18 +196,103 @@ class ReportModel {
 		return $value;
 	}
 	
-	protected function formatInputMatchField($field) {				
+	protected function formatInputMatchField($field, $entity) {				
 		switch ($field) {
 			case 'billrun_status':
 				return 'billrun';
 			default:
+				$needle = '$' . $entity;
+				$length = strlen($needle);
+				if (substr($field, 0, $length) === $needle){
+					return substr_replace($field, $entity, 0, $length);
+				}
 				return $field;
 		}
+	}
+
+	protected function getFilterByType($field, $by_field, $by_value){
+		$path = '$$raw.' . $by_field;
+		$filter[$field] = array(
+			'$filter' => array(
+				'input' => "\$$field",
+				'as' =>  "raw",
+				'cond' => array(
+					'$eq' => array($path, $by_value)
+				)
+			)
+		);
+		return $filter;
+	}
+	
+	protected function getFilterByRevision($field){
+		$filter[$field] = array(
+			'$filter' => array(
+				'input' => "\$$field",
+				'as' =>  "raw",
+				'cond' => array(
+					'$eq' => array('$$raw.to', array(
+						'$max' => "\$$field".'.to'
+					))
+				)
+			)
+		);
+		return $filter;
+	}
+
+	protected function getLookup($entity, $report) {
+		$report_entity = $this->getReportEntity($report);
+		$join_collection = $this->collectionMapper($entity);
+		$lookup = array(
+			'from' => $join_collection,
+			'localField' => $this->mapJoin[$report_entity][$entity]['localField'],
+			'foreignField' => $this->mapJoin[$report_entity][$entity]['foreignField'],
+			'as' => $entity
+		);
+		return $lookup;
+	}
+	
+
+	protected function getUnwind($entity) {
+		return array(
+			'path' => "\$$entity",
+			'preserveNullAndEmptyArrays' => true
+		);
+	}
+	
+	/**
+	 * get unique list of all join entityes expect report entity.
+	 * @param type $report
+	 * @return type
+	 */
+	protected function getReportJoinEntities($report) {
+		$joinEntities = array();
+		if(!empty($report['columns'])) {
+			foreach ($report['columns'] as $column) {
+				$joinEntities[] = $this->getFieldEntity($column, $report);
+			}
+		}
+		if(empty(!$report['conditions'])) {
+			foreach ($report['conditions'] as $condition) {
+				$joinEntities[] = $this->getFieldEntity($condition, $report);
+			}
+		}
+		return array_diff(array_unique($joinEntities), [$this->getReportEntity($report)]);
+	}
+	
+	protected function getReportEntity($report) {
+		return $report['entity'];
+	}
+	
+	protected function getFieldEntity($field, $report) {
+		if(!empty($field['entity'])) {
+			return $field['entity'];
+		}
+		return $this->getReportEntity($report);
 	}
 	
 	protected function getDefaultEntityMatch($report) {
 		$defaultEntityMatch = array();
-		switch ($report['entity']) {
+		switch ($this->getReportEntity($report)) {
 			case 'subscription':
 				$defaultEntityMatch[]['type'] = "subscriber";
 				$activeQuery = Billrun_Utils_Mongo::getDateBoundQuery();
@@ -175,10 +311,15 @@ class ReportModel {
 	}
 	
 	protected function getCollection($report) {
-		if(empty($report['entity'])) {
+		$entity = $this->getReportEntity($report);
+		if(empty($entity)) {
 			throw new Exception("Report entity is empty");
 		}
-		switch ($report['entity']) {
+		return $this->collectionMapper($entity);
+	}
+	
+	protected function collectionMapper($entity) {
+		switch ($entity) {
 			case 'usage':
 				return 'lines';
 			case 'subscription':
@@ -196,6 +337,8 @@ class ReportModel {
 			foreach ($report['columns'] as $column) {
 				$op = $column['op'];
 				$field = $column['field_name'];
+				//remove JOIN collection name prefix
+				$field = str_replace('$', '', $field);
 				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
 				$field_key = str_replace(".", "__", $field);
 				switch ($op) {
@@ -227,11 +370,15 @@ class ReportModel {
 		return $group;
 	}
 	
-	protected function getMatch($report) {
+	protected function getMatch($report, $entity) {
 		$matchs = $this->getDefaultEntityMatch($report);
 		foreach ($report['conditions'] as $condition) {
+			$condition_entity = $this->getFieldEntity($condition, $report);
+			if($condition_entity !== $entity) {
+				continue;
+			}
 			$type = $condition['type'];
-			$field = $this->formatInputMatchField($condition['field']);
+			$field = $this->formatInputMatchField($condition['field'], $condition_entity);
 			$op = $this->formatInputMatchOp($condition['op'], $field, $condition['value']);
 			$value = $this->formatInputMatchValue($condition['value'], $field, $type);		
 			switch ($op) {
@@ -346,9 +493,10 @@ class ReportModel {
 		}
 		foreach ($report['columns'] as $column) {
 			$field_name = $column['field_name'];
+			$field_name = str_replace('$', '', $field_name);
 			if ($isReportGrouped) {
 				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
-				$field_name = str_replace('.', '__', $column['field_name']);
+				$field_name = str_replace('.', '__', $field_name);
 				if($column['op'] === 'group') {
 					// fix mongoDB group by _id if exist
 					$field_name = '_id.' . $field_name;
