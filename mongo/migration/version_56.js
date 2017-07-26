@@ -23,7 +23,16 @@ for (var i = 0; i < additionalParams.length(); i++) {
 var p = [...new Set(params)];
 var fields = lastConfig['rates']['fields'];
 for (var i in p) {
-	fields.push({"field_name": "params." + p[i], "multiple":true, "title":p[i], "display":true, "editable":true});
+	var found = false;
+	for (var j in fields) {
+		if (fields[j].field_name === "params." + p[i]) {
+			found= true;
+			break;
+		}
+	}
+	if (!found) {
+		fields.push({"field_name": "params." + p[i], "multiple":true, "title":p[i], "display":true, "editable":true});
+	}
 }
 lastConfig['rates']['fields'] = fields;
 db.config.insert(lastConfig);
