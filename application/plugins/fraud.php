@@ -452,7 +452,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 									'calc_time' => false,
 									'calc_name' => false,
 								);
-				if(isset($line['aid']) && isset($line['sid']) ) {
+				if(isset($line['aid']) && isset($line['sid']) && Billrun_Factory::config()->getConfigValue('fraud.queue.set_calc_name_customer', false)) {
 					$queueLine['aid'] =  $line['aid'];
 					$queueLine['sid'] =  $line['sid'];
 					$queueLine['calc_name'] = 'customer';
@@ -503,6 +503,24 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
+	/**
+	 * Inserting sms lines to fruad for monitoring roaming packages usage
+	 * detect roaming sms lines
+	 * @param type $lines
+	 */
+	protected function insertRoamingSms($lines) {
+		$roamingLines = array();
+		foreach ($lines as $line) {
+			if (isset($line['roaming'])) {
+				$roamingLines[] = $line;
+			}
+		}
+		if (!empty($roamingLines)) {
+			$this->insertToFraudLines($roamingLines);
+			$this->insertToFraudQueue($roamingLines);
+		}
+	}
+
 
 	/**
 	 * TODO
@@ -511,7 +529,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function afterProcessorStore($processor) {
 		$type = $processor->getType();
-		if ($type != "ggsn" && $type != "nsn") {
+		if ($type != "ggsn" && $type != "nsn" && $type != 'smsc') {
 			return;
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore', Zend_Log::INFO);
@@ -524,6 +542,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$this->insertRoamingGgsn($processor->getData()['data']);
 				} else if ($type == "nsn") {
 					$this->insertIntlNsn($processor->getData()['data']);
+				} else if ($type == "smsc") {
+					$this->insertRoamingSms($processor->getData()['data']);
 				}
 				Billrun_Factory::log('Plugin fraud::afterProcessorStore async mode done.', Zend_Log::INFO);
 				exit(); // exit from child process after finish
@@ -534,7 +554,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$this->insertRoamingGgsn($processor->getData()['data']);
 			} else if ($type == "nsn") {
 				$this->insertIntlNsn($processor->getData()['data']);
+			} else if ($type == "smsc") {
+				$this->insertRoamingSms($processor->getData()['data']);
 			}
+
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
@@ -655,6 +678,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$yearDay = date('z', strtotime($lineTime));
 		try {
 			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
+				Billrun_Factory::log('Quering Fraud server for '.$sid.' vfdays count', Zend_Log::DEBUG);
 				$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
 			} else {
 				return $this->cachedResults[$sid][$lineYear . $yearDay];
