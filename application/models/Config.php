@@ -47,6 +47,12 @@ class ConfigModel {
 	 * @var string
 	 */
 	protected $fileTypesRegex = '/^[a-zA-Z0-9_]+$/';
+	
+	/**
+	 * Max custom header/footer template size
+	 * @var number - bytes
+	 */
+	protected $invoice_custom_template_max_size = 1 * 1024 * 1024;
 
 	public function __construct() {
 		// load the config data from db
@@ -302,6 +308,12 @@ class ConfigModel {
 			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
 			throw new Exception($data . ' is illegal usage type');
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['header'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 0, true);
+			throw new Exception("Custom header template is too long, maximum size is {$max}.");
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
+			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
 		} else {
 			$this->preUpdateConfig($category, $data, $updatedData[$category]);
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
@@ -951,6 +963,10 @@ class ConfigModel {
 	protected function validateUsageType($usageType) {
 		$reservedUsageTypes = array('cost');
 		return !in_array($usageType, $reservedUsageTypes);
+	}
+
+	protected function validateStringLength($str, $size) {
+		return mb_strlen($str, "8bit") <= $size;
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
