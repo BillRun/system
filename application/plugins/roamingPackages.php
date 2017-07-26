@@ -134,6 +134,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->joinedUsageTypes = null;
 			$this->joinedField= null;
 			$this->row = $row;
+			$this->package = null;
 		}
 	}
 	
