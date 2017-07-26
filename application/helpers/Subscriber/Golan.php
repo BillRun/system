@@ -771,6 +771,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		if (!is_array($arr) || empty($arr)) {
 			return false;
 		}
+		
 
 		return $arr;
 	}
