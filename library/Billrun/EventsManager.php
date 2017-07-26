@@ -141,6 +141,7 @@ class Billrun_EventsManager {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
 		}
+		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
 		self::$collection->insert($event);
 	}
 	
