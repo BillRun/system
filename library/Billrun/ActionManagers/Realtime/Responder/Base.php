@@ -87,19 +87,12 @@ abstract class Billrun_ActionManagers_Realtime_Responder_Base {
 
 	/**
 	 * Gets response status.
-	 * @return int 1 - success, o -failure
+	 * @return int 1 - success, 0 - failure
 	 */
 	protected function getStatus() {
-		if (isset($this->row['granted_return_code'])) {
-			$returnCodes = Billrun_Factory::config()->getConfigValue('prepaid.customer', array());
-			switch ($this->row['granted_return_code']) {
-				case ($returnCodes['no_rate']):
-				case ($returnCodes['no_subscriber']):
-					return 0;
-			}
-		}
-
-		return 1;
+		return isset($this->row['granted_return_code']) && $this->row['granted_return_code'] == Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 0)
+			? 1
+			: 0;
 	}
 
 	/**
