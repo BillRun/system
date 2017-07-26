@@ -494,7 +494,7 @@ class ConfigModel {
 		return array(
 			'subscribers.subscriber.fields' => 'subscribers',
 			'subscribers.account.fields' => 'accounts',
-			'rates.fields' => 'subscribers',
+			'rates.fields' => 'rates',
 		);
 	}
 	
