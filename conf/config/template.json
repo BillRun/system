@@ -40,7 +40,12 @@
 	"events" : {
 		"balance" : [],
 		"settings": {
-			"http": {}
+			"http": {
+				"url": "",
+				"num_of_tries": 3,
+				"method": "post",
+				"decoder": "json"
+			}
 		}
 	},
 	"taxation" :{
