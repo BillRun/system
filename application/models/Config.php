@@ -966,7 +966,7 @@ class ConfigModel {
 	}
 
 	protected function validateStringLength($str, $size) {
-		return mb_strlen($str, "8bit") <= $size;
+		return strlen($str) <= $size;
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
