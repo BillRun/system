@@ -247,15 +247,15 @@ class BillrunController extends ApiController {
 	}
 
 	protected function getCyclesKeys($params) {
+		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		if (!empty($params['from']) && !empty($params['to'])) {
-			return $this->getCyclesInRange($params['from'], $params['to']);
+			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst);
 		}
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
 		$from = date('Y/m/d', strtotime('12 months ago'));		
-		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		return $this->getCyclesInRange($from, $to, $newestFirst);
 	}
 
