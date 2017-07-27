@@ -130,9 +130,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$this->exhaustedBalances = array();
 			$this->balanceToUpdate = null;
-			$this->package = null;
 			$this->joinedUsageTypes = null;
-			$this->joinedField= null;
+			$this->joinedField = null;
 			$this->row = $row;
 			$this->package = null;
 		}
@@ -142,6 +141,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming'])) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['roaming_package'] = $this->package;
+			$balancesIncludeRow = array();
 			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
 				$roamingQuery = array(
@@ -158,7 +158,18 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;	
 				}
 		
-				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));	
+				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
+				$balancesIncludeRow[] = array(
+					'service_name' => $this->balanceToUpdate['service_name'],
+					'package_id' =>  $this->balanceToUpdate['service_id'],
+					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
+					'usage_before' => array(
+						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'],
+						'incoming_call' => $this->balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
+						'sms' => $this->balanceToUpdate['balance']['totals']['sms']['usagev'], 
+						'data' => $this->balanceToUpdate['balance']['totals']['data']['usagev']
+					)
+				);
 			}
 			
 			if (!empty($this->exhaustedBalances)) {
@@ -190,21 +201,12 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
 			}
-			if (!is_null($this->balanceToUpdate) || !empty($this->exhaustedBalances)) {
-				$balancesIncludeRow[] = array(
-					'service_name' => $this->balanceToUpdate['service_name'],
-					'package_id' =>  $this->balanceToUpdate['service_id'],
-					'billrun_month' => $this->balanceToUpdate['billrun_month'], 
-					'usage_before' => array(
-						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'],
-						'incoming_call' => $this->balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
-						'sms' => $this->balanceToUpdate['balance']['totals']['sms']['usagev'], 
-						'data' => $this->balanceToUpdate['balance']['totals']['data']['usagev']
-					)
-				);
-				if (isset($exhaustedBalancesKeys)) {
-					$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
-				}
+		
+
+			if (isset($exhaustedBalancesKeys)) {
+				$balancesIncludeRow = array_merge($balancesIncludeRow, $exhaustedBalancesKeys);
+			}
+			if ((isset($balancesIncludeRow))) {
 				$row['roaming_balances'] = $balancesIncludeRow;
 			}
 		}
@@ -290,7 +292,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$volume = $usageLeft - $this->extraUsage;
 				$subscriberBalance->__set('balance.groups.' . $balancePackage . '.' . $this->row['usaget'] . '.usagev', ceil($subscriberSpent / $this->coefficient));
 				$groupSelected = $balancePackage;
-				$this->package = $groupSelected;
+				$this->package = $balancePackage;
 				if ($volume > 0) {
 					$this->balanceToUpdate = $balance;
 					break;
