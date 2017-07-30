@@ -157,8 +157,8 @@ class ReportModel {
 		if (empty($this->mapJoin[$report_entity])) {
 			return false;
 		}
-		$allowd_join_collesction = array_keys($this->mapJoin[$report_entity]);
-		return count(array_intersect($join_entities, $allowd_join_collesction)) == count($join_entities);
+		$allowd_join_entities = array_keys($this->mapJoin[$report_entity]);
+		return count(array_intersect($join_entities, $allowd_join_entities)) == count($join_entities);
 	}
 	
 	protected function formatOutputRow($row) {
@@ -267,9 +267,9 @@ class ReportModel {
 
 	protected function getLookup($entity, $report) {
 		$report_entity = $this->getReportEntity($report);
-		$join_collection = $this->collectionMapper($entity);
+		$join_entity = $this->entityMapper($entity);
 		$lookup = array(
-			'from' => $join_collection,
+			'from' => $join_entity,
 			'localField' => $this->mapJoin[$report_entity][$entity]['source_field'],
 			'foreignField' => $this->mapJoin[$report_entity][$entity]['target_field'],
 			'as' => $entity
@@ -341,10 +341,10 @@ class ReportModel {
 		if(empty($entity)) {
 			throw new Exception("Report entity is empty");
 		}
-		return $this->collectionMapper($entity);
+		return $this->entityMapper($entity);
 	}
 	
-	protected function collectionMapper($entity) {
+	protected function entityMapper($entity) {
 		switch ($entity) {
 			case 'usage':
 				return 'lines';
@@ -363,7 +363,7 @@ class ReportModel {
 			foreach ($report['columns'] as $column) {
 				$op = $column['op'];
 				$field = $column['field_name'];
-				//remove JOIN collection name prefix
+				//remove JOIN entity name prefix
 				$field = str_replace('$', '', $field);
 				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
 				$field_key = str_replace(".", "__", $field);
