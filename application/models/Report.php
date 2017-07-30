@@ -28,22 +28,22 @@ class ReportModel {
 	protected $mapJoin = array(
 		'usage' => array(
 			'subscription' => array(
-				'localField' => 'sid',
-				'foreignField' => 'sid',
+				'source_field' => 'sid',
+				'target_field' => 'sid',
 			),
 			'customer' => array(
-				'localField' => 'aid',
-				'foreignField' => 'aid',
+				'source_field' => 'aid',
+				'target_field' => 'aid',
 			),
 		),
 		'subscription' => array(
 			'usage' => array(
-				'localField' => 'sid',
-				'foreignField' => 'sid',
+				'source_field' => 'sid',
+				'target_field' => 'sid',
 			),
 			'customer' => array(
-				'localField' => 'aid',
-				'foreignField' => 'aid',
+				'source_field' => 'aid',
+				'target_field' => 'aid',
 			),
 		)
 	);
@@ -255,8 +255,8 @@ class ReportModel {
 		$join_collection = $this->collectionMapper($entity);
 		$lookup = array(
 			'from' => $join_collection,
-			'localField' => $this->mapJoin[$report_entity][$entity]['localField'],
-			'foreignField' => $this->mapJoin[$report_entity][$entity]['foreignField'],
+			'localField' => $this->mapJoin[$report_entity][$entity]['source_field'],
+			'foreignField' => $this->mapJoin[$report_entity][$entity]['target_field'],
 			'as' => $entity
 		);
 		return $lookup;
