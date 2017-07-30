@@ -36,6 +36,16 @@ class ReportModel {
 				'foreignField' => 'aid',
 			),
 		),
+		'subscription' => array(
+			'usage' => array(
+				'localField' => 'sid',
+				'foreignField' => 'sid',
+			),
+			'customer' => array(
+				'localField' => 'aid',
+				'foreignField' => 'aid',
+			),
+		)
 	);
 	
 	/**
@@ -77,6 +87,7 @@ class ReportModel {
 			if(!empty($lookup)) {
 				$aggregate[] = array('$lookup' => $lookup);
 			}
+			// filter by account type beacuse subscribers have AID field too 
 			if($join_entity === 'customer' ) {
 				$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
 				if(!empty($filterByType)) {
