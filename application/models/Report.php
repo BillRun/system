@@ -73,41 +73,48 @@ class ReportModel {
 	 */
 	public function applyFilter($report, $page, $size) {
 		$collection = Billrun_Factory::db()->{$this->getCollection($report) . "Collection"}();
+		$report_entity = $this->getReportEntity($report);
 		
 		$aggregate = array();
 		
-		$match = $this->getMatch($report, $report['entity']);
+		$match = $this->getMatch($report, $report_entity);
 		if(!empty($match)) {
 			$aggregate[] = array('$match' => $match);
 		}
 		
-		$join_entities = $this->getReportJoinEntities($report);
-		foreach ($join_entities as $join_entity) {
-			$lookup = $this->getLookup($join_entity, $report);
-			if(!empty($lookup)) {
-				$aggregate[] = array('$lookup' => $lookup);
+		$join_entities = $this->getReportJoinEntities($report, $report_entity);
+		if(!empty($join_entities)) {
+			if(!$this->isValidJoin($report_entity, $join_entities)) {
+				$report_entities = implode(", ", $join_entities);
+				throw new Exception("No support to join {$report_entity} with those entities: {$report_entities}");
 			}
-			// filter by account type beacuse subscribers have AID field too 
-			if($join_entity === 'customer' ) {
-				$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
-				if(!empty($filterByType)) {
-					$aggregate[] = array('$addFields' => $filterByType);
+			foreach ($join_entities as $join_entity) {
+				$lookup = $this->getLookup($join_entity, $report);
+				if(!empty($lookup)) {
+					$aggregate[] = array('$lookup' => $lookup);
 				}
-			}
-			if(in_array($join_entity, $this->entityWithRevisions)) {
-				$filterByRevision = $this->getFilterByRevision($join_entity);
-				if(!empty($filterByRevision)) {
-					$aggregate[] = array('$addFields' => $filterByRevision);
+				// filter by account type beacuse subscribers have AID field too 
+				if($join_entity === 'customer' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
 				}
-			}
-			$unwind = $this->getUnwind($join_entity);
-			if(!empty($unwind)) {
-				$aggregate[] = array('$unwind' => $unwind);
-			}
-			
-			$match = $this->getMatch($report, $join_entity);
-			if(!empty($match)) {
-				$aggregate[] = array('$match' => $match);
+				if(in_array($join_entity, $this->entityWithRevisions)) {
+					$filterByRevision = $this->getFilterByRevision($join_entity);
+					if(!empty($filterByRevision)) {
+						$aggregate[] = array('$addFields' => $filterByRevision);
+					}
+				}
+				$unwind = $this->getUnwind($join_entity);
+				if(!empty($unwind)) {
+					$aggregate[] = array('$unwind' => $unwind);
+				}
+
+				$match = $this->getMatch($report, $join_entity);
+				if(!empty($match)) {
+					$aggregate[] = array('$match' => $match);
+				}
 			}
 		}
 
@@ -144,6 +151,14 @@ class ReportModel {
 			$rows[] = $this->formatOutputRow($row);
 		}
 		return $rows;
+	}
+	
+	protected function isValidJoin($report_entity, $join_entities) {
+		if (empty($this->mapJoin[$report_entity])) {
+			return false;
+		}
+		$allowd_join_collesction = array_keys($this->mapJoin[$report_entity]);
+		return count(array_intersect($join_entities, $allowd_join_collesction)) == count($join_entities);
 	}
 	
 	protected function formatOutputRow($row) {
