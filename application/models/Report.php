@@ -64,6 +64,16 @@ class ReportModel {
 	
 	
 	/**
+	 * getReportByKey
+	 * 
+	 * @param type $key
+	 * @return type report
+	 */
+	public function getReportByKey($key) {
+		return Billrun_Factory::db()->reportsCollection()->query(array('key' => $key))->cursor()->current()->getRawData();
+	}
+	
+	/**
 	 * applyFilter
 	 * 
 	 * @param type $query
