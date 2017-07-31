@@ -22,8 +22,8 @@ class ResetLinesAction extends ApiAction {
 		$this->allowed();
 		Billrun_Factory::log("Execute reset", Zend_Log::INFO);
 		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
-		if (empty($request['aid']) && empty($request['sid'])) {
-			return $this->setError('Please supply at least one sid or aid', $request);
+		if (empty($request['aid'])) {
+			return $this->setError('Please supply at least one aid', $request);
 		}
 
 		// remove the aids from current balance cache - on next current balance it will be recalculated and avoid to take it from cache
@@ -41,27 +41,29 @@ class ResetLinesAction extends ApiAction {
 		}
 		
 		// Warning: will convert half numeric strings / floats to integers
-		$sids = $this->getRequestSids($request);
+		$aids = $this->getRequestAids($request);
 
-		if (!$sids) {
-			return $this->setError('Illegal sid', $request);
+		if (!$aids) {
+			return $this->setError('Illegal aid', $request);
 		}
 
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
-			foreach ($sids as $sid) {
-				$rebalanceLine = array( 'sid' => $sid,
-										'billrun_key' => $billrun_key,
-										'creation_date' => new MongoDate());
+			foreach ($aids as $aid) {
+				$rebalanceLine = array( 
+					'aid' => $aid,
+					'billrun_key' => $billrun_key,
+					'creation_date' => new MongoDate()
+				);
 				$query = array(
-					'sid' => $sid,
+					'aid' => $aid,
 					'billrun_key' => $billrun_key,
 				);
 				$options = array('upsert' => true);
 				$rebalance_queue->update($query, array('$set' => $rebalanceLine), $options);
 			}
 		} catch (Exception $exc) {
-			Billrun_Util::logFailedResetLines($sids, $billrun_key);
+			Billrun_Util::logFailedResetLines($aids, $billrun_key);
 			return FALSE;
 		}
 
@@ -74,45 +76,16 @@ class ResetLinesAction extends ApiAction {
 	}
 	
 	/**
-	 * Gets sids from the request.
-	 * If sid (list or string) received - returns it as array of integers.
-	 * If aid (list or string) received - gets all sids from the db
+	 * Gets aids from the request.
+	 * If aid (list or string) received - returns it as array of integers.
 	 * 
 	 * @param type $request
 	 * @return array
 	 */
-	protected function getRequestSids($request) {
-		if (isset($request['sid'])) {
-			return array_unique(array_diff(Billrun_Util::verify_array($request['sid'], 'int'), array(0)));
-		}
-		
-		$query = $this->getSidsByAidsQuery(Billrun_Util::verify_array($request['aid'], 'int'));
-		return Billrun_Util::verify_array(Billrun_Factory::db()->subscribersCollection()->distinct('sid', $query), 'int');
+	protected function getRequestAids($request) {
+		return array_unique(array_diff(Billrun_Util::verify_array($request['aid'], 'int'), array(0)));
 	}
 	
-	/**
-	 * Gets the query to get sids by aids list.
-	 * gets all subscribers from past 3 months - for late lines.
-	 * only active cycles will be handled because of the billrun key
-	 * 
-	 * @param array $aids
-	 * @return query
-	 */
-	protected function getSidsByAidsQuery($aids) {
-		$time = date(strtotime('-3 months'));
-		return array(
-			'to' => array(
-				'$gt' => new MongoDate($time),
-			),
-			'from' => array(
-				'$lte' => new MongoDate(),
-			),
-			'aid' => array(
-				'$in' => $aids,
-			),
-			'type' => 'subscriber',
-		);
-	}
 
 	/**
 	 * Clean cache from account.
