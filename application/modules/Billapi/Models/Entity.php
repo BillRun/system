@@ -22,7 +22,6 @@ class Models_Entity {
 	const FUTURE = 'future';
 	const EXPIRED = 'expired';
 	const ACTIVE = 'active';
-	const ACTIVE_WITH_FUTURE = 'active_with_future';
 
 	const UNLIMITED_DATE = '+149 years';
 
@@ -897,10 +896,12 @@ class Models_Entity {
 	 */
 	public static function setRevisionInfo($record, $collection) {
 		$status = self::getStatus($record, $collection);
-		$earlyExpiration = self::isEarlyExpiration($record, $status);
+		$isLast = self::getIsLast($record, $collection);
+		$earlyExpiration = self::isEarlyExpiration($record, $status, $isLast);
 		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
 			"status" => $status,
+			"is_last" => $isLast,
 			"early_expiration" => $earlyExpiration,
 			"updatable" => $isCurrentCycle,
 			"closeandnewable" => $isCurrentCycle,
@@ -922,7 +923,7 @@ class Models_Entity {
 	 * @param array $record - Record to set revision info.
 	 * @param string $collection - Record collection name
 	 * 
-	 * @return string Status, available values are: "future", "expired", "active_with_future", "active"
+	 * @return string Status, available values are: "future", "expired", "active"
 	 */
 	static function getStatus($record, $collection) {
 		if ($record['to']->sec < time()) {
@@ -931,6 +932,18 @@ class Models_Entity {
 		if ($record['from']->sec > time()) {
 			return self::FUTURE;
 		}
+		return self::ACTIVE;
+	}
+	
+	/**
+	 * Calculate record status
+	 * 
+	 * @param array $record - Record to set revision info.
+	 * @param string $collection - Record collection name
+	 * 
+	 * @return string Status, available values are: "future", "expired", "active"
+	 */
+	static function getIsLast($record, $collection) {
 		// For active records, check if it has furure revisions
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
@@ -938,12 +951,7 @@ class Models_Entity {
 			$query[$fieldName] = $record[$fieldName];
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
-		$isFutureExist = $recordCollection->query($query)->count() > 0;
-
-		if ($isFutureExist) {
-			return self::ACTIVE_WITH_FUTURE;
-		}
-		return self::ACTIVE;
+		return $recordCollection->query($query)->count() === 0;
 	}
 
 	/**
@@ -951,12 +959,12 @@ class Models_Entity {
 	 * true if the "to" field is less than 50 years from record "from" date.
 	 * 
 	 * @param array $record - Record to set revision info.
-	 * @param string $status - Record status, available values are: "expired", "active_with_future", "active", "future"
+	 * @param string $status - Record status, available values are: "expired", "active", "future"
 	 * 
 	 * @return bool
 	 */
-	protected static function isEarlyExpiration($record, $status) {
-		if ($status === self::FUTURE || $status === self::ACTIVE) {
+	protected static function isEarlyExpiration($record, $status, $isLast) {
+		if ($status === self::FUTURE || ($status === self::ACTIVE && $isLast)) {
 			return self::isItemExpired($record);
 		}
 		return false;
