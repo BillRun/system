@@ -565,11 +565,9 @@ class AdminController extends Yaf_Controller_Abstract {
 	public function getAvailableRatesAction() {
 		if (!$this->allowed('read'))
 			return false;
-		$rates = Billrun_Factory::db()->ratesCollection()->query()->cursor()->sort(array('key' => 1));
-		$availableRates = array();
-		foreach ($rates as $rate) {
-			$availableRates[] = $rate->get('key');
-		}
+		$query = Billrun_Util::getDateBoundQuery();
+		$availableRates = Billrun_Factory::db()->ratesCollection()->distinct('key', $query);
+		sort($availableRates);
 		$response = new Yaf_Response_Http();
 		$response->setBody(json_encode($availableRates));
 		$response->response();
