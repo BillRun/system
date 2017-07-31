@@ -23,7 +23,16 @@ for (var i = 0; i < additionalParams.length(); i++) {
 var p = [...new Set(params)];
 var fields = lastConfig['rates']['fields'];
 for (var i in p) {
-	fields.push({"field_name": "params." + p[i], "multiple":true, "title":p[i], "display":true, "editable":true});
+	var found = false;
+	for (var j in fields) {
+		if (fields[j].field_name === "params." + p[i]) {
+			found= true;
+			break;
+		}
+	}
+	if (!found) {
+		fields.push({"field_name": "params." + p[i], "multiple":true, "title":p[i], "display":true, "editable":true});
+	}
 }
 lastConfig['rates']['fields'] = fields;
 db.config.insert(lastConfig);
@@ -388,4 +397,20 @@ for (var i in subscriberFields) {
 }
 lastConfig.subscribers.subscriber.fields = subscriberFields;
 
+// BRCD-841: add status to realtime response
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+var fileTypes = lastConfig['file_types'];
+for (var i in fileTypes) {
+	if (fileTypes[i].response && fileTypes[i].response.fields) {
+		fileTypes[i].response.fields.push({
+				"response_field_name": "status",
+				"row_field_name": {
+					"classMethod": "getStatus"
+				}
+			});
+	}
+}
+
+lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
