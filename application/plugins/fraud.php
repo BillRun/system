@@ -43,7 +43,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var int
 	 */
 	protected $min_time;
-
+	
 	public function __construct() {
 		$this->min_time = Billrun_Util::getStartTime(Billrun_Util::getBillrunKey(time()));
 	}
@@ -99,6 +99,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					break;
 				case 'usage':
 					$this->usageCheck($limits, $row, $balance);
+					break;
+				case 'roaming_package':
+					if (!isset($row['roaming_balances'])) {
+						break;
+					}
+					
+					$roamingBalances = $row['roaming_balances'];
+					foreach ($roamingBalances as $roamingBalance) {
+						$this->roamingUsageCheck($limits, $row, $roamingBalance);
+					}
 					break;
 				default:
 					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $type, Zend_Log::WARN);
@@ -199,6 +209,58 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $ret;
 	}
 
+	protected function roamingUsageCheck($limits, $row, $balance) {
+		$ret = array();
+		if ($row['usagev'] === 0) {
+			return false;
+		}
+		foreach ($limits['rules'] as $rule) {
+			if (empty($rule['service_name']) || !in_array($balance['service_name'], $rule['service_name'])) {
+				continue;
+			}
+			$ret[] = $this->checkRoamingUsageRule($rule, $row, $balance);
+		}
+		return $ret;
+	}
+	
+	protected function checkRoamingUsageRule($rule, $row, $balance) {
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
+			return false;
+		}
+		$usaget = $row['usaget'];
+		if ($usaget == 'data' && $rule['unit'] == 'BYTE') {
+			$before = $balance['usage_before']['data'];
+			$after = $before + $row['usagev'];
+		} else if (in_array($usaget, array('call', 'sms', 'incoming_call')) && $rule['unit'] == 'SMSEC') {
+			$callUsageBefore = $balance['usage_before']['call'] + $balance['usage_before']['incoming_call'];
+			$smsUsageBefore = $balance['usage_before']['sms'];
+			$before	= $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
+			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
+			$after = $before + $currentUsage;
+		}
+		if (!isset($before)) {
+			return;
+		}
+		$threshold = $rule['threshold'];
+		$recurring = isset($rule['recurring']) && $rule['recurring'];
+		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+			$roamingPackage['service_name'] = $balance['service_name'];
+			$roamingPackage['package_id'] = $balance['package_id'];
+			$channelAddon = isset($rule['channel']) ? $rule['channel'] : '' ;
+			$roamingPackage['channel'] = "Roaming_Package_" . $balance['package_id'] . $channelAddon;
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+			if (isset($rule['priority'])) {
+				$priority = (int) $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring, $roamingPackage);
+			return $rule;
+		}
+	}
+	
 	/**
 	 * check if fraud rule triggered
 	 * 
@@ -347,7 +409,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $event_type the event type
 	 * @param bool $recurring is the event is recurring
 	 */
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false, $roamingPackage = null) {
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = (float) $value;
@@ -384,7 +446,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$newEvent['priority'] = (int) $priority;
 		}
-
+		
+		if (!is_null($roamingPackage)) {
+			foreach ($roamingPackage as $key => $value) {
+				$newEvent[$key] = $value;
+			}
+		}
+		
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
