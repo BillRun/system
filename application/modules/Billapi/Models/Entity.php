@@ -209,7 +209,11 @@ class Models_Entity {
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
 		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
-		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		if (is_array($val)) {
+			$uniqueQuery = array($field => array('$in' => $val)); // not revisions of same entity, but has same unique value
+		} else {
+			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		}
 		$startTime = strtotime($data['from']);
 		$endTime = strtotime($data['to']);
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
