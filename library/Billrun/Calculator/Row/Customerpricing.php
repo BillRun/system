@@ -546,7 +546,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if ($keyRequired == 'cost') {
 						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan']);
 					} else {
-						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan']);
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], 0, 0, 0, null, $this->row['usagev']);
 					}
 				} else {
 					$comparedValue = $value;
