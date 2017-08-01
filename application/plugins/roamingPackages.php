@@ -441,7 +441,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($volumeToSubstract as $usaget => $usagev) {
 			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
 				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
-				$update['$inc']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
+				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
 			}
 		}
 		return $update;
