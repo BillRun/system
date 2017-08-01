@@ -158,7 +158,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$roamingUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 				$roamingUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => floor($this->extraUsage / $this->coefficient));
 				if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
-					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;	
+					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;
+					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;	
 				}
 
 				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
@@ -202,6 +203,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
 					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
 						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $exhausted['usage_left'];
+						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;
 						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.exhausted'] = true;
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
