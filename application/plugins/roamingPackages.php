@@ -125,7 +125,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : null;
+			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();
 			if ($row['usaget'] == 'sms') {
 				$this->coefficient = $this->coefficient * 60;
 				$this->extraUsage = $row['usagev'] * $this->coefficient;
