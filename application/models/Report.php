@@ -246,7 +246,7 @@ class ReportModel {
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
 			case 'default_empty':
-				return $value === "" ? $format['value'] : $value;
+				return ($value === "" || is_null($value)) ? $format['value'] : $value;
 			default:
 				return $value;
 		}
