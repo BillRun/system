@@ -125,10 +125,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-
-			if (isset($row['packages'])) {
-				$this->ownedPackages = $row['packages'];
-			}
+			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : null;
 			if ($row['usaget'] == 'sms') {
 				$this->coefficient = $this->coefficient * 60;
 				$this->extraUsage = $row['usagev'] * $this->coefficient;
@@ -161,7 +158,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$roamingUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 				$roamingUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => floor($this->extraUsage / $this->coefficient));
 				if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
-					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;	
+					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;
+					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;	
 				}
 
 				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
@@ -205,6 +203,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
 					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
 						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $exhausted['usage_left'];
+						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;
 						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.exhausted'] = true;
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
@@ -415,13 +414,15 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}	
 		foreach ($line['roaming_balances'] as $roamingBalance) {
 			$packageId = $roamingBalance['package_id'];
-			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']] : 0;
-			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']] = $aggregatedUsage + $roamingBalance['added_usage'];
+			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] : 0;
+			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] = $aggregatedUsage + $roamingBalance['added_usage'];
+			@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['count'] += 1; 
 			if (!is_null($roamingBalance['added_joined_usage'])) {
 				$joinedField = $roamingBalance['added_joined_usage']['joined_field'];
 				$joinedUsage = $roamingBalance['added_joined_usage']['usage'];
-				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField] : 0;
-				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField] = $aggregatedJoinedUsage + $joinedUsage;
+				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] : 0;
+				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
+				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] +=1;
 			}
 		}
 	}
@@ -439,8 +440,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$update = array();
 		foreach ($volumeToSubstract as $usaget => $usagev) {
 			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
-				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev;
-				$update['$inc']['balance.totals.' . $usaget . '.count'] = -1;
+				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
+				$update['$inc']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
 			}
 		}
 		return $update;
