@@ -127,7 +127,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->row = $row;
 		}
 		
-		$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();
+		$this->ownedPackages = !empty($row['packages']) ? $row['packages'] : array();
 		$this->exhaustedBalances = array();
 		$this->balanceToUpdate = null;
 		$this->joinedUsageTypes = null;
