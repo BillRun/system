@@ -235,14 +235,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 					$line_params['time'] = date(Billrun_Base::base_dateformat, $row['urt']->sec);
 					$line_params['stamp'] = $row['stamp'];
 					$line_params['EXTRAS'] = 0;
-					if (($row['type'] == 'tap3' && $row['usaget'] != 'sms') || $row['type'] == 'ggsn' || isset($row['roaming'])) {
-						$line_params['IRP'] = 1;
-					}
 					foreach ($subscriber_extra_data as $key) {
 						if ($this->isExtraDataRelevant($row, $key)) {
 							$line_params['EXTRAS'] = 1;
 							break;
 						}
+					}
+					if (($row['type'] == 'tap3' && $row['usaget'] != 'sms') || ( $row['type'] == 'ggsn' && $line_params['EXTRAS'] )	|| isset($row['roaming'])) {
+						$line_params['IRP'] = 1;
 					}
 					$params[] = $line_params;
 				}
