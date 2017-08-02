@@ -125,7 +125,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : null;
+			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();
 			if ($row['usaget'] == 'sms') {
 				$this->coefficient = $this->coefficient * 60;
 				$this->extraUsage = $row['usagev'] * $this->coefficient;
@@ -441,7 +441,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($volumeToSubstract as $usaget => $usagev) {
 			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
 				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
-				$update['$inc']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
+				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
 			}
 		}
 		return $update;
