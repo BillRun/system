@@ -119,23 +119,24 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-
-			$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();		
+	
 			if ($row['usaget'] == 'sms') {
 				$this->coefficient = $this->coefficient * 60;
 				$this->extraUsage = $row['usagev'] * $this->coefficient;
-			}
-			$this->exhaustedBalances = array();
-			$this->balanceToUpdate = null;
-			$this->joinedUsageTypes = null;
-			$this->joinedField = null;
+			}			
 			$this->row = $row;
-			$this->package = null;
 		}
+		
+		$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();
+		$this->exhaustedBalances = array();
+		$this->balanceToUpdate = null;
+		$this->joinedUsageTypes = null;
+		$this->joinedField = null;
+		$this->package = null;
 	}
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
-		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming'])) {
+		if (!is_null($this->package) && ((($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming']))) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['roaming_package'] = $this->package;
 			$balancesIncludeRow = array();
@@ -210,7 +211,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && (($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming'])) {	
+		if (!is_null($this->package) && ((($row['type'] == 'nrtrde' && in_array($row['usaget'], array('call', 'incoming_call'))) || $row['type'] == 'ggsn') || isset($row['roaming']))) {	
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
