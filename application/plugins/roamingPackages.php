@@ -133,7 +133,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			
 		}
 		
-		$this->ownedPackages = isset($row['packages']) ? $row['packages'] : array();
+		$this->ownedPackages = !empty($row['packages']) ? $row['packages'] : array();
 		$this->exhaustedBalances = array();
 		$this->balanceToUpdate = null;
 		$this->joinedUsageTypes = null;
@@ -375,7 +375,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to update roaming balances once the regular balance was removed.
 	 * 
 	 */
-	public function afterResetBalances($rebalanceSids) {
+	public function afterResetBalances($rebalanceSids, $rebalanceStamps) {
 		if (empty($this->rebalanceUsageSubtract)) {
 			return;
 		}
@@ -401,6 +401,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 			
 		$this->rebalanceUsageSubtract = array();
+		$linesColl = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
+		$linesColl->update(array('stamp' => array('$in' => $rebalanceStamps)), array('$unset' => array('roaming_balances' => 1)), array('multiple' => true));
 	}
 	
 	/**
