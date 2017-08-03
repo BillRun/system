@@ -48,7 +48,7 @@ class ResetLinesModel {
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances($sids, $stamps) {
+	public function resetBalances($sids, $lineStamps) {
 		Billrun_Factory::dispatcher()->trigger('beforeResetBalances', array($sids));
 		$ret = true;
 		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
@@ -60,7 +60,7 @@ class ResetLinesModel {
 				),
 			);
 			$ret = $balances_coll->remove($query, array('w' => 1)); // ok ==1 && n>0
-			Billrun_Factory::dispatcher()->trigger('afterResetBalances', array($sids, $stamps));
+			Billrun_Factory::dispatcher()->trigger('afterResetBalances', array($sids, $lineStamps));
 		}		
 		return $ret;
 	}
