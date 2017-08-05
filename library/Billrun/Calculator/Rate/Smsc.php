@@ -108,7 +108,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 				}
 				foreach ($fullEqual_rates as $fe_rate) {
 					if (in_array($called_number, $fe_rate['params']['prefix'])) {
-						$matchedRate = $rate;
+						$matchedRate = $fe_rate;
 					}
 				}
 				if (!$matchedRate) {
