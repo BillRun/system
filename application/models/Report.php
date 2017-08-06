@@ -155,9 +155,10 @@ class ReportModel {
 		}
 		$results = $collection->aggregate($aggregate);	
 		$rows = [];
+		$formatters = $this->getFieldFormatters($report);
 		foreach ($results as $result) {
 			$row = $result->getRawData();
-			$rows[] = $this->formatOutputRow($row);
+			$rows[] = $this->formatOutputRow($row, $formatters);
 		}
 		return $rows;
 	}
@@ -170,35 +171,86 @@ class ReportModel {
 		return count(array_intersect($join_entities, $allowd_join_entities)) == count($join_entities);
 	}
 	
-	protected function formatOutputRow($row) {
+	protected function getRowsFormattersByKey($key, $formatters) {
+		$formats = array();
+		foreach ($formatters as $formatter) {
+			if ($formatter['field'] === $key) {
+				$formats[] = $formatter;
+			}
+		}
+		return $formats;
+	}
+	
+	protected function formatOutputRow($row, $formatters) {
 		$output = array();
 		foreach ($row as $key => $value) {
+			$formats = $this->getRowsFormattersByKey($key, $formatters);
 			if(is_array($value)) {
 				// array result like addToSet
 				if(count(array_filter(array_keys($value), 'is_string'))  === 0){
 					$formatedValues = array();
 					foreach ($value as $val) {
 						if($val != ""){ // ignore empty values						
-							$formatedValues[] = $this->formatOutputValue($val, $key);
+							$formatedValues[] = $this->formatOutputValue($val, $key, $formats);
 						}
 					}
 					$output[$key] = implode(', ',$formatedValues);
 				} else { // is associative array like _id or subfields
 					foreach ($value as $value_key => $val) {
 						$formatedKey = ($key == '_id') ? $value_key : $key . '.' . $value_key;
-						$output[$formatedKey] = $this->formatOutputValue($val, $key);
+						$output[$formatedKey] = $this->formatOutputValue($val, $key, $formats);
 					}
 				}
 			} else {
-				$output[$key] = $this->formatOutputValue($value, $key);
+				$output[$key] = $this->formatOutputValue($value, $key, $formats);
 			}
 		}
 		return $output;
 	}
 	
-	protected function formatOutputValue($value, $key) {
+	protected function formatOutputValue($value, $key, $formats) {
+		if(!empty($formats)) {
+			foreach ($formats as $format) {
+				$value = $this->applyValueformat($value, $format);
+			}
+		}
 		return $value;
 	}
+	
+	protected function applyValueformat($value, $format) {
+		switch ($format['op']) {
+			case 'time_format': 
+			case 'datetime_format': 
+			case 'date_format': {
+				$time = (!empty($value->sec)) ? $value->sec :  strtotime($value);
+				return $time !== false ? date($format['value'], $time) : $value;
+			}
+			case 'vat_format': {
+				if (is_numeric($value)) {
+					$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
+					if ($format['value'] === 'remove_tax') {
+						return $taxCalc->removeTax($value);
+					}
+					return $taxCalc->addTax($value);
+				}
+				return $value;
+			}
+			case 'corrency_format': {
+				$currencySymbol = Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
+				if ($format['value'] === 'prefix') {
+					return $currencySymbol.$value;
+				}
+				return $value.$currencySymbol;
+			}
+			case 'multiplication':
+				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
+			case 'default_empty':
+				return ($value === "" || is_null($value)) ? $format['value'] : $value;
+			default:
+				return $value;
+		}
+	}
+	
 	
 	protected function formatInputMatchOp($op, $field, $value) {
 		// search by op
@@ -341,6 +393,10 @@ class ReportModel {
 	
 	protected function getReportEntity($report) {
 		return $report['entity'];
+	}
+	
+	protected function getFieldFormatters($report) {
+		return $report['formats'];
 	}
 	
 	protected function getFieldEntity($field, $report) {
