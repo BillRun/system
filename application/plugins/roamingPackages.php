@@ -285,7 +285,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		);
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
 		if ($roamingBalances->current()->isEmpty()) {
-			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::ALERT);
+			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 		}
 		foreach ($roamingBalances as $balance) {
 			$subRaw = $balance->getRawData();
