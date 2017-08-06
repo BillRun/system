@@ -206,7 +206,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 			$retTaxData['taxes'][] = array_merge($taxDataToSave, array( 'tax'=> $calculatedTaxRate,
 																'amount' => $tax_data['taxamount'] ,
 																'type' => $tax_data['taxtype'],
-																'description' => preg_replace('/[^\w _]/',' ',$tax_data['descript']),//TODO  find a better solution
+																'description' => trim(preg_replace('/[^\w _]/',' ',$tax_data['descript'])),//TODO  find a better solution
 																'pass_to_customer' => $tax_data['passflag']));
 
 			$retLinesTaxesData[$tax_data['unique_id']]= $retTaxData;

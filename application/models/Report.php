@@ -153,7 +153,6 @@ class ReportModel {
 		if(!empty($sort)) {
 			$aggregate[] = array('$sort' => $sort);
 		}
-
 		$results = $collection->aggregate($aggregate);	
 		$rows = [];
 		foreach ($results as $result) {
@@ -202,6 +201,15 @@ class ReportModel {
 	}
 	
 	protected function formatInputMatchOp($op, $field, $value) {
+		// search by op
+		switch ($op) {
+			case 'last_hours':
+			case 'last_days_include_today':
+				return 'gte';
+			case 'last_days':
+				return 'between';
+		}
+		// search by field_name
 		if($field === 'billrun') {
 			switch ($value) {
 				case 'confirmed':
@@ -213,7 +221,23 @@ class ReportModel {
 		return $op;
 	}
 	
-	protected function formatInputMatchValue($value, $field, $type) {	
+	protected function formatInputMatchValue($value, $field, $type, $op) {
+		// search by op
+		switch ($op) {
+			case 'last_hours':
+				$hours = -1 * intval($value);
+				return strtotime("{$hours} hours");
+			case 'last_days_include_today':
+				$days = -1 * intval($value);
+				return strtotime("{$days} day midnight");
+			case 'last_days':
+				$days = -1 * (intval($value) + 1);
+				return array(
+					'from' => strtotime("{$days} day midnight"),
+					'to' => strtotime("today") - 1	
+				);
+		}
+		// search by field_name
 		if($field === 'billrun') {
 			switch ($value) {
 				case 'current':
@@ -416,7 +440,7 @@ class ReportModel {
 			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field'], $condition_entity);
 			$op = $this->formatInputMatchOp($condition['op'], $field, $condition['value']);
-			$value = $this->formatInputMatchValue($condition['value'], $field, $type);		
+			$value = $this->formatInputMatchValue($condition['value'], $field, $type, $condition['op']);
 			switch ($op) {
 				case 'like':
 					$formatedExpression = array(
@@ -451,26 +475,44 @@ class ReportModel {
 				case 'ne':
 				case 'eq':
 					if ($type === 'date') {
-						$date = strtotime(substr($value, 0, 10));
+						$date = strtotime($value);
 						$beginOfDay = strtotime("midnight", $date);
 						$endOfDay = strtotime("tomorrow", $date) - 1;
 						$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
 						$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
 						$formatedExpression = array(
 							'$gte' => new MongoDate($gteDate),
-							'$lt' => new MongoDate(),
+							'$lt' => new MongoDate($ltDate),
 						);
 					} elseif ($type === 'number') {
 						$formatedExpression = array(
-							'$eq' => floatval($value)
+							'\${$op}' => floatval($value)
 						);
 					} elseif ($type === 'boolean') {
 						$formatedExpression = array(
-							'$ne' => (bool)$value
+							'\${$op}' => (bool)$value
 						);
 					} else {
 						$formatedExpression = array(
-							'$eq' => $value
+							'\${$op}' => $value
+						);
+					}
+					break;
+				case 'between':
+					if ($type === 'date') {
+						$formatedExpression = array(
+							'$gte' => new MongoDate($value['from']),
+							'$lte' => new MongoDate($value['to']),
+						);
+					} elseif ($type === 'number') {
+						$formatedExpression = array(
+							'$gte' => floatval($value['from']),
+							'$lt' => floatval($value['to']),
+						);
+					} else {
+						$formatedExpression = array(
+							'$gte' => $value['from'],
+							'$lte' => $value['to'],
 						);
 					}
 					break;
@@ -478,8 +520,8 @@ class ReportModel {
 				case 'lte':
 				case 'gt':
 				case 'gte':
-					if (get_class($value) === 'MongoDate') {
-						$date = strtotime(substr($value, 0, 10));
+					if ($type === 'date') {
+						$date = strtotime($value);
 						$queryDate = ($op === 'lt' || $op === 'lte')
 							? strtotime("tomorrow", $date) - 1
 							: strtotime("midnight", $date);

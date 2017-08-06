@@ -359,6 +359,44 @@ db.services.find().forEach(function (service) {
 	db.services.save(service);
 });
 
+//BRCD-924 - update system account/subscriber custom fields
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+var knownFields = {
+	"firstname": "First name",
+	"lastname": "Last name",
+	"country": "Country",
+	"address": "Address",
+	"email": "E-Mail"
+};
+
+var accountFields = lastConfig.subscribers.account.fields;
+for (var i in accountFields) {
+	var fieldName  = accountFields[i].field_name;
+	if (knownFields[fieldName] !== undefined) {
+		accountFields[i].editable = true;
+		accountFields[i].display = true;
+		if (accountFields[i].title === undefined) {
+			accountFields[i].title = knownFields[fieldName];
+		}
+	}
+}
+lastConfig.subscribers.account.fields = accountFields;
+
+var subscriberFields = lastConfig.subscribers.subscriber.fields;
+for (var i in subscriberFields) {
+	var fieldName  = subscriberFields[i].field_name;
+	if (knownFields[fieldName] !== undefined) {
+		subscriberFields[i].editable = true;
+		subscriberFields[i].display = true;
+		if (subscriberFields[i].title === undefined) {
+			subscriberFields[i].title = knownFields[fieldName];
+		}
+	}
+}
+lastConfig.subscribers.subscriber.fields = subscriberFields;
+
 // BRCD-841: add status to realtime response
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -375,6 +413,36 @@ for (var i in fileTypes) {
 }
 
 lastConfig.file_types = fileTypes;
+db.config.insert(lastConfig);
+
+// BRCD-933: make all unique custom fields mandatory
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+var accountFields = lastConfig.subscribers.account.fields;
+for (var i in accountFields) {
+	if (accountFields[i].unique) {
+		accountFields[i].mandatory = true;
+	}
+}
+lastConfig.subscribers.account.fields = accountFields;
+
+var subscriberFields = lastConfig.subscribers.subscriber.fields;
+for (var i in subscriberFields) {
+	if (subscriberFields[i].unique) {
+		subscriberFields[i].mandatory = true;
+	}
+}
+lastConfig.subscribers.subscriber.fields = subscriberFields;
+
+var rateFields = lastConfig.rates.fields;
+for (var i in rateFields) {
+	if (rateFields[i].unique) {
+		rateFields[i].mandatory = true;
+	}
+}
+lastConfig.rates.fields = rateFields;
+
 db.config.insert(lastConfig);
 
 // BRCD-552
