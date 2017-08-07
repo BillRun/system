@@ -42,7 +42,15 @@
 	"template_token":{},
 	"payment_gateways":[],
 	"events" : {
-		"pricing" : []
+		"balance" : [],
+		"settings": {
+			"http": {
+				"url": "",
+				"num_of_tries": 3,
+				"method": "post",
+				"decoder": "json"
+			}
+		}
 	},
 	"taxation" :{
 		"tax_type": "vat",

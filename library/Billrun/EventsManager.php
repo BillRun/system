@@ -15,6 +15,7 @@ class Billrun_EventsManager {
 
 	const EVENT_TYPE_BALANCE = 'balance';
 	const CONDITION_IS = 'is';
+	const CONDITION_IN = 'in';
 	const CONDITION_IS_NOT = 'is_not';
 	const CONDITION_IS_LESS_THAN = 'is_less_than';
 	const CONDITION_IS_LESS_THAN_OR_EQUAL = 'is_less_than_or_equal';
@@ -55,16 +56,23 @@ class Billrun_EventsManager {
 		return self::$instance;
 	}
 
-	public function trigger($eventType, $entityBefore, $entityAfter, $extraParams = array()) {
-		if (!empty($this->eventsSettings[$eventType])) {
-			foreach ($this->eventsSettings[$eventType] as $event) {
-				foreach ($event['conditions'] as $rawEventSettings) {
-					if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $entityBefore, $entityAfter)) {
-						continue 2;
-					}
+	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
+		if (empty($this->eventsSettings[$eventType])) {
+			return;
+		}
+		foreach ($this->eventsSettings[$eventType] as $event) {
+			foreach ($event['conditions'] as $rawEventSettings) {
+				if (isset($rawEventSettings['entity_type']) && $rawEventSettings['entity_type'] !== $eventType) {
+					$conditionEntityAfter = $conditionEntityBefore = $additionalEntities[$rawEventSettings['entity_type']];
+				} else {
+					$conditionEntityAfter = $entityAfter;
+					$conditionEntityBefore = $entityBefore;
 				}
-				$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $extraParams);
+				if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter)) {
+					continue 2;
+				}
 			}
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $extraParams);
 		}
 	}
 
@@ -72,16 +80,18 @@ class Billrun_EventsManager {
 		switch ($condition) {
 			case self::CONDITION_IS:
 				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
+			case self::CONDITION_IN:
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$in', $rawEventSettings['value']);
 			case self::CONDITION_IS_NOT:
 				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
 			case self::CONDITION_IS_LESS_THAN:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lt', $rawEventSettings['value']);
 			case self::CONDITION_IS_LESS_THAN_OR_EQUAL:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$lte', $rawEventSettings['value']);
 			case self::CONDITION_IS_GREATER_THAN:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gt', $rawEventSettings['value']);
 			case self::CONDITION_IS_GREATER_THAN_OR_EQUAL:
-				return !$this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value']);
+				return $this->arrayMatches($this->getWhichEntity($rawEventSettings, $entityBefore, $entityAfter), $rawEventSettings['path'], '$gte', $rawEventSettings['value']);
 			case self::CONDITION_HAS_CHANGED:
 				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL));
 			case self::CONDITION_HAS_CHANGED_TO:
@@ -93,17 +103,13 @@ class Billrun_EventsManager {
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
 				$eventValue = $rawEventSettings['value'];
 				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
-			case self::CONDITION_REACHED_CONSTANT:
-				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+			case self::CONDITION_REACHED_CONSTANT_RECURRING:
+				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
+				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
 				$eventValue = $rawEventSettings['value'];
-				$eventValueMultiple = ceil($eventValue / $valueBefore);
+				$valueBefore = ceil($rawValueBefore / $eventValue);
+				$valueAfter = ceil($rawValueAfter / $eventValue);
 				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
-
-//	const CONDITION_REACHED_CONSTANT_RECURRING = 'reached_constant_recurring';
-	
-	
-
 			default:
 				return FALSE;
 		}
@@ -135,7 +141,56 @@ class Billrun_EventsManager {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
 		}
+		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
 		self::$collection->insert($event);
 	}
-
+	
+	/**
+	 * used for Cron to handle the events exists in the system
+	 */
+	public function notify() {
+		$events = $this->getEvents();
+		foreach ($events as $event) {
+			$response = Billrun_Events_Notifier::notify($event->getRawData());
+			if ($response === false) {
+				Billrun_Factory::log('Error notify event. Event details: ' . print_R($event, 1), Billrun_Log::NOTICE);
+				continue;
+			}
+			$this->addEventResponse($event, $response);
+		}
+	}
+	
+	/**
+	 * get all events that were found in the system and was not already handled
+	 * 
+	 * @return type
+	 */
+	protected function getEvents() {
+		$query = array(
+			'notify_time' => array('$exists' => false),
+		);
+		
+		return self::$collection->query($query);
+	}
+	
+	/**
+	 * add response data to event and update notification time
+	 * 
+	 * @param array $event
+	 * @param array $response
+	 * @return mongo update result.
+	 */
+	protected function addEventResponse($event, $response) {
+		$query = array(
+			'_id' => $event->getId()->getMongoId(),
+		);
+		$update = array(
+			'$set' => array(
+				'notify_time' => new MongoDate(),
+				'returned_value' => $response,
+			),
+		);
+		
+		return self::$collection->update($query, $update);
+	}
 }

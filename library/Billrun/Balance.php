@@ -186,7 +186,10 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			return FALSE;
 		}
 		$after = $ret->getRawData();
-		Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, array('aid' => $after['aid'], 'sid' => $after['sid']));
+		$additionalEntities = array(
+			'subscriber' => $this->row['subscriber'],
+		);
+		Billrun_Factory::eventsManager()->trigger(Billrun_EventsManager::EVENT_TYPE_BALANCE, $this->getRawData(), $after, $additionalEntities, array('aid' => $after['aid'], 'sid' => $after['sid']));
 		$this->setRawData($after);
 		return $ret;
 	}
