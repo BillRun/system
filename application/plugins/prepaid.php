@@ -232,7 +232,7 @@ class prepaidPlugin extends Billrun_Plugin_BillrunPluginBase {
 				"session_id" => $row['session_id'],
 				"request_num" => array(
 					'$lt' => $row['request_num'],
-					'$gte' => ($row['request_num'] > 10) ? $row['request_num'] - 10 : 0,
+//					'$gte' => ($row['request_num'] > 10) ? $row['request_num'] - 10 : 0,
 				),
 				"mscc_data.service_id" => $row['mscc_data'][0]['service_id'],
 			);
