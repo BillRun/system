@@ -624,7 +624,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	
 	protected function shouldRunAggregate($stamp) {
 		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
-		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+		if (!$this->isFakeCycle() && !$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
 			return false;
 		}
 		return true;

@@ -431,7 +431,7 @@ class Billrun_Factory {
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			Billrun_Util::setHttpSessionTimeout();
-			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
 		}
 		return self::$auth;
 	}

@@ -37,26 +37,26 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		$results = $rebalance_queue->find($query)->sort($sort)->limit($limit);
 
 		$billruns = array();
-		$all_sids = array();
+		$all_aids = array();
 		foreach ($results as $result) {
-			$billruns[$result['billrun_key']][] = $result['sid'];
-			$all_sids[] = $result['sid'];
+			$billruns[$result['billrun_key']][] = $result['aid'];
+			$all_aids[] = $result['aid'];
 		}
 
-		foreach ($billruns as $billrun_key => $sids) {
-			$model = new ResetLinesModel($sids, $billrun_key);
+		foreach ($billruns as $billrun_key => $aids) {
+			$model = new ResetLinesModel($aids, $billrun_key);
 			try {
 				$ret = $model->reset();
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
-				$rebalance_queue->remove(array('sid' => array('$in' => $sids)));
+				$rebalance_queue->remove(array('aid' => array('$in' => $aids)));
 			} catch (Exception $exc) {
-				Billrun_Factory::log('Error resetting sids ' . implode(',', $sids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
+				Billrun_Factory::log('Error resetting aids ' . implode(',', $aids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;
 			}
 		}
-		Billrun_Factory::log("Success resetting sids " . implode(',', $all_sids), Zend_Log::INFO);
+		Billrun_Factory::log("Success resetting aids " . implode(',', $all_aids), Zend_Log::INFO);
 		return true;
 	}
 
