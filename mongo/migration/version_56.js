@@ -444,3 +444,6 @@ for (var i in rateFields) {
 lastConfig.rates.fields = rateFields;
 
 db.config.insert(lastConfig);
+
+// BRCD-552
+db.events.ensureIndex({'creation_time': 1 }, { unique: false , sparse: true, background: true });

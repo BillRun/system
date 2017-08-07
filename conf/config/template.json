@@ -41,6 +41,17 @@
 	},
 	"template_token":{},
 	"payment_gateways":[],
+	"events" : {
+		"balance" : [],
+		"settings": {
+			"http": {
+				"url": "",
+				"num_of_tries": 3,
+				"method": "post",
+				"decoder": "json"
+			}
+		}
+	},
 	"taxation" :{
 		"tax_type": "vat",
 		 "CSI": {

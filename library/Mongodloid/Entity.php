@@ -8,6 +8,11 @@
 class Mongodloid_Entity implements ArrayAccess {
 
 	private $_values;
+	
+	/**
+	 * The entity's collection
+	 * @var Mongodloid_Collection
+	 */
 	private $_collection;
 
 	const POPFIRST = 1;
@@ -308,7 +313,7 @@ class Mongodloid_Entity implements ArrayAccess {
 	 * Sets or gets the collection.
 	 * @param Mongodloid_Collection $collection - If null, returns the current 
 	 *	collection, if not, sets the value as the collection and returns the new value.
-	 * @return type
+	 * @return Mongodloid_Collection
 	 */
 	public function collection($collection = null) {
 		if ($collection instanceOf Mongodloid_Collection)

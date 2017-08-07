@@ -99,7 +99,7 @@ class ConfigModel {
 	}
 
 	public function getFromConfig($category, $data) {
-		$currentConfig = $this->getConfig(true);
+		$currentConfig = $this->getConfig();
 
 		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
@@ -114,6 +114,15 @@ class ConfigModel {
 				return $fileSettings;
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
+		}
+		else if ($category == 'events.balance') {
+			if (empty($data['event_code'])) {
+				return Billrun_Util::getIn($currentConfig, $category, []);
+			}
+			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_code', $data['event_code'])) {
+				return $fileSettings;
+			}
+			throw new Exception('Unknown event ' . $data['event_code']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
 		} else if ($category == 'payment_gateways') {
@@ -219,9 +228,14 @@ class ConfigModel {
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
-			$this->setFileTypeSettings($updatedData, $data);
+			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
-		} else if ($category === 'payment_gateways') {
+		}
+		else if ($category === 'events.balance') {
+			if ($this->validateEvent($data)) {
+				$this->setSettingsArrayElement($updatedData, $data, 'events.balance', 'event_code');
+			}
+		} else if ($category === 'payment_gateways') {	
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
 				return 0;
@@ -522,7 +536,7 @@ class ConfigModel {
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
-			$this->setFileTypeSettings($updatedData, $data);
+			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			return $this->validateFileSettings($updatedData, $data['file_type']);
 		}
 	}
@@ -550,8 +564,8 @@ class ConfigModel {
 	protected function updateRoot(&$currentConfig, $data) {
 		foreach ($data as $key => $value) {
 			foreach ($value as $k => $v) {
-				Billrun_Factory::log("Data: " . print_r($data,1));
-				Billrun_Factory::log("Value: " . print_r($value,1));
+//				Billrun_Factory::log("Data: " . print_r($data,1));
+//				Billrun_Factory::log("Value: " . print_r($value,1));
 				if (!$this->_updateConfig($currentConfig, $k, $v)) {
 					return 0;
 				}
@@ -758,12 +772,18 @@ class ConfigModel {
 				$this->unsetFileTypeSettings($updatedData, $data['file_type']);
 			}
 		}
-		if ($category === 'export_generators') {
+		else if ($category === 'export_generators') {
 			if (isset($data['name'])) {
 				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
 		}
-		if ($category === 'payment_gateways') {
+		else if ($category === 'events.balance') {
+			if (empty($data['event_code'])) {
+				throw new Exception('Must supply event_code');
+			}
+			$this->unsetSettingsArrayElement($updatedData, $category, 'event_code', $data['event_code']);
+		}
+		else if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
  				if (count($data) == 1) {
  					$this->unsetPaymentGatewaySettings($updatedData, $data['name']);
@@ -838,6 +858,35 @@ class ConfigModel {
  		return FALSE;
  	}
  
+	protected function setSettingsArrayElement(&$config, $element, $settingsKey, $elementKey) {
+		$fileType = $element[$elementKey];
+		$nestedVal = Billrun_Util::getIn($config, $settingsKey, array());
+		$foundElement = FALSE;
+		foreach ($nestedVal as &$someFileSettings) {
+			if ($someFileSettings[$elementKey] == $fileType) {
+				$foundElement = TRUE;
+				$someFileSettings = $element;
+				break;
+			}
+		}
+		if (!$foundElement) {
+			$nestedVal[] = $element;
+		}
+		Billrun_Util::setIn($config, $settingsKey, $nestedVal);
+	}
+
+	protected function unsetSettingsArrayElement(&$config, $settingsKey, $elementsKey, $elementId) {
+		Billrun_Util::setIn($config, $settingsKey, array_filter(Billrun_Util::getIn($config, $settingsKey, []), function($fileSettings) use ($elementsKey, $elementId) {
+			return $fileSettings[$elementsKey] !== $elementId;
+		}));
+	}
+	
+	protected function getSettingsArrayElement($config, $settingsKey, $elementsKey, $elementId) {
+		return array_filter(Billrun_Util::getIn($config, $settingsKey, []), function($fileSettings) use ($elementId, $elementsKey) {
+			return $fileSettings[$elementsKey] === $elementId;
+		});
+	}
+	
 	protected function setFileTypeSettings(&$config, $fileSettings) {
 		$fileType = $fileSettings['file_type'];
 		foreach ($config['file_types'] as &$someFileSettings) {
@@ -895,13 +944,18 @@ class ConfigModel {
  	}
  
 
+	/**
+	 * TODO change to unsetSettingsArrayElement
+	 */
 	protected function unsetFileTypeSettings(&$config, $fileType) {
 		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
 		});
 	}
 	
-	
+	/**
+	 * TODO change to unsetSettingsArrayElement
+	 */
 	protected function unsetPaymentGatewaySettings(&$config, $pg) {
  		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] !== $pg;
@@ -963,8 +1017,21 @@ class ConfigModel {
 		if (!$allowPartial && !$completeFileSettings) {
 			throw new Exception('File settings is not complete.');
 		}
-		$this->setFileTypeSettings($config, $updatedFileSettings);
+		$this->setSettingsArrayElement($config, $updatedFileSettings, 'file_types', 'file_type');
 		return $this->checkForConflics($config, $fileType);
+	}
+	
+	/**
+	 * 
+	 * @todo Insert validations
+	 * @param type $data
+	 * @return boolean
+	 */
+	protected function validateEvent($data) {
+		if (!isset($data['event_code'])) {
+			throw new Exception('Invalid data for events.');
+		}
+		return TRUE;
 	}
 
 	protected function validateType($type) {

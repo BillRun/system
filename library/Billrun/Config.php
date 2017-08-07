@@ -199,7 +199,6 @@ class Billrun_Config {
 	 */
 	public function refresh() {
 		$this->setTenantTimezone($this->toArray());
-		Billrun_Factory::log("Timezone to set: " . date_default_timezone_get());
 	}
 	
 	protected function setTenantTimezone($dbConfig) {
