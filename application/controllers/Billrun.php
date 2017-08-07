@@ -193,6 +193,7 @@ class BillrunController extends ApiController {
 		$params['from'] = $request->get('from');
 		$params['to'] = $request->get('to');
 		$params['billrun_key'] = $request->get('stamp');
+		$params['newestFirst'] = $request->get('newestFirst');
 		$billrunKeys = $this->getCyclesKeys($params);
 		foreach ($billrunKeys as $billrunKey) {
 			$setting['billrun_key'] = $billrunKey;
@@ -246,18 +247,19 @@ class BillrunController extends ApiController {
 	}
 
 	protected function getCyclesKeys($params) {
+		$newestFirst = !isset($params['newestFirst']) ? TRUE : boolval($params['newestFirst']);
 		if (!empty($params['from']) && !empty($params['to'])) {
-			return $this->getCyclesInRange($params['from'], $params['to']);
+			return $this->getCyclesInRange($params['from'], $params['to'], $newestFirst);
 		}
 		if (!empty($params['billrun_key'])) {
 			return array($params['billrun_key']);
 		}
 		$to = date('Y/m/d', time());
 		$from = date('Y/m/d', strtotime('12 months ago'));		
-		return $this->getCyclesInRange($from, $to);
+		return $this->getCyclesInRange($from, $to, $newestFirst);
 	}
 
-	public function getCyclesInRange($from, $to) {
+	public function getCyclesInRange($from, $to, $newestFirst = TRUE) {
 		$limit = 0;
 		$startTime = Billrun_Billingcycle::getBillrunStartTimeByDate($from);
 		$endTime = Billrun_Billingcycle::getBillrunEndTimeByDate($to);
@@ -269,7 +271,9 @@ class BillrunController extends ApiController {
 			$currentBillrunKey = Billrun_Billingcycle::getPreviousBillrunKey($currentBillrunKey);
 			$limit++;
 		}
-
+		if (!$newestFirst) {
+			$billrunKeys = array_reverse($billrunKeys);
+		}
 		return $billrunKeys;
 	}
 

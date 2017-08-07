@@ -70,20 +70,22 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	 *  Get  the  total amount with taxes  for a given line
 	 * @param type $taxedLine a line *after* taxation  was applied to it.
 	 * @return float the  price of the line including taxes
+	 *				 or the same value if the tax could not be calcualted without the taxedLine
 	 */
-	public static function addTax($taxedLine) {
-		return $taxedLine['aprice'] + $taxedLine['tax_data']['tax_amount'];
+	public static function addTax($untaxedPrice, $taxedLine = NULL) {
+		return $untaxedPrice + Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'],0);
 	}
 
 	/**
 	 *  Remove the taxes from the total amount with taxes for a given line
 	 * @param type $taxedLine a line *after* taxation  was applied to it.
-	 * @return float the  price of the line including taxes
+	 * @return float the price of the line including taxes \
+	 *				 or the same value if the tax could not be calcualted without the taxedLine
 	 */
-	public static function removeTax($taxedPrice, $taxedLine) {
-		return $taxedPrice + $taxedLine['tax_data']['tax_amount'];
+	public static function removeTax($taxedPrice, $taxedLine = NULL) {
+		return $taxedPrice - Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'],0);
 	}
-
+	
 	//================================ Protected ===============================	
 
 	/**

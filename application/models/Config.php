@@ -40,13 +40,19 @@ class ConfigModel {
 	 * reserved names of File Types.
 	 * @var array
 	 */
-	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount', 'all');
 	
 	/**
 	 * Valid file type names regex
 	 * @var string
 	 */
 	protected $fileTypesRegex = '/^[a-zA-Z0-9_]+$/';
+	
+	/**
+	 * Max custom header/footer template size
+	 * @var number - bytes
+	 */
+	protected $invoice_custom_template_max_size = 1 * 1024 * 1024;
 
 	public function __construct() {
 		// load the config data from db
@@ -316,8 +322,13 @@ class ConfigModel {
 			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
 			throw new Exception($data . ' is illegal usage type');
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['header'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 0, true);
+			throw new Exception("Custom header template is too long, maximum size is {$max}.");
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
+			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
 		} else {
-			$this->preUpdateConfig($category, $data, $updatedData[$category]);
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
 			}
@@ -342,11 +353,8 @@ class ConfigModel {
 	 * @return true on success, throws error in case of an error
 	 * @todo re-factor after fields move from subscribers.account.fields => accounts.fields
 	 */
-	protected function preUpdateConfig($category, $data, $prevData) {
+	protected function preUpdateConfig($category, &$data, $prevData) {
 		if ($this->isCustomFieldsConfig($category, $data)) {
-			if ($category === 'subscribers') { // TODO: hack. While account is still under subscribers, also validate accounts
-				$this->validateCustomFields('accounts', $data, $prevData);
-			}
 			$this->validateCustomFields($category, $data, $prevData);
 		}
 		return true;
@@ -361,31 +369,33 @@ class ConfigModel {
 	 * @return true on validation success
 	 * @throws Exception on validation failure
 	 */
-	protected function validateCustomFields($category, $data, $prevData) {
+	protected function validateCustomFields($category, &$data, $prevData) {
 		$params = array(
 			'no_init' => true,
-			'collection' => $category,
+			'collection' => $this->getCollectionName($category),
 		);
 		$entityModel = Models_Entity::getInstance($params);
-		$customFieldsPath = $entityModel->getCustomFieldsPath();
-		$fieldsPath = substr($customFieldsPath, strpos($customFieldsPath, ".") + 1); // we are already inside the $category
 		
 		$mandatoryFields = array();
 		$uniqueFields = array();
-		foreach (Billrun_Util::getIn($data, $fieldsPath, array()) as $field) {
+		foreach ($data as &$field) {
 			$fieldName = $field['field_name'];
 			$prevField = false;
-			foreach (Billrun_Util::getIn($prevData, $fieldsPath, array()) as $f) {
+			foreach ($prevData as $f) {
 				if ($f['field_name'] === $fieldName) {
 					$prevField = $f;
 					break;
 				}
 			}
+			
+			if ($field['unique']) {
+				$field['mandatory'] = true;
+			}
 
 			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
 				$mandatoryFields[] = $fieldName;
 			}
-
+			
 			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
 				$uniqueFields[] = $fieldName;
 			}
@@ -433,9 +443,8 @@ class ConfigModel {
 		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
 		$mandatoryQuery['$or'] = array();
 		foreach ($mandatoryFields as $field) {
-			$fieldName = $field['field_name'];
-			$mandatoryQuery['$or'][] = array($fieldName => '');
-			$mandatoryQuery['$or'][] = array($fieldName => array('$exists' => false));
+			$mandatoryQuery['$or'][] = array($field => '');
+			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
 		}
 		
 		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
@@ -461,6 +470,7 @@ class ConfigModel {
 		
 		foreach ($uniqueFields as $field) {
 			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
+			$unwind = '$' . $field;
 			$project = array(
 				$field => 1,
 				't.from' => '$from',
@@ -475,6 +485,7 @@ class ConfigModel {
 			
 			$results = $entityModel->getCollection()->aggregate(
 				array('$match' => $match),
+				array('$unwind' => $unwind),
 				array('$project' => $project),
 				array('$sort' => $sort),
 				array('$group' => $group),
@@ -496,6 +507,18 @@ class ConfigModel {
 		return true;
 	}
 	
+	protected function getCustomFields() {
+		return array(
+			'subscribers.subscriber.fields' => 'subscribers',
+			'subscribers.account.fields' => 'accounts',
+			'rates.fields' => 'rates',
+		);
+	}
+	
+	protected function getCollectionName($category) {
+		return Billrun_Util::getIn($this->getCustomFields(), $category, '');
+	}
+	
 	/**
 	 * checks if the updated category is of  a custom field
 	 * 
@@ -504,7 +527,7 @@ class ConfigModel {
 	 * @return boolean
 	 */
 	protected function isCustomFieldsConfig($category, $data) {
-		return in_array($category, array('subscribers', 'accounts'));
+		return array_key_exists($category, $this->getCustomFields());
 	}
 	
 	public function validateConfig($category, $data) {
@@ -590,6 +613,7 @@ class ConfigModel {
 			return 1;
 		}
 		
+		$this->preUpdateConfig($category, $data, $valueInCategory);
 		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 	}
 	
@@ -1018,6 +1042,10 @@ class ConfigModel {
 	protected function validateUsageType($usageType) {
 		$reservedUsageTypes = array('cost');
 		return !in_array($usageType, $reservedUsageTypes);
+	}
+
+	protected function validateStringLength($str, $size) {
+		return strlen($str) <= $size;
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {

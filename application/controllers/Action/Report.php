@@ -26,6 +26,8 @@ class ReportAction extends ApiAction {
 	protected $desc = 'success';
 	protected $next_page = true;
 	protected $response = array();
+	protected $type = null;
+	protected $headers = array();
 	
 	public function execute() {
 		$this->request = $this->getRequest(); // supports GET / POST requests;
@@ -39,6 +41,23 @@ class ReportAction extends ApiAction {
 		$size = $this->request->getRequest('size', -1);
 		$this->{$action}($report, $page, $size);
 		$this->response();
+	}
+	
+	public function exportCSV($report_name) {
+		$report = $this->model->getReportByKey($report_name);
+		if (empty($report)) {
+			throw new Exception("Report {$report_name} not exist");
+		}
+		$this->type = 'csv';
+		$this->headers = array_reduce(
+			$report['columns'], 
+			function ($carry, $column) {
+				$carry[$column['key']] = $column['label'];
+				return $carry;
+			},
+			array()
+		);
+		$this->response = $this->model->applyFilter($report, 0, -1);
 	}
 	
 	public function generateReport($report, $page, $size) {
@@ -74,7 +93,7 @@ class ReportAction extends ApiAction {
 	
 	protected function render($tpl, array $parameters = null) {
 		$request = array_merge($this->getRequest()->getParams(),$this->getRequest()->getRequest());
-		$type = $this->request->getRequest('type', '');
+		$type = !empty($this->type) ? $this->type : $this->request->getRequest('type', '');
 		if($type === 'csv') {
 			return $this->renderCsv($request, $parameters);
 		}
@@ -83,7 +102,7 @@ class ReportAction extends ApiAction {
 
 	protected function renderCsv($request, array $parameters = null) {
 		$filename = isset($request['file_name']) ? $request['file_name'] : date('Ymd').'_report';
-		$headers = isset($request['headers']) ? json_decode($request['headers'], TRUE) : array();
+		$headers = isset($request['headers']) ? json_decode($request['headers'], TRUE) : $this->headers;
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
 		$this->getController()->setOutputVar('delimiter', $delimiter);

@@ -31,5 +31,24 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 		
 		return $line;
 	}
+	
+	//================================= Static =================================
+	/**
+	 * @see Billrun_Calculator_Tax::addTax
+	 * 
+	 * @param type $untaxedPrice
+	 */
+	public static function addTax($untaxedPrice, $taxedLine = NULL) {
+		$defaultTax = $untaxedPrice * Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun());
+		return $untaxedPrice + Billrun_Util::getFieldVal($taxedLine['tax_data']['tax_amount'], $defaultTax );
+	}
+
+	/**
+	 *  @see Billrun_Calculator_Tax::removeTax
+	 */
+	public static function removeTax($taxedPrice, $taxedLine = NULL) {
+		$defaultTax = $taxedPrice / (1 + Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun()));
+		return $taxedPrice - Billrun_Util::getFieldVal(	$taxedLine['tax_data']['tax_amount'], $defaultTax );
+	}
 }
 	
