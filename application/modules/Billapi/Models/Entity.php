@@ -143,14 +143,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		if ($params['collection'] == 'accounts') { 
-			$customFieldsPath = 'subscribers.account';
-		} else if ($params['collection'] == 'subscribers') {
-			$customFieldsPath = 'subscribers.subscriber';
-		} else {
-			$customFieldsPath = $params['collection'];
-		}
-		$customFields = Billrun_Factory::config()->getConfigValue($customFieldsPath . '.fields', array());
+		$customFields = $this->getCustomFields();
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999, true, array(), $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);

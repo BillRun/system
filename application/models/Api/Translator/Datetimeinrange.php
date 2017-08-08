@@ -30,7 +30,7 @@ class Api_Translator_DatetimeInRangeModel extends Api_Translator_TypeModel {
 			}
 			return array(
 					'from' => array('$lte' => $date),
-					'to' => array('$gte' => $date),
+					'to' => array('$gt' => $date),
 			);
 		} catch (MongoException $ex) {
 			return false;
