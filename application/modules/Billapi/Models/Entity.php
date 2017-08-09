@@ -495,6 +495,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
+		return true;
 		if (is_null($action)) {
 			$action = $this->action;
 		}
@@ -914,6 +915,7 @@ class Models_Entity {
 	}
 	
 	protected static function isDateMovable($timestamp) {
+		return true;
 		return self::getMinimumUpdateDate() <= $timestamp;
 	}
 
