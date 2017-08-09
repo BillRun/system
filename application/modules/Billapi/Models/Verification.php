@@ -24,22 +24,8 @@ trait Models_Verification {
 	 * @throws Billrun_Exceptions_Api
 	 * @throws Billrun_Exceptions_InvalidFields
 	 */
-	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true, $requestOptions = array(), $duplicateCheck = array(), $customFields = array()) {
+	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true, $requestOptions = array()) {
 		$options = array();
-		if (isset($config['unique_query_parameters']) && $config['unique_query_parameters']) {
-			$updatedQueryParams = $this->verifyQueryParams($query, $duplicateCheck, $customFields);
-			if (!empty($updatedQueryParams)) {
-				if (!isset($query['_id']) && !isset($query['effective_date'])) {
-					throw new Billrun_Exceptions_Api($error, array(), 'When updating entity not by id need to transfer effective_date field');
-				} else if (isset($query['effective_date'])) {
-					$updatedQueryParams[] = array(
-						 'name' => 'effective_date',
-						 'type' => 'datetimeInRange'
-					);
-				}
-				$config['query_parameters'] = $updatedQueryParams;
-			}
-		}
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
 			$translated[$type] = array();
@@ -93,9 +79,6 @@ trait Models_Verification {
 		if ($forceNotEmpty) {
 			$this->verifyTranslated($translated);
 		}
-		if (isset($translated['update_parameters']['effective_date'])) {
-			unset($translated['update_parameters']['effective_date']);
-		}
 		return array($translated['query_parameters'], $translated['update_parameters']);
 	}
 
@@ -108,54 +91,5 @@ trait Models_Verification {
 			throw new Billrun_Exceptions_Api($this->errorBase + 2, array(), 'No query/update was found or entity not supported');
 		}
 	}
-	
-	/**
-	 * Verify that legal query params are transfered for update and adjust the query if needed.
-	 * @param array $queryParams
-	 */
-	protected function verifyQueryParams($queryParams, $duplicateCheck, $customFields) {
-		if (isset($queryParams['_id'])) {
-			return $this->buildIdQuery();
-		} else if (empty(array_diff_key(array_flip($duplicateCheck), $queryParams))) {
-			return $this->buildDuplicateCheckQuery($duplicateCheck);
-		} else if (!empty($customFields)) {
-			return $this->buildUniqueFieldsQuery($customFields);
-		}
-		
-		return false;
-	}
-	
-	protected function buildIdQuery() {
-		return array(
-			array(
-				'name' => '_id',
-				'type' => 'dbid',
-				'mandatory' => '1'
-		));
-	}
-	
-	protected function buildDuplicateCheckQuery($duplicateCheck) {
-		foreach ($duplicateCheck as $type => $fieldName) {
-			$query[] = array(
-				'name' => $fieldName,
-				'type' => $type,
-			);
-		}
-		
-		return $query;
-	}
-	
-	protected function buildUniqueFieldsQuery($customFields) {
-		$uniqueFields = array_filter($customFields, function($field) {
-			return isset($field['unique']) && $field['unique'] && !(isset($field['system']) && $field['system']);
-		});
-		foreach ($uniqueFields as $field) {
-			$query[] = array(
-				'name' => $field['field_name'],
-				'type' => isset($field['type']) ? $field['type'] : 'string',
-			);
-		}
-		return $query;
-	}
-	
+
 }
