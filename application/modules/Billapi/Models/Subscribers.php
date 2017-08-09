@@ -161,7 +161,11 @@ class Models_Subscribers extends Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
+		if (isset($this->query['_id'])) {
+			$this->trackChanges($this->query['_id']);
+		} else {
+			$this->trackChanges();
+		}
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
 			$update = array($otherEdge => new MongoDate($this->update[$edge]->sec));
