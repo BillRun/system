@@ -22,10 +22,12 @@ class ReportAction extends ApiAction {
 	
 	protected $model = null;
 	protected $request = null;
-	protected $status = true;
+	protected $status = 1;
 	protected $desc = 'success';
 	protected $next_page = true;
 	protected $response = array();
+	protected $type = null;
+	protected $headers = array();
 	
 	public function execute() {
 		$this->request = $this->getRequest(); // supports GET / POST requests;
@@ -34,18 +36,43 @@ class ReportAction extends ApiAction {
 		if (!method_exists($this, $action)) {
 			return $this->setError('Report controller - cannot find action: ' . $action);
 		}
-		$query = $this->request->getRequest('query', null);
+		$report = $this->request->getRequest('report', null);
 		$page = $this->request->getRequest('page', 0);
 		$size = $this->request->getRequest('size', -1);
-		$this->{$action}($query, $page, $size);
+		$this->{$action}($report, $page, $size);
 		$this->response();
 	}
 	
-	public function generateReport($query, $page, $size) {
-		$parsed_query = json_decode($query, TRUE);
-		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_query, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
-		$this->response = $this->model->applyFilter($parsed_query, $page, $size);
+	public function exportCSV($report_name) {
+		$report = $this->model->getReportByKey($report_name);
+		if (empty($report)) {
+			throw new Exception("Report {$report_name} not exist");
+		}
+		$this->type = 'csv';
+		$this->headers = array_reduce(
+			$report['columns'], 
+			function ($carry, $column) {
+				$carry[$column['key']] = $column['label'];
+				return $carry;
+			},
+			array()
+		);
+		$this->response = $this->model->applyFilter($report, 0, -1);
+	}
+	
+	public function generateReport($report, $page, $size) {
+		$parsed_report = json_decode($report, TRUE);
+		$this->response = $this->model->applyFilter($parsed_report, $page, $size);
+		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_report, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
 		$this->next_page = count($nextPageData) > 0; 
+	}
+	
+	public function taxationReport($report, $page, $size) {	
+		$parsed_query = json_decode($report, TRUE);
+		$reportData = Billrun_Factory::chain()->trigger('getTaxationReport',array($parsed_query['billrun_key']));
+		$this->response =  $reportData['data'];
+		$this->getRequest()->setParam('headers', json_encode($reportData['headers']));
+		$this->next_page = false; 
 	}
 	
 	protected function response() {
@@ -65,8 +92,8 @@ class ReportAction extends ApiAction {
 	}
 	
 	protected function render($tpl, array $parameters = null) {
-		$request = $this->getRequest()->getRequest();
-		$type = $this->request->getRequest('type', '');
+		$request = array_merge($this->getRequest()->getParams(),$this->getRequest()->getRequest());
+		$type = !empty($this->type) ? $this->type : $this->request->getRequest('type', '');
 		if($type === 'csv') {
 			return $this->renderCsv($request, $parameters);
 		}
@@ -74,8 +101,8 @@ class ReportAction extends ApiAction {
 	}
 
 	protected function renderCsv($request, array $parameters = null) {
-		$filename = isset($request['file_name']) ? $request['file_name'] : 'report';
-		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$filename = isset($request['file_name']) ? $request['file_name'] : date('Ymd').'_report';
+		$headers = isset($request['headers']) ? json_decode($request['headers'], TRUE) : $this->headers;
 		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
 		$this->getController()->setOutputVar('headers', $headers);
 		$this->getController()->setOutputVar('delimiter', $delimiter);

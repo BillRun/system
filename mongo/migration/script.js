@@ -1,6 +1,6 @@
 /* 
  * Idempotent migration script goes here.
- * Please try to avoid using migration script and instead make special treament in the code!
+ * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
 // BRCD-576 (Deactivate / reactivate payment gateway)
@@ -286,5 +286,26 @@ for (var i in fileTypes) {
 lastConfig.file_types = fileTypes;
 db.config.insert(lastConfig);
 
-// update balances collection with compatibility to extended balance period
+// BRCD-832 rename entity name from lines to usage
+db.reports.find({"entity": "lines"}).forEach(function (obj) {
+	obj.entity = "usage";
+	db.reports.save(obj);
+});
+
+// BRCD-368 Importer - chenge account and subscriber fieds settings
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+if ((typeof lastConfig) !== "undefined") {
+	delete lastConfig['_id'];
+	// set subscriber plan_activation display false
+	var plan_activation_index = lastConfig.subscribers.subscriber.fields.findIndex(function (field) {
+		return field.field_name == "plan_activation" && typeof field.editable === "undefined"
+	});
+	if(plan_activation_index !== -1) {
+		lastConfig.subscribers.subscriber.fields[plan_activation_index].editable = false;
+	}
+
+	db.config.insert(lastConfig);
+}
+
+// BRCD-865 update balances collection with compatibility to extended balance period
 db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1})

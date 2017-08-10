@@ -150,7 +150,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 				$ret[] = $fileData['path'];
 				$count++; //count the file as recieved
 				// delete the file after downloading and store it to processing queue
-				if (Billrun_Factory::config()->isProd() && (isset($config['delete_received']) && $config['delete_received'] )) {
+				if (isset($config['delete_received']) && $config['delete_received']) {
 					Billrun_Factory::log("FTP: Deleting file {$file->name} from remote host ", Zend_Log::INFO);
 					$file->delete();
 				}

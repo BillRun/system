@@ -15,6 +15,8 @@
  */
 class Billrun_Billingcycle {
 	
+	const PRECISION = 0.005;
+	
 	protected static $billingCycleCol = null;
     
 	/**
@@ -213,7 +215,7 @@ class Billrun_Billingcycle {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 		$numOfPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size))->count();
 		$finishedPages = $billingCycleCol->query(array('billrun_key' => $billrunKey, 'page_size' => $size, 'end_time' => array('$exists' => 1)))->count();
-		if (Billrun_Aggregator_Customer::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
+		if (static::isBillingCycleOver($billingCycleCol, $billrunKey, $size, $zeroPages) && $numOfPages != 0 && $finishedPages == $numOfPages) {
 			return true;
 		}
 		return false;
@@ -413,7 +415,7 @@ class Billrun_Billingcycle {
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
-public static function getLastNonRerunnableCycle() {
+	public static function getLastNonRerunnableCycle() {
 		$query = array('billed' => 1);
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
@@ -422,4 +424,39 @@ public static function getLastNonRerunnableCycle() {
 		}
 		return $entry['billrun_key'];
 	}
+
+	
+	public static function isBillingCycleOver($cycleCol, $stamp, $size, $zeroPages=1){
+		if (empty($zeroPages) || !Billrun_Util::IsIntegerValue($zeroPages)) {
+			$zeroPages = 1;
+		}
+		$cycleQuery = array('billrun_key' => $stamp, 'page_size' => $size, 'count' => 0);
+		$cycleCount = $cycleCol->query($cycleQuery)->count();
+		
+		if ($cycleCount >= $zeroPages) {
+			Billrun_Factory::log("Finished going over all the pages", Zend_Log::DEBUG);
+			return true;
+		}		
+		return false;
+	}
+
+	/**
+	 * Returns accounts ids who have a confirmed invoice for the given cycle
+	 * @param string $billrunKey
+	 * @return array
+	 */
+	public static function getConfirmedAccountIds($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'billrun_key' => $billrunKey,
+			'billed' => 1,
+		);
+		$fields = array(
+			'aid' => 1,
+		);
+		$confirmedInvoices = $billrunColl->find($query, $fields);
+		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
+		return $aids;
+	}
+	
 }

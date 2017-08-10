@@ -40,13 +40,19 @@ class ConfigModel {
 	 * reserved names of File Types.
 	 * @var array
 	 */
-	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount');
+	protected $reservedFileTypeName = array('service', 'flat', 'credit', 'conditional_discount', 'discount', 'all');
 	
 	/**
 	 * Valid file type names regex
 	 * @var string
 	 */
 	protected $fileTypesRegex = '/^[a-zA-Z0-9_]+$/';
+	
+	/**
+	 * Max custom header/footer template size
+	 * @var number - bytes
+	 */
+	protected $invoice_custom_template_max_size = 1 * 1024 * 1024;
 
 	public function __construct() {
 		// load the config data from db
@@ -93,7 +99,7 @@ class ConfigModel {
 	}
 
 	public function getFromConfig($category, $data) {
-		$currentConfig = $this->getConfig(true);
+		$currentConfig = $this->getConfig();
 
 		// TODO: Create a config class to handle just file_types.
 		if ($category == 'file_types') {
@@ -108,6 +114,15 @@ class ConfigModel {
 				return $fileSettings;
 			}
 			throw new Exception('Unknown file type ' . $data['file_type']);
+		}
+		else if ($category == 'events.balance') {
+			if (empty($data['event_code'])) {
+				return Billrun_Util::getIn($currentConfig, $category, []);
+			}
+			else if ($fileSettings = $this->getSettingsArrayElement($currentConfig, $category, 'event_code', $data['event_code'])) {
+				return $fileSettings;
+			}
+			throw new Exception('Unknown event ' . $data['event_code']);
 		} else if ($category == 'subscribers') {
 			return $currentConfig['subscribers'];
 		} else if ($category == 'payment_gateways') {
@@ -213,9 +228,14 @@ class ConfigModel {
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
-			$this->setFileTypeSettings($updatedData, $data);
+			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			$fileSettings = $this->validateFileSettings($updatedData, $data['file_type'], FALSE);
-		} else if ($category === 'payment_gateways') {
+		}
+		else if ($category === 'events.balance') {
+			if ($this->validateEvent($data)) {
+				$this->setSettingsArrayElement($updatedData, $data, 'events.balance', 'event_code');
+			}
+		} else if ($category === 'payment_gateways') {	
 			if (!is_array($data)) {
 				Billrun_Factory::log("Invalid data for payment gateways.");
 				return 0;
@@ -302,6 +322,12 @@ class ConfigModel {
 			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
 			throw new Exception($data . ' is illegal usage type');
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['header'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 0, true);
+			throw new Exception("Custom header template is too long, maximum size is {$max}.");
+		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['footer'], $this->invoice_custom_template_max_size)) {
+			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 2, true);
+			throw new Exception("Custom footer template is too long, maximum size is ${$max}.");
 		} else {
 			if (!$this->_updateConfig($updatedData, $category, $data)) {
 				return 0;
@@ -317,6 +343,192 @@ class ConfigModel {
 
 		return $saveResult;
 	}
+		
+	/**
+	 * runs before update of configuration, validates that data is correct
+	 * 
+	 * @param string category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on success, throws error in case of an error
+	 * @todo re-factor after fields move from subscribers.account.fields => accounts.fields
+	 */
+	protected function preUpdateConfig($category, &$data, $prevData) {
+		if ($this->isCustomFieldsConfig($category, $data)) {
+			$this->validateCustomFields($category, $data, $prevData);
+		}
+		return true;
+	}
+	
+	/**
+	 * validates that fields attributes (mandatory/unique) really are set as defined for existing entities
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @param array $prevData
+	 * @return true on validation success
+	 * @throws Exception on validation failure
+	 */
+	protected function validateCustomFields($category, &$data, $prevData) {
+		$params = array(
+			'no_init' => true,
+			'collection' => $this->getCollectionName($category),
+		);
+		$entityModel = Models_Entity::getInstance($params);
+		
+		$mandatoryFields = array();
+		$uniqueFields = array();
+		foreach ($data as &$field) {
+			$fieldName = $field['field_name'];
+			$prevField = false;
+			foreach ($prevData as $f) {
+				if ($f['field_name'] === $fieldName) {
+					$prevField = $f;
+					break;
+				}
+			}
+			
+			if ($field['unique']) {
+				$field['mandatory'] = true;
+			}
+
+			if ($this->isFieldNewlySet('mandatory', $field, $prevField)) {
+				$mandatoryFields[] = $fieldName;
+			}
+			
+			if ($this->isFieldNewlySet('unique', $field, $prevField)) {
+				$uniqueFields[] = $fieldName;
+			}
+		}
+
+		if (!$this->validateMandatoryFields($entityModel, $mandatoryFields)) {
+			throw new Exception('cannot make field\s [' . implode(', ', $mandatoryFields) .'] mandatory because there is an entity missing one of those fields');
+		}
+
+		if (!$this->validateUniqueFields($entityModel, $uniqueFields)) {
+			throw new Exception('cannot make field\s [' . implode(', ', $uniqueFields) .'] unique because for one of those fields there is more than one entity with the same value');
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * checks if the field is now set to true, but previously was not set or was set to false
+	 * 
+	 * @param string $fieldName
+	 * @param array $field
+	 * @param array $prevField
+	 * @return boolean
+	 */
+	protected function isFieldNewlySet($fieldName, $field, $prevField) {
+		if (!$prevField) {
+			return (isset($field[$fieldName]) && $field[$fieldName]);
+		}
+		return (isset($field[$fieldName]) && $field[$fieldName]) &&
+			(!isset($prevField[$fieldName]) || !$prevField[$fieldName]);
+	}
+	
+	/**
+	 * checks that all existing entities of type model have all fields marked as mandatories
+	 * 
+	 * @param Models_Entity $entityModel
+	 * @param array $mandatoryFields
+	 * @return boolean
+	 */
+	protected function validateMandatoryFields(Models_Entity $entityModel, $mandatoryFields) {
+		if (empty($mandatoryFields)) {
+			return true;
+		}
+		
+		$mandatoryQuery = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
+		$mandatoryQuery['$or'] = array();
+		foreach ($mandatoryFields as $field) {
+			$mandatoryQuery['$or'][] = array($field => '');
+			$mandatoryQuery['$or'][] = array($field => array('$exists' => false));
+		}
+		
+		return $entityModel->getCollection()->query($mandatoryQuery)->count() === 0;
+	}
+	
+	/**
+	 * checks that all existing entities of type model have all fields marked as unique different from each other
+	 * 
+	 * @param Models_Entity $entityModel
+	 * @param array $uniqueFields
+	 * @return boolean
+	 */
+	protected function validateUniqueFields(Models_Entity $entityModel, $uniqueFields) {
+		if (empty($uniqueFields)) {
+			return true;
+		}
+		
+		$basicMatch = array_merge(Billrun_Utils_Mongo::getDateBoundQuery(time(), true), $entityModel->getMatchSubQuery());
+		$sort = array('t.from' => 1);
+		$match2 = array(
+			's' => array('$gt' => 1),
+		);
+		
+		foreach ($uniqueFields as $field) {
+			$match = array_merge($basicMatch, array($field => array('$exists' => true)));
+			$unwind = '$' . $field;
+			$project = array(
+				$field => 1,
+				't.from' => '$from',
+				't.to' => '$to',
+			);
+			
+			$group = array(
+				'_id' => '$' . $field,
+				'ts' => array('$push' => '$t'),
+				's' => array('$sum' => 1),
+			);
+			
+			$results = $entityModel->getCollection()->aggregate(
+				array('$match' => $match),
+				array('$unwind' => $unwind),
+				array('$project' => $project),
+				array('$sort' => $sort),
+				array('$group' => $group),
+				array('$match' => $match2)
+			);
+			
+			foreach ($results as $result) {
+				$prevRange = null;
+				foreach ($result['ts'] as $range) {
+					if ($prevRange && $prevRange['to']->sec >= $range['from']->sec) {
+						return false;
+					}
+					
+					$prevRange = $range;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	protected function getCustomFields() {
+		return array(
+			'subscribers.subscriber.fields' => 'subscribers',
+			'subscribers.account.fields' => 'accounts',
+			'rates.fields' => 'rates',
+		);
+	}
+	
+	protected function getCollectionName($category) {
+		return Billrun_Util::getIn($this->getCustomFields(), $category, '');
+	}
+	
+	/**
+	 * checks if the updated category is of  a custom field
+	 * 
+	 * @param string $category
+	 * @param array $data
+	 * @return boolean
+	 */
+	protected function isCustomFieldsConfig($category, $data) {
+		return array_key_exists($category, $this->getCustomFields());
+	}
 	
 	public function validateConfig($category, $data) {
 		$updatedData = $this->getConfig();
@@ -324,7 +536,7 @@ class ConfigModel {
 			if (empty($data['file_type'])) {
 				throw new Exception('Couldn\'t find file type name');
 			}
-			$this->setFileTypeSettings($updatedData, $data);
+			$this->setSettingsArrayElement($updatedData, $data, 'file_types', 'file_type');
 			return $this->validateFileSettings($updatedData, $data['file_type']);
 		}
 	}
@@ -352,8 +564,8 @@ class ConfigModel {
 	protected function updateRoot(&$currentConfig, $data) {
 		foreach ($data as $key => $value) {
 			foreach ($value as $k => $v) {
-				Billrun_Factory::log("Data: " . print_r($data,1));
-				Billrun_Factory::log("Value: " . print_r($value,1));
+//				Billrun_Factory::log("Data: " . print_r($data,1));
+//				Billrun_Factory::log("Value: " . print_r($value,1));
 				if (!$this->_updateConfig($currentConfig, $k, $v)) {
 					return 0;
 				}
@@ -401,6 +613,7 @@ class ConfigModel {
 			return 1;
 		}
 		
+		$this->preUpdateConfig($category, $data, $valueInCategory);
 		return Billrun_Utils_Mongo::setValueByMongoIndex($data, $currentConfig, $category);
 	}
 	
@@ -559,12 +772,18 @@ class ConfigModel {
 				$this->unsetFileTypeSettings($updatedData, $data['file_type']);
 			}
 		}
-		if ($category === 'export_generators') {
+		else if ($category === 'export_generators') {
 			if (isset($data['name'])) {
 				$this->unsetExportGeneratorSettings($updatedData, $data['name']);
 			}
 		}
-		if ($category === 'payment_gateways') {
+		else if ($category === 'events.balance') {
+			if (empty($data['event_code'])) {
+				throw new Exception('Must supply event_code');
+			}
+			$this->unsetSettingsArrayElement($updatedData, $category, 'event_code', $data['event_code']);
+		}
+		else if ($category === 'payment_gateways') {
  			if (isset($data['name'])) {
  				if (count($data) == 1) {
  					$this->unsetPaymentGatewaySettings($updatedData, $data['name']);
@@ -639,6 +858,35 @@ class ConfigModel {
  		return FALSE;
  	}
  
+	protected function setSettingsArrayElement(&$config, $element, $settingsKey, $elementKey) {
+		$fileType = $element[$elementKey];
+		$nestedVal = Billrun_Util::getIn($config, $settingsKey, array());
+		$foundElement = FALSE;
+		foreach ($nestedVal as &$someFileSettings) {
+			if ($someFileSettings[$elementKey] == $fileType) {
+				$foundElement = TRUE;
+				$someFileSettings = $element;
+				break;
+			}
+		}
+		if (!$foundElement) {
+			$nestedVal[] = $element;
+		}
+		Billrun_Util::setIn($config, $settingsKey, $nestedVal);
+	}
+
+	protected function unsetSettingsArrayElement(&$config, $settingsKey, $elementsKey, $elementId) {
+		Billrun_Util::setIn($config, $settingsKey, array_filter(Billrun_Util::getIn($config, $settingsKey, []), function($fileSettings) use ($elementsKey, $elementId) {
+			return $fileSettings[$elementsKey] !== $elementId;
+		}));
+	}
+	
+	protected function getSettingsArrayElement($config, $settingsKey, $elementsKey, $elementId) {
+		return array_filter(Billrun_Util::getIn($config, $settingsKey, []), function($fileSettings) use ($elementId, $elementsKey) {
+			return $fileSettings[$elementsKey] === $elementId;
+		});
+	}
+	
 	protected function setFileTypeSettings(&$config, $fileSettings) {
 		$fileType = $fileSettings['file_type'];
 		foreach ($config['file_types'] as &$someFileSettings) {
@@ -696,13 +944,18 @@ class ConfigModel {
  	}
  
 
+	/**
+	 * TODO change to unsetSettingsArrayElement
+	 */
 	protected function unsetFileTypeSettings(&$config, $fileType) {
 		$config['file_types'] = array_filter($config['file_types'], function($fileSettings) use ($fileType) {
 			return $fileSettings['file_type'] !== $fileType;
 		});
 	}
 	
-	
+	/**
+	 * TODO change to unsetSettingsArrayElement
+	 */
 	protected function unsetPaymentGatewaySettings(&$config, $pg) {
  		$config['payment_gateways'] = array_filter($config['payment_gateways'], function($pgSettings) use ($pg) {
  			return $pgSettings['name'] !== $pg;
@@ -748,7 +1001,7 @@ class ConfigModel {
 				if (isset($fileSettings['customer_identification_fields'])) {
 					$updatedFileSettings['customer_identification_fields'] = $this->validateCustomerIdentificationConfiguration($fileSettings['customer_identification_fields']);
 					if (isset($fileSettings['rate_calculators'])) {
-						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators']);
+						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators'], $config);
 						if (isset($fileSettings['receiver'])) {
 							$updatedFileSettings['receiver'] = $this->validateReceiverConfiguration($fileSettings['receiver']);
 							$completeFileSettings = TRUE;
@@ -764,8 +1017,21 @@ class ConfigModel {
 		if (!$allowPartial && !$completeFileSettings) {
 			throw new Exception('File settings is not complete.');
 		}
-		$this->setFileTypeSettings($config, $updatedFileSettings);
+		$this->setSettingsArrayElement($config, $updatedFileSettings, 'file_types', 'file_type');
 		return $this->checkForConflics($config, $fileType);
+	}
+	
+	/**
+	 * 
+	 * @todo Insert validations
+	 * @param type $data
+	 * @return boolean
+	 */
+	protected function validateEvent($data) {
+		if (!isset($data['event_code'])) {
+			throw new Exception('Invalid data for events.');
+		}
+		return TRUE;
 	}
 
 	protected function validateType($type) {
@@ -776,6 +1042,10 @@ class ConfigModel {
 	protected function validateUsageType($usageType) {
 		$reservedUsageTypes = array('cost');
 		return !in_array($usageType, $reservedUsageTypes);
+	}
+
+	protected function validateStringLength($str, $size) {
+		return strlen($str) <= $size;
 	}
 	
 	protected function validatePaymentGatewaySettings(&$config, $pg, $paymentGateway) {
@@ -966,8 +1236,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !(isset($mapping['pattern']) && Billrun_Util::isValidRegex($mapping['pattern'])) || empty($mapping['usaget'])) {
-					throw new Exception('Illegal usaget mapping at index ' . $index);
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
 		}
@@ -998,10 +1268,11 @@ class ConfigModel {
 		return $customerIdentificationSettings;
 	}
 
-	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings) {
+	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings, &$config) {
 		if (!is_array($rateCalculatorsSettings)) {
 			throw new Exception('Rate calculators settings is not an array');
 		}
+		$longestPrefixParams = array();
 		foreach ($rateCalculatorsSettings as $usaget => $rateRules) {
 			foreach ($rateRules as $rule) {
 				if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
@@ -1010,9 +1281,21 @@ class ConfigModel {
 				if (!in_array($rule['type'], $this->ratingAlgorithms)) {
 					throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
 				}
+				if ($rule['type'] === 'longestPrefix') {
+					$longestPrefixParams[] = $rule['rate_key'];
+				}
 			}
 		}
+		$this->validateLongestPrefixRateConfiguration($config, $longestPrefixParams);
 		return $rateCalculatorsSettings;
+	}
+	
+	protected function validateLongestPrefixRateConfiguration(&$config, $longestPrefixParams) {
+		foreach ($config['rates']['fields'] as &$field) {
+			if (in_array($field['field_name'], $longestPrefixParams)) {
+				$field['multiple'] = true;
+			}
+		}
 	}
 
 	protected function validateReceiverConfiguration($receiverSettings) {

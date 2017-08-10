@@ -132,7 +132,7 @@ class Billrun_Factory {
 	 * @var Zend_Auth
 	 */
 	protected static $auth = null;
-
+	
 	/**
 	 * method to retrieve the log instance
 	 * 
@@ -431,7 +431,7 @@ class Billrun_Factory {
 	public static function auth() {
 		if (!isset(self::$auth)) {
 			Billrun_Util::setHttpSessionTimeout();
-			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf());
+			self::$auth = Zend_Auth::getInstance()->setStorage(new Zend_Auth_Storage_Yaf(Billrun_Factory::config()->getTenant()));
 		}
 		return self::$auth;
 	}
@@ -474,6 +474,15 @@ class Billrun_Factory {
 	
 	public static function remoteClient($param) {
 		return new SoapClient($param);
+	}
+	
+	/**
+	 * 
+	 * @param array $params
+	 * @return Billrun_EventsManager
+	 */
+	public static function eventsManager($params = array()) {
+		return Billrun_EventsManager::getInstance($params);
 	}
 
 }

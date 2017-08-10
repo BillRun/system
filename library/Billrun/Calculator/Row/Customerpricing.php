@@ -307,8 +307,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
-			if (!($ret['ok'] && $ret['updatedExisting'])) {
-				Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
+			if ($ret === FALSE) {
+				Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
 				return false;
 			}
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
@@ -341,8 +341,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$balancePricingData, &$query, &$update, $rate, $this));
 			$ret = $balance->update($query, $update);
-			if (!($ret['ok'] && $ret['updatedExisting'])) {
-				Billrun_Factory::log('Update subscriber balance failed on updated existing document. Update status: ' . print_r($ret, true), Zend_Log::INFO);
+			if ($ret === FALSE) {
+				Billrun_Factory::log('Update subscriber balance failed on updated existing document.', Zend_Log::INFO);
 				return false;
 			}
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
@@ -552,7 +552,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if ($keyRequired == 'cost') {
 						$comparedValue = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $value, $this->row['plan']);
 					} else {
-						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan']);
+						$comparedValue = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $value, $this->row['plan'], 0, 0, 0, null, $this->row['usagev']);
 					}
 				} else {
 					$comparedValue = $value;
@@ -880,6 +880,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$ret['$inc']['rebalance_' . $rebalanceKey] = $rebalanceValue;
 		}
 		return $ret;
+	}
+	
+	public function triggerEvents($balanceBefore) {
+		
 	}
 
 }

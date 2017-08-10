@@ -426,8 +426,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		}
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
+				$rowData['subscriber'] = $enrichedData;
 				$row->setRawData( array_merge($rowData, $enrichedData));
 			} else {
+				$row['subscriber'] = $enrichedData;
 				$row = array_merge($row,$enrichedData);
 			}
 		}

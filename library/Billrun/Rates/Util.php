@@ -209,9 +209,13 @@ class Billrun_Rates_Util {
 	 * @return int the calculated volume
 	 * 
 	 */
-	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null) {
+	public static function getVolumeByRate($rate, $usage_type, $price, $plan = null, $offset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null, $maxUsage = null) {
 		// Check if the price is enough for default usagev
-		$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 100, 'float'); // float avoid set type to int
+		if (is_null($maxUsage)) {
+			$defaultUsage = (float) Billrun_Factory::config()->getConfigValue('rates.prepaid_granted.' . $usage_type . '.usagev', 100, 'float'); // float avoid set type to int
+		} else {
+			$defaultUsage = $maxUsage;
+		}
 		$defaultUsagePrice = static::getTotalChargeByRate($rate, $usage_type, $defaultUsage, $plan, $offset, $time);
 		if ($price >= $defaultUsagePrice) {
 			return $defaultUsage;
@@ -271,7 +275,7 @@ class Billrun_Rates_Util {
 			(isset($row['free_call']) && $row['free_call'])) {
 			return 0;
 		}
-		$maximumGrantedVolume = self::getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time);
+		$maximumGrantedVolume = self::getPrepaidGrantedVolumeByRate($rate, $usageType, $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time, $requestedVolume);
 		$rowInOrOutOfBalanceKey = 'in';
 		if (isset($balance->get("balance")["totals"][$balanceTotalKeys]["usagev"])) {
 			$currentBalanceVolume = $balance->get("balance")["totals"][$balanceTotalKeys]["usagev"];
@@ -282,7 +286,7 @@ class Billrun_Rates_Util {
 				$price = $balance->get("balance")["cost"];
 				$rowInOrOutOfBalanceKey = 'out';
 			}
-			$currentBalanceVolume = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, abs($price), $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time);
+			$currentBalanceVolume = Billrun_Rates_Util::getVolumeByRate($rate, $usageType, abs($price), $row['plan'], $callOffset, $min_balance_cost, $min_balance_volume, $time, $requestedVolume);
 		}
 		$currentBalanceVolume = abs($currentBalanceVolume);
 		$usagev = min(array($currentBalanceVolume, $maximumGrantedVolume, $requestedVolume));
@@ -299,15 +303,15 @@ class Billrun_Rates_Util {
 	 * @param int $min_balance_cost minimum balance cost
 	 * @param int $min_balance_volume minimum balance volume
 	 */
-	public static function getPrepaidGrantedVolumeByRate($rate, $usageType, $planName, $callOffset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null) {
+	public static function getPrepaidGrantedVolumeByRate($rate, $usageType, $planName, $callOffset = 0, $min_balance_cost = 0, $min_balance_volume = 0, $time = null, $maxUsage = null) {
 		if (isset($rate["rates"][$usageType]["prepaid_granted_usagev"])) {
 			return $rate["rates"][$usageType]["prepaid_granted_usagev"];
 		}
 		if (isset($rate["rates"][$usageType]["prepaid_granted_cost"])) {
-			return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
+			return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, $rate["rates"][$usageType]["prepaid_granted_cost"], $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage);
 		}
 
-		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 5), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time);
+		return Billrun_Rates_Util::getVolumeByRate($rate, $usageType, Billrun_Factory::config()->getConfigValue("rates.prepaid_granted.$usageType.cost", 5), $planName, $callOffset, $min_balance_cost, $min_balance_volume, $time, $maxUsage);
 	}
 
 	/**

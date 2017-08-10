@@ -297,7 +297,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$query = array('stamp' => array('$in' => $stamps));
 		$update = array('$set' => array('mediated.' . static::$type => new MongoDate()));
 		try {
-			$result = $this->collection->update($query, $update, array('multiple' => 1));
+			$result = $this->collection->update($query, $update, array('multiple' => true));
 		} catch (Exception $e) {
 			#TODO : implement error handling
 		}

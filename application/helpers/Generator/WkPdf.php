@@ -34,8 +34,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->filePermissions = Billrun_Util::getFieldVal( $options['file_permisison'], 0666 );		
 		
 		//handle accounts both as  an array and as a comma seperated list (CSV row)
-		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return is_array($acts) ? $acts : explode(',',$acts); });
-		
+		$this->accountsToInvoice = Billrun_Util::getFieldVal( $options['accounts'], FALSE, function($acts) {return Billrun_Util::verify_array(is_array($acts) ? $acts : explode(',',$acts), 'int'); });
+
 		$this->header_path = APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl'], "/application/views/invoices/header/header_tpl.html" );
 
 		$this->logo_path = $this->getLogoPath();
@@ -46,13 +46,19 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$this->paths = array(
 			'html' => $this->export_directory.DIRECTORY_SEPARATOR.'html/',
-			'pdf' => $this->export_directory.DIRECTORY_SEPARATOR.'pdf/',
-			'tmp' => $this->getTempDir(),
+			'pdf' =>  (empty(Billrun_Util::getFieldVal( $options['temp_pdf'], FALSE)) ? $this->export_directory : $this->getTempDir($this->stamp)).DIRECTORY_SEPARATOR.'pdf/',
+			'tmp' => $this->getTempDir($this->stamp),
 		);
 		
 		$this->tmp_paths = array(
 			'header' => $this->paths['tmp'] . 'tmp_header.html',
 			'footer' => $this->paths['tmp'] . 'tmp_footer.html',
+		);
+		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
+		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
+		$this->custom = array(
+			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
+			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
 		);
 		
 		//only generate bills that are 0.01 and above.
@@ -99,12 +105,14 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * an html file for each invoice is created
 	 * for each html a pdf invoice file is generated using wkhtmltopdf tool
 	 */
-	public function generate() {
+	public function generate($lines = FALSE) {
 		
 		$this->prepereView();
 		
 		foreach ($this->billrun_data as $object) {
-			$this->generateAccountInvoices($object);
+			if(isset($object['invoice_id'])) {
+				$this->generateAccountInvoices($object, $lines);
+			}
 		}
 	}
 	
@@ -124,6 +132,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page);
 	}
 	
+	public function setData($billrunData) {
+		$this->billrun_data = $billrunData;
+	}
+	
 	/**
 	 * Generate account invoice.
 	 * @param type $account the account to generate an invoice for.
@@ -136,7 +148,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$this->view->assign('data',$account);
 			$this->view->assign('details_keys',$this->getDetailsKeys());
 			if(empty($lines)) {
-				$this->view->add_lines();
+				$this->view->loadLines();
+			} else {
+				$this->view->setLines($lines);
 			}
 			
 			$file_name = $account['billrun_key']."_".$account['aid']."_".$account['invoice_id'].".html";
@@ -151,8 +165,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			
 			$this->updateHtmlDynamicData($account);
 			
-			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id'],Zend_Log::INFO);
-			exec($this->wkpdf_exec . " -R 0.1 -L 0 -B 14 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
+			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id']." to : $pdf" ,Zend_Log::INFO);
+			exec($this->wkpdf_exec . " -R 0.1 -L 0 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
 	}
 	
@@ -181,12 +195,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		
 		$headerContent = file_get_contents($this->header_path);
 		$headerContent = str_replace("[[invoiceHeaderTemplate]]", $this->getInvoiceHeaderContent(), $headerContent);		
-		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);		
+		$headerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $headerContent);
+		$customHeader = ($this->custom['header'] !== false) ? "<div class='section-custom-header'>{$this->custom['header']}</div>" : '';
+		$headerContent = str_replace("[[invoiceCustomHeader]]", $customHeader, $headerContent);		
 		
 		$footerContent = file_get_contents($this->footer_path);
 		$footerContent = str_replace("[[invoiceFooterTemplate]]", $this->getInvoiceFooterContent(), $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateStyle]]", $this->css_path, $footerContent);
 		$footerContent = str_replace("[[invoiceTemplateFontAwesomeStyle]]", $this->font_awesome_css_path, $footerContent);
+		$customFooter = (!empty($this->custom['footer']) !== false) ? "<div class='section-custom-footer'>{$this->custom['footer']}</div>" : '';
+		$footerContent = str_replace("[[invoiceCustomFooter]]", $customFooter, $footerContent);	
 
 		foreach ($translations as $translation) {
 			switch ($translation) {
@@ -204,7 +222,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		file_put_contents($this->tmp_paths['footer'], $footerContent);
 	}
 	
-	protected function getCompanyName() {
+	protected static function getCompanyName() {
 		return Billrun_Util::getCompanyName();
 	}
 	
@@ -229,7 +247,6 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	}
 	
 	protected function getInvoiceHeaderContent() {
-		//TODO : in future header should came from config
 		return "
 			{$this->tanent_css}
 			<div class='table'>
@@ -242,11 +259,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 					</tbody>
 				</table>
 			</div>";
-		return Billrun_Factory::config()->getConfigValue(self::$type . '.header', '');
 	}
 	
 	protected function getInvoiceFooterContent() {
-		//TODO : in future footer should came from config
 		return "
 			{$this->tanent_css}
 			<div class='table footer'>
@@ -270,8 +285,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				</tbody>
 			  </table>
 			</div>";
-		return Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '');
 	}
+
 	/**
 	 * generate Teanat specific CSS 
 	 * @param type $css
@@ -284,8 +299,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * Retrive and create tenant temporary direcotory
 	 * @return string the  directory path
 	 */
-	protected function getTempDir() {
-		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', $this->getCompanyName()) . DIRECTORY_SEPARATOR. $this->stamp . DIRECTORY_SEPARATOR;
+	public static function getTempDir($stamp) {
+		$tmpdirPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . str_replace(' ', '_', static::getCompanyName()) . DIRECTORY_SEPARATOR. $stamp . DIRECTORY_SEPARATOR;
 		if(!file_exists($tmpdirPath)) {
 			mkdir($tmpdirPath, 0775, true);
 		}
@@ -300,7 +315,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if(!defined('APPLICATION_MULTITENANT')  || !APPLICATION_MULTITENANT ) {
 			return APPLICATION_PATH . Billrun_Util::getFieldVal( $options['header_tpl_logo'], "/application/views/invoices/theme/logo.png" );
 		} 
-		return $this->getTempDir() .DIRECTORY_SEPARATOR. 'logo.png'; 
+		return $this->getTempDir($this->stamp) .DIRECTORY_SEPARATOR. 'logo.png'; 
 	}
 	
 	/**

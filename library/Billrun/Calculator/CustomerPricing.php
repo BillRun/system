@@ -82,10 +82,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	protected $next_active_billrun;
 
 	/**
-	 * Array of subscriber ids queued for rebalance in rebalance_queue collection
+	 * Array of account ids queued for rebalance in rebalance_queue collection
 	 * @var array
 	 */
-	protected $sidsQueuedForRebalance;
+	protected $aidsQueuedForRebalance;
 
 	/**
 	 * balance that customer pricing update
@@ -155,7 +155,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$this->active_billrun_end_time = Billrun_Billingcycle::getEndTime($this->active_billrun);
 		$this->next_active_billrun = Billrun_Billingcycle::getFollowingBillrunKey($this->active_billrun);
 
-		$this->sidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('sid'), 'int'));
+		$this->aidsQueuedForRebalance = array_flip(Billrun_Util::verify_array(Billrun_Factory::db()->rebalance_queueCollection()->distinct('aid'), 'int'));
 	}
 
 	protected function getLines() {
@@ -204,7 +204,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function updateRow($row) {
-		if (isset($this->sidsQueuedForRebalance[$row['sid']])) {
+		if (isset($this->aidsQueuedForRebalance[$row['aid']])) {
 			return false;
 		}
 
@@ -264,10 +264,6 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			Billrun_Factory::db()->queueCollection()->update($where, $save);
 		}
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
-		if (!isset($line['usagev']) || $line['usagev'] === 0) {
-			$this->removeLineFromQueue($line);
-			unset($this->data[$dataKey]);
-		}
 	}
 
 	public function getPossiblyUpdatedFields() {

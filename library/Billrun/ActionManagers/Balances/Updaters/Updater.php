@@ -192,7 +192,7 @@ abstract class Billrun_ActionManagers_Balances_Updaters_Updater {
 		$options = array(
 			'upsert' => false,
 			'new' => false,
-			'multiple' => 1
+			'multiple' => true
 		);
 		$balancesColl = Billrun_Factory::db()->balancesCollection();
 		$updateQueryValue = array($wallet->getFieldName() => $maxValue);
