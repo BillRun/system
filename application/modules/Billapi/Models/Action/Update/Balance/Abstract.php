@@ -21,17 +21,35 @@ abstract class Models_Action_Update_Balance_Abstract {
 	protected $updateType = 'Abstract';
 
 	/**
+	 * Flag to mark if balance is shared
+	 * @var boolean
+	 */
+	protected $sharedBalance = false;
+
+	/**
 	 * the subscriber entry
 	 * @var array
 	 */
 	protected $subscriber = array();
 
 	public function __construct(array $params = array()) {
-		if (!isset($params['sid'])) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id is not define in input under prepaid include');
+		if (!$this->sharedBalance && !isset($params['sid'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber id (sid) is not define in input under prepaid include');
+		} else if (!$this->sharedBalance) {
+			$identifier = $params['sid'];
+			$field = 'sid';
+			$subscriber_type = 'subscriber';
+		}
+		
+		if ($this->sharedBalance && !isset($params['aid'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'On shared balance account id (aid) must be defined in the input');
+		} else if ($this->sharedBalance) {
+			$identifier = $params['aid'];
+			$field = 'aid';
+			$subscriber_type = 'account';
 		}
 
-		$this->loadSubscriber((int) $params['sid']);
+		$this->loadSubscriber((int) $identifier, $field, $subscriber_type);
 	}
 
 	abstract protected function init();
@@ -99,20 +117,14 @@ abstract class Models_Action_Update_Balance_Abstract {
 	 * @todo add connection type (limit to prepaid)
 	 * @return array subscriber details
 	 */
-	protected function loadSubscriber($sid) {
-		$subQuery = array(
-			'$or' => array(
-				array(
-					'type' => array(
-						'$exists' => false,
-					)), // backward compatibility (type not exists)
-				array('type' => 'subscriber'),
-			),
-			'sid' => $sid,
-		);
-		$sub = Billrun_Factory::db()->subscribersCollection()->query($subQuery)->cursor()->current();
+	protected function loadSubscriber($identifier, $field, $subscriber_type) {
+		$subQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+		$subQuery[$field] = $identifier;
+		$subQuery['type'] = $subscriber_type;
+		
+		$sub = Billrun_Factory::db()->subscribersCollection()->query($subQuery)->cursor()->current(); // todo add revision from/to support
 		if ($sub->isEmpty()) {
-			throw new Billrun_Exceptions_Api(0, array(), 'Subscriber not found on prepaid include update');
+			throw new Billrun_Exceptions_Api(0, array(), ucfirst($field) . ' not found on prepaid include update');
 		}
 		$this->subscriber = $sub->getRawData();
 	}
