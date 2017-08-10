@@ -254,30 +254,34 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @return type
 	 */
 	protected function handleMaxBalanceAfterUpdate() {
-		if (!isset($this->after['_id'])) {
-			return;
+		try {
+			if (!isset($this->after['_id'])) {
+				return;
+			}
+
+			$balanceValue = $this->getBalanceValue($this->after);
+			// value is negative
+			if ($this->chargingLimit < $balanceValue) {
+				return;
+			}
+
+			$query = array('_id' => $this->after->getId()->getMongoID());
+			$update = array(
+				'$set' => array(
+					$this->getChargingField() => $this->chargingLimit,
+				)
+			);
+
+			$options = array(
+				'upsert' => false,
+				'new' => true,
+			);
+
+			$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
+			$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Cannot handle max balance after update. " . $ex->getCode() . ": " . $ex->getMessage());
 		}
-		
-		$balanceValue = $this->getBalanceValue($this->after);
-		// value is negative
-		if ($this->chargingLimit > $balanceValue) { 
-			return;
-		}
-		
-		$query = array('_id' => $this->after['_id']);
-		$update = array(
-			'$set' => array(
-				$this->getChargingField() => $this->chargingLimit,
-			)
-		);
-		
-		$options = array(
-			'upsert' => false,
-			'new' => true,
-		);
-		
-		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
-		$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
 	}
 	
 	protected function getChargingField() {
