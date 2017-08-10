@@ -93,7 +93,8 @@
                 "system": true,
                 "unique": true,
                 "editable": false,
-                "display": false
+                "display": false,
+                "mandatory": true
             }, {
                 "field_name": "aid",
                 "mandatory": true,
