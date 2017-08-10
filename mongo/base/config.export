@@ -94,7 +94,7 @@
                 "unique": true,
                 "editable": false,
                 "display": false,
-				"mandatory": true
+                "mandatory": true
             }, {
                 "field_name": "aid",
                 "mandatory": true,
