@@ -27,13 +27,6 @@ trait Models_Verification {
 	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true, $requestOptions = array(), $duplicateCheck = array(), $customFields = array()) {
 		$options = array();
 		if (isset($config['unique_query_parameters']) && $config['unique_query_parameters']) {
-			
-			unset($query['_id']);
-			$query['sid'] = 65234;
-			$query['type'] = 'subscriber';
-			$query['effective_date'] = '2017/07/25';
-			
-			
 			$updatedQueryParams = $this->verifyQueryParams($query, $duplicateCheck, $customFields);
 			if (!empty($updatedQueryParams)) {
 				if (!isset($query['_id']) && !isset($query['effective_date'])) {
