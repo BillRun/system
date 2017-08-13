@@ -156,8 +156,8 @@ class Models_Entity {
 		$this->page = Billrun_Util::IsIntegerValue($page) ? $page : 0;
 		$size = Billrun_Util::getFieldVal($params['size'], 10);
 		$this->size = Billrun_Util::IsIntegerValue($size) ? $size : 10;
-		if (!empty($this->query)) {
-			$this->setBefore($this->loadPreviousEntity());
+		if (isset($this->query['_id'])) {
+			$this->setBefore($this->loadById($this->query['_id']));
 		}
 		if (isset($this->config[$this->action]['custom_fields']) && $this->config[$this->action]['custom_fields']) {
 			$this->addCustomFields($this->config[$this->action]['custom_fields'], $update);
@@ -298,11 +298,7 @@ class Models_Entity {
 		$this->action = 'update';
 
 		$this->checkUpdate();
-		if (isset($this->query['_id'])) {
-			$this->trackChanges($this->query['_id']);
-		} else {
-			$this->trackChanges();
-		}
+		$this->trackChanges($this->query['_id']);
 		return true;
 	}
 	
@@ -320,7 +316,7 @@ class Models_Entity {
 	}
 	
 	protected function checkUpdate() {
-		if (!$this->query || empty($this->query)) {
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
 		
@@ -591,7 +587,7 @@ class Models_Entity {
 	public function reopen() {
 		$this->action = 'reopen';
 
-		if (!$this->query || empty($this->query) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
 		
@@ -684,11 +680,7 @@ class Models_Entity {
 		if ($edge == 'from') {
 			$this->updateCreationTime($keyField, $edge);
 		}
-		if (isset($this->query['_id'])) {
-			$this->trackChanges($this->query['_id']);
-		} else {
-			$this->trackChanges();
-		}
+		$this->trackChanges($this->query['_id']);
 
 		if (!empty($followingEntry) && !$followingEntry->isEmpty() && ($this->before[$edge]->sec === $followingEntry[$otherEdge]->sec)) {
 			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
@@ -827,8 +819,6 @@ class Models_Entity {
 
 		if ($newId) {
 			$this->after = $this->loadById($newId);
-		} else if (!empty($this->query)) {
-			$this->after = $this->loadPreviousEntity();
 		}
 		
 		$old = !is_null($this->before) ? $this->before->getRawData() : null;
@@ -1032,16 +1022,6 @@ class Models_Entity {
 		}
 		$sort = array('_id' => -1);
 		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
-	}
-	
-	/**
-	 * method to load the entity from DB by query
-	 * 
-	 * 
-	 * @return array the entity loaded
-	 */
-	protected function loadPreviousEntity() {
-		return $this->collection->query($this->query)->cursor()->current();
 	}
 
 }

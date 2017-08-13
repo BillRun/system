@@ -27,6 +27,13 @@ trait Models_Verification {
 	protected function validateRequest($query, $data, $action, $config, $error, $forceNotEmpty = true, $requestOptions = array(), $duplicateCheck = array(), $customFields = array()) {
 		$options = array();
 		if (isset($config['unique_query_parameters']) && $config['unique_query_parameters']) {
+			
+			unset($query['_id']);
+			$query['sid'] = 65234;
+			$query['type'] = 'subscriber';
+			$query['effective_date'] = '2017/07/25';
+			
+			
 			$updatedQueryParams = $this->verifyQueryParams($query, $duplicateCheck, $customFields);
 			if (!empty($updatedQueryParams)) {
 				if (!isset($query['_id']) && !isset($query['effective_date'])) {
@@ -96,6 +103,11 @@ trait Models_Verification {
 		if (isset($translated['update_parameters']['effective_date'])) {
 			unset($translated['update_parameters']['effective_date']);
 		}
+		
+		if (!isset($translated['query_parameters']['_id']) && !empty($this->collection)) {
+			$translated['query_parameters'] = $this->transformQueryById($translated['query_parameters']);
+		}
+		
 		return array($translated['query_parameters'], $translated['update_parameters']);
 	}
 
@@ -158,4 +170,16 @@ trait Models_Verification {
 		return $query;
 	}
 	
+	protected function transformQueryById($query) {
+		$entity = $this->collection->query($query)->cursor();
+		if ($entity->count() != 1) {
+			throw new Exception('Wrong query for getting an entity');
+		}
+		$data = $entity->current()->getRawData();
+		if (empty($data)) {
+			throw new Exception('Wrong query for getting an entity');
+		}
+		return array('_id' => $data['_id']);
+	}
+
 }
