@@ -61,7 +61,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @var array
 	 */
 	protected $normalizeValue = 0;
-
+	
 	/**
 	 * expiration date
 	 * @var MongoDate
@@ -69,12 +69,13 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	protected $to = null;
 
 	public function __construct(array $params = array()) {
-		parent::__construct($params);
-
 		$query = $this->getLoadQuery($params);
-
 		$this->load($query);
+		if (isset($this->data['shared']) && $this->data['shared']) {
+			$this->sharedBalance = true;
+		}
 
+		parent::__construct($params);
 
 		if (isset($params['operation']) && in_array($params['operation'], array('inc', 'set', 'new'))) { // TODO: move array values to config
 			$this->operation = $params['operation'];
@@ -137,9 +138,13 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	
 	protected function init() {
 		$this->query = array(
-			'sid' => $this->subscriber['sid'],
 			'pp_includes_external_id' => $this->data['external_id'],
 		);
+		if ($this->sharedBalance) {
+			$this->query['aid'] = $this->subscriber['aid'];
+		} else {
+			$this->query['sid'] = $this->subscriber['sid'];
+		}
 		$this->preload();
 	}
 
@@ -254,30 +259,34 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @return type
 	 */
 	protected function handleMaxBalanceAfterUpdate() {
-		if (!isset($this->after['_id'])) {
-			return;
+		try {
+			if (!isset($this->after['_id'])) {
+				return;
+			}
+
+			$balanceValue = $this->getBalanceValue($this->after);
+			// value is negative
+			if ($this->chargingLimit < $balanceValue) {
+				return;
+			}
+
+			$query = array('_id' => $this->after->getId()->getMongoID());
+			$update = array(
+				'$set' => array(
+					$this->getChargingField() => $this->chargingLimit,
+				)
+			);
+
+			$options = array(
+				'upsert' => false,
+				'new' => true,
+			);
+
+			$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
+			$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
+		} catch (Exception $ex) {
+			Billrun_Factory::log("Cannot handle max balance after update. " . $ex->getCode() . ": " . $ex->getMessage());
 		}
-		
-		$balanceValue = $this->getBalanceValue($this->after);
-		// value is negative
-		if ($this->chargingLimit > $balanceValue) { 
-			return;
-		}
-		
-		$query = array('_id' => $this->after['_id']);
-		$update = array(
-			'$set' => array(
-				$this->getChargingField() => $this->chargingLimit,
-			)
-		);
-		
-		$options = array(
-			'upsert' => false,
-			'new' => true,
-		);
-		
-		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
-		$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
 	}
 	
 	protected function getChargingField() {
@@ -323,7 +332,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'urt' => new MongoDate(),
 			'source_ref' => Billrun_Factory::db()->prepaidincludesCollection()->createRefByEntity($this->data),
 			'aid' => $this->subscriber['aid'],
-			'sid' => $this->subscriber['sid'],
+			'sid' => isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0,
 			'pp_includes_name' => $this->data['name'],
 			'pp_includes_external_id' => $this->data['external_id'],
 			'charging_usaget' => $this->data['charging_by_usaget'],
@@ -360,7 +369,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @return true on success log change else false
 	 */
 	protected function trackChanges() {
-		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . $this->subscriber['sid'], 
+		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . (isset($this->subscriber['sid']) ? $this->subscriber['sid'] : 0), 
 			'balances', $this->before->getRawData(), $this->after->getRawData());
 	}
 
