@@ -384,5 +384,71 @@
 			"uom":[{"unit":1,"name":"counter","label":"Counter"}],
 			"invoice_uom": "counter"
 		}
-	]
+	],
+	"unify": {
+		"unification_fields": {
+			"required": {
+				"fields": [
+					"session_id",
+					"urt",
+					"request_type"
+				],
+				"match": {
+					"request_type": "\/1|2|3\/"
+				}
+			},
+			"date_seperation": "Ymd",
+			"stamp": {
+				"value": [
+					"session_id",
+					"usaget",
+					"imsi"
+				],
+				"field": []
+			},
+			"fields": [
+				{
+					"match": {
+						"request_type": "\/.*\/"
+					},
+					"update": [
+						{
+							"operation": "$setOnInsert",
+							"data": [
+								"arate",
+								"arate_key",
+								"usaget",
+								"imsi",
+								"session_id",
+								"urt",
+								"plan",
+								"connection_type",
+								"aid",
+								"sid",
+								"msisdn"
+							]
+						},
+						{
+							"operation": "$set",
+							"data": [
+								"process_time",
+								"granted_return_code"
+							]
+						},
+						{
+							"operation": "$inc",
+							"data": [
+								"usagev",
+								"duration",
+								"apr",
+								"out_balance_usage",
+								"in_balance_usage",
+								"aprice"
+							]
+						}
+					]
+				}
+			]
+		}
+	}
 }
