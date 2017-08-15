@@ -85,7 +85,7 @@ abstract class Billrun_Discount {
 			'usaget' => 'discount', //TODO move to  disocunt rate data?
 			'discount_type' => $this->discountData['discount_type'],
 			'urt' => new MongoDate($creationTime),
-			'process_time' => date(Billrun_Base::base_dateformat, $creationTime),
+			'process_time' => new MongoDate($creationTime),
 			'modifier' => $lineModifier,
 			'orignal_modifier' => $orgModifier,
 			'arate' => $this->discountData->createRef(Billrun_Factory::db()->ratesCollection()),
@@ -120,7 +120,7 @@ abstract class Billrun_Discount {
 		}
 		
 
-		$discountLine['process_time'] = date(Billrun_Base::base_dateformat);
+		$discountLine['process_time'] = new MongoDate();
 		if (!empty($accountInvoice)) {
 			$discountLine['received_count'] = static::countReceivedDiscountsOfKey(null, $this->discountData['key'], $accountInvoice->getRawData()['aid']);
 		}
