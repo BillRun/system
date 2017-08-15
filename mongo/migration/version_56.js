@@ -552,3 +552,105 @@ if (db.getName() === 'billing_onesimcard') {
 
 	db.config.insert(lastConfig);
 }
+
+// BECD-979: change rebalance field to array
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+if (!lastConfig.unify) {
+	lastConfig.unify = {
+		"unification_fields": {
+			"required": {
+				"fields": [
+					"session_id",
+					"urt",
+					"request_type"
+				],
+				"match": {
+					"request_type": "\/1|2|3\/"
+				}
+			},
+			"date_seperation": "Ymd",
+			"stamp": {
+				"value": [
+					"session_id",
+					"usaget",
+					"imsi"
+				],
+				"field": []
+			},
+			"fields": [
+				{
+					"match": {
+						"request_type": "\/.*\/"
+					},
+					"update": [
+						{
+							"operation": "$setOnInsert",
+							"data": [
+								"arate",
+								"arate_key",
+								"usaget",
+								"imsi",
+								"session_id",
+								"urt",
+								"plan",
+								"connection_type",
+								"aid",
+								"sid",
+								"msisdn"
+							]
+						},
+						{
+							"operation": "$set",
+							"data": [
+								"process_time",
+								"granted_return_code"
+							]
+						},
+						{
+							"operation": "$inc",
+							"data": [
+								"usagev",
+								"duration",
+								"apr",
+								"out_balance_usage",
+								"in_balance_usage",
+								"aprice"
+							]
+						}
+					]
+				}
+			]
+		}
+	};
+	db.config.insert(lastConfig);
+}
+
+if (db.getName() === 'billing_onesimcard') {
+	var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+	delete lastConfig['_id'];
+
+for (var i in lastConfig.file_types) {
+		lastConfig.file_types[i].unify = {
+			"unification_fields": {
+				"fields": [
+					{
+						"update": [
+							{
+							"operation": "$setOnInsert",
+							"data": [
+								"uf.3GPP_Location_Info",
+								"uf.3GPP_SGSN_MCC_MNC",
+								"uf.Calling_Station_Id"
+							]
+	}
+						]
+}
+				]
+			}
+		};
+	}
+
+db.config.insert(lastConfig);
+}
