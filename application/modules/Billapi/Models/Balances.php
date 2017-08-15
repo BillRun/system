@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Balances extends Models_Entity {
+class Models_Balances extends Models_Entity {	
 
 	public function __construct($params) {
 		parent::__construct($params);
@@ -40,6 +40,8 @@ class Models_Balances extends Models_Entity {
 		$params = array_merge($this->query, $this->update);
 		$action = new $className($params);
 		$ret = $action->execute();
+		$this->after = $action->getAfter();
+		$this->line = $action->getAffectedLine();
 		return $ret;
 	}
 

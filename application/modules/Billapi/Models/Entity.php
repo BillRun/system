@@ -86,6 +86,13 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $after = null;
+	
+	/**
+	 * the line that was added as part of the action
+	 * 
+	 * @var array
+	 */
+	protected $line = null;
 
 	/**
 	 * the change action applied on the entity
@@ -800,6 +807,15 @@ class Models_Entity {
 	 */
 	public function getAfter() {
 		return $this->after;
+	}
+
+	/**
+	 * method to return the affected line
+	 *
+	 * @return array
+	 */
+	public function getAffectedLine() {
+		return $this->line;
 	}
 
 	/**
