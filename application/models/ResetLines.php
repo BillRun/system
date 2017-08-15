@@ -92,7 +92,7 @@ class ResetLinesModel {
 				'$ne' => 'credit',
 			),
 			'process_time' => array(
-				'$lt' => date(Billrun_Base::base_datetimeformat, strtotime($this->process_time_offset . ' ago')),
+				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
 	}
