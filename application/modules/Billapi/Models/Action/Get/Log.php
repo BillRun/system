@@ -17,10 +17,10 @@ class Models_Action_Get_Log extends Models_Action_Get {
 	
 	protected function __construct(array $params = array()) {
 		parent::__construct($params);
-		Billrun_Utils_Mongo::convertQueryMongoDates($this->query['urt']);
+		if(isset($this->query['urt'])){
+			Billrun_Utils_Mongo::convertQueryMongoDates($this->query['urt']);
+		}
 	}
-	
-
 
 	protected function runQuery() {
 		$records = parent::runQuery();
