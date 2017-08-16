@@ -252,7 +252,9 @@ class ReportModel {
 	}
 	
 	
-	protected function formatInputMatchOp($op, $field, $value) {
+	protected function formatInputMatchOp($condition, $field) {
+		$op = $condition['op'];
+		$value = $condition['value'];
 		// search by op
 		switch ($op) {
 			case 'last_hours':
@@ -270,10 +272,15 @@ class ReportModel {
 					return $op;
 			}
 		}
+		if($condition['field'] === 'logfile_status') {
+			return 'exists';
+		}
 		return $op;
 	}
 	
-	protected function formatInputMatchValue($value, $field, $type, $op) {
+	protected function formatInputMatchValue($condition, $field, $type) {
+		$value = $condition['value'];
+		$op = $condition['op'];
 		// search by op
 		switch ($op) {
 			case 'last_hours':
@@ -305,11 +312,16 @@ class ReportModel {
 					return $value;
 			}
 		}
+		if($condition['field'] === 'logfile_status') {
+			return $value === 'received';
+		}
 		return $value;
 	}
 	
 	protected function formatInputMatchField($field, $entity) {				
 		switch ($field) {
+			case 'logfile_status':
+				return 'process_time';
 			case 'billrun_status':
 				return 'billrun';
 			default:
@@ -363,7 +375,6 @@ class ReportModel {
 		return $lookup;
 	}
 	
-
 	protected function getUnwind($entity) {
 		return array(
 			'path' => "\$$entity",
@@ -421,6 +432,11 @@ class ReportModel {
 				$defaultEntityMatch[]['to'] = $activeQuery['to'];
 				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
+			case 'logFile':
+				$defaultEntityMatch[]['file_name'] = array(
+					"\$exists" => true
+				);
+				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
 		}
@@ -442,6 +458,8 @@ class ReportModel {
 				return 'subscribers';
 			case 'customer':
 				return 'subscribers';
+			case 'logFile':
+				return 'log';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -495,8 +513,8 @@ class ReportModel {
 			}
 			$type = $condition['type'];
 			$field = $this->formatInputMatchField($condition['field'], $condition_entity);
-			$op = $this->formatInputMatchOp($condition['op'], $field, $condition['value']);
-			$value = $this->formatInputMatchValue($condition['value'], $field, $type, $condition['op']);
+			$op = $this->formatInputMatchOp($condition, $field);
+			$value = $this->formatInputMatchValue($condition, $field, $type);
 			switch ($op) {
 				case 'like':
 					$formatedExpression = array(
