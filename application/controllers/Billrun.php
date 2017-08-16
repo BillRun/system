@@ -121,7 +121,7 @@ class BillrunController extends ApiController {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			return $this->setError("stamp is in incorrect format or missing ", $request);
 		}
-		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size) && (!Billrun_Billingcycle::isCycleConfirmed($billrunKey) || !empty($invoices))){
+		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size) && (empty(Billrun_Billingcycle::getConfirmedCycles(array($billrunKey))) || !empty($invoices))){
 			if (is_null($invoices)) {
 				$success = self::processConfirmCycle($billrunKey);
 			} else {

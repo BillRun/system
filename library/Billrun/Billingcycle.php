@@ -240,27 +240,59 @@ class Billrun_Billingcycle {
 	}
 	
 	/**
-	 * True if generated all the bills from billrun objects.
-	 * @param string $billrunKey - Billrun key
+	 * Returns billrun keys of confirmed cycles according to the billrun keys that are transferred,
+	 * if isn't transferred returns all confirmed cycles in the db.
+	 * @param array $billrunKeys - Billrun keys.
 	 * 
-	 * @return bool - True if generated all the bills from billrun objects
+	 * @return bool - returns the keys of confirmed cycles
 	 * 
 	 */
-	public static function isCycleConfirmed($billrunKey) {
-		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$totalQuery = array(
-			'billrun_key' => $billrunKey
-		);
-		$finishedQuery = array(
-			'billrun_key' => $billrunKey,
-			'billed' => 1
-		);
-		$totalBillrun = $billrunColl->query($totalQuery)->count();
-		$numberOfFinished = $billrunColl->query($finishedQuery)->count();
-		if ($numberOfFinished == $totalBillrun) {
-			return true;
+	public static function getConfirmedCycles($billrunKeys) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();	
+		if (!empty($billrunKeys)) {
+			$pipelines[] = array(
+				'$match' => array(
+					'billrun_key' => array('$in' => $billrunKeys),
+				),
+			);
 		}
-		return false;
+		
+		$pipelines[] = array(
+			'$project' => array(
+				'billrun_key' => 1,
+				'confirmed' => array('$cond' => array('if' => array('$eq' => array('$billed', 1)), 'then' => 1 , 'else' => 0)),
+			),
+		);
+		
+		$pipelines[] = array(
+			'$group' => array(
+				'_id' => '$billrun_key',
+				'confirmed' => array(
+					'$sum' => '$confirmed',
+				),
+				'total' => array(
+					'$sum' => 1,
+				),
+			),
+		);
+		
+		$pipelines[] = array(
+			'$project' => array(
+				'billrun_key' => '$_id',
+				'confirmed' => 1,
+				'total' => 1,
+			),
+		);
+
+		$confirmedCycles = array();
+		$results = $billrunColl->aggregate($pipelines);
+		foreach ($results as $billrunDetails) {
+			if ($billrunDetails['confirmed'] == $billrunDetails['total']) {
+				$confirmedCycles[] = $billrunDetails['billrun_key'];
+			}
+		}
+
+		return $confirmedCycles;	
 	}
 
 	/**
@@ -343,7 +375,7 @@ class Billrun_Billingcycle {
 			return self::$cycleStatuses[$billrunKey][$size];
 		}
 		$currentBillrunKey = self::getBillrunKeyByTimestamp();
-		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
 		$cycleRunning = self::isCycleRunning($billrunKey, $size);
 		
@@ -390,7 +422,7 @@ class Billrun_Billingcycle {
 		$maxIterations = 12;
 		$billrunKey = self::getLastClosedBillingCycle();
 		for ($i = 0; $i < $maxIterations; $i++) { // To avoid infinite loop
-			if (self::isCycleConfirmed($billrunKey)) {
+			if (!empty(self::getConfirmedCycles(array($billrunKey)))) {
 				return $billrunKey;
 			}
 			$date = strtotime(($i + 1) . ' months ago');
@@ -458,5 +490,4 @@ class Billrun_Billingcycle {
 		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
 		return $aids;
 	}
-	
 }
