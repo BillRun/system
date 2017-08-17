@@ -273,7 +273,15 @@ class ReportModel {
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
-			return 'exists';
+			switch ($value) {
+				case 'received':
+				case 'not_received':
+					return 'exists';
+				case 'stuck':
+					return 'and';
+				default:
+					return $op;
+			}
 		}
 		return $op;
 	}
@@ -313,15 +321,37 @@ class ReportModel {
 			}
 		}
 		if($condition['field'] === 'logfile_status') {
-			return $value === 'received';
+			switch ($value) {
+				case 'received':
+					return true;
+				case 'not_received':
+					return false;
+				case 'stuck':
+					return array(
+						array('start_process_time' =>array('$exists' => true)),
+						array('start_process_time' => array('$lt' => new MongoDate(strtotime("-6 hours")))),
+						array('process_time' => array('$exists' => false)),
+					);
+				default:
+					return $value;
+			}
 		}
 		return $value;
 	}
 	
-	protected function formatInputMatchField($field, $entity) {				
+	protected function formatInputMatchField($condition, $entity) {
+		$field = $condition['field'];
 		switch ($field) {
 			case 'logfile_status':
-				return 'process_time';
+				switch ($condition['value']) {
+					case 'stuck':
+						return '';
+					case 'received':
+					case 'not_received':
+						return 'process_time';
+					default:
+						return $field;
+				}
 			case 'billrun_status':
 				return 'billrun';
 			default:
@@ -512,7 +542,7 @@ class ReportModel {
 				continue;
 			}
 			$type = $condition['type'];
-			$field = $this->formatInputMatchField($condition['field'], $condition_entity);
+			$field = $this->formatInputMatchField($condition, $condition_entity);
 			$op = $this->formatInputMatchOp($condition, $field);
 			$value = $this->formatInputMatchValue($condition, $field, $type);
 			switch ($op) {
@@ -616,6 +646,10 @@ class ReportModel {
 					$formatedExpression = array(
 						"\${$op}" => (bool)$value
 					);
+					break;
+				case 'and': // for complex queries
+					$field = '$and';
+					$formatedExpression = $value;
 					break;
 				default:
 					throw new Exception("Invalid filter operator $op");
