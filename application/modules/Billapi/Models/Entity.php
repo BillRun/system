@@ -149,7 +149,9 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
 
-		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
+		$customFields = $this->getCustomFields();
+		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
+		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999, true, array(), $duplicateCheck, $customFields);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
 		foreach ($this->availableOperations as $operation) {
@@ -575,7 +577,7 @@ class Models_Entity {
 
 	public function move() {
 		$this->action = 'move';
-		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
+		if (!$this->query || empty($this->query)) { // currently must have some query
 			return;
 		}
 
