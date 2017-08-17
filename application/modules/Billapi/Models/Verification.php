@@ -55,6 +55,11 @@ trait Models_Verification {
 						continue;
 					}
 				}
+				if (isset($param['regex'])){
+					if(preg_match($param['regex'] , $params[$name]) !== 1) {
+						throw new Billrun_Exceptions_Api($error, array(), ucfirst(str_replace('_parameters', '', $type)) . ' parameter ' . $name . ' contain illegal characters');
+					}
+				}
 				$options['fields'][] = array(
 					'name' => $name,
 					'type' => $param['type'],
