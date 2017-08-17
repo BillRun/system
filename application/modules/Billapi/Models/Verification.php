@@ -169,8 +169,8 @@ trait Models_Verification {
 			throw new Exception('Wrong query for getting an entity');
 		}
 		$data = $entity->current()->getRawData();
-		if (empty($data)) {
-			throw new Exception('Wrong query for getting an entity');
+		if (!isset($data['_id'])) {
+			throw new Exception('Missing Id for entity');
 		}
 		return array('_id' => $data['_id']);
 	}
