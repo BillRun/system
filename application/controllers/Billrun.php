@@ -358,5 +358,29 @@ class BillrunController extends ApiController {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
+	
+	/**
+	 * Resetting billing cycle by billrun key.
+	 * 
+	 */
+	public function resetCycleAction() {
+		$request = $this->getRequest();
+		$billrunKey = $request->get('stamp');
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			throw new Exception('Need to pass correct billrun key');
+		}
+		$success = false;
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			$success = true;
+		}
+
+		$output = array (
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'error',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
+	}
 
 }
