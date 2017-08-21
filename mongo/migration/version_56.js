@@ -450,3 +450,77 @@ db.events.ensureIndex({'creation_time': 1 }, { unique: false , sparse: true, bac
 
 db.rebalance_queue.dropIndex('sid_1_billrun_key_1');
 db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: true, "background": true})
+
+// BRCD-976 - move unify to config
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+
+if (!lastConfig.unify) {
+	lastConfig.unify = {
+		"unification_fields": {
+			"required": {
+				"fields": [
+					"session_id",
+					"urt",
+					"request_type"
+				],
+				"match": {
+					"request_type": "\/1|2|3\/"
+				}
+			},
+			"date_seperation": "Ymd",
+			"stamp": {
+				"value": [
+					"session_id",
+					"usaget",
+					"imsi"
+				],
+				"field": []
+			},
+			"fields": [
+				{
+					"match": {
+						"request_type": "\/.*\/"
+					},
+					"update": [
+						{
+							"operation": "$setOnInsert",
+							"data": [
+								"arate",
+								"arate_key",
+								"usaget",
+								"imsi",
+								"session_id",
+								"urt",
+								"plan",
+								"connection_type",
+								"aid",
+								"sid",
+								"msisdn"
+							]
+						},
+						{
+							"operation": "$set",
+							"data": [
+								"process_time",
+								"granted_return_code"
+							]
+						},
+						{
+							"operation": "$inc",
+							"data": [
+								"usagev",
+								"duration",
+								"apr",
+								"out_balance_usage",
+								"in_balance_usage",
+								"aprice"
+							]
+						}
+					]
+				}
+			]
+		}
+	};
+	db.config.insert(lastConfig);
+}
