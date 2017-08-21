@@ -49,18 +49,18 @@
 							<?php if (empty($sub['totals'][$key])) { continue; } ?>
 							<tr class="<?php echo (end($details_keys) === $key ? 'last' : '') ?>">
 								<td><?php echo ucfirst($title); ?></td>
-								<td><?php echo '$' . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
+								<td><?php echo $this->currencySymbol() . number_format($sub['totals'][$key]['before_vat'], 2); ?></td>
 							</tr>
 						<?php } ?>
 							<tr class="total">
 								<td>SUBTOTAL</td>
-								<td><strong><?php echo '$' . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
+								<td><strong><?php echo $this->currencySymbol() . number_format($sub['totals']['before_vat'], 2); ?></strong></td>
 							</tr>
 							<?php echo $this->render($this->tax_template,array('data' => $sub['totals']))	?>
 
 							<tr class="grand-total">
 								<td>GRAND TOTAL</td>
-								<td><?php echo '$' . number_format($sub['totals']['after_vat'], 2); ?></td>
+								<td><?php echo $this->currencySymbol() . number_format($sub['totals']['after_vat'], 2); ?></td>
 							</tr>
 						</tbody>
 					</table>
