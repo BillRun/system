@@ -31,6 +31,13 @@ abstract class Models_Action_Update_Balance_Abstract {
 	 * @var array
 	 */
 	protected $subscriber = array();
+	
+	/**
+	 * The line saved to lines collection
+	 * 
+	 * @var array
+	 */
+	protected $line = null;
 
 	public function __construct(array $params = array()) {
 		if (!$this->sharedBalance && !isset($params['sid'])) {
@@ -73,7 +80,7 @@ abstract class Models_Action_Update_Balance_Abstract {
 			return false;
 		}
 
-		$this->createBillingLines();
+		$this->line = $this->createBillingLines();
 		$this->trackChanges();
 
 		return true;
@@ -127,6 +134,15 @@ abstract class Models_Action_Update_Balance_Abstract {
 			throw new Billrun_Exceptions_Api(0, array(), ucfirst($field) . ' not found on prepaid include update');
 		}
 		$this->subscriber = $sub->getRawData();
+	}
+	
+	/**
+	 * Gets the line saved in lines collection
+	 * 
+	 * @return array
+	 */
+	public function getAffectedLine() {
+		return $this->line;
 	}
 
 }

@@ -448,6 +448,9 @@ db.config.insert(lastConfig);
 // BRCD-552
 db.events.ensureIndex({'creation_time': 1 }, { unique: false , sparse: true, background: true });
 
+db.rebalance_queue.dropIndex('sid_1_billrun_key_1');
+db.rebalance_queue.ensureIndex({"aid": 1, "billrun_key": 1}, {unique: true, "background": true})
+
 // BRCD-976 - move unify to config
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];

@@ -36,6 +36,8 @@ abstract class Api_Translator_TypeModel {
 	 * @var array
 	 */
 	protected $postConversions;
+	
+	protected $queryFieldTranslate = false;
 
 	/**
 	 * Create a new instance of the Date type translator object
@@ -71,9 +73,13 @@ abstract class Api_Translator_TypeModel {
 			$invalidField = new Billrun_DataTypes_InvalidField($fieldName, 3);
 			return $invalidField;
 		}
-
-		$output = $input;
-		$output[$fieldName] = $translated;
+		$output = $input;	
+		if ($this->queryFieldTranslate) {
+			unset($output[$fieldName]);
+			$output = array_merge($output, $translated);
+		} else {
+			$output[$fieldName] = $translated;
+		}
 		return $output;
 	}
 
