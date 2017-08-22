@@ -89,7 +89,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view->assign('discount_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.discount_template', '/application/views/invoices/discounts/discounts.phtml'));
 		$this->view->assign('simple_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.simple_sumup_template', '/application/views/invoices/sumup/simple_sumup.phtml'));
 		$this->view->assign('complex_sumup_template',  APPLICATION_PATH . Billrun_Factory::config()->getConfigValue(self::$type . '.complex_sumup_template', '/application/views/invoices/sumup/complex_sumup.phtml'));
-		$this->view->assign('currency',  Billrun_Factory::config()->getConfigValue('pricing.currency', ''));
+		$this->view->assign('currency',  $this->view ->currencySymbol());
 		$this->view->assign('datetime_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.datetime_format', 'd/m/Y H:i:s'));
 		$this->view->assign('date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.date_format', 'd/m/Y'));
 		$this->view->assign('span_date_format',  Billrun_Factory::config()->getConfigValue(self::$type . '.span_date_format', 'd/m'));
