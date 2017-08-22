@@ -52,7 +52,7 @@ class BillrunController extends ApiController {
 		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
 			throw new Exception("Already Running");
 		}
-		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished' || Billrun_Billingcycle::getCycleStatus($billrunKey) == 'to_rerun') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
@@ -87,7 +87,7 @@ class BillrunController extends ApiController {
 			throw new Exception("Illgal account id's");
 		}
 		$status = Billrun_Billingcycle::getCycleStatus($billrunKey);
-		if (!in_array($status, array('to_run', 'finished'))) {
+		if (!in_array($status, array('to_run', 'finished', 'to_rerun'))) {
 			throw new Exception("Can't Run");
 		}
 		$customerAggregatorOptions = array(
