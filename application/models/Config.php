@@ -1154,7 +1154,8 @@ class ConfigModel {
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
-			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields))) {
+			$additionalFields = array('computed');
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
 			}
 		}

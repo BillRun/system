@@ -36,6 +36,9 @@ class Billrun_Calculator_Rate_Filters_Base {
 	}
 	
 	protected function getRowFieldValue($row, $field) {
+		if ($field === 'computed') {
+			return $this->getComputedValue($row);
+		}
 		if (isset($row['uf'][$field])) {
 			return $row['uf'][$field];
 		}
@@ -45,6 +48,27 @@ class Billrun_Calculator_Rate_Filters_Base {
 		}
 		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." details: " . print_R($row, 1), Zend_Log::NOTICE);
 		return '';
+	}
+	
+	/**
+	 * Gets a computed (condition) field value
+	 * Currently, only supporting boolean condition
+	 * 
+	 * @param array $row
+	 * @return int, 1 if the condition met, 0 otherwise
+	 */
+	protected function getComputedValue($row) {
+		if (!isset($this->params['computed'])) {
+			return 0;
+		}
+		$data = array('first_val' => $this->getRowFieldValue($row, $this->params['computed']['line_keys'][0]));
+		$query = array(
+			'first_val' => array(
+				$this->params['computed']['operator'] => $this->getRowFieldValue($row, $this->params['computed']['line_keys'][1])
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query) ? 1 : 0;
 	}
 	
 	protected function updateMatchQuery(&$match, $row) {
