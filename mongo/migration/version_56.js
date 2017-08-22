@@ -524,3 +524,32 @@ if (!lastConfig.unify) {
 	};
 	db.config.insert(lastConfig);
 }
+
+if (db.getName() === 'billing_onesimcard') {
+	var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+	delete lastConfig['_id'];
+
+	for (var i in lastConfig.file_types) {
+		lastConfig.file_types[i].unify = {
+			"unification_fields": {
+				"fields": [
+					{
+						"update": [
+							{
+							"operation": "$setOnInsert",
+							"data": [
+								"uf.3GPP_Location_Info",
+								"uf.3GPP_SGSN_MCC_MNC",
+								"uf.Calling_Station_Id"
+							]
+						}
+						]
+					}
+				]
+			}
+		};
+	}
+
+
+	db.config.insert(lastConfig);
+}
