@@ -51,7 +51,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 	}
 	
 	protected function regexValue($value, $regex) {
-		if (empty($regex)) {
+		if (empty($regex) || !Billrun_Util::isValidRegex($regex)) {
 			return $value;
 		}
 		
