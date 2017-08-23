@@ -698,7 +698,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function rebalance() {
 		$lineToRebalance = $this->getLineToUpdate()->current();
-		$realUsagev = $this->getRealUsagev();
+		$usagev = $this->getRealUsagev();
+		$unit = isset($this->row['usagev_unit']) ? $this->row['usagev_unit'] : 'counter';
+		$realUsagev = Billrun_Utils_Units::convertVolumeUnits($usagev, $this->row['usaget'], $unit, true);
 		$chargedUsagev = $this->getChargedUsagev($this->row, $lineToRebalance);
 		if ($chargedUsagev !== null) {
 			$rebalanceUsagev = $realUsagev - $chargedUsagev;
@@ -733,10 +735,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 */
 	protected function getRealUsagev() {
 		$config = $this->getConfig();
-		if (!isset($this->row['uf'][$config['realtime']['used_usagev_field']])) {
-			return 0;
+		$usagev = 0;
+		$usedUsagevFields = is_array($config['realtime']['used_usagev_field']) ? $config['realtime']['used_usagev_field'] : array($config['realtime']['used_usagev_field']);
+		foreach ($usedUsagevFields as $usedUsagevField) {
+			$usagev += isset($this->row['uf'][$usedUsagevField]) ? $this->row['uf'][$usedUsagevField] : 0;
 		}
-		return $this->row['uf'][$config['realtime']['used_usagev_field']];
+		
+		return $usagev;
 	}
 
 	/**

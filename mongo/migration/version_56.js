@@ -552,3 +552,13 @@ if (db.getName() === 'billing_onesimcard') {
 
 	db.config.insert(lastConfig);
 }
+
+// BECD-979: change rebalance field to array
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig.file_types) {
+	if (lastConfig.file_types[i].realtime && !(lastConfig.file_types[i].realtime.used_usagev_field instanceof Array)) {
+		lastConfig.file_types[i].realtime.used_usagev_field = [ lastConfig.file_types[i].realtime.used_usagev_field ];
+	}
+}
+db.config.insert(lastConfig);
