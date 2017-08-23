@@ -550,6 +550,5 @@ if (db.getName() === 'billing_onesimcard') {
 		};
 	}
 
-
 	db.config.insert(lastConfig);
 }
