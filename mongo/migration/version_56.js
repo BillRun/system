@@ -549,6 +549,7 @@ if (db.getName() === 'billing_onesimcard') {
 							"operation": "$set",
 							"data": [
 								"uf.Acct_Output_Octets",
+								"uf.Acct_Status_Type",
 								"uf.Acct_Input_Octets"
 							]
 						}
