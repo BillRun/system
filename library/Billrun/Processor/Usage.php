@@ -82,7 +82,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			return false;
 		}
 		
-		$row['urt'] = new MongoDate($datetime->format('U'));	
+		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));	
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;

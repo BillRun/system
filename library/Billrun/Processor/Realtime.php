@@ -54,6 +54,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		} else {
 			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
+		$row['eurt'] = $row['urt'];
 
 		return true;
 	}
