@@ -503,7 +503,8 @@ if (!lastConfig.unify) {
 							"operation": "$set",
 							"data": [
 								"process_time",
-								"granted_return_code"
+								"granted_return_code",
+								"eurt"
 							]
 						},
 						{
@@ -539,8 +540,16 @@ if (db.getName() === 'billing_onesimcard') {
 							"operation": "$setOnInsert",
 							"data": [
 								"uf.3GPP_Location_Info",
-								"uf.3GPP_SGSN_MCC_MNC",
+								"uf.BR_3GPP_SGSN_MNC",
+								"uf.BR_3GPP_SGSN_MCC",
 								"uf.Calling_Station_Id"
+							]
+						},
+						{
+							"operation": "$set",
+							"data": [
+								"uf.Acct_Output_Octets",
+								"uf.Acct_Input_Octets"
 							]
 						}
 						]
