@@ -542,6 +542,8 @@ if (db.getName() === 'billing_onesimcard') {
 								"uf.3GPP_Location_Info",
 								"uf.BR_3GPP_SGSN_MNC",
 								"uf.BR_3GPP_SGSN_MCC",
+								"uf.BR_ICCID",
+								"uf.Called_Station_Id",
 								"uf.Calling_Station_Id"
 							]
 						},
