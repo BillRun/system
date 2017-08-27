@@ -572,3 +572,8 @@ for (var i in lastConfig.file_types) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-1013: add auto renew collection
+db.createCollection('autorenew');
+db.autorenew.ensureIndex({ 'from': 1, 'to': 1, 'next_renew': 1}, { unique: false , sparse: true, background: true });
+db.autorenew.ensureIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, background: true });
