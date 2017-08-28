@@ -64,6 +64,7 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 		foreach ($chargingGroup['include'] as $chargingEntry) {
 			$ppIncludeParams = array(
 				'sid' => $this->subscriber['sid'],
+				'aid' => $this->subscriber['aid'],
 				'operation' => isset($chargingEntry['operation']) ? $chargingEntry['operation'] : $chargingGroup['operation'],
 				'pp_includes_external_id' => (int) $chargingEntry['pp_includes_external_id'],
 				'expiration_date' => strtotime('+' . $chargingEntry['period']['duration'] . ' ' . $chargingEntry['period']['unit']),
@@ -138,6 +139,10 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->trackChanges();
 		}
+	}
+	
+	public function getAfter() {
+		return $this->data;
 	}
 
 }
