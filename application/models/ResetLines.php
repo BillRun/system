@@ -179,7 +179,7 @@ class ResetLinesModel {
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
 	 */
-	protected function getUpdateQuery() {
+	protected function getUpdateQuery($rebalanceTime) {
 		return array(
 			'$unset' => array(
 //				'aid' => 1,
@@ -210,8 +210,10 @@ class ResetLinesModel {
 				'final_charge' => 1,
 			),
 			'$set' => array(
-				'rebalance' => new MongoDate(),
 				'in_queue' => true,
+			),
+			'$push' => array(
+				'rebalance' => $rebalanceTime,
 			),
 		);
 	}
@@ -239,7 +241,8 @@ class ResetLinesModel {
 	 * @return boolean
 	 */
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids) {
-		$update = $this->getUpdateQuery();
+		$rebalanceTime = new MongoDate();
+		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
 
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
@@ -268,7 +271,8 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-
+		$queue_coll->update($stamps_query, array('$push' => array('rebalance' => $rebalanceTime)), array('multiple' => true));
+		
 		return true;
 	}
 
