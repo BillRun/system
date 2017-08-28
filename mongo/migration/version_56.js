@@ -574,3 +574,24 @@ for (var i in lastConfig.file_types) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-1031
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (lastConfig.events && lastConfig.events.pricing) {
+	delete lastConfig['events']['pricing'];
+}
+if (lastConfig.events && Object.keys(lastConfig.events).length === 0) {
+	delete lastConfig['events'];
+}
+if (lastConfig.events && !lastConfig.events.settings) {
+	lastConfig.events.settings = {
+		"http": {
+			"url": "",
+			"num_of_tries": 3,
+			"method": "post",
+			"decoder": "json"
+		}
+	};
+}
+db.config.insert(lastConfig);
