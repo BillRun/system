@@ -1,9 +1,9 @@
 <?php
 
 /**
- * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
- * @license         GNU Affero General Public License Version 4; see LICENSE.txt
+ * @package	Billing
+ * @copyright	Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
+ * @license	GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
 /**
