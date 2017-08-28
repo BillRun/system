@@ -144,5 +144,9 @@ abstract class Models_Action_Update_Balance_Abstract {
 	public function getAffectedLine() {
 		return $this->line;
 	}
+	
+	public function getAfter() {
+		return null;
+	}
 
 }
