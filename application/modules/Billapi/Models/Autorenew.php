@@ -16,7 +16,7 @@ class Models_Autorenew extends Models_Entity {
 
 	public function create() {
 		if (empty($this->update['period'])) {
-			$this->update['period'] = 'monthly';
+			$this->update['interval'] = 'month';
 		}
 		$this->update['next_renew'] = Billrun_Utils_Autorenew::getNextRenewDate(time());
 		$this->update['cycles_remaining'] = $this->update['cycles'];
