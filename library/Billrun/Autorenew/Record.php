@@ -82,7 +82,10 @@ abstract class Billrun_Autorenew_Record {
 		$update = array(
 			'$set' => array(
 				'next_renew' => $this->getNextRenewDate(),
-				'cycles_remaining' => $this->record['cycles_remaining'] - 1,
+				'last_renew' => new MongoDate(),
+			),
+			'$inc' => array(
+				'cycles_remaining' => - 1,
 			),
 		);
 		return Billrun_Factory::db()->autorenewCollection()->update($query, $update);
