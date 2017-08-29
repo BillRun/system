@@ -252,7 +252,9 @@ class ReportModel {
 	}
 	
 	
-	protected function formatInputMatchOp($op, $field, $value) {
+	protected function formatInputMatchOp($condition, $field) {
+		$op = $condition['op'];
+		$value = $condition['value'];
 		// search by op
 		switch ($op) {
 			case 'last_hours':
@@ -270,10 +272,23 @@ class ReportModel {
 					return $op;
 			}
 		}
+		if($condition['field'] === 'logfile_status') {
+			switch ($value) {
+				case 'received':
+				case 'not_received':
+					return 'exists';
+				case 'stuck':
+					return 'and';
+				default:
+					return $op;
+			}
+		}
 		return $op;
 	}
 	
-	protected function formatInputMatchValue($value, $field, $type, $op) {
+	protected function formatInputMatchValue($condition, $field, $type) {
+		$value = $condition['value'];
+		$op = $condition['op'];
 		// search by op
 		switch ($op) {
 			case 'last_hours':
@@ -305,11 +320,38 @@ class ReportModel {
 					return $value;
 			}
 		}
+		if($condition['field'] === 'logfile_status') {
+			switch ($value) {
+				case 'received':
+					return true;
+				case 'not_received':
+					return false;
+				case 'stuck':
+					return array(
+						array('start_process_time' =>array('$exists' => true)),
+						array('start_process_time' => array('$lt' => new MongoDate(strtotime("-6 hours")))),
+						array('process_time' => array('$exists' => false)),
+					);
+				default:
+					return $value;
+			}
+		}
 		return $value;
 	}
 	
-	protected function formatInputMatchField($field, $entity) {				
+	protected function formatInputMatchField($condition, $entity) {
+		$field = $condition['field'];
 		switch ($field) {
+			case 'logfile_status':
+				switch ($condition['value']) {
+					case 'stuck':
+						return '';
+					case 'received':
+					case 'not_received':
+						return 'process_time';
+					default:
+						return $field;
+				}
 			case 'billrun_status':
 				return 'billrun';
 			default:
@@ -363,7 +405,6 @@ class ReportModel {
 		return $lookup;
 	}
 	
-
 	protected function getUnwind($entity) {
 		return array(
 			'path' => "\$$entity",
@@ -421,6 +462,11 @@ class ReportModel {
 				$defaultEntityMatch[]['to'] = $activeQuery['to'];
 				$defaultEntityMatch[]['from'] = $activeQuery['from'];
 				return $defaultEntityMatch;
+			case 'logFile':
+				$defaultEntityMatch[]['file_name'] = array(
+					"\$exists" => true
+				);
+				return $defaultEntityMatch;
 			default:
 				return $defaultEntityMatch;
 		}
@@ -442,6 +488,8 @@ class ReportModel {
 				return 'subscribers';
 			case 'customer':
 				return 'subscribers';
+			case 'logFile':
+				return 'log';
 			default:
 				throw new Exception("Invalid entity type");
 		}
@@ -494,9 +542,9 @@ class ReportModel {
 				continue;
 			}
 			$type = $condition['type'];
-			$field = $this->formatInputMatchField($condition['field'], $condition_entity);
-			$op = $this->formatInputMatchOp($condition['op'], $field, $condition['value']);
-			$value = $this->formatInputMatchValue($condition['value'], $field, $type, $condition['op']);
+			$field = $this->formatInputMatchField($condition, $condition_entity);
+			$op = $this->formatInputMatchOp($condition, $field);
+			$value = $this->formatInputMatchValue($condition, $field, $type);
 			switch ($op) {
 				case 'like':
 					$formatedExpression = array(
@@ -598,6 +646,10 @@ class ReportModel {
 					$formatedExpression = array(
 						"\${$op}" => (bool)$value
 					);
+					break;
+				case 'and': // for complex queries
+					$field = '$and';
+					$formatedExpression = $value;
 					break;
 				default:
 					throw new Exception("Invalid filter operator $op");
