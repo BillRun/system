@@ -35,7 +35,7 @@ class Billrun_Processor_Json extends Billrun_Processor {
 
 	public function processData() {
 		foreach ($this->data['data'] as &$row) {
-			$row['process_time'] = Billrun_Util::generateCurrentTime();
+			$row['process_time'] = new MongoDate();
 		}
 		return true;
 	}
