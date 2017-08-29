@@ -305,6 +305,9 @@ class ReportModel {
 					return $value;
 			}
 		}
+		if($field === 'calc_name' && $value === 'false') {
+			return false;
+		}
 		return $value;
 	}
 	
@@ -449,6 +452,8 @@ class ReportModel {
 				return 'subscribers';
 			case 'customer':
 				return 'subscribers';
+			case 'queue':
+				return 'queue';
 			case 'event':
 				return 'events';
 			default:
