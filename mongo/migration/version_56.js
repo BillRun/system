@@ -595,3 +595,19 @@ if (lastConfig.events && !lastConfig.events.settings) {
 	};
 }
 db.config.insert(lastConfig);
+
+// BRCD-984 - Change received_time field to date instead of a string in log collection
+db.log.find().forEach(function (logItem) {
+	var oldDate = logItem.received_time;
+	if (oldDate) {
+		if (typeof (oldDate) === "string") {
+			oldDate = oldDate.replace(" ", 'T');
+			if (oldDate.charAt(oldDate.length - 1) !== 'Z') {
+				oldDate = oldDate.concat("Z");
+			}
+			var date = new Date(oldDate);
+			logItem.received_time = date;
+			db.log.save(logItem);
+		}
+	}
+});
