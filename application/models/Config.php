@@ -1010,6 +1010,10 @@ class ConfigModel {
 							$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
 							$completeFileSettings = TRUE;
 						}
+						
+						if (isset($fileSettings['unify'])) {
+							$updatedFileSettings['unify'] = $fileSettings['unify'];
+						}
 					}
 				}
 			}
