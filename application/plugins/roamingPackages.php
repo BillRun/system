@@ -290,8 +290,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		foreach ($roamingBalances as $balance) {
 			$subRaw = $balance->getRawData();
 			$stamp = strval($this->row['stamp']);
-			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;	
+			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;
 			$balancePackage = $balance['service_name'];
+			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
+				continue;
+			}
 			$UsageIncluded += (int) $plan->get('include.groups.' . $balancePackage)[$usageType];
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
@@ -425,7 +428,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$joinedUsage = $roamingBalance['added_joined_usage']['usage'];
 				$aggregatedJoinedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage']) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] : 0;
 				$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['usage'] = $aggregatedJoinedUsage + $joinedUsage;
-				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] +=1;
+				@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$joinedField]['count'] += 1;
 			}
 		}
 	}
@@ -445,6 +448,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
 				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
 				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
+			}
+			if (isset($balance['balance']['totals'][$usaget]['exhausted']) && ($usagev['usage'] > 0)) {
+				$update['$unset']['balance.totals.' . $usaget . '.exhausted'] = 1;
 			}
 		}
 		return $update;
