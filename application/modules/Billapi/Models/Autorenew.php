@@ -18,10 +18,20 @@ class Models_Autorenew extends Models_Entity {
 		if (empty($this->update['period'])) {
 			$this->update['interval'] = 'month';
 		}
-		$this->update['next_renew'] = Billrun_Utils_Autorenew::getNextRenewDate(time());
+		if (empty($this->update['next_renew'])) {
+			$this->update['next_renew'] = Billrun_Utils_Autorenew::getNextRenewDate(time());
+		}
 		$this->update['cycles_remaining'] = $this->update['cycles'];
-		$this->validateBucketGroup();
+		$this->validate();
 		parent::create();
+		if ($this->isImmediateAutoRenew()) {
+			$this->autoRenewImmediate();
+		}
+	}
+	
+	protected function validate() {
+		$this->validateBucketGroup();
+		$this->validateNextRenewDate();
 	}
 	
 	protected function validateBucketGroup() {
@@ -32,5 +42,24 @@ class Models_Autorenew extends Models_Entity {
 			throw new Billrun_Exceptions_Api(0, array(), "Invalid bucket group '$bucketGroup'");
 		}
 		return true;
+	}
+	
+	protected function validateNextRenewDate() {
+		if (!$this->isImmediateAutoRenew() && !$this->isValidNextRenewDate()) {
+			throw new Billrun_Exceptions_Api(0, array(), "Invalid next renew date");
+		}
+		return true;
+	}
+	
+	protected function isValidNextRenewDate() {
+		return $this->update['next_renew']->sec >= strtotime("tomorrow");
+	}
+	
+	protected function isImmediateAutoRenew() {
+		return Billrun_Util::getIn($this->update, 'immediate', false);
+	}
+	
+	protected function autoRenewImmediate() {
+		Billrun_Autorenew_Manager::autoRenewRecord($this->after);
 	}
 }
