@@ -15,11 +15,11 @@
 class Models_Autorenew extends Models_Entity {
 
 	public function create() {
-		if (empty($this->update['period'])) {
+		if (empty($this->update['interval'])) {
 			$this->update['interval'] = 'month';
 		}
 		if (empty($this->update['next_renew'])) {
-			$this->update['next_renew'] = Billrun_Utils_Autorenew::getNextRenewDate(time());
+			$this->update['next_renew'] = $this->getNextRenewDate();
 		}
 		$this->update['cycles_remaining'] = $this->update['cycles'];
 		$this->validate();
@@ -61,5 +61,13 @@ class Models_Autorenew extends Models_Entity {
 	
 	protected function autoRenewImmediate() {
 		Billrun_Autorenew_Manager::autoRenewRecord($this->after);
+	}
+	
+	protected function getNextRenewDate() {
+		if ($this->isImmediateAutoRenew()) {
+			return new MongoDate(strtotime("tomorrow")); // in case the immediate charge will fail, the charge will occur on next Cron run
+		}
+		
+		return Billrun_Utils_Autorenew::getNextRenewDate(time());
 	}
 }
