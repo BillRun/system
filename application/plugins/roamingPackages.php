@@ -34,7 +34,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @var array
 	 */
-	protected $roamingPackages = array("IRP_2GB", "IRP_2GB_W_CALLS_SMS", "IRP_1GB", "IRP_IRD");
+	protected $roamingPackages;
 	
 
 	protected $package = null;
@@ -111,6 +111,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	public function __construct() {
+		$this->roamingPackages = Billrun_Factory::config()->getConfigValue('roamingPackages.available_packages');
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 	}
