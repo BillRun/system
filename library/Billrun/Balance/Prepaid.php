@@ -117,7 +117,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		$planName = $this->row->get('plan');
 		$rateName = $this->row->get('arate_key');
 		
-		$allowedInQuery = array('$or' => array(
+		$disallowedPrepaidIncludesQuery = array('$or' => array(
 				array('$and' => array(
 						array("allowed_in." . $planName => array('$exists' => 1)),
 						array("allowed_in." . $planName => array('$nin' => array($rateName))),
@@ -130,13 +130,13 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		));
 		
 		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
-		$ppIncludes = $prepaidIncludesCollection->query($allowedInQuery)->cursor();
-		$notAllowedPPIncludes = array();
+		$ppIncludes = $prepaidIncludesCollection->query($disallowedPrepaidIncludesQuery)->cursor();
+		$disallowedPrepaidIncludes = array();
 		if ($ppIncludes->count() > 0) {
-			$notAllowedPPIncludes = array_map(function($doc) {
+			$disallowedPrepaidIncludes = array_map(function($doc) {
 				return $doc['external_id'];
 			}, iterator_to_array($ppIncludes));
-			$query['pp_includes_external_id'] = array('$nin' => array_values($notAllowedPPIncludes));
+			$query['pp_includes_external_id'] = array('$nin' => array_values($disallowedPrepaidIncludes));
 		}
 	}
 
