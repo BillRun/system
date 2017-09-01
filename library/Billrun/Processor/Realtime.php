@@ -45,14 +45,16 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
 			return false;
 		}
+		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		$row['process_time'] = date(self::base_datetimeformat);
+		$row['process_time'] = new MongoDate();
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			$row['urt'] = new MongoDate();
 		} else {
 			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
+		$row['eurt'] = $row['urt'];
 
 		return true;
 	}

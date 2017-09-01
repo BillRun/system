@@ -300,7 +300,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$resource->set('trailer', $trailer);
 			}
 			$resource->set('process_hostname', Billrun_Util::getHostName());
-			$resource->set('process_time', date(self::base_datetimeformat));
+			$resource->set('process_time', new MongoDate());
 			return $log->save($resource);
 		} else {
 			// backward compatibility

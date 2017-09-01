@@ -35,16 +35,52 @@ class Billrun_Calculator_Rate_Filters_Base {
 		$this->updateSortQuery($sort, $row);
 	}
 	
-	protected function getRowFieldValue($row, $field) {
+	protected function getRowFieldValue($row, $field, $regex = '') {
+		if ($field === 'computed') {
+			return $this->getComputedValue($row);
+		}
 		if (isset($row['uf'][$field])) {
-			return $row['uf'][$field];
+			return $this->regexValue($row['uf'][$field], $regex);
 		}
 		
 		if (isset($row[$field])) {
-			return $row[$field];
+			return $this->regexValue($row[$field], $regex);
 		}
 		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." details: " . print_R($row, 1), Zend_Log::NOTICE);
 		return '';
+	}
+	
+	protected function regexValue($value, $regex) {
+		if (empty($regex) || !Billrun_Util::isValidRegex($regex)) {
+			return $value;
+		}
+		
+		return preg_replace($regex,'',$value);	
+	}
+	
+	/**
+	 * Gets a computed (condition) field value
+	 * Currently, only supporting boolean condition
+	 * 
+	 * @param array $row
+	 * @return int, 1 if the condition met, 0 otherwise
+	 */
+	protected function getComputedValue($row) {
+		if (!isset($this->params['computed'])) {
+			return '0';
+		}
+		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
+		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
+		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
+		$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
+		$data = array('first_val' => $this->getRowFieldValue($row, $firstValKey, $firstValRegex));
+		$query = array(
+			'first_val' => array(
+				$this->params['computed']['operator'] => $this->getRowFieldValue($row, $secondValKey, $secondValRegex),
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query) ? '1' : '0';
 	}
 	
 	protected function updateMatchQuery(&$match, $row) {

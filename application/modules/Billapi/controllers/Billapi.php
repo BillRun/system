@@ -92,10 +92,16 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 		$this->output->status = 1;
 		$this->output->details = $entityModel->{$this->action}();
 		$entity = $entityModel->getAfter();
+		$line = $entityModel->getAffectedLine();
 		if ($entity instanceof Mongodloid_Entity) {
 			$this->output->entity = $entity->getRawData();
 		} else {
 			$this->output->entity = $entity;
+		}
+		if ($line instanceof Mongodloid_Entity) {
+			$this->output->line = $line->getRawData();
+		} else if ($line) {
+			$this->output->line = $line;
 		}
 	}
 	

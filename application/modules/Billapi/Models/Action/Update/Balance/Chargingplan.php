@@ -126,6 +126,7 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->createBillingLines();
 		}
+		return $row;
 	}
 
 	/**
