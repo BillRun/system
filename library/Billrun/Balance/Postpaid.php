@@ -36,24 +36,61 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance($options) {
-		$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
-		if (isset($options['balance_start_time']) && ($timestamp = strtotime((string) $options['balance_start_time'], $options['urt']->sec)) !== false) {
-			$from = $timestamp;
-			$start_period = $options['balance_start_time'];
-		} else {
+		if (isset($options['balance_period']) && isset($options['serviceName'])) {
+			$subService = $this->getSubscriberService($options['sid'], $options['service_name'], $options['urt']->sec);
+			if ($subService) {
+				$from = $start_period = $subService['from'];
+				$period = $options['balance_period'];
+				$to = strtotime((string) $options['balance_period'], $subService['from']);
+			}
+		}
+		if (empty($from) || empty($to)) {
+			$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
 			$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
 			$start_period = "default";
-		}
-		
-		if (isset($options['balance_period']) && ($timestamp = strtotime((string) $options['balance_period'], $options['urt']->sec)) !== false) {
-			$to = $timestamp;
-			$period = $options['balance_period'];
-		} else {
 			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 			$period = "default";
 		}
 		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
 		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec, $start_period, $period);
+	}
+	
+	/**
+	 * method to fetch subscriber service
+	 * 
+	 * @param int $sid subscriber id
+	 * @param string $service service name
+	 * @param int $time time stamp
+	 * 
+	 * @return mixed subscriber service entry if exists, else false
+	 * 
+	 * @todo refactoring and use native subscriber class
+	 */
+	protected function getSubscriberService($sid, $service, $time) {
+		try {
+			$baseQuery = array(
+				'sid' => $sid,
+				'type' => 'subscriber',
+				'services.name' => $service,
+				'services.from' => array('$lte' => new MongoDate($time)),
+				'services.to' => array('$gt' => new MongoDate($time))
+			);
+			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
+			$elemMatch = array(
+				'$elemMatch' => array(
+					'name' => $service
+				)
+			);
+			$proj = array('_id' => 0, "services" => $elemMatch);
+			$ret = Billrun_Factory::db()->subscribersCollection()->query()->query($query)
+					->project($proj)->cursor()->current();
+			if ($ret->isEmpty()) {
+				return false;
+			}
+			return $ret;
+		} catch (Exception $ex) {
+			return false;
+		}
 	}
 
 	/**
