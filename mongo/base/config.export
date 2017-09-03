@@ -2,10 +2,7 @@
     "shared_folder": "shared",
     "cg_return_url": "",
     "shared_secret": [],
-    "usage_types": {
-        "array": [],
-        "t": "Array"
-       },
+    "usage_types": [],
     "resetlines": {
         "limit": {
             "v": 10,
