@@ -19,7 +19,8 @@ class autorenewPlugin extends Billrun_Plugin_BillrunPluginBase {
 		Billrun_Factory::log('Running auto renew...', Billrun_Log::DEBUG);
 		$autoRenews = $this->getAutoRenews();
 		foreach ($autoRenews as $autoRenew) {
-			Billrun_Autorenew_Manager::autoRenewRecord($autoRenew);
+			$autoRenewHandler = Billrun_Autorenew_Manager::getInstance($autoRenew);
+			$autoRenewHandler->autoRenew();
 		}
 	}
 	

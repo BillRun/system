@@ -13,29 +13,19 @@
 class Billrun_Autorenew_Manager {
 	
 	/**
-	 * Perform the auto renew process for the given record
+	 * get Auto renew handler instance
 	 * 
-	 * @param Mongodloid Entity $record
-	 * @return true on success, throws exception on error
-	 */
-	public static function autoRenewRecord($record) {
-		$autoRenewHandler = self::getAutoRenewHandler($record);
-		return $autoRenewHandler->autoRenew();
-	}
-	
-	/**
-	 * Assistance function to get the auto renew handler object
+	 * @param array $params the parameters of the action
 	 * 
-	 * @param array $record
-	 * @return Billrun_Autorenew_Record
+	 * @return AutoRenew handler
 	 */
-	public static function getAutoRenewHandler($record) {
-		$handlerClassName = self::getAutoRenewHandlerClassName($record);
-		if (!class_exists($handlerClassName)) {
+	public static function getInstance($params) {
+		$handlerClassName = self::getAutoRenewHandlerClassName($params);
+		if (!@class_exists($handlerClassName, true)) {
 			$handlerClassName = 'Billrun_Autorenew_Month';
 		}
 
-		return (new $handlerClassName($record));
+		return (new $handlerClassName($params));
 	}
 
 	/**
