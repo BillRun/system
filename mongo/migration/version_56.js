@@ -171,6 +171,10 @@ if (prevUsageTypes) {
 	var usageTypes = [];
 	for (var i in prevUsageTypes) {
 		var prevUsageType = prevUsageTypes[i];
+		if (prevUsageType.usage_type) {
+			usageTypes.push(prevUsageType);
+			continue;
+		}
 		prevUsageType;
 		var system = (["call", "data"].indexOf(prevUsageType.toLowerCase()) !== -1);
 		if (prevUsageType.toLowerCase().indexOf("call") !== -1) {
