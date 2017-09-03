@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-abstract class Models_Action_Update_Balance_Abstract {
+abstract class Billrun_Balance_Update_Abstract {
 
 	/**
 	 * the update method type

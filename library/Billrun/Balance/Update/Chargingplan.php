@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Balance_Abstract {
+class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstract {
 
 	/**
 	 * the update method type
@@ -74,7 +74,7 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 				(isset($chargingEntry['cost']) ? $chargingEntry['cost'] :
 				(isset($chargingEntry['total_cost']) ? $chargingEntry['total_cost'] : $chargingEntry['value'])),
 			);
-			$this->data[] = new Models_Action_Update_Balance_Prepaidinclude($ppIncludeParams);
+			$this->data[] = new Billrun_Balance_Update_Prepaidinclude($ppIncludeParams);
 		}
 	}
 

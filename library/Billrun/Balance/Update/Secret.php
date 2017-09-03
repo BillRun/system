@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Secret extends Models_Action_Update_Balance_Chargingplan {
+class Billrun_Balance_Update_Secret extends Billrun_Balance_Update_Chargingplan {
 
 	/**
 	 * the update method type

@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_Balance_Abstract {
+class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstract {
 
 	/**
 	 * the update method type

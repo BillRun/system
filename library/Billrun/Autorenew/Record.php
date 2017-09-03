@@ -6,8 +6,6 @@
  * @license	GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
-Yaf_Loader::getInstance(APPLICATION_PATH . '/application/modules/Billapi')->registerLocalNamespace("Models");
-
 /**
  * Abstract helper class for an auto renew record
  *
@@ -46,7 +44,7 @@ abstract class Billrun_Autorenew_Record {
 		return $this->record->getId()->getMongoID();
 	}
 	
-	protected function getUpdateRequestQuery() {
+	protected function getUpdateRequestParams() {
 		$query = array(
 			'charging_plan' => $this->record['bucket_group'],
 		);
@@ -59,19 +57,9 @@ abstract class Billrun_Autorenew_Record {
 		return $query;
 	}
 	
-	protected function getUpdateRequestParams() {
-		return array(
-			'request' => array(
-				'action' => 'update',
-				'query' => json_encode($this->getUpdateRequestQuery()),
-			),
-			'collection' => 'balances',
-		);
-	}
-	
 	protected function updateBalance() {
 		$params = $this->getUpdateRequestParams();
-		$model = new Models_Balances($params);
+		$model = new Billrun_Balance_Update_Chargingplan($params);
 		return $model->update();
 	}
 	
