@@ -60,7 +60,8 @@ class Models_Autorenew extends Models_Entity {
 	}
 	
 	protected function autoRenewImmediate() {
-		Billrun_Autorenew_Manager::autoRenewRecord($this->after);
+		$autoRenewHandler = Billrun_Autorenew_Manager::getInstance($this->after);
+		$autoRenewHandler->autoRenew();
 	}
 	
 	protected function getNextRenewDate() {
