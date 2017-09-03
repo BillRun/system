@@ -318,7 +318,7 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 			'source' => $fileData['source'],
 			'type' => $fileData['source'],
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => date(self::base_datetimeformat),
+			'received_time' => new MongoDate(),
 			'generated_time' => new MongoDate($this->startTime),
 			'direction' => 'out'
 		);

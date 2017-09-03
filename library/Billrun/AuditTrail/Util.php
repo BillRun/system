@@ -28,7 +28,7 @@ class Billrun_AuditTrail_Util {
 	public static function trackChanges($type = '', $key = '', $collection = '', $old = null, $new = null, array $additionalParams = array()) {
 		try {
 			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
+			if ($user) {
 				$trackUser = array(
 					'_id' => $user->getMongoId()->getMongoID(),
 					'name' => $user->getUsername(),
