@@ -93,7 +93,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = date(self::base_datetimeformat);
+		$row['process_time'] = new MongoDate();
 		return $row;
 	}
 	
@@ -143,7 +143,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_datetimeformat);
+		$trailer['process_time'] = new MongoDate();
 		return $trailer;
 	}
 

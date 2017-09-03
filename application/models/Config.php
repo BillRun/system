@@ -1158,7 +1158,8 @@ class ConfigModel {
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
-			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields))) {
+			$additionalFields = array('computed');
+			if ($diff = array_diff($useFromStructure, array_merge($customFields, $billrunFields, $additionalFields))) {
 				throw new Exception('Unknown source field(s) ' . implode(',', $diff));
 			}
 		}
@@ -1287,6 +1288,11 @@ class ConfigModel {
 				}
 				if ($rule['type'] === 'longestPrefix') {
 					$longestPrefixParams[] = $rule['rate_key'];
+				}
+				foreach (Billrun_Util::getIn($rule, ['computed', 'line_keys'], array()) as $lineKey) {
+					if (!empty($lineKey['regex']) && !Billrun_Util::isValidRegex($lineKey['regex'])) {
+						throw new Exception('Illegal regex ' . $lineKey['regex']);
+					}
 				}
 			}
 		}
