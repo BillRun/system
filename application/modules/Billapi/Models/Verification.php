@@ -101,8 +101,7 @@ trait Models_Verification {
 		if (isset($translated['update_parameters']['effective_date'])) {
 			unset($translated['update_parameters']['effective_date']);
 		}
-		
-		if (!isset($translated['query_parameters']['_id']) && !empty($this->collection)) {
+		if (!empty($config['unique_query_parameters']) && !isset($translated['query_parameters']['_id']) && !empty($this->collection)) {
 			$translated['query_parameters'] = $this->transformQueryById($translated['query_parameters']);
 		}
 		
@@ -171,7 +170,7 @@ trait Models_Verification {
 	protected function transformQueryById($query) {
 		$entity = $this->collection->query($query)->cursor();
 		if ($entity->count() != 1) {
-			throw new Exception('Wrong query for getting an entity');
+			throw new Exception('No unique record was found');
 		}
 		$data = $entity->current()->getRawData();
 		if (!isset($data['_id'])) {

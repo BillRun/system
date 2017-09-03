@@ -70,67 +70,24 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 
 	/**
 	 * Get the unification fields.
+	 * returns generic unification fields merged with specific unification fields for specific file type (input processor)
 	 * @param array $options - Array of input options.
 	 * @return array The unification fields.
 	 */
 	protected function getUnificationFields($options) {
 		if (isset($options['unification_fields'])) {
 			return $options['unification_fields'];
-		} else {
-			// TODO: put in seperate config dedicate to unify
-			return array(
-				'ggsn' => array(
-					'required' => array(
-						'fields' => array('sid', 'aid', 'ggsn_address', 'arate', 'urt'),
-						'match' => array(
-							'sgsn_address' => '/^(?=62\.90\.|37\.26\.|85\.64\.|172\.28\.|176\.12\.158\.)/',
-						),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('sgsn_address', 'ggsn_address', 'sid', 'aid', 'arate', 'imsi', 'plan', 'rating_group', 'billrun', 'rat_type'),
-						'field' => array('in_plan', 'out_plan', 'over_plan', 'aprice'),
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-								'type' => '/.*/',
-							),
-							'update' => array(
-								'$set' => array('process_time'),
-								'$setOnInsert' => array('urt', 'imsi', 'usagesb', 'usaget', 'aid', 'sid', 'ggsn_address', 'sgsn_address', 'rating_group', 'arate', 'plan', 'billrun', 'rat_type'),
-								'$inc' => array('usagev', 'aprice', 'apr', 'fbc_downlink_volume', 'fbc_uplink_volume', 'duration', 'in_plan', 'out_plan', 'over_plan'),
-							)
-						)
-					),
-				),
-				'nsn' => array(
-					'required' => array(
-						'fields' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name'),
-						'match' => array(
-							'classMethod' => 'isNsnLineLegitimate',
-						),
-					),
-					'date_seperation' => 'Ymd',
-					'stamp' => array(
-						'value' => array('record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'arate', 'usaget', 'calling_subs_last_ex_id', 'called_subs_last_ex_id'),
-						'field' => array()
-					),
-					'fields' => array(
-						array(
-							'match' => array(
-								'type' => '/.*/',
-							),
-							'update' => array(
-								'$set' => array('process_time'),
-								'$setOnInsert' => array('urt', 'record_type', 'in_circuit_group', 'in_circuit_group_name', 'out_circuit_group', 'out_circuit_group_name', 'calling_subs_last_ex_id', 'called_subs_last_ex_id', 'arate', 'usaget'),
-								'$inc' => array('usagev', 'duration'),
-							)
-						)
-					),
-				),
-			);
 		}
+		$type = $options['type'];
+		$basicUnificationFields = Billrun_Factory::config()->getConfigValue('unify.unification_fields', array());
+		$fileTypeUnificationFields = Billrun_Util::getIn(Billrun_Factory::config()->getFileTypeSettings($type, true), array('unify', 'unification_fields'), array());
+		$unificationFields = array_merge_recursive($fileTypeUnificationFields, $basicUnificationFields);
+		if (empty($unificationFields)) {
+			Billrun_Factory::log('Cannot get unification fields. options: ' . print_r($options, 1));
+			return array();
+		}
+		
+		return array($type => $unificationFields);
 	}
 
 	/**
@@ -172,10 +129,12 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$updatedRow = $this->getUnifiedRowForSingleRow($updatedRowStamp, $newRow, $typeFields);
 		foreach ($typeFields as $key => $fields) {
 			foreach ($fields as $field) {
-				if ($key == '$inc' && isset($newRow[$field])) {
-					$updatedRow[$field] += ($newRow[$field] && is_numeric($newRow[$field])) ? $newRow[$field] : 0;
-				} else if ($key == '$set' && isset($newRow[$field])) {
-					$updatedRow[$field] = $newRow[$field];
+				$val = Billrun_Util::getIn($newRow, $field, null);
+				if ($key == '$inc' && !is_null($val)) {
+					$updatedVal  = Billrun_Util::getIn($updatedRow, $field, 0) + (($val && is_numeric($val)) ? $val : 0);
+					Billrun_Util::setIn($updatedRow, $field, $updatedVal);
+				} else if ($key == '$set' && !is_null($val)) {
+					Billrun_Util::setIn($updatedRow, $field, $val);
 				}
 			}
 		}
@@ -190,10 +149,28 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$fields = array();
 		foreach ($this->unificationFields[$line['type']]['fields'] as $field) {
 			if ($this->verifyMatchField($field['match'], $line)) {
-				$fields = array_merge_recursive($fields, $field['update']);
+				$fields = array_merge_recursive($fields, $this->getUpdateQueries($field['update']));
 			}
 		}
 		return $fields;
+	}
+	
+	/**
+	 * convert operations from new configuration structure to old structure
+	 * 
+	 * @param array $updateConfig
+	 * @return array
+	 */
+	protected function getUpdateQueries($updateConfig) {
+		$ret = array();
+		foreach ($updateConfig as $conf) {
+			if (!isset($ret[$conf['operation']])) {
+				$ret[$conf['operation']] = $conf['data'];
+			} else {
+				$ret[$conf['operation']] = array_merge($ret[$conf['operation']], $conf['data']);
+			}
+		}
+		return $ret;
 	}
 
 	/**
@@ -242,10 +219,13 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 //					'billrun' => $this->activeBillrun,
 			));
 			$update = array_merge($base_update, $this->getlockLinesUpdate($this->unifiedToRawLines[$key]['update']));
-			foreach ($this->mergedUpdateFields[$row['type']] as $fkey => $fields) {
+			foreach ($this->mergedUpdateFields[$row['type']] as $operations) {
+				$fkey = $operations['operation'];
+				$fields = $operations['data'];
 				foreach ($fields as $field) {
-					if (isset($row[$field])) {
-						$update[$fkey][$field] = $row[$field];
+					$val = Billrun_Util::getIn($row, $field, null);
+					if (!is_null($val)) {
+						$update[$fkey][$field] = $val;
 					}
 				}
 			}
@@ -289,8 +269,10 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		if (isset($this->unifiedLines[$updatedRowStamp])) {
 			$existingRow = $this->unifiedLines[$updatedRowStamp];
 			foreach ($typeFields['$inc'] as $field) {
-				if (isset($newRow[$field]) && !isset($existingRow[$field])) {
-					$existingRow[$field] = 0;
+				$newVal = Billrun_Util::getIn($newRow, $field, null);
+				$exisingVal = Billrun_Util::getIn($existingRow, $field, null);
+				if (!is_null($newVal) && is_null($exisingVal)) {
+					Billrun_Util::setIn($existingRow, $field, 0);
 				}
 			}
 		} else {
@@ -298,10 +280,11 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 			$existingRow = array('lcount' => 0, 'type' => $type);
 			foreach ($typeFields as $key => $fields) {
 				foreach ($fields as $field) {
-					if ($key == '$inc' && isset($newRow[$field])) {
-						$existingRow[$field] = 0;
-					} else if (isset($newRow[$field])) {
-						$existingRow[$field] = $newRow[$field];
+					$newVal = Billrun_Util::getIn($newRow, $field, null);
+					if ($key == '$inc' && !is_null($newVal)) {
+						Billrun_Util::setIn($existingRow, $field, 0);
+					} else if (!is_null($newVal)) {
+						Billrun_Util::setIn($existingRow, $field, $newVal);
 					} else {
 						Billrun_Factory::log("Missing Field $field for row {$newRow['stamp']} when trying to unify.", Zend_Log::DEBUG);
 					}
@@ -321,8 +304,9 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 		$typeData = $this->unificationFields[$newRow['type']];
 		$serialize_array = array();
 		foreach ($typeData['stamp']['value'] as $field) {
-			if (isset($newRow[$field])) {
-				$serialize_array[$field] = $newRow[$field];
+			$newVal = Billrun_Util::getIn($newRow, $field, null);
+			if (!is_null($newVal)) {
+				Billrun_Util::setIn($serialize_array, $field, $newVal);
 			}
 		}
 

@@ -305,6 +305,9 @@ class ReportModel {
 					return $value;
 			}
 		}
+		if($field === 'calc_name' && $value === 'false') {
+			return false;
+		}
 		return $value;
 	}
 	
@@ -434,6 +437,13 @@ class ReportModel {
 		return $this->entityMapper($entity);
 	}
 	
+	/**
+	 * Map entity name to collection
+	 * 
+	 * @param type $entity name 
+	 * @return string collection name
+	 * @throws Exception validate for only allowd collections
+	 */
 	protected function entityMapper($entity) {
 		switch ($entity) {
 			case 'usage':
@@ -442,6 +452,10 @@ class ReportModel {
 				return 'subscribers';
 			case 'customer':
 				return 'subscribers';
+			case 'queue':
+				return 'queue';
+			case 'event':
+				return 'events';
 			default:
 				throw new Exception("Invalid entity type");
 		}

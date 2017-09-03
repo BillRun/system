@@ -92,7 +92,7 @@ abstract class Billrun_Receiver extends Billrun_Base {
 
 		$addData = array(
 			'received_hostname' => Billrun_Util::getHostName(),
-			'received_time' => date(self::base_datetimeformat),
+			'received_time' => new MongoDate()
 		);
 
 		$update = array(
