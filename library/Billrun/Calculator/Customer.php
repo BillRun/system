@@ -446,4 +446,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $retServices;;
 	}
 	
+	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
+		$retServices = array();
+		foreach($services as $service) {
+			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+				$retServices[] = array(
+					'name' => $service['name'],
+					'from' => $service['from'],
+				);
+			}
+		}
+		return $retServices;
+	}
+	
 }
