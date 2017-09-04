@@ -108,6 +108,7 @@ class ResetLinesModel {
 	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$query = $this->getResetLinesQuery($update_aids);
 		$lines = $lines_coll->query($query);
+		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
 		$queue_line = array(
@@ -119,6 +120,11 @@ class ResetLinesModel {
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
 			$stamps[] = $line['stamp'];
+			if (!empty($line['rebalance'])) {
+				$queue_line['rebalance'] = array_merge($line['rebalance'], array($rebalanceTime));
+			} else {
+				$queue_line['rebalance'] = array($rebalanceTime);
+			}
 			$this->buildQueueLine($queue_line, $line, $advancedProperties);
 			$queue_lines[] = $queue_line;
 		}
@@ -126,7 +132,7 @@ class ResetLinesModel {
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime)) {
 				return false;
 			}
 		}
@@ -240,8 +246,7 @@ class ResetLinesModel {
 	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids) {
-		$rebalanceTime = new MongoDate();
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
 		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
 
@@ -271,7 +276,6 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-		$queue_coll->update($stamps_query, array('$push' => array('rebalance' => $rebalanceTime)), array('multiple' => true));
 		
 		return true;
 	}
