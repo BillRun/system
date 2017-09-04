@@ -114,8 +114,8 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 */
 	protected function applyAllowInRates(&$query) {
 		$basePlanName = "BASE";
-		$planName = $this->row->get('plan');
-		$rateName = $this->row->get('arate_key');
+		$planName = $this->row['plan'];
+		$rateName = $this->row['arate_key'];
 		
 		$disallowedPrepaidIncludesQuery = array('$or' => array(
 				array('$and' => array(
