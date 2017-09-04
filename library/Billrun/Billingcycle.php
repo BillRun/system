@@ -284,14 +284,19 @@ class Billrun_Billingcycle {
 			),
 		);
 
-		$confirmedCycles = array();
+		$potentialConfirmed = array();
 		$results = $billrunColl->aggregate($pipelines);
+		$resetCycles = self::getResetCycles($billrunKeys);
 		foreach ($results as $billrunDetails) {
 			if ($billrunDetails['confirmed'] == $billrunDetails['total']) {
-				$confirmedCycles[] = $billrunDetails['billrun_key'];
+				$potentialConfirmed[] = $billrunDetails['billrun_key'];
 			}
 		}
-
+		$flipped = array_flip($potentialConfirmed);
+		foreach ($resetCycles as $billrunKey) {
+			unset($flipped[$billrunKey]);
+		}
+		$confirmedCycles = array_flip($flipped);
 		return $confirmedCycles;	
 	}
 
@@ -490,4 +495,55 @@ class Billrun_Billingcycle {
 		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
 		return $aids;
 	}
+	
+	/**
+	 * Returns reset cycles from the transferred billrun keys.
+	 * @param string $billrunKeys - Billrun keys.
+	 * 
+	 * @return array - reset billrun keys.
+	 * 
+	 */
+	public static function getResetCycles($billrunKeys) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$billingCycleCol = self::getBillingCycleColl();
+		if (empty($billrunKeys)) {
+			return array();
+		}
+		
+		$pipelines[] = array(
+			'$match' => array(
+				'billrun_key' => array('$in' => $billrunKeys),
+			),
+		);
+
+		$pipelines[] = array(
+			'$group' => array(
+				'_id' => '$billrun_key',
+				'count' => array(
+					'$sum' => 1,
+				),
+			),
+		);
+		
+		$pipelines[] = array(
+			'$project' => array(
+				'billrun_key' => '$_id',
+				'count' => 1,
+			),
+		);
+
+		$billrunResults = $billrunColl->aggregate($pipelines);
+		$billingCycleResults = $billingCycleCol->aggregate($pipelines);
+		foreach ($billrunResults as $billrunDetails){
+			$billrunData = $billrunDetails->getRawData();
+			$billrunCount[$billrunData['billrun_key']] = $billrunData['count'];
+		}
+		foreach ($billingCycleResults as $cycleDetails){
+			$cycleData = $cycleDetails->getRawData();
+			$cycleCount[$cycleData['billrun_key']] = $cycleData['count'];
+		}
+		$resetCycles = array_keys(array_diff_key($billrunCount, $cycleCount));
+		return $resetCycles;
+	}
+
 }
