@@ -497,14 +497,11 @@ class Billrun_Plan extends Billrun_Service {
 			if($addMonths) {
 				$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
 				$daysInMonth = date('t', $activation);
-				Billrun_Factory::log($daysInMonth);
 				$addedDays +=  floor($daysInMonth * $startFraction);
 			} 
 			//based on the starting month fraction  retrive the  current month fraction
 			$endFraction = $i - $startFraction;
-			Billrun_Factory::log( $i." - ".$startFraction." = ".$endFraction);
 			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) - 1);
-			Billrun_Factory::log($daysInMonth);
 			$addedDays += floor($daysInMonth * ( $endFraction ));
 		}
 		
