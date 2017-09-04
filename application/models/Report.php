@@ -53,6 +53,16 @@ class ReportModel {
 	 * Array of entities with revision
 	 */
 	protected $entityWithRevisions = array('subscription', 'customer');
+	
+	/**
+	 * Fields that are complex object
+	 */
+	protected $pluckFields = array(
+		array(
+			'key' => 'name',
+			'fields' => array('$subscription.services', 'services'),
+		),
+	);
 
 	/**
 	 * constructor
@@ -158,7 +168,7 @@ class ReportModel {
 		if(!empty($sort)) {
 			$aggregate[] = array('$sort' => $sort);
 		}
-		$results = $collection->aggregate($aggregate);	
+		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
 		foreach ($results as $result) {
@@ -213,12 +223,35 @@ class ReportModel {
 		return $output;
 	}
 	
-	protected function formatOutputValue($value, $key, $formats) {	
+	protected function formatOutputValue($value, $key, $formats) {
+		if(!is_scalar($value)){
+			// array result like addToSet
+			if(count(array_filter(array_keys($value), 'is_string')) === 0){
+				$values = array();
+				foreach ($value as $val) {
+					$values[] = $this->formatOutputValue($val, $key, $formats);
+				}
+				return implode(', ', $values);
+			}
+			$value = $this->pluckOutputValue($value, $key, $formats);
+		}
 		if(!empty($formats)) {
 			foreach ($formats as $format) {
 				$value = $this->applyValueformat($value, $format);
 			}
 		}
+		return $value;
+	}
+	
+	protected function pluckOutputValue($value, $key, $formats) {
+		$field_names = array_column($this->report['columns'], 'field_name', 'key');
+		//If value is object where value is at key 'NAME' -> pop the value
+		foreach ($this->pluckFields as $pluckField) {
+			if(in_array($field_names[$key], $pluckField['fields'])){
+				return $value[$pluckField['key']];
+			}
+		}
+
 		return $value;
 	}
 	
