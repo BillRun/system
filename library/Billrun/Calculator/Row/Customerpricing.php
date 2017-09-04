@@ -701,7 +701,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usagev = $this->getRealUsagev($lineToRebalance);
 		$unit = isset($this->row['usagev_unit']) ? $this->row['usagev_unit'] : 'counter';
 		$realUsagev = Billrun_Utils_Units::convertVolumeUnits($usagev, $this->row['usaget'], $unit, true);
-		$chargedUsagev = $this->getChargedUsagev($this->row, $lineToRebalance);
+		$chargedUsagev = $this->getChargedUsagev($lineToRebalance);
 		if ($chargedUsagev !== null) {
 			$rebalanceUsagev = $realUsagev - $chargedUsagev;
 			if (($rebalanceUsagev) < 0) {
