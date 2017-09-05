@@ -265,9 +265,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'sid' => $subscriberBalance['sid'],
 			'$and' => array(
 				array('to' => array('$exists' => true)),
-				array('to' => array('$gte' => new MongoDate($this->lineTime)))
-			),
-			'$and' => array(
+				array('to' => array('$gte' => new MongoDate($this->lineTime))),
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
