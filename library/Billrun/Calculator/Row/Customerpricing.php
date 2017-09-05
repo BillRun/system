@@ -748,7 +748,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function handleAccumulativeUsagev(&$usagev, $lineToRebalance, $config) {
 		if (Billrun_Util::getIn($config, array('realtime', 'used_usagev_accumulative'), false)) {
 			$this->row['accumulative_usagev'] = $usagev;
-			$usagev -= Billrun_Util::getIn($lineToRebalance, 'accumulative_usagev', 0);
+			$prevAccumulativeUsagev = Billrun_Util::getIn($lineToRebalance, 'accumulative_usagev', 0);
+			$usagev -= $prevAccumulativeUsagev;
+			$this->row['usagev_delta'] = $this->row['accumulative_usagev'] - $prevAccumulativeUsagev;
 		}
 	}
 
