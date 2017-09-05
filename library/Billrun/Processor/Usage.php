@@ -82,9 +82,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			return false;
 		}
 		
-		$row['urt'] = new MongoDate($datetime->format('U'));	
+		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));	
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$usagev = $this->getLineUsageVolume($row['uf']);
+		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
@@ -92,7 +93,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['source'] = self::$type;
 		$row['file'] = basename($this->filePath);
 		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = date(self::base_datetimeformat);
+		$row['process_time'] = new MongoDate();
 		return $row;
 	}
 	
@@ -142,7 +143,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_datetimeformat);
+		$trailer['process_time'] = new MongoDate();
 		return $trailer;
 	}
 

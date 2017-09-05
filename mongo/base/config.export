@@ -339,9 +339,6 @@
     },
   "export_generators": [],
   "payment_gateways" : [],
-  "events" : {
-    "pricing" : []
-  },
   "taxation" :{
     "tax_type": "vat",
      "CSI": {

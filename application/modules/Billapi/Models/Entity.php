@@ -532,6 +532,11 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
+		if (isset($this->config['collection_subset_query'])) {
+			foreach ($this->config['collection_subset_query'] as $key => $value) {
+				$this->query[$key] = $value;
+			}
+		}
 
 		$this->verifyLastEntry();
 		$this->checkMinimumDate($this->before, 'from');
