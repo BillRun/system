@@ -111,9 +111,18 @@ class Models_Action_Get extends Models_Action {
 			if ((empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) && isset($record['from'], $record['to'])) {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
 			}
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record, $this->getDateFields());
 		}
 		return $records;
+	}
+	
+	/**
+	 * gets the date fields names to be converted before retured
+	 * 
+	 * @return array
+	 */
+	protected function getDateFields() {
+		return array('from', 'to');
 	}
 	
 	/**

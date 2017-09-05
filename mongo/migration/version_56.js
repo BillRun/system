@@ -602,6 +602,11 @@ if (lastConfig.events && !lastConfig.events.settings) {
 }
 db.config.insert(lastConfig);
 
+// BRCD-1013: add auto renew collection
+db.createCollection('autorenew');
+db.autorenew.ensureIndex({ 'from': 1, 'to': 1, 'next_renew': 1}, { unique: false , sparse: true, background: true });
+db.autorenew.ensureIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, background: true });
+
 // BRCD-984 - Change received_time field to date instead of a string in log collection
 db.log.find().forEach(function (logItem) {
 	var oldDate = logItem.received_time;

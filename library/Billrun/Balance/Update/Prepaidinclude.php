@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_Balance_Abstract {
+class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstract {
 
 	/**
 	 * the update method type
@@ -127,7 +127,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 */
 	protected function getChargingLimit() {
 		$query = Billrun_Utils_Mongo::getDateBoundQuery();
-		$query['plan'] = $this->subscriber['plan'];
+		$query['plan'] = Billrun_Util::getIn($this->subscriber, ['plan'], '');
 		$plan = Billrun_Factory::db()->plansCollection()->query($query)->cursor()->current();
 
 		if (isset($plan['pp_threshold'][$this->data['external_id']])) {

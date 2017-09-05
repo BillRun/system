@@ -1,56 +1,41 @@
 <?php
 
 /**
- * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
- * @license         GNU Affero General Public License Version 4; see LICENSE.txt
+ * @package	Billing
+ * @copyright	Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
+ * @license	GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
 /**
- * Factory to create the record types.
+ * helper to get auto renew for a single record
  *
  */
-class Billrun_Autorenew_Manager extends Billrun_ActionManagers_Manager {
-
-	/** This function receives input and returns a subscriber action instance after
-	 * it already parsed the input into itself.
-	 * @return Billrun_Autorenew_Record
-	 */
-	public function getAction($options) {
-		$this->options = $options;
-		return parent::getAction();
-	}
-
+class Billrun_Autorenew_Manager {
+	
 	/**
-	 * Get the string that is the stump for the action class name to be constructed.
-	 * @return string - String for action name.
+	 * get Auto renew handler instance
+	 * 
+	 * @param array $params the parameters of the action
+	 * 
+	 * @return AutoRenew handler
 	 */
-	protected function getActionStump() {
-		return __CLASS__;
-	}
-
-	/**
-	 * Allocate the new action to return.
-	 * @param string $actionClass - Name of the action to allocate.
-	 * @return Billrun_ActionManagers_Action - Action to return.
-	 */
-	protected function allocateAction($actionClass) {
-		return new $actionClass($this->options);
-	}
-
-	/**
-	 * Get the action name from the input.
-	 */
-	protected function getActionName() {
-		if (!isset($this->options['interval'])) {
-			Billrun_Factory::log("getAction received invalid input", Zend_Log::INFO);
-			return null;
+	public static function getInstance($params) {
+		$handlerClassName = self::getAutoRenewHandlerClassName($params);
+		if (!@class_exists($handlerClassName, true)) {
+			$handlerClassName = 'Billrun_Autorenew_Month';
 		}
 
-		$interval = $this->options['interval'];
-
-		// Make sure that the type name are lower case with capital first.
-		return ucfirst(strtolower($interval));
+		return (new $handlerClassName($params));
 	}
 
+	/**
+	 * Assistance function to get record class name
+	 * 
+	 * @param array $record
+	 * @return string the name of the class
+	 */
+	protected static function getAutoRenewHandlerClassName($record) {
+		$classNamePref = 'Billrun_Autorenew_';
+		return $classNamePref . ucfirst($record['interval']);
+	}
 }
