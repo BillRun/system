@@ -105,6 +105,20 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'm5', 'aid' => 8884, 'sid' => 806, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 25, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
 		array('stamp' => 'm6', 'aid' => 8884, 'sid' => 807, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 10, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
 		array('stamp' => 'm7', 'aid' => 8885, 'sid' => 809, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 100, 'services' => ["POOLED-SERVICE3"]),
+		// case N - new structure support multiple usage types
+		// N1
+		array('stamp' => 'n1', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 125, 'services' => ["SERVICE-N1"]),
+		// N2 - depend on N1
+		array('stamp' => 'n2', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 275, 'services' => ["SERVICE-N1"]),
+		// N3
+		array('stamp' => 'n3', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-N3"]),
+		// N4 - depend on N1
+		array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services' => ["SERVICE-N3"]),
+
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -186,6 +200,11 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 25, 'over_group' => 0, 'aprice' => 0), //3 subscriber3 with pooled plan
 		array('in_group' => 5, 'over_group' => 5, 'aprice' => 0.5), //3 subscriber3 with pooled plan
 		array('in_group' => 60, 'over_group' => 40, 'aprice' => 4), //1 subscriber with one service of cost
+		//case N expected
+		array('in_group' => 125, 'over_group' => 0, 'aprice' => 0), //N1
+		array('in_group' => 175, 'over_group' => 100, 'aprice' => 10), //N2
+		array('in_group' => 240, 'over_group' => 0, 'aprice' => 0), //N3
+		array('in_group' => 60, 'over_group' => 415, 'aprice' => 7), //N4	
 	];
 
 	public function __construct($label = false) {

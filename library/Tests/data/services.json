@@ -189,7 +189,63 @@
 				}
 			}
 		}
+	},
+	{
+		"name" : "SERVICE-N1", "description" : "SERVICE-N1", "price" : 15, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include": {
+			"groups": {
+			  "G2": {
+				"usage_types": {
+				  "call": {
+					"unit": "seconds"
+				  },
+				  "incoming_call": {
+					"unit": "seconds"
+				  },
+				  "outgoing_call": {
+					"unit": "seconds"
+				  }
+				},
+				"value": 300,
+				"account_shared": false,
+				"account_pool": false,
+				"rates": [
+				  "RATE-N1",
+				  "INCOMING_1"
+				]
+			  }
+			}
+		  }
+	},
+
+	{
+		"name" : "SERVICE-N3", "description" : "SERVICE-N3", "price" : 15, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"include": {
+			"groups": {
+			  "G3": {
+				"usage_types": {
+				  "call": {
+					"unit": "minutes"
+				  },
+				  "incoming_call": {
+					"unit": "minutes"
+				  },
+				  "outgoing_call": {
+					"unit": "minutes"
+				  }
+				},
+				"value": 5,
+				"account_shared": false,
+				"account_pool": false,
+				"rates": [
+				  "RATE-N3",
+				  "INCOMING_1"
+				]
+			  }
+			}
+		  }
 	}
+
         ]
 		
 		
