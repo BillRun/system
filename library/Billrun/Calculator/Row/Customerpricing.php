@@ -701,7 +701,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usagev = $this->getRealUsagev($lineToRebalance);
 		$unit = isset($this->row['usagev_unit']) ? $this->row['usagev_unit'] : 'counter';
 		$realUsagev = Billrun_Utils_Units::convertVolumeUnits($usagev, $this->row['usaget'], $unit, true);
-		$chargedUsagev = $this->getChargedUsagev($this->row, $lineToRebalance);
+		$chargedUsagev = $this->getChargedUsagev($lineToRebalance);
 		if ($chargedUsagev !== null) {
 			$rebalanceUsagev = $realUsagev - $chargedUsagev;
 			if (($rebalanceUsagev) < 0) {
@@ -748,7 +748,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function handleAccumulativeUsagev(&$usagev, $lineToRebalance, $config) {
 		if (Billrun_Util::getIn($config, array('realtime', 'used_usagev_accumulative'), false)) {
 			$this->row['accumulative_usagev'] = $usagev;
-			$usagev -= Billrun_Util::getIn($lineToRebalance, 'accumulative_usagev', 0);
+			$prevAccumulativeUsagev = Billrun_Util::getIn($lineToRebalance, 'accumulative_usagev', 0);
+			$usagev -= $prevAccumulativeUsagev;
+			$this->row['usagev_delta'] = $this->row['accumulative_usagev'] - $prevAccumulativeUsagev;
 		}
 	}
 
