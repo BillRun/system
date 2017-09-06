@@ -179,7 +179,13 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 		$lastFile = Billrun_Factory::db()->logCollection()->query(array('source' => $type,'type' => $type))->cursor()->sort(array('seq' => -1))->limit(1)->current();
 		$seq = empty($lastFile['seq']) ? 0 : $lastFile['seq'];
 
-		return ( ++$seq) % 10000;
+		$retSeq = ( ++$seq ) % Billrun_Factory::config()->getConfigValue(static::$type . '.generator.seq_modulator', 10000 );
+		if($retSeq == 0) {
+			Billrun_Factory::log("Count for {static::$type} has reached his limit`s Resetting the counter.");
+			$retSeq++;
+		}
+		
+		return $retSeq;
 	}
 
 	/**
@@ -461,6 +467,10 @@ abstract class Billrun_Generator_ConfigurableCDRAggregationCsv extends Billrun_G
 	
 	protected function getGenerationTime($value, $parameters, $line) {
 		return $this->translateUrt(new MongoDate($this->startTime), $parameters);
+	}
+	protected function generateFilteredArrayStamp($array,$filter=array()) {
+		$filteredArray = array_intersect_key($array, array_flip($filter));
+		return Billrun_Util::generateArrayStamp($filteredArray);
 	}
 
 }

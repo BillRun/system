@@ -20,9 +20,11 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	
 	protected $balances = array();
 	protected $plans = array();
+	protected $gracePeriod = 3600;
 
 	public function __construct($options) {
 		parent::__construct($options);
+		$this->gracePeriod=  Billrun_Factory::config()->getConfigValue(static::$type.'.generator.to_grace_period', 3600);
 	}
 	
 	public function getNextFileData() {
@@ -42,7 +44,7 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 		
 		do {
 			$this->data =$this->getNextDataChunk($subscribersLimit * $page, $subscribersLimit);
-			
+			$this->data = $this->unifyByBalanceId($this->data);
 			$hasData = $this->writeDataLines($this->data);
 			$page++;
 		} while ($hasData);
@@ -50,10 +52,13 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function getReportCandiateMatchQuery() {
+		
 		$retQuery = array(	'from' => array('$lt' => new MongoDate($this->startTime)),
-							'to' => array('$gt' => isset($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp : new MongoDate($this->startTime) ),
-							'sid' => array('$in' => array_keys($this->transactions)),
+							'to' => array('$gt' => new MongoDate( (!empty($this->releventTransactionTimeStamp) ? $this->releventTransactionTimeStamp->sec : $this->startTime) - $this->gracePeriod) ),
 				);
+		if(!$this->isInitialRun()) {
+			$retQuery['sid']= array('$in' => array_keys($this->transactions));
+		}
 		return $retQuery;
 	}
 
@@ -62,44 +67,81 @@ class Generator_Pssubsbalances extends Generator_Prepaidsubscribers {
 	}
 
 	protected function isLineEligible($line) {
-		return isset($this->transactions[$line['subscriber_no']][(string)$line['balance_ref']]);
+		return $this->isInitialRun() || isset($this->transactions[$line['subscriber_no']][(string)$line['balance_ref']]);
 	}
 	
-	protected function loadTransactions($skip,$limit) {
+	protected function loadTransactions($skip,$limit,$sids= array()) {
 		Billrun_Factory::log("loading transactions...");
         unset($this->transactions);
+		$sidsQuery = empty($sids) ? array('$gt'=> 0) :array('$in'=> $sids) ;
 		$this->transactions = array();
-		$aggregationPipeline = array(
-                            array('$match' => array(
-													'sid' => array('$gt'=> 0),
-													'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
-													'balance_ref' => array('$type'=> 3),
-													'balance_after' => array('$exists'=> 1),
-													)),
-			                array('$sort' => array('urt'=>1, 'sid'=>1 )),
-							array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 ,'balance_after' => 1)),
-							array('$group'=>array(
-									'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
-									'sid'=> array('$first'=>'$sid'),
-									'balance_ref'=> array('$first'=>'$balance_ref'),
-									'urt' =>array('$max'=>'$urt'),
-									'balance' =>  array('$last'=> '$balance_after')
-								)),
-							array('$skip' => $skip),
-							array('$limit' => $limit)
-						);
-		$this->logQueries($aggregationPipeline);
-		$transactions = $this->db->archiveCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
-		foreach ($transactions as $transaction) {
-			$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = array( 'urt'=>$transaction['urt'], 'balance' => $transaction['balance']);
+		
+		if(empty($this->transactionsCursor) || !Billrun_Factory::config()->getConfigValue(static::$type.'.generator.presist_transactions_cursor',1)){
+			$aggregationPipeline = array(
+								array('$match' => array(
+														'sid' => $sidsQuery,
+														'urt'=> array('$gt'=>$this->releventTransactionTimeStamp , '$lte' => new MongoDate($this->startTime) ),
+														'balance_ref' => array('$type'=> 3),
+														'balance_after' => array('$exists'=> 1),
+														)),
+								array('$sort' => array('sid'=>1,'urt'=>1)),
+								array('$project' => array('sid'=>1,'urt'=>1,'balance_ref' =>1 ,'balance_after' => 1)),
+								array('$group'=>array(
+										'_id'=>array('s'=>'$sid','id'=> '$balance_ref'), 
+										'sid'=> array('$first'=>'$sid'),
+										'balance_ref'=> array('$first'=>'$balance_ref'),
+										'urt' =>array('$max'=>'$urt'),
+										'balance' =>  array('$last'=> '$balance_after')
+									)),
+							);
+			if(!Billrun_Factory::config()->getConfigValue(static::$type.'.generator.presist_transactions_cursor',1)) {
+				$aggregationPipeline[] = array('$skip' => $skip);
+				$aggregationPipeline[]=	array('$limit' => $limit);
+			}
+			$this->logQueries($aggregationPipeline);
+			$this->transactionsCursor = $this->db->archiveCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
+			$this->transactionsCursor->rewind();
+			//Load sms transactions from lines as they are not inserted in the archive.	
+			$aggregationPipeline[0]['$match']['type'] = 'smsrt';	
+			$this->smsTransactionsCursor = $this->db->linesCollection()->aggregateWithOptions($aggregationPipeline, array('allowDiskUse' => true));
+			Billrun_Factory::log("Transactions query done.");
 		}
+		$iterationLimit = $limit;
+		while ($transaction = $this->transactionsCursor->current()) {
+			$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = array( 'urt'=>$transaction['urt'], 'balance' => $transaction['balance']);
+			$this->transactionsCursor->next();
+			if(!--$iterationLimit ) { break; }
+			
+		}
+		
+		$iterationLimit = $limit;
+		while ($transaction = $this->smsTransactionsCursor->current()) {
+			if(empty($this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']]) || 
+				$transaction['urt'] > $this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']]['urt']) {
+				$this->transactions[$transaction['sid']][(string)$transaction['balance_ref']['$id']] = array( 'urt'=>$transaction['urt'], 'balance' => $transaction['balance']);
+			} 				
+			$this->smsTransactionsCursor->next();
+			if(!--$iterationLimit ) { break; }
+		}
+		
 		Billrun_Factory::log("Done loading transactions.");
     }
-	
-	protected function isInitialRun() {
-		return isset($this->releventTransactionTimeStamp) && !$this->releventTransactionTimeStamp->sec && empty($this->transactions);
-	}
 
+	protected function unifyByBalanceId($nonUniqueData) {
+		$retData = array();
+		foreach($nonUniqueData as $cdr) {
+			$cdr = ($cdr instanceof Mongodloid_Entity) ? $cdr->getRawData() : $cdr;
+			$stamp = $this->generateFilteredArrayStamp($cdr  ,array('ban','subscriber_no','balance_id','balance_expiration_date'));
+			if(!empty($retData[$stamp])) {
+				$retData[$stamp]['balance'] += $cdr['balance'];
+				$retData[$stamp]['update_date'] = max($retData[$stamp]['update_date'],$cdr['update_date']);
+			} else {
+				$retData[$stamp] = $cdr;
+			}
+		}
+		return array_values($retData);
+	}
+	
 	// ------------------------------------ Helpers -----------------------------------------
 	// 
 
