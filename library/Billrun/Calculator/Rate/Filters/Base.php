@@ -43,7 +43,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (isset($row[$field])) {
 			return $row[$field];
 		}
-		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." details: " . print_R($row, 1), Zend_Log::NOTICE);
+		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." stamp: " . $row['stamp'], Zend_Log::NOTICE);
 		return '';
 	}
 	
