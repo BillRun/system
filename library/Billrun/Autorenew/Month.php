@@ -1,9 +1,9 @@
 <?php
 
 /**
- * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
- * @license         GNU Affero General Public License Version 4; see LICENSE.txt
+ * @package	Billing
+ * @copyright	Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
+ * @license	GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
 /**
@@ -17,7 +17,7 @@ class Billrun_Autorenew_Month extends Billrun_Autorenew_Record {
 	 * @return Next update date.
 	 */
 	protected function getNextRenewDate() {
-		return Billrun_Utils_Autorenew::getNextRenewDate($this->data['from']->sec);
+		return Billrun_Utils_Autorenew::getNextRenewDate($this->record['from']->sec);
 	}
 
 }
