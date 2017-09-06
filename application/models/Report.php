@@ -274,10 +274,11 @@ class ReportModel {
 		}
 		if($condition['field'] === 'logfile_status') {
 			switch ($value) {
-				case 'received':
-				case 'not_received':
+				case 'processed':
+				case 'not_processed':
 					return 'exists';
-				case 'stuck':
+				case 'crashed':
+				case 'processing':
 					return 'and';
 				default:
 					return $op;
@@ -325,14 +326,20 @@ class ReportModel {
 		}
 		if($condition['field'] === 'logfile_status') {
 			switch ($value) {
-				case 'received':
+				case 'processed':
 					return true;
-				case 'not_received':
+				case 'not_processed':
 					return false;
-				case 'stuck':
+				case 'crashed':
 					return array(
 						array('start_process_time' =>array('$exists' => true)),
 						array('start_process_time' => array('$lt' => new MongoDate(strtotime("-6 hours")))),
+						array('process_time' => array('$exists' => false)),
+					);
+				case 'processing':
+					return array(
+						array('start_process_time' =>array('$exists' => true)),
+						array('start_process_time' => array('$gt' => new MongoDate(strtotime("-6 hours")))),
 						array('process_time' => array('$exists' => false)),
 					);
 				default:
@@ -347,10 +354,11 @@ class ReportModel {
 		switch ($field) {
 			case 'logfile_status':
 				switch ($condition['value']) {
-					case 'stuck':
+					case 'crashed':
+					case 'processing':
 						return '';
-					case 'received':
-					case 'not_received':
+					case 'processed':
+					case 'not_processed':
 						return 'process_time';
 					default:
 						return $field;
