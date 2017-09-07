@@ -267,7 +267,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'$or' => array(
 				array('balance.totals.' . $usageType . '.exhausted' => array('$exists' => false)),
 				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
-				
 			),
 		);
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
@@ -438,7 +437,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $update;
 	}
-	
+
 	/**
 	 * Returns usage type with considiration to joined usage types.
 	 * 
