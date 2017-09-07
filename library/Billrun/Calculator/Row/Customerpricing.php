@@ -450,7 +450,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 		if (isset($this->row['prepriced']) && $this->row['prepriced']) {
 			$prepriced = Billrun_Util::getIn($this->row, array($this->pricingField), false);
-			if ($prepriced  === false) {
+			if ($prepriced === false) {
 				return false;
 			}
 			$charges = (float) $prepriced;
@@ -746,11 +746,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		foreach ($usedUsagevFields as $usedUsagevField) {
 			$usagev += isset($this->row['uf'][$usedUsagevField]) ? $this->row['uf'][$usedUsagevField] : 0;
 		}
-		
+
 		$this->handleAccumulativeUsagev($usagev, $lineToRebalance, $config);
 		return $usagev;
 	}
-	
+
 	protected function handleAccumulativeUsagev(&$usagev, $lineToRebalance, $config) {
 		if (Billrun_Util::getIn($config, array('realtime', 'used_usagev_accumulative'), false)) {
 			$this->row['accumulative_usagev'] = $usagev;
@@ -855,7 +855,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @return array
 	 */
 	protected function getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget) {
-		$rebalancePricingData  = $this->getLinePricingData($realUsagev, $usaget, $rate,  $this->plan);
+		$rebalancePricingData = $this->getLinePricingData($realUsagev, $usaget, $rate, $this->plan);
 		$rebalanceData = array(
 			'usagev' => $rebalanceUsagev,
 			'aprice' => $lineToRebalance['aprice'] - $rebalancePricingData['aprice'],
@@ -896,7 +896,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 		return $ret;
 	}
-	
+
 	public function triggerEvents($balanceBefore) {
 		
 	}
