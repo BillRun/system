@@ -87,20 +87,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $row;
 	
 	protected $plan;
-	
-	/**
-	 * usage types to join together.
-	 * 
-	 * @var string
-	 */
-	protected $joinedUsageTypes = null;
-	
-	/**
-	 * usage type name for multiple usage types in one package.
-	 * 
-	 * @var string
-	 */
-	protected $joinedField = null;
 
 	protected $coefficient;
 	
