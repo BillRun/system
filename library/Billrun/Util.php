@@ -1602,6 +1602,15 @@ class Billrun_Util {
 		$current = $value;
 	}
 	
+	/**
+	 * Gets the value from an array.
+	 * Also supports deep fetch (for nested arrays)
+	 * 
+	 * @param array $arr
+	 * @param array/string $keys  - array of keys, or string of keys separated by "."
+	 * @param any $defaultValue - returns in case one the fields is not found
+	 * @return the value in the array, default value if one of the keys is not found
+	 */
 	public static function getIn($arr, $keys, $defaultValue = null) {
 		if (!$arr) {
 			return $defaultValue;

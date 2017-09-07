@@ -91,10 +91,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		$aprice = $this->getLineAprice($row['uf']);
-		if ($aprice !== false) {
+		if ($this->isLinePrepriced()) {
 			$row['prepriced'] = true;
-			$row['aprice'] = $aprice;
+			$row['aprice'] = $this->getLineAprice($row['uf']);
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
@@ -191,11 +190,23 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		return $volume;
 	}
+	
+	/**
+	 * Checks if the line is prepriced (aprice was supposed to be received in the CDR)
+	 * 
+	 * @return boolean
+	 */
+	protected function isLinePrepriced() {
+		return !empty($this->apriceField);
+	}
 
+	/**
+	 * Get the prepriced value received in the CDR
+	 * 
+	 * @param type $userFields
+	 * @return aprice if the field found, false otherwise
+	 */
 	protected function getLineAprice($userFields) {
-		if (empty($this->apriceField)) {
-			return false;
-		}
 		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
 			return $userFields[$this->apriceField];
 		}

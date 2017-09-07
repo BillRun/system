@@ -47,10 +47,9 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		}
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		$aprice = $this->getLineAprice($row['uf']);
-		if ($aprice !== false) {
+		if ($this->isLinePrepriced()) {
 			$row['prepriced'] = true;
-			$row['aprice'] = $aprice;
+			$row['aprice'] = $this->getLineAprice($row['uf']);
 		}
 		$row['process_time'] = new MongoDate();
 		$datetime = $this->getRowDateTime($row);
