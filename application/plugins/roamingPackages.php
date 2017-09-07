@@ -177,17 +177,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
 					$packageLimits = $this->getPackageJoinedValues($exhaustedBalance['service_name'], $this->plan);
-					if (!empty($packageLimits)) {
-						$joinedField = $packageLimits['joined_field'];
-						$joinedUsageTypes = $packageLimits['joined_usage_types'];
-					}
 					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(
 						'service_name' => $exhaustedBalance['service_name'],
 						'package_id' =>  $exhaustedBalance['service_id'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'added_usage' => $usageLeft,
-						'added_joined_usage' => (!empty($joinedField) && in_array($row['usaget'], $joinedUsageTypes)) ? array('joined_field' => $joinedField, 'usage' => $this->extraUsage) : null,
+						'added_joined_usage' => (!empty($packageLimits['joined_field']) && in_array($row['usaget'], $packageLimits['joined_usage_types'])) ? array('joined_field' => $packageLimits['joined_field'], 'usage' => $this->extraUsage) : null,
 						'usage_before' => array(
 							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
 							'incoming_call' => $exhaustedBalance['balance']['totals']['incoming_call']['usagev'], 
@@ -200,10 +196,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;	
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
-					if (!empty($joinedField) && in_array($row['usaget'], $joinedUsageTypes)) {
-						$exhaustedUpdate['$inc']['balance.totals.' . $joinedField . '.usagev'] = $exhausted['usage_left'];
-						$exhaustedUpdate['$inc']['balance.totals.' . $joinedField . '.count'] = 1;
-						$exhaustedUpdate['$set']['balance.totals.' . $joinedField . '.exhausted'] = true;
+					if (!empty($packageLimits['joined_field']) && in_array($row['usaget'], $packageLimits['joined_usage_types'])) {
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.usagev'] = $exhausted['usage_left'];
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.count'] = 1;
+						$exhaustedUpdate['$set']['balance.totals.' . $packageLimits['joined_field'] . '.exhausted'] = true;
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
