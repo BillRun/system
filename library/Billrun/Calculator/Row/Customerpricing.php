@@ -448,7 +448,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		}
 
-		if (empty($balanceType) || $balanceType != 'cost') {
+		if (isset($this->row['prepriced']) && $this->row['prepriced'] && isset($this->row[$this->pricingField])) {
+			$charges = (float) $this->row[$this->pricingField];
+		}
+		else if (empty($balanceType) || $balanceType != 'cost') {
 			$charges = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $valueToCharge, $plan->getName(), 0, $this->row['urt']->sec); // TODO: handle call offset (set 0 for now)
 		} else {
 			$charges = $valueToCharge;

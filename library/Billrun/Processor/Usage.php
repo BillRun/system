@@ -15,6 +15,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $usagetMapping = null;
 	protected $usagevUnit = 'counter';
 	protected $usagevFields = array();
+	protected $apriceField = null;
 	protected $dateField = null;
 	protected $dateFormat = null;
 	protected $timeField = null;
@@ -45,6 +46,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
+		}
+		if (!empty($options['processor']['aprice_field'])){
+			$this->apriceField = $options['processor']['aprice_field'];
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -87,6 +91,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
+		$aprice = $this->getLineAprice($row['uf']);
+		if ($aprice !== false) {
+			$row['prepriced'] = true;
+			$row['aprice'] = $aprice;
+		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
@@ -181,6 +190,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			}
 		}
 		return $volume;
+	}
+
+	protected function getLineAprice($userFields) {
+		if (empty($this->apriceField)) {
+			return false;
+		}
+		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
+			return $userFields[$this->apriceField];
+		}
+		
+		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		return false;
 	}
 
 }
