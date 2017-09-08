@@ -414,5 +414,5 @@ class Billrun_Service {
 		}
 		return $results['s'];
 	}
-
+	
 }
