@@ -521,7 +521,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
-				$serviceSettings = $service->getGroupSettings($serviceGroup);
+				$serviceSettings = array(
+					'service_name' => $service->getName(),
+					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
+				);
 				// pre-check if need to switch to other balance with the new service
 				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
