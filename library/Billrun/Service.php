@@ -105,7 +105,7 @@ class Billrun_Service {
 		$groups = array();
 		if (is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
-				if ((array_key_exists($usageType, $groupIncludes) || (array_key_exists('cost', $groupIncludes))) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+				if ((array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType])) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;
 				}
 			}
@@ -201,6 +201,7 @@ class Billrun_Service {
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
 			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
+				&& !isset($this->data['include']['groups'][$staticGroup]['usage_types'][$usageType]) 
 				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
 				return array('usagev' => 0);
 			}
@@ -217,7 +218,8 @@ class Billrun_Service {
 			$groupSelected = $staticGroup;
 		}
 		
-		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+			&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
 			}
@@ -281,7 +283,7 @@ class Billrun_Service {
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+			if ((!isset($this->data['include']['groups'][$groupSelected][$usageType]) || !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType]))
 				&& !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				continue;
 			}
@@ -338,13 +340,36 @@ class Billrun_Service {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
-		if (!isset($this->data['include']['groups'][$group][$usageType])) {
+		$groupValue = $this->getGroupValue($group, $usageType);
+		if ($groupValue === FALSE) {
 			return 0;
 		}
 		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
-			return $this->data['include']['groups'][$group][$usageType] * $pool;
+			return $groupValue * $pool;
 		}
-		return $this->data['include']['groups'][$group][$usageType];
+		return $groupValue;
+	}
+	
+	/**
+	 * method to get group includes value
+	 * 
+	 * @param string $group the group name
+	 * @param string $usaget the usage type related
+	 * 
+	 * @return mixed double if found, else false
+	 * 
+	 * @since 5.7
+	 */
+	protected function getGroupValue($group, $usaget) {
+		if (!isset($this->data['include']['groups'][$group][$usaget]) && !isset($this->data['include']['groups'][$group]['usage_types'][$usaget])) {
+			return false;
+		}
+		if (!isset($this->data['include']['groups'][$group]['value'])) {
+			return $this->data['include']['groups'][$group][$usaget];
+		}
+		$value = $this->data['include']['groups'][$group]['value'];
+		$unit = $this->data['include']['groups'][$group]['usage_types'][$usaget]['unit'];
+		return Billrun_Utils_Units::convertVolumeUnits($value, $usaget, $unit, true);
 	}
 	
 	/**
