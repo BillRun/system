@@ -605,6 +605,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 			$queueRow = $dataRow;
 			$queueRow['calc_name'] = false;
 			$queueRow['calc_time'] = false;
+			$queueRow['in_queue_since'] = new MongoDate();
 			$this->setQueueRow($queueRow);
 		}
 	}
