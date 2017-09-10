@@ -118,7 +118,18 @@ class Tests_Updaterowt extends UnitTestCase {
 		// N4 - depend on N1
 		array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
 			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services' => ["SERVICE-N3"]),
-
+		// O1
+		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services' => ["SERVICE-O1"],
+			'urt' => '2017-09-01 09:00:00+03:00'),
+		// O2
+		array('stamp' => 'o2', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1',
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services' => ["SERVICE-O1"],
+			'urt' => '2017-09-15 09:00:00+03:00'),
+		// O3
+		array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O2',
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services' => ["SERVICE-O1"],
+			'urt' => '2017-09-14 09:00:00+03:00'),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -205,6 +216,10 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 175, 'over_group' => 100, 'aprice' => 10), //N2
 		array('in_group' => 240, 'over_group' => 0, 'aprice' => 0), //N3
 		array('in_group' => 60, 'over_group' => 415, 'aprice' => 7), //N4	
+		//case O expected
+		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //O1
+		array('in_group' => 0, 'over_group' => 62, 'aprice' => 0.62), //O2
+		array('in_group' => 25, 'over_group' => 20, 'aprice' => 0.02), //O3
 	];
 
 	public function __construct($label = false) {

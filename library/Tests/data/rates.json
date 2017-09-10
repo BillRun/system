@@ -186,6 +186,40 @@
                 }
             }
         }
+      },
+	  {
+        "key" : "RATE-O1","code" : "RATE-O1","description" : "RATE-O1","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : 0.01
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-O2","code" : "RATE-O2","description" : "RATE-O2","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 10,
+                            "price" : 0.01
+                        }
+                    ]
+                }
+            }
+        }
       }
 
 	  

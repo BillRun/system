@@ -217,7 +217,6 @@
 			}
 		  }
 	},
-
 	{
 		"name" : "SERVICE-N3", "description" : "SERVICE-N3", "price" : 15, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
 		"include": {
@@ -239,6 +238,35 @@
 				"account_pool": false,
 				"rates": [
 				  "RATE-N3",
+				  "INCOMING_1"
+				]
+			  }
+			}
+		  }
+	},
+	{
+		"name" : "SERVICE-O1", "description" : "SERVICE-O1", "price" : 15, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"balance_period": "tomorrow +2 weeks",
+		"include": {
+			"groups": {
+			  "O10": {
+				"usage_types": {
+				  "call": {
+					"unit": "seconds"
+				  },
+				  "incoming_call": {
+					"unit": "seconds"
+				  },
+				  "outgoing_call": {
+					"unit": "secondss"
+				  }
+				},
+				"value": 60,
+				"account_shared": false,
+				"account_pool": false,
+				"rates": [
+				  "RATE-O1",
+				  "RATE-O2",
 				  "INCOMING_1"
 				]
 			  }
