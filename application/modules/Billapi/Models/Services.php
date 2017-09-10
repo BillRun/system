@@ -18,21 +18,14 @@ class Models_Services extends Models_Entity {
 
 	protected function init($params) {
 		parent::init($params);
-		$actionsExcludeValidation = array('move', 'close');
-		if (!in_array($this->action, $actionsExcludeValidation)) {
-			$this->validatePrice();
-		}
+		$this->validatePrice();
 	}
 	
 	/**
 	 * Verfiy services has all price parameters required.
 	 */
 	protected function validatePrice() {
-		$priceIntervals = $this->update['price'];
-		if (empty($priceIntervals)) {
-			throw new Billrun_Exceptions_Api($this->errorCode, array(), 'Service must have price value');
-		}
-		
+		$priceIntervals = Billrun_Util::getIn($this->update, 'price', []);
 		foreach ($priceIntervals as $price) {
 			if (!isset($price['from']) || $price['from'] === '' || 
 				!isset($price['to']) || $price['to'] === '') {

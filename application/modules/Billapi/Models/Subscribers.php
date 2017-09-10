@@ -75,7 +75,8 @@ class Models_Subscribers extends Models_Entity {
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
 				//to can't be more then the updated 'to' of the subscription
-				$service['to'] = !empty($service['to']) && $service['to'] <= $this->update['to'] ? $service['to'] : $this->update['to'];
+				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
+				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
 			}
 		}
 	}
