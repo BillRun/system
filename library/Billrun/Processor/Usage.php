@@ -25,6 +25,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['default_usaget'])) {
 			$this->defaultUsaget = $options['processor']['default_usaget'];
 		}
+		if (!empty($options['processor']['default_unit'])) {
+			$this->usagevUnit = $options['processor']['default_unit'];
+		}
 		if (!empty($options['processor']['usaget_mapping'])) {
 			$this->usagetMapping = $options['processor']['usaget_mapping'];
 		}
