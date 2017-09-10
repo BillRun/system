@@ -423,7 +423,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				} else if ($valueToCharge > 0) {
 					$ret['out_group'] = $ret['out_plan'] = $valueToCharge;
 				}
-				$services = $this->loadSubscriberServices((isset($this->row['services']) ? $this->row['services'] : array()), $this->row['urt']->sec);
+				$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
 				if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
 					$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
 					$balanceType = key($value);
@@ -435,7 +435,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 		} else {
 			$balanceType = 'usagev';
-			$services = $this->loadSubscriberServices((isset($this->row['services']) ? $this->row['services'] : array()), $this->row['urt']->sec);
+			$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
 			if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
 				$ret['arategroups'] = array();
 				$groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $volume), $ret['arategroups']);
@@ -471,10 +471,13 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$ret = array();
 		foreach ($services as $service) {
 			$serviceSettings = array(
-				'name' => $service,
+				'name' => $service['name'],
 				'time' => $time
 			);
-			$ret[] = new Billrun_Service($serviceSettings);
+			$serviceInstance = new Billrun_Service($serviceSettings);
+			if ($serviceInstance && !$serviceInstance->isExhausted($service['from'])) {
+				$ret[] = $serviceInstance;
+			}
 		}
 
 		return $ret; // array of service objects

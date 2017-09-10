@@ -1537,21 +1537,22 @@ class Billrun_Util {
 		$retData = array();
 		
 		foreach ($translations as $key => $trans) {
-			if (!isset($source[$key])) {
+			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
+			if (!isset($source[$sourceKey])) {
 				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
-			} else if(is_string($trans) && isset($source[$key])){
+			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
-				$retData[$trans] =  $source[$key];
+				$retData[$trans] =  $source[$sourceKey];
 			} else switch (@$trans['type']) {
 				//Handle funtion based transaltion
 				case 'function' :
 					if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
-						$retData[$key] = $instance->{$trans['translation']['function']}($source[$key],
+						$retData[$key] = $instance->{$trans['translation']['function']}($source[$sourceKey],
 																						Billrun_Util::getFieldVal($trans['translation']['values'], array()),
 																						$source,
 																						$userData);
 					} else if (function_exists($trans['translation']['function'])) {
-						$retData[$key] = call_user_func_array($trans['translation']['function'], array($source[$key],
+						$retData[$key] = call_user_func_array($trans['translation']['function'], array($source[$sourceKey],
 																									   $userData) );
 					} else {
 						Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
@@ -1561,10 +1562,10 @@ class Billrun_Util {
 				case 'regex' :
 					if (isset($trans['translation'][0]) && is_array($trans)) {
 						foreach ($trans['translation'] as $value) {
-							$retData[$key] = preg_replace(key($value), reset($value), $source[$key]);
+							$retData[$key] = preg_replace(key($value), reset($value), $source[$sourceKey]);
 						}
 					} else if(isset($trans['translation'])) {
-						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$key]);
+						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);
 					} else {
 						Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
 					}
