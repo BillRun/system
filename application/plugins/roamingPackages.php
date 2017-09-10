@@ -169,10 +169,6 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
 					$packageLimits = $this->getPackageJoinedValues($exhaustedBalance['service_name'], $this->plan);
-					if (!empty($packageLimits)) {
-						$joinedField = $packageLimits['joined_field'];
-						$joinedUsageTypes = $packageLimits['joined_usage_types'];
-					}
 					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(
 						'service_name' => $exhaustedBalance['service_name'],
@@ -190,10 +186,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;	
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
-					if (!empty($joinedField) && in_array($row['usaget'], $joinedUsageTypes)) {
-						$exhaustedUpdate['$inc']['balance.totals.' . $joinedField . '.usagev'] = $exhausted['usage_left'];
-						$exhaustedUpdate['$inc']['balance.totals.' . $joinedField . '.count'] = 1;
-						$exhaustedUpdate['$set']['balance.totals.' . $joinedField . '.exhausted'] = true;
+					if (!empty($packageLimits['joined_field']) && in_array($row['usaget'], $packageLimits['joined_usage_types'])) {
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.usagev'] = $exhausted['usage_left'];
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.count'] = 1;
+						$exhaustedUpdate['$set']['balance.totals.' . $packageLimits['joined_field'] . '.exhausted'] = true;
 
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
@@ -272,10 +268,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 		}
 		foreach ($roamingBalances as $balance) {
-			$subRaw = $balance->getRawData();
-			$stamp = strval($this->row['stamp']);
 			$balancePackage = $balance['service_name'];
 			$usageType = $this->getTransformedUsageType($balancePackage, $plan, $this->row['usaget']);
+			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
+				continue;
+			}
+			$subRaw = $balance->getRawData();
+			$stamp = strval($this->row['stamp']);
 			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;
 			$UsageIncluded += (int) $plan->get('include.groups.' . $balancePackage)[$usageType];
 			if (isset($balance['balance']['totals'][$usageType])) {
