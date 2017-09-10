@@ -118,11 +118,12 @@ class Tests_Updaterowt extends UnitTestCase {
 		// N4 - depend on N1
 		array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
 			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services' => ["SERVICE-N3"]),
+		// case O - custom period balance support
 		// O1
 		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
 			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services' => ["SERVICE-O1"],
 			'urt' => '2017-09-01 09:00:00+03:00'),
-		// O2
+//		// O2
 		array('stamp' => 'o2', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1',
 			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services' => ["SERVICE-O1"],
 			'urt' => '2017-09-15 09:00:00+03:00'),
@@ -130,6 +131,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O2',
 			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services' => ["SERVICE-O1"],
 			'urt' => '2017-09-14 09:00:00+03:00'),
+
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -141,7 +143,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 180, 'aprice' => 18),
 		//case G expected
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
+		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.1),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
 //		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.1),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
@@ -156,7 +158,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 12, 'over_group' => 0, 'aprice' => 0), //gr from plan
 		array('in_group' => 26, 'over_group' => 24, 'aprice' => 12), //call from plan + over
 		array('in_group' => 38, 'over_group' => 42, 'aprice' => 6.4), //gr from plan + over
-		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.05), // over calls
+		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.1), // over calls
 		//case J expected
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //in groups
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 2.5), //move group and over
@@ -177,7 +179,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 180, 'aprice' => 18),
 		//case B expected
 		array('in_group' => 120, 'over_group' => 0, 'aprice' => 0),
-		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.05),
+		array('in_group' => 0, 'over_group' => 110.5, 'aprice' => 11.1),
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0),
 //		array('in_group' => 75, 'over_group' => 0.4, 'aprice' => 0.16),
 		array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8),
@@ -192,7 +194,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 12, 'over_group' => 0, 'aprice' => 0), //gr from plan
 		array('in_group' => 26, 'over_group' => 24, 'aprice' => 12), //call from plan + over
 		array('in_group' => 38, 'over_group' => 42, 'aprice' => 8.4), //gr from plan + over
-		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.05), // over calls
+		array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.1), // over calls
 		//case E expected
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //in groups
 		array('in_group' => 50, 'over_group' => 25, 'aprice' => 12.5), //move group and over
@@ -265,7 +267,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$epsilon = 0.000001;
 		$inGroupE = $this->expected[$key]['in_group'];
 		$overGroupE = $this->expected[$key]['over_group'];
-		$aprice = round(10 * ($this->expected[$key]['aprice'])) / 10;
+		$aprice = round(10 * ($this->expected[$key]['aprice']), (1/$epsilon)) / 10;
 		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#'  . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
 		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
