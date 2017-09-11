@@ -137,7 +137,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
 				$packageLimits = $this->getPackageJoinedValues($this->balanceToUpdate['service_name'], $this->plan);
-				if (!empty($packageLimits)) {
+				if (!empty($packageLimits['joined_field'])) {
 					$joinedField = $packageLimits['joined_field'];
 					$joinedUsageTypes = $packageLimits['joined_usage_types'];
 				}
@@ -327,7 +327,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName, $balancePriority) {
 		$planRef = $plan->createRef();
 		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
-		if (!empty($packageLimits)) {
+		if (!empty($packageLimits['joined_field'])) {
 			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority, $packageLimits['joined_field']);
 		} else {
 			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
