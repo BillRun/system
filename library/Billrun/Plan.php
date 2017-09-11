@@ -480,26 +480,29 @@ class Billrun_Plan extends Billrun_Service {
 		}
 		$activation  = strtotime(date('Y-m-d 00:00:00', $activationTime));
 		$dayInSec = Billrun_Utils_Time::daysToSeconds(1);
-		$addedDays = 0;
+		$addMonths = $addedDays = 0;
 		$baseMonth = date('m',$activation);
 		$baseYear = date('Y',$activation);
 		$i = $cycleFraction ;
+		//Accumulate the full months days that were passsed since the  activation date.
 		for(; $i >=1; $i-=1) {
 			$addMonths= ($baseMonth + floor($i));
 			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
 			$addedDays +=  $daysInMonth;
 		}
-		
+		//if there was a fraction of a month left split it to the  starting month fraction and ending month fraction (due to diffrent month lengths)
 		if( $i != 0 ) {	
 			//add the starting month  fraction
-			$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
-			$addMonths= ($baseMonth + floor($startFraction) );
-			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
-			$addedDays +=  $daysInMonth * (($startFraction));
+			$startFraction = 0;
+			if($addMonths) {
+				$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
+				$daysInMonth = date('t', $activation);
+				$addedDays +=  floor($daysInMonth * $startFraction);
+			} 
 			//based on the starting month fraction  retrive the  current month fraction
 			$endFraction = $i - $startFraction;
-			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
-			$addedDays +=  $daysInMonth * ( $endFraction );
+			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) - 1);
+			$addedDays += floor($daysInMonth * ( $endFraction ));
 		}
 		
 		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
@@ -508,7 +511,9 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
-		return static::calcFractionOfMonth($billrunKey, date(Billrun_Base::base_datetimeformat, $start_date), date(Billrun_Base::base_datetimeformat, $end_date) );
+		return static::calcFractionOfMonth(	$billrunKey, 
+											date(Billrun_Base::base_datetimeformat, $start_date), 
+											date(Billrun_Base::base_datetimeformat, $end_date) );
 	}
 	
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {

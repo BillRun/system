@@ -166,70 +166,76 @@ db.config.insert(lastConfig);
 // BRCD-891: Unit of Measures
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
-var prevUsageTypes = lastConfig['usage_types']['array'];
-if (prevUsageTypes) {
-	var usageTypes = [];
-	for (var i in prevUsageTypes) {
-		var prevUsageType = prevUsageTypes[i];
-		prevUsageType;
-		var system = (["call", "data"].indexOf(prevUsageType.toLowerCase()) !== -1);
-		if (prevUsageType.toLowerCase().indexOf("call") !== -1) {
-			usageTypes.push({
-				"usage_type": prevUsageType,
-				"label": prevUsageType,
-				"system": system,
-				"property_type": "time",
-				"invoice_uom": "hhmmss",
-				"input_uom": "minutes"
-			});
-		} else if (prevUsageType.toLowerCase().indexOf("data") !== -1) {
-			usageTypes.push({
-				"usage_type": prevUsageType,
-				"label": prevUsageType,
-				"system": system,
-				"property_type": "data",
-				"invoice_uom": "automatic",
-				"input_uom": "mb1024"
-			});
-		} else {
-			usageTypes.push({
-				"usage_type": prevUsageType,
-				"label": prevUsageType,
-				"system": system,
-				"property_type": "counter",
-				"invoice_uom": "counter",
-				"input_uom": "counter"
-			});
+if (lastConfig['usage_types'] && lastConfig['usage_types']['array']) {
+	var prevUsageTypes = lastConfig['usage_types']['array'];
+	if (prevUsageTypes) {
+		var usageTypes = [];
+		for (var i in prevUsageTypes) {
+			var prevUsageType = prevUsageTypes[i];
+			if (typeof prevUsageType.usage_type !== 'undefined') {
+				usageTypes.push(prevUsageType);
+				continue;
+			}
+			prevUsageType;
+			var system = (["call", "data"].indexOf(prevUsageType.toLowerCase()) !== -1);
+			if (prevUsageType.toLowerCase().indexOf("call") !== -1) {
+				usageTypes.push({
+					"usage_type": prevUsageType,
+					"label": prevUsageType,
+					"system": system,
+					"property_type": "time",
+					"invoice_uom": "hhmmss",
+					"input_uom": "minutes"
+				});
+			} else if (prevUsageType.toLowerCase().indexOf("data") !== -1) {
+				usageTypes.push({
+					"usage_type": prevUsageType,
+					"label": prevUsageType,
+					"system": system,
+					"property_type": "data",
+					"invoice_uom": "automatic",
+					"input_uom": "mb1024"
+				});
+			} else {
+				usageTypes.push({
+					"usage_type": prevUsageType,
+					"label": prevUsageType,
+					"system": system,
+					"property_type": "counter",
+					"invoice_uom": "counter",
+					"input_uom": "counter"
+				});
+			}
 		}
-	}
 
-	lastConfig['usage_types'] = usageTypes;
-	lastConfig['property_types'] = [
-		{
-			system: true,
-			type: "time",
-			uom: [{unit: 1, name: "seconds", label: "Seconds"}, {unit: 60, name: "minutes", label: "Minutes"}, {unit: 3600, name: "hours", label: "Hours"}, {name: "hhmmss", label: "hh:mm:ss", function_name: "parseTime"}],
-			invoice_uom: "hhmmss"
-		},
-		{
-			system: true,
-			type: "data",
-			uom: [{unit: 1, name: "byte", label: "Byte"}, {unit: 1000, name: "kb1000", label: "KB"}, {unit: 1000000, name: "mb1000", label: "MB"}, {unit: 1000000000, name: "gb1000", label: "GB"}, {unit: 1000000000000, name: "tb1000", label: "TB"}, {unit: 1024, name: "kb1024", label: "KiB"}, {unit: 1048576, name: "mb1024", label: "MiB"}, {unit: 1073741824, name: "gb1024", label: "GiB"}, {unit: 1099511627776, name: "tb1024", label: "TiB"}, {name: "automatic", label: "Automatic", function_name: "parseDataUsage"}],
-			invoice_uom: "automatic"
-		},
-		{
-			system: true,
-			type: "length",
-			uom: [{unit: 1, name: "mm", label: "mm"}, {unit: 10, name: "cm", label: "cm"}, {unit: 1000, name: "m", label: "m"}, {unit: 1000000, name: "km", label: "km"}],
-			invoice_uom: "cm"
-		},
-		{
-			system: true,
-			type: "counter",
-			uom: [{unit: 1, name: "counter", label: "Counter"}],
-			invoice_uom: "counter"
-		}
-	];
+		lastConfig['usage_types'] = usageTypes;
+		lastConfig['property_types'] = [
+			{
+				system: true,
+				type: "time",
+				uom: [{unit: 1, name: "seconds", label: "Seconds"}, {unit: 60, name: "minutes", label: "Minutes"}, {unit: 3600, name: "hours", label: "Hours"}, {name: "hhmmss", label: "hh:mm:ss", function_name: "parseTime"}],
+				invoice_uom: "hhmmss"
+			},
+			{
+				system: true,
+				type: "data",
+				uom: [{unit: 1, name: "byte", label: "Byte"}, {unit: 1000, name: "kb1000", label: "KB"}, {unit: 1000000, name: "mb1000", label: "MB"}, {unit: 1000000000, name: "gb1000", label: "GB"}, {unit: 1000000000000, name: "tb1000", label: "TB"}, {unit: 1024, name: "kb1024", label: "KiB"}, {unit: 1048576, name: "mb1024", label: "MiB"}, {unit: 1073741824, name: "gb1024", label: "GiB"}, {unit: 1099511627776, name: "tb1024", label: "TiB"}, {name: "automatic", label: "Automatic", function_name: "parseDataUsage"}],
+				invoice_uom: "automatic"
+			},
+			{
+				system: true,
+				type: "length",
+				uom: [{unit: 1, name: "mm", label: "mm"}, {unit: 10, name: "cm", label: "cm"}, {unit: 1000, name: "m", label: "m"}, {unit: 1000000, name: "km", label: "km"}],
+				invoice_uom: "cm"
+			},
+			{
+				system: true,
+				type: "counter",
+				uom: [{unit: 1, name: "counter", label: "Counter"}],
+				invoice_uom: "counter"
+			}
+		];
+	}
 }
 var fileTypes = lastConfig['file_types'];
 for (var i in fileTypes) {
@@ -565,7 +571,7 @@ if (db.getName() === 'billing_onesimcard') {
 	db.config.insert(lastConfig);
 }
 
-// BECD-979: change rebalance field to array
+// BRCD-979: change rebalance field to array
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig.file_types) {
@@ -595,6 +601,11 @@ if (lastConfig.events && !lastConfig.events.settings) {
 	};
 }
 db.config.insert(lastConfig);
+
+// BRCD-1013: add auto renew collection
+db.createCollection('autorenew');
+db.autorenew.ensureIndex({ 'from': 1, 'to': 1, 'next_renew': 1}, { unique: false , sparse: true, background: true });
+db.autorenew.ensureIndex({ 'sid': 1, 'aid': 1}, { unique: false, sparse: true, background: true });
 
 // BRCD-984 - Change received_time field to date instead of a string in log collection
 db.log.find().forEach(function (logItem) {

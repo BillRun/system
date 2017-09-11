@@ -12,7 +12,7 @@
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Balance_Abstract {
+class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstract {
 
 	/**
 	 * the update method type
@@ -26,6 +26,8 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 	 * @var array
 	 */
 	protected $data = array(); // data container of the charging plan record
+	
+	protected $chargingGroup = array();
 
 	/**
 	 * the charging plan name
@@ -60,18 +62,19 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 			throw new Billrun_Exceptions_Api(0, array(), 'Charging plan not found');
 		}
 
-		$chargingGroup = $chargingPlan->getRawData();
-		foreach ($chargingGroup['include'] as $chargingEntry) {
+		$this->chargingGroup = $chargingPlan->getRawData();
+		foreach ($this->chargingGroup['include'] as $chargingEntry) {
 			$ppIncludeParams = array(
 				'sid' => $this->subscriber['sid'],
-				'operation' => isset($chargingEntry['operation']) ? $chargingEntry['operation'] : $chargingGroup['operation'],
+				'aid' => $this->subscriber['aid'],
+				'operation' => isset($chargingEntry['operation']) ? $chargingEntry['operation'] : $this->chargingGroup['operation'],
 				'pp_includes_external_id' => (int) $chargingEntry['pp_includes_external_id'],
 				'expiration_date' => strtotime('+' . $chargingEntry['period']['duration'] . ' ' . $chargingEntry['period']['unit']),
 				'value' => isset($chargingEntry['usagev']) ? $chargingEntry['usagev'] :
 				(isset($chargingEntry['cost']) ? $chargingEntry['cost'] :
 				(isset($chargingEntry['total_cost']) ? $chargingEntry['total_cost'] : $chargingEntry['value'])),
 			);
-			$this->data[] = new Models_Action_Update_Balance_Prepaidinclude($ppIncludeParams);
+			$this->data[] = new Billrun_Balance_Update_Prepaidinclude($ppIncludeParams);
 		}
 	}
 
@@ -111,7 +114,7 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 			'usaget' => 'balance',
 			'charging_type' => $this->updateType,
 			'urt' => new MongoDate(),
-			'source_ref' => Billrun_Factory::db()->plansCollection()->createRefByEntity($this->data),
+			'source_ref' => Billrun_Factory::db()->prepaidgroupsCollection()->createRefByEntity($this->chargingGroup),
 			'aid' => $this->subscriber['aid'],
 			'sid' => $this->subscriber['sid'],
 		);
@@ -138,6 +141,10 @@ class Models_Action_Update_Balance_Chargingplan extends Models_Action_Update_Bal
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->trackChanges();
 		}
+	}
+	
+	public function getAfter() {
+		return $this->data;
 	}
 
 }

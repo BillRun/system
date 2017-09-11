@@ -321,7 +321,7 @@ class ConfigModel {
 				return 0;
 			}
 		} else if ($category === 'usage_types' && !$this->validateUsageType($data)) {
-			throw new Exception($data . ' is illegal usage type');
+			throw new Exception($data . ' is an illegal activity type');
 		} else if ($category === 'invoice_export' && !$this->validateStringLength($data['header'], $this->invoice_custom_template_max_size)) {
 			$max = Billrun_Util::byteFormat($this->invoice_custom_template_max_size, "MB", 0, true);
 			throw new Exception("Custom header template is too long, maximum size is {$max}.");
@@ -356,6 +356,12 @@ class ConfigModel {
 	protected function preUpdateConfig($category, &$data, $prevData) {
 		if ($this->isCustomFieldsConfig($category, $data)) {
 			$this->validateCustomFields($category, $data, $prevData);
+		} else if ($category === 'usage_types') {
+			foreach ($data as $usagetData) {
+				if (!$this->validateUsageType($usagetData['usage_type'])) {
+					throw new Exception($usagetData['usage_type'] . ' is an illegal activity type');
+				}
+			}
 		}
 		return true;
 	}
@@ -1044,7 +1050,7 @@ class ConfigModel {
 	}
 	
 	protected function validateUsageType($usageType) {
-		$reservedUsageTypes = array('cost');
+		$reservedUsageTypes = array('cost', 'balance');
 		return !in_array($usageType, $reservedUsageTypes);
 	}
 

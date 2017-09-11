@@ -46,7 +46,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (isset($row[$field])) {
 			return $this->regexValue($row[$field], $regex);
 		}
-		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." details: " . print_R($row, 1), Zend_Log::NOTICE);
+		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." stamp: " . $row['stamp'], Zend_Log::NOTICE);
 		return '';
 	}
 	
@@ -59,24 +59,29 @@ class Billrun_Calculator_Rate_Filters_Base {
 	}
 	
 	/**
-	 * Gets a computed (condition) field value
-	 * Currently, only supporting boolean condition
+	 * Gets a computed (regex/condition) field value
 	 * 
 	 * @param array $row
-	 * @return int, 1 if the condition met, 0 otherwise
+	 * @return value after regex applying, in case of condition - 1 if the condition is met, 0 otherwise
 	 */
 	protected function getComputedValue($row) {
 		if (!isset($this->params['computed'])) {
-			return '0';
+			return '';
 		}
+		$computedType = Billrun_Util::getIn($this->params, array('computed', 'type'), 'regex');
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
-		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
 		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
+		$firstVal = $this->getRowFieldValue($row, $firstValKey, $firstValRegex);
+		if ($computedType === 'regex') {
+			return $firstVal;
+		}
+		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
 		$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
-		$data = array('first_val' => $this->getRowFieldValue($row, $firstValKey, $firstValRegex));
+		$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
+		$data = array('first_val' => $firstVal);
 		$query = array(
 			'first_val' => array(
-				$this->params['computed']['operator'] => $this->getRowFieldValue($row, $secondValKey, $secondValRegex),
+				$this->params['computed']['operator'] => $secondVal,
 			),
 		);
 		
