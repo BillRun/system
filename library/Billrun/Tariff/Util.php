@@ -151,11 +151,6 @@ class Billrun_Tariff_Util {
 	 */
 	protected static function getChargeValueForRateStep($volume, $rate) {
 		$ceil = true;
-		
-		// Check for access-price in first step
-		if ($rate['to'] == $rate['from'] && $rate['to'] === 0) {
-			return $rate['price'];
-		}
 
 		if (isset($rate['ceil'])) {
 			$ceil = $rate['ceil'];
