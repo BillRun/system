@@ -175,7 +175,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				Billrun_Factory::log('getRateQuery: cannot find filter hander. Details: ' . print_r($filter, 1));
 				continue;
 			}
-			$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
+			try {
+				$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
+			} catch (Exception $ex) {
+				return FALSE;
+			}
 		}
 	
 		$sortQuery = array();

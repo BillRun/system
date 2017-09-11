@@ -85,7 +85,26 @@ class Billrun_Calculator_Rate_Filters_Base {
 			),
 		);
 		
-		return Billrun_Utils_Arrayquery_Query::exists($data, $query) ? '1' : '0';
+		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
+		return $this->getComputedValueResult($row, $res);
+	}
+	
+	protected function getComputedValueResult($row, $conditionRes) {
+		if (Billrun_Util::getIn($this->params, array('computed', 'must_met'), false) && !$conditionRes) {
+			throw new Exception('Rate condition must met');
+		}
+		
+		$projectionKey = $conditionRes ? 'on_true' : 'on_false';
+		$key = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'key'), '');
+		switch ($key) {
+			case ('condition_result'):
+				return $conditionRes;
+			case ('hard_coded'):
+				return Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'value'), '');
+			default:
+				$regex = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'regex'), '');
+				return $this->getRowFieldValue($row, $key, $regex);
+		}
 	}
 	
 	protected function updateMatchQuery(&$match, $row) {
