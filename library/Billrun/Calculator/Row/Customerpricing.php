@@ -331,6 +331,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 
 			foreach ($balanceData as &$data) {
+				$data['balance_ref'] = Billrun_Factory::db()->balancesCollection()->createRefByEntity($data['balance']);
 				unset($data['balance']);
 			}
 
