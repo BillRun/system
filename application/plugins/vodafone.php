@@ -20,6 +20,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $line_type = null;
 	protected $cached_results = array();
 	protected $count_days;
+	protected $premium_ir_not_included = null;
 
 	
 	public function __construct() {
@@ -31,15 +32,20 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (isset($row['urt'])) {
 				$timestamp = $row['urt']->sec;
 				$this->line_type = $row['type'];
-				$this->line_time = date("YmdHis",  $timestamp);	
+				$this->line_time = date("YmdHis",  $timestamp);
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
 		}
+		if (!empty($row['premium_ir_not_included'])) {
+			$this->premium_ir_not_included = $row['premium_ir_not_included'];
+		} else {
+			$this->premium_ir_not_included = null;
+		}
 	}
 
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->count_days)) {
+		if (!is_null($this->count_days) && empty($this->premium_ir_not_included)) {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
 		$this->count_days = NULL;
@@ -59,6 +65,10 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
+			return;
+		}
+		if (!empty($this->premium_ir_not_included)) {
+			$groupSelected = FALSE;
 			return;
 		}
 		if ($this->line_type == 'tap3' && $usageType == 'sms' && $this->line_time >= $this->transferDaySmsc) {
