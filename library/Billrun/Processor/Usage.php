@@ -15,6 +15,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $usagetMapping = null;
 	protected $usagevUnit = 'counter';
 	protected $usagevFields = array();
+	protected $apriceField = null;
 	protected $dateField = null;
 	protected $dateFormat = null;
 	protected $timeField = null;
@@ -24,6 +25,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		parent::__construct($options);
 		if (!empty($options['processor']['default_usaget'])) {
 			$this->defaultUsaget = $options['processor']['default_usaget'];
+		}
+		if (!empty($options['processor']['default_unit'])) {
+			$this->usagevUnit = $options['processor']['default_unit'];
 		}
 		if (!empty($options['processor']['usaget_mapping'])) {
 			$this->usagetMapping = $options['processor']['usaget_mapping'];
@@ -45,6 +49,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
+		}
+		if (!empty($options['processor']['aprice_field'])){
+			$this->apriceField = $options['processor']['aprice_field'];
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -87,6 +94,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
+		if ($this->isLinePrepriced()) {
+			$row['prepriced'] = true;
+			$row['aprice'] = $this->getLineAprice($row['uf']);
+		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
 		$row['type'] = static::$type;
@@ -181,6 +192,30 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			}
 		}
 		return $volume;
+	}
+	
+	/**
+	 * Checks if the line is prepriced (aprice was supposed to be received in the CDR)
+	 * 
+	 * @return boolean
+	 */
+	protected function isLinePrepriced() {
+		return !empty($this->apriceField);
+	}
+
+	/**
+	 * Get the prepriced value received in the CDR
+	 * 
+	 * @param type $userFields
+	 * @return aprice if the field found, false otherwise
+	 */
+	protected function getLineAprice($userFields) {
+		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
+			return $userFields[$this->apriceField];
+		}
+		
+		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		return false;
 	}
 
 }

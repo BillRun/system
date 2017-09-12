@@ -32,7 +32,6 @@ class ReportAction extends ApiAction {
 	public function execute() {
 		$this->request = $this->getRequest(); // supports GET / POST requests;
 		$action = $this->request->getRequest('action', '');
-		$this->model = new ReportModel();
 		if (!method_exists($this, $action)) {
 			return $this->setError('Report controller - cannot find action: ' . $action);
 		}
@@ -44,10 +43,11 @@ class ReportAction extends ApiAction {
 	}
 	
 	public function exportCSV($report_name) {
-		$report = $this->model->getReportByKey($report_name);
+		$report = ReportModel::getReportByKey($report_name);
 		if (empty($report)) {
 			throw new Exception("Report {$report_name} not exist");
 		}
+		$this->model = new ReportModel($report);
 		$this->type = 'csv';
 		$this->headers = array_reduce(
 			$report['columns'], 
@@ -57,13 +57,14 @@ class ReportAction extends ApiAction {
 			},
 			array()
 		);
-		$this->response = $this->model->applyFilter($report, 0, -1);
+		$this->response = $this->model->applyFilter(0, -1);
 	}
 	
 	public function generateReport($report, $page, $size) {
 		$parsed_report = json_decode($report, TRUE);
-		$this->response = $this->model->applyFilter($parsed_report, $page, $size);
-		$nextPageData = ($size !== -1) ? $this->model->applyFilter($parsed_report, $page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
+		$this->model = new ReportModel($parsed_report);
+		$this->response = $this->model->applyFilter($page, $size);
+		$nextPageData = ($size !== -1) ? $this->model->applyFilter($page + 1, $size) : array(); // TODO: improve performance, avoid duplicate aggregate run
 		$this->next_page = count($nextPageData) > 0; 
 	}
 	

@@ -7,17 +7,15 @@
  */
 
 /**
- * Billapi model for balance update by prepaid include
+ * Billapi get operation for Auto renew
  *
  * @package  Billapi
- * @since    5.3
+ * @since    5.6
  */
-class Models_Action_Update_Balance_Id extends Models_Action_Update_Balance_Prepaidinclude {
+class Models_Action_Get_Autorenew extends Models_Action_Get {
 
-	/**
-	 * the update method type
-	 * @var string
-	 */
-	protected $updateType = 'Id';
+	protected function getDateFields() {
+		return array('from', 'to', 'next_renew', 'last_renew');
+	}
 
 }

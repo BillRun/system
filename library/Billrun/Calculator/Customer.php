@@ -446,4 +446,27 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $retServices;;
 	}
 	
+	/**
+	 * Used for enriching lines data with services from subscriber document.
+	 * includes services names and the dates from which they are valid for the subnscriber
+	 * 
+	 * @param array $services
+	 * @param array $translationRules
+	 * @param attay $subscriber
+	 * @param array $row
+	 * @return services array
+	 */
+	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
+		$retServices = array();
+		foreach($services as $service) {
+			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+				$retServices[] = array(
+					'name' => $service['name'],
+					'from' => $service['from'],
+				);
+			}
+		}
+		return $retServices;
+	}
+	
 }
