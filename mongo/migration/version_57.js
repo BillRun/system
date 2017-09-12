@@ -6,7 +6,7 @@
 
 // BRCD-1002- Add weight property type to units of measure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-if (lastConfig.property_types && lastConfig.property_types.indexOf('weight') === -1) {
+if (lastConfig.property_types && lastConfig.property_types.filter(element => element.type === 'weight').length == 0) {
 	delete lastConfig['_id'];
 	lastConfig.property_types.push(
 			{
