@@ -20,6 +20,7 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $cached_results = array();
 	protected $count_days;
 	protected $roamingSms = false;
+	protected $premium_ir_not_included = null;
 
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
 		if (isset($row['type'])) {
@@ -33,11 +34,17 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else {
 				Billrun_Factory::log()->log('urt wasn\'t found for line ' . $row['stamp'] . '.', Zend_Log::ALERT);
 			}
-		}	
+		}
+		if (!empty($row['premium_ir_not_included'])) {
+			$this->premium_ir_not_included = $row['premium_ir_not_included'];
+		} else {
+			$this->premium_ir_not_included = null;
+		}
+
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->count_days)) {
+		if (!is_null($this->count_days) && empty($this->premium_ir_not_included)) {
 			$pricingData['vf_count_days'] = $this->count_days;
 		}
 		$this->count_days = NULL;
@@ -59,6 +66,11 @@ class vodafonePlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($groupSelected != 'VF' || !isset($this->line_type)) {
 			return;
 		}
+		if (!empty($this->premium_ir_not_included)) {
+			$groupSelected = FALSE;
+			return;
+		}
+
 		$sid = $subscriberBalance['sid'];
 		$line_year = substr($this->line_time, 0, 4);
 		$line_month = substr($this->line_time, 4, 2);
