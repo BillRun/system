@@ -128,15 +128,22 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
 	protected function getRateByParams($row, $usaget, $type) {
-		$query = $this->getRateQuery($row, $usaget, $type);
-		if (!$query) {
-			return FALSE;
+		$matchedRate = null;
+		$filters = $this->getRateCustomFilters($usaget, $type);
+		foreach ($filters as $currentPriorityFilters) {
+			$query = $this->getRateQuery($row, $usaget, $type, $currentPriorityFilters);
+			if (!$query) {
+				continue;
+			}
+			Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
+			$rates_coll = Billrun_Factory::db()->ratesCollection();
+			$matchedRate = $rates_coll->aggregate($query)->current();
+			if (!$matchedRate->isEmpty()) {
+				break;
+			}
 		}
-		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$matchedRate = $rates_coll->aggregate($query)->current();
 
-		if ($matchedRate->isEmpty()) {
+		if (empty($matchedRate) || $matchedRate->isEmpty()) {
 			return false;
 		}
 
@@ -158,13 +165,12 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery($row, $usaget, $type) {
+	protected function getRateQuery($row, $usaget, $type, $filters) {
 		$match = $this->getBasicMatchRateQuery($row, $usaget);
 		$additional = array();
 		$group = $this->getBasicGroupRateQuery($row);
 		$additionalAfterGroup = array();
 		$sort = $this->getBasicSortRateQuery($row);
-		$filters = $this->getRateCustomFilters($usaget, $type);
 		if (!$filters) {
 			Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
 			return FALSE;
@@ -175,9 +181,9 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 				Billrun_Factory::log('getRateQuery: cannot find filter hander. Details: ' . print_r($filter, 1));
 				continue;
 			}
-			try {
-				$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
-			} catch (Exception $ex) {
+			
+			$handlerClass->updateQuery($match, $additional, $group, $additionalAfterGroup, $sort, $row);
+			if (!$handlerClass->canHandle()) {
 				return FALSE;
 			}
 		}
@@ -213,7 +219,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	
 	protected function getRateCustomFilters($usaget, $type) {
 		$rateRules = Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
-		return Billrun_Util::getFieldVal($rateRules[$usaget], array());
+		return Billrun_Util::getIn($rateRules, array($usaget), array());
 	}
 
 }

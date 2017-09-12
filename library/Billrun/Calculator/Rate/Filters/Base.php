@@ -16,6 +16,12 @@ class Billrun_Calculator_Rate_Filters_Base {
 	
 	public $params = array();
 	
+	/**
+	 * wheather or not this can handle the rate query
+	 * @var boolean
+	 */
+	protected $canHandle = true;
+	
 	public function __construct($params = array()) {
 		$this->params = $params;
 	}
@@ -91,7 +97,8 @@ class Billrun_Calculator_Rate_Filters_Base {
 	
 	protected function getComputedValueResult($row, $conditionRes) {
 		if (Billrun_Util::getIn($this->params, array('computed', 'must_met'), false) && !$conditionRes) {
-			throw new Exception('Rate condition must met');
+			$this->canHandle = false;
+			return false;
 		}
 		
 		$projectionKey = $conditionRes ? 'on_true' : 'on_false';
@@ -120,5 +127,9 @@ class Billrun_Calculator_Rate_Filters_Base {
 	}
 	
 	protected function updateSortQuery(&$sort, $row) {
+	}
+	
+	public function canHandle() {
+		return $this->canHandle;
 	}
 }
