@@ -217,6 +217,13 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return array();
 	}
 	
+	/**
+	 * Gets the rate mapping calculators
+	 * 
+	 * @param string $usaget
+	 * @param string $type
+	 * @return array of rate calculators (by priority)
+	 */
 	protected function getRateCustomFilters($usaget, $type) {
 		$rateRules = Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 		return Billrun_Util::getIn($rateRules, array($usaget), array());

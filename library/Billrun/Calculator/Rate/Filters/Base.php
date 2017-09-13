@@ -95,6 +95,13 @@ class Billrun_Calculator_Rate_Filters_Base {
 		return $this->getComputedValueResult($row, $res);
 	}
 	
+	/**
+	 * returns a value for a computed line key (the value received by a calculation on the CDR fields)
+	 * 
+	 * @param array $row
+	 * @param boolean $conditionRes
+	 * @return value to compare against the rate key
+	 */
 	protected function getComputedValueResult($row, $conditionRes) {
 		if (Billrun_Util::getIn($this->params, array('computed', 'must_met'), false) && !$conditionRes) {
 			$this->canHandle = false;
@@ -129,6 +136,12 @@ class Billrun_Calculator_Rate_Filters_Base {
 	protected function updateSortQuery(&$sort, $row) {
 	}
 	
+	/**
+	 * Whether or not the current filter can handle the query building
+	 * currently, will return false only if a must_met condition is set on the CDR fields and the values are not equal
+	 * 
+	 * @return boolean
+	 */
 	public function canHandle() {
 		return $this->canHandle;
 	}
