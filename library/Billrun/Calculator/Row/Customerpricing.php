@@ -412,7 +412,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
 					'balance' => $this->balance,
 				);
-			} else if ($valueToCharge > 0) {
+			} else if ($valueToCharge >= 0) {
 				$ret['in_group'] = $ret['in_plan'] = $value;
 				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $valueToCharge;
