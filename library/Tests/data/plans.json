@@ -490,7 +490,28 @@
 		
 
         },
-	{
+		{
+			"name" : "NEW-PLAN-N5",
+			"plan_code" : "NEW-PLAN-N5",
+			"description" : "NEW-PLAN-N5",
+			"upfront" : false,
+			"from" : "time*2016-10-05T08:08:36Z",
+			"to" : "time*2116-10-05T08:08:36Z",
+			"include" : {
+				"groups" : {
+					"CALL": {
+						"call": 10,
+						"unit": "seconds",
+						"account_shared": false,
+						"account_pool": false,
+						"rates": [
+							"RATE-N5"
+						]
+					}
+				}
+			}
+        },
+		{
 		"name" : "NEW-PLAN-O1",
 		"plan_code" : "NEW-PLAN-O1",
 		"description" : "NEW-PLAN-O1",

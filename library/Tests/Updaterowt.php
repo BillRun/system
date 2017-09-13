@@ -118,6 +118,15 @@ class Tests_Updaterowt extends UnitTestCase {
 		// N4 - depend on N1
 		array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
 			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services' => ["SERVICE-N3"]),
+		// N5
+		array('stamp' => 'n5', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
+		// N6
+		array('stamp' => 'n6', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
+		// N7
+		array('stamp' => 'n7', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
 		// case O - custom period balance support
 		// O1
 		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
@@ -218,6 +227,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 175, 'over_group' => 100, 'aprice' => 10), //N2
 		array('in_group' => 240, 'over_group' => 0, 'aprice' => 0), //N3
 		array('in_group' => 60, 'over_group' => 415, 'aprice' => 7), //N4	
+		array('in_group' => 5, 'over_group' => 0, 'aprice' => 0), //N5	
+		array('in_group' => 5, 'over_group' => 0, 'aprice' => 0), //N6	
+		array('in_group' => 0, 'over_group' => 5, 'aprice' => 2.5), //N7
 		//case O expected
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //O1
 		array('in_group' => 0, 'over_group' => 62, 'aprice' => 0.62), //O2
@@ -248,7 +260,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$init->restoreColletions();
+//		$init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 
