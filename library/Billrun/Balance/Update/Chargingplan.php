@@ -64,10 +64,15 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 
 		$this->chargingGroup = $chargingPlan->getRawData();
 		foreach ($this->chargingGroup['include'] as $chargingEntry) {
+			if (isset($chargingEntry['operation']) && $chargingEntry['operation'] != "default") {
+				$operation = $chargingEntry['operation'];
+			} else {
+				$operation = $this->chargingGroup['operation'];
+			}
 			$ppIncludeParams = array(
 				'sid' => $this->subscriber['sid'],
 				'aid' => $this->subscriber['aid'],
-				'operation' => isset($chargingEntry['operation']) ? $chargingEntry['operation'] : $this->chargingGroup['operation'],
+				'operation' => $operation,
 				'pp_includes_external_id' => (int) $chargingEntry['pp_includes_external_id'],
 				'expiration_date' => strtotime('+' . $chargingEntry['period']['duration'] . ' ' . $chargingEntry['period']['unit']),
 				'value' => isset($chargingEntry['usagev']) ? $chargingEntry['usagev'] :
