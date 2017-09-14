@@ -224,7 +224,7 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value)){
+		if(!is_scalar($value) && get_class($value) !== 'MongoDate'){
 			// array result like addToSet
 			if(count(array_filter(array_keys($value), 'is_string')) === 0){
 				$values = array();
