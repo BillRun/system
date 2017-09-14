@@ -338,7 +338,7 @@ class Billrun_Plan extends Billrun_Service {
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
-				$startPricing += ((($startFratcion * date('t',$activation)+1) /  $currentDays) - $startFratcion);
+				$startPricing += ((($startFratcion * date('t',$activation)) /  $currentDays) - $startFratcion);
 			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
@@ -347,7 +347,7 @@ class Billrun_Plan extends Billrun_Service {
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$endFratcion = 1 -($startOffset-floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
-				$endPricing += (( ($endFratcion * date('t',$activation)+1) / $currentDays) - $endFratcion);
+				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
 			}
 		}
 
