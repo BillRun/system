@@ -377,6 +377,12 @@
 			"type": "counter",
 			"uom":[{"unit":1,"name":"counter","label":"Counter"}],
 			"invoice_uom": "counter"
+		},
+		{
+			"system": true,
+			"type": "weight",
+			"uom": [{"unit":1,"name":"mg","label":"mg"},{"unit":1000,"name":"g","label":"g"},{"unit":1000000,"name":"kg","label":"kg"},{"unit":1000000000,"name":"ton","label":"ton"}],
+			"invoice_uom": "kg"
 		}
 	],
 	"unify": {

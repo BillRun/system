@@ -16,6 +16,12 @@ class Billrun_Calculator_Rate_Filters_Base {
 	
 	public $params = array();
 	
+	/**
+	 * wheather or not this can handle the rate query
+	 * @var boolean
+	 */
+	protected $canHandle = true;
+	
 	public function __construct($params = array()) {
 		$this->params = $params;
 	}
@@ -85,7 +91,34 @@ class Billrun_Calculator_Rate_Filters_Base {
 			),
 		);
 		
-		return Billrun_Utils_Arrayquery_Query::exists($data, $query) ? '1' : '0';
+		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
+		return $this->getComputedValueResult($row, $res);
+	}
+	
+	/**
+	 * returns a value for a computed line key (the value received by a calculation on the CDR fields)
+	 * 
+	 * @param array $row
+	 * @param boolean $conditionRes
+	 * @return value to compare against the rate key
+	 */
+	protected function getComputedValueResult($row, $conditionRes) {
+		if (Billrun_Util::getIn($this->params, array('computed', 'must_met'), false) && !$conditionRes) {
+			$this->canHandle = false;
+			return false;
+		}
+		
+		$projectionKey = $conditionRes ? 'on_true' : 'on_false';
+		$key = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'key'), '');
+		switch ($key) {
+			case ('condition_result'):
+				return $conditionRes;
+			case ('hard_coded'):
+				return Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'value'), '');
+			default:
+				$regex = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'regex'), '');
+				return $this->getRowFieldValue($row, $key, $regex);
+		}
 	}
 	
 	protected function updateMatchQuery(&$match, $row) {
@@ -101,5 +134,15 @@ class Billrun_Calculator_Rate_Filters_Base {
 	}
 	
 	protected function updateSortQuery(&$sort, $row) {
+	}
+	
+	/**
+	 * Whether or not the current filter can handle the query building
+	 * currently, will return false only if a must_met condition is set on the CDR fields and the values are not equal
+	 * 
+	 * @return boolean
+	 */
+	public function canHandle() {
+		return $this->canHandle;
 	}
 }
