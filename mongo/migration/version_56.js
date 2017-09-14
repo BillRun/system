@@ -172,7 +172,7 @@ if (lastConfig['usage_types'] && lastConfig['usage_types']['array']) {
 		var usageTypes = [];
 		for (var i in prevUsageTypes) {
 			var prevUsageType = prevUsageTypes[i];
-			if (prevUsageType.usage_type) {
+			if (typeof prevUsageType.usage_type !== 'undefined') {
 				usageTypes.push(prevUsageType);
 				continue;
 			}

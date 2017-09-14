@@ -93,6 +93,23 @@ class Billrun_Service {
 		}
 		return $this->data;
 	}
+	
+	/**
+	 * Validates that the service still have cycles left (not exhausted yet)
+	 * 
+	 * @param $serviceStartDate the date from which the service is valid for the subscriber
+	 */
+	public function isExhausted($serviceStartDate) {
+		$serviceAvailableCycles = Billrun_Util::getIn(end($this->data['price']), 'to', 0);
+		if ($serviceAvailableCycles === 'UNLIMITED') {
+			return false;
+		}
+		if ($serviceStartDate instanceof MongoDate) {
+			$serviceStartDate = $serviceStartDate->sec;
+		}
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, time());
+		return $cyclesSpent >= $serviceAvailableCycles;
+	}
 
 	/**
 	 * method to receive all group rates of the current plan
