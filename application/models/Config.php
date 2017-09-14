@@ -1143,9 +1143,11 @@ class ConfigModel {
 				}
 				if (isset($fileSettings['rate_calculators'])) {
 					$ratingUsageTypes = array_keys($fileSettings['rate_calculators']);
-					foreach ($fileSettings['rate_calculators'] as $usageRules) {
-						foreach ($usageRules as $rule) {
-							$ratingLineKeys[] = $rule['line_key'];
+					foreach ($fileSettings['rate_calculators'] as $rules) {
+						foreach ($rules as $usageRules) {
+							foreach ($usageRules as $rule) {
+								$ratingLineKeys[] = $rule['line_key'];
+							}
 						}
 					}
 					$useFromStructure = array_merge($useFromStructure, $ratingLineKeys);
@@ -1284,20 +1286,22 @@ class ConfigModel {
 			throw new Exception('Rate calculators settings is not an array');
 		}
 		$longestPrefixParams = array();
-		foreach ($rateCalculatorsSettings as $usaget => $rateRules) {
-			foreach ($rateRules as $rule) {
-				if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
-					throw new Exception('Illegal rating rules for usaget ' . $usaget);
-				}
-				if (!in_array($rule['type'], $this->ratingAlgorithms)) {
-					throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
-				}
-				if ($rule['type'] === 'longestPrefix') {
-					$longestPrefixParams[] = $rule['rate_key'];
-				}
-				foreach (Billrun_Util::getIn($rule, ['computed', 'line_keys'], array()) as $lineKey) {
-					if (!empty($lineKey['regex']) && !Billrun_Util::isValidRegex($lineKey['regex'])) {
-						throw new Exception('Illegal regex ' . $lineKey['regex']);
+		foreach ($rateCalculatorsSettings as $usaget => $rates) {
+			foreach ($rates as $rateRules) {
+				foreach ($rateRules as $rule) {
+					if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
+						throw new Exception('Illegal rating rules for usaget ' . $usaget);
+					}
+					if (!in_array($rule['type'], $this->ratingAlgorithms)) {
+						throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
+					}
+					if ($rule['type'] === 'longestPrefix') {
+						$longestPrefixParams[] = $rule['rate_key'];
+					}
+					foreach (Billrun_Util::getIn($rule, ['computed', 'line_keys'], array()) as $lineKey) {
+						if (!empty($lineKey['regex']) && !Billrun_Util::isValidRegex($lineKey['regex'])) {
+							throw new Exception('Illegal regex ' . $lineKey['regex']);
+						}
 					}
 				}
 			}

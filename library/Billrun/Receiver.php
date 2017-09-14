@@ -41,8 +41,8 @@ abstract class Billrun_Receiver extends Billrun_Base {
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
-		if (isset($options['filename_regex']) || isset($options['receiver']['connections'][0]['filename_regex'])) {
-			$this->filenameRegex = isset($options['receiver']['connections'][0]['filename_regex']) ? $options['receiver']['connections'][0]['filename_regex'] : $options['filename_regex'];
+		if (!empty($options['filename_regex']) || !empty($options['receiver']['connections'][0]['filename_regex'])) {
+			$this->filenameRegex = !empty($options['receiver']['connections'][0]['filename_regex']) ? $options['receiver']['connections'][0]['filename_regex'] : $options['filename_regex'];
 		}
 		if (isset($options['receiver']['limit']) && $options['receiver']['limit']) {
 			$this->setLimit($options['receiver']['limit']);
