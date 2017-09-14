@@ -317,8 +317,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		}
 
 		$balancePricingData = array_diff_key($pricingData, array('arategroups' => 'val')); // clone issue
-		$pricingData['arategroups'] = array_values($pricingData['arategroups']);
-		foreach ($pricingData['arategroups'] as &$balanceData) {
+		$pricingData['arategroups'] = $pricingData['arategroups'];
+		$arategroups = array(); // will used to flat the structure of pricingData['arategroups'] item
+		foreach ($pricingData['arategroups'] as /* $balance_key => */ &$balanceData) {
 			$balance = $balanceData[0]['balance'];
 			if (($crashedPricingData = $this->getTx($this->row['stamp'], $balance)) !== FALSE) {
 				return $crashedPricingData;
@@ -330,6 +331,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 
 			foreach ($balanceData as &$data) {
+				$data['balance_ref'] = Billrun_Factory::db()->balancesCollection()->createRefByEntity($data['balance']);
 				unset($data['balance']);
 			}
 
@@ -347,8 +349,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			}
 			Billrun_Factory::log("Line with stamp " . $this->row['stamp'] . " was written to balance " . $balance_id . " for subscriber " . $this->row['sid'], Zend_Log::DEBUG);
 			$this->row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
+			$arategroups = array_merge($arategroups, $balanceData);
 		}
-
+		$pricingData['arategroups'] = $arategroups;
 		return $pricingData;
 	}
 
@@ -409,7 +412,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
 					'balance' => $this->balance,
 				);
-			} else if ($valueToCharge > 0) {
+			} else if ($valueToCharge >= 0) {
 				$ret['in_group'] = $ret['in_plan'] = $value;
 				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
 					$ret['over_group'] = $ret['over_plan'] = $valueToCharge;
@@ -530,14 +533,23 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
+				$serviceSettings = array(
+					'service_name' => $service->getName(),
+					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
+				);
 				// pre-check if need to switch to other balance with the new service
 				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = 0;
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
-					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost));
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
+					$instanceOptions['balance_db_refresh'] = true;
+					$instanceOptions['sid'] = $this->row['sid'];
+					$balance = Billrun_Balance::getInstance($instanceOptions);
+				} else if (!empty($serviceSettings)) {
+					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);

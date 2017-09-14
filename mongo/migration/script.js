@@ -306,3 +306,6 @@ if ((typeof lastConfig) !== "undefined") {
 
 	db.config.insert(lastConfig);
 }
+
+// BRCD-865 update balances collection with compatibility to extended balance period
+db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1})

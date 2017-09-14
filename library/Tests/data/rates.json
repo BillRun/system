@@ -152,7 +152,93 @@
                 }
             }
         }
+      },
+	  {
+        "key" : "RATE-N1","code" : "RATE-N1","description" : "RATE-N1","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : 0.1
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-N3","code" : "RATE-N3","description" : "RATE-N3","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 30,
+                            "price" : 0.5
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-O1","code" : "RATE-O1","description" : "RATE-O1","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : 0.01
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-O2","code" : "RATE-O2","description" : "RATE-O2","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 10,
+                            "price" : 0.01
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-N5","code" : "RATE-N5","description" : "RATE-N5","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : 0.5
+                        }
+                    ]
+                }
+            }
+        }
       }
+
 	  
     ]
     }

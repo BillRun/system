@@ -29,3 +29,6 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-865 - extend postpaid balances period
+db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1});

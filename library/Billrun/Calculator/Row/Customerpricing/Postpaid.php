@@ -35,21 +35,21 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$pricingData['billrun'] = $this->row['urt']->sec <= $this->activeBillrunEndTime ? $this->activeBillrun : $this->nextActiveBillrun;
 		return $pricingData;
 	}
-	
+
 	/**
 	 * In case balance is in over charge, 
 	 * adds a refund row to the balance.
- 	 * currently, there is no support for postpay rebalance
+	 * currently, there is no support for postpay rebalance
 	 * 
 	 * @param float $rebalanceUsagev amount of balance (usagev) to return to the balance
 	 * @param float $realUsagev
 	 * @param array $lineToRebalance
 	 * @param array $originalRow
-	 */	
+	 */
 	protected function handleRebalanceRequired($rebalanceUsagev, $realUsagev, $lineToRebalance, $originalRow) {
 		$usaget = $lineToRebalance['usaget'];
 		$rate = Billrun_Factory::db()->ratesCollection()->getRef($lineToRebalance->get('arate', true));
-		
+
 		// Update subscribers balance
 		$balanceRef = $lineToRebalance->get('balance_ref', true);
 		if (!$balanceRef) {
@@ -62,17 +62,17 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 				$balance['tx'] = new stdClass();
 			}
 			$balance->collection($balances_coll);
-			$balance_totals_key =  $this->balance->getBalanceTotalsKey($lineToRebalance);
+			$balance_totals_key = $this->balance->getBalanceTotalsKey($lineToRebalance);
 			$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
-			
+
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
 				$group = $lineToRebalance['arategroup'];
 				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
 			}
 		}
-		
+
 		$rebalanceData = $this->getRebalanceData($lineToRebalance, $rate, $rebalanceUsagev, $realUsagev, $usaget);
-		
+
 		// Update balance cost
 		if ($balance) {
 			$rebalanceAprice = ($lineToRebalance['aprice'] - $rebalanceData['aprice']);
@@ -84,11 +84,11 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			}
 			$balance->save();
 		}
-		
+
 		$originalRow['usagev_offset'] += $rebalanceUsagev;
-		
+
 		$updateQuery = $this->getUpdateLineUpdateQuery($rebalanceData);
-		
+
 		// Update line in archive
 		$lines_archive_coll = Billrun_Factory::db()->archiveCollection();
 		$lines_archive_coll->update(array('_id' => $lineToRebalance->getId()->getMongoId()), $updateQuery);
@@ -100,7 +100,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		$options = array('multiple' => true); // this option is added in case we have sharding key=stamp and the update cannot be done
 		$lines_coll->update($findQuery, $updateQuery, $options);
 	}
-	
+
 	/**
 	 * see Billrun_Calculator_Row_Customerpricing::isRebalanceRequired
 	 * currently, there is no support for postpay rebalance
@@ -109,6 +109,31 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 	 */
 	protected function isRebalanceRequired() {
 		return false;
+	}
+
+	/**
+	 * load subscribers services objects by their name
+	 * 
+	 * @param array $services services names
+	 * @param int $time unix timestamp of effective datetime
+	 * 
+	 * @return array of services objects
+	 */
+	protected function loadSubscriberServices($services, $time) {
+		$ret = array();
+		foreach ($services as $service) {
+			$serviceSettings = array(
+				'name' => $service,
+				'time' => $time
+			);
+			$serviceObject = new Billrun_Service($serviceSettings);
+			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $service, $this->urt->sec) == FALSE) {
+				continue;
+			}
+			$ret[] = $serviceObject;
+		}
+
+		return $ret; // array of service objects
 	}
 
 }
