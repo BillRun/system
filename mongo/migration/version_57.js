@@ -3,3 +3,5 @@
  * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
+// BRCD-865 - extend postpaid balances period
+db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1});
