@@ -334,7 +334,7 @@ class Billrun_Plan extends Billrun_Service {
 
 		if ($tariff['from'] > $startOffset) {			
 			$startPricing = $tariff['from'];
-			// HACK :  fix for the month length differance between the  activation and the  plan change
+			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
@@ -343,7 +343,7 @@ class Billrun_Plan extends Billrun_Service {
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
-			// HACK :  fix for the month length differance between the  activation and the  plan change
+			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$endFratcion = 1 -($startOffset-floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
@@ -449,9 +449,9 @@ class Billrun_Plan extends Billrun_Service {
 	public static function getMonthsDiff($from, $to) {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
-		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
-			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
-		}
+//		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
+//			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
+//		}
 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
 			return $maxDate->diff((new DateTime($from))->modify('-1 day'))->m;
 		}
