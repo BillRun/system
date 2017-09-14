@@ -703,29 +703,68 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($row['usaget'])) {
 			return false;
 		}
+		$conditionsLogic = $rule['conditions']['logic'];
+			switch ($conditionsLogic) {
+				case 'or':
+					$conditionsValue = $this->isOrConditionSatisfied($rule, $row);
+					break;
+				case 'and':
+					$conditionsValue = $this->isAndConditionSatisfied($rule, $row);
+					break;
+				default:
+					$conditionsValue = false;
+					break;
+			}
+		
+		if ($conditionsValue == false) {
+			return;
+		}
+		
+		$threshold = $rule['threshold'];
+		$before = 0;
+		$after = $row['usagev'];
+		$recurring = isset($rule['recurring']) && $rule['recurring'];
+		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+			if (isset($rule['priority'])) {
+				$priority = (int) $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
+			return $rule;
+		}
+	}
+	
+	protected function isOrConditionSatisfied($rule, $row) {
 		foreach ($rule['condition_on_fields'] as $index => $field) {
 			$condition = $rule['conditions'][$index];
 			$func = key($condition);
 			$value = $condition[key($condition)];
-			if (($func == 'empty') && (empty($row[$field]) == $value)) {
-				$threshold = $rule['threshold'];
-				$before = 0;
-				$after = $row['usagev'];
-				$recurring = isset($rule['recurring']) && $rule['recurring'];
-				$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
-				$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
-				if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
-					Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
-					if (isset($rule['priority'])) {
-						$priority = (int) $rule['priority'];
-					} else {
-						$priority = null;
-					}
-					$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
-					return $rule;
-				}
+			if (($func == 'isset') && (isset($row[$field]) == $value)) {
+				return true;
 			}
 		}
+		
+		return false;
+	}
+	
+	protected function isAndConditionSatisfied($rule, $row) {
+		foreach ($rule['condition_on_fields'] as $index => $field) {
+			$condition = $rule['conditions'][$index];
+			$func = key($condition);
+			$value = $condition[key($condition)];
+			if ($func != 'isset') {
+				return false;
+			}
+			if (isset($row[$field]) != $value) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 }
