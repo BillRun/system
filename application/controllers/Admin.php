@@ -223,6 +223,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if (!$this->allowed('write'))
 			die(json_encode(null));
 		$flatData = $this->getRequest()->get('data');
+		$stripNullChar = str_replace(',null', "", $flatData);
 		$type = Billrun_Util::filter_var($this->getRequest()->get('type'), FILTER_SANITIZE_STRING);
 		$id = Billrun_Util::filter_var($this->getRequest()->get('id'), FILTER_SANITIZE_STRING);
 		$coll = Billrun_Util::filter_var($this->getRequest()->get('coll'), FILTER_SANITIZE_STRING);
@@ -235,7 +236,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			return false;
 		}
 
-		$data = @json_decode($flatData, true);
+		$data = @json_decode($stripNullChar, true);
 
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 			return false;
