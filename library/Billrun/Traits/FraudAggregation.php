@@ -56,6 +56,7 @@ trait Billrun_Traits_FraudAggregation {
 					$eventQuery = $this->prepareRuleQuery($eventQuery, $key);
 					$charge_time = new MongoDate(isset($eventQuery['time_period']) ? strtotime($eventQuery['time_period']) : Billrun_Util::getLastChargeTime(true));
 					$query['base_match']['$match'][$timeField]['$gte'] = $charge_time;
+					$query['base_match']['$match']['roaming_balances']['$exists'] = false;
 
 					$project = $query['project'];
 					$project['$project'] = array_merge($project['$project'], $this->addToProject((!empty($eventRules['added_values']) ? $eventRules['added_values'] : array())), $this->addToProject(array('units' => $eventQuery['units'], 'event_type' => $key,
