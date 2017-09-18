@@ -24,7 +24,13 @@ class Api_Translator_DatetimeModel extends Api_Translator_TypeModel {
 			if (isset($data['sec'])) {
 				return new MongoDate($data['sec']);
 			}
-			return new MongoDate(strtotime($data));
+			$time = strtotime($data);
+			if ($time > 0) {
+				return new MongoDate($time);
+			} else {
+				return false;
+			}
+			
 		} catch (MongoException $ex) {
 			return false;
 		}
