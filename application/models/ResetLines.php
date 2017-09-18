@@ -182,8 +182,9 @@ class ResetLinesModel {
 	protected function getUpdateQuery() {
 		return array(
 			'$unset' => array(
-//				'aid' => 1,
-//				'sid' => 1,
+				'aid' => 1,
+				'sid' => 1,
+				'subscriber' => 1,
 				'apr' => 1,
 				'aprice' => 1,
 				'arate' => 1,
@@ -199,6 +200,7 @@ class ResetLinesModel {
 				'over_arate' => 1,
 				'over_group' => 1,
 				'over_plan' => 1,
+				'out_group' => 1,
 				'plan' => 1,
 				'plan_ref' => 1,
 				'services' => 1,
