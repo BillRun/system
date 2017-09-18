@@ -504,6 +504,8 @@ class Billrun_Billingcycle {
 	 * 
 	 */
 	public static function getResetCycles($billrunKeys) {
+		$billrunCount = array();
+		$cycleCount = array();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$billingCycleCol = self::getBillingCycleColl();
 		if (empty($billrunKeys)) {
@@ -519,16 +521,12 @@ class Billrun_Billingcycle {
 		$pipelines[] = array(
 			'$group' => array(
 				'_id' => '$billrun_key',
-				'count' => array(
-					'$sum' => 1,
-				),
 			),
 		);
 		
 		$pipelines[] = array(
 			'$project' => array(
 				'billrun_key' => '$_id',
-				'count' => 1,
 			),
 		);
 
@@ -536,13 +534,13 @@ class Billrun_Billingcycle {
 		$billingCycleResults = $billingCycleCol->aggregate($pipelines);
 		foreach ($billrunResults as $billrunDetails){
 			$billrunData = $billrunDetails->getRawData();
-			$billrunCount[$billrunData['billrun_key']] = $billrunData['count'];
+			$billrunCount[] = $billrunData['billrun_key'];
 		}
 		foreach ($billingCycleResults as $cycleDetails){
 			$cycleData = $cycleDetails->getRawData();
-			$cycleCount[$cycleData['billrun_key']] = $cycleData['count'];
+			$cycleCount[] = $cycleData['billrun_key'];
 		}
-		$resetCycles = array_keys(array_diff_key($billrunCount, $cycleCount));
+		$resetCycles = array_diff($billrunCount, $cycleCount);
 		return $resetCycles;
 	}
 
