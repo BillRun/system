@@ -342,34 +342,30 @@ class Billrun_Billingcycle {
 		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
 			return self::$cycleStatuses[$billrunKey][$size];
 		}
-		$currentBillrunKey = self::getBillrunKeyByTimestamp();
-		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
-		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
-		$cycleRunning = self::isCycleRunning($billrunKey, $size);
-		$cycleToRerun = self::isToRerun($billrunKey);
-		
 		$cycleStatus = '';
+		$currentBillrunKey = self::getBillrunKeyByTimestamp();
 		if ($billrunKey == $currentBillrunKey) {
 			$cycleStatus = 'current';
-		}
-		else if ($billrunKey > $currentBillrunKey) {
+		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
-		} 
-		else if ($cycleToRerun) {
+		}
+		$cycleToRerun = self::isToRerun($billrunKey);
+		if (empty($cycleStatus) && $cycleToRerun) {
 			$cycleStatus = 'to_rerun';
 		}
-		else if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		if (empty($cycleStatus) && $billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			$cycleStatus = 'to_run';
-		}
-		else if ($cycleRunning) {
+		}		
+		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		
-		else if (!$cycleConfirmed && $cycleEnded) {
+		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
-		
-		else if ($cycleEnded && $cycleConfirmed) {
+		if (empty($cycleStatus) && $cycleEnded && $cycleConfirmed) {
 			$cycleStatus = 'confirmed';
 		}
 		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
