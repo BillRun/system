@@ -393,7 +393,7 @@ class Models_Entity {
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$this->verifyLastEntry();
 
-		if ($this->before['from']->sec > $this->update['from']->sec) {
+		if ($this->before['from']->sec >= $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
 			return false;
 		}
