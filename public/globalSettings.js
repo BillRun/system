@@ -20,7 +20,7 @@ var globalSetting = {
   planCycleUnlimitedValue: 'UNLIMITED',
   serviceCycleUnlimitedValue: 'UNLIMITED',
   productUnlimitedValue: 'UNLIMITED',
-  keyUppercaseRegex: /^[A-Z0-9_]*$/,
+  keyUppercaseRegex: /^[A-Z0-9_]+$/,
   keyRegex: /^[A-Za-z0-9_]*$/,
   defaultLogo: 'billRun-cloud-logo.png',
   billrunCloudLogo: 'billRun-cloud-logo.png',
