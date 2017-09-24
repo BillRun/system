@@ -27,23 +27,23 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $rows = [
 		//New tests for new override price and includes format
 		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
-		array('stamp' => 'f1', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
-		array('stamp' => 'f2', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
-		array('stamp' => 'f3', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
-		array('stamp' => 'f4', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 280, 'services' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
-		array('stamp' => 'f5', 'sid' => 62, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 180, 'services' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f1', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f2', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f3', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f4', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 280, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f5', 'sid' => 62, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 180, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		//case G: NEW-PLAN-X3+NEW-SERVICE3
-		array('stamp' => 'g1', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 120, 'services' => ["NEW-SERVICE3"]),
-		array('stamp' => 'g2', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 110.5, 'services' => ["NEW-SERVICE3"]),
-		array('stamp' => 'g3', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 20, 'services' => ["NEW-SERVICE3"]),
-//		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services' => ["NEW-SERVICE3"]),
-		array('stamp' => 'g5', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services' => ["NEW-SERVICE3"]),
+		array('stamp' => 'g1', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 120, 'services_data' => ["NEW-SERVICE3"]),
+		array('stamp' => 'g2', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 110.5, 'services_data' => ["NEW-SERVICE3"]),
+		array('stamp' => 'g3', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 20, 'services_data' => ["NEW-SERVICE3"]),
+//		array('stamp' => 'g4', 'sid' => 63, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 75.4, 'services_data' => ["NEW-SERVICE3"]),
+		array('stamp' => 'g5', 'sid' => 63, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services_data' => ["NEW-SERVICE3"]),
 		//case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
-		array('stamp' => 'h1', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["NEW-SERVICE4"]),
-		array('stamp' => 'h2', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services' => ["NEW-SERVICE1"]),
-		array('stamp' => 'h3', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services' => ["NEW-SERVICE4"]),
-		array('stamp' => 'h4', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services' => ["NEW-SERVICE1"]),
-		array('stamp' => 'h5', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services' => ["NEW-SERVICE1"]),
+		array('stamp' => 'h1', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ["NEW-SERVICE4"]),
+		array('stamp' => 'h2', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services_data' => ["NEW-SERVICE1"]),
+		array('stamp' => 'h3', 'sid' => 64, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services_data' => ["NEW-SERVICE4"]),
+		array('stamp' => 'h4', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services_data' => ["NEW-SERVICE1"]),
+		array('stamp' => 'h5', 'sid' => 64, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services_data' => ["NEW-SERVICE1"]),
 		//case I NEW-PLAN-A1 (with two groups) no services
 		array('stamp' => 'i1', 'sid' => 65, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
 		array('stamp' => 'i2', 'sid' => 65, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
@@ -51,35 +51,35 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'i4', 'sid' => 65, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
 		array('stamp' => 'i5', 'sid' => 65, 'arate_key' => 'NEW-CALL-EUROPE', 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
 		//case J NEW-PLAN-A2 multiple groups with same name
-		array('stamp' => 'j1', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["NEW-SERVICE1"]),
-		array('stamp' => 'j2', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services' => ["NEW-SERVICE1"]),
-		array('stamp' => 'j3', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["NEW-SERVICE1"]),
-		array('stamp' => 'j4', 'sid' => 66, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["NEW-SERVICE1"]),
+		array('stamp' => 'j1', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ["NEW-SERVICE1"]),
+		array('stamp' => 'j2', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services_data' => ["NEW-SERVICE1"]),
+		array('stamp' => 'j3', 'sid' => 66, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ["NEW-SERVICE1"]),
+		array('stamp' => 'j4', 'sid' => 66, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services_data' => ["NEW-SERVICE1"]),
 		//case K shared account test
-		array('stamp' => 'k1', 'aid' => 7770, 'sid' => 71, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services' => ["SHARED-SERVICE1"]),
-		array('stamp' => 'k2', 'aid' => 7770, 'sid' => 72, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services' => ["SHARED-SERVICE1"]),
-		array('stamp' => 'k3', 'aid' => 7771, 'sid' => 73, 'arate_key' => 'SHARED-RATE', 'plan' => 'SHARED-PLAN-K3',  'usaget' => 'call', 'usagev' => 20, 'services' => ["SHARED-SERVICE1"]),
-		array('stamp' => 'k4', 'aid' => 7772, 'sid' => 74, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["SHARED-SERVICE1", "NO-SHARED-SERVICE2"]),
-		array('stamp' => 'k5', 'aid' => 7772, 'sid' => 75, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["SHARED-SERVICE1", "NO-SHARED-SERVICE2"]),
+		array('stamp' => 'k1', 'aid' => 7770, 'sid' => 71, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services_data' => ["SHARED-SERVICE1"]),
+		array('stamp' => 'k2', 'aid' => 7770, 'sid' => 72, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 8, 'services_data' => ["SHARED-SERVICE1"]),
+		array('stamp' => 'k3', 'aid' => 7771, 'sid' => 73, 'arate_key' => 'SHARED-RATE', 'plan' => 'SHARED-PLAN-K3',  'usaget' => 'call', 'usagev' => 20, 'services_data' => ["SHARED-SERVICE1"]),
+		array('stamp' => 'k4', 'aid' => 7772, 'sid' => 74, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services_data' => ["SHARED-SERVICE1", "NO-SHARED-SERVICE2"]),
+		array('stamp' => 'k5', 'aid' => 7772, 'sid' => 75, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services_data' => ["SHARED-SERVICE1", "NO-SHARED-SERVICE2"]),
 		//old tests
 		//case A: PLAN-X3+SERVICE1+SERVICE2
-		array('stamp' => 'a1', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 60, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a2', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a3', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a4', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 280, 'services' => ["SERVICE1", "SERVICE2"]),
-		array('stamp' => 'a5', 'sid' => 51, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 180, 'services' => ["SERVICE1", "SERVICE2"]),
+		array('stamp' => 'a1', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 60, 'services_data' => ["SERVICE1", "SERVICE2"]),
+		array('stamp' => 'a2', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services_data' => ["SERVICE1", "SERVICE2"]),
+		array('stamp' => 'a3', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 50, 'services_data' => ["SERVICE1", "SERVICE2"]),
+		array('stamp' => 'a4', 'sid' => 51, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 280, 'services_data' => ["SERVICE1", "SERVICE2"]),
+		array('stamp' => 'a5', 'sid' => 51, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 180, 'services_data' => ["SERVICE1", "SERVICE2"]),
 		//case B: PLAN-X3+SERVICE3
-		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services' => ["SERVICE3"]),
-//		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services' => ["SERVICE3"]),
-		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services' => ["SERVICE3"]),
+		array('stamp' => 'b1', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 120, 'services_data' => ["SERVICE3"]),
+		array('stamp' => 'b2', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 110.5, 'services_data' => ["SERVICE3"]),
+		array('stamp' => 'b3', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 20, 'services_data' => ["SERVICE3"]),
+//		array('stamp' => 'b4', 'sid' => 52, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-X3', 'usagev' => 75.4, 'services_data' => ["SERVICE3"]),
+		array('stamp' => 'b5', 'sid' => 52, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-X3', 'usagev' => 8, 'services_data' => ["SERVICE3"]),
 		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
-		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services' => ["SERVICE4"]),
-		array('stamp' => 'c2', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services' => ["SERVICE1"]),
-		array('stamp' => 'c3', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services' => ["SERVICE4"]),
-		array('stamp' => 'c4', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services' => ["SERVICE1"]),
-		array('stamp' => 'c5', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services' => ["SERVICE1"]),
+		array('stamp' => 'c1', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ["SERVICE4"]),
+		array('stamp' => 'c2', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 35.5, 'services_data' => ["SERVICE1"]),
+		array('stamp' => 'c3', 'sid' => 53, 'arate_key' => 'VEG', 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 180, 'services_data' => ["SERVICE4"]),
+		array('stamp' => 'c4', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 4.5, 'services_data' => ["SERVICE1"]),
+		array('stamp' => 'c5', 'sid' => 53, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services_data' => ["SERVICE1"]),
 		//case D PLAN-A1 (with two groups) no services
 		array('stamp' => 'd1', 'sid' => 54, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
 		array('stamp' => 'd2', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 12),
@@ -87,58 +87,58 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'd4', 'sid' => 54, 'arate_key' => 'VEG', 'plan' => 'PLAN-A1', 'usaget' => 'gr', 'usagev' => 80),
 		array('stamp' => 'd5', 'sid' => 54, 'arate_key' => 'CALL-EUROPE', 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
 		//case E PLAN-A2 multiple groups with same name
-		array('stamp' => 'e1', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e2', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e3', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services' => ["SERVICE1"]),
-		array('stamp' => 'e4', 'sid' => 55, 'arate_key' => 'VEG', 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services' => ["SERVICE1"]),
+		array('stamp' => 'e1', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ["SERVICE1"]),
+		array('stamp' => 'e2', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 75, 'services_data' => ["SERVICE1"]),
+		array('stamp' => 'e3', 'sid' => 55, 'arate_key' => 'CALL-USA', 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ["SERVICE1"]),
+		array('stamp' => 'e4', 'sid' => 55, 'arate_key' => 'VEG', 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services_data' => ["SERVICE1"]),
 		/**** NEW TEST CASES ****/
 		//case L cost
-		array('stamp' => 'l1', 'aid' => 23457, 'sid' => 77, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services' => ["NEW-SERVICE5"]),
-		array('stamp' => 'l2', 'aid' => 23457, 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L3"]),
-		array('stamp' => 'l3', 'aid' => 23457, 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
-		array('stamp' => 'l4', 'aid' => 23458, 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-L2"]),
+		array('stamp' => 'l1', 'aid' => 23457, 'sid' => 77, 'arate_key' => 'NEW-VEG', 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services_data' => ["NEW-SERVICE5"]),
+		array('stamp' => 'l2', 'aid' => 23457, 'sid' => 78, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L2', 'usaget' => 'call', 'usagev' => 240, 'services_data' => ["SERVICE-L3"]),
+		array('stamp' => 'l3', 'aid' => 23457, 'sid' => 79, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L3', 'usaget' => 'call', 'usagev' => 240, 'services_data' => ["SERVICE-L2"]),
+		array('stamp' => 'l4', 'aid' => 23458, 'sid' => 80, 'arate_key' => 'RATE-L3', 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services_data' => ["SERVICE-L2"]),
 		//case M pooled account services
-		array('stamp' => 'm1', 'aid' => 8880, 'sid' => 800, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 10, 'services' => ["POOLED-SERVICE1"]),
-		array('stamp' => 'm2', 'aid' => 8881, 'sid' => 801, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["POOLED-SERVICE1"]),
-		array('stamp' => 'm3', 'aid' => 8882, 'sid' => 803, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services' => ["POOLED-SERVICE1"]),
-		array('stamp' => 'm4', 'aid' => 8883, 'sid' => 804, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 15, 'services' => ["POOLED-SERVICE1"]),
-		array('stamp' => 'm5', 'aid' => 8884, 'sid' => 806, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 25, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
-		array('stamp' => 'm6', 'aid' => 8884, 'sid' => 807, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 10, 'services' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
-		array('stamp' => 'm7', 'aid' => 8885, 'sid' => 809, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 100, 'services' => ["POOLED-SERVICE3"]),
+		array('stamp' => 'm1', 'aid' => 8880, 'sid' => 800, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 10, 'services_data' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm2', 'aid' => 8881, 'sid' => 801, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services_data' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm3', 'aid' => 8882, 'sid' => 803, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 20, 'services_data' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm4', 'aid' => 8883, 'sid' => 804, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 15, 'services_data' => ["POOLED-SERVICE1"]),
+		array('stamp' => 'm5', 'aid' => 8884, 'sid' => 806, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 25, 'services_data' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
+		array('stamp' => 'm6', 'aid' => 8884, 'sid' => 807, 'arate_key' => 'SHARED-RATE', 'plan' => 'POOLED-PLAN-1',  'usaget' => 'call', 'usagev' => 10, 'services_data' => ["POOLED-SERVICE12", "POOLED-SERVICE11"]),
+		array('stamp' => 'm7', 'aid' => 8885, 'sid' => 809, 'arate_key' => 'SHARED-RATE', 'plan' => 'NEW-PLAN-A2',  'usaget' => 'call', 'usagev' => 100, 'services_data' => ["POOLED-SERVICE3"]),
 		// case N - new structure support multiple usage types
 		// N1
 		array('stamp' => 'n1', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
-			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 125, 'services' => ["SERVICE-N1"]),
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 125, 'services_data' => ["SERVICE-N1"]),
 		// N2 - depend on N1
 		array('stamp' => 'n2', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
-			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 275, 'services' => ["SERVICE-N1"]),
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 275, 'services_data' => ["SERVICE-N1"]),
 		// N3
 		array('stamp' => 'n3', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
-			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 240, 'services' => ["SERVICE-N3"]),
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 240, 'services_data' => ["SERVICE-N3"]),
 		// N4 - depend on N1
 		array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
-			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services' => ["SERVICE-N3"]),
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 475, 'services_data' => ["SERVICE-N3"]),
 		// N5
 		array('stamp' => 'n5', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
-			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services_data' => []),
 		// N6
 		array('stamp' => 'n6', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
-			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services_data' => []),
 		// N7
 		array('stamp' => 'n7', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N5', 
-			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services' => []),
+			'plan' => 'NEW-PLAN-N5',  'usaget' => 'call', 'usagev' => 5, 'services_data' => []),
 		// case O - custom period balance support
 		// O1
 		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services_data' => ["SERVICE-O1"],
 			'urt' => '2017-09-01 09:00:00+03:00'),
 //		// O2
 		array('stamp' => 'o2', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services_data' => ["SERVICE-O1"],
 			'urt' => '2017-09-15 09:00:00+03:00'),
 		// O3
 		array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O2',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services_data' => ["SERVICE-O1"],
 			'urt' => '2017-09-14 09:00:00+03:00'),
 
 	];
@@ -248,7 +248,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
 		$init = new Tests_UpdateRowSetUp();
 		$init->setColletions();
-		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services'=>$this->servicesToUse)),array("multiple" => true));
+		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services_data'=>$this->servicesToUse)),array("multiple" => true));
 		//running test
 		foreach ($this->rows as $key => $row) {
 			$row = $this->fixRow($row, $key);
