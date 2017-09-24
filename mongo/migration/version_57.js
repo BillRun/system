@@ -42,6 +42,6 @@ db.lines.find({"process_time":{$exists:1}}).forEach( function(line) {
 });
 db.log.find({"process_time":{$exists:1}}).forEach( function(line) { 
 	if (typeof line.process_time == 'string'){
-		db.lines.update({_id:line._id},{$set:{process_time:new ISODate(line.process_time)}})
+		db.log.update({_id:line._id},{$set:{process_time:new ISODate(line.process_time)}})
 	}
 });
