@@ -86,7 +86,7 @@ else
 	echo "Deploy replica-set 1 server b"
 	mongod --quiet --shardsvr --replSet "rs1" --dbpath $INSTALLPATH/data1b --port 27632 --logpath=$INSTALLPATH/log/mongod1b.log --fork
 	echo "Deploy replica-set 1 arbiter"
-	mongod --quiet --port 30000 --dbpath $INSTALLPATH/arb1 --replSet rs0 --fork --logpath=$INSTALLPATH/log/arb1.log --smallfiles --nojournal
+	mongod --quiet --port 30000 --dbpath $INSTALLPATH/arb1 --replSet rs1 --fork --logpath=$INSTALLPATH/log/arb1.log --smallfiles --nojournal
 	echo "Configure replica-set 1"
 	echo "Configure server a of replica-set 1"
 	mongo --quiet --port 27631 --eval 'rs.initiate({"_id": "rs1", members: [{ "_id": 0, "host": "localhost:27631" }]});'
@@ -107,7 +107,7 @@ else
 	echo "Deploy replica-set 2 server b"
 	mongod --quiet --shardsvr --replSet "rs2" --dbpath $INSTALLPATH/data2b --port 27642 --logpath=$INSTALLPATH/log/mongod2b.log --fork
 	echo "Deploy replica-set 1 arbiter"
-	mongod --quiet --port 30001 --dbpath $INSTALLPATH/arb2 --replSet rs1 --fork --logpath=$INSTALLPATH/log/arb2.log --smallfiles --nojournal
+	mongod --quiet --port 30001 --dbpath $INSTALLPATH/arb2 --replSet rs2 --fork --logpath=$INSTALLPATH/log/arb2.log --smallfiles --nojournal
 	echo 
 	echo "Configure replica-set 2"
 	echo "Configure server a of replica-set 2"
