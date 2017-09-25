@@ -36,7 +36,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance($options) {
-		if (isset($options['balance_period']) && isset($options['serviceName'])) {
+		if (isset($options['balance_period']) && isset($options['service_name'])) {
 			$subService = self::getSubscriberService($options['sid'], $options['service_name'], $options['urt']->sec);
 			if ($subService) {
 				$from = $start_period = $subService['from'];
