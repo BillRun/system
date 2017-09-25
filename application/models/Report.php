@@ -273,7 +273,7 @@ class ReportModel {
 				}
 				return $value;
 			}
-			case 'corrency_format': {
+			case 'currency_format': {
 				$currencySymbol = Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
 				if ($format['value'] === 'prefix') {
 					return $currencySymbol.$value;
