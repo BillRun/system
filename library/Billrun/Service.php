@@ -14,6 +14,8 @@
  * @since    5.2
  */
 class Billrun_Service {
+	
+	const UNLIMITED_VALUE = 'UNLIMITED';
 
 	/**
 	 * container of the entity data
@@ -101,7 +103,7 @@ class Billrun_Service {
 	 */
 	public function isExhausted($serviceStartDate) {
 		$serviceAvailableCycles = Billrun_Util::getIn(end($this->data['price']), 'to', 0);
-		if ($serviceAvailableCycles === 'UNLIMITED') {
+		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
 		if ($serviceStartDate instanceof MongoDate) {
@@ -243,7 +245,7 @@ class Billrun_Service {
 			
 			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time);
 			// convert cost to volume
-			if ($cost === 'UNLIMITED') {
+			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
 				return array(
 					'cost' => PHP_INT_MAX,
 				);
@@ -386,7 +388,7 @@ class Billrun_Service {
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
 		$unit = $this->data['include']['groups'][$group]['usage_types'][$usaget]['unit'];
-		return Billrun_Utils_Units::convertVolumeUnits($value, $usaget, $unit, true);
+		return Billrun_Utils_Units::convertVolumeUnits($value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value, $usaget, $unit, true);
 	}
 	
 	/**

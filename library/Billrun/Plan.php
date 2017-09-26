@@ -224,7 +224,7 @@ class Billrun_Plan extends Billrun_Service {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded === 'UNLIMITED') {
+		if ($rateUsageIncluded === Billrun_Service::UNLIMITED_VALUE) {
 			return PHP_INT_MAX;
 		}
 
@@ -251,7 +251,7 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		$usageIncluded = $this->get('include')[$usagetype];
-		if ($usageIncluded == 'UNLIMITED') {
+		if ($usageIncluded == Billrun_Service::UNLIMITED_VALUE) {
 			return PHP_INT_MAX;
 		}
 
@@ -399,15 +399,15 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	public static function isValueUnlimited($value) {
-		return $value == 'UNLIMITED';
+		return $value == Billrun_Service::UNLIMITED_VALUE;
 	}
 	
 	public function isUnlimited($usage_type) {
-		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == 'UNLIMITED';
+		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == Billrun_Service::UNLIMITED_VALUE;
 	}
 
 	public function isUnlimitedRate($rate, $usageType) {
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == 'UNLIMITED');
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == Billrun_Service::UNLIMITED_VALUE);
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
@@ -415,7 +415,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($groupSelected === FALSE) {
 			return FALSE;
 		}
-		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == Billrun_Service::UNLIMITED_VALUE);
 	}
 
 	/**
