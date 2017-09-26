@@ -128,7 +128,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 				'time' => $time
 			);
 			$serviceObject = new Billrun_Service($serviceSettings);
-			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec) == FALSE) {
+			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec, $serviceObject->get("balance_period")) == FALSE) {
 				continue;
 			}
 			$ret[] = $serviceObject;
