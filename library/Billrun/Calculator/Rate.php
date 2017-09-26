@@ -61,7 +61,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideRate = TRUE;
-
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['calculator']['rate_mapping'])) {
@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		return array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'foreign');
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -234,7 +234,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], 0, $row['urt']->sec);
 		}
 		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
+		$row->setRawData( array_merge($newData ,array('foreign' => $this->getForeignFields($newData))) );
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
@@ -404,6 +404,21 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
+	}
+
+	protected function getForeignFields($row) {
+		$foreignFieldsData = array();
+		$forignFieldsConf = Billrun_Factory::config()->getConfigValue('lines.fields', array());
+		foreach ($forignFieldsConf as $fieldconf) {
+			Billrun_Util::setIn($foreignFieldsData, $fieldconf['field_name'], $this->getForeginFieldValue($row, $fieldconf));
+		}
+		return $foreignFieldsData;
+	}
+
+	protected function getForeginFieldValue($row, $fieldConf) {
+		$entity = Billrun_Utils_Usage::retriveEntityFromUsage($row, $fieldConf['forign']['entity']);
+
+		return empty($entity) ? null : $entity[$fieldConf['forign']['field']];
 	}
 
 }
