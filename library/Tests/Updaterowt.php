@@ -110,8 +110,8 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'n1', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
 			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 125, 'services_data' => ["SERVICE-N1"]),
 		// N2 - depend on N1
-		array('stamp' => 'n2', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1', 
-			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 275, 'services_data' => ["SERVICE-N1"]),
+		array('stamp' => 'n2', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N1b', 
+			'plan' => 'NEW-PLAN-N1',  'usaget' => 'incoming_call', 'usagev' => 275, 'services_data' => ["SERVICE-N1"]),
 		// N3
 		array('stamp' => 'n3', 'aid' => 9001, 'sid' => 900, 'arate_key' => 'RATE-N3', 
 			'plan' => 'NEW-PLAN-N1',  'usaget' => 'call', 'usagev' => 240, 'services_data' => ["SERVICE-N3"]),
