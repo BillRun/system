@@ -232,7 +232,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
 			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
 		});
-		if (empty($matchedPackages)) {
+		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
 			$groupSelected = FALSE;
 			return;
 		}
@@ -301,9 +301,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$rateUsageIncluded = 0;
 		}
 		
-		if(!floor($roundedUsage - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev'])) {
+		if(floor($roundedUsage - $subscriberBalance['balance']['groups'][$groupSelected][$this->row['usaget']]['usagev']) <= 0) {
 			$this->balanceToUpdate = null;
 			$this->exhaustedBalances = array();
+			$groupSelected = FALSE;
 		}
 
 	}
