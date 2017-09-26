@@ -268,8 +268,8 @@ class Billrun_Service {
 				);
 			}
 
-			if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected]['usagev'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['usagev'];
 			} else {
 				$subscriberSpent = 0;
 			}
