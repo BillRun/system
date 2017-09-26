@@ -309,7 +309,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 					$ret['out_group'] = $ret['out_plan'] = $volumeToCharge;
 				}
 			}
-			if ($plan->getPlanGroup() !== FALSE) {
+			if (($plan->getPlanGroup() !== FALSE) && (!empty($ret['in_plan']))) {
 				$ret['arategroup'] = $plan->getPlanGroup();
 			}
 		} else { // else if (dispatcher->chain_of_responsibilty)->isRateInPlugin {dispatcher->trigger->calc}
