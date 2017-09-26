@@ -272,6 +272,35 @@
 			  }
 			}
 		  }
+	},
+	{
+		"name" : "SERVICE-O4", "description" : "SERVICE-O4", "price" : 15, "from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"balance_period": "tomorrow +2 weeks",
+		"include": {
+			"groups": {
+			  "XYZ": {
+				"usage_types": {
+				  "call": {
+					"unit": "seconds"
+				  },
+				  "incoming_call": {
+					"unit": "seconds"
+				  },
+				  "outgoing_call": {
+					"unit": "secondss"
+				  }
+				},
+				"value": 100,
+				"account_shared": false,
+				"account_pool": false,
+				"rates": [
+				  "RATE-O4",
+				  "RATE-O5",
+				  "RATE-O6"
+				]
+			  }
+			}
+		  }
 	}
 
         ]

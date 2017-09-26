@@ -520,6 +520,29 @@
 		"to" : "time*2116-10-05T08:08:36Z"
 		
 
+        },
+		{
+			"name" : "NEW-PLAN-O4",
+			"plan_code" : "NEW-PLAN-O4",
+			"description" : "NEW-PLAN-O4",
+			"upfront" : false,
+			"from" : "time*2016-10-05T08:08:36Z",
+			"to" : "time*2116-10-05T08:08:36Z",
+			"include" : {
+				"groups" : {
+					"ABC": {
+						"call": 40,
+						"unit": "seconds",
+						"account_shared": false,
+						"account_pool": false,
+						"rates": [
+							"RATE-O4",
+							"RATE-O5",
+							"RATE-O6"
+						]
+					}
+				}
+			}
         }
 		
 
