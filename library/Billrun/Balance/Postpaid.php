@@ -65,7 +65,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	protected function getDefaultBalance() {
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
-			$subService = self::getSubscriberService($this->row['sid'], $service_name, $this->row['urt']->sec);
+			$subService = self::getSubscriberService($this->row['sid'], $service_name, $this->row['urt']->sec, $this->row['balance_period']);
 			if ($subService) {
 				$from = $start_period = $subService['services'][0]['from']->sec;
 				$period = $this->row['balance_period'];
@@ -104,14 +104,17 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @todo refactoring and use native subscriber class
 	 */
-	public static function getSubscriberService($sid, $service, $time) {
+	public static function getSubscriberService($sid, $service, $time, $balance_period) {
 		try {
 			$baseQuery = array(
 				'sid' => $sid,
 				'type' => 'subscriber',
 				'services.name' => $service,
-				'services.from' => array('$lte' => new MongoDate($time)),
-				'services.to' => array('$gt' => new MongoDate($time))
+				'services.from' => array(
+					'$lte' => new MongoDate($time), 
+					'$gte' => new MongoDate(strtotime(str_replace("+", "-", $balance_period), $time)), // TODO: change once the to in subscriber service will be fixed (use the next mark-out condition instead)
+				),
+//				'services.to' => array('$gt' => new MongoDate($time))
 			);
 			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
 			$elemMatch = array(
