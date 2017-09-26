@@ -26,8 +26,7 @@ $out = fopen('php://output', 'w');
 foreach ($entities as $entity) {
 	$line = array();
 	foreach (array_keys($headers) as $header) {
-		$value = Billrun_Util::getIn($entity, $header, null);
-		array_push($line, $value);
+		array_push($line, Billrun_Util::getIn($entity, $header, null));
 	}
 	array_push($lines, $line);
 }
