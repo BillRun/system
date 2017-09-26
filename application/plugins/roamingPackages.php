@@ -247,7 +247,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$usageType = $this->getTransformedUsageType($package['service_name'], $plan, $usageType);
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
-			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name'], $package['balance_priority']);
+			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name']);
 		}
 		
 		$roamingQuery = array(
@@ -263,11 +263,19 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
 			),
 		);
-		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
+		$roamingBalances = $this->balances->query($roamingQuery)->cursor();
 		if ($roamingBalances->current()->isEmpty()) {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 		}
 		foreach ($roamingBalances as $balance) {
+			foreach ($matchedPackages as $matchedPackage) {
+				if ($balance['service_id'] == $matchedPackage['id']) {
+					$roamingBalancesByOrder[$matchedPackage['balance_priority']] = $balance;
+				}
+			}
+		}
+		ksort($roamingBalancesByOrder);
+		foreach ($roamingBalancesByOrder as $balance) {
 			$balancePackage = $balance['service_name'];
 			$usageType = $this->getTransformedUsageType($balancePackage, $plan, $this->row['usaget']);
 			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
@@ -318,13 +326,13 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $to - unixtimestamp representing the end date of the package.
 	 * 
 	 */
-	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName, $balancePriority) {
+	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName) {
 		$planRef = $plan->createRef();
 		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
 		if (!empty($packageLimits['joined_field'])) {
-			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority, $packageLimits['joined_field']);
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $packageLimits['joined_field']);
 		} else {
-			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName);
 		}
 	}
 
