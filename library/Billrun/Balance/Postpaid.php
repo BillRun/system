@@ -230,7 +230,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 		}
 		// update balance group (if exists); supported only on postpaid
-		$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_totals_key);
+		$this->buildBalanceGroupsUpdateQuery($update, $pricingData);
 		$pricingData['usagesb'] = floatval($currentUsage);
 		return array($query, $update);
 	}
@@ -244,7 +244,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @return void
 	 */
-	protected function buildBalanceGroupsUpdateQuery(&$update, &$pricingData, $balance_totals_key) {
+	protected function buildBalanceGroupsUpdateQuery(&$update, &$pricingData) {
 		if (!isset($pricingData['arategroups'])) {
 			return;
 		}
@@ -262,13 +262,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 					$arategroup['usagesb'] = 0;
 				}
 			} else {
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
-				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
-				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
+				$update['$inc']['balance.groups.' . $group . '.usagev'] = $arategroup['usagev'];
+				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
 //				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
-					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+				if (isset($this->get('balance')['groups'][$group]['usagev'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['usagev']);
 				} else {
 					$arategroup['usagesb'] = 0;
 				}
