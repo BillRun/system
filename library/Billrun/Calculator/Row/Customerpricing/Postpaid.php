@@ -122,12 +122,13 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 	protected function loadSubscriberServices($services, $time) {
 		$ret = array();
 		foreach ($services as $service) {
+			$serviceName = isset($service['name']) ? $service['name'] : $service;
 			$serviceSettings = array(
-				'name' => $service,
+				'name' => $serviceName,
 				'time' => $time
 			);
 			$serviceObject = new Billrun_Service($serviceSettings);
-			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $service, $this->urt->sec) == FALSE) {
+			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec) == FALSE) {
 				continue;
 			}
 			$ret[] = $serviceObject;

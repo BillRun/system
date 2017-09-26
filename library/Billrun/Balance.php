@@ -140,26 +140,18 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function loadQuerySort() {
 		return array();
 	}
-
+	
+	abstract protected function getBalanceLoadQuery(array $query = array());
+	
 	/**
-	 * Gets a query to get the correct balance of the subscriber.
-	 * 
-	 * @param type $subscriberId
-	 * @param type $timeNow - The time now.
-	 * @param type $chargingType
-	 * @param type $usageType
+	 * on prepaid there is no default balance, return no balance (empty array)
+	 * @param array $options settings
 	 * @return array
 	 */
-	protected function getBalanceLoadQuery(array $query = array()) {
-		$query['aid'] = $this->row['aid'];
-		$query['sid'] = $this->row['sid'];
-		$query['from'] = array('$lte' => $this->row['urt']);
-		$query['to'] = array('$gte' => $this->row['urt']);
-
-		Billrun_Factory::dispatcher()->trigger('getBalanceLoadQuery', array(&$query, $this->row, $this));
-
-		return $query;
+	protected function getDefaultBalance() {
+		return array();
 	}
+
 
 	/**
 	 * method to check if the loaded balance is valid
