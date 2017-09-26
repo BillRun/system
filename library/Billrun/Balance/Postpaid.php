@@ -85,6 +85,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $this->row['urt']->sec, $start_period, $period, $service_name);
 	}
 	
+	/**
+	 * method to check if balance is aligned to extended period which is not aligned to the cycle
+	 * @return boolean true if this is extended balance, else false
+	 */
 	protected function isExtendedBalance() {
 		return isset($this->row['balance_period']) && $this->row['balance_period'] != "default" && isset($this->row['service_name']);
 	}
