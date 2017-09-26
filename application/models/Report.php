@@ -224,7 +224,7 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value)){
+		if(!is_scalar($value) && get_class($value) !== 'MongoDate'){
 			// array result like addToSet
 			if(count(array_filter(array_keys($value), 'is_string')) === 0){
 				$values = array();
@@ -273,7 +273,7 @@ class ReportModel {
 				}
 				return $value;
 			}
-			case 'corrency_format': {
+			case 'currency_format': {
 				$currencySymbol = Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
 				if ($format['value'] === 'prefix') {
 					return $currencySymbol.$value;
