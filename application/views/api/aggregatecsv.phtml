@@ -19,13 +19,20 @@ if (isset($headers[0])) {
 header('Content-Encoding: UTF-8');
 header('Content-type: text/csv; charset=UTF-8');
 
-echo implode($delimiter, $headers) . PHP_EOL;
+$lines = array();
+array_push($lines, $headers);
+$out = fopen('php://output', 'w');
 
 foreach ($entities as $entity) {
 	$line = array();
 	foreach (array_keys($headers) as $header) {
-		$val = Billrun_Util::getIn($entity, $header, null);
-		echo (!is_null($val) ? (strpos($val, $delimiter) === false ? $val : '"' . addslashes($val) . '"') : '') . $delimiter;
+		$value = Billrun_Util::getIn($entity, $header, null);
+		array_push($line, $value);
 	}
-	echo PHP_EOL;
+	array_push($lines, $line);
 }
+
+foreach ($lines as $line) {
+	fputcsv($out, $line);
+}
+fclose($out);
