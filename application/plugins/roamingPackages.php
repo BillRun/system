@@ -149,7 +149,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.usagev'] = $this->extraUsage;
 					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.count'] = 1;
 				}
-		
+				
+				$balanceIds[] = $this->balanceToUpdate->getRawData()['_id'];
 				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
 				$balancesIncludeRow[] = array(
 					'service_name' => $this->balanceToUpdate['service_name'],
@@ -192,6 +193,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 						$exhaustedUpdate['$set']['balance.totals.' . $packageLimits['joined_field'] . '.exhausted'] = true;
 
 					}
+					$balanceIds[] = $exhaustedBalance['_id'];
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
 			}
@@ -202,6 +204,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			if ((isset($balancesIncludeRow))) {
 				$row['roaming_balances'] = $balancesIncludeRow;
+				$this->updateRoamingBalancesTx($row, $balanceIds);
 			}
 		}
 	}
@@ -275,7 +278,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$subRaw = $balance->getRawData();
 			$stamp = strval($this->row['stamp']);
-			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;
+			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx'][$stamp]['usagev'] : 0;
 			$UsageIncluded += (int) $plan->get('include.groups.' . $balancePackage)[$usageType];
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
@@ -393,4 +396,41 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return false;
 	}
+	
+	public function handleRoamingBalancesOnCrash(&$pricingData, $row) {
+		$stamp = strval($row['stamp']);
+		$balanceQuery = array(
+			'sid' => $row['sid'],
+			'$and' => array(
+				array('to' => array('$exists' => true)),
+				array('to' => array('$gte' => new MongoDate($row['urt']->sec))),
+				array('from' => array('$exists' => true)),
+				array('from' => array('$lte' => new MongoDate($row['urt']->sec)))
+			),
+		);
+		$roamingBalances = $this->balances->query($balanceQuery)->cursor();
+		foreach ($roamingBalances as $balance) {
+			if (isset($balance['tx'][$stamp])) {
+				$pricingData['roaming_balances'] = $balance['tx'][$stamp]['roaming_balances'];
+				$ids[] = $balance->getRawData()['_id'];
+			}
+		}
+
+		if (!empty($ids)) {
+			$query = array(
+				'_id' => array('$in' => $ids),
+			);
+			$update = array(
+				'$unset' => array(
+					'tx.' . $row['stamp'] => 1
+				)
+			);
+			$this->balances->update($query, $update);
+		}
+	}
+
+	protected function updateRoamingBalancesTx($row, $balanceIds) {
+		$this->balances->update(array('_id' => array('$in' => $balanceIds)), array('$set' => array('tx.' . $row['stamp'] . '.roaming_balances' => $row['roaming_balances'])));
+	}
+
 }
