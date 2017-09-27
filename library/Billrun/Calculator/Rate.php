@@ -61,7 +61,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideRate = TRUE;
-	
+
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['calculator']['rate_mapping'])) {
