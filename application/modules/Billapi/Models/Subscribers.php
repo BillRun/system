@@ -74,6 +74,12 @@ class Models_Subscribers extends Models_Entity {
 				if (empty($this->before)) { // this is new subscriber
 					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
 				}
+				//Handle custom period services
+				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
+				if( !empty($serviceRate) && !empty( $servicePeriod = @$serviceRate->get('balance_period')) ) {
+					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+				}
+				
 				//to can't be more then the updated 'to' of the subscription
 				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
 				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
