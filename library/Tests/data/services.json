@@ -211,6 +211,7 @@
 				"account_pool": false,
 				"rates": [
 				  "RATE-N1",
+				  "RATE-N1b",
 				  "INCOMING_1"
 				]
 			  }

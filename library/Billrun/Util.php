@@ -1229,7 +1229,7 @@ class Billrun_Util {
 	 * @return Integer value of input, or false if failed.
 	 */
 	public static function toNumber($input) {
-		if ($input === "UNLIMITED") {
+		if ($input === Billrun_Service::UNLIMITED_VALUE) {
 			return $input;
 		}
 

@@ -153,7 +153,7 @@ class Billrun_Importer_RecurringChargingPlans extends Billrun_Importer_Csv {
 	protected function getDuration($rowData, $unlimited = false) {
 		if ($unlimited) {
 			return array(
-				'duration' => 'UNLIMITED',
+				'duration' => Billrun_Service::UNLIMITED_VALUE,
 			);
 		}
 		return array(
