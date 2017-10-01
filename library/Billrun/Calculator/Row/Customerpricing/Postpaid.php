@@ -128,13 +128,25 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 				'time' => $time
 			);
 			$serviceObject = new Billrun_Service($serviceSettings);
-			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec, $serviceObject->get("balance_period")) == FALSE) {
+			$balancePeriod = @$serviceObject->get("balance_period");
+			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec, $serviceObject->get("balance_period")) == FALSE) {
 				continue;
 			}
-			$ret[] = $serviceObject;
+			
+			if ($balancePeriod && isset($service['to']->sec)) {
+				$sortKey = (int) $service['to']->sec;
+			} else {
+				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
+			}
+			while (isset($ret[$sortKey])) { // in case service with same expiration
+				++$sortKey;
+			}
+			$ret[$sortKey] = $serviceObject;
 		}
+		
+		ksort($ret);
 
-		return $ret; // array of service objects
+		return array_values($ret); // array of service objects
 	}
 
 }
