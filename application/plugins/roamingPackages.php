@@ -34,7 +34,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 * @var array
 	 */
-	protected $roamingPackages = array("IRP_2GB", "IRP_2GB_W_CALLS_SMS", "IRP_1GB", "IRP_IRD");
+	protected $roamingPackages;
 	
 
 	protected $package = null;
@@ -86,19 +86,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	protected $row;
 	
-	/**
-	 * usage types to join together.
-	 * 
-	 * @var string
-	 */
-	protected $joinedUsageTypes = null;
-	
-	/**
-	 * usage type name for multiple usage types in one package.
-	 * 
-	 * @var string
-	 */
-	protected $joinedField = null;
+	protected $plan;
 
 	protected $coefficient;
 	
@@ -111,6 +99,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 
 	public function __construct() {
+		$this->roamingPackages = Billrun_Factory::config()->getConfigValue('roamingPackages.available_packages');
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 	}
@@ -136,9 +125,8 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->ownedPackages = !empty($row['packages']) ? $row['packages'] : array();
 		$this->exhaustedBalances = array();
 		$this->balanceToUpdate = null;
-		$this->joinedUsageTypes = null;
-		$this->joinedField = null;
 		$this->package = null;
+		$this->plan = null;
 	}
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
@@ -148,6 +136,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$balancesIncludeRow = array();
 			$roamingUpdate = array();
 			if (!is_null($this->balanceToUpdate)) {
+				$packageLimits = $this->getPackageJoinedValues($this->balanceToUpdate['service_name'], $this->plan);
+				if (!empty($packageLimits['joined_field'])) {
+					$joinedField = $packageLimits['joined_field'];
+					$joinedUsageTypes = $packageLimits['joined_usage_types'];
+				}
 				$roamingQuery = array(
 					'sid' => $row['sid'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month'],
@@ -158,9 +151,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$roamingUpdate['$set']['balance.totals.' . $row['usaget'] . '.cost'] = 0;
 				$roamingUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 				$roamingUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => floor($this->extraUsage / $this->coefficient));
-				if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
-					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $this->extraUsage;
-					$roamingUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;	
+				if (!empty($joinedField) && in_array($row['usaget'], $joinedUsageTypes)) {
+					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.usagev'] = $this->extraUsage;
+					$roamingUpdate['$inc']['balance.totals.' . $joinedField . '.count'] = 1;	
 				}
 
 				$this->balances->update($roamingQuery, $roamingUpdate, array('w' => 1));
@@ -169,7 +162,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					'package_id' =>  $this->balanceToUpdate['service_id'],
 					'billrun_month' => $this->balanceToUpdate['billrun_month'],
 					'added_usage' => floor($this->extraUsage / $this->coefficient),
-					'added_joined_usage' => (!is_null($this->joinedField) && in_array($row['usaget'], $this->joinedUsageTypes)) ? array('joined_field' => $this->joinedField, 'usage' => $this->extraUsage) : null,
+					'added_joined_usage' => (!empty($joinedField) && in_array($row['usaget'], $joinedUsageTypes)) ? array('joined_field' => $joinedField, 'usage' => $this->extraUsage) : null,
 					'usage_before' => array(
 						'call' => $this->balanceToUpdate['balance']['totals']['call']['usagev'],
 						'incoming_call' => $this->balanceToUpdate['balance']['totals']['incoming_call']['usagev'],
@@ -183,13 +176,14 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$exhaustedUpdate = array();
 				foreach ($this->exhaustedBalances as $exhausted) {
 					$exhaustedBalance = $exhausted['balance']->getRawData();
+					$packageLimits = $this->getPackageJoinedValues($exhaustedBalance['service_name'], $this->plan);
 					$usageLeft = floor($exhausted['usage_left'] / $this->coefficient);
 					$exhaustedBalancesKeys[] = array(
 						'service_name' => $exhaustedBalance['service_name'],
 						'package_id' =>  $exhaustedBalance['service_id'],
 						'billrun_month' => $exhaustedBalance['billrun_month'], 
 						'added_usage' => $usageLeft,
-						'added_joined_usage' => (!is_null($this->joinedField) && in_array($row['usaget'], $this->joinedUsageTypes)) ? array('joined_field' => $this->joinedField, 'usage' => $this->extraUsage) : null,
+						'added_joined_usage' => (!empty($packageLimits['joined_field']) && in_array($row['usaget'], $packageLimits['joined_usage_types'])) ? array('joined_field' => $packageLimits['joined_field'], 'usage' => $this->extraUsage) : null,
 						'usage_before' => array(
 							'call' => $exhaustedBalance['balance']['totals']['call']['usagev'], 
 							'incoming_call' => $exhaustedBalance['balance']['totals']['incoming_call']['usagev'], 
@@ -202,10 +196,10 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;	
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
-					if (!is_null($this->joinedField ) && in_array($row['usaget'], $this->joinedUsageTypes)) {
-						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.usagev'] = $exhausted['usage_left'];
-						$exhaustedUpdate['$inc']['balance.totals.' . $this->joinedField . '.count'] = 1;
-						$exhaustedUpdate['$set']['balance.totals.' . $this->joinedField . '.exhausted'] = true;
+					if (!empty($packageLimits['joined_field']) && in_array($row['usaget'], $packageLimits['joined_usage_types'])) {
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.usagev'] = $exhausted['usage_left'];
+						$exhaustedUpdate['$inc']['balance.totals.' . $packageLimits['joined_field'] . '.count'] = 1;
+						$exhaustedUpdate['$set']['balance.totals.' . $packageLimits['joined_field'] . '.exhausted'] = true;
 					}
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);	
 				}
@@ -248,14 +242,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$groupSelected = FALSE;
 			return;
 		}
-		if (isset($limits['joined_usage_types']) && isset($limits['joined_field'])) {
-			$this->joinedUsageTypes = $limits['joined_usage_types'];
-			$this->joinedField = $limits['joined_field'];
-			if (in_array($usageType, $this->joinedUsageTypes)) {
-				$usageType = $this->joinedField;
-			}
-		}
-		
+		$this->plan = $plan;
 		$UsageIncluded = 0;
 		$subscriberSpent = 0;
 		foreach ($matchedPackages as $package) {
@@ -264,6 +251,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (!($this->lineTime >= $from && $this->lineTime <= $to)) {
 				continue;
 			}
+			$usageType = $this->getTransformedUsageType($package['service_name'], $plan, $usageType);
 			$billrunKey = $package['service_name'] . '_' . date("Ymd", $from) . '_' . date("Ymd", $to) . '_' . $package['id'];
 			$this->createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $package['id'], $package['service_name'], $package['balance_priority']);
 		}
@@ -272,15 +260,14 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'sid' => $subscriberBalance['sid'],
 			'$and' => array(
 				array('to' => array('$exists' => true)),
-				array('to' => array('$gte' => new MongoDate($this->lineTime)))
-			),
-			'$and' => array(
+				array('to' => array('$gte' => new MongoDate($this->lineTime))),
 				array('from' => array('$exists' => true)),
 				array('from' => array('$lte' => new MongoDate($this->lineTime)))
 			),
 			'$or' => array(
 				array('balance.totals.' . $usageType . '.exhausted' => array('$exists' => false)),
 				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
+				
 			),
 		);
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
@@ -288,13 +275,14 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log("Didn't found roaming balance for sid:" . $subscriberBalance['sid'] . ' row stamp:' . $this->row['stamp'], Zend_Log::NOTICE);
 		}
 		foreach ($roamingBalances as $balance) {
-			$subRaw = $balance->getRawData();
-			$stamp = strval($this->row['stamp']);
-			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;
 			$balancePackage = $balance['service_name'];
+			$usageType = $this->getTransformedUsageType($balancePackage, $plan, $this->row['usaget']);
 			if (!isset($plan->get('include.groups.' . $balancePackage)[$usageType])) {
 				continue;
 			}
+			$subRaw = $balance->getRawData();
+			$stamp = strval($this->row['stamp']);
+			$txValue = isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx']) ? $subRaw['tx']['stamp'][$usageType] : 0;	
 			$UsageIncluded += (int) $plan->get('include.groups.' . $balancePackage)[$usageType];
 			if (isset($balance['balance']['totals'][$usageType])) {
 				$subscriberSpent += $balance['balance']['totals'][$usageType]['usagev'] - $txValue;
@@ -338,8 +326,9 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected function createRoamingPackageBalanceForSid($subscriberBalance, $billrunKey, $plan, $from, $to, $serviceId, $serviceName, $balancePriority) {
 		$planRef = $plan->createRef();
-		if (!is_null($this->joinedField)) { 
-			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority, $this->joinedField);
+		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
+		if (!empty($packageLimits['joined_field'])) {
+			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority, $packageLimits['joined_field']);
 		} else {
 			Billrun_Balance::createBalanceIfMissing($subscriberBalance['aid'], $subscriberBalance['sid'], $billrunKey, $planRef, $from, $to, $serviceId, $serviceName, $balancePriority);
 		}	
@@ -387,7 +376,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$balancesToUpdate = array_intersect_key($this->rebalanceUsageSubtract, $sidsAsKeys);			
 		$queryBalances = array(
 			'sid' => array('$in' => array_keys($balancesToUpdate)),
-		);	
+		);
 		$balances = $balancesColl->query($queryBalances)->cursor();
 		foreach ($balancesToUpdate as $sid => $packageUsage) {
 			foreach ($packageUsage as $packageId => $usageByUsaget) {
@@ -454,6 +443,44 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 		return $update;
+	}
+	
+	/**
+	 * Returns usage type with considiration to joined usage types.
+	 * 
+	 * @param type String $serviceName - the package service name.
+	 * @param type String $plan - billrun plan.
+	 * @param type String $usaget - row usage type.
+	 * 
+	 * @return String - The correct usage type.
+	 */
+	protected function getTransformedUsageType($serviceName, $plan, $usaget) {
+		$usageType = $usaget;
+		$packageLimits = $this->getPackageJoinedValues($serviceName, $plan);
+		if (isset($packageLimits['joined_usage_types']) && isset($packageLimits['joined_field'])) {
+			$packageJoinedTypes = $packageLimits['joined_usage_types'];
+			$packageJoinedField = $packageLimits['joined_field'];
+			if (in_array($usageType, $packageJoinedTypes)) {
+				$usageType = $packageJoinedField;
+			}
+		}
+		return $usageType;
+	}
+	
+	/**
+	 * Returns information on package joined fields.
+	 * 
+	 * @param type String $serviceName - the package service name.
+	 * @param type String $plan - billrun plan.
+	 * 
+	 * @return array - The package limits and false if doesn't exists.
+	 */
+	protected function getPackageJoinedValues($serviceName, $plan) {
+		$packageLimits = $plan->get('include.groups.' . $serviceName. '.limits');
+		if (!empty($packageLimits)) {
+			return $packageLimits;
+		}
+		return false;
 	}
 
 }
