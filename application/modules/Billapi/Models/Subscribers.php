@@ -76,7 +76,7 @@ class Models_Subscribers extends Models_Entity {
 				}
 				//Handle custom period services
 				$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
-				if(!empty($serviceRate) && !empty( $servicePeriod = @$serviceRate->getData(true)['balance_period'])) {
+				if( !empty($serviceRate) && !empty( $servicePeriod = @$serviceRate->get('balance_period')) ) {
 					$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
 				}
 				
