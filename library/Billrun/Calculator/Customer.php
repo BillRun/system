@@ -434,6 +434,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $row;
 	}
 	
+	/**
+	 * Gets the services which includes for any customer having this plan.
+	 * 
+	 * @param string $planName
+	 * @return array - services names array
+	 */
 	protected function getPlanIncludedServices($planName) {
 		$plansQuery = array('name' => $planName);
 		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
