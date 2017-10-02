@@ -45,3 +45,19 @@ db.log.find({"process_time":{$exists:1}}).forEach( function(line) {
 		db.log.update({_id:line._id},{$set:{process_time:new ISODate(line.process_time)}})
 	}
 });
+
+// BRCD-986 - fix empty "computed" field
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
+		for (var priority in lastConfig['file_types'][i]['rate_calculators'][usaget]) {
+			for (var j in lastConfig['file_types'][i]['rate_calculators'][usaget][priority]) {
+				if (lastConfig['file_types'][i]['rate_calculators'][usaget][priority][j].computed && lastConfig['file_types'][i]['rate_calculators'][usaget][priority][j].computed.length === 0) {
+					delete lastConfig['file_types'][i]['rate_calculators'][usaget][priority][j].computed;
+				}
+			}
+		}
+	}
+}
+db.config.insert(lastConfig);
