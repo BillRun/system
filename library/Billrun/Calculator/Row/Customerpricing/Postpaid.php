@@ -111,42 +111,4 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 		return false;
 	}
 
-	/**
-	 * load subscribers services objects by their name
-	 * 
-	 * @param array $services services names
-	 * @param int $time unix timestamp of effective datetime
-	 * 
-	 * @return array of services objects
-	 */
-	protected function loadSubscriberServices($services, $time) {
-		$ret = array();
-		foreach ($services as $service) {
-			$serviceName = isset($service['name']) ? $service['name'] : $service;
-			$serviceSettings = array(
-				'name' => $serviceName,
-				'time' => $time
-			);
-			$serviceObject = new Billrun_Service($serviceSettings);
-			$balancePeriod = @$serviceObject->get("balance_period");
-			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec, $serviceObject->get("balance_period")) == FALSE) {
-				continue;
-			}
-			
-			if ($balancePeriod && isset($service['to']->sec)) {
-				$sortKey = (int) $service['to']->sec;
-			} else {
-				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
-			}
-			while (isset($ret[$sortKey])) { // in case service with same expiration
-				++$sortKey;
-			}
-			$ret[$sortKey] = $serviceObject;
-		}
-		
-		ksort($ret);
-
-		return array_values($ret); // array of service objects
-	}
-
 }
