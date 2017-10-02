@@ -98,7 +98,7 @@ trait Billrun_Traits_TypeAll {
 		$typeArray = array();
 		$name = $this->getNameType();
 		foreach ($rawArray as $current) {
-			if(!isset($current[$name])) {
+			if(!isset($current[$name]) || !Billrun_Config::isFileTypeConfigEnabled($current)) {
 				continue;
 			}
 			$typeArray[$current['file_type']] = $current[$name]['buffer_timeout'];

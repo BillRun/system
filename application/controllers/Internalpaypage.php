@@ -104,14 +104,14 @@ class InternalPaypageController extends ExternalPaypageController {
 			}
 		}
 		
-		$secret = Billrun_Factory::config()->getConfigValue("shared_secret.key");
+		$secret = Billrun_Utils_Security::getValidSharedKey();
 		$data = array(
 			"aid" => $request['aid'],
 			"name" => $request['payment_gateway'],
 			"type" => $type,
 			"return_url" => urlencode($request['return_url']),
 		);
-		$signed = Billrun_Utils_Security::addSignature($data, $secret);
+		$signed = Billrun_Utils_Security::addSignature($data, $secret['key']);
 
 		header("Location: /paymentgateways/getRequest?data=" . json_encode($signed));
 		return false;

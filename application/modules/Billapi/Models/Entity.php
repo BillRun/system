@@ -106,15 +106,28 @@ class Models_Entity {
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
+	
+	public static function getInstance($params) {
+		$modelPrefix = 'Models_';
+		$className = $modelPrefix . ucfirst($params['collection']);
+		if (!@class_exists($className)) {
+			$className = $modelPrefix . 'Entity';
+		}
+		return new $className($params);
+	}
 
 	public function __construct($params) {
-		if ($params['collection'] == 'accounts') {
+		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
 			$this->collectionName = $params['collection'];
 		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $params['collection'] . '.ini');
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
+		if (isset($params['no_init']) && $params['no_init']) {
+			return;
+		}
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -172,16 +185,16 @@ class Models_Entity {
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
-			if ($val) {
+			if ($val !== FALSE) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($defaultFieldsValues[$field] !== false) {
+			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
@@ -189,8 +202,15 @@ class Models_Entity {
 	}
 
 	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
-		$query = $this->getNotRevisionsOfEntity($data);
-		$query[$field] = $val; // not revisions of same entity, but has same unique value
+		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
+		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		$startTime = strtotime($data['from']);
+		$endTime = strtotime($data['to']);
+		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
 
 		return $this->collection->query($query)->count() > 0;
 	}
@@ -207,6 +227,9 @@ class Models_Entity {
 		}
 		$query['$or'] = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			if (!isset($data[$fieldName])) {
+				continue;
+			}
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
@@ -221,6 +244,10 @@ class Models_Entity {
 
 	protected function getCustomFields() {
 		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".fields";
 	}
 
 	/**
@@ -255,10 +282,29 @@ class Models_Entity {
 	public function update() {
 		$this->action = 'update';
 
+		$this->checkUpdate();
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * Performs the changepassword action by a query and data to update
+	 * @param array $query
+	 * @param array $data
+	 */
+	public function changePassword() {
+		$this->action = 'changepassword';
+		
+		$this->checkUpdate();
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
+		return true;
+	}
+	
+	protected function checkUpdate() {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-
+		
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
@@ -268,8 +314,6 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
-		return true;
 	}
 
 	/**
@@ -311,12 +355,16 @@ class Models_Entity {
 	 */
 	public function closeandnew() {
 		$this->action = 'closeandnew';
-		if ($this->preCheckUpdate() !== TRUE) {
-			return false;
-		}
-
 		if (!isset($this->update['from'])) {
 			$this->update['from'] = new MongoDate();
+		}
+		if (!is_null($this->before)) {
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$this->update = array_merge($prevEntity, $this->update);
+		}
+		if ($this->preCheckUpdate() !== TRUE) {
+			return false;
 		}
 
 		$this->protectKeyField();
@@ -372,7 +420,7 @@ class Models_Entity {
 	 * 
 	 * @return unix timestamp
 	 */
-	protected static function getMinimumUpdateDate() {
+	public static function getMinimumUpdateDate() {
 		if (is_null(self::$minUpdateDatetime)) {
 			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
 		}
@@ -724,38 +772,12 @@ class Models_Entity {
 		if ($newId) {
 			$this->after = $this->loadById($newId);
 		}
-
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => $this->action,
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => $this->collectionName,
-				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
-				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] :
-				(isset($this->before[$field]) ? $this->before[$field] : null),
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		
+		$old = !is_null($this->before) ? $this->before->getRawData() : null;
+		$new = !is_null($this->after) ? $this->after->getRawData() : null;
+		$key = isset($this->update[$field]) ? $this->update[$field] :
+				(isset($this->before[$field]) ? $this->before[$field] : null);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
 	}
 
 	/**
@@ -863,7 +885,7 @@ class Models_Entity {
 			return self::FUTURE;
 		}
 		// For active records, check if it has furure revisions
-		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
@@ -891,6 +913,23 @@ class Models_Entity {
 			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
+	}
+	
+	public function getCollectionName() {
+		return $this->collectionName;
+	}
+	
+	public function getCollection() {
+		return $this->collection;
+	}
+	
+	public function getMatchSubQuery() {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		
+		return $query;
 	}
 
 }

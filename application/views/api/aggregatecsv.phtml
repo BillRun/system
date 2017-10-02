@@ -5,7 +5,6 @@
  * @copyright       Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
-
 $entities = current($this->output)['details'];
 $headers = $this->output->headers;
 $delimiter = $this->output->delimiter;
@@ -13,14 +12,20 @@ $delimiter = $this->output->delimiter;
 if (empty($headers) && count($entities) > 0) {
 	$headers = array_keys($entities[0]);
 }
+if (isset($headers[0])) {
+	$headers = array_combine($headers , $headers);
+}
+
+header('Content-Encoding: UTF-8');
+header('Content-type: text/csv; charset=UTF-8');
 
 echo implode($delimiter, $headers) . PHP_EOL;
 
 foreach ($entities as $entity) {
 	$line = array();
-	foreach ($headers as $header) {
+	foreach (array_keys($headers) as $header) {
 		$val = Billrun_Util::getIn($entity, $header, null);
-		echo (!is_null($val) ? $val : '') . $delimiter;
+		echo (!is_null($val) ? (strpos($val, $delimiter) === false ? $val : '"' . addslashes($val) . '"') : '') . $delimiter;
 	}
 	echo PHP_EOL;
 }

@@ -82,7 +82,7 @@ abstract class Models_Action {
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
-		list($this->query, $this->update) = $this->validateRequest($query, $update, $this->request['collection'], $this->settings, 999999, false);
+		list($this->query, $this->update) = $this->validateRequest($query, $update, $this->request['collection'], $this->settings, 999999, false, $params['options']);
 		
 		if (isset($params['data'])) {
 			$this->setData($params['data']);

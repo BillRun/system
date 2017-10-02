@@ -221,11 +221,6 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::db()->queueCollection()->update($where, $save);
 		}
 
-		if ((!isset($line['usagev']) || $line['usagev'] === 0) && !$this->shouldUsagevBeZero($line)) {
-			$this->removeLineFromQueue($line);
-			unset($this->data[$dataKey]);
-		}
-
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 	}
 	
