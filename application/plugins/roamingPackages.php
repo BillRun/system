@@ -240,6 +240,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$UsageIncluded = 0;
 		$subscriberSpent = 0;
 		foreach ($matchedPackages as $package) {
+			$matchedIds[] = $package['id'];
 			$from = strtotime($package['from_date']);
 			$to = strtotime($package['to_date']);
 			if (!($this->lineTime >= $from && $this->lineTime <= $to)) {
@@ -262,6 +263,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 				array('balance.totals.' . $usageType . '.exhausted' => array('$exists' => false)),
 				array('balance.totals.' . $usageType . '.exhausted' => array('$ne' => true)),
 			),
+			'service_id' => array('$in' => $matchedIds),
 		);
 		$roamingBalances = $this->balances->query($roamingQuery)->cursor()->sort(array('balance_priority' => 1));
 		if ($roamingBalances->current()->isEmpty()) {
