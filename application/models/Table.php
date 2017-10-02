@@ -305,7 +305,10 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
+		$defaultNativeLong = ini_get('mongo.native_long');
+		$this->setMongoNativeLong(1);
 		$entity->save($this->collection, 1);
+		$this->setMongoNativeLong($defaultNativeLong);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
@@ -552,5 +555,16 @@ class TableModel {
 			$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
 		}
 	}
+	
+	/**
+	 * method to set MongoDB native long
+	 * this is useful only on MongoDB 2.4 and below because the native long is off by default
+	 * 
+	 * @param int $status either 1 to turn on or 0 for off
+	 */
+	protected function setMongoNativeLong($status = 1) {
+		Billrun_Factory::db()->setMongoNativeLong($status);
+	}
+
 
 }
