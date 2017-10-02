@@ -305,9 +305,10 @@ class TableModel {
 		} else {
 			$entity = new Mongodloid_Entity($params);
 		}
+		$defaultNativeLong = ini_get('mongo.native_long');
 		$this->setMongoNativeLong(1);
 		$entity->save($this->collection, 1);
-		$this->setMongoNativeLong(0);
+		$this->setMongoNativeLong($defaultNativeLong);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
