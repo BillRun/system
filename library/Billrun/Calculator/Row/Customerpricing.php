@@ -475,23 +475,50 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @param int $time unix timestamp of effective datetime
 	 * 
 	 * @return array of services objects
+	 * 
+	 * @todo remove backward compatibility of service as string (should be only array)
 	 */
 	protected function loadSubscriberServices($services, $time) {
 		$ret = array();
 		foreach ($services as $service) {
+			$serviceName = isset($service['name']) ? $service['name'] : $service;
 			$serviceSettings = array(
-				'name' => $service['name'],
+				'name' => $serviceName,
 				'time' => $time
 			);
-			$serviceInstance = new Billrun_Service($serviceSettings);
-			if ($serviceInstance && !$serviceInstance->isExhausted($service['from'])) {
-				$ret[] = $serviceInstance;
+			
+			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
+				continue;
 			}
+			
+			if (isset($service['from']) && $serviceObject->isExhausted($service['from'])) {
+				continue;
+			}
+			
+			$balancePeriod = @$serviceObject->get("balance_period");
+			
+			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec, $serviceObject->get("balance_period")) == FALSE) {
+				continue;
+			}
+			
+			if ($balancePeriod && isset($service['to']->sec)) {
+				$sortKey = (int) $service['to']->sec;
+			} else {
+				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
+			}
+			
+			while (isset($ret[$sortKey])) { // in case service with same expiration
+				++$sortKey;
+			}
+			
+			$ret[$sortKey] = $serviceObject;
 		}
+		
+		ksort($ret);
 
-		return $ret; // array of service objects
+		return array_values($ret); // array of service objects
 	}
-
+	
 	/**
 	 * check if rate is includes in customer services groups
 	 * 
