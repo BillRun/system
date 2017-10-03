@@ -26,7 +26,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [
 		//New tests for new override price and includes format
-		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
+//		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 		array('stamp' => 'f1', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f2', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f3', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
@@ -155,15 +155,18 @@ class Tests_Updaterowt extends UnitTestCase {
 		// O6- plan includes - use part of it
 		// O7 - try to use service includes
                 // p1 service with limited cycle's 
-                array('stamp' => 'p1', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET',
-                            'plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000, 'services_data' => ["2GB_INTERNET_FOR_1_CYCLE"],
-                            'urt' => '2017-09-14 14:00:00+03:00'),
-                array('stamp' => 'p2', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET',
-                            'plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000, 'services_data' => ["2GB_INTERNET_FOR_1_CYCLE"],
-                            'urt' => '2017-09-20 14:00:00+03:00'),
-                array('stamp' => 'p3', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET',
-                            'plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75, 'services_data' => ["2GB_INTERNET_FOR_1_CYCLE"],
-                            'urt' => '2017-10-14 14:00:00+03:00'),
+                array('stamp' => 'p1', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000,                               
+                           'services_data' =>
+                            array('name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> 1504213200/*strtotime('2017-09-01 00:00:00')*/, 'to'=>1535749200 /*strtotime('2018-09-01 00:00:00')*/),
+                      'urt' => '2017-09-14 14:00:00+03:00'),
+                array('stamp' => 'p2', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000, 
+                           'services_data' =>
+                            array('name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> 1504213200/*strtotime('2017-09-01 00:00:00')*/, 'to'=>1535749200 /*strtotime('2018-09-01 00:00:00')*/),
+                      'urt' => '2017-09-20 14:00:00+03:00'),
+                array('stamp' => 'p3', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75,
+                            'services_data' => 
+                             array('name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> 1504213200/*strtotime('2017-09-01 00:00:00')*/, 'to'=>1535749200 /*strtotime('2018-09-01 00:00:00')*/),
+                       'urt' => '2017-10-14 14:00:00+03:00'),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -262,9 +265,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //O5
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
                 //case 8 service with limited cycle's 
-                array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0), 
+                array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0 ), 
 		array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0), 
-		array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75)
+		array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75,)
                 
 	];
 
@@ -311,6 +314,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$epsilon = 0.000001;
 		$inGroupE = $this->expected[$key]['in_group'];
 		$overGroupE = $this->expected[$key]['over_group'];
+         //       $totalArategroups = $this->expected[$key]['total_arategroups'];
 		$aprice = round(10 * ($this->expected[$key]['aprice']), (1/$epsilon)) / 10;
 		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#'  . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
