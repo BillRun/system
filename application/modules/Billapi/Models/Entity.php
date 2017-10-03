@@ -289,6 +289,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
 		} else {
@@ -305,6 +306,7 @@ class Models_Entity {
 		$this->action = 'update';
 
 		$this->checkUpdate();
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -409,6 +411,7 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -550,6 +553,7 @@ class Models_Entity {
 		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
 		}
+		$this->fixEntityFields($this->before);
 		return true;
 	}
 
@@ -576,6 +580,7 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -593,7 +598,7 @@ class Models_Entity {
 		if (isset($this->update['from'])) { // default is move from
 			return $this->moveEntry('from');
 		}
-
+		$this->fixEntityFields($this->before);
 		return $this->moveEntry('to');
 	}
 
@@ -622,6 +627,7 @@ class Models_Entity {
 		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -1045,6 +1051,10 @@ class Models_Entity {
 		}
 		$sort = array('_id' => -1);
 		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
+	}
+	
+	protected function fixEntityFields($entity) {
+		return;
 	}
 
 }

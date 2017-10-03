@@ -285,4 +285,78 @@ class Models_Subscribers extends Models_Entity {
 		}
 		parent::create();
 	}
+	
+	/**
+	 * method to keep maintenance of subscriber fields.
+	 * 
+	 * @param MongoCursor $revisions array of the subscriber revisions
+	 */
+	protected function fixSubscriberFields($revisions) {
+		$needUpdate = array();
+		$plansDeactivation = array();
+		$previousPlan = '';
+		$subscriberDeactivation = $revisions->sort(array('to' => -1))->current()['to'];
+		foreach ($revisions as $revision) {
+			$revisionsArray[] = $revision->getRawData();
+		}
+		$sortedByFrom = array_reverse($revisionsArray);
+		foreach ($sortedByFrom as $revision) {
+			$revisionId = $revision['_id']->{'$id'};
+			if (empty($revision['deactivation']) || $subscriberDeactivation != $revision['deactivation']) {
+				$needUpdate[$revisionId]['deactivation'] = $subscriberDeactivation;
+			}
+			$currentPlan = $revision['plan'];
+			if ($currentPlan != $previousPlan) {
+				$previousPlan = $currentPlan;
+				$planActivation = isset($revision['plan_activation']) ? $revision['plan_activation'] : $revision['from'];
+				$planDeactivation = isset($revision['plan_deactivation']) ? $revision['plan_deactivation'] : $revision['to'];
+			}
+			if (empty($revision['plan_activation']) || $planActivation != $revision['plan_activation']) {
+				$needUpdate[$revisionId]['plan_activation'] = $planActivation;
+			}		
+			$futureDeactivation = isset($revision['plan_deactivation']) ? $revision['plan_deactivation'] : $revision['to'];
+			if ($planDeactivation < $futureDeactivation) {
+				$planDeactivation = $futureDeactivation;
+			}
+			if (!isset($revision['plan_deactivation']) || $revision['plan_deactivation'] != $planDeactivation) {
+				$plansDeactivation[$currentPlan] = $planDeactivation;
+			}
+		}
+	
+		foreach($plansDeactivation as $plan => $deactivationDate) {
+			foreach($sortedByFrom as $revision) {
+				$revisionId = $revision['_id']->{'$id'};
+				if ($revision['plan'] == $plan && $revision['plan_deactivation'] != $deactivationDate) {
+					$needUpdate[$revisionId]['plan_deactivation'] = $deactivationDate;
+				}
+			}
+		}
+
+		foreach ($needUpdate as $revisionId => $updateValue) {
+			$query = array('_id' => new MongoId($revisionId));
+			foreach ($updateValue as $field => $value) {
+				$update['$set'][$field] = $value;
+			}
+			$this->collection->update($query, $update);
+		}
+	}
+	
+	/**
+	 * get all revisions of a subscriber.
+	 * 
+	 * @param int $sid subscriber id.
+	 */
+	protected function getSubscriberRevisions($sid) {
+		$query = array(
+			'sid' => $sid,
+			'type' => 'subscriber'
+		);
+		$revisions = $this->collection->query($query)->cursor();
+		return $revisions;
+	}
+	
+	protected function fixEntityFields($entity) {
+		$revisions = $this->getSubscriberRevisions($entity['sid']);
+		$this->fixSubscriberFields($revisions);
+	}
 }
