@@ -56,7 +56,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		return array('priority' => -1, 'to' => 1,);
 	}
 
-	protected function getBalanceLoadQuery($query = array()) {
+	protected function getBalanceLoadQuery(array $query = array()) {
 		$usageType = $this->row['usaget'];
 		if (isset($this->granted['usagev'])) {
 			$minUsage = $this->granted['usagev'];
