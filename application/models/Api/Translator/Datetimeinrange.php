@@ -26,7 +26,11 @@ class Api_Translator_DatetimeInRangeModel extends Api_Translator_TypeModel {
 			if (isset($data['sec'])) {
 				$date = new MongoDate($data['sec']);
 			} else {
-				$date = new MongoDate(strtotime($data));
+				$time = strtotime($data);
+				if ($time <= 0) {
+					return false;
+				}
+				$date = new MongoDate($time);
 			}
 			return array(
 					'from' => array('$lte' => $date),
