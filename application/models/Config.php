@@ -359,7 +359,11 @@ class ConfigModel {
 		} else if ($category === 'usage_types') {
 			foreach ($data as $usagetData) {
 				if (!$this->validateUsageType($usagetData['usage_type'])) {
-					throw new Exception($usagetData['usage_type'] . ' is an illegal activity type');
+					$message = $usagetData['usage_type'] == '' ? 'Empty string' : $usagetData['usage_type'];
+					throw new Exception($message . ' is an illegal activity type');
+				}
+				if (!$this->validatePropertyType($usagetData['property_type'])) {
+					throw new Exception('Must select a property type');
 				}
 			}
 		}
@@ -1050,8 +1054,13 @@ class ConfigModel {
 	}
 	
 	protected function validateUsageType($usageType) {
-		$reservedUsageTypes = array('cost', 'balance');
+		$reservedUsageTypes = array('cost', 'balance', '');
 		return !in_array($usageType, $reservedUsageTypes);
+	}
+	
+	protected function validatePropertyType($propertyType) {
+		$reservedUsageTypes = array('');
+		return !in_array($propertyType, $reservedUsageTypes);
 	}
 
 	protected function validateStringLength($str, $size) {
