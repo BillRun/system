@@ -226,6 +226,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$instanceOptions['balance_db_refresh'] = true;
 		if ($this->plan->isGroupAccountShared($this->rate, $this->usaget)) {
 			$instanceOptions['sid'] = 0;
+			$instanceOptions['orig_sid'] = $this->row['sid'];
 		}
 		$loadedBalance = Billrun_Balance::getInstance($instanceOptions);
 		if (!$loadedBalance || !$loadedBalance->isValid()) {
@@ -569,18 +570,19 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = 0;
+					$instanceOptions['orig_sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);
 				} else if ($this->balance['sid'] == 0) { // if need to switch to non-shared balance (from plan)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else if (!empty($serviceSettings)) {
+				} else if ($serviceSettings['balance_period'] != 'default') { // cannot use plan balance as this is custom period balance (different from and/or to)
 					$instanceOptions = array_merge($this->row->getRawData(), array('granted_usagev' => $this->granted_volume, 'granted_cost' => $this->granted_cost), $serviceSettings);
 					$instanceOptions['balance_db_refresh'] = true;
 					$instanceOptions['sid'] = $this->row['sid'];
 					$balance = Billrun_Balance::getInstance($instanceOptions);
-				} else {
+				} else { // use same balance as plan balance
 					$balance = $this->balance;
 				}
 				$groupVolume = $service->usageLeftInEntityGroup($balance, $rate, $usageType, $serviceGroup, null, $this->row['urt']->sec);

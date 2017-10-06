@@ -65,7 +65,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	protected function getDefaultBalance() {
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
-			$subService = self::getSubscriberService($this->row['aid'], $this->row['sid'], $service_name, $this->row['urt']->sec);
+			$subService = self::getSubscriberService($this->row['aid'], $this->row['sid'], $service_name, $this->row['urt']->sec, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
 			if ($subService) {
 				$from = $start_period = $subService['services'][0]['from']->sec;
 				$period = $this->row['balance_period'];
@@ -99,17 +99,20 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param int $sid subscriber id
 	 * @param string $service service name
 	 * @param int $time time stamp
+	 * @param int $orig_sid real subscriber id in case of shared balance (sid will be 0)
 	 * 
 	 * @return mixed subscriber service entry if exists, else false
 	 * 
 	 * @todo refactoring and use native subscriber class
 	 */
-	public static function getSubscriberService($aid, $sid, $service, $time) {
+	public static function getSubscriberService($aid, $sid, $service, $time, $orig_sid = null) {
 		try {
 			$baseQuery = array(
 				'aid' => $aid,
-				'sid' => $sid,
-				'type' => 'subscriber',
+				'sid' => is_null($orig_sid) ? $sid : $orig_sid,
+				'type' => array(
+					'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
+				),
 				'services' => array(
 					'$elemMatch' => array(
 						'name' => $service,
