@@ -107,30 +107,26 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	public static function getSubscriberService($aid, $sid, $service, $time, $orig_sid = null) {
 		try {
+			$elemMatch = array(
+				'$elemMatch' => array(
+					'name' => $service,
+					'from' => array(
+						'$lte' => new MongoDate($time), 
+					),
+					'to' => array(
+						'$gt' => new MongoDate($time)
+					),
+				)
+			);
 			$baseQuery = array(
 				'aid' => $aid,
 				'sid' => is_null($orig_sid) ? $sid : $orig_sid,
 				'type' => array(
 					'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
 				),
-				'services' => array(
-					'$elemMatch' => array(
-						'name' => $service,
-						'from' => array(
-							'$lte' => new MongoDate($time), 
-						),
-						'to' => array(
-							'$gt' => new MongoDate($time)
-						),
-					),
-				),
+				'services' => $elemMatch,
 			);
 			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
-			$elemMatch = array(
-				'$elemMatch' => array(
-					'name' => $service
-				)
-			);
 			$proj = array('_id' => 0, "services" => $elemMatch);
 			$ret = Billrun_Factory::db()->subscribersCollection()->query()->query($query)
 					->project($proj)->cursor()->current();
