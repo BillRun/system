@@ -109,12 +109,16 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$baseQuery = array(
 				'sid' => $sid,
 				'type' => 'subscriber',
-				'services.name' => $service,
-				'services.from' => array(
-					'$lte' => new MongoDate($time), 
-				),
-				'services.to' => array(
-					'$gt' => new MongoDate($time)
+				'services' => array(
+					'$elemMatch' => array(
+						'name' => $service,
+						'from' => array(
+							'$lte' => new MongoDate($time), 
+						),
+						'to' => array(
+							'$gt' => new MongoDate($time)
+						),
+					),
 				),
 			);
 			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
