@@ -497,7 +497,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			
 			$balancePeriod = @$serviceObject->get("balance_period");
 			
-			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $serviceName, $this->urt->sec) == FALSE) {
+			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->aid, $this->sid, $serviceName, $this->urt->sec) == FALSE) {
 				continue;
 			}
 			

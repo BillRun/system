@@ -65,7 +65,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	protected function getDefaultBalance() {
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
-			$subService = self::getSubscriberService($this->row['sid'], $service_name, $this->row['urt']->sec);
+			$subService = self::getSubscriberService($this->row['aid'], $this->row['sid'], $service_name, $this->row['urt']->sec);
 			if ($subService) {
 				$from = $start_period = $subService['services'][0]['from']->sec;
 				$period = $this->row['balance_period'];
@@ -104,9 +104,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @todo refactoring and use native subscriber class
 	 */
-	public static function getSubscriberService($sid, $service, $time) {
+	public static function getSubscriberService($aid, $sid, $service, $time) {
 		try {
 			$baseQuery = array(
+				'aid' => $aid,
 				'sid' => $sid,
 				'type' => 'subscriber',
 				'services' => array(
