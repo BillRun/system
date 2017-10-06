@@ -102,7 +102,11 @@ class Billrun_Service {
 	 * @param $serviceStartDate the date from which the service is valid for the subscriber
 	 */
 	public function isExhausted($serviceStartDate) {
-		$serviceAvailableCycles = Billrun_Util::getIn(end($this->data['price']), 'to', 0);
+		if (!isset($this->data['price']) || !is_array($this->data['price'])) {
+			return false;
+		}
+		$lastEntry = array_slice($this->data['price'], -1)[0];
+		$serviceAvailableCycles = Billrun_Util::getIn($lastEntry, 'to', 0);
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
