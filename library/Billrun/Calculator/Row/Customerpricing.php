@@ -498,7 +498,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			
 			$balancePeriod = @$serviceObject->get("balance_period");
 			
-			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberService($this->aid, $this->sid, $serviceName, $this->urt->sec) == FALSE) {
+			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberServicesByName($this->aid, $this->sid, $serviceName, $this->urt->sec) == FALSE) {
 				continue;
 			}
 			
@@ -554,15 +554,24 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function usageLeftInServicesGroups($rate, $usageType, $services, $required, &$arategroups) {
 		$keyRequired = key($required);
 		$valueRequired = current($required);
+		$servicesByName = array();
 		foreach ($services as $service) {
 			if ($valueRequired <= 0) {
 				break;
+			}
+			
+			$serviceName = $service->getName();
+			if (!isset($servicesByName[$serviceName])) {
+				$servicesByName[$serviceName] = 1;
+			} else {
+				$servicesByName[$serviceName]++;
 			}
 
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
-					'service_name' => $service->getName(),
+					'service_name' => $serviceName,
+					'service_index' => $servicesByName[$serviceName] - 1,
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
 				);
 				// pre-check if need to switch to other balance with the new service
