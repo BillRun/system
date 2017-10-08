@@ -64,7 +64,7 @@ class Models_Subscribers extends Models_Entity {
 			return FALSE;
 		}
 		
-		foreach ($this->update['services'] as $key => &$service) {
+		foreach ($this->update['services'] as &$service) {
 			if (gettype($service) == 'string') {
 				$service = array('name' => $service);
 			}
@@ -83,6 +83,9 @@ class Models_Subscribers extends Models_Entity {
 			//to can't be more then the updated 'to' of the subscription
 			$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
 			$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+			if (!isset($service['service_id'])) {
+				$service['service_id'] = hexdec(uniqid());
+			}
 		}
 	}
 
