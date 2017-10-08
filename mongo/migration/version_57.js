@@ -61,3 +61,6 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-865 - overlapping extend balances services
+db.balances.update({"priority":{$exists:0}},{"$set":{"priority":0}}, {multi:1});
