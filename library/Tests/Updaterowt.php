@@ -175,6 +175,32 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 250, 
 			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00"],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00"]],
 			'urt' => '2017-09-27 11:00:00+03:00'),
+		
+		//R1
+		array('stamp' => 'r1', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 235, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'urt' => '2017-09-11 11:00:00+03:00'),
+		//R2
+		array('stamp' => 'r2', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 245, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'urt' => '2017-09-12 11:00:00+03:00'),
+		//R3
+		array('stamp' => 'r3', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'urt' => '2017-09-13 11:00:00+03:00'),
+		//R4
+		array('stamp' => 'r4', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 120, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'urt' => '2017-09-09 11:00:00+03:00'),
+		//R5
+		array('stamp' => 'r5', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 60, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'urt' => '2017-09-21 11:00:00+03:00'),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -279,6 +305,12 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 150, 'over_group' => 0, 'aprice' => 0), //Q3
 		array('in_group' => 120, 'over_group' => 130, 'aprice' => 1.30), //Q4; service2 - take 20, service1 - take 100
 		
+		//case R expected
+		array('in_group' => 235, 'over_group' => 0, 'aprice' => 0), //R1
+		array('in_group' => 245, 'over_group' => 0, 'aprice' => 0), //R2
+		array('in_group' => 20, 'over_group' => 50, 'aprice' => 0.5), //R3
+		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
+		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
 	];
 
 	public function __construct($label = false) {
@@ -305,7 +337,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$init->restoreColletions();
+//		$init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 

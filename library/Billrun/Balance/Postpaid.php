@@ -42,7 +42,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		$query['sid'] = $this->row['sid'];
 		$query['from'] = array('$lte' => $this->row['urt']);
 		$query['to'] = array('$gte' => $this->row['urt']);
-
+		$query['priority'] = $this->getServiceIndex();
+		
 		if ($this->isExtendedBalance()) {
 			$query['service_name'] = $this->row['service_name'];
 		} else {
@@ -63,11 +64,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance() {
+		$service_index = $this->getServiceIndex();
+		$urt = $this->row['urt']->sec;
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
-			$subService = self::getSubscriberService($this->row['aid'], $this->row['sid'], $service_name, $this->row['urt']->sec, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
+			$subService = self::getSubscriberServicesByName($this->row['aid'], $this->row['sid'], $service_name, $urt, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
 			if ($subService) {
-				$from = $start_period = $subService['services'][0]['from']->sec;
+				$from = $start_period = $subService[$service_index]['services']['from']->sec;
 				$period = $this->row['balance_period'];
 				$to = strtotime((string) $this->row['balance_period'], $from);
 			}
@@ -75,16 +78,27 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$service_name = null;
 		}
 		if (empty($from) || empty($to)) {
-			$urtDate = date('Y-m-d h:i:s', $this->row['urt']->sec);
+			$urtDate = date('Y-m-d h:i:s', $urt);
 			$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
 			$start_period = "default";
 			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 			$period = "default";
 		}
-		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $this->row['urt']->sec, 'disableCache' => true));
-		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $this->row['urt']->sec, $start_period, $period, $service_name);
+		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' => true));
+		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_index);
 	}
 	
+	/**
+	 * method to return service index if this balance based on service
+	 * @return int service index if service based else return 0
+	 */
+	protected function getServiceIndex() {
+		if (!isset($this->row['service_index'])) {
+			return 0;
+		}
+		return $this->row['service_index'];
+	}
+
 	/**
 	 * method to check if balance is aligned to extended period which is not aligned to the cycle
 	 * @return boolean true if this is extended balance, else false
@@ -94,7 +108,8 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	}
 	
 	/**
-	 * method to fetch subscriber service
+	 * method to fetch subscriber service(s) by service name
+	 * can be multiple in case of overlapping services (same service with same or overlap period)
 	 * 
 	 * @param int $sid subscriber id
 	 * @param string $service service name
@@ -104,35 +119,49 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return mixed subscriber service entry if exists, else false
 	 * 
 	 * @todo refactoring and use native subscriber class
+	 * @todo cache query results
 	 */
-	public static function getSubscriberService($aid, $sid, $service, $time, $orig_sid = null) {
+	public static function getSubscriberServicesByName($aid, $sid, $service, $time, $orig_sid = null) {
 		try {
-			$elemMatch = array(
-				'$elemMatch' => array(
-					'name' => $service,
-					'from' => array(
-						'$lte' => new MongoDate($time), 
+			$boundQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+			$aggregate = array(
+				array( // todo filter urt of subscriber revision
+					'$match' => array(
+						'aid' => $aid,
+						'sid' => is_null($orig_sid) ? $sid : $orig_sid,
+						'type' => array(
+							'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
+						),
+						'from' => $boundQuery['from'],
+						'to' => $boundQuery['to'],
 					),
-					'to' => array(
-						'$gt' => new MongoDate($time)
-					),
-				)
-			);
-			$baseQuery = array(
-				'aid' => $aid,
-				'sid' => is_null($orig_sid) ? $sid : $orig_sid,
-				'type' => array(
-					'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
 				),
-				'services' => $elemMatch,
+				array('$unwind' => '$services'),
+				array(
+					'$match' => array(
+						'services.name' => $service,
+						'services.from' => $boundQuery['from'],
+						'services.to' => $boundQuery['to'],
+					),
+				),
+				array(
+					'$sort' => array(
+						'to' => 1
+					),
+				),
 			);
-			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
-			$proj = array('_id' => 0, "services" => $elemMatch);
-			$ret = Billrun_Factory::db()->subscribersCollection()->query()->query($query)
-					->project($proj)->cursor()->current();
-			if ($ret->isEmpty()) {
+			
+			$cursor = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregate);
+			
+			$ret = array();
+			foreach($cursor as $row) {
+				$ret[] = $row;
+			}
+			
+			if (empty($ret)) {
 				return false;
 			}
+			
 			return $ret;
 		} catch (Exception $ex) {
 			return false;
@@ -149,7 +178,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $urt line time
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default", $service_name = null) {
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
@@ -161,12 +190,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			),
 			'start_period' => $start_period,
 			'period' => $period,
+			'priority' => $priority,
 		);
 		if (!is_null($service_name)) {
 			$query['service_name'] = $service_name;
 		}
 		$update = array(
-			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period, $service_name),
+			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period, $service_name, $priority),
 		);
 		$options = array(
 			'upsert' => true,
@@ -192,7 +222,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param Billrun_Plan $current_plan
 	 * @return array
 	 */
-	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period = "default", $period = "default", $service_name = null) {
+	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
 		$planRef = $plan->createRef();
 		$connectionType = $plan->get('connection_type');
 		$planDescription = $plan->get('description');
@@ -206,6 +236,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'start_period' => $start_period,
 			'period' => $period,
 			'plan_description' => $planDescription,
+			'priority' => $priority,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
 		);
@@ -228,7 +259,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		if ($this->get('sid') != 0) {
+		if ($this->get('sid') != 0 && !$this->isExtendedBalance()) {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
