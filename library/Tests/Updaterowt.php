@@ -316,7 +316,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 20, 'over_group' => 50, 'aprice' => 0.5), //R3
 		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
 		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
-		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R5
+		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
 	];
 
 	public function __construct($label = false) {
