@@ -2,10 +2,7 @@
     "shared_folder": "shared",
     "cg_return_url": "",
     "shared_secret": [],
-    "usage_types": {
-        "array": [],
-        "t": "Array"
-       },
+    "usage_types": [],
     "resetlines": {
         "limit": {
             "v": 10,
@@ -339,9 +336,6 @@
     },
   "export_generators": [],
   "payment_gateways" : [],
-  "events" : {
-    "pricing" : []
-  },
   "taxation" :{
     "tax_type": "vat",
      "CSI": {
@@ -383,6 +377,12 @@
 			"type": "counter",
 			"uom":[{"unit":1,"name":"counter","label":"Counter"}],
 			"invoice_uom": "counter"
+		},
+		{
+			"system": true,
+			"type": "weight",
+			"uom": [{"unit":1,"name":"mg","label":"mg"},{"unit":1000,"name":"g","label":"g"},{"unit":1000000,"name":"kg","label":"kg"},{"unit":1000000000,"name":"ton","label":"ton"}],
+			"invoice_uom": "kg"
 		}
 	],
 	"unify": {

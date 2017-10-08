@@ -183,7 +183,7 @@ class Billrun_Importer_ChargingPlans extends Billrun_Importer_Csv {
 
 	protected function getDuration($rowData, $unlimited = false) {
 		if (($rowData[$this->fieldsColumns['expirations_date']] == 0 || $unlimited)) {
-			return array('duration' => 'UNLIMITED');
+			return array('duration' => Billrun_Service::UNLIMITED_VALUE);
 		}
 
 		return array(

@@ -92,7 +92,7 @@ class ResetLinesModel {
 				'$ne' => 'credit',
 			),
 			'process_time' => array(
-				'$lt' => date(Billrun_Base::base_datetimeformat, strtotime($this->process_time_offset . ' ago')),
+				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
 		);
 	}
@@ -189,8 +189,9 @@ class ResetLinesModel {
 	protected function getUpdateQuery($rebalanceTime) {
 		return array(
 			'$unset' => array(
-//				'aid' => 1,
-//				'sid' => 1,
+				'aid' => 1,
+				'sid' => 1,
+				'subscriber' => 1,
 				'apr' => 1,
 				'aprice' => 1,
 				'arate' => 1,
@@ -206,6 +207,7 @@ class ResetLinesModel {
 				'over_arate' => 1,
 				'over_group' => 1,
 				'over_plan' => 1,
+				'out_group' => 1,
 				'plan' => 1,
 				'plan_ref' => 1,
 				'services' => 1,

@@ -224,7 +224,7 @@ class Billrun_Plan extends Billrun_Service {
 
 		$rateUsageIncluded = $this->get('include')[$rate['key']][$usageType];
 
-		if ($rateUsageIncluded === 'UNLIMITED') {
+		if ($rateUsageIncluded === Billrun_Service::UNLIMITED_VALUE) {
 			return PHP_INT_MAX;
 		}
 
@@ -251,7 +251,7 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		$usageIncluded = $this->get('include')[$usagetype];
-		if ($usageIncluded == 'UNLIMITED') {
+		if ($usageIncluded == Billrun_Service::UNLIMITED_VALUE) {
 			return PHP_INT_MAX;
 		}
 
@@ -334,25 +334,25 @@ class Billrun_Plan extends Billrun_Service {
 
 		if ($tariff['from'] > $startOffset) {			
 			$startPricing = $tariff['from'];
-			// HACK :  fix for the month length differance between the  activation and the  plan change
+			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
 				$startFratcion = 1 -($startOffset-floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
-				$startPricing += ((($startFratcion * date('t',$activation)+1) /  $currentDays) - $startFratcion);
+				$startPricing += ((($startFratcion * date('t',$activation)) /  $currentDays) - $startFratcion);
 			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
-			// HACK :  fix for the month length differance between the  activation and the  plan change
+			// HACK :  fix for the month length differance between the  activation and the  plan change , NOTICE will only work on monthly charges
 			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
-				$endFratcion = 1 -($startOffset-floor($startOffset));
+				$endFratcion = 1 -($startOffset - floor($startOffset));
 				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
-				$endPricing += (( ($endFratcion * date('t',$activation)+1) / $currentDays) - $endFratcion);
+				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
 			}
 		}
-
-		return array('start' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $startPricing,
-			'end' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $endPricing,
+		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
+		return array('start' => $fullMonth ? FALSE : $startPricing,
+			'end' => $fullMonth ? FALSE : $endPricing,
 			'price' => ($endPricing - $startPricing) * $tariff['price']);
 	}
 
@@ -399,15 +399,15 @@ class Billrun_Plan extends Billrun_Service {
 	}
 
 	public static function isValueUnlimited($value) {
-		return $value == 'UNLIMITED';
+		return $value == Billrun_Service::UNLIMITED_VALUE;
 	}
 	
 	public function isUnlimited($usage_type) {
-		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == 'UNLIMITED';
+		return isset($this->data['include'][$usage_type]) && $this->data['include'][$usage_type] == Billrun_Service::UNLIMITED_VALUE;
 	}
 
 	public function isUnlimitedRate($rate, $usageType) {
-		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == 'UNLIMITED');
+		return (isset($this->data['include']['rates'][$rate['key']][$usageType]) && $this->data['include']['rates'][$rate['key']][$usageType] == Billrun_Service::UNLIMITED_VALUE);
 	}
 
 	public function isUnlimitedGroup($rate, $usageType) {
@@ -415,7 +415,7 @@ class Billrun_Plan extends Billrun_Service {
 		if ($groupSelected === FALSE) {
 			return FALSE;
 		}
-		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == "UNLIMITED");
+		return (isset($this->data['include']['groups'][$groupSelected][$usageType]) && $this->data['include']['groups'][$groupSelected][$usageType] == Billrun_Service::UNLIMITED_VALUE);
 	}
 
 	/**
@@ -449,9 +449,9 @@ class Billrun_Plan extends Billrun_Service {
 	public static function getMonthsDiff($from, $to) {
 		$minDate = new DateTime($from);
 		$maxDate = new DateTime($to);
-		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
-			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
-		}
+//		if ($minDate->format('d') - 1 == $maxDate->format('d')) {
+//			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
+//		}
 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
 			return $maxDate->diff((new DateTime($from))->modify('-1 day'))->m;
 		}
@@ -478,37 +478,45 @@ class Billrun_Plan extends Billrun_Service {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
-		$activation  = strtotime(date('Y-m-d 00:00:00', $activationTime));
-		$dayInSec = Billrun_Utils_Time::daysToSeconds(1);
-		$addedDays = 0;
-		$baseMonth = date('m',$activation);
-		$baseYear = date('Y',$activation);
-		$i = $cycleFraction ;
-		for(; $i >=1; $i-=1) {
-			$addMonths= ($baseMonth + floor($i));
-			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
-			$addedDays +=  $daysInMonth;
-		}
+		$activation  =  new DateTime(date('Y-m-d 00:00:00', $activationTime));
+		$addedMonths = 0;
+
+		//add the starting month fraction
+		$addedDays = $activation->format('t') - $activation->format('d') + 1;
+		$startFraction = ( $addedDays ) / $activation->format('t');
+		$resultDate = new DateTime($activation->format('Y-m-d'));
 		
-		if( $i != 0 ) {	
-			//add the starting month  fraction
-			$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
-			$addMonths= ($baseMonth + floor($startFraction) );
-			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
-			$addedDays +=  $daysInMonth * (($startFraction));
+		if($cycleFraction - $startFraction > 0) {
+			$i = $cycleFraction - $startFraction;
+			$resultDate->modify($addedDays.' day');
+		} else {
+			$i = $cycleFraction;
+		}
+
+		//Accumulate the full months days that were passsed since the  activation date.
+		if($i > 0) {
+			$addedMonths = $i - ($i - floor($i));
+			$resultDate->modify($addedMonths.' month');
+			$i = $i - $addedMonths;
+		}
+		//if there was a fraction of a month left split it to the  starting month fraction and ending month fraction (due to diffrent month lengths)
+		if( $i != 0 ) {				 
 			//based on the starting month fraction  retrive the  current month fraction
-			$endFraction = $i - $startFraction;
-			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
-			$addedDays +=  $daysInMonth * ( $endFraction );
+			$endFraction = $i;
+			$daysInMonth = $resultDate->format('t');
+			$roundedDays = floor(round($daysInMonth *  $endFraction ,6));
+			$resultDate->modify($roundedDays.' day');
+			if($resultDate->format('t') != $resultDate->format('d') && $resultDate->format('d') != "01") {
+				$resultDate->modify('-1 day');
+			}
 		}
-		
-		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
-		
-		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff + ($isStart ? 0 : -1);
+		return $resultDate->format('U') + ($isStart ? 0 : -1);
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {
-		return static::calcFractionOfMonth($billrunKey, date(Billrun_Base::base_datetimeformat, $start_date), date(Billrun_Base::base_datetimeformat, $end_date) );
+		return static::calcFractionOfMonth(	$billrunKey, 
+											date(Billrun_Base::base_datetimeformat, $start_date), 
+											date(Billrun_Base::base_datetimeformat, $end_date) );
 	}
 	
 	public static function calcFractionOfMonth($billrunKey, $start_date, $end_date) {

@@ -63,7 +63,7 @@ trait Billrun_Traits_FileSequenceChecking {
 				}
 			}
 		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
-			$timediff = time() - strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
+			$timediff = time() - $this->hostSequenceCheckers[$hostname]->lastLogFile['received_time'];
 			if ($timediff > Billrun_Factory::config()->getConfigValue($this->getName() . '.receiver.max_missing_file_wait', 3600)) {
 				$mailMsg = 'Didn`t received any new ' . $this->getName() . ' files form host ' . $hostname . ' for more then ' . $timediff . ' Seconds';
 			}

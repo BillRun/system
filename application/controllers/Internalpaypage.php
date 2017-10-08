@@ -17,6 +17,7 @@ require_once APPLICATION_PATH . '/application/controllers/Externalpaypage.php';
 
 class InternalPaypageController extends ExternalPaypageController {
 	use Billrun_Traits_Api_UserPermissions;
+	use Billrun_Traits_Api_PageRedirect;
 
 	public function init() {
 		Billrun_Factory::db();

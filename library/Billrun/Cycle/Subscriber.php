@@ -389,7 +389,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		if(!empty($plansData['plans']) ) {			
 			foreach($plansData['plans'] as $planData) {
 				if(!empty($mongoPlans[$planData['plan']]['include']['services'])) {
-					foreach($mongoPlans[$planData]['include']['services'] as $srvName) {
+					foreach($mongoPlans[$planData['plan']]['include']['services'] as $srvName) {
 						$includedServices[] = array(
 												'name'=> $srvName,
 												'quantity' => 1,

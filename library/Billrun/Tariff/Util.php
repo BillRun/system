@@ -129,7 +129,7 @@ class Billrun_Tariff_Util {
 	 * @return int Volume value after handling.
 	 */
 	protected static function handleChargeAndVolume($volume, &$charge, $rate, $pricingMethod) {
-		$maxVolumeInRate = ($rate['to'] == 'UNLIMITED' ? PHP_INT_MAX : $rate['to']) - $rate['from'];
+		$maxVolumeInRate = ($rate['to'] === Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX : $rate['to']) - $rate['from'];
 
 		// get the volume that needed to be priced for the current rating
 		$volumeToPriceCurrentRating = ($volume < $maxVolumeInRate) ? $volume : $maxVolumeInRate;
@@ -151,10 +151,11 @@ class Billrun_Tariff_Util {
 	 */
 	protected static function getChargeValueForRateStep($volume, $rate) {
 		$ceil = true;
+
 		if (isset($rate['ceil'])) {
 			$ceil = $rate['ceil'];
 		}
-
+		
 		if ($ceil) {
 			// actually price the usage volume by the current 	
 			return floatval(ceil($volume / $rate['interval']) * $rate['price']);

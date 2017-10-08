@@ -229,7 +229,7 @@ class Billrun_Rates_Util {
 		// Let's find the best volume by lion in the desert algorithm
 		$previousUsage = $defaultUsage;
 		$currentUsage = $defaultUsage - (abs($defaultUsage - $min_balance_volume) / 2);
-		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.1);
+		$epsilon = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.epsilon', 0.000001);
 		$limitLoop = Billrun_Factory::config()->getConfigValue('rates.getVolumeByRate.limitLoop', 50);
 		while (abs($currentUsage - $previousUsage) > $epsilon && $limitLoop-- > 0) {
 			$currentPrice = static::getTotalChargeByRate($rate, $usage_type, $currentUsage, $plan, $offset, $time);
@@ -245,7 +245,7 @@ class Billrun_Rates_Util {
 
 		// Check if the price is enough for minimum cost
 		if ($currentPrice >= $min_balance_cost) {
-			return floor($currentUsage);
+			return floor(round($currentUsage, $epsilon));
 		}
 		return 0;
 	}

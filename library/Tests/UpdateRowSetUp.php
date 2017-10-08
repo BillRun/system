@@ -63,17 +63,31 @@ class Tests_UpdateRowSetUp {
 	 */
 	protected function fixDates($jsonAr) {
 		foreach ($jsonAr as $key => $jsonFile) {
-			foreach ($jsonFile as $jsonFiled => $value) {
-				if (gettype($value) == 'string') {
-					$value = explode("*", $value);
-					if ((count($value) == 2) && ($value[0] == 'time')) {
-						$value = new MongoDate(strtotime($value[1]));
-						$jsonAr[$key][$jsonFiled] = $value;
-					}
-				}
-			}
+			$jsonAr[$key] = $this->fixArrayDates($jsonFile);
 		}
 		return $jsonAr;
+	}
+
+	/**
+	 * tranform all fields starts with time* into MongoDate object
+	 * @param array $jsonAr 
+	 */
+	protected function fixArrayDates($arr) {
+		if (!is_array($arr)) {
+			return $arr;
+		}
+		foreach ($arr as $jsonField => $value) {
+			if (is_string($value)) {
+				$value = explode("*", $value);
+				if ((count($value) == 2) && ($value[0] == 'time')) {
+					$value = new MongoDate(strtotime($value[1]));
+					$arr[$jsonField] = $value;
+				}
+			} else if (is_array($arr)) {
+				$arr[$jsonField] = $this->fixArrayDates($value);
+			}
+		}
+		return $arr;
 	}
 
 	/**

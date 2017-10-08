@@ -188,7 +188,7 @@ class Models_Entity {
 			$fieldName = $customField['field_name'];
 			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
 			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
-			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], false);
+			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], null);
 		}
 
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
@@ -201,14 +201,14 @@ class Models_Entity {
 			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
-			$val = Billrun_Util::getIn($originalUpdate, $field, false);
+			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
-			if ($val !== FALSE) {
+			if (!is_null($val)) {
 				Billrun_Util::setIn($this->update, $field, $val);
-			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
+			} else if ($this->action === 'create' && !is_null($defaultFieldsValues[$field])) {
 				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
@@ -393,7 +393,7 @@ class Models_Entity {
 		$this->checkMinimumDate($this->update, 'from', 'Revision update');
 		$this->verifyLastEntry();
 
-		if ($this->before['from']->sec > $this->update['from']->sec) {
+		if ($this->before['from']->sec >= $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
 			return false;
 		}
@@ -504,7 +504,9 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
-		return true;
+		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)){
+			return true;
+		}
 		if (is_null($action)) {
 			$action = $this->action;
 		}
@@ -531,6 +533,11 @@ class Models_Entity {
 
 		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
+		}
+		if (isset($this->config['collection_subset_query'])) {
+			foreach ($this->config['collection_subset_query'] as $key => $value) {
+				$this->query[$key] = $value;
+			}
 		}
 
 		$this->verifyLastEntry();
@@ -933,7 +940,9 @@ class Models_Entity {
 	}
 	
 	protected static function isDateMovable($timestamp) {
-		return true;
+		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)){
+			return true;
+		}
 		return self::getMinimumUpdateDate() <= $timestamp;
 	}
 

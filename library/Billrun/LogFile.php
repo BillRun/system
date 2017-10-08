@@ -65,7 +65,7 @@ class Billrun_LogFile {
 		if (is_null($time)) {
 			$time = time();
 		}
-		$this->data['process_time'] = date(Billrun_Base::base_datetimeformat, $time);
+		$this->data['process_time'] = new MongoDate($time);
 	}
 
 }
