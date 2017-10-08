@@ -111,7 +111,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					}
 					break;
 				case 'condition':
-					$this->conditionCheck($limits, $row);
+					$this->conditionCheck($limits, $row, $balance);
 					break;
 				default:
 					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $type, Zend_Log::WARN);
@@ -694,15 +694,15 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 	}
 	
-	protected function conditionCheck($limits, $row) {
+	protected function conditionCheck($limits, $row, $balance) {
 		foreach ($limits['rules'] as $rule) {
 			if (isset($rule['usaget']) && ($row['usaget'] == $rule['usaget'])) {
-				$this->checkConditionRule($rule, $row);
+				$this->checkConditionRule($rule, $row, $balance->balance);
 			}
 		}
 	}
 
-	protected function checkConditionRule($rule, $row) {
+	protected function checkConditionRule($rule, $row, $balance) {
 		if (!isset($row['usaget'])) {
 			return false;
 		}
@@ -722,10 +722,27 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($conditionsValue == false) {
 			return;
 		}
-		
+
 		$threshold = $rule['threshold'];
-		$before = 0;
-		$after = $row['usagev'];
+		if (!empty($rule['sumFields']) && is_array($rule['sumFields'])) {
+			$before = 0;
+			foreach ($rule['sumFields'] as $dottedField) {
+				$value = $balance;
+				$field_arr = explode('.', $dottedField);
+				foreach ($field_arr as $field) {
+					if (isset($value[$field])) {
+						$value = $value[$field];
+					} else {
+						$value = 0;
+						break;
+					}
+				}
+				$before+=$value;
+			}
+		} else { // fallback: rule based on general usage
+			$before = $balance['totals'][$row['usaget']]['usagev'];
+		}
+		$after = $before + $row['usagev'];
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
