@@ -31,7 +31,7 @@ for (var i in lastConfig['file_types']) {
 db.config.insert(lastConfig);
 
 // BRCD-865 - extend postpaid balances period
-db.balances.update({},{"$set":{"period":"default","start_period":"default"}}, {multi:1});
+db.balances.update({"period":{$exists:0}},{"$set":{"period":"default","start_period":"default"}}, {multi:1});
 
 
 // BRCD-811 - Save process_time field as a date instead of a string
