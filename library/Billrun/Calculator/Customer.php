@@ -440,16 +440,34 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * Gets the services which includes for any customer having this plan.
 	 * 
 	 * @param string $planName
-	 * @return array - services names array
+	 * @param date time
+	 * @param boolean $addServiceData
+	 * @return array - services names array if $addServiceData is false, services names and data otherwise
 	 */
-	protected function getPlanIncludedServices($planName) {
-		$plansQuery = array('name' => $planName);
+	protected function getPlanIncludedServices($planName, $time, $addServiceData = false) {
+		if ($time instanceof MongoDate) {
+			$time = $time->sec;
+		}
+		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+		$plansQuery['name'] = $planName;
 		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
-		if($plan->isEmpty() || empty($plan->get('include')) || empty($services = $plan->get('include')['services'])) {
+		if($plan->isEmpty() || empty($plan->get('include')) || !isset($plan->get('include')['services']) || empty($services = $plan->get('include')['services'])) {
 			return array();
 		}
 		
-		return $services;
+		if (!$addServiceData) {
+			return $services;
+		}
+		
+		$retServices = array();
+		foreach ($services as $service) {
+			$retServices[] = array(
+				'name' => $service,
+				'from' => $plan->get('plan_activation'),
+				'to' => $plan->get('plan_deactivation'),
+			);
+		}
+		return $retServices;
 	}
 	
 	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
@@ -459,17 +477,17 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = $service['name'];
 			}
 		}
-		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan']);
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false);
 		return array_merge($retServices, $planIncludedServices);
 	}
 	
 	/**
 	 * Used for enriching lines data with services from subscriber document.
-	 * includes services names and the dates from which they are valid for the subnscriber
+	 * includes services names and the dates from which they are valid for the subscriber
 	 * 
 	 * @param array $services
 	 * @param array $translationRules
-	 * @param attay $subscriber
+	 * @param array $subscriber
 	 * @param array $row
 	 * @return services array
 	 */
@@ -483,7 +501,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				);
 			}
 		}
-		return $retServices;
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true);
+		return array_merge($retServices, $planIncludedServices);
 	}
 	
 }
