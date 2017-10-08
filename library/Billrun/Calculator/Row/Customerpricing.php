@@ -482,8 +482,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function loadSubscriberServices($services, $time) {
 		$ret = array();
 		foreach ($services as $service) {
+			$serviceId = isset($service['service_id']) ? $service['service_id'] : 0;
 			$serviceName = isset($service['name']) ? $service['name'] : $service;
 			$serviceSettings = array(
+				'service_id' => $serviceId,
 				'name' => $serviceName,
 				'time' => $time
 			);
@@ -554,24 +556,18 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function usageLeftInServicesGroups($rate, $usageType, $services, $required, &$arategroups) {
 		$keyRequired = key($required);
 		$valueRequired = current($required);
-		$servicesByName = array();
 		foreach ($services as $service) {
 			if ($valueRequired <= 0) {
 				break;
 			}
 			
 			$serviceName = $service->getName();
-			if (!isset($servicesByName[$serviceName])) {
-				$servicesByName[$serviceName] = 1;
-			} else {
-				$servicesByName[$serviceName]++;
-			}
 
 			$serviceGroups = $service->getRateGroups($rate, $usageType);
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
-					'service_index' => $servicesByName[$serviceName] - 1,
+					'service_index' => $service->getServiceId(),
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
 				);
 				// pre-check if need to switch to other balance with the new service

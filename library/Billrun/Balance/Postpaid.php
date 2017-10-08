@@ -155,7 +155,11 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			
 			$ret = array();
 			foreach($cursor as $row) {
-				$ret[] = $row;
+				$key = @$row->get('services.id');
+				if (is_null($key) || $key === FALSE) {
+					$key = 0;
+				}
+				$ret[$key] = $row;
 			}
 			
 			if (empty($ret)) {
