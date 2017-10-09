@@ -18,13 +18,34 @@ if (lastConfig.property_types && lastConfig.property_types.filter(element => ele
 	db.config.insert(lastConfig);
 }
 
+// BRCD-1078: add rate categories
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
+	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
+	if (secKey == 0) {
+		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
+		for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
+			if (usaget === 'retail') {
+				continue;
+			}
+			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
+			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
+		}
+	}
+}
+db.config.insert(lastConfig);
+
 // BRCD-988 - rating priorities
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-		if (typeof lastConfig['file_types'][i]['rate_calculators'][usaget][0][0] === 'undefined') {
-			lastConfig['file_types'][i]['rate_calculators'][usaget] = [lastConfig['file_types'][i]['rate_calculators'][usaget]];
+	for (var rateCat in lastConfig['file_types'][i]['rate_calculators']) {
+		for (var usaget in lastConfig['file_types'][i]['rate_calculators'][rateCat]) {
+			if (typeof lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget][0][0] === 'undefined') {
+				lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget] = [lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget]];
+			}
 		}
 	}
 }
