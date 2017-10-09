@@ -1151,11 +1151,17 @@ class ConfigModel {
 					throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
 				}
 				if (isset($fileSettings['rate_calculators'])) {
-					$ratingUsageTypes = array_keys($fileSettings['rate_calculators']);
-					foreach ($fileSettings['rate_calculators'] as $rules) {
-						foreach ($rules as $usageRules) {
-							foreach ($usageRules as $rule) {
-								$ratingLineKeys[] = $rule['line_key'];
+					$ratingUsageTypes = array();
+					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
+						$ratingUsageTypes = array_merge($ratingUsageTypes, array_keys($rates));
+					}
+					$ratingUsageTypes = array_unique($ratingUsageTypes);
+					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
+						foreach ($rates as $rules) {
+							foreach ($rules as $usageRules) {
+								foreach ($usageRules as $rule) {
+									$ratingLineKeys[] = $rule['line_key'];
+								}
 							}
 						}
 					}
@@ -1164,7 +1170,7 @@ class ConfigModel {
 						throw new Exception('Unknown usage type(s) in rating: ' . implode(',', $unknownUsageTypes));
 					}
 					if ($usageTypesMissingRating = array_diff($usagetTypes, $ratingUsageTypes)) {
-						throw new Exception('Missing rating rules for usage types(s): ' . implode(',', $usageTypesMissingRating));
+						throw new Exception('Missing rating rules for usage type(s): ' . implode(',', $usageTypesMissingRating));
 					}
 				}
 			}
@@ -1295,21 +1301,23 @@ class ConfigModel {
 			throw new Exception('Rate calculators settings is not an array');
 		}
 		$longestPrefixParams = array();
-		foreach ($rateCalculatorsSettings as $usaget => $rates) {
-			foreach ($rates as $rateRules) {
-				foreach ($rateRules as $rule) {
-					if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
-						throw new Exception('Illegal rating rules for usaget ' . $usaget);
-					}
-					if (!in_array($rule['type'], $this->ratingAlgorithms)) {
-						throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
-					}
-					if ($rule['type'] === 'longestPrefix') {
-						$longestPrefixParams[] = $rule['rate_key'];
-					}
-					foreach (Billrun_Util::getIn($rule, ['computed', 'line_keys'], array()) as $lineKey) {
-						if (!empty($lineKey['regex']) && !Billrun_Util::isValidRegex($lineKey['regex'])) {
-							throw new Exception('Illegal regex ' . $lineKey['regex']);
+		foreach ($rateCalculatorsSettings as $category => $usagetRates) {
+			foreach ($usagetRates as $usaget => $rates) {
+				foreach ($rates as $rateRules) {
+					foreach ($rateRules as $rule) {
+						if (!isset($rule['type'], $rule['rate_key'], $rule['line_key'])) {
+							throw new Exception('Illegal rating rules for usaget ' . $usaget);
+						}
+						if (!in_array($rule['type'], $this->ratingAlgorithms)) {
+							throw new Exception('Illegal rating algorithm for usaget ' . $usaget);
+						}
+						if ($rule['type'] === 'longestPrefix') {
+							$longestPrefixParams[] = $rule['rate_key'];
+						}
+						foreach (Billrun_Util::getIn($rule, ['computed', 'line_keys'], array()) as $lineKey) {
+							if (!empty($lineKey['regex']) && !Billrun_Util::isValidRegex($lineKey['regex'])) {
+								throw new Exception('Illegal regex ' . $lineKey['regex']);
+							}
 						}
 					}
 				}
