@@ -64,3 +64,10 @@ db.config.insert(lastConfig);
 
 // BRCD-865 - overlapping extend balances services
 db.balances.update({"priority":{$exists:0}},{"$set":{"priority":0}}, {multi:1});
+
+// BRCD-908 - Rebalance field changes
+db.lines.find({"rebalance":{$exists:1}}).forEach( function(line) { 
+	if (!Array.isArray(line.rebalance)){
+		db.lines.update({_id:line._id},{$set:{rebalance:[line.rebalance]}})
+	}
+});
