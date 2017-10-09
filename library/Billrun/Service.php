@@ -26,6 +26,12 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	/**
+	 * service internal id
+	 * 
+	 * @var int
+	 */
+	protected $service_id = 0;
 
 	/**
 	 * constructor
@@ -46,6 +52,28 @@ class Billrun_Service {
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
 		}
+		
+		if (isset($params['service_id'])) {
+			$this->setServiceId($params['service_id']);
+		} else {
+			$this->setServiceId(0);
+		}
+	}
+	
+	/**
+	 * set service internal index
+	 * @param int $id
+	 */
+	public function setServiceId($id) {
+		$this->service_id = $id;
+	}
+	
+	/**
+	 * get service internal index
+	 * @param int $id
+	 */
+	public function getServiceId() {
+		return $this->service_id;
 	}
 
 	/**
