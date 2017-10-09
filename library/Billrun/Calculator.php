@@ -481,5 +481,34 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	public function getPossiblyUpdatedFields() {
 		return array();
 	}
+	
+	protected function getForeignFields($foreignEntities,$existsingFields = array()) {
+		$foreignFieldsData = !empty($existsingFields['foreign']) ? $existsingFields['foreign'] : array();
+		$forignFieldsConf = Billrun_Factory::config()->getConfigValue('lines.fields', array());
+		
+		foreach ($forignFieldsConf as $fieldConf) {
+			print_r(PHP_EOL.$fieldConf['foreign']['entity']);
+			print_r(!empty($foreignEntities[$fieldConf['foreign']['entity']]));
+			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
+				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
+					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']['field']));
+				} else {
+					foreach ($foreignEntities[$fieldConf['foreign']['entity']] as $idx => $foreignEntity) {
+						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity,$fieldConf['foreign']['field']));	
+					}
+				}
+				
+			}
+		}
+		return $foreignFieldsData;
+	}
+	
+	protected function getForeginEntityFieldValue($foreignEntity, $field) {
+		if(is_object($foreignEntity) && method_exists($foreignEntity, 'getData')) {
+			$foreignEntity = $foreignEntity->getData();
+		}
+		print_r($foreignEntity[$field]);
+		return $foreignEntity[$field];
+	}
 
 }

@@ -233,8 +233,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			// TODO: push plan to the function to enable market price by plan
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], 0, $row['urt']->sec);
 		}
-		$newData = array_merge($current, $added_values);
-		$row->setRawData( array_merge($newData ,array('foreign' => $this->getForeignFields($newData))) );
+		$row->setRawData( array_merge($current, $added_values ,array('foreign' => $this->getForeignFields(array('rating_data' => $added_values),$current))) );
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
@@ -405,20 +404,4 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}
-
-	protected function getForeignFields($row) {
-		$foreignFieldsData = array();
-		$forignFieldsConf = Billrun_Factory::config()->getConfigValue('lines.fields', array());
-		foreach ($forignFieldsConf as $fieldconf) {
-			Billrun_Util::setIn($foreignFieldsData, $fieldconf['field_name'], $this->getForeginFieldValue($row, $fieldconf));
-		}
-		return $foreignFieldsData;
-	}
-
-	protected function getForeginFieldValue($row, $fieldConf) {
-		$entity = Billrun_Utils_Usage::retriveEntityFromUsage($row, $fieldConf['forign']['entity']);
-
-		return empty($entity) ? null : $entity[$fieldConf['forign']['field']];
-	}
-
 }
