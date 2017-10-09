@@ -20,7 +20,7 @@ for (var i in lastConfig['file_types']) {
 			for (var name in lastConfig['file_types'][i]['parser']['structure']) {
 				newStructure.push({
 					name: name,
-          width:  lastConfig['file_types'][i]['parser']['structure']['name']
+          width:  lastConfig['file_types'][i]['parser']['structure'][name]
 				});
 			}
 			lastConfig['file_types'][i]['parser']['structure'] = newStructure;
