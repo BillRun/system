@@ -236,7 +236,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge($this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev','foreign'));
+		return array_merge(parent::getPossiblyUpdatedFields(), $this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
 	}
 
 	public function getCustomerPossiblyUpdatedFields() {

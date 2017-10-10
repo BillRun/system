@@ -75,6 +75,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 	protected $rates_query = array();
+	protected $addedForeignFields = array();
 
 	/**
 	 * constructor of the class
@@ -479,25 +480,26 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @todo change this one to be abstract
 	 */
 	public function getPossiblyUpdatedFields() {
-		return array();
+		return $this->addedForeignFields;
 	}
 	
 	protected function getForeignFields($foreignEntities,$existsingFields = array()) {
-		$foreignFieldsData = !empty($existsingFields['foreign']) ? $existsingFields['foreign'] : array();
-		$forignFieldsConf = Billrun_Factory::config()->getConfigValue('lines.fields', array());
+		$this->addedForeignFields = array();
+		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
+		$forignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+			return isset($value['foreign']);	
+		});
 		
 		foreach ($forignFieldsConf as $fieldConf) {
-			print_r(PHP_EOL.$fieldConf['foreign']['entity']);
-			print_r(!empty($foreignEntities[$fieldConf['foreign']['entity']]));
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
 					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']['field']));
 				} else {
 					foreach ($foreignEntities[$fieldConf['foreign']['entity']] as $idx => $foreignEntity) {
-						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity,$fieldConf['foreign']['field']));	
+						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']['field']));
 					}
 				}
-				
+				$this->addedForeignFields[] = preg_replace('/\..+$/','',$fieldConf['field_name']);
 			}
 		}
 		return $foreignFieldsData;
@@ -507,7 +509,6 @@ abstract class Billrun_Calculator extends Billrun_Base {
 		if(is_object($foreignEntity) && method_exists($foreignEntity, 'getData')) {
 			$foreignEntity = $foreignEntity->getData();
 		}
-		print_r($foreignEntity[$field]);
 		return $foreignEntity[$field];
 	}
 

@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField, 'foreign');
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {

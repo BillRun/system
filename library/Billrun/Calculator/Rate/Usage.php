@@ -100,7 +100,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 
 		// TODO: Create the ref using the collection, not the entity object.
 		$rate->collection(Billrun_Factory::db()->ratesCollection());		
-		$row->setRawData( array_merge( $current, $this->getAddedValues($rate, $row), array('foreign' => $this->getForeignFields(array('rate' => $rate ) , $current))) );
+		$row->setRawData( array_merge( $current, $this->getForeignFields(array('rate' => $rate), $current), $this->getAddedValues($rate, $row) ));
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;

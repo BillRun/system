@@ -109,6 +109,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'time' => $this->row['urt']->sec,
 		);
 		$this->plan = Billrun_Factory::plan($planSettings);
+		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
