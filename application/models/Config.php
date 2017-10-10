@@ -1204,9 +1204,9 @@ class ConfigModel {
 			throw new Exception('No file structure supplied');
 		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys = $parserSettings['structure'];
+			$customKeys =  array_column($parserSettings['structure'], 'name');
 		} else if ($parserSettings['type'] == 'separator') {
-			$customKeys = $parserSettings['structure'];
+			$customKeys =  array_column($parserSettings['structure'], 'name');
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
 			}
@@ -1214,8 +1214,8 @@ class ConfigModel {
 				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
 			}
 		} else {
-			$customKeys = array_keys($parserSettings['structure']);
-			$customLengths = array_values($parserSettings['structure']);
+			$customKeys = array_column($parserSettings['structure'], 'name');
+			$customLengths = array_column($parserSettings['structure'], 'width');
 			if ($customLengths != array_filter($customLengths, function($length) {
 					return Billrun_Util::IsIntegerValue($length);
 				})) {

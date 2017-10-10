@@ -64,10 +64,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance() {
-		$service_index = $this->getServiceIndex();
 		$urt = $this->row['urt']->sec;
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
+			$service_index = $this->getServiceIndex();
 			$subService = self::getSubscriberServicesByName($this->row['aid'], $this->row['sid'], $service_name, $urt, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
 			if ($subService) {
 				$from = $start_period = $subService[$service_index]['services']['from']->sec;
@@ -75,6 +75,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 				$to = strtotime((string) $this->row['balance_period'], $from);
 			}
 		} else {
+			$service_index = 0;
 			$service_name = null;
 		}
 		if (empty($from) || empty($to)) {

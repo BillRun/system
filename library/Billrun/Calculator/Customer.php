@@ -471,6 +471,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				'name' => $service,
 				'from' => $plan->get('plan_activation'),
 				'to' => $plan->get('plan_deactivation'),
+				'service_id' => 0, // assumption: there is no *custom period* service includes
 			);
 		}
 		return $retServices;
@@ -504,6 +505,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = array(
 					'name' => $service['name'],
 					'from' => $service['from'],
+					'to' => $service['to'],
+					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
 				);
 			}
 		}
