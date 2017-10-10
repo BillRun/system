@@ -122,10 +122,8 @@ class ResetLinesModel {
 			$stamps[] = $line['stamp'];
 			if (!empty($line['rebalance'])) {
 				$queue_line['rebalance'] = $line['rebalance'];
-				array_push($queue_line['rebalance'], $rebalanceTime);
-			} else {
-				$queue_line['rebalance'] = array($rebalanceTime);
 			}
+			$queue_line['rebalance'][] = $rebalanceTime;
 			$this->buildQueueLine($queue_line, $line, $advancedProperties);
 			$queue_lines[] = $queue_line;
 		}

@@ -15,7 +15,9 @@
 class Billrun_Calculator_Rate_Filters_Match extends Billrun_Calculator_Rate_Filters_Base {
 
 	protected function updateMatchQuery(&$match, $row) {
-		$match = array_merge($match, array($this->params['rate_key'] => $this->getRowFieldValue($row, $this->params['line_key'])));
+		if ($this->params['rate_key'] !== 'usaget') {
+			$match = array_merge($match, array($this->params['rate_key'] => $this->getRowFieldValue($row, $this->params['line_key'])));
+		}
 	}
 
 }

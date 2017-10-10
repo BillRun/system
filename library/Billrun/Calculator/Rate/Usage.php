@@ -132,6 +132,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		$filters = $this->getRateCustomFilters($usaget, $type);
 		foreach ($filters as $currentPriorityFilters) {
 			$query = $this->getRateQuery($row, $usaget, $type, $currentPriorityFilters);
+			$query[0]['$match']['key'] = 'CALL';
 			if (!$query) {
 				continue;
 			}
