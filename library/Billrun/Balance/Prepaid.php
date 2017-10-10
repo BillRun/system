@@ -52,20 +52,11 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		}
 	}
 
-	/**
-	 * on prepaid there is no default balance, return no balance (empty array)
-	 * @param array $options settings
-	 * @return array
-	 */
-	protected function getDefaultBalance($options) {
-		return array();
-	}
-
 	protected function loadQuerySort() {
 		return array('priority' => -1, 'to' => 1,);
 	}
 
-	protected function getBalanceLoadQuery($query = array()) {
+	protected function getBalanceLoadQuery(array $query = array()) {
 		$usageType = $this->row['usaget'];
 		if (isset($this->granted['usagev'])) {
 			$minUsage = $this->granted['usagev'];

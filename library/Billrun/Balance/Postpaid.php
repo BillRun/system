@@ -23,9 +23,37 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	protected function load() {
 		$ret = parent::load();
 		if (empty($ret)) { // on postpaid we create the balance if not exists
-			$ret = $this->getDefaultBalance($this->row);
+			$ret = $this->getDefaultBalance();
 		}
 		return $ret;
+	}
+	
+	/**
+	 * Gets a query to get the correct balance of the subscriber.
+	 * 
+	 * @param type $subscriberId
+	 * @param type $timeNow - The time now.
+	 * @param type $chargingType
+	 * @param type $usageType
+	 * @return array
+	 */
+	protected function getBalanceLoadQuery(array $query = array()) {
+		$query['aid'] = $this->row['aid'];
+		$query['sid'] = $this->row['sid'];
+		$query['from'] = array('$lte' => $this->row['urt']);
+		$query['to'] = array('$gte' => $this->row['urt']);
+		$query['priority'] = $this->getServiceIndex();
+		
+		if ($this->isExtendedBalance()) {
+			$query['service_name'] = $this->row['service_name'];
+		} else {
+			$query['service_name'] = array(
+				'$exists' => false,
+			);
+		}
+		Billrun_Factory::dispatcher()->trigger('getBalanceLoadQuery', array(&$query, $this->row, $this));
+
+		return $query;
 	}
 
 	/**
@@ -35,58 +63,110 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $options subscriber db line
 	 * @return array The default balance
 	 */
-	protected function getDefaultBalance($options) {
-		if (isset($options['balance_period']) && isset($options['serviceName'])) {
-			$subService = self::getSubscriberService($options['sid'], $options['service_name'], $options['urt']->sec);
+	protected function getDefaultBalance() {
+		$urt = $this->row['urt']->sec;
+		if ($this->isExtendedBalance()) {
+			$service_name = $this->row['service_name'];
+			$service_index = $this->getServiceIndex();
+			$subService = self::getSubscriberServicesByName($this->row['aid'], $this->row['sid'], $service_name, $urt, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
 			if ($subService) {
-				$from = $start_period = $subService['from'];
-				$period = $options['balance_period'];
-				$to = strtotime((string) $options['balance_period'], $subService['from']);
+				$from = $start_period = $subService[$service_index]['services']['from']->sec;
+				$period = $this->row['balance_period'];
+				$to = strtotime((string) $this->row['balance_period'], $from);
 			}
+		} else {
+			$service_index = 0;
+			$service_name = null;
 		}
 		if (empty($from) || empty($to)) {
-			$urtDate = date('Y-m-d h:i:s', $options['urt']->sec);
+			$urtDate = date('Y-m-d h:i:s', $urt);
 			$from = Billrun_Billingcycle::getBillrunStartTimeByDate($urtDate);
 			$start_period = "default";
 			$to = Billrun_Billingcycle::getBillrunEndTimeByDate($urtDate);
 			$period = "default";
 		}
-		$plan = Billrun_Factory::plan(array('name' => $options['plan'], 'time' => $options['urt']->sec, 'disableCache' => true));
-		return $this->createBasicBalance($options['aid'], $options['sid'], $from, $to, $plan, $options['urt']->sec, $start_period, $period);
+		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' => true));
+		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_index);
 	}
 	
 	/**
-	 * method to fetch subscriber service
+	 * method to return service index if this balance based on service
+	 * @return int service index if service based else return 0
+	 */
+	protected function getServiceIndex() {
+		if (!isset($this->row['service_index'])) {
+			return 0;
+		}
+		return $this->row['service_index'];
+	}
+
+	/**
+	 * method to check if balance is aligned to extended period which is not aligned to the cycle
+	 * @return boolean true if this is extended balance, else false
+	 */
+	protected function isExtendedBalance() {
+		return isset($this->row['balance_period']) && $this->row['balance_period'] != "default" && isset($this->row['service_name']);
+	}
+	
+	/**
+	 * method to fetch subscriber service(s) by service name
+	 * can be multiple in case of overlapping services (same service with same or overlap period)
 	 * 
 	 * @param int $sid subscriber id
 	 * @param string $service service name
 	 * @param int $time time stamp
+	 * @param int $orig_sid real subscriber id in case of shared balance (sid will be 0)
 	 * 
 	 * @return mixed subscriber service entry if exists, else false
 	 * 
 	 * @todo refactoring and use native subscriber class
+	 * @todo cache query results
 	 */
-	public static function getSubscriberService($sid, $service, $time) {
+	public static function getSubscriberServicesByName($aid, $sid, $service, $time, $orig_sid = null) {
 		try {
-			$baseQuery = array(
-				'sid' => $sid,
-				'type' => 'subscriber',
-				'services.name' => $service,
-				'services.from' => array('$lte' => new MongoDate($time)),
-				'services.to' => array('$gt' => new MongoDate($time))
+			$boundQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+			$aggregate = array(
+				array( // todo filter urt of subscriber revision
+					'$match' => array(
+						'aid' => $aid,
+						'sid' => is_null($orig_sid) ? $sid : $orig_sid,
+						'type' => array(
+							'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
+						),
+						'from' => $boundQuery['from'],
+						'to' => $boundQuery['to'],
+					),
+				),
+				array('$unwind' => '$services'),
+				array(
+					'$match' => array(
+						'services.name' => $service,
+						'services.from' => $boundQuery['from'],
+						'services.to' => $boundQuery['to'],
+					),
+				),
+				array(
+					'$sort' => array(
+						'to' => 1
+					),
+				),
 			);
-			$query = array_merge($baseQuery, Billrun_Utils_Mongo::getDateBoundQuery($time));
-			$elemMatch = array(
-				'$elemMatch' => array(
-					'name' => $service
-				)
-			);
-			$proj = array('_id' => 0, "services" => $elemMatch);
-			$ret = Billrun_Factory::db()->subscribersCollection()->query()->query($query)
-					->project($proj)->cursor()->current();
-			if ($ret->isEmpty()) {
+			
+			$cursor = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregate);
+			
+			$ret = array();
+			foreach($cursor as $row) {
+				$key = @$row->get('services.service_id');
+				if (is_null($key) || $key === FALSE) {
+					$key = 0;
+				}
+				$ret[$key] = $row;
+			}
+			
+			if (empty($ret)) {
 				return false;
 			}
+			
 			return $ret;
 		} catch (Exception $ex) {
 			return false;
@@ -103,7 +183,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param type $urt line time
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
-	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default") {
+	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
@@ -115,9 +195,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			),
 			'start_period' => $start_period,
 			'period' => $period,
+			'priority' => $priority,
 		);
+		if (!is_null($service_name)) {
+			$query['service_name'] = $service_name;
+		}
 		$update = array(
-			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period),
+			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period, $service_name, $priority),
 		);
 		$options = array(
 			'upsert' => true,
@@ -143,11 +227,11 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @param Billrun_Plan $current_plan
 	 * @return array
 	 */
-	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period = "default", $period = "default") {
+	protected function getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
 		$planRef = $plan->createRef();
 		$connectionType = $plan->get('connection_type');
 		$planDescription = $plan->get('description');
-		return array(
+		$ret = array(
 			'from' => new MongoDate($from),
 			'to' => new MongoDate($to),
 			'aid' => $aid,
@@ -157,9 +241,14 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'start_period' => $start_period,
 			'period' => $period,
 			'plan_description' => $planDescription,
+			'priority' => $priority,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
 		);
+		if (!is_null($service_name)) {
+			$ret['service_name'] = $service_name;
+		}
+		return $ret;
 	}
 
 	/**
@@ -175,14 +264,14 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		list($query, $update) = parent::buildBalanceUpdateQuery($pricingData, $row, $volume);
 		$balance_totals_key = $this->getBalanceTotalsKey($pricingData);
 		$currentUsage = $this->getCurrentUsage($balance_totals_key);
-		if ($this->get('sid') != 0) {
+		if ($this->get('sid') != 0 && !$this->isExtendedBalance()) {
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.usagev'] = $volume;
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.cost'] = $pricingData[$this->pricingField];
 			$update['$inc']['balance.totals.' . $balance_totals_key . '.count'] = 1;
 			$update['$inc']['balance.cost'] = $pricingData[$this->pricingField];
 		}
 		// update balance group (if exists); supported only on postpaid
-		$this->buildBalanceGroupsUpdateQuery($update, $pricingData, $balance_totals_key);
+		$this->buildBalanceGroupsUpdateQuery($update, $pricingData);
 		$pricingData['usagesb'] = floatval($currentUsage);
 		return array($query, $update);
 	}
@@ -196,7 +285,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @return void
 	 */
-	protected function buildBalanceGroupsUpdateQuery(&$update, &$pricingData, $balance_totals_key) {
+	protected function buildBalanceGroupsUpdateQuery(&$update, &$pricingData) {
 		if (!isset($pricingData['arategroups'])) {
 			return;
 		}
@@ -214,13 +303,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 					$arategroup['usagesb'] = 0;
 				}
 			} else {
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] = $arategroup['usagev'];
-				$update['$inc']['balance.groups.' . $group . '.' . $balance_totals_key . '.count'] = 1;
-				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.left'] = $arategroup['left'];
-				$update['$set']['balance.groups.' . $group . '.' . $balance_totals_key . '.total'] = $arategroup['total'];
+				$update['$inc']['balance.groups.' . $group . '.usagev'] = $arategroup['usagev'];
+				$update['$inc']['balance.groups.' . $group . '.count'] = 1;
+				$update['$set']['balance.groups.' . $group . '.left'] = $arategroup['left'];
+				$update['$set']['balance.groups.' . $group . '.total'] = $arategroup['total'];
 //				$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];
-				if (isset($this->get('balance')['groups'][$group][$balance_totals_key]['usagev'])) {
-					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group][$balance_totals_key]['usagev']);
+				if (isset($this->get('balance')['groups'][$group]['usagev'])) {
+					$arategroup['usagesb'] = floatval($this->get('balance')['groups'][$group]['usagev']);
 				} else {
 					$arategroup['usagesb'] = 0;
 				}

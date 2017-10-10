@@ -57,26 +57,34 @@ class Models_Subscribers extends Models_Entity {
 	}
 
 	/**
-	 * Verfiy services are corrrect before update is applied tothe subscrition.
+	 * Verify services are correct before update is applied to the subscription
 	 */
 	protected function verifyServices() {
-		if (empty($this->update)) {
+		if (empty($this->update) || empty($this->update['services'])) {
 			return FALSE;
 		}
-		if (!empty($this->update['services'])) {
-			foreach ($this->update['services'] as &$service) {
-				if (gettype($service) == 'string') {
-					$service = array('name' => $service);
-				}
-				if (gettype($service['from']) == 'string') {
-					$service['from'] = new MongoDate(strtotime($service['from']));
-				}
-				if (empty($this->before)) { // this is new subscriber
-					$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
-				}
-				//to can't be more then the updated 'to' of the subscription
-				$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
-				$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+		
+		foreach ($this->update['services'] as &$service) {
+			if (gettype($service) == 'string') {
+				$service = array('name' => $service);
+			}
+			if (gettype($service['from']) == 'string') {
+				$service['from'] = new MongoDate(strtotime($service['from']));
+			}
+			if (empty($this->before)) { // this is new subscriber
+				$service['from'] = isset($service['from']) && $service['from'] >= $this->update['from'] ? $service['from'] : $this->update['from'];
+			}
+			//Handle custom period services
+			$serviceRate = new Billrun_Service(array('name'=>$service['name'],'time'=>$service['from']->sec));
+			if( !empty($serviceRate) && !empty( $servicePeriod = @$serviceRate->get('balance_period')) ) {
+				$service['to'] = new MongoDate(strtotime($servicePeriod, $service['from']->sec));
+			}
+
+			//to can't be more then the updated 'to' of the subscription
+			$entityTo = isset($this->update['to']) ? $this->update['to'] : $this->getBefore()['to'];
+			$service['to'] = !empty($service['to']) && $service['to'] <= $entityTo ? $service['to'] : $entityTo;
+			if (!isset($service['service_id'])) {
+				$service['service_id'] = hexdec(uniqid());
 			}
 		}
 	}

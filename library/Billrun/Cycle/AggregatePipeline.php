@@ -52,7 +52,8 @@ class Billrun_Cycle_AggregatePipeline {
 				'price' => 1,
 				'recurrence.periodicity' => 1,
 				'plan_activation' => 1,
-				'plan_deactivation' => 1
+				'plan_deactivation' => 1,
+				'include' => 1
 			)
 		);
 	}

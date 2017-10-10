@@ -37,7 +37,7 @@ class Billrun_Utils_Mongo {
 		$duration = $period['duration'];
 		// If this plan is unlimited.
 		// TODO: Move this logic to a more generic location
-		if ($duration == "UNLIMITED") {
+		if ($duration == Billrun_Service::UNLIMITED_VALUE) {
 			return new MongoDate(strtotime(self::UNLIMITED_DATE));
 		}
 		if (isset($period['units'])) {

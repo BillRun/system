@@ -67,7 +67,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
 				$group = $lineToRebalance['arategroup'];
-				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
+				$balance['balance.groups.' . $group . '.usagev'] += $rebalanceUsagev;
 			}
 		}
 
@@ -80,7 +80,7 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
 				$group = $lineToRebalance['arategroup'];
-				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
+				$balance['balance.groups.' . $group . '.cost'] -= $rebalanceAprice;
 			}
 			$balance->save();
 		}
@@ -109,31 +109,6 @@ class Billrun_Calculator_Row_Customerpricing_Postpaid extends Billrun_Calculator
 	 */
 	protected function isRebalanceRequired() {
 		return false;
-	}
-
-	/**
-	 * load subscribers services objects by their name
-	 * 
-	 * @param array $services services names
-	 * @param int $time unix timestamp of effective datetime
-	 * 
-	 * @return array of services objects
-	 */
-	protected function loadSubscriberServices($services, $time) {
-		$ret = array();
-		foreach ($services as $service) {
-			$serviceSettings = array(
-				'name' => $service,
-				'time' => $time
-			);
-			$serviceObject = new Billrun_Service($serviceSettings);
-			if ($serviceObject->get("balance_period") && Billrun_Balance_Postpaid::getSubscriberService($this->sid, $service, $this->urt->sec) == FALSE) {
-				continue;
-			}
-			$ret[] = $serviceObject;
-		}
-
-		return $ret; // array of service objects
 	}
 
 }
