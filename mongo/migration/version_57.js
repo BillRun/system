@@ -71,7 +71,7 @@ db.prepaidgroups.ensureIndex({ 'name':1, 'to': 1 }, { unique: false, sparse: tru
 db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
 
 
-// BRCD-1143 - Input Processors fields new structure
+// BRCD-1143 - Input Processors fields new strucrure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
@@ -120,4 +120,14 @@ for (var i in lastConfig['file_types']) {
 	lastConfig['file_types'][i]['customer_identification_fields'] = mappings;
 }
 db.config.insert(lastConfig);
+
+// BRCD-865 - overlapping extend balances services
+db.balances.update({"priority":{$exists:0}},{"$set":{"priority":0}}, {multi:1});
+
+// BRCD-908 - Rebalance field changes
+db.lines.find({"rebalance":{$exists:1}}).forEach( function(line) { 
+	if (!Array.isArray(line.rebalance)){
+		db.lines.update({_id:line._id},{$set:{rebalance:[line.rebalance]}})
+	}
+});
 
