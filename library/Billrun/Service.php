@@ -130,7 +130,7 @@ class Billrun_Service {
 	 * @param $serviceStartDate the date from which the service is valid for the subscriber
 	 */
 	public function isExhausted($serviceStartDate) {
-		if (!isset($this->data['price']) || !is_array($this->data['price'])) {
+		if (!isset($this->data['price']) || !is_array($this->data['price']) || $this->get("balance_period")) {
 			return false;
 		}
 		$lastEntry = array_slice($this->data['price'], -1)[0];
