@@ -71,7 +71,7 @@ db.prepaidgroups.ensureIndex({ 'name':1, 'to': 1 }, { unique: false, sparse: tru
 db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
 
 
-// BRCD-1143 - Input Processors fields new strucrure
+// BRCD-1143 - Input Processors fields new structure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
@@ -97,3 +97,27 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-1114: change customer mapping structure
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	var mappings = {};
+	var firstKey = Object.keys(lastConfig['file_types'][i]['customer_identification_fields'])[0];
+	if (firstKey != 0) {
+		continue;
+	}
+	for (var priority in lastConfig['file_types'][i]['customer_identification_fields']) {
+		var regex = lastConfig['file_types'][i]['customer_identification_fields'][priority]['conditions'][0]['regex'];
+		var data = lastConfig['file_types'][i]['customer_identification_fields'][priority];
+		delete data['conditions'];
+		var usaget = regex.substring(2, regex.length - 2);;
+		if (!mappings[usaget]) {
+			mappings[usaget] = [];
+		}
+		mappings[usaget].push(data);
+	}
+	lastConfig['file_types'][i]['customer_identification_fields'] = mappings;
+}
+db.config.insert(lastConfig);
+
