@@ -154,6 +154,58 @@ class Tests_Updaterowt extends UnitTestCase {
 
 		// O6- plan includes - use part of it
 		// O7 - try to use service includes
+		
+		//Q1
+		array('stamp' => 'q1', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
+			'urt' => '2017-09-25 11:00:00+03:00'),
+		//Q2
+		array('stamp' => 'q2', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q2',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 30, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
+			'urt' => '2017-09-26 11:00:00+03:00'),
+		//Q3
+		array('stamp' => 'q3', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q2',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 150, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
+			'urt' => '2017-09-23 11:00:00+03:00'),
+		//Q4
+		array('stamp' => 'q4', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 250, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
+			'urt' => '2017-09-27 11:00:00+03:00'),
+		
+		//R1
+		array('stamp' => 'r1', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 235, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-11 11:00:00+03:00'),
+		//R2
+		array('stamp' => 'r2', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 245, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-12 11:00:00+03:00'),
+		//R3
+		array('stamp' => 'r3', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-13 11:00:00+03:00'),
+		//R4
+		array('stamp' => 'r4', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 120, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-09 11:00:00+03:00'),
+		//R5
+		array('stamp' => 'r5', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 60, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-21 11:00:00+03:00'),
+		//r6
+		array('stamp' => 'r6', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-14 11:00:00+03:00'),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -251,6 +303,20 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 40, 'over_group' => 0, 'aprice' => 0), //O4
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //O5
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
+		
+		//case Q expected
+		array('in_group' => 70, 'over_group' => 0, 'aprice' => 0), //Q1
+		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //Q2
+		array('in_group' => 150, 'over_group' => 0, 'aprice' => 0), //Q3
+		array('in_group' => 120, 'over_group' => 130, 'aprice' => 1.30), //Q4; service2 - take 20, service1 - take 100
+		
+		//case R expected
+		array('in_group' => 235, 'over_group' => 0, 'aprice' => 0), //R1
+		array('in_group' => 245, 'over_group' => 0, 'aprice' => 0), //R2
+		array('in_group' => 20, 'over_group' => 50, 'aprice' => 0.5), //R3
+		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
+		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
+		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
 	];
 
 	public function __construct($label = false) {
@@ -377,6 +443,16 @@ class Tests_Updaterowt extends UnitTestCase {
 		}
 		if (!isset($row['usaget'])) {
 			$row['usaget'] = 'call';
+		}
+		if (isset($row['services_data'])) {
+			foreach ($row['services_data'] as $key => $service) {
+				if (isset($service['from'])) {
+					$row['services_data'][$key]['from'] = new MongoDate(strtotime($service['from']));
+				}
+				if (isset($service['to'])) {
+					$row['services_data'][$key]['to'] = new MongoDate(strtotime($service['to']));
+				}
+			}
 		}
 		$rate = $this->ratesCol->query(array('key' => $row['arate_key']))->cursor()->current();
 		$row['arate'] = MongoDBRef::create('rates', (new MongoId((string) $rate['_id'])));

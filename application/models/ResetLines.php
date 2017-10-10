@@ -115,6 +115,7 @@ class ResetLinesModel {
 	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$query = $this->getResetLinesQuery($update_aids);
 		$lines = $lines_coll->query($query);
+		$rebalanceTime = new MongoDate();
 		$stamps = array();
 		$queue_lines = array();
 		$queue_line = array(
@@ -126,7 +127,12 @@ class ResetLinesModel {
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
 			$this->aggregateLineUsage($line);
+			$queue_line['rebalance'] = array();
 			$stamps[] = $line['stamp'];
+			if (!empty($line['rebalance'])) {
+				$queue_line['rebalance'] = $line['rebalance'];
+			}
+			$queue_line['rebalance'][] = $rebalanceTime;
 			$this->buildQueueLine($queue_line, $line, $advancedProperties);
 			$queue_lines[] = $queue_line;
 		}
@@ -134,7 +140,7 @@ class ResetLinesModel {
 		// If there are stamps to handle.
 		if ($stamps) {
 			// Handle the stamps.
-			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids)) {
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime)) {
 				return false;
 			}
 		}
@@ -187,11 +193,12 @@ class ResetLinesModel {
 	 * Get the query to update the lines collection with.
 	 * @return array - Query to use to update lines collection.
 	 */
-	protected function getUpdateQuery() {
+	protected function getUpdateQuery($rebalanceTime) {
 		return array(
 			'$unset' => array(
-//				'aid' => 1,
-//				'sid' => 1,
+				'aid' => 1,
+				'sid' => 1,
+				'subscriber' => 1,
 				'apr' => 1,
 				'aprice' => 1,
 				'arate' => 1,
@@ -207,6 +214,7 @@ class ResetLinesModel {
 				'over_arate' => 1,
 				'over_group' => 1,
 				'over_plan' => 1,
+				'out_group' => 1,
 				'plan' => 1,
 				'plan_ref' => 1,
 				'services' => 1,
@@ -218,8 +226,10 @@ class ResetLinesModel {
 				'final_charge' => 1,
 			),
 			'$set' => array(
-				'rebalance' => new MongoDate(),
 				'in_queue' => true,
+			),
+			'$push' => array(
+				'rebalance' => $rebalanceTime,
 			),
 		);
 	}
@@ -246,8 +256,8 @@ class ResetLinesModel {
 	 * @param type $update_aids
 	 * @return boolean
 	 */
-	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids) {
-		$update = $this->getUpdateQuery();
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
+		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
 
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
@@ -276,7 +286,7 @@ class ResetLinesModel {
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-
+		
 		return true;
 	}
 

@@ -271,6 +271,40 @@
                 }
             }
         }
+      },
+	  {
+        "key" : "RATE-Q1","code" : "RATE-O4","description" : "RATE-O4","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 10,
+                            "price" : 0.1
+                        }
+                    ]
+                }
+            }
+        }
+      },
+	  {
+        "key" : "RATE-Q2","code" : "RATE-O4","description" : "RATE-O4","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
+        "rates" : {
+            "call" : {
+                "BASE" : {
+                    "rate" : [
+                        {
+                            "from" : 0,
+                            "to" : 999999999,
+                            "interval" : 1,
+                            "price" : 0.05
+                        }
+                    ]
+                }
+            }
+        }
       }
 
 	  
