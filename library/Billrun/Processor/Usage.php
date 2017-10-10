@@ -16,6 +16,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $usagevUnit = 'counter';
 	protected $usagevFields = array();
 	protected $apriceField = null;
+	protected $apriceMult = null;
 	protected $dateField = null;
 	protected $dateFormat = null;
 	protected $timeField = null;
@@ -52,6 +53,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['aprice_field'])){
 			$this->apriceField = $options['processor']['aprice_field'];
+			if (!empty($options['processor']['aprice_mult'])){
+				$this->apriceMult = $options['processor']['aprice_mult'];
+			}
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -211,7 +215,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected function getLineAprice($userFields) {
 		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
-			return $userFields[$this->apriceField];
+			$aprice = $userFields[$this->apriceField];
+			if (!is_null($this->apriceMult) && is_numeric($this->apriceMult)) {
+				$aprice *= floatval($this->apriceMult);
+			}
+			return $aprice;
 		}
 		
 		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
