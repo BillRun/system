@@ -325,10 +325,6 @@ class ResetLinesModel {
 		$update = array();
 		foreach ($volumeToSubstract as $group => $usaget) {
 			foreach ($usaget as $usageType => $usagev) {
-				if (isset($balance['balance']['totals'][$usageType]['usagev'])) {
-					$update['$set']['balance.totals.' . $usageType . '.usagev'] = $balance['balance']['totals'][$usageType]['usagev'] - $usagev['usage'];
-					$update['$set']['balance.totals.' . $usageType . '.count'] = $balance['balance']['totals'][$usageType]['count'] - $usagev['count'];
-				}
 				if (isset($balance['balance']['groups'][$group])) {
 					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
 					if (isset($balance['balance']['groups'][$group]['usagev'])) {
