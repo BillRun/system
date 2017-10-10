@@ -91,9 +91,9 @@ class ResetLinesModel {
 			'type' => array(
 				'$ne' => 'credit',
 			),
-			'process_time' => array(
-				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
-			),
+//			'process_time' => array(
+//				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+//			),
 		);
 	}
 
@@ -119,6 +119,7 @@ class ResetLinesModel {
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
+			$queue_line['rebalance'] = array();
 			$stamps[] = $line['stamp'];
 			if (!empty($line['rebalance'])) {
 				$queue_line['rebalance'] = $line['rebalance'];

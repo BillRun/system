@@ -181,7 +181,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	protected function getLineUsageVolume($userFields) {
 		$volume = 0;
-		return $userFields['usagev'];
 		if (!empty($this->usagevFields)) {
 			foreach ($this->usagevFields as $usagevField) {
 				if (isset($userFields[$usagevField]) && is_numeric($userFields[$usagevField])) {
