@@ -495,21 +495,19 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				'time' => $time
 			);
 			
+			if (isset($service['from']->sec)) {
+				$serviceSettings['service_start_date'] = $service['from']->sec;
+			}
+			
 			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
 				continue;
 			}
 			
-			if (isset($service['from']) && $serviceObject->isExhausted($service['from'])) {
+			if (isset($service['from']) && $serviceObject->isExhausted($service['from'], $time)) {
 				continue;
 			}
 			
-			$balancePeriod = @$serviceObject->get("balance_period");
-			
-			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberServicesByName($this->aid, $this->sid, $serviceName, $this->urt->sec) == FALSE) {
-				continue;
-			}
-			
-			if ($balancePeriod && isset($service['to']->sec)) {
+			if ($serviceObject->get("balance_period") && isset($service['to']->sec)) {
 				$sortKey = (int) $service['to']->sec;
 			} else {
 				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
@@ -572,8 +570,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
-					'service_index' => $service->getServiceId(),
+					'service_id' => $service->get('service_id'),
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
+					'service_start_date' => $service->get('service_start_date'),
 				);
 				// pre-check if need to switch to other balance with the new service
 				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
