@@ -130,26 +130,26 @@ class Tests_Updaterowt extends UnitTestCase {
 		// case O - custom period balance support
 		// O1
 		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services_data' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services_data' => [["name"=> "SERVICE-O1", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-01 09:00:00+03:00'),
 //		// O2
 		array('stamp' => 'o2', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services_data' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services_data' => [["name"=> "SERVICE-O1", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-15 09:00:00+03:00'),
 		// O3
 		array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O2',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services_data' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services_data' => [["name"=> "SERVICE-O1", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 09:00:00+03:00'),
 		// O4- plan includes - use all
 		array('stamp' => 'o4', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 40, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 40, 'services_data' => [["name"=> "SERVICE-O4", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 09:00:00+03:00'),
 		// O5 - try to use service includes
 		array('stamp' => 'o5', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 30, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 30, 'services_data' => [["name"=> "SERVICE-O4", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 11:00:00+03:00'),
 		array('stamp' => 'o6', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 75, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 75, 'services_data' => [["name"=> "SERVICE-O4", "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 14:00:00+03:00'),
 
 		// O6- plan includes - use part of it
@@ -303,7 +303,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 40, 'over_group' => 0, 'aprice' => 0), //O4
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //O5
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
-		
+//		
 		//case Q expected
 		array('in_group' => 70, 'over_group' => 0, 'aprice' => 0), //Q1
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //Q2
