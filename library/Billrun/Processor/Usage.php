@@ -11,14 +11,64 @@
  */
 class Billrun_Processor_Usage extends Billrun_Processor {
 
+	/**
+	 * default usaget type used in case no other matches
+	 * @var type string
+	 */
 	protected $defaultUsaget = 'general';
+	
+	/**
+	 * usage type mapping options
+	 * @var type array
+	 */
 	protected $usagetMapping = null;
+	
+	/**
+	 * unit of measure used for the received volume
+	 * @var type string
+	 */
 	protected $usagevUnit = 'counter';
+	
+	/**
+	 * fields used to calculate usagev (sum of field values)
+	 * @var type array
+	 */
 	protected $usagevFields = array();
+	
+	/**
+	 * name of the field where the price of the line placed (in case it's pre-priced)
+	 * @var type string
+	 */
 	protected $apriceField = null;
+	
+	/**
+	 * constant to multiply the price received (in case of pre-priced)
+	 * @var type float
+	 */
+	protected $apriceMult = null;
+	
+	/**
+	 * the field's name where the date is located
+	 * @var type  string
+	 */
 	protected $dateField = null;
+	
+	/**
+	 * the date format (not mandatory)
+	 * @var type string
+	 */
 	protected $dateFormat = null;
+	
+	/**
+	 * the field's name where the time is located (in case of separate field time)
+	 * @var type string
+	 */
 	protected $timeField = null;
+	
+	/**
+	 * the time format (not mandatory, in case of separate field time)
+	 * @var type string
+	 */
 	protected $timeFormat = null;
 
 	public function __construct($options) {
@@ -52,6 +102,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['aprice_field'])){
 			$this->apriceField = $options['processor']['aprice_field'];
+			if (!empty($options['processor']['aprice_mult'])){
+				$this->apriceMult = $options['processor']['aprice_mult'];
+			}
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -211,7 +264,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected function getLineAprice($userFields) {
 		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
-			return $userFields[$this->apriceField];
+			$aprice = $userFields[$this->apriceField];
+			if (!is_null($this->apriceMult) && is_numeric($this->apriceMult)) {
+				$aprice *= $this->apriceMult;
+			}
+			return $aprice;
 		}
 		
 		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);

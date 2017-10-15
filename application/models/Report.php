@@ -149,6 +149,16 @@ class ReportModel {
 			$aggregate[] = array('$group' => $group);
 		}
 		
+		$project = $this->getProject();
+		if(!empty($project)) {
+			$aggregate[] = array('$project' => $project);
+		}
+		
+		$sort = $this->getSort();
+		if(!empty($sort)) {
+			$aggregate[] = array('$sort' => $sort);
+		}
+		
 		$skip = $this->getSkip($size, $page);
 		if($skip !== -1) {
 			$aggregate[] = array('$skip' => $skip);
@@ -159,15 +169,6 @@ class ReportModel {
 			$aggregate[] = array('$limit' => $limit);
 		}
 		
-		$project = $this->getProject();
-		if(!empty($project)) {
-			$aggregate[] = array('$project' => $project);
-		}
-		
-		$sort = $this->getSort();
-		if(!empty($sort)) {
-			$aggregate[] = array('$sort' => $sort);
-		}
 		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();

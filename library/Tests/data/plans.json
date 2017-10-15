@@ -543,6 +543,14 @@
 					}
 				}
 			}
+        },
+		{
+			"name" : "NEW-PLAN-Q1",
+			"plan_code" : "NEW-PLAN-Q1",
+			"description" : "NEW-PLAN-Q1",
+			"upfront" : false,
+			"from" : "time*2016-10-05T08:08:36Z",
+			"to" : "time*2116-10-05T08:08:36Z"
         }
 		
 
