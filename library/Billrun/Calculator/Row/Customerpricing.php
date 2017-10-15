@@ -307,7 +307,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, (isset($pricingData['over_group']) && $pricingData['over_group'] ? $pricingData['over_group'] : $pricingData['out_group']));
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
 
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
