@@ -121,15 +121,16 @@ class Billrun_Service {
 		if ($serviceStartDate instanceof MongoDate) {
 			$serviceStartDate = $serviceStartDate->sec;
 		}
-
-		if ($customPeriod = $this->get("balance_period")) {
-			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
-			if (is_null($rowTime)) {
-				$rowTime = time();
-			}
-			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
+		
+		if (is_null($rowTime)) {
+			$rowTime = time();
 		}
 		
+		if ($customPeriod = $this->get("balance_period")) {
+			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
+			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
+		}
+
 		if (!isset($this->data['price']) || !is_array($this->data['price'])) {
 			return false;
 		}
@@ -138,8 +139,8 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, time());
-		return $cyclesSpent >= $serviceAvailableCycles;
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		return $cyclesSpent > $serviceAvailableCycles;
 	}
 	
 	/**
