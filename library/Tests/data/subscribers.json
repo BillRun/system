@@ -591,6 +591,28 @@
 				"service_id": 1235
 			  }
 		  ]
+        },
+        {
+            "aid" : 9503,
+            "firstname" :"nr122",
+            "lastname" : "nr122",
+            "plan" : "NEW-PLAN-O4",
+            "address" : "nr71",
+            "country" : "nr71",
+            "type" : "subscriber",
+            "from" : "time*2016-11-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-11-11T09:17:58.865Z",
+            "to" : "time*2116-11-11T09:17:58Z",
+            "sid" : 952,
+             "services" : [
+			  {
+				"name": "2GB_INTERNET_FOR_1_CYCLE",
+				"from": "time*2017-09-01T00:00:00Z",
+				"to": "time*2117-09-14T23:59:59Z"
+			  }
+		  ]
+		
         }
+       
         ]
     }
