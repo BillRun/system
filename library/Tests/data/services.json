@@ -403,7 +403,6 @@
                         }
                 },
                 "prorated" : true,
-                "balance_period" : "default",
                 "to" : "time*2166-10-03T09:29:58Z",
                 "creation_time" : "time*2016-10-04T04:00:00Z"
         }
