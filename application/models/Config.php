@@ -1102,18 +1102,38 @@ class ConfigModel {
 		
 		return true;
  	}
+	
+	/**
+	 * gets all field names (distinct) used for volume in the input processor received
+	 * 
+	 * @param array $fileSettings
+	 * @return array field names
+	 */
+	protected function getVolumeFields($fileSettings) {
+		$volumeFields = array();
+		if (isset($fileSettings['processor']['usaget_mapping'])) {
+			foreach ($fileSettings['processor']['usaget_mapping'] as $mapping) {
+				if ($mapping['volume_type'] === 'field') {
+					$volumeSrc = is_array($mapping['volume_src']) ? $mapping['volume_src'] : array($mapping['volume_src']);
+					$volumeFields = array_merge($volumeFields , $volumeSrc);
+				}
+			}
+		}
+		
+		if (isset($fileSettings['processor']['default_volume_type']) && $fileSettings['processor']['default_volume_type'] === 'field') {
+			$volumeSrc = is_array($fileSettings['processor']['default_volume_src']) ? $fileSettings['processor']['default_volume_src'] : array($fileSettings['processor']['default_volume_src']);
+			$volumeFields = array_merge($volumeFields , $volumeSrc);
+		}
+		
+		return array_unique($volumeFields);
+	}
 
 	protected function checkForConflics($config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
-			if (is_array($fileSettings['processor']['volume_field'])) {
-				$volumeFields = $fileSettings['processor']['volume_field'];
-			}
-			else {
-				$volumeFields = array($fileSettings['processor']['volume_field']);
-			}
+			$volumeFields = $this->getVolumeFields($fileSettings);
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
 			if (!isset($fileSettings['processor']['usaget_mapping'])) {
 				$fileSettings['processor']['usaget_mapping'] = array();
@@ -1255,11 +1275,11 @@ class ConfigModel {
 		if (!isset($processorSettings['date_field'])) {
 			throw new Exception('Missing processor date field');
 		}
-		if (empty($processorSettings['volume_field'])) {
-			throw new Exception('Missing processor volume field');
-		}
 		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
 			throw new Exception('Missing processor usage type mapping rules');
+		}
+		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_volume_src']))) {
+			throw new Exception('Missing processor volume field');
 		}
 		if (isset($processorSettings['usaget_mapping'])) {
 			if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
@@ -1267,7 +1287,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget']) 
+					|| empty($mapping['volume_type']) || empty($mapping['volume_src'])) {
 					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
