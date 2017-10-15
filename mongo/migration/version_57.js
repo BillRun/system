@@ -131,3 +131,23 @@ db.lines.find({"rebalance":{$exists:1}}).forEach( function(line) {
 	}
 });
 
+// BRCD-1044: separate volume field to different usage types
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	var volumeFields = lastConfig['file_types'][i]['processor']['volume_field'];
+	if (typeof volumeFields  === 'undefined') {
+		continue;
+	}
+	if (typeof lastConfig['file_types'][i]['processor']['usaget_mapping'] !== 'undefined') {
+		for (var j in lastConfig['file_types'][i]['processor']['usaget_mapping']) {
+			lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_type'] = 'field';
+			lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_src'] = volumeFields;
+		}
+	} else {
+		lastConfig['file_types'][i]['processor']['default_volume_type'] = 'field';
+		lastConfig['file_types'][i]['processor']['default_volume_src'] = volumeFields;
+	}
+	delete lastConfig['file_types'][i]['processor']['volume_field'];
+}
+db.config.insert(lastConfig);
