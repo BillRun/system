@@ -82,7 +82,7 @@ trait Models_Verification {
 				unset($params[$name]);
 			}
 			if ($options['fields']) {
-				$options['method'] = ($type === 'query_parameters' && isset($requestOptions['query_method']) ? $requestOptions['query_method'] : 'and');
+				$options['or_fields'] = ($type === 'query_parameters' && isset($requestOptions['or_fields']) ? $requestOptions['or_fields'] : array());
 				$translatorModel = new Api_TranslatorModel($options);
 				$ret = $translatorModel->translate($knownParams);
 				$translated[$type] = $ret['data'];
