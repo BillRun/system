@@ -920,9 +920,9 @@ class Models_Entity {
 	 * 
 	 * @return The record with revision info.
 	 */
-	public static function setRevisionInfo($record, $collection) {
+	public static function setRevisionInfo($record, $collection, $entityName) {
 		$status = self::getStatus($record, $collection);
-		$isLast = self::getIsLast($record, $collection);
+		$isLast = self::getIsLast($record, $collection, $entityName);
 		$earlyExpiration = self::isEarlyExpiration($record, $status, $isLast);
 		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
@@ -969,13 +969,14 @@ class Models_Entity {
 	 * 
 	 * @param array $record - Record to set revision info.
 	 * @param string $collection - Record collection name
+	 * @param string $entityName - Record entity name
 	 * 
 	 * @return string Status, available values are: "future", "expired", "active"
 	 */
-	static function getIsLast($record, $collection) {
+	static function getIsLast($record, $collection, $entityName) {
 		// For active records, check if it has furure revisions
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
-		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$entityName}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
 		}
