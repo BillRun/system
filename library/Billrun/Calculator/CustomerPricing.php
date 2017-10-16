@@ -218,7 +218,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			}
 			
 			$row->setRawData(array_merge(	$row->getRawData(), 
-											$this->getForeignFields( array(	'balance' => $calcRow->getBalance() ) ,$row->getRawData()),
+											$this->getForeignFields( array(	'balance' => $calcRow->getBalance() ,
+																			'used_services' => $calcRow->getUsedServices(),
+																			'used_plan' => $calcRow->getPlan()) ,
+																	 $row->getRawData() ),
 											$pricingData ));
 			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
