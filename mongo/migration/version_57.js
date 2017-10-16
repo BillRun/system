@@ -153,3 +153,6 @@ for (var i in lastConfig['file_types']) {
 	delete lastConfig['file_types'][i]['processor']['volume_field'];
 }
 db.config.insert(lastConfig);
+
+// BRCD-1164 - Don't set balance_period field when it's irrelevant
+db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
