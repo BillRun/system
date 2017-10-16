@@ -37,7 +37,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$flatLine['name'] = $this->name;
 		$flatLine['usagev'] = $this->quantity;
 		if($this->planIncluded) {
-			$flatLine['included'] = $this->planIncluded;
+			$flatLine['included_in_plan'] = $this->planIncluded;
 		}
 		$flatLine['type'] = 'service';
 		return $flatLine;

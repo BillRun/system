@@ -55,7 +55,7 @@ trait Billrun_Traits_ForeignFields  {
 		if(is_object($foreignEntity) && method_exists($foreignEntity, 'getData')) {
 			$foreignEntity = $foreignEntity->getData();
 		}
-		return $foreignEntity[$field];
+		return Billrun_Util::getIn($foreignEntity,$field);
 	}
 
 }
