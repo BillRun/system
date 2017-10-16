@@ -233,7 +233,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			// TODO: push plan to the function to enable market price by plan
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], 0, $row['urt']->sec);
 		}
-		$row->setRawData( array_merge($current, $added_values ,array('foreign' => $this->getForeignFields(array('rating_data' => $added_values),$current))) );
+		$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
