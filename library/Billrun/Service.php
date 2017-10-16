@@ -126,7 +126,7 @@ class Billrun_Service {
 			$rowTime = time();
 		}
 		
-		if ($customPeriod = $this->get("balance_period")) {
+		if (($customPeriod = $this->get("balance_period")) && $customPeriod !== "default") {
 			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
 			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
 		}
