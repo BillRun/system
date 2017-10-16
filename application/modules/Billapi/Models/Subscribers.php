@@ -212,17 +212,8 @@ class Models_Subscribers extends Models_Entity {
 	 * future entity was removed - need to update the to of the previous change
 	 */
 	protected function reopenPreviousEntry() {
-		$key = $this->getKeyField();
-		$previousEntryQuery = array(
-			$key => $this->before[$key],
-		);
-		$previousEntrySort = array(
-			'_id' => -1
-		);
-		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
-				->sort($previousEntrySort)->limit(1)->current();
-		if (!$previousEntry->isEmpty()) {
-			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+		if (!$this->previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $this->previousEntry['_id']->getMongoID()));
 			$update = array(
 				'to' => $this->before['to'],
 			);
@@ -230,7 +221,7 @@ class Models_Subscribers extends Models_Entity {
 				$update['deactivation_date'] = $this->before['to'];
 			}
 			$this->setUpdate($update);
-			$this->setBefore($previousEntry);
+			$this->setBefore($this->previousEntry);
 			return $this->update();
 		}
 		return TRUE;
