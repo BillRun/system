@@ -23,8 +23,10 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
 	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-		if (typeof lastConfig['file_types'][i]['rate_calculators'][usaget][0][0] === 'undefined') {
-			lastConfig['file_types'][i]['rate_calculators'][usaget] = [lastConfig['file_types'][i]['rate_calculators'][usaget]];
+		if (lastConfig['file_types'][i]['rate_calculators'][usaget].length) {
+			if (typeof lastConfig['file_types'][i]['rate_calculators'][usaget][0][0] === 'undefined') {
+				lastConfig['file_types'][i]['rate_calculators'][usaget] = [lastConfig['file_types'][i]['rate_calculators'][usaget]];
+			}
 		}
 	}
 }
@@ -151,3 +153,6 @@ for (var i in lastConfig['file_types']) {
 	delete lastConfig['file_types'][i]['processor']['volume_field'];
 }
 db.config.insert(lastConfig);
+
+// BRCD-1164 - Don't set balance_period field when it's irrelevant
+db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})

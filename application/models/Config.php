@@ -1197,9 +1197,9 @@ class ConfigModel {
 					}
 				}
 			}
-			if ($uniqueFields != array_unique($uniqueFields)) {
-				throw new Exception('Cannot use same field for different configurations');
-			}
+//			if ($uniqueFields != array_unique($uniqueFields)) {
+//				throw new Exception('Cannot use same field for different configurations');
+//			}
 			$billrunFields = array('type', 'usaget');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
