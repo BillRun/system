@@ -156,3 +156,16 @@ db.config.insert(lastConfig);
 
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
+
+// BRCD-441 -Add plugin support
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (!lastConfig['plugins']) {
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+}
+db.config.insert(lastConfig);
+
+
+
+
+
