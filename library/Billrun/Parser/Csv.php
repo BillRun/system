@@ -78,6 +78,7 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 	public function parse($fp) {
 		$totalLines = 0;
 		$skippedLines = 0;
+		$this->dataRows = array();
 		
 		if ($this->hasHeader) {
 			$this->getLine($fp);
