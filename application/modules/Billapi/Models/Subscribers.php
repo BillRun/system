@@ -330,9 +330,9 @@ class Models_Subscribers extends Models_Entity {
 		}
 	
 		foreach($plansDeactivation as $index => $deactivationDate) {
-			foreach($sortedByFrom as $revision) {
-				$revisionId = $revision['_id']->{'$id'};
-				if ($revision['indicator'] == $index && $revision['plan_deactivation'] != $deactivationDate) {
+			foreach($sortedByFrom as $revision2) {
+				$revisionId = $revision2['_id']->{'$id'};
+				if ($revision2['indicator'] == $index && $revision2['plan_deactivation'] != $deactivationDate) {
 					$needUpdate[$revisionId]['plan_deactivation'] = $deactivationDate;
 				}
 			}
