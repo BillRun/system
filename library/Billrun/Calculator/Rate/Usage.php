@@ -116,6 +116,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			Billrun_Factory::log('No custom filters found for type ' . $type . '. Stamp was ' . $row['stamp']);
 			return false;
 		}
+		// goes over all rate mappings for every tariff categories
 		foreach ($customFilters as $tariffCategory => $categoryFilters) {
 			$filters = Billrun_Util::getIn($categoryFilters, array($usaget), array());
 			if (empty($filters)) {
@@ -143,6 +144,13 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return $row;
 	}
 	
+	/**
+	 * gets the matching rate for the category from the line  received
+	 * 
+	 * @param array $row
+	 * @param string $tariffCategory
+	 * @return rate ref if found, false otherwise
+	 */
 	protected function getCategoryRate($row, $tariffCategory) {
 		if (!isset($row['rates'])) {
 			return false;
