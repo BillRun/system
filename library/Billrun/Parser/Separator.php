@@ -78,7 +78,8 @@ class Billrun_Parser_Separator extends Billrun_Parser_Csv {
 			Billrun_Factory::log('Incompatible number of fields for line ' . $line . '. Skipping.', Zend_Log::ALERT);
 			return FALSE;
 		}
-		$row = array_combine($this->structure, $row);
+		$keys = array_column($this->structure, 'name');
+		$row = array_combine($keys, $row);
 		if ($this->return == 'array') {
 			return $row;
 		}

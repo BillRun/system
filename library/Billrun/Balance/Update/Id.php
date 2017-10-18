@@ -7,10 +7,17 @@
  */
 
 /**
- * Billapi model for balance update by prepaid group
- * Reference to old charging plan
+ * Billapi model for balance update by prepaid include
  *
  * @package  Billapi
  * @since    5.3
  */
-class Models_Action_Update_Balance_Prepaidgroup extends Models_Action_Update_Balance_Chargingplan {}
+class Billrun_Balance_Update_Id extends Billrun_Balance_Update_Prepaidinclude {
+
+	/**
+	 * the update method type
+	 * @var string
+	 */
+	protected $updateType = 'Id';
+
+}

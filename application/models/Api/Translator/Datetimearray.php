@@ -7,30 +7,31 @@
  */
 
 /**
- * Datetime type translator
+ * Datetime array type translator - for complex queries with datetime included
  *
  * @package  Api
- * @since    5.3
+ * @since    5.6
  */
-class Api_Translator_DatetimeModel extends Api_Translator_TypeModel {
+class Api_Translator_DatetimearrayModel extends Api_Translator_DatetimeModel {
 	
 	/**
-	 * Translate an array
+	 * Translate an array of datetimes
 	 * @param mixed $data - Input data
 	 * @return mixed Translated value.
 	 */
 	public function internalTranslateField($data) {
+		if (!is_array($data)) {
+			return false;
+		}
 		try {
-			if (isset($data['sec'])) {
-				return new MongoDate($data['sec']);
+			$ret = array();
+			foreach ($data as $cond => $date) {
+				$ret[$cond] = parent::internalTranslateField($date);
+				if ($ret[$cond] === false) {
+					return false;
+				}
 			}
-			$time = strtotime($data);
-			if ($time > 0) {
-				return new MongoDate($time);
-			} else {
-				return false;
-			}
-			
+			return $ret;
 		} catch (MongoException $ex) {
 			return false;
 		}

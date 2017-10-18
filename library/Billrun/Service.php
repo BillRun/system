@@ -14,6 +14,8 @@
  * @since    5.2
  */
 class Billrun_Service {
+	
+	const UNLIMITED_VALUE = 'UNLIMITED';
 
 	/**
 	 * container of the entity data
@@ -24,6 +26,12 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	/**
+	 * service internal id
+	 * 
+	 * @var int
+	 */
+	protected $service_id = 0;
 
 	/**
 	 * constructor
@@ -43,6 +51,13 @@ class Billrun_Service {
 			$this->load(new MongoId($params['id']));
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
+		}
+		
+		if (isset($params['service_id'])) {
+			$this->data['service_id'] = $params['service_id'];
+		}
+		if (isset($params['service_start_date'])) {
+			$this->data['service_start_date'] = $params['service_start_date'];
 		}
 	}
 
@@ -93,7 +108,41 @@ class Billrun_Service {
 		}
 		return $this->data;
 	}
+	
+	/**
+	 * Validates that the service still have cycles left (not exhausted yet)
+	 * If this is custom period service it will check if the duration is still aligned to the row timw
+	 * 
+	 * @param $serviceStartDate the date from which the service is valid for the subscriber
+	 * 
+	 * @return boolean true if exhausted, else false
+	 */
+	public function isExhausted($serviceStartDate, $rowTime = null) {
+		if ($serviceStartDate instanceof MongoDate) {
+			$serviceStartDate = $serviceStartDate->sec;
+		}
+		
+		if (is_null($rowTime)) {
+			$rowTime = time();
+		}
+		
+		if (($customPeriod = $this->get("balance_period")) && $customPeriod !== "default") {
+			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
+			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
+		}
 
+		if (!isset($this->data['price']) || !is_array($this->data['price'])) {
+			return false;
+		}
+		$lastEntry = array_slice($this->data['price'], -1)[0];
+		$serviceAvailableCycles = Billrun_Util::getIn($lastEntry, 'to', 0);
+		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
+			return false;
+		}
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		return $cyclesSpent > $serviceAvailableCycles;
+	}
+	
 	/**
 	 * method to receive all group rates of the current plan
 	 * @param array $rate the rate to check
@@ -105,7 +154,7 @@ class Billrun_Service {
 		$groups = array();
 		if (is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
-				if ((array_key_exists($usageType, $groupIncludes) || (array_key_exists('cost', $groupIncludes))) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
+				if ((array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType])) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;
 				}
 			}
@@ -201,6 +250,7 @@ class Billrun_Service {
 			$groupSelected = $this->getStrongestGroup($rate, $usageType);
 		} else { // specific group required to check
 			if (!isset($this->data['include']['groups'][$staticGroup][$usageType]) 
+				&& !isset($this->data['include']['groups'][$staticGroup]['usage_types'][$usageType]) 
 				&& !isset($this->data['include']['groups'][$staticGroup]['cost'])) {
 				return array('usagev' => 0);
 			}
@@ -217,14 +267,15 @@ class Billrun_Service {
 			$groupSelected = $staticGroup;
 		}
 		
-		if (!isset($this->data['include']['groups'][$groupSelected][$usageType])) {
+		if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+			&& !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType])) {
 			if (!isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				return array('usagev' => 0);
 			}
 			
 			$cost = $this->getGroupVolume('cost', $subscriberBalance['aid'], $groupSelected, $time);
 			// convert cost to volume
-			if ($cost === 'UNLIMITED') {
+			if ($cost === Billrun_Service::UNLIMITED_VALUE) {
 				return array(
 					'cost' => PHP_INT_MAX,
 				);
@@ -247,8 +298,8 @@ class Billrun_Service {
 				);
 			}
 
-			if (isset($subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'])) {
-				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected][$usageType]['usagev'];
+			if (isset($subscriberBalance['balance']['groups'][$groupSelected]['usagev'])) {
+				$subscriberSpent = $subscriberBalance['balance']['groups'][$groupSelected]['usagev'];
 			} else {
 				$subscriberSpent = 0;
 			}
@@ -281,7 +332,7 @@ class Billrun_Service {
 				break; // do-while
 			}
 			// not group included in the specific usage try to take iterate next group
-			if (!isset($this->data['include']['groups'][$groupSelected][$usageType]) 
+			if ((!isset($this->data['include']['groups'][$groupSelected][$usageType]) || !isset($this->data['include']['groups'][$groupSelected]['usage_types'][$usageType]))
 				&& !isset($this->data['include']['groups'][$groupSelected]['cost'])) {
 				continue;
 			}
@@ -338,13 +389,36 @@ class Billrun_Service {
 		if (is_null($group)) {
 			$group = $this->getEntityGroup();
 		}
-		if (!isset($this->data['include']['groups'][$group][$usageType])) {
+		$groupValue = $this->getGroupValue($group, $usageType);
+		if ($groupValue === FALSE) {
 			return 0;
 		}
 		if ($this->isGroupAccountPool($group) && $pool = $this->getPoolSharingUsageCount($aid, $time)) {
-			return $this->data['include']['groups'][$group][$usageType] * $pool;
+			return $groupValue * $pool;
 		}
-		return $this->data['include']['groups'][$group][$usageType];
+		return $groupValue;
+	}
+	
+	/**
+	 * method to get group includes value
+	 * 
+	 * @param string $group the group name
+	 * @param string $usaget the usage type related
+	 * 
+	 * @return mixed double if found, else false
+	 * 
+	 * @since 5.7
+	 */
+	protected function getGroupValue($group, $usaget) {
+		if (!isset($this->data['include']['groups'][$group][$usaget]) && !isset($this->data['include']['groups'][$group]['usage_types'][$usaget])) {
+			return false;
+		}
+		if (!isset($this->data['include']['groups'][$group]['value'])) {
+			return $this->data['include']['groups'][$group][$usaget];
+		}
+		$value = $this->data['include']['groups'][$group]['value'];
+		$unit = $this->data['include']['groups'][$group]['usage_types'][$usaget]['unit'];
+		return Billrun_Utils_Units::convertVolumeUnits($value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value, $usaget, $unit, true);
 	}
 	
 	/**
@@ -389,5 +463,5 @@ class Billrun_Service {
 		}
 		return $results['s'];
 	}
-
+	
 }

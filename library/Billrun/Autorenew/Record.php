@@ -1,9 +1,9 @@
 <?php
 
 /**
- * @package         Billing
- * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
- * @license         GNU Affero General Public License Version 4; see LICENSE.txt
+ * @package	Billing
+ * @copyright	Copyright (C) 2012-2017 BillRun Technologies Ltd. All rights reserved.
+ * @license	GNU Affero General Public License Version 4; see LICENSE.txt
  */
 
 /**
@@ -11,24 +11,11 @@
  *
  */
 abstract class Billrun_Autorenew_Record {
-
-	/**
-	 * Holds the record data.
-	 * @var Array
-	 */
-	protected $data;
-
-	/**
-	 * Create a new instance of the auto renew record object.
-	 * @param array $record - The record from the data base.
-	 */
+	
+	protected $record = null;
+	
 	public function __construct($record) {
-		// TODO: I believe that this condition is correct, it might change if we
-		// change the database framework.
-		if (!is_a($record, "Mongodloid_Entity")) {
-			throw new Exception;
-		}
-		$this->data = clone $record;
+		$this->record = $record;
 	}
 
 	/**
@@ -36,117 +23,59 @@ abstract class Billrun_Autorenew_Record {
 	 * @return MongoDate Next update date.
 	 */
 	protected abstract function getNextRenewDate();
-
-	/**
-	 * Get the date to set in the balance 'to' field.
-	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
-	 * @return MongoDate date to set in the 'to' field.
-	 */
-	protected function getUpdaterInputToTime($nextRenewDate) {
-		$dataTo = $this->data['to'];
-		if (is_a($dataTo, "MongoDate")) {
-			$toTime = $dataTo->sec;
-		} else {
-			$toTime = strtotime($dataTo);
+	
+	public function autoRenew() {
+		Billrun_Factory::log('running auto renew for auto renew record: ' . $this->getRecordId(), Billrun_Log::DEBUG);
+		if ($this->updateBalance()) {
+			$ret = $this->updateAutoRenewRecord();
+			if (!$ret || !$ret['ok'] || !$ret['nModified']) {
+				Billrun_Factory::log('cannot update auto renew record after balance update: ' . $this->getRecordId(), Billrun_Log::ERR);
+			}
 		}
-
-		$toDate = $nextRenewDate;
-
-		// Check if the 'to' is before the next renew date.
-		if ($nextRenewDate->sec > $toTime) {
-			$toDate = new MongoDate($toTime);
-		}
-
-		return $toDate;
+		Billrun_Factory::log('finish running auto renew for auto renew record: ' . $this->getRecordId(), Billrun_Log::DEBUG);
 	}
-
+	
 	/**
-	 * Get the balance updater input.
-	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
-	 * @return array - Input array for the balance updater.
+	 * gets the record Mongo ID
+	 * 
+	 * @return MongoId
 	 */
-	protected function getUpdaterInput($nextRenewDate) {
-		$updaterInput['method'] = 'update';
-		$updaterInput['sid'] = $this->data['sid'];
-
-		// Set the recurring flag for the balance update.
-		$updaterInput['recurring'] = 1;
-		// Build the query
-		$updaterInputQuery['charging_plan_external_id'] = $this->data['charging_plan_external_id'];
-		$updaterInputUpdate['from'] = date('Y-m-d H:i:s', $this->data['from']->sec);
-		$updaterInputUpdate['operation'] = $this->data['operation'];
-
-		// Always set the balance expiration date as the autorenew record 'to' field
-		$updaterInputUpdate['to'] = $updaterInputUpdate['expiration_date'] = date('Y-m-d H:i:s', $this->data['to']->sec);
-		$updaterInput['query'] = json_encode($updaterInputQuery, JSON_FORCE_OBJECT);
-		$updaterInput['upsert'] = json_encode($updaterInputUpdate, JSON_FORCE_OBJECT);
-
-		// Send the additional field if exists.
-		if (isset($this->data['additional'])) {
-			$updaterInput['additional'] = json_encode($this->data['additional']);
-		}
-
-		return $updaterInput;
+	protected function getRecordId() {
+		return $this->record->getId()->getMongoID();
 	}
-
-	/**
-	 * Update a balance according to a auto renew record.
-	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record.
-	 * @return boolean
-	 */
-	protected function updateBalance($nextRenewDate) {
-		$updaterInput = $this->getUpdaterInput($nextRenewDate);
-		$updater = new Billrun_ActionManagers_Balances_Update();
-
-		// Anonymous object
-		$jsonObject = new Billrun_AnObj($updaterInput);
-		if (!$updater->parse($jsonObject)) {
-			// TODO: What do I do here?
-			return false;
+	
+	protected function getUpdateRequestParams() {
+		$query = array(
+			'charging_plan' => $this->record['bucket_group'],
+		);
+		if (isset($this->record['sid'])) {
+			$query['sid'] = $this->record['sid'];
 		}
-		if (!$updater->execute()) {
-			// TODO: What do I do here?
-			return false;
+		if (isset($this->record['aid'])) {
+			$query['aid'] = $this->record['aid'];
 		}
-
-		return true;
+		return $query;
 	}
-
-	/**
-	 * Update the auto renew record.
-	 * @param MongoDate $nextRenewDate - The next renew date for the autorenew record
-	 * @return Result of the update operation.
-	 */
-	protected function updateAutorenew($nextRenewDate) {
-		if (!is_a($nextRenewDate, 'MongoDate')) {
-			$nextRenewDate = new MongoDate($nextRenewDate);
-		}
-
-		$this->data['last_renew_date'] = new MongoDate();
-		$this->data['next_renew_date'] = $nextRenewDate;
-		$this->data['remain'] = $this->data['remain'] - 1;
-
-		$this->data['done'] = $this->data['done'] + 1;
-
-		$collection = Billrun_Factory::db()->subscribers_auto_renew_servicesCollection();
-		return $collection->updateEntity($this->data);
+	
+	protected function updateBalance() {
+		$params = $this->getUpdateRequestParams();
+		$model = new Billrun_Balance_Update_Chargingplan($params);
+		return $model->update();
 	}
-
-	/**
-	 * Update the auto renew record after usage.
-	 * @return the update function result.
-	 */
-	public function update() {
-		$nextRenewDate = $this->getNextRenewDate();
-
-		if (!$this->updateBalance($nextRenewDate)) {
-			// TODO: This means that if we failed to update the balance we do not
-			// update the auto renew record!!!
-			return false;
-		}
-
-		// The next auto renew is one second after the balance expiration input
-		return $this->updateAutorenew($nextRenewDate);
+	
+	protected function updateAutoRenewRecord() {
+		$query = array(
+			'_id' => $this->getRecordId(),
+		);
+		$update = array(
+			'$set' => array(
+				'next_renew' => $this->getNextRenewDate(),
+				'last_renew' => new MongoDate(),
+			),
+			'$inc' => array(
+				'cycles_remaining' => - 1,
+			),
+		);
+		return Billrun_Factory::db()->autorenewCollection()->update($query, $update);
 	}
-
 }

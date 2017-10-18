@@ -52,20 +52,11 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 		}
 	}
 
-	/**
-	 * on prepaid there is no default balance, return no balance (empty array)
-	 * @param array $options settings
-	 * @return array
-	 */
-	protected function getDefaultBalance($options) {
-		return array();
-	}
-
 	protected function loadQuerySort() {
 		return array('priority' => -1, 'to' => 1,);
 	}
 
-	protected function getBalanceLoadQuery($query = array()) {
+	protected function getBalanceLoadQuery(array $query = array()) {
 		$usageType = $this->row['usaget'];
 		if (isset($this->granted['usagev'])) {
 			$minUsage = $this->granted['usagev'];
@@ -79,13 +70,65 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 			$minCost = (float) Billrun_Factory::config()->getConfigValue('balance.minCost' . $usageType, Billrun_Factory::config()->getConfigValue('balance.minCost', -0.1, 'float')); // float avoid set type to int
 		}
 
-		$query['$or'] = array(
-			array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
-			array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
-			array("balance.cost" => array('$lte' => $minCost)),
+		$query['$and'] = array();
+		$query['$and'][] = array(
+			'$or' => array(
+				array("balance.totals.$usageType.usagev" => array('$lte' => $minUsage)),
+				array("balance.totals.$usageType.cost" => array('$lte' => $minCost)),
+				array("balance.cost" => array('$lte' => $minCost)),
+			),
+		);
+		$query['$and'][] = array(
+			'$or' => array(
+				array('sid' => 0),
+				array('sid' => $this->row['sid']),
+			),
 		);
 
-		return parent::getBalanceLoadQuery($query);
+		$query['aid'] = $this->row['aid'];
+		$query['from'] = array('$lte' => $this->row['urt']);
+		$query['to'] = array('$gte' => $this->row['urt']);
+
+		$this->applyAllowInRates($query);
+		
+		Billrun_Factory::dispatcher()->trigger('getBalanceLoadQuery', array(&$query, $this->row, $this));
+
+		return $query;
+	}
+	
+	/**
+	 * apply only allowed in rates in pre-paid includes
+	 * includes also pre-paid includes entries that support all rates (allowed_in field does not exists)
+	 * the filter is using nin operator as it filter out all the entries that does not match
+	 * 
+	 * @param void
+	 */
+	protected function applyAllowInRates(&$query) {
+		$basePlanName = "BASE";
+		$planName = $this->row['plan'];
+		$rateName = $this->row['arate_key'];
+		
+		$disallowedPrepaidIncludesQuery = array('$or' => array(
+				array('$and' => array(
+						array("allowed_in." . $planName => array('$exists' => 1)),
+						array("allowed_in." . $planName => array('$nin' => array($rateName))),
+					)),
+				array('$and' => array(
+						array("allowed_in." . $planName => array('$exists' => 0)),
+						array("allowed_in." . $basePlanName => array('$exists' => 1)),
+						array("allowed_in." . $basePlanName => array('$nin' => array($rateName))),
+					)),
+		));
+		
+		$prepaidIncludesCollection = Billrun_Factory::db()->prepaidincludesCollection();
+		$ppIncludes = $prepaidIncludesCollection->query($disallowedPrepaidIncludesQuery)->cursor();
+		$disallowedPrepaidIncludes = array();
+		if ($ppIncludes->count() > 0) {
+			$disallowedPrepaidIncludes = array_map(function($doc) {
+				return $doc['external_id'];
+			}, iterator_to_array($ppIncludes));
+			$query['pp_includes_external_id'] = array('$nin' => array_values($disallowedPrepaidIncludes));
+		}
 	}
 
 	/**

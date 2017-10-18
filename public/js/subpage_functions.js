@@ -14,6 +14,11 @@
 
 			planContent = $plan.html();
 		});
+		
+		$('#payment_gateway_submit').prop('disabled', true).css('background-color', 'gray');
+		$('.radio-cards').on('click', function(event){
+			$('#payment_gateway_submit').prop('disabled', false).css("background-color", '');;
+		});	
 
 		$('.form-btn-submit').on('click', function(event) {
 			$('.popup').removeClass('open');

@@ -302,18 +302,25 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
 			return;
 		}
+		
+		$time = date(Billrun_Base::base_datetimeformat, $row->get('urt')->sec);
+		
+		foreach ($params as $currParams) {
+			$currParams['time'] = $time;
+			$currParams['stamp'] = $row->get('stamp');
+			if ($this->subscriber->load($currParams)) {
+				return true;
+			}
+		}
 
-		$params['time'] = date(Billrun_Base::base_datetimeformat, $row->get('urt')->sec);
-		$params['stamp'] = $row->get('stamp');
-
-		return $this->subscriber->load($params);
+		return false;
 	}
 	
 	protected function getIdentityParams($row) {
 		$params = array();
-		$customer_identification_translation = Billrun_Util::getFieldVal($this->translateCustomerIdentToAPI[$row['type']], array());
+		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
 		foreach ($customer_identification_translation as $translationRules) {
-			if (!empty($translationRules['conditions'])) {
+				if (!empty($translationRules['conditions'])) {
 				foreach ($translationRules['conditions'] as $condition) {
 					if (!preg_match($condition['regex'], $row[$condition['field']])) {
 						continue 2;
@@ -323,26 +330,25 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$key = $translationRules['src_key'];
 			if (isset($row['uf'][$key])) {
 				if (isset($translationRules['clear_regex'])) {
-					$params[$translationRules['target_key']] = preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]);
+					$params[] = array($translationRules['target_key'] => preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]));
 				} else {
 					if ($translationRules['target_key'] === 'msisdn') {
-						$params[$translationRules['target_key']] = Billrun_Util::msisdn($row['uf'][$key]);
+						$params[] = array($translationRules['target_key'] => Billrun_Util::msisdn($row['uf'][$key]));
 					} else {
-						$params[$translationRules['target_key']] = $row['uf'][$key];
+						$params[] = array($translationRules['target_key'] => $row['uf'][$key]);
 					}
 				}
-				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . $params[$translationRules['target_key']], Zend_Log::DEBUG);
-				break;
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . end($params)[$translationRules['target_key']], Zend_Log::DEBUG);
 			}
 			else {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
 			}
 		}
 		if (empty($params) && $row['type'] === 'credit' && isset($row['sid'])) {
-			$params = array(
+			$params = array(array(
 				'sid' => $row['sid'],
 				'aid' => $row['aid'],
-			);
+			));
 		}
 		return $params;
 	}
@@ -436,6 +442,41 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $row;
 	}
 	
+	/**
+	 * Gets the services which includes for any customer having this plan.
+	 * 
+	 * @param string $planName
+	 * @param date time
+	 * @param boolean $addServiceData
+	 * @return array - services names array if $addServiceData is false, services names and data otherwise
+	 */
+	protected function getPlanIncludedServices($planName, $time, $addServiceData = false) {
+		if ($time instanceof MongoDate) {
+			$time = $time->sec;
+		}
+		$plansQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
+		$plansQuery['name'] = $planName;
+		$plan = Billrun_Factory::db()->plansCollection()->query($plansQuery)->cursor()->current();
+		if($plan->isEmpty() || empty($plan->get('include')) || !isset($plan->get('include')['services']) || empty($services = $plan->get('include')['services'])) {
+			return array();
+		}
+		
+		if (!$addServiceData) {
+			return $services;
+		}
+		
+		$retServices = array();
+		foreach ($services as $service) {
+			$retServices[] = array(
+				'name' => $service,
+				'from' => $plan->get('plan_activation'),
+				'to' => $plan->get('plan_deactivation'),
+				'service_id' => 0, // assumption: there is no *custom period* service includes
+			);
+		}
+		return $retServices;
+	}
+	
 	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
 		foreach($services as $service) {
@@ -443,7 +484,34 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = $service['name'];
 			}
 		}
-		return $retServices;;
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false);
+		return array_merge($retServices, $planIncludedServices);
+	}
+	
+	/**
+	 * Used for enriching lines data with services from subscriber document.
+	 * includes services names and the dates from which they are valid for the subscriber
+	 * 
+	 * @param array $services
+	 * @param array $translationRules
+	 * @param array $subscriber
+	 * @param array $row
+	 * @return services array
+	 */
+	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
+		$retServices = array();
+		foreach($services as $service) {
+			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+				$retServices[] = array(
+					'name' => $service['name'],
+					'from' => $service['from'],
+					'to' => $service['to'],
+					'service_id' => isset($service['service_id']) ? $service['service_id'] : 0,
+				);
+			}
+		}
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true);
+		return array_merge($retServices, $planIncludedServices);
 	}
 	
 }

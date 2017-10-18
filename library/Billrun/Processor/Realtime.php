@@ -45,14 +45,20 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			Billrun_Factory::log("Billrun_Processor: cannot get line usage volume. details: " . print_R($row, 1), Zend_Log::ERR);
 			return false;
 		}
+		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		$row['process_time'] = date(self::base_datetimeformat);
+		if ($this->isLinePrepriced()) {
+			$row['prepriced'] = true;
+			$row['aprice'] = $this->getLineAprice($row['uf']);
+		}
+		$row['process_time'] = new MongoDate();
 		$datetime = $this->getRowDateTime($row);
 		if (!$datetime) {
 			$row['urt'] = new MongoDate();
 		} else {
 			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
+		$row['eurt'] = $row['urt'];
 
 		return true;
 	}
@@ -97,17 +103,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function getLineVolume($row, $config) {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
-			if (!is_array($config['processor']['volume_field'])) {
-				$config['processor']['volume_field'] = array($config['processor']['volume_field']);
-			}
-			$volume = 0;
-			foreach ($config['processor']['volume_field'] as $volumeField) {
-				if (!isset($row['uf'][$volumeField])) {
-					return false;
-				}
-				$volume += floatval($row['uf'][$volumeField]);
-			}
-			return $volume;
+			return $this->getLineUsageVolume($row['uf'], true);
 		}
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
 			return floatval($config['realtime']['default_values'][$row['record_type']]);
