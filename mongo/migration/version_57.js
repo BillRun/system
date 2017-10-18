@@ -66,14 +66,15 @@ db.config.insert(lastConfig);
 
 // BRCD-865 - overlapping extend balances services
 db.balances.update({"priority":{$exists:0}},{"$set":{"priority":0}}, {multi:1});
+var existingCollections = db.getCollectionNames();
+if (existingCollections.indexOf('prepaidgroups') === -1) {
+	db.createCollection('prepaidgroups');
+	db.prepaidgroups.ensureIndex({ 'name':1, 'from': 1, 'to': 1 }, { unique: false, background: true });
+	db.prepaidgroups.ensureIndex({ 'name':1, 'to': 1 }, { unique: false, sparse: true, background: true });
+	db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
+	}
 
-db.createCollection('prepaidgroups');
-db.prepaidgroups.ensureIndex({ 'name':1, 'from': 1, 'to': 1 }, { unique: false, background: true });
-db.prepaidgroups.ensureIndex({ 'name':1, 'to': 1 }, { unique: false, sparse: true, background: true });
-db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
-
-
-// BRCD-1143 - Input Processors fields new strucrure
+//// BRCD-1143 - Input Processors fields new strucrure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
@@ -105,11 +106,13 @@ var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
 	var mappings = {};
+	if (typeof lastConfig['file_types'][i]['customer_identification_fields'] === 'undefined') continue;
 	var firstKey = Object.keys(lastConfig['file_types'][i]['customer_identification_fields'])[0];
 	if (firstKey != 0) {
 		continue;
 	}
 	for (var priority in lastConfig['file_types'][i]['customer_identification_fields']) {
+		if (typeof lastConfig['file_types'][i]['customer_identification_fields'][priority]['conditions'] === 'undefined') continue;
 		var regex = lastConfig['file_types'][i]['customer_identification_fields'][priority]['conditions'][0]['regex'];
 		var data = lastConfig['file_types'][i]['customer_identification_fields'][priority];
 		delete data['conditions'];
@@ -137,6 +140,7 @@ db.lines.find({"rebalance":{$exists:1}}).forEach( function(line) {
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
+	if (typeof lastConfig['file_types'][i]['processor'] === 'undefined') continue;
 	var volumeFields = lastConfig['file_types'][i]['processor']['volume_field'];
 	if (typeof volumeFields  === 'undefined') {
 		continue;
