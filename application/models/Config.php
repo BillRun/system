@@ -151,7 +151,7 @@ class ConfigModel {
  			throw new Exception('Unknown export_generator ' . $data['name']);
 		} else if ($category == 'template_token'){
 			$tokens = Billrun_Factory::templateTokens()->getTokens();
-			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
+			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category, array()), $tokens);
 			return $tokens;
 		} else if ($category == 'minimum_entity_start_date'){
 			return Models_Entity::getMinimumUpdateDate();
