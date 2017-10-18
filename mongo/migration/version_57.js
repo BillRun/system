@@ -156,3 +156,14 @@ db.config.insert(lastConfig);
 
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
+
+// BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (Array.isArray(lastConfig['file_types'][i]['realtime']['used_usagev_field']) &&
+		typeof lastConfig['file_types'][i]['realtime']['used_usagev_field'][0] === 'undefined') {
+		lastConfig['file_types'][i]['realtime']['used_usagev_field'] = [];
+	}
+}
+db.config.insert(lastConfig);
