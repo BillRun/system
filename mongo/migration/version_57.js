@@ -175,3 +175,30 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-1168: fix field source which is not an array
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (typeof lastConfig['file_types'][i]['processor'] === 'undefined') continue;
+	if (typeof lastConfig['file_types'][i]['processor']['usaget_mapping'] !== 'undefined') {
+		for (var j in lastConfig['file_types'][i]['processor']['usaget_mapping']) {
+			if (lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_type'] === 'field' &&
+					!Array.isArray(lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_src'])) {
+				var val = (typeof lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_src'] === 'undefined'
+									? []
+									: [lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_src']]);
+				lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['volume_src'] = val;
+			}
+		}
+	} else {
+		if (lastConfig['file_types'][i]['processor']['default_volume_type'] === 'field' &&
+				!Array.isArray(lastConfig['file_types'][i]['processor']['default_volume_src'])) {
+			var val = (typeof lastConfig['file_types'][i]['processor']['default_volume_src'] === 'undefined'
+									? []
+									: [lastConfig['file_types'][i]['processor']['default_volume_src']]);
+			lastConfig['file_types'][i]['processor']['default_volume_src'] = val;
+		}
+	}
+}
+db.config.insert(lastConfig);
