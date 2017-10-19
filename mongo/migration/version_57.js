@@ -165,6 +165,10 @@ db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
+	if (typeof lastConfig['file_types'][i]['realtime'] === 'undefined' ||
+			typeof lastConfig['file_types'][i]['realtime']['used_usagev_field'] === 'undefined') {
+		continue;
+	}
 	if (Array.isArray(lastConfig['file_types'][i]['realtime']['used_usagev_field']) &&
 		typeof lastConfig['file_types'][i]['realtime']['used_usagev_field'][0] === 'undefined') {
 		lastConfig['file_types'][i]['realtime']['used_usagev_field'] = [];
