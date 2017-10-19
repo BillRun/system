@@ -32,11 +32,11 @@ trait Billrun_Traits_ForeignFields  {
 	protected function getForeignFields($foreignEntities,$existsingFields = array()) {
 		$this->clearAddedForeignFields();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
-		$forignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
+		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
 			return isset($value['foreign']);	
 		});
 		
-		foreach ($forignFieldsConf as $fieldConf) {
+		foreach ($foreignFieldsConf as $fieldConf) {
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
 					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']['field']));
