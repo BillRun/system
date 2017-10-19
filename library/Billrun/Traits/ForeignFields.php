@@ -14,6 +14,9 @@
  */
 
 trait Billrun_Traits_ForeignFields  {
+
+	private $foreginFieldPrefix = 'foreign';
+
 	/**
 	 * This array  will hold all the  added foregin fields that  were added to the CDR/row/line.
 	 */
@@ -37,12 +40,16 @@ trait Billrun_Traits_ForeignFields  {
 		});
 		
 		foreach ($foreignFieldsConf as $fieldConf) {
+			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {
+				Billrun_Factory::log("Foreign field configuration not mapped to foreign sub-field",Zend_Log::WARN);
+				continue;
+			}
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
-					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']['field']));
+					Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'], $this->getForeginEntityFieldValue($foreignEntities[$fieldConf['foreign']['entity']], $fieldConf['foreign']));
 				} else {
 					foreach ($foreignEntities[$fieldConf['foreign']['entity']] as $idx => $foreignEntity) {
-						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']['field']));
+						Billrun_Util::setIn($foreignFieldsData, $fieldConf['field_name'].'.'.$idx, $this->getForeginEntityFieldValue($foreignEntity, $fieldConf['foreign']));
 					}
 				}
 				$this->addedForeignFields[] = preg_replace('/\..+$/','',$fieldConf['field_name']);
@@ -51,11 +58,27 @@ trait Billrun_Traits_ForeignFields  {
 		return $foreignFieldsData;
 	}
 	
-	protected function getForeginEntityFieldValue($foreignEntity, $field) {
+	protected function getForeginEntityFieldValue($foreignEntity, $foreignConf) {
 		if(is_object($foreignEntity) && method_exists($foreignEntity, 'getData')) {
 			$foreignEntity = $foreignEntity->getData();
 		}
-		return Billrun_Util::getIn($foreignEntity,$field);
+		return $this->fieldValueTranslation(Billrun_Util::getIn($foreignEntity, $foreignConf['field']),$foreignConf);
 	}
 
+	protected function fieldValueTranslation($value, $foreignConf) {
+		if(empty($foreignConf['translate'])) {
+			return $value;
+		}
+
+		$translated = $value;
+		switch($foreignConf['translate']['type']) {
+			case 'unixTimeToString' : $translated = date(Billrun_Util::getFieldVal($foreignConf['translate']['format'],  Billrun_Base::base_datetimeformat),$value);
+				break;
+			case 'unixTimeToMongoDate' : $translated = new MongoDate($value);
+				break;
+			default: Billrun_Factory::log("Couldn't find translation function : {$foreignConf['translate']['type']}",Zend_Log::WARN);
+		}
+
+		return $translated;
+	}
 }
