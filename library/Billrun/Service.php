@@ -152,7 +152,7 @@ class Billrun_Service {
 	 */
 	public function getRateGroups($rate, $usageType) {
 		$groups = array();
-		if (is_array($this->data['include']['groups'])) {
+		if (isset($this->data['include']['groups']) && is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
 				if ((array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType])) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;

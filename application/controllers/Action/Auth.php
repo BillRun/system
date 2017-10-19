@@ -145,7 +145,7 @@ class AuthAction extends ApiAction  {
 	 */
 	protected function logout($params) {
 		if (Billrun_Factory::user() === FALSE) {
-			return false;
+			return TRUE;
 		}
 		
 		$username = Billrun_Factory::user()->getUsername();
