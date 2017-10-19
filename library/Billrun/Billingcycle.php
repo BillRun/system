@@ -247,7 +247,7 @@ class Billrun_Billingcycle {
 	 * @return bool - returns the keys of confirmed cycles
 	 * 
 	 */
-	public static function getConfirmedCycles($billrunKeys) {
+	public static function getConfirmedCycles($billrunKeys = array()) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();	
 		if (!empty($billrunKeys)) {
 			$pipelines[] = array(
