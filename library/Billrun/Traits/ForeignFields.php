@@ -62,10 +62,10 @@ trait Billrun_Traits_ForeignFields  {
 		if(is_object($foreignEntity) && method_exists($foreignEntity, 'getData')) {
 			$foreignEntity = $foreignEntity->getData();
 		}
-		return $this->fieldValueTranslation(Billrun_Util::getIn($foreignEntity, $foreignConf['field']),$foreignConf);
+		return $this->foreignFieldValueTranslation( Billrun_Util::getIn($foreignEntity, $foreignConf['field']), $foreignConf);
 	}
 
-	protected function fieldValueTranslation($value, $foreignConf) {
+	protected function foreignFieldValueTranslation($value, $foreignConf) {
 		if(empty($foreignConf['translate'])) {
 			return $value;
 		}
