@@ -417,8 +417,7 @@ class Billrun_Service {
 			return $this->data['include']['groups'][$group][$usaget];
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
-		$unit = $this->data['include']['groups'][$group]['usage_types'][$usaget]['unit'];
-		return Billrun_Utils_Units::convertVolumeUnits($value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value, $usaget, $unit, true);
+		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
 	}
 	
 	/**
