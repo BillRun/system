@@ -13,8 +13,11 @@
  * @since    4.4
  */
 class TestController extends Yaf_Controller_Abstract {
+	
+	use Billrun_Traits_Api_UserPermissions;	
 
 	public function init() {
+		$this->allowed();
 		if (Billrun_Factory::config()->isProd()) {
 			die("Cannot run on production environment");
 		}
@@ -79,5 +82,9 @@ class TestController extends Yaf_Controller_Abstract {
 		$translated = array_map(function($s){return ucfirst(strtolower($s));}, $params);
 		
 		return implode("/", $translated);
+	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }

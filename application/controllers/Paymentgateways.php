@@ -18,12 +18,14 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Collect.php';
  */
 class PaymentGatewaysController extends ApiController {
 	use Billrun_Traits_Api_PageRedirect;
+	use Billrun_Traits_Api_UserPermissions;
 	
 	public function init() {
 		parent::init();
 	}
 
 	public function listAction() {
+		$this->allowed();
 		$gateways = Billrun_Factory::config()->getConfigValue('PaymentGateways.potential');
 		$imagesUrl = Billrun_Factory::config()->getConfigValue('PaymentGateways.images');
 		$settings = array();
@@ -199,4 +201,8 @@ class PaymentGatewaysController extends ApiController {
 		$this->forceRedirect($redirectUrl . '&message=' . $messageObj);
 	}
 	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+	}
+
 }
