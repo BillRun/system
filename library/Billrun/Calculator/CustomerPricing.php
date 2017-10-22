@@ -210,19 +210,83 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 		try {
 			Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-			$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
-			$calcRow->preUpdate();
-			$pricingData = $calcRow->update();
-			if (is_bool($pricingData)) {
-				return $pricingData;
+			$rateField = 'arate';
+			$arate = $row->get($rateField, true);
+			$totalPricingData = array();
+			$rates = $row->get('rates', true);
+			foreach ($rates as &$rate) {
+				$row[$rateField] = $rate['rate'];
+				$row['retail_rate'] = $this->isRetailRate($rate);
+				$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
+				$calcRow->preUpdate();
+				$pricingData = $calcRow->update();
+				if (is_bool($pricingData)) {
+					return $pricingData;
+				}
+				$this->updatePricingData($rate, $totalPricingData, $pricingData);
 			}
-			$row->setRawData(array_merge($row->getRawData(), $pricingData));
+			$row->set('rates', $rates);
+			unset($row['retail_rate']);
+			if (empty($arate)) {
+				unset($row[$rateField]);
+			} else {
+				$row[$rateField] = $arate;
+			}
+			$row->setRawData(array_merge($row->getRawData(), $totalPricingData));
 			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
 			Billrun_Factory::log('Line with stamp ' . $row['stamp'] . ' crashed when trying to price it. got exception :' . $e->getCode() . ' : ' . $e->getMessage() . "\n trace :" . $e->getTraceAsString(), Zend_Log::ERR);
 			return false;
 		}
+	}
+	
+	/**
+	 * update rate object and pricing data of entire line based on current rate calculation
+	 * 
+	 * @param array $rate (by ref) - current rate object
+	 * @param array $totalPricingData (by ref) - entire line's pricing data
+	 * @param array $pricingData - current rate pricing data
+	 */
+	protected function updatePricingData(&$rate, &$totalPricingData, $pricingData) {
+		$pricingField = $this->getPricingField();
+		$rate['pricing'] = $pricingData;
+		if (isset($rate['pricing'][$pricingField])) {
+			$rate['pricing']['charge'] = $rate['pricing'][$pricingField];
+			unset($rate['pricing'][$pricingField]);
+		}
+		foreach ($pricingData as $key => $val) {
+			if ($key === $pricingField && !$this->shouldAddToRetailPrice($rate)) {
+				continue;
+			}
+			if (!isset($totalPricingData[$key]) || $key === 'billrun') {
+				$totalPricingData[$key] = $val;
+			} else {
+				$totalPricingData[$key] += $val;
+			}
+		}
+	}
+
+
+	/**
+	 * returns whether or not the current rate is a retail rate
+	 * 
+	 * @param array $rate
+	 * @return boolean
+	 */
+	protected function isRetailRate($rate) {
+		return $rate['tariff_category'] === 'retail';
+	}
+	
+	/**
+	 * whether or not the received rate pricing data should be added to the retail price
+	 * 
+	 * @param array $rate
+	 * @return boolean
+	 */
+	protected function shouldAddToRetailPrice($rate) {
+		return ($this->isRetailRate($rate)) ||
+			(isset($rate['add_to_retail']) && $rate['add_to_retail']);
 	}
 	
 	/**
@@ -295,9 +359,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		$arate = Billrun_Rates_Util::getRateByRef($line->get('arate', TRUE));
-		return !is_null($arate) && (empty($arate['skip_calc']) || !in_array(self::$type, $arate['skip_calc'])) &&
-			isset($line['sid']) && $line['sid'] !== false &&
+		if (empty($line['rates'])) {
+			return false;
+		}
+		foreach ($line['rates'] as $rate) {
+			$arate = Billrun_Rates_Util::getRateByRef($rate['rate']);
+			if (is_null($arate) || (!empty($arate['skip_calc']) && in_array(self::$type, $arate['skip_calc']))) {
+				return false;
+			}
+		}
+		return isset($line['sid']) && $line['sid'] !== false &&
 			$line['urt']->sec >= $this->billrun_lower_bound_timestamp;
 	}
 
