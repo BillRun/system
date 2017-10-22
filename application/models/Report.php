@@ -22,6 +22,7 @@ class ReportModel {
 	
 	protected $config = null;
 	protected $report = null;
+	protected $cacheFormatStyle = [];
 	
 	/**
 	 *  Array of entity join map keys
@@ -257,7 +258,24 @@ class ReportModel {
 	}
 	
 	protected function applyValueformat($value, $format) {
+		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$value])) {
+			return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+		}
 		switch ($format['op']) {
+			case 'billing_cycle': {
+				// validate for YYYYMM value format
+				if (!preg_match("/^[0-9]{4}(0[1-9]|1[0-2])$/", $value)) {
+					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
+					return $value;
+				} else if ($format['value'] === 'start') {
+					$styledValue = new MongoDate(Billrun_Billingcycle::getStartTime($value));
+					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+					return $styledValue;
+				}
+				$styledValue = new MongoDate(Billrun_Billingcycle::getEndTime($value));
+				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				return $styledValue;
+			}
 			case 'time_format': 
 			case 'datetime_format': 
 			case 'date_format': {
