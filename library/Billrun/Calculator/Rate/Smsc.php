@@ -81,7 +81,7 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 		$line_time = $row['urt'];
 		if (isset($row['roaming'])) {
 			if ($this->shouldLineBeRated($row)) {
-				$matchedRate = false;
+				$matchedRate = $this->rates['UNRATED'];
 				$calling_msc = Billrun_Util::cleanLeadingZeros($row['calling_msc']);
 				$calling_msc_prefixes = Billrun_Util::getPrefixes($calling_msc);
 				$called_number = $this->extractNumber($row);
@@ -106,10 +106,10 @@ class Billrun_Calculator_Rate_Smsc extends Billrun_Calculator_Rate_Sms {
 				}
 				foreach ($fullEqual_rates as $fe_rate) {
 					if (in_array($called_number, $fe_rate['params']['prefix'])) {
-						$matchedRate = $rate;
+						$matchedRate = $fe_rate;
 					}
 				}
-				if (!$matchedRate) {
+				if (!$matchedRate || $matchedRate == $this->rates['UNRATED']) {
 					foreach ($called_number_prefixes as $prefix) {
 						foreach ($possible_rates as $rate) {
 							if (in_array($prefix, $rate['params']['prefix'])) {
