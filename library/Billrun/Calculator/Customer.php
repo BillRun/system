@@ -320,7 +320,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params = array();
 		$customer_identification_translation = Billrun_Util::getIn($this->translateCustomerIdentToAPI, array($row['type'], $row['usaget']), array());
 		foreach ($customer_identification_translation as $translationRules) {
-			if (!empty($translationRules['conditions'])) {
+				if (!empty($translationRules['conditions'])) {
 				foreach ($translationRules['conditions'] as $condition) {
 					if (!preg_match($condition['regex'], $row[$condition['field']])) {
 						continue 2;
@@ -338,7 +338,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 						$params[] = array($translationRules['target_key'] => $row['uf'][$key]);
 					}
 				}
-				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . $params[$translationRules['target_key']], Zend_Log::DEBUG);
+				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . end($params)[$translationRules['target_key']], Zend_Log::DEBUG);
 			}
 			else {
 				Billrun_Factory::log('Customer calculator missing field ' . $key . ' for line with stamp ' . $row['stamp'], Zend_Log::ALERT);
