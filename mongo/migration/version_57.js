@@ -190,4 +190,5 @@ db.rates.find().forEach(function (rate) {
 	if (!rate.hasOwnProperty("tariff_category")) {
 		rate.tariff_category = "retail";
 	}
-	db.rates.save(r
+	db.rates.save(rate);
+});
