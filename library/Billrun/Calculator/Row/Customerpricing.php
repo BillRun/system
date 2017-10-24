@@ -396,64 +396,66 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	protected function getLinePricingData($volume, $usageType, $rate, $plan) {
 		$ret = array();
 		$balanceId = (string) $this->balance->getId();
-		if ($plan->isRateInEntityGroup($rate, $usageType)) {
-			$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
+		if (!isset($this->row['retail_rate']) || $this->row['retail_rate']) { // groups/includes should only be calculated for retail rates (or if fthe flag is not set for backward compatibility)
+			if ($plan->isRateInEntityGroup($rate, $usageType)) {
+				$groupVolumeLeft = $plan->usageLeftInEntityGroup($this->balance, $rate, $usageType, null, $this->row['urt']->sec);
 
-			$balanceType = key($groupVolumeLeft); // usagev or cost
-			$value = current($groupVolumeLeft);
-			if ($balanceType == 'cost') {
-				$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
-				$valueToCharge = $cost - $value;
-			} else {
-				$valueToCharge = $volume - $value;
-			}
+				$balanceType = key($groupVolumeLeft); // usagev or cost
+				$value = current($groupVolumeLeft);
+				if ($balanceType == 'cost') {
+					$cost = Billrun_Rates_Util::getTotalCharge($rate, $usageType, $volume);
+					$valueToCharge = $cost - $value;
+				} else {
+					$valueToCharge = $volume - $value;
+				}
 
-			if ($valueToCharge < 0) {
-				$valueToCharge = 0;
-				$ret['in_group'] = $ret['in_plan'] = $volume;
-				$ret['arategroups'][$balanceId][] = array(
-					'name' => $plan->getEntityGroup(),
-					$balanceType => $volume,
-					'left' => $value - ($balanceType == 'cost' ? $cost : $volume),
-					'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
-					'balance' => $this->balance,
-				);
-			} else if ($valueToCharge >= 0) {
-				$ret['in_group'] = $ret['in_plan'] = $value;
-				if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
-					$ret['over_group'] = $ret['over_plan'] = $valueToCharge;
+				if ($valueToCharge < 0) {
+					$valueToCharge = 0;
+					$ret['in_group'] = $ret['in_plan'] = $volume;
 					$ret['arategroups'][$balanceId][] = array(
 						'name' => $plan->getEntityGroup(),
-						$balanceType => $ret['in_group'],
-						'left' => 0,
+						$balanceType => $volume,
+						'left' => $value - ($balanceType == 'cost' ? $cost : $volume),
 						'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
 						'balance' => $this->balance,
 					);
-				} else if ($valueToCharge > 0) {
-					$ret['out_group'] = $ret['out_plan'] = $valueToCharge;
+				} else if ($valueToCharge >= 0) {
+					$ret['in_group'] = $ret['in_plan'] = $value;
+					if ($plan->getEntityGroup() !== FALSE && isset($ret['in_group']) && $ret['in_group'] > 0) { // verify that after all calculations we are in group
+						$ret['over_group'] = $ret['over_plan'] = $valueToCharge;
+						$ret['arategroups'][$balanceId][] = array(
+							'name' => $plan->getEntityGroup(),
+							$balanceType => $ret['in_group'],
+							'left' => 0,
+							'total' => $plan->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid']),
+							'balance' => $this->balance,
+						);
+					} else if ($valueToCharge > 0) {
+						$ret['out_group'] = $ret['out_plan'] = $valueToCharge;
+					}
+					$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
+					if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
+						$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
+						$balanceType = key($value);
+						$ret['over_group'] = $ret['over_plan'] = current($value);
+						$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $ret['over_group'];
+						$valueToCharge = $ret['over_group'];
+						unset($ret['out_group'], $ret['out_plan']);
+					}
 				}
+			} else {
+				$balanceType = 'usagev';
 				$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
-				if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
-					$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
-					$balanceType = key($value);
-					$ret['over_group'] = $ret['over_plan'] = current($value);
-					$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $ret['over_group'];
+				if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
+					$ret['arategroups'] = array();
+					$groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $volume), $ret['arategroups']);
+					$balanceType = key($groupVolumeLeft);
+					$ret['over_group'] = $ret['over_plan'] = current($groupVolumeLeft);
+					$ret['in_plan'] = $ret['in_group'] = $volume - $ret['over_group'];
 					$valueToCharge = $ret['over_group'];
-					unset($ret['out_group'], $ret['out_plan']);
+				} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
+					$ret['out_plan'] = $ret['out_group'] = $valueToCharge = $volume;
 				}
-			}
-		} else {
-			$balanceType = 'usagev';
-			$services = $this->loadSubscriberServices((isset($this->row['services_data']) ? $this->row['services_data'] : array()), $this->row['urt']->sec);
-			if ($this->isRateInServicesGroups($rate, $usageType, $services)) {
-				$ret['arategroups'] = array();
-				$groupVolumeLeft = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $volume), $ret['arategroups']);
-				$balanceType = key($groupVolumeLeft);
-				$ret['over_group'] = $ret['over_plan'] = current($groupVolumeLeft);
-				$ret['in_plan'] = $ret['in_group'] = $volume - $ret['over_group'];
-				$valueToCharge = $ret['over_group'];
-			} else { // @todo: else if (dispatcher->isRateInPlugin {dispatcher->trigger->calc}
-				$ret['out_plan'] = $ret['out_group'] = $valueToCharge = $volume;
 			}
 		}
 
