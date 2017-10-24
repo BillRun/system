@@ -43,6 +43,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
 		$entry = $this->getFlatLine();
 		$entry['aprice'] = $chargeData['value'];
+		$entry['full_price'] = $chargeData['full_price'];
 		$entry['charge_op'] = $chargeingKey;
 		if (isset($chargeData['cycle'])) {
 			$entry['cycle'] = $chargeData['cycle'];
