@@ -222,7 +222,7 @@ class Zend_Ftp_Directory_Iterator implements Zend_Ftp_Directory_IIterator {
 		$parser = Zend_Ftp_Factory::getParser($this->_ftp->getSysType());
 		foreach ($lines as $line) {
 			$fileData = $parser->parseFileDirectoryListing($line);	
-			if ($fileData['type'] != 'l' && $fileData) {
+			if ($fileData && $fileData['type'] != 'l') {
 				$this->_data[] = $fileData;
 			}		
 		}

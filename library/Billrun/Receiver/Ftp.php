@@ -205,7 +205,7 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 	 */
 	protected function sortByFileDate($files) {
 		if (!is_array($files)) {
-			$files = iterator_to_array($files);	
+			$files = iterator_to_array($files);
 		}
 		usort($files, function ($a, $b) {
 			if ($a->isFile() && $b->isFile() &&
