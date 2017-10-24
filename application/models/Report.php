@@ -262,9 +262,19 @@ class ReportModel {
 			return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
 		}
 		switch ($format['op']) {
+			case 'date_override': {
+				if (!empty($value->sec) || is_numeric($value)) {
+					$styledValue = new MongoDate(strtotime("+{$format['value']}", $value->sec));
+				} elseif (is_string($value)){
+					$styledValue = new MongoDate(strtotime("{$value} {$format['value']}" ));
+				} else {
+					$styledValue = $value;
+				}
+				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				return $styledValue;
+			}
 			case 'billing_cycle': {
-				// validate for YYYYMM value format
-				if (!preg_match("/^[0-9]{4}(0[1-9]|1[0-2])$/", $value)) {
+				if (!Billrun_Util::isBillrunKey($value)) {
 					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
 					return $value;
 				} else if ($format['value'] === 'start') {
