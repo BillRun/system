@@ -306,7 +306,7 @@ class ReportModel {
 		if($field === 'billrun') {
 			switch ($value) {
 				case 'confirmed':
-					return 'lte';
+					return 'in';
 				default:
 					return $op;
 			}
@@ -355,7 +355,8 @@ class ReportModel {
 				case 'last_confirmed':
 					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
 				case 'confirmed':
-					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
+					$confirmed = Billrun_Billingcycle::getConfirmedCycles();
+					return implode(',', $confirmed);
 				default:
 					return $value;
 			}

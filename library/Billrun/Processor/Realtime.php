@@ -103,17 +103,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function getLineVolume($row, $config) {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
-			if (!is_array($config['processor']['volume_field'])) {
-				$config['processor']['volume_field'] = array($config['processor']['volume_field']);
-			}
-			$volume = 0;
-			foreach ($config['processor']['volume_field'] as $volumeField) {
-				if (!isset($row['uf'][$volumeField])) {
-					return false;
-				}
-				$volume += floatval($row['uf'][$volumeField]);
-			}
-			return $volume;
+			return $this->getLineUsageVolume($row['uf'], true);
 		}
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
 			return floatval($config['realtime']['default_values'][$row['record_type']]);

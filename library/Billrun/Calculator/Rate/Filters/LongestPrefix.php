@@ -34,7 +34,7 @@ class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_R
 	}
 	
 	protected function updateAdditionaAfterGrouplQuery($row) {
-		return array('$match' => array($this->getAggregatedPrefixFieldName() => $this->getPrefixMatchQuery($row['uf'][$this->params['line_key']])));
+		return array('$match' => array($this->getAggregatedPrefixFieldName() => $this->getPrefixMatchQuery($this->getRowFieldValue($row, $this->params['line_key']))));
 
 	}
 	

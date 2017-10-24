@@ -11,14 +11,70 @@
  */
 class Billrun_Processor_Usage extends Billrun_Processor {
 
+	/**
+	 * default usaget type used in case no other matches
+	 * @var type string
+	 */
 	protected $defaultUsaget = 'general';
+	
+	/**
+	 * usage type mapping options
+	 * @var type array
+	 */
 	protected $usagetMapping = null;
+	
+	/**
+	 * unit of measure used for the received volume
+	 * @var type string
+	 */
 	protected $usagevUnit = 'counter';
-	protected $usagevFields = array();
+	
+	/**
+	 * volume type used for the line, can be "field" and then taken from fields in the line, or "value" and then it's hard-coded value
+	 * @var type string
+	 */
+	protected $volumeType = 'field';
+	
+	/**
+	 * field names used to get line volume, or hard coded value
+	 * @var type array / string
+	 */
+	protected $volumeSrc = array();
+	
+	/**
+	 * name of the field where the price of the line placed (in case it's pre-priced)
+	 * @var type string
+	 */
 	protected $apriceField = null;
+	
+	/**
+	 * constant to multiply the price received (in case of pre-priced)
+	 * @var type float
+	 */
+	protected $apriceMult = null;
+	
+	/**
+	 * the field's name where the date is located
+	 * @var type  string
+	 */
 	protected $dateField = null;
+	
+	/**
+	 * the date format (not mandatory)
+	 * @var type string
+	 */
 	protected $dateFormat = null;
+	
+	/**
+	 * the field's name where the time is located (in case of separate field time)
+	 * @var type string
+	 */
 	protected $timeField = null;
+	
+	/**
+	 * the time format (not mandatory, in case of separate field time)
+	 * @var type string
+	 */
 	protected $timeFormat = null;
 
 	public function __construct($options) {
@@ -35,11 +91,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (empty($options['processor']['date_field'])) {
 			return FALSE;
 		}
-		if (isset($options['processor']['volume_field'])) {
-			if (!is_array($options['processor']['volume_field'])) {
-				$options['processor']['volume_field'] = array($options['processor']['volume_field']);
-			}
-			$this->usagevFields = $options['processor']['volume_field'];
+		if (!empty($options['processor']['default_volume_type'])) {
+			$this->volumeType = $options['processor']['default_volume_type'];
+		}
+		if (!empty($options['processor']['default_volume_src'])) {
+			$this->volumeSrc = $options['processor']['default_volume_src'];
 		}
 		if (!empty($options['processor']['date_format'])){
 			$this->dateFormat = $options['processor']['date_format'];
@@ -52,6 +108,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['aprice_field'])){
 			$this->apriceField = $options['processor']['aprice_field'];
+			if (!empty($options['processor']['aprice_mult'])){
+				$this->apriceMult = $options['processor']['aprice_mult'];
+			}
 		}
 		
 		$this->dateField = $options['processor']['date_field'];
@@ -163,6 +222,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			foreach ($this->usagetMapping as $usagetMapping) {
 				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field'])) {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
+					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
+					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
 					return $usagetMapping['usaget'];
 				}
 				if (isset($userFields[$usagetMapping['src_field']])) {
@@ -171,6 +232,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 					}
 					if (preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
 						$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
+						$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
+						$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
 						return $usagetMapping['usaget'];
 					}
 				}
@@ -179,15 +242,26 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		return $this->defaultUsaget;
 	}
 
-	protected function getLineUsageVolume($userFields) {
+	protected function getLineUsageVolume($userFields, $falseOnError = false) {
 		$volume = 0;
-		if (!empty($this->usagevFields)) {
-			foreach ($this->usagevFields as $usagevField) {
+		if ($this->volumeType === 'value') {
+			if (!is_numeric($this->volumeSrc)) {
+				Billrun_Factory::log('Usage volume value "' . $this->volumeSrc . '" is invalid ' . basename($this->filePath), Zend_Log::ALERT);
+				return $falseOnError ? false : 0;
+			}
+			return floatval($this->volumeSrc);
+		}
+		$usagevFields = is_array($this->volumeSrc) ? $this->volumeSrc : array($this->volumeSrc);
+		if (!empty($usagevFields)) {
+			foreach ($usagevFields as $usagevField) {
 				if (isset($userFields[$usagevField]) && is_numeric($userFields[$usagevField])) {
-					$volume += intval($userFields[$usagevField]);
+					$volume += floatval($userFields[$usagevField]);
 				}
 				else {
 					Billrun_Factory::log('Usage volume field ' . $usagevField . ' is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+					if ($falseOnError) {
+						return false;
+					}
 				}
 			}
 		}
@@ -211,7 +285,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected function getLineAprice($userFields) {
 		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
-			return $userFields[$this->apriceField];
+			$aprice = $userFields[$this->apriceField];
+			if (!is_null($this->apriceMult) && is_numeric($this->apriceMult)) {
+				$aprice *= $this->apriceMult;
+			}
+			return $aprice;
 		}
 		
 		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);

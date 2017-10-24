@@ -1102,18 +1102,38 @@ class ConfigModel {
 		
 		return true;
  	}
+	
+	/**
+	 * gets all field names (distinct) used for volume in the input processor received
+	 * 
+	 * @param array $fileSettings
+	 * @return array field names
+	 */
+	protected function getVolumeFields($fileSettings) {
+		$volumeFields = array();
+		if (isset($fileSettings['processor']['usaget_mapping'])) {
+			foreach ($fileSettings['processor']['usaget_mapping'] as $mapping) {
+				if ($mapping['volume_type'] === 'field') {
+					$volumeSrc = is_array($mapping['volume_src']) ? $mapping['volume_src'] : array($mapping['volume_src']);
+					$volumeFields = array_merge($volumeFields , $volumeSrc);
+				}
+			}
+		}
+		
+		if (isset($fileSettings['processor']['default_volume_type']) && $fileSettings['processor']['default_volume_type'] === 'field') {
+			$volumeSrc = is_array($fileSettings['processor']['default_volume_src']) ? $fileSettings['processor']['default_volume_src'] : array($fileSettings['processor']['default_volume_src']);
+			$volumeFields = array_merge($volumeFields , $volumeSrc);
+		}
+		
+		return array_unique($volumeFields);
+	}
 
 	protected function checkForConflics($config, $fileType) {
 		$fileSettings = $this->getFileTypeSettings($config, $fileType);
 		if (isset($fileSettings['processor'])) {
 			$customFields = $fileSettings['parser']['custom_keys'];
 			$uniqueFields[] = $dateField = $fileSettings['processor']['date_field'];
-			if (is_array($fileSettings['processor']['volume_field'])) {
-				$volumeFields = $fileSettings['processor']['volume_field'];
-			}
-			else {
-				$volumeFields = array($fileSettings['processor']['volume_field']);
-			}
+			$volumeFields = $this->getVolumeFields($fileSettings);
 			$uniqueFields = array_merge($uniqueFields,  $volumeFields);
 			if (!isset($fileSettings['processor']['usaget_mapping'])) {
 				$fileSettings['processor']['usaget_mapping'] = array();
@@ -1135,20 +1155,29 @@ class ConfigModel {
 				$usagetTypes = array_unique($usagetTypes);
 			}
 			if (isset($fileSettings['customer_identification_fields'])) {
-				$customerMappingSource = array_map(function($mapping) {
-					return $mapping['src_key'];
-				}, $fileSettings['customer_identification_fields']);
-				$useFromStructure = $uniqueFields = array_merge($uniqueFields, array_unique($customerMappingSource));
-				$customerMappingTarget = array_map(function($mapping) {
-					return $mapping['target_key'];
-				}, $fileSettings['customer_identification_fields']);
-				$subscriberFields = array_map(function($field) {
-					return $field['field_name'];
-				}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
-						return !empty($field['unique']);
-					}));
-				if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
-					throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
+				$subscriberMappingUsageTypes = array_keys($fileSettings['customer_identification_fields']);
+				if ($unknownUsageTypes = array_diff($subscriberMappingUsageTypes, $usagetTypes)) {
+					throw new Exception('Unknown usage type(s) in subscriber identification: ' . implode(',', $unknownUsageTypes));
+				}
+				if ($usageTypesMissingSubscriberIdentification = array_diff($usagetTypes, $subscriberMappingUsageTypes)) {
+					throw new Exception('Missing subscriber identification rules for usage types(s): ' . implode(',', $usageTypesMissingSubscriberIdentification));
+				}
+				foreach ($fileSettings['customer_identification_fields'] as $usaget => $customerIdentification) {
+					$customerMappingSource = array_map(function($mapping) {
+						return $mapping['src_key'];
+					}, $customerIdentification);
+					$useFromStructure = $uniqueFields = array_merge($uniqueFields, array_unique($customerMappingSource));
+					$customerMappingTarget = array_map(function($mapping) {
+						return $mapping['target_key'];
+					}, $customerIdentification);
+					$subscriberFields = array_map(function($field) {
+						return $field['field_name'];
+					}, array_filter($config['subscribers']['subscriber']['fields'], function($field) {
+							return !empty($field['unique']);
+						}));
+					if ($subscriberDiff = array_unique(array_diff($customerMappingTarget, $subscriberFields))) {
+						throw new Exception('Unknown subscriber fields ' . implode(',', $subscriberDiff));
+					}
 				}
 				if (isset($fileSettings['rate_calculators'])) {
 					$ratingUsageTypes = array_keys($fileSettings['rate_calculators']);
@@ -1168,9 +1197,9 @@ class ConfigModel {
 					}
 				}
 			}
-			if ($uniqueFields != array_unique($uniqueFields)) {
-				throw new Exception('Cannot use same field for different configurations');
-			}
+//			if ($uniqueFields != array_unique($uniqueFields)) {
+//				throw new Exception('Cannot use same field for different configurations');
+//			}
 			$billrunFields = array('type', 'usaget');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
@@ -1195,9 +1224,9 @@ class ConfigModel {
 			throw new Exception('No file structure supplied');
 		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys = $parserSettings['structure'];
+			$customKeys =  array_column($parserSettings['structure'], 'name');
 		} else if ($parserSettings['type'] == 'separator') {
-			$customKeys = $parserSettings['structure'];
+			$customKeys =  array_column($parserSettings['structure'], 'name');
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
 			}
@@ -1205,8 +1234,8 @@ class ConfigModel {
 				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
 			}
 		} else {
-			$customKeys = array_keys($parserSettings['structure']);
-			$customLengths = array_values($parserSettings['structure']);
+			$customKeys = array_column($parserSettings['structure'], 'name');
+			$customLengths = array_column($parserSettings['structure'], 'width');
 			if ($customLengths != array_filter($customLengths, function($length) {
 					return Billrun_Util::IsIntegerValue($length);
 				})) {
@@ -1246,11 +1275,11 @@ class ConfigModel {
 		if (!isset($processorSettings['date_field'])) {
 			throw new Exception('Missing processor date field');
 		}
-		if (empty($processorSettings['volume_field'])) {
-			throw new Exception('Missing processor volume field');
-		}
 		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_usaget']))) {
 			throw new Exception('Missing processor usage type mapping rules');
+		}
+		if (!(isset($processorSettings['usaget_mapping']) || isset($processorSettings['default_volume_src']))) {
+			throw new Exception('Missing processor volume field');
 		}
 		if (isset($processorSettings['usaget_mapping'])) {
 			if (!$processorSettings['usaget_mapping'] || !is_array($processorSettings['usaget_mapping'])) {
@@ -1258,7 +1287,8 @@ class ConfigModel {
 			}
 			$processorSettings['usaget_mapping'] = array_values($processorSettings['usaget_mapping']);
 			foreach ($processorSettings['usaget_mapping'] as $index => $mapping) {
-				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget'])) {
+				if (isset($mapping['src_field']) && !isset($mapping['pattern']) || empty($mapping['usaget']) 
+					|| empty($mapping['volume_type']) || empty($mapping['volume_src'])) {
 					throw new Exception('Illegal usage type mapping at index ' . $index);
 				}
 			}
@@ -1269,25 +1299,27 @@ class ConfigModel {
 		return $processorSettings;
 	}
 
-	protected function validateCustomerIdentificationConfiguration($customerIdentificationSettings) {
-		if (!is_array($customerIdentificationSettings) || !$customerIdentificationSettings) {
+	protected function validateCustomerIdentificationConfiguration($usagetCustomerIdentificationSettings) {
+		if (!is_array($usagetCustomerIdentificationSettings) || !$usagetCustomerIdentificationSettings) {
 			throw new Exception('Illegal customer identification settings');
 		}
-		$customerIdentificationSettings = array_values($customerIdentificationSettings);
-		foreach ($customerIdentificationSettings as $index => $settings) {
-			if (!isset($settings['src_key'], $settings['target_key'])) {
-				throw new Exception('Illegal customer identification settings at index ' . $index);
-			}
-			if (array_key_exists('conditions', $settings) && (!is_array($settings['conditions']) || !$settings['conditions'] || !($settings['conditions'] == array_filter($settings['conditions'], function ($condition) {
-					return isset($condition['field'], $condition['regex']) && Billrun_Util::isValidRegex($condition['regex']);
-				})))) {
-				throw new Exception('Illegal customer identification conditions field at index ' . $index);
-			}
-			if (isset($settings['clear_regex']) && !Billrun_Util::isValidRegex($settings['clear_regex'])) {
-				throw new Exception('Invalid customer identification clear regex at index ' . $index);
+		foreach ($usagetCustomerIdentificationSettings as $usaget => $customerIdentificationSettings) {
+			$customerIdentificationSettings = array_values($customerIdentificationSettings);
+			foreach ($customerIdentificationSettings as $index => $settings) {
+				if (!isset($settings['src_key'], $settings['target_key'])) {
+					throw new Exception('Illegal customer identification settings at index ' . $index);
+				}
+				if (array_key_exists('conditions', $settings) && (!is_array($settings['conditions']) || !$settings['conditions'] || !($settings['conditions'] == array_filter($settings['conditions'], function ($condition) {
+						return isset($condition['field'], $condition['regex']) && Billrun_Util::isValidRegex($condition['regex']);
+					})))) {
+					throw new Exception('Illegal customer identification conditions field at index ' . $index);
+				}
+				if (isset($settings['clear_regex']) && !Billrun_Util::isValidRegex($settings['clear_regex'])) {
+					throw new Exception('Invalid customer identification clear regex at index ' . $index);
+				}
 			}
 		}
-		return $customerIdentificationSettings;
+		return $usagetCustomerIdentificationSettings;
 	}
 
 	protected function validateRateCalculatorsConfiguration($rateCalculatorsSettings, &$config) {

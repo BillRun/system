@@ -26,7 +26,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [
 		//New tests for new override price and includes format
-		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
+//		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 		array('stamp' => 'f1', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f2', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f3', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
@@ -130,77 +130,109 @@ class Tests_Updaterowt extends UnitTestCase {
 		// case O - custom period balance support
 		// O1
 		array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1', 
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services_data' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 35, 'services_data' => [["name"=> "SERVICE-O1", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-01 09:00:00+03:00'),
 //		// O2
 		array('stamp' => 'o2', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O1',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services_data' => ["SERVICE-O1"],
-			'urt' => '2017-09-15 09:00:00+03:00'),
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 62, 'services_data' => [["name"=> "SERVICE-O1", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
+			'urt' => '2017-09-16T09:00:00+03:00'),
 		// O3
 		array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'arate_key' => 'RATE-O2',
-			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services_data' => ["SERVICE-O1"],
+			'plan' => 'NEW-PLAN-O1',  'usaget' => 'call', 'usagev' => 45, 'services_data' => [["name"=> "SERVICE-O1", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 09:00:00+03:00'),
 		// O4- plan includes - use all
 		array('stamp' => 'o4', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 40, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 40, 'services_data' => [["name"=> "SERVICE-O4", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 09:00:00+03:00'),
 		// O5 - try to use service includes
 		array('stamp' => 'o5', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 30, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 30, 'services_data' => [["name"=> "SERVICE-O4", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 11:00:00+03:00'),
 		array('stamp' => 'o6', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
-			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 75, 'services_data' => ["SERVICE-O4"],
+			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 75, 'services_data' => [["name"=> "SERVICE-O4", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 14:00:00+03:00'),
 
 		// O6- plan includes - use part of it
 		// O7 - try to use service includes
+		// p1 service with limited cycle's 
+		array('stamp' => 'p1', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 7500000,
+					'services_data' => [
+						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00']
+					],
+			   'urt' => '2017-09-01 00:00:00+03:00'),
+		array('stamp' => 'p2', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000,                               
+				   'services_data' => [
+						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00' ] 
+					],
+			  'urt' => '2017-09-14 14:00:00+03:00'),
+		array('stamp' => 'p3', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000, 
+				   'services_data' => [
+						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00' ] 
+					],
+			  'urt' => '2017-09-30 14:00:00+03:00'),
+		array('stamp' => 'p4', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 7500000,
+					'services_data' => [
+						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00']
+					],
+			   'urt' => '2017-10-01 00:00:01+03:00'),
+		array('stamp' => 'p5', 'aid' => 9503, 'sid' => 952, 'arate_key' => 'INTERNET','plan' => 'NEW-PLAN-O4',  'usaget' => 'data', 'usagev' => 75000000,
+					'services_data' => [
+						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00']
+					],
+			   'urt' => '2017-10-14 14:00:00+03:00'),
+				
 		
 		//Q1
 		array('stamp' => 'q1', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00"],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
 			'urt' => '2017-09-25 11:00:00+03:00'),
 		//Q2
 		array('stamp' => 'q2', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q2',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 30, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00"],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
 			'urt' => '2017-09-26 11:00:00+03:00'),
 		//Q3
 		array('stamp' => 'q3', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q2',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 150, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00"],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
 			'urt' => '2017-09-23 11:00:00+03:00'),
 		//Q4
 		array('stamp' => 'q4', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 250, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00"],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
 			'urt' => '2017-09-27 11:00:00+03:00'),
 		
 		//R1
 		array('stamp' => 'r1', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 235, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-11 11:00:00+03:00'),
 		//R2
 		array('stamp' => 'r2', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 245, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-12 11:00:00+03:00'),
 		//R3
 		array('stamp' => 'r3', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-13 11:00:00+03:00'),
 		//R4
 		array('stamp' => 'r4', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 120, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-09 11:00:00+03:00'),
 		//R5
 		array('stamp' => 'r5', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 60, 
-			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00"]],
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-21 11:00:00+03:00'),
+		//r6
+		array('stamp' => 'r6', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
+			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
+			'urt' => '2017-09-14 11:00:00+03:00'),
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -298,7 +330,14 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 40, 'over_group' => 0, 'aprice' => 0), //O4
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //O5
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
-		
+                //case 8 service with limited cycle's 
+		array('in_group' => 7500000, 'over_group' => 0, 'aprice' => 0 ),
+        array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0 ), 
+		array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0),
+		array('in_group' => 0, 'over_group' => 7500000, 'aprice' => 8,),
+		array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75,),
+                
+//		
 		//case Q expected
 		array('in_group' => 70, 'over_group' => 0, 'aprice' => 0), //Q1
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //Q2
@@ -311,6 +350,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 20, 'over_group' => 50, 'aprice' => 0.5), //R3
 		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
 		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
+		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
 	];
 
 	public function __construct($label = false) {
@@ -319,6 +359,7 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	public function testUpdateRow() {
 
+		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -337,7 +378,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-//		$init->restoreColletions();
+		$init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 

@@ -26,6 +26,12 @@ class Billrun_Service {
 	protected $groupSelected = null;
 	protected $groups = null;
 	protected $strongestGroup = null;
+	/**
+	 * service internal id
+	 * 
+	 * @var int
+	 */
+	protected $service_id = 0;
 
 	/**
 	 * constructor
@@ -45,6 +51,13 @@ class Billrun_Service {
 			$this->load(new MongoId($params['id']));
 		} else if (isset($params['name'])) {
 			$this->load($params['name'], $time, 'name');
+		}
+		
+		if (isset($params['service_id'])) {
+			$this->data['service_id'] = $params['service_id'];
+		}
+		if (isset($params['service_start_date'])) {
+			$this->data['service_start_date'] = $params['service_start_date'];
 		}
 	}
 
@@ -98,10 +111,26 @@ class Billrun_Service {
 	
 	/**
 	 * Validates that the service still have cycles left (not exhausted yet)
+	 * If this is custom period service it will check if the duration is still aligned to the row timw
 	 * 
 	 * @param $serviceStartDate the date from which the service is valid for the subscriber
+	 * 
+	 * @return boolean true if exhausted, else false
 	 */
-	public function isExhausted($serviceStartDate) {
+	public function isExhausted($serviceStartDate, $rowTime = null) {
+		if ($serviceStartDate instanceof MongoDate) {
+			$serviceStartDate = $serviceStartDate->sec;
+		}
+		
+		if (is_null($rowTime)) {
+			$rowTime = time();
+		}
+		
+		if (($customPeriod = $this->get("balance_period")) && $customPeriod !== "default") {
+			$serviceEndDate = strtotime($customPeriod, $serviceStartDate);
+			return $rowTime < $serviceStartDate || $rowTime > $serviceEndDate;
+		}
+
 		if (!isset($this->data['price']) || !is_array($this->data['price'])) {
 			return false;
 		}
@@ -110,13 +139,10 @@ class Billrun_Service {
 		if ($serviceAvailableCycles === Billrun_Service::UNLIMITED_VALUE) {
 			return false;
 		}
-		if ($serviceStartDate instanceof MongoDate) {
-			$serviceStartDate = $serviceStartDate->sec;
-		}
-		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, time());
-		return $cyclesSpent >= $serviceAvailableCycles;
+		$cyclesSpent = Billrun_Utils_Autorenew::countMonths($serviceStartDate, $rowTime );
+		return $cyclesSpent > $serviceAvailableCycles;
 	}
-
+	
 	/**
 	 * method to receive all group rates of the current plan
 	 * @param array $rate the rate to check

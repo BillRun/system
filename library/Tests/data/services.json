@@ -372,7 +372,41 @@
 			  }
 			}
 		  }
-	}
+	},
+         {
+
+                "from" : "time*2016-10-04T04:00:00Z",
+                "name" : "2GB_INTERNET_FOR_1_CYCLE",
+                "price" : [
+                        {
+                                "from" : 0,
+                                "to" : "1",
+                                "price" : "10"
+                        }
+                ],
+                "description" : "2gb_internet_for_1_cycle",
+                "include" : {
+                        "groups" : {
+                                "INTERNET" : {
+                                        "account_shared" : false,
+                                        "account_pool" : false,
+                                        "rates" : [
+                                                "INTERNET"
+                                        ],
+                                        "value" : 2000000000,
+                                        "usage_types" : {
+                                                "data" : {
+                                                        "unit" : "mb1000"
+                                                }
+                                        }
+                                }
+                        }
+                },
+                "prorated" : true,
+                "to" : "time*2166-10-03T09:29:58Z",
+                "creation_time" : "time*2016-10-04T04:00:00Z"
+        }
+
 
         ]
 		
