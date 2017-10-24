@@ -63,7 +63,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			(isset($rate['key']) && $rate['key'] == "UNRATED"));
 	}
 	
-	protected function getAddedValues($rate, $row = array()) {
+	protected function getAddedValues($tariffCategory, $rate, $row = array()) {
+		if ($tariffCategory !== 'retail') {
+			return array();
+		}
 		$added_values = array(
 			$this->ratingField => $rate ? $rate->createRef() : $rate,
 		);
@@ -86,39 +89,95 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		}
 	
 	/**
+	 * gets the data object to save under the line's "rates" attribute
+	 * 
+	 * @param string $tariffCategory
+	 * @param Mongodloid_Entity $rate
+	 * @return array
+	 */
+	protected function getRateData($tariffCategory, $rate) {
+		return array(
+			'tariff_category' => $tariffCategory,
+			'key' => isset($rate['key']) ? $rate['key'] : '',
+			'add_to_retail' => isset($rate['add_to_retail']) ? $rate['add_to_retail'] : false,
+			'rate' => $rate ? $rate->createRef() : $rate,
+		);
+	}
+		
+	/**
 	 * make the calculation
 	 */
 	public function updateRow($row) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
-		$current = $row->getRawData();
 		$usaget = $row['usaget'];
 		$type = $row['type'];
-		$rate = $this->getLineRate($row, $usaget, $type);
-		if (!$this->isRateLegitimate($rate)) {
+		$customFilters = $this->getRateCustomFilters($type);
+		if (empty($customFilters)) {
+			Billrun_Factory::log('No custom filters found for type ' . $type . '. Stamp was ' . $row['stamp']);
 			return false;
 		}
+		// goes over all rate mappings for every tariff categories
+		foreach ($customFilters as $tariffCategory => $categoryFilters) {
+			$filters = Billrun_Util::getIn($categoryFilters, array($usaget), array());
+			if (empty($filters)) {
+				Billrun_Factory::log('No custom filters found for type ' . $type . ', usaget ' . $usaget . '. Stamp was ' . $row['stamp']);
+				return false;
+			}
+			
+			$rate = $this->getLineRate($row, $usaget, $type, $tariffCategory, $filters);
+			if (!$this->isRateLegitimate($rate)) {
+				return false;
+			}
 
-		// TODO: Create the ref using the collection, not the entity object.
-		$rate->collection(Billrun_Factory::db()->ratesCollection());		
-		$newData = array_merge($current, $this->getAddedValues($rate, $row));
-		$row->setRawData($newData);
+			// TODO: Create the ref using the collection, not the entity object.
+			$rate->collection(Billrun_Factory::db()->ratesCollection());
+			$current = $row->getRawData();
+			$newData = array_merge($current, $this->getAddedValues($tariffCategory, $rate, $row));
+			if (!isset($newData['rates'])) {
+				$newData['rates'] = array();
+			}
+			$newData['rates'][] = $this->getRateData($tariffCategory, $rate);
+			$row->setRawData($newData);
+		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
+	}
+	
+	/**
+	 * gets the matching rate for the category from the line  received
+	 * 
+	 * @param array $row
+	 * @param string $tariffCategory
+	 * @return rate ref if found, false otherwise
+	 */
+	protected function getCategoryRate($row, $tariffCategory) {
+		if (!isset($row['rates'])) {
+			return false;
+		}
+		foreach ($row['rates'] as $rate) {
+			if ($rate['tariff_category'] === $tariffCategory) {
+				return $rate['rate'];
+			}
+		}
+		return false;
 	}
 
 	/**
 	 * Get the associate rate object for a given CDR line.
 	 * @param $row the CDR line to get the for.
 	 * @param $usage_type the CDR line  usage type (SMS/Call/etc..)
+	 * @param $type CDR type
+	 * @param $tariffCategory rate category
+	 * @param $filters array of filters used to find the rate
 	 * @return the Rate object that was loaded  from the DB  or false if the line shouldn't be rated.
 	 */
-	protected function getLineRate($row, $usaget, $type) {
-		if ($this->overrideRate || !isset($row[$this->getRatingField()])) {
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
+		if ($this->overrideRate || (!$rate = $this->getCategoryRate($row, $tariffCategory))) {
 			//$this->setRowDataForQuery($row);
-			$rate = $this->getRateByParams($row,$usaget,$type);
+			$rate = $this->getRateByParams($row,$usaget,$type, $tariffCategory, $filters);
 		} else {
-			$rate = Billrun_Factory::db()->ratesCollection()->getRef($row[$this->getRatingField()]);
+			$rate = Billrun_Factory::db()->ratesCollection()->getRef($rate);
 		}
 		return $rate;
 	}
@@ -127,11 +186,10 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams($row, $usaget, $type) {
+	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
 		$matchedRate = null;
-		$filters = $this->getRateCustomFilters($usaget, $type);
 		foreach ($filters as $currentPriorityFilters) {
-			$query = $this->getRateQuery($row, $usaget, $type, $currentPriorityFilters);
+			$query = $this->getRateQuery($row, $usaget, $type, $tariffCategory, $currentPriorityFilters);
 			if (!$query) {
 				continue;
 			}
@@ -165,8 +223,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery($row, $usaget, $type, $filters) {
-		$match = $this->getBasicMatchRateQuery($row, $usaget);
+	protected function getRateQuery($row, $usaget, $type, $tariffCategory, $filters) {
+		$match = $this->getBasicMatchRateQuery($row, $usaget, $tariffCategory);
 		$additional = array();
 		$group = $this->getBasicGroupRateQuery($row);
 		$additionalAfterGroup = array();
@@ -195,12 +253,13 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 		return array_merge(array(array('$match' => $match)), $additional, array(array('$group' => $group)), $additionalAfterGroup, $sortQuery, array(array('$limit' => 1)));
 	}
 	
-	protected function getBasicMatchRateQuery($row, $usaget) {
+	protected function getBasicMatchRateQuery($row, $usaget, $tariffCategory) {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
 		return array_merge(
 			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
-			array('rates.' . $usaget => array('$exists' => true))
+			array('rates.' . $usaget => array('$exists' => true)),
+			array('tariff_category' => $tariffCategory)
 		);
 	}
 	
@@ -220,13 +279,11 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	/**
 	 * Gets the rate mapping calculators
 	 * 
-	 * @param string $usaget
 	 * @param string $type
 	 * @return array of rate calculators (by priority)
 	 */
-	protected function getRateCustomFilters($usaget, $type) {
-		$rateRules = Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
-		return Billrun_Util::getIn($rateRules, array($usaget), array());
+	protected function getRateCustomFilters($type) {
+		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
 	}
 
 }
