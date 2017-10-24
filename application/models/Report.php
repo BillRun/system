@@ -274,8 +274,7 @@ class ReportModel {
 				return $styledValue;
 			}
 			case 'billing_cycle': {
-				// validate for YYYYMM value format
-				if (!preg_match("/^[0-9]{4}(0[1-9]|1[0-2])$/", $value)) {
+				if (!Billrun_Util::isBillrunKey($value)) {
 					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
 					return $value;
 				} else if ($format['value'] === 'start') {
