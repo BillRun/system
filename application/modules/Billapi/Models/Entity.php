@@ -531,7 +531,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
 
-		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+		if (!$this->validateQuery()) {
 			return false;
 		}
 		if (isset($this->config['collection_subset_query'])) {
@@ -551,6 +551,18 @@ class Models_Entity {
 
 		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
+		}
+		return true;
+	}
+	
+	/**
+	 * validates that the query is legitimate
+	 * 
+	 * @return boolean
+	 */
+	protected function validateQuery() {
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+			return false;
 		}
 		return true;
 	}

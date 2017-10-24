@@ -234,7 +234,7 @@
 					"unit": "minutes"
 				  }
 				},
-				"value": 5,
+				"value": 300,
 				"account_shared": false,
 				"account_pool": false,
 				"rates": [
@@ -259,7 +259,7 @@
 					"unit": "seconds"
 				  },
 				  "outgoing_call": {
-					"unit": "secondss"
+					"unit": "seconds"
 				  }
 				},
 				"value": 60,
@@ -288,7 +288,7 @@
 					"unit": "seconds"
 				  },
 				  "outgoing_call": {
-					"unit": "secondss"
+					"unit": "seconds"
 				  }
 				},
 				"value": 100,
@@ -324,7 +324,7 @@
 					"unit": "seconds"
 				  },
 				  "outgoing_call": {
-					"unit": "secondss"
+					"unit": "seconds"
 				  }
 				},
 				"value": 250,
@@ -359,7 +359,7 @@
 					"unit": "seconds"
 				  },
 				  "outgoing_call": {
-					"unit": "secondss"
+					"unit": "seconds"
 				  }
 				},
 				"value": 120,
