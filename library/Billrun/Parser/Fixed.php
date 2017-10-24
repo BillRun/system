@@ -28,7 +28,9 @@ class Billrun_Parser_Fixed extends Billrun_Parser_Csv {
 			Billrun_Factory::log('Incompatible number of fields for line ' . $line, Zend_Log::WARN);
 			return FALSE;
 		}
-		foreach ($this->structure as $key => $length) {
+		foreach ($this->structure as $struct) {
+			$key = $struct['name'];
+			$length = $struct['width'];
 			$ar_line[$key] = trim(substr($line, $pointer, $length), "\n\r ");
 			$pointer += $length;
 		}

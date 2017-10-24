@@ -64,17 +64,15 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return array The default balance
 	 */
 	protected function getDefaultBalance() {
-		$service_index = $this->getServiceIndex();
 		$urt = $this->row['urt']->sec;
 		if ($this->isExtendedBalance()) {
 			$service_name = $this->row['service_name'];
-			$subService = self::getSubscriberServicesByName($this->row['aid'], $this->row['sid'], $service_name, $urt, isset($this->row['orig_sid']) ? $this->row['orig_sid'] : null);
-			if ($subService) {
-				$from = $start_period = $subService[$service_index]['services']['from']->sec;
-				$period = $this->row['balance_period'];
-				$to = strtotime((string) $this->row['balance_period'], $from);
-			}
+			$service_id = $this->row['service_id'];
+			$from = $start_period = $this->row['service_start_date'];
+			$period = $this->row['balance_period'];
+			$to = strtotime((string) $this->row['balance_period'], $from);
 		} else {
+			$service_id = 0;
 			$service_name = null;
 		}
 		if (empty($from) || empty($to)) {
@@ -85,7 +83,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			$period = "default";
 		}
 		$plan = Billrun_Factory::plan(array('name' => $this->row['plan'], 'time' => $urt, 'disableCache' => true));
-		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_index);
+		return $this->createBasicBalance($this->row['aid'], $this->row['sid'], $from, $to, $plan, $urt, $start_period, $period, $service_name, $service_id);
 	}
 	
 	/**
@@ -105,71 +103,6 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 */
 	protected function isExtendedBalance() {
 		return isset($this->row['balance_period']) && $this->row['balance_period'] != "default" && isset($this->row['service_name']);
-	}
-	
-	/**
-	 * method to fetch subscriber service(s) by service name
-	 * can be multiple in case of overlapping services (same service with same or overlap period)
-	 * 
-	 * @param int $sid subscriber id
-	 * @param string $service service name
-	 * @param int $time time stamp
-	 * @param int $orig_sid real subscriber id in case of shared balance (sid will be 0)
-	 * 
-	 * @return mixed subscriber service entry if exists, else false
-	 * 
-	 * @todo refactoring and use native subscriber class
-	 * @todo cache query results
-	 */
-	public static function getSubscriberServicesByName($aid, $sid, $service, $time, $orig_sid = null) {
-		try {
-			$boundQuery = Billrun_Utils_Mongo::getDateBoundQuery($time);
-			$aggregate = array(
-				array( // todo filter urt of subscriber revision
-					'$match' => array(
-						'aid' => $aid,
-						'sid' => is_null($orig_sid) ? $sid : $orig_sid,
-						'type' => array(
-							'$in' => array('subscriber', 'account'), // forward compatability: account in case services will be attached to account
-						),
-						'from' => $boundQuery['from'],
-						'to' => $boundQuery['to'],
-					),
-				),
-				array('$unwind' => '$services'),
-				array(
-					'$match' => array(
-						'services.name' => $service,
-						'services.from' => $boundQuery['from'],
-						'services.to' => $boundQuery['to'],
-					),
-				),
-				array(
-					'$sort' => array(
-						'to' => 1
-					),
-				),
-			);
-			
-			$cursor = Billrun_Factory::db()->subscribersCollection()->aggregate($aggregate);
-			
-			$ret = array();
-			foreach($cursor as $row) {
-				$key = @$row->get('services.service_id');
-				if (is_null($key) || $key === FALSE) {
-					$key = 0;
-				}
-				$ret[$key] = $row;
-			}
-			
-			if (empty($ret)) {
-				return false;
-			}
-			
-			return $ret;
-		} catch (Exception $ex) {
-			return false;
-		}
 	}
 
 	/**
