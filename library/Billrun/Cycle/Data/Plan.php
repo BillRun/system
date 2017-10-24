@@ -11,11 +11,14 @@
  */
 class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 
+	use Billrun_Traits_ForeignFields;
+	
 	protected $plan = null;
 	protected $name = null;
 	protected $start = 0;
 	protected $end = PHP_INT_MAX;
 	protected $cycle;
+	protected $foreignFields = array();
 
 	public function __construct(array $options) {
 		parent::__construct($options);
@@ -28,6 +31,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->cycle = $options['cycle'];
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
+		$this->foreignFields = $this->getForeignFields(array('plan' => $options));
 	}
 
 	protected function getCharges($options) {
@@ -72,7 +76,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$flatEntry['vatable'] = TRUE;
 		}
 
-		$merged = array_merge($flatEntry, $this->stumpLine);
+		$merged = array_merge($flatEntry, $this->foreignFields, $this->stumpLine);
 		return $merged;
 	}
 

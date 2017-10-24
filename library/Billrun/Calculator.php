@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Calculator extends Billrun_Base {
 
+	use Billrun_Traits_ForeignFields;
+	
 	/**
 	 * the type of the object
 	 *
@@ -75,6 +77,7 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	protected $autosort = true;
 	protected $queue_coll = null;
 	protected $rates_query = array();
+	
 
 	/**
 	 * constructor of the class
@@ -479,7 +482,8 @@ abstract class Billrun_Calculator extends Billrun_Base {
 	 * @todo change this one to be abstract
 	 */
 	public function getPossiblyUpdatedFields() {
-		return array();
+		return $this->getAddedFoerignFields();
 	}
+	
 
 }
