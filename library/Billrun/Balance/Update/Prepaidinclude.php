@@ -347,7 +347,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);
-		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row));
+		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
 		return $row;
 	}
 

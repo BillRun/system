@@ -135,7 +135,7 @@ class Billrun_Balance_Update_Chargingplan extends Billrun_Balance_Update_Abstrac
 		foreach ($this->data as $prepaidInclude) {
 			$prepaidInclude->createBillingLines();
 		}
-		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row));
+		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
 		return $row;
 	}
 
