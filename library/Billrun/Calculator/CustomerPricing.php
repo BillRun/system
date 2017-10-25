@@ -202,6 +202,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 
 			$pricingDataTxt = "Saving pricing data to line with stamp: " . $row['stamp'] . ".";
 			foreach ($pricingData as $key => $value) {
+				if ($key == 'roaming_balances') {
+					continue;
+				}
 				$pricingDataTxt .= " " . $key . ": " . $value . ".";
 			}
 			Billrun_Factory::log()->log($pricingDataTxt, Zend_Log::DEBUG);
@@ -407,6 +410,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		$stamp = strval($row['stamp']);
 		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
 			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
+			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
+			Billrun_Factory::dispatcher()->trigger('handleRoamingBalancesOnCrash', array(&$pricingData, $row));
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance, $plan);
