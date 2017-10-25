@@ -71,4 +71,21 @@ class Models_Autorenew extends Models_Entity {
 		
 		return Billrun_Utils_Autorenew::getNextRenewDate(time());
 	}
+	
+	/*
+	 * see Models_Entity::verifyLastEntry()
+	 */
+	protected function verifyLastEntry() {
+		return true;
+	}
+	
+	/*
+	 * see Models_Entity::validateQuery()
+	 */
+	protected function validateQuery() {
+		if (!$this->query || empty($this->query)) { // currently must have some query
+			return false;
+		}
+		return true;
+	}
 }
