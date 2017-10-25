@@ -175,7 +175,6 @@ db.config.insert(lastConfig);
 
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
-<<<<<<< HEAD
 
 
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
@@ -206,11 +205,7 @@ if(!found) {
 lastConfig['rates']['fields'] = fields;
 db.config.insert(lastConfig);
 // BRCD-1077 update all products(Rates) tariff_category field.
-db.rates.find().forEach(function (rate) {
-	if (!rate.hasOwnProperty("tariff_category")) {
-		rate.tariff_category = "retail";
-	}
+db.rates.find({'tariff_category': {$exists: false}}).forEach(function (rate) {
+	rate.tariff_category = "retail";
 	db.rates.save(rate);
 });
-=======
->>>>>>> 0082a0125e835cd837e95a2a0b5d08827cbf0295
