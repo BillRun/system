@@ -107,6 +107,10 @@ class PaymentGatewaysController extends ApiController {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
 		}
 		if ($result['content_type'] == 'url') {
+			if (isset($data['iframe']) && $data['iframe']) {
+				$this->printIframeJson($result);
+				return;
+			}
 			$this->getView()->output = $result['content'];
 			$this->getView()->outputMethod = 'header';
 		} else if ($result['content_type'] == 'html') {
@@ -176,9 +180,18 @@ class PaymentGatewaysController extends ApiController {
 		} catch (Exception $e) {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
 		}
-		Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
-		$this->getView()->outputMethod = 'header';
-		$this->getView()->output = "Location: " . $returnUrl;
+		$redirect = $request->get("redirect");
+		if (!is_null($redirect) && !$redirect) {
+			$output = array(
+				'status' => 1,
+				'desc' => 'success',
+			);
+			$this->setOutput(array($output));
+		} else {
+			Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
+			$this->getView()->outputMethod = 'header';
+			$this->getView()->output = "Location: " . $returnUrl;
+		}
 	}
 
 	public function successAction() {
@@ -197,6 +210,15 @@ class PaymentGatewaysController extends ApiController {
 	protected function forceRedirectWithMessage($redirectUrl, $content, $type) {
 		$messageObj = json_encode(array('content' => $content , 'type' => $type));
 		$this->forceRedirect($redirectUrl . '&message=' . $messageObj);
+	}
+	
+	protected function printIframeJson($result) {
+		$output = array(
+			'status' => !empty($result) ? 1 : 0,
+			'desc' => !empty($result) ? 'success' : 'error',
+			'details' => empty($result) ? array() : array($result['content_type'] => $result['content']),
+		);
+		echo json_encode($output);
 	}
 	
 }
