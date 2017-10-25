@@ -233,6 +233,34 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 75, 
 			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-14 11:00:00+03:00'),
+		//Included services
+		//is1 should be included
+		array('stamp' => 'is1', 'aid' => 9803, 'sid' => 982, 'arate_key' => 'RATE-Q1',
+			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-12-21 00:00:00+03:00", "service_id" => 1234]],
+			'urt' => '2017-09-14 11:00:00+03:00'),
+		//is2 after the service time  (by the service price cycles not the plan de-activation)
+		array('stamp' => 'is2', 'aid' => 9803, 'sid' => 982, 'arate_key' => 'RATE-Q1',
+			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-12-21 00:00:00+03:00", "service_id" => 1234]],
+			'urt' => '2017-11-14 11:00:00+03:00'),
+		//is3 after the service time  (by the plan detactivation not the cycles) TODO is this impossible?
+//		array('stamp' => 'is3', 'aid' => 9803, 'sid' => 982, 'arate_key' => 'RATE-Q1',
+//			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
+//			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-10-11 00:00:00+03:00", "service_id" => 1234]],
+//			'urt' => '2017-10-11 11:00:00+03:00'),
+		//is4 should be half included
+		array('stamp' => 'is4', 'aid' => 9803, 'sid' => 982, 'arate_key' => 'RATE-Q1',
+			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-12-21 00:00:00+03:00", "service_id" => 1234]],
+			'urt' => '2017-09-14 11:00:00+03:00'),
+		//is5 should not be included
+		array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'arate_key' => 'RATE-Q1',
+			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
+			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-12-21 00:00:00+03:00", "service_id" => 1234]],
+			'urt' => '2017-09-14 11:00:00+03:00'),
+		
+		
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -351,6 +379,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
 		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
 		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
+		
+		// case IS expected
+		array('in_group' => 75, 'over_group' => 0, 'aprice' => 0), //IS1
+		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //IS2
+		//array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //IS3
+		array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5), ///IS4
+		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), ///IS5
 	];
 
 	public function __construct($label = false) {
