@@ -108,11 +108,18 @@ class PaymentGatewaysController extends ApiController {
 		}
 		if ($result['content_type'] == 'url') {
 			if (isset($data['iframe']) && $data['iframe']) {
-				$this->printIframeJson($result);
-				return;
+			$output = array(
+				'status' => 1,
+				'desc' => 'success',
+				'details' => empty($result) ? array() : array('url' => $result['url']),
+			);
+			$this->getView()->outputMethod = array('Zend_Json', 'encode');
+			$this->setOutput(array($output));
+		
+			} else {
+				$this->getView()->output = $result['content'];
+				$this->getView()->outputMethod = 'header';
 			}
-			$this->getView()->output = $result['content'];
-			$this->getView()->outputMethod = 'header';
 		} else if ($result['content_type'] == 'html') {
 			$this->setOutput(array($result['content'], TRUE));
 		}
@@ -210,15 +217,6 @@ class PaymentGatewaysController extends ApiController {
 	protected function forceRedirectWithMessage($redirectUrl, $content, $type) {
 		$messageObj = json_encode(array('content' => $content , 'type' => $type));
 		$this->forceRedirect($redirectUrl . '&message=' . $messageObj);
-	}
-	
-	protected function printIframeJson($result) {
-		$output = array(
-			'status' => !empty($result) ? 1 : 0,
-			'desc' => !empty($result) ? 'success' : 'error',
-			'details' => empty($result) ? array() : array($result['content_type'] => $result['content']),
-		);
-		echo json_encode($output);
 	}
 	
 }
