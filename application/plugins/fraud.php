@@ -83,7 +83,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		// first check we are not on tap3, because we prevent intl roaming fraud on nrtrde
-		if ($row['type'] == 'tap3') {
+		if ($row['type'] == 'tap3' || !empty($row['roaming'])) {
 			return true;
 		}
 
