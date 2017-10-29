@@ -48,7 +48,6 @@ class AuthAction extends ApiAction  {
 	 * @todo Refactor this function, no reason for all this very simple logic to be in one long function, seperate to functions.
 	 */
 	protected function login($params) {
-		
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
 			$userData = array(
@@ -58,8 +57,7 @@ class AuthAction extends ApiAction  {
 			);
 			  return $userData;
 		}		
-		
-		if(isset( $params['username'],$params['password'])) {
+		if(isset( $params['username'],$params['password']) && $this->getRequest()->isPost()) {
 			$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
 
 			$username = $params['username'];
