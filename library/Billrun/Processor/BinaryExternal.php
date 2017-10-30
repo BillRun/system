@@ -22,22 +22,6 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 	}
 
 	/**
-	 * @see Billrun_Processor::parse()
-	 */
-	protected function parse() {
-		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
-			return FALSE;
-		}
-		try {
-			return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
-		} catch (Exception $e) {
-			Billrun_Factory::log("Got exception :" . $e->getMessage() . " while processing file {$this->filePath}", Zend_Log::ERR);
-			return FALSE;
-		}
-	}
-
-	/**
 	 * @see Billrun_Processor::getSequenceData
 	 */
 	public function getFilenameData($filename) {
@@ -50,6 +34,22 @@ class Billrun_Processor_BinaryExternal extends Billrun_Processor_Base_Binary {
 
 	protected function getLineUsageType($row) {
 		return Billrun_Factory::chain()->trigger('getLineVolume', $row);
+	}
+	
+		/**
+	 * method to run over all the files received which did not have been processed
+	 */
+	public function processLines() {
+		if (!is_resource($this->fileHandler)) {
+			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
+			return FALSE;
+		}
+		try {
+			return Billrun_Factory::chain()->trigger('processData', array($this->getType(), $this->fileHandler, &$this));
+		} catch (Exception $e) {
+			Billrun_Factory::log("Got exception :" . $e->getMessage() . " while processing file {$this->filePath}", Zend_Log::ERR);
+			return FALSE;
+		}
 	}
 
 }
