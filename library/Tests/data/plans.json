@@ -551,7 +551,29 @@
 			"upfront" : false,
 			"from" : "time*2016-10-05T08:08:36Z",
 			"to" : "time*2116-10-05T08:08:36Z"
-        }
+        },
+        {
+	
+	"from" : "time*2017-04-01T00:00:00Z",
+	"name" : "WITH_NOTHIG",
+	"price" : [
+		{
+			"price" : "",
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "with_nothig",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : false,
+	"connection_type" : "postpaid",
+	"prorated" : true,
+	"to" : "time*2166-10-30T08:51:56Z",
+	"creation_time" : "time*2017-04-01T00:00:00Z"
+}
+
 		
 
 ]
