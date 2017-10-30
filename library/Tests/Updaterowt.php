@@ -246,11 +246,11 @@ class Tests_Updaterowt extends UnitTestCase {
                  //s3 & s4 are one test case for check service period shard
                  array('stamp' => 's3', 'aid' => 27, 'sid' => 28, 'arate_key' => 'CALL',
                                 'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 20, 
-                                'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 123456]],
+                                'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234568]],
                                 'urt' => '2017-08-14 11:00:00+03:00'),
                 array('stamp' => 's4', 'aid' => 27, 'sid' => 29, 'arate_key' => 'CALL',
                             'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 15, 
-                            'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234567]],
+                            'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234569]],
                             'urt' => '2017-08-14 11:00:00+03:00'),
             
 	];
