@@ -617,7 +617,7 @@
             "from" : "time*2017-08-01T00:00:00Z",
             "aid" : 24,
             "sid" : 25,
-            "plan" : "WITH_NOTHIG",
+            "plan" : "WITH_NOTHING",
             "services" : [
                     {
                             "name" : "PERIOD_POOLED",
@@ -640,7 +640,7 @@
             "from" : "time*2017-08-01T00:00:00Z",
             "aid" : 24,
             "sid" : 26,
-            "plan" : "WITH_NOTHIG",
+            "plan" : "WITH_NOTHING",
             "services" : [
                     {
                             "name" : "PERIOD_POOLED",
@@ -663,7 +663,7 @@
             "from" : "time*2017-08-01T00:00:00Z",
             "aid" : 27,
             "sid" : 28,
-            "plan" : "WITH_NOTHIG",
+            "plan" : "WITH_NOTHINsG",
             "services" : [
                     {
                             "name" : "PERIOD_SHARED",
@@ -686,7 +686,7 @@
             "from" : "time*2017-08-01T00:00:00Z",
             "aid" : 27,
             "sid" : 29,
-            "plan" : "WITH_NOTHIG",
+            "plan" : "WITH_NOTHING",
             "services" : [
                     {
                             "name" : "PERIOD_SHARED",
