@@ -328,15 +328,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
-			if (isset($rule['service_name'])) {
-				$roamingPackage['service_name'] = $rule['service_name'];
-			}
 			if (isset($rule['priority'])) {
 				$priority = (int) $rule['priority'];
 			} else {
 				$priority = null;
 			}
-			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring, $roamingPackage);
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring);
 			return $rule;
 		}
 	}
