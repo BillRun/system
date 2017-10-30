@@ -83,7 +83,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		// first check we are not on tap3, because we prevent intl roaming fraud on nrtrde
-		if ($row['type'] == 'tap3' || !empty($row['roaming'])) {
+		if ($row['type'] == 'tap3' ) {
 			return true;
 		}
 
@@ -648,7 +648,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (isset($queue_line['skip_fraud']) && $queue_line['skip_fraud']) {
 			return false;
 		}
-		return true;
+		return empty($row['roaming']);
 	}
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
