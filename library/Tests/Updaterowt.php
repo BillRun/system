@@ -233,25 +233,26 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 75, 
 			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1234],["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]],
 			'urt' => '2017-09-14 11:00:00+03:00'),
-                 //s costem period with pooled/shard
-                // s1 & s2 are one test case for check service period pooled
-                array('stamp' => 's1', 'aid' => 24, 'sid' => 25, 'arate_key' => 'CALL',
-                            'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 15, 
-                            'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 123456]],
-                            'urt' => '2017-08-14 11:00:00+03:00'),
-                array('stamp' => 's2', 'aid' => 24, 'sid' => 26, 'arate_key' => 'CALL',
-                            'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 10, 
-                            'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234567]],
-                            'urt' => '2017-08-14 11:00:00+03:00'),
-                 //s3 & s4 are one test case for check service period shard
-                 array('stamp' => 's3', 'aid' => 27, 'sid' => 28, 'arate_key' => 'CALL',
-                                'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 20, 
-                                'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 123456]],
-                                'urt' => '2017-08-14 11:00:00+03:00'),
-                array('stamp' => 's4', 'aid' => 27, 'sid' => 29, 'arate_key' => 'CALL',
-                            'plan' => 'WITH_NOTHIG',  'usaget' => 'call', 'usagev' => 15, 
-                            'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234567]],
-                            'urt' => '2017-08-14 11:00:00+03:00'),
+		
+		// s custom period with pooled/shard
+		// s1 & s2 are one test case for check service period pooled
+		array('stamp' => 's1', 'aid' => 24, 'sid' => 25, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 15, 
+			'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 123456]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		array('stamp' => 's2', 'aid' => 24, 'sid' => 26, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 10, 
+			'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234567]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		//s3 & s4 are one test case for check service period shard
+		array('stamp' => 's3', 'aid' => 27, 'sid' => 28, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 20, 
+			'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234568]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		array('stamp' => 's4', 'aid' => 27, 'sid' => 29, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 15, 
+			'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234569]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
             
 	];
 	protected $expected = [
@@ -372,13 +373,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
 		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
             
-              // case s1/s2 tast for period service pooled 
-                array('in_group' => 15, 'over_group' => 0, 'aprice' => 0), //s1
+		// case s1/s2 tast for period service pooled 
+		array('in_group' => 15, 'over_group' => 0, 'aprice' => 0), //s1
 		array('in_group' => 5, 'over_group' => 5, 'aprice' => 5), //s2
-               // case s3/s4 tast for period service shard 
-	        array('in_group' => 20, 'over_group' => 0, 'aprice' => 0), //s3
-		array('in_group' => 15, 'over_group' => 5, 'aprice' => 5), //s4
-            ]; 
+		 // case s3/s4 tast for period service shard 
+		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0), //s3
+		array('in_group' => 10, 'over_group' => 5, 'aprice' => 5), //s4
+		]; 
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
