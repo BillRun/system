@@ -14,11 +14,6 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	use Billrun_Traits_AsnParsing,
 	 Billrun_Traits_FileSequenceChecking;
 
-	const HEADER_LENGTH = 54;
-	const MAX_CHUNKLENGTH_LENGTH = 4096;
-	const FILE_READ_AHEAD_LENGTH = 16384;
-	const RECORD_PADDING = 4;
-
 	/**
 	 * plugin name
 	 *
@@ -260,7 +255,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		}
 
 		$asnObject = Asn_Base::parseASNString($data);
-		$parser->setLastParseLength($asnObject->getRawDataLength());
+		$recordPadding = Billrun_Factory::config()->getConfigValue('constants.ggsn_record_padding');
+		$parser->setLastParseLength($asnObject->getRawDataLength() + $recordPadding);
 
 		$type = $asnObject->getType();
 		$cdrLine = false;
@@ -273,6 +269,13 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			//convert to unified time GMT  time.
 			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
+				if (!empty(Billrun_Factory::config()->getConfigValue('constants.ggsn_golan_definitions'))) {
+					$cdrLine = $this->activateGolanDefinitions($cdrLine);
+					if ($cdrLine == false) {
+						return false;
+					}
+				}
+			
 		} else {
 			Billrun_Factory::log("couldn't find  definition for {$type}", Zend_Log::INFO);
 		}
@@ -396,13 +399,18 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			return FALSE;
 		}
 		$processedData = &$processor->getData();
-
+		$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
+		$fileReadAheadLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_file_read_ahead_length');
+		$headerLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_header_length');
+		if ($headerLength > 0) {
+			$processedData['header'] = $processor->buildHeader(fread($fileHandle, $headerLength));
+		}
 		$bytes = null;
 		while (true) {
-			if (!feof($fileHandle) && !isset($bytes[self::MAX_CHUNKLENGTH_LENGTH])) {
-				$bytes .= fread($fileHandle, self::FILE_READ_AHEAD_LENGTH);
+			if (!feof($fileHandle) && !isset($bytes[$maxChunklengthLength])) {
+				$bytes .= fread($fileHandle, $fileReadAheadLength);
 			}
-			if (!isset($bytes[self::HEADER_LENGTH])) {
+			if (!isset($bytes[$headerLength])) {
 				break;
 			}
 			$row = $processor->buildDataRow($bytes, $fileHandle);
@@ -456,7 +464,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$valueArr = array();
 		foreach ($config as $key => $val) {
 			$tmpVal = $this->parseASNData(explode(',', $val), $dataArr, $fields);
-			if ($tmpVal !== FALSE) {
+			if (!is_null($tmpVal)) {
 				$valueArr[$key] = $tmpVal;
 			}
 		}
@@ -474,7 +482,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	protected function parseASNData($struct, $asnData, $fields) {
 		$matches = array();
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
-			$ret = false;
+			$ret = null;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
 				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
@@ -505,7 +513,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	/**
@@ -517,6 +525,9 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 */
 	protected function doParsingAction($action, $data, $prevVal = null) {
 		$ret = $prevVal;
+		if (is_null($data)) {
+			return $ret;
+		}
 		switch ($action) {
 			case "+":
 				if ($prevVal == null) {
@@ -582,6 +593,28 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	 */
 	protected function getLineUsageType($row) {
 		return 'data';
+	}
+	
+	protected function activateGolanDefinitions($cdrLine) {
+		if (is_array($cdrLine['rating_group'])) {
+			$fbc_uplink_volume = $fbc_downlink_volume = 0;
+			$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
+			$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+			$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
+			foreach ($cdrLine['rating_group'] as $key => $rateVal) {
+				if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
+					$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
+					$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
+				}
+			}
+			$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
+			$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
+			$cdrLine['rating_group'] = 0;
+		} else if ($cdrLine['rating_group'] == 10) {
+			return false;
+		}
+		
+		return $cdrLine;
 	}
 
 }

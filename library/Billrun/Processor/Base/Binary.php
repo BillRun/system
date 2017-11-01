@@ -48,7 +48,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$this->getParser()->setLine($data);
 		$rawRow = $this->getParser()->parse($fileHandle);
 		if ($rawRow) {
-			$row = $rawRow;
+			$row = $this->filterFields($rawRow);
 			$row['stamp'] = md5(serialize($row));
 			$row['type'] = static::$type;
 			$row['source'] = self::$type;
@@ -56,7 +56,8 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 			$row['log_stamp'] = $this->getFileStamp();
 			$row['process_time'] = new MongoDate();
 		}
-		return $row;
+		$newRowStruct['uf'] = $row;
+		return $newRowStruct;
 	}
 
 	/**
