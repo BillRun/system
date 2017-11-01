@@ -663,7 +663,7 @@
             "from" : "time*2017-08-01T00:00:00Z",
             "aid" : 27,
             "sid" : 28,
-            "plan" : "WITH_NOTHINsG",
+            "plan" : "WITH_NOTHING",
             "services" : [
                     {
                             "name" : "PERIOD_SHARED",
