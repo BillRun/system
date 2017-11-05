@@ -405,9 +405,77 @@
                 "prorated" : true,
                 "to" : "time*2166-10-03T09:29:58Z",
                 "creation_time" : "time*2016-10-04T04:00:00Z"
+        },
+        {
+              
+                "from" : "time*2017-08-01T00:00:00Z",
+                "name" : "PERIOD_SHARED",
+                "price" : [
+                        {
+                                "from" : 0,
+                                "to" : 1,
+                                "price" : "1"
+                        }
+                ],
+                "description" : "period_shared",
+                "include" : {
+                        "groups" : {
+                                "CALL_ONLY" : {
+                                        "account_shared" : true,
+                                        "account_pool" : false,
+                                        "rates" : [
+                                                "CALL"
+                                        ],
+                                        "value" : 30,
+                                        "usage_types" : {
+                                                "call" : {
+                                                        "unit" : "seconds"
+                                                }
+                                        }
+                                }
+                        }
+                },
+                "prorated" : false,
+                "quantitative" : false,
+                "balance_period" : "+1 months",
+                "to" : "time*2166-10-29T15:23:26Z",
+                "creation_time" : "time*2017-08-01T00:00:00Z"
+        },
+        {
+              
+                "from" : "time*2017-08-01T00:00:00Z",
+                "name" : "PERIOD_POOLED",
+                "price" : [
+                        {
+                                "from" : 0,
+                                "to" : 1,
+                                "price" : "1"
+                        }
+                ],
+                "description" : "period_pooled",
+                "include" : {
+                        "groups" : {
+                                "PERIOD" : {
+                                        "account_shared" : true,
+                                        "account_pool" : true,
+                                        "rates" : [
+                                                "CALL"
+                                        ],
+                                        "value" : 10,
+                                        "usage_types" : {
+                                                "call" : {
+                                                        "unit" : "seconds"
+                                                }
+                                        }
+                                }
+                        }
+                },
+                "prorated" : false,
+                "quantitative" : false,
+                "balance_period" : "+1 months",
+                "to" : "time*2166-10-29T15:27:45Z",
+                "creation_time" : "time*2017-08-01T00:00:00Z"
         }
-
-
         ]
 		
 		
