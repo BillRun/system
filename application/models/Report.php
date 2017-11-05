@@ -241,7 +241,7 @@ class ReportModel {
 				$value = $this->applyValueformat($value, $format);
 			}
 		}
-		return $value;
+		return empty($value) ? 'false' : var_export($value, true);
 	}
 	
 	protected function pluckOutputValue($value, $key, $formats) {
@@ -652,15 +652,15 @@ class ReportModel {
 						);
 					} elseif ($type === 'number') {
 						$formatedExpression = array(
-							'\${$op}' => floatval($value)
+							"\${$op}" => floatval($value)
 						);
 					} elseif ($type === 'boolean') {
 						$formatedExpression = array(
-							'\${$op}' => (bool)$value
+							"\${$op}" => (bool)$value
 						);
 					} else {
 						$formatedExpression = array(
-							'\${$op}' => $value
+							"\"${$op}" => $value
 						);
 					}
 					break;
