@@ -47,8 +47,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			// Check if private key exist
 			if (isset($config['key'])) {
 				$auth = array(
-					'key' => $config['key']['name'],
-					'keytext' => $config['key']['key']
+					'key' => $config['key'],
 				);
 			} else {
 				$auth = array(
