@@ -127,9 +127,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		//TODO  change this to be configurable.
 		$pricingData = array();
 		$volume = $this->usagev;
+		$prepriced = isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			if (isset($this->row['prepriced']) && $this->row['prepriced']) {
+		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
+			if ($prepriced) {
 				$charges = (float) $this->row[$this->pricingField];
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
@@ -297,7 +298,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
 		}
-
 		$balance_id = (string) $this->balance->getId();
 		if (!isset($pricingData['arategroups'][$balance_id]) && 
 			((isset($pricingData['over_group']) && $pricingData['over_group']) || (isset($pricingData['out_group']) && $pricingData['out_group']))) {
