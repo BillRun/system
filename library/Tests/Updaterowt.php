@@ -261,6 +261,26 @@ class Tests_Updaterowt extends UnitTestCase {
 			'urt' => '2017-09-14 11:00:00+03:00'),
 		
 		
+		// s custom period with pooled/shard
+		// s1 & s2 are one test case for check service period pooled
+		array('stamp' => 's1', 'aid' => 24, 'sid' => 25, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 15, 
+			'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 123456]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		array('stamp' => 's2', 'aid' => 24, 'sid' => 26, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 10, 
+			'services_data' => [["name" => "PERIOD_POOLED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234567]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		//s3 & s4 are one test case for check service period shard
+		array('stamp' => 's3', 'aid' => 27, 'sid' => 28, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 20, 
+			'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234568]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+		array('stamp' => 's4', 'aid' => 27, 'sid' => 29, 'arate_key' => 'CALL',
+			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 15, 
+			'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234569]],
+			'urt' => '2017-08-14 11:00:00+03:00'),
+            
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
@@ -360,7 +380,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
                 //case 8 service with limited cycle's 
 		array('in_group' => 7500000, 'over_group' => 0, 'aprice' => 0 ),
-        array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0 ), 
+                array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0 ), 
 		array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 7500000, 'aprice' => 8,),
 		array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75,),
@@ -386,7 +406,13 @@ class Tests_Updaterowt extends UnitTestCase {
 		//array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //IS3
 		array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5), ///IS4
 		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), ///IS5
-	];
+		// case s1/s2 tast for period service pooled 
+		array('in_group' => 15, 'over_group' => 0, 'aprice' => 0), //s1
+		array('in_group' => 5, 'over_group' => 5, 'aprice' => 5), //s2
+		 // case s3/s4 tast for period service shard 
+		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0), //s3
+		array('in_group' => 10, 'over_group' => 5, 'aprice' => 5), //s4
+		]; 
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");

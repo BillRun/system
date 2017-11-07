@@ -552,16 +552,40 @@
 			"from" : "time*2016-10-05T08:08:36Z",
 			"to" : "time*2116-10-05T08:08:36Z"
         },
+	{
+		"name" : "PLAN-IS1",
+		"plan_code" : "PLAN-IS1",
+		"description" : "PLAN-IS1",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"services" : ["SERVICE-IS1"]
+		}
+        },
+        {
+	
+	"from" : "time*2017-04-01T00:00:00Z",
+	"name" : "WITH_NOTHING",
+	"price" : [
 		{
-			"name" : "PLAN-IS1",
-			"plan_code" : "PLAN-IS1",
-			"description" : "PLAN-IS1",
-			"upfront" : false,
-			"from" : "time*2016-10-05T08:08:36Z",
-			"to" : "time*2116-10-05T08:08:36Z",
-			"include" : {
-				"services" : ["SERVICE-IS1"]
-			}
-        }
+			"price" : "",
+			"from" : 0,
+			"to" : "UNLIMITED"
+		}
+	],
+	"description" : "with_nothing",
+	"recurrence" : {
+		"periodicity" : "month"
+	},
+	"upfront" : false,
+	"connection_type" : "postpaid",
+	"prorated" : true,
+	"to" : "time*2166-10-30T08:51:56Z",
+	"creation_time" : "time*2017-04-01T00:00:00Z"
+}
+
+		
+
 ]
 }

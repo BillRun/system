@@ -116,6 +116,7 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return boolean true  if the creation was sucessful false otherwise.
 	 */
 	protected function createBasicBalance($aid, $sid, $from, $to, $plan, $urt, $start_period = "default", $period = "default", $service_name = null, $priority = 0) {
+		$converted_start_period = is_numeric($start_period) ? new MongoDate($start_period) : $start_period;
 		$query = array(
 			'aid' => $aid,
 			'sid' => $sid,
@@ -125,15 +126,19 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'to' => array(
 				'$gte' => new MongoDate($urt),
 			),
-			'start_period' => $start_period,
+//			'start_period' => $start_period,
+			'start_period' => $converted_start_period,
 			'period' => $period,
-			'priority' => $priority,
+//			'priority' => $priority,
 		);
+		if ($sid != 0) {
+			$query['priority'] = $priority;
+		}
 		if (!is_null($service_name)) {
 			$query['service_name'] = $service_name;
 		}
 		$update = array(
-			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $start_period, $period, $service_name, $priority),
+			'$setOnInsert' => $this->getEmptySubscriberEntry($from, $to, $aid, $sid, $plan, $converted_start_period, $period, $service_name, $priority),
 		);
 		$options = array(
 			'upsert' => true,
@@ -173,10 +178,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			'start_period' => $start_period,
 			'period' => $period,
 			'plan_description' => $planDescription,
-			'priority' => $priority,
+//			'priority' => $priority,
 			'balance' => array('cost' => 0),
 			'tx' => new stdclass,
 		);
+		if ($sid != 0) {
+			$ret['priority'] = $priority;
+		}
 		if (!is_null($service_name)) {
 			$ret['service_name'] = $service_name;
 		}
