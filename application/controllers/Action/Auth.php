@@ -48,7 +48,6 @@ class AuthAction extends ApiAction  {
 	 * @todo Refactor this function, no reason for all this very simple logic to be in one long function, seperate to functions.
 	 */
 	protected function login($params) {
-		
 		if (Billrun_Factory::user() !== FALSE) {
 			// if already logged-in redirect to admin homepage
 			$userData = array(
@@ -56,18 +55,17 @@ class AuthAction extends ApiAction  {
 				'permissions' => Billrun_Factory::user()->getPermissions(),
 				'last_login' => Billrun_Factory::user()->getLastLogin(),
 			);
-			  return $userData;
-		}		
-		
-		if(isset( $params['username'],$params['password'])) {
+			return $userData;
+		}
+		if (isset($params['username'], $params['password']) && $this->getRequest()->isPost()) {
 			$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
 
 			$username = $params['username'];
 			$password = $params['password'];
 
-			
+
 			if ($username != '' && !is_null($password)) {
-				$adapter = new Zend_Auth_Adapter_MongoDb( $db, 'username', 'password' );
+				$adapter = new Zend_Auth_Adapter_MongoDb($db, 'username', 'password');
 
 				$adapter->setIdentity($username);
 				$adapter->setCredential($password);
@@ -79,17 +77,17 @@ class AuthAction extends ApiAction  {
 					Billrun_Factory::log('User ' . $username . ' logged in to admin panel from IP: ' . $ip, Zend_Log::INFO);
 					// TODO: stringify to url encoding (A-Z,a-z,0-9)
 					$ret_action = $this->getRequest()->get('ret_action');
-	//				if (empty($ret_action)) {
-	//					$ret_action = 'admin';
-	//				}
+					//				if (empty($ret_action)) {
+					//					$ret_action = 'admin';
+					//				}
 					$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity->getRawData()));
-					
+
 					$additionalParams = array(
 						'ip' => $ip,
 					);
 					Billrun_AuditTrail_Util::trackChanges('login', 'login_' . $username, 'Login', null, null, $additionalParams);
-					
+
 					$userData = array(
 						'user' => Billrun_Factory::user()->getUsername(),
 						'permissions' => Billrun_Factory::user()->getPermissions(),
@@ -101,7 +99,6 @@ class AuthAction extends ApiAction  {
 					$entity = Billrun_Factory::db()->usersCollection()->query(array('username' => $username))->cursor()->current();
 					Billrun_Factory::auth()->getStorage()->write(array('current_user' => $entity->getRawData()));
 					return $userData;
-					
 				} else { // LDAP
 					$entity = new stdClass();
 					$result = Billrun_Factory::chain()->trigger('userAuthenticate', array($username, $password, &$this, &$entity));
@@ -121,7 +118,7 @@ class AuthAction extends ApiAction  {
 							$entity->roles[] = str_ireplace('billrun_', '', $group);
 						}
 						Billrun_Factory::auth()->getStorage()->write(array('current_user' => (array) $entity));
-						
+
 						$userData = array(
 							'user' => Billrun_Factory::user()->getUsername(),
 							'permissions' => Billrun_Factory::user()->getPermissions(),
@@ -135,7 +132,7 @@ class AuthAction extends ApiAction  {
 		}
 		return FALSE;
 	}
-	
+
 	/**
 	 * Logout  the current user.
 	 * @param type $params unused
