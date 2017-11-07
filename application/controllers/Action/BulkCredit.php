@@ -152,7 +152,7 @@ class BulkCreditAction extends CreditAction {
 	}
 	
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

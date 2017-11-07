@@ -344,7 +344,7 @@ class CronController extends Yaf_Controller_Abstract {
 	}
 	
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }
