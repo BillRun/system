@@ -135,7 +135,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 			}
-			$pricingData = array($this->pricingField => $charges);		
+			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
 		}
