@@ -289,6 +289,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			Billrun_Factory::dispatcher()->trigger('afterBillApiCreate', array(&$this->update));
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
 		} else {
