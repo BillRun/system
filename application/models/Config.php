@@ -839,6 +839,21 @@ class ConfigModel {
 		$ret = $this->collection->insert($updatedData);
 		return !empty($ret['ok']);
 	}
+	
+	public function cancelKeyAuth($category, $data) {
+		$updatedData = $this->getConfig();
+		unset($updatedData['_id']);
+		if ($category === 'file_types') {
+			foreach ($updatedData['file_types'] as &$someFtSettings) {
+				if ($someFtSettings['file_type'] == $data['file_type']) {
+					unset($someFtSettings['receiver']['connections'][0]['key']);
+					break;
+				}
+			}
+		}
+		$ret = $this->collection->insert($updatedData);
+		return !empty($ret['ok']);
+	}
 
 	protected function getFileTypeSettings($config, $fileType, $enabledOnly = false) {
 		if ($filtered = array_filter($config['file_types'], function($fileSettings) use ($fileType, $enabledOnly) {
