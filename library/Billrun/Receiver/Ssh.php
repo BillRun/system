@@ -46,8 +46,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 			// Check if private key exist
 			if (isset($config['key'])) {
+				$directoryPath = 'files/keys/input_processors/';
+				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 				$auth = array(
-					'key' => $config['key'],
+					'key' => $sharedDirectoryPath . $config['key'],
 				);
 			} else {
 				$auth = array(
