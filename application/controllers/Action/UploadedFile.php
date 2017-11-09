@@ -49,7 +49,7 @@ class UploadedFileAction extends ApiAction {
 		$output = array(
 			'status' => $result ? 1 : 0,
 			'desc' => $result ? 'success' : 'error',
-			'details' => $result ? array('message' => $message, 'path' => $targetPath) : $message,
+			'details' => $result ? array('message' => $message, 'path' => $fileType) : $message,
 		);
 		$this->getController()->setOutput(array($output));
 	}
