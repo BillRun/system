@@ -310,7 +310,7 @@ class Models_Subscribers extends Models_Entity {
 				$needUpdate[$revisionId]['deactivation_date'] = $subscriberDeactivation;
 			}
 			$currentPlan = $revision['plan'];
-			if ($currentPlan != $previousPlan && ($previousRevision['to'] == $revision['from'] || empty($previousRevision)) || 
+			if ($currentPlan != $previousPlan && (empty($previousRevision) || $previousRevision['to'] == $revision['from']) || 
 				(isset($previousRevision['to']) && $previousRevision['to'] != $revision['from'])) {
 				$previousPlan = $currentPlan;
 				$planActivation = $revision['from'];
@@ -332,7 +332,7 @@ class Models_Subscribers extends Models_Entity {
 		foreach($plansDeactivation as $index => $deactivationDate) {
 			foreach($sortedByFrom as $revision2) {
 				$revisionId = $revision2['_id']->{'$id'};
-				if ($revision2['indicator'] == $index && $revision2['plan_deactivation'] != $deactivationDate) {
+				if ($revision2['indicator'] == $index && (!isset($revision2['plan_deactivation']) || $revision2['plan_deactivation'] != $deactivationDate)) {
 					$needUpdate[$revisionId]['plan_deactivation'] = $deactivationDate;
 				}
 			}
