@@ -334,7 +334,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return Crypt_RSA
 	 */
 	public function getNewKey() {
-		return new Crypt_RSA;
+		return new phpseclib\Crypt\RSA;
 		//return Crypt_RSA::factory();
 	}
 
@@ -374,7 +374,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 		if ($this->connection) {
 			return $this->connection;
 		}
-		return $this->connection = new Net_SFTP($this->host, $this->port);
+		return $this->connection = new phpseclib\Net\SFTP($this->host, $this->port);
 	}
 
 }
