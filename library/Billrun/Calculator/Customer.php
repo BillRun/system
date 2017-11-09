@@ -236,7 +236,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge($this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
+		return array_merge(parent::getPossiblyUpdatedFields(), $this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
 	}
 
 	public function getCustomerPossiblyUpdatedFields() {
@@ -430,6 +430,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
+		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ),$rowData));
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;

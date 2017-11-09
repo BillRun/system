@@ -128,6 +128,7 @@ class Billrun_DiscountManager {
 		$totalTaxData['total_tax'] = empty($cdr['aprice']) ? 0 : $totalTaxData['total_amount'] / $cdr['aprice'];
 
 		$cdr['tax_data'] = $totalTaxData;
+		$cdr['final_charge'] = $totalTaxData['total_amount'] + $cdr['aprice'];
 
 		return $cdr;
 	}

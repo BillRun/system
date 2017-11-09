@@ -23,6 +23,7 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->cycle = $options['cycle'];
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
 		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
+		$this->foreignFields = $this->getForeignFields(array('service' => $options));
 		$this->constructOptions($options);
 	}
 	
@@ -35,6 +36,9 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$flatLine['service'] = $this->name;
 		$flatLine['name'] = $this->name;
 		$flatLine['usagev'] = $this->quantity;
+		if($this->planIncluded) {
+			$flatLine['included_in_plan'] = $this->planIncluded;
+		}
 		$flatLine['type'] = 'service';
 		return $flatLine;
 	}

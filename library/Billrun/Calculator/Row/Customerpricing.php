@@ -96,6 +96,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @var type 
 	 */
 	protected $config = null;
+	
+	/**
+	 * This holds the services used when pricing the row.
+	 */
+	protected $servicesUsed = array();
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
@@ -104,6 +109,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'time' => $this->row['urt']->sec,
 		);
 		$this->plan = Billrun_Factory::plan($planSettings);
+		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -619,6 +625,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
 						'balance' => $balance,
 					);
+					$this->servicesUsed[] = $service;
 					return array($keyRequired => 0);
 				}
 				$arategroups[(string) $balance->getId()][] = array(
@@ -637,6 +644,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				} else {
 					$valueRequired -= $value;
 				}
+				$this->servicesUsed[] = $service;
 			}
 		}
 		return array($keyRequired => $valueRequired); // volume/cost left to charge
@@ -955,4 +963,18 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		
 	}
 
+	
+	
+	//=======================================
+	public function getBalance() {
+		return $this->balance;
+	}
+	
+	public function getPlan() {
+		return $this->plan;
+	}
+	
+	public function getUsedServices() {
+		return $this->servicesUsed;
+	}
 }
