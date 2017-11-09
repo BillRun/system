@@ -139,7 +139,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField);
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->ratingField, $this->ratingKeyField, 'usaget', 'usagev', $this->pricingField, $this->aprField ));
 	}
 	
 	protected static function getRateCalculatorClassName($type) {
@@ -233,8 +233,7 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 			// TODO: push plan to the function to enable market price by plan
 			$added_values[$this->aprField] = Billrun_Rates_Util::getTotalCharge($rate, $row['usaget'], $row['usagev'], $row['plan'], 0, $row['urt']->sec);
 		}
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
+		$row->setRawData( array_merge($current, $added_values , $this->getForeignFields(array('rating_data' => $added_values),$current)) );
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
@@ -405,5 +404,4 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 	protected function getCountryCodeMatchQuery() {
 		return array('$in' => Billrun_Util::getPrefixes($this->rowDataForQuery['country_code']));
 	}
-
 }

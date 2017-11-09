@@ -236,7 +236,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge($this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
+		return array_merge(parent::getPossiblyUpdatedFields(), $this->getCustomerPossiblyUpdatedFields(), array('granted_return_code', 'usagev'));
 	}
 
 	public function getCustomerPossiblyUpdatedFields() {
@@ -430,6 +430,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
+		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ),$rowData));
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;
@@ -450,7 +451,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @param boolean $addServiceData
 	 * @return array - services names array if $addServiceData is false, services names and data otherwise
 	 */
-	protected function getPlanIncludedServices($planName, $time, $addServiceData = false) {
+	protected function getPlanIncludedServices($planName, $time, $addServiceData, $subscriberData ) {
 		if ($time instanceof MongoDate) {
 			$time = $time->sec;
 		}
@@ -469,8 +470,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		foreach ($services as $service) {
 			$retServices[] = array(
 				'name' => $service,
-				'from' => $plan->get('plan_activation'),
-				'to' => $plan->get('plan_deactivation'),
+				'from' => $subscriberData['plan_activation'],
+				'to' => $subscriberData['plan_deactivation'],
 				'service_id' => 0, // assumption: there is no *custom period* service includes
 			);
 		}
@@ -484,7 +485,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				$retServices[] = $service['name'];
 			}
 		}
-		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false);
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber);
 		return array_merge($retServices, $planIncludedServices);
 	}
 	
@@ -510,7 +511,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				);
 			}
 		}
-		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true);
+		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
 		return array_merge($retServices, $planIncludedServices);
 	}
 	
