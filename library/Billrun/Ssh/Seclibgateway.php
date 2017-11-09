@@ -172,6 +172,11 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	public function getListOfFiles($dir, $recursive = false) {
 		$files = array();
 		$rootFolders = $this->getConnection()->nlist($dir, $recursive);
+		
+		if (empty($rootFolders)) {
+			Billrun_Factory::log("No files received");
+			return array();
+		}
 		$check_is_numeric = Billrun_Factory::config()->getConfigValue('Seclibgateway.check_is_numeric');
 		foreach ($rootFolders as $folder) {
 			if ($check_is_numeric && !is_numeric($folder)) {
@@ -274,7 +279,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 */
 	protected function loadRsaKey(array $auth) {
 		//$key = $this->getKey($auth);
-		$key = new Crypt_RSA();
+		$key = new phpseclib\Crypt\RSA();
 		$key->loadKey($this->readRsaKey($auth));
 		//$key->loadKey($this->readRsaKey($auth));
 		//$key->setParams(array('public_key' => $this->readRsaKey($auth)));
