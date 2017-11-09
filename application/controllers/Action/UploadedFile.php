@@ -41,7 +41,7 @@ class UploadedFileAction extends ApiAction {
 			}
 			$targetPath = $sharedDirectoryPath . $fileType;
 			if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetPath)) {
-				chmod($targetPath, 400);
+				chmod($targetPath, 0440);
 				$result = 1;
 				$message = "The file " . basename($_FILES['file']['name']) . " has been uploaded";
 			}
