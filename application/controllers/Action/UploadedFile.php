@@ -24,6 +24,10 @@ class UploadedFileAction extends ApiAction {
 		if (empty($category)) {
 			throw new Exception("Need to pass category");
 		}
+		$fileType = $request->get('file_type');
+		if (empty($category)) {
+			throw new Exception("Need to pass input processor name");
+		}
 		$result = 0;
 		$message = "There was an error uploading the file, please try again!";
 		if (is_uploaded_file($_FILES['file']['tmp_name'])) {
@@ -35,7 +39,7 @@ class UploadedFileAction extends ApiAction {
 			if (!file_exists($sharedDirectoryPath)) {
 			   mkdir($sharedDirectoryPath, 0777, true);
 			}
-			$targetPath = $sharedDirectoryPath . basename($_FILES['file']['name']);
+			$targetPath = $sharedDirectoryPath . $fileType;
 			if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetPath)) {
 				chmod($targetPath, 400);
 				$result = 1;
@@ -57,7 +61,7 @@ class UploadedFileAction extends ApiAction {
 	protected function decidePathByCategory($category) {
 		switch ($category) {
 			case 'key':
-				$path = 'files/keys/';
+				$path = 'files/keys/input_processors/';
 				break;
 
 			default:
