@@ -21,6 +21,9 @@ class UploadedFileAction extends ApiAction {
 		$this->allowed();
 		$request = $this->getRequest();
 		$category = $request->get('category');
+		if (empty($category)) {
+			throw new Exception("Need to pass category");
+		}
 		$result = 0;
 		$message = "There was an error uploading the file, please try again!";
 		if (is_uploaded_file($_FILES['file']['tmp_name'])) {
@@ -57,9 +60,8 @@ class UploadedFileAction extends ApiAction {
 				$path = 'files/keys/';
 				break;
 
-			default: 
-				$path = '/';
-				break;
+			default:
+				throw new Exception("Unknown category");
 		}
 		return $path;
 	}
