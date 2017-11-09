@@ -237,3 +237,26 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 db.config.insert(lastConfig);
+
+if (db.getName() === 'billing_onesimcard') {
+	var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+	delete lastConfig['_id'];
+
+	for (var i in lastConfig.file_types) {
+		if (lastConfig.file_types[i].file_type !== 'Data_Usage') {
+			continue;
+		}
+		var found = false;
+		for (var j in lastConfig.file_types[i].response.fields) {
+			if (lastConfig.file_types[i].response.fields[j].response_field_name == "poolName") {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "poolName", "row_field_name": "subscriber.pool_name"});
+		}
+	}
+
+	db.config.insert(lastConfig);
+}
