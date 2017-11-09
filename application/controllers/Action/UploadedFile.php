@@ -19,10 +19,15 @@ class UploadedFileAction extends ApiAction {
 
 	public function execute() {
 		$this->allowed();
+		$request = $this->getRequest();
+		$category = $request->get('category');
 		$result = 0;
 		$message = "There was an error uploading the file, please try again!";
 		if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-			$directoryPath = 'files/keys/';
+			if ($_FILES['file']['size'] > 1048576) { // 1MB
+				throw new Exception("Invalid file size!, files bigger than 1MB are not allowed");
+			}
+			$directoryPath = $this->decidePathByCategory($category);
 			$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 			if (!file_exists($sharedDirectoryPath)) {
 			   mkdir($sharedDirectoryPath, 0777, true);
@@ -44,6 +49,19 @@ class UploadedFileAction extends ApiAction {
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
+	protected function decidePathByCategory($category) {
+		switch ($category) {
+			case 'key':
+				$path = 'files/keys/';
+				break;
+
+			default: 
+				$path = '/';
+				break;
+		}
+		return $path;
 	}
 
 }

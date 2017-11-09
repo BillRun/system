@@ -63,8 +63,6 @@ class SettingsAction extends ApiAction {
 			$success = $this->model->setEnabled($category, $data, true);
 		} else if ($action === 'disable') {
 			$success = $this->model->setEnabled($category, $data, false);
-		} else if ($action === 'cancel_key_auth'){
-			$success = $this->model->cancelKeyAuth($category, $data);
 		} else {
 			$output = $this->model->getFromConfig($category, $data);
 		}
