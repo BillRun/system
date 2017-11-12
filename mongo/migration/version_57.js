@@ -237,3 +237,5 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 db.config.insert(lastConfig);
+
+db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, background: true });
