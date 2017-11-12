@@ -255,6 +255,40 @@ if (db.getName() === 'billing_onesimcard') {
 		}
 		if (!found) {
 			lastConfig.file_types[i].response.fields.push({"response_field_name": "poolName", "row_field_name": "subscriber.pool_name"});
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "iccid", "row_field_name": "subscriber.iccid"});
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "country", "row_field_name": "foreign.country"});
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "operator", "row_field_name": "foreign.operator"});
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "osc_country", "row_field_name": "foreign.osc_country"});
+			lastConfig.file_types[i].response.fields.push({"response_field_name": "osc_operator", "row_field_name": "foreign.osc_operator"});
+		}
+	}
+	
+	var found = false;
+	if (typeof lastConfig['lines'] === 'undefined') {
+		lastConfig['lines'] = {
+			fields: []
+		};
+	} else if (typeof lastConfig['lines']['fields'] === 'undefined') {
+		lastConfig['lines']['fields'] = [];
+	}
+	for (var i in lastConfig['lines']['fields']) {
+		if (lastConfig['lines']['fields'][i]['field_name'] === 'foreign.mcc') {
+			found = true;
+			break;
+		}
+	}
+	
+	if (!found) {
+		var fieldsToAdd = ['mcc', 'mnc', 'country', 'operator', 'osc_country', 'osc_operator'];
+		for (var i in fieldsToAdd) {
+			var addField = {
+				field_name : "foreign." + fieldsToAdd[i],
+				foreign : { 
+					entity : "rate",
+					field  :"params." + fieldsToAdd[i]
+				}
+			};
+			lastConfig['lines']['fields'].push(addField);
 		}
 	}
 
