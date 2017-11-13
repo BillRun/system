@@ -239,3 +239,11 @@ if(lastConfig['lines']['fields'].length > idx) {
 db.config.insert(lastConfig);
 
 db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, background: true });
+
+// BRCD-938: Option to not generate pdfs for the cycle
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
+	lastConfig['billrun']['generate_pdf'] = {"v": true ,"t" : "Boolean"};
+	db.config.insert(lastConfig);
+}
