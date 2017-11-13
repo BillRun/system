@@ -57,7 +57,7 @@ class AuthAction extends ApiAction  {
 			);
 			return $userData;
 		}
-		if (isset($params['username'], $params['password']) && $this->getRequest()->isPost()) {
+		if (isset($params['username'], $params['password'])/* && $this->getRequest()->isPost()*/) {
 			$db = Billrun_Factory::db()->usersCollection()->getMongoCollection();
 
 			$username = $params['username'];
