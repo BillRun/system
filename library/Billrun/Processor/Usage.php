@@ -106,13 +106,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
-		if (!empty($options['processor']['aprice_field'])){
-			$this->apriceField = $options['processor']['aprice_field'];
-			if (!empty($options['processor']['aprice_mult'])){
-				$this->apriceMult = $options['processor']['aprice_mult'];
-			}
-		}
-		
+
 		$this->dateField = $options['processor']['date_field'];
 	}
 
@@ -153,7 +147,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		if ($this->isLinePrepriced()) {
+		if ($this->isLinePrepriced($row['usaget'], static::$type)) {
 			$row['prepriced'] = true;
 			$row['aprice'] = $this->getLineAprice($row['uf']);
 		}
@@ -273,7 +267,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 
 	 * @return boolean
 	 */
-	protected function isLinePrepriced() {
+	protected function isLinePrepriced($usaget, $type) {
+		$prepricedSettings = Billrun_Factory::config()->getFileTypeSettings($type, true)['pricing'];
+		$prericedByUsaget = Billrun_Util::getIn($prepricedSettings, array($usaget), array());
+		$this->apriceField = $prericedByUsaget['aprice_field'];
+		if (!empty($prericedByUsaget['aprice_mult'])) {
+			$this->apriceMult = $prericedByUsaget['aprice_mult'];
+		}
 		return !empty($this->apriceField);
 	}
 
