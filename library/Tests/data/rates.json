@@ -305,7 +305,68 @@
                 }
             }
         }
-      }
+      },
+      {
+	"from" : "time*2016-10-04T04:00:00Z",
+	"key" : "INTERNET",
+	"rates" : {
+		"data" : {
+			"BASE" : {
+				"rate" : [
+					{
+						"from" : 0,
+						"to" : "UNLIMITED",
+						"interval" : 1000000,
+						"price" : "1",
+						"uom_display" : {
+							"range" : "mb1000",
+							"interval" : "mb1000"
+						}
+					}
+				]
+			}
+		}
+	},
+	"description" : "internet",
+	"params" : {
+		"prefix" : [ ],
+		"file_type" : [ ]
+	},
+	"vatable" : true,
+	"pricing_method" : "tiered",
+	"to" : "time*2166-10-03T09:22:38Z",
+	"creation_time" :"time*2016-10-04T04:00:00Z"
+        },
+        {
+
+	"from" : "time*2017-06-01T00:00:00Z",
+	"key" : "CALL",
+	"rates" : {
+		"call" : {
+			"BASE" : {
+				"rate" : [
+					{
+						"from" : 0,
+						"to" : "UNLIMITED",
+						"interval" : 1,
+						"price" : "1",
+						"uom_display" : {
+							"range" : "seconds",
+							"interval" : "seconds"
+						}
+					}
+				]
+			}
+		}
+	},
+	"description" : "call",
+	"params" : [ ],
+	"vatable" : true,
+	"pricing_method" : "tiered",
+	"to" : "time*2166-12-25T09:15:40Z",
+	"creation_time" : "time*2017-06-01T00:00:00Z"
+       }
+
 
 	  
     ]

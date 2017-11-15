@@ -515,8 +515,8 @@
 		"services" : [
 			  {
 				"name": "SERVICE-O1",
-				"from": "time*2017-09-01T00:00:00Z",
-				"to": "time*2017-09-14T23:59:59Z"
+				"from": "time*2017-09-01T00:00:00+03:00",
+				"to": "time*2017-09-14T23:59:59+03:00"
 			  }
 		  ]
         },
@@ -535,8 +535,8 @@
 		"services" : [
 			  {
 				"name": "SERVICE-O4",
-				"from": "time*2017-09-01T00:00:00Z",
-				"to": "time*2017-09-14T23:59:59Z"
+				"from": "time*2017-09-01T00:00:00+03:00",
+				"to": "time*2017-09-14T23:59:59+03:00"
 			  }
 		  ]
         },
@@ -591,6 +591,135 @@
 				"service_id": 1235
 			  }
 		  ]
-        }
+        },
+        {
+            "aid" : 9503,
+            "firstname" :"nr122",
+            "lastname" : "nr122",
+            "plan" : "NEW-PLAN-O4",
+            "address" : "nr71",
+            "country" : "nr71",
+            "type" : "subscriber",
+            "from" : "time*2016-11-11T09:17:58.865Z",
+            "plan_activation" : "time*2016-11-11T09:17:58.865Z",
+            "to" : "time*2116-11-11T09:17:58Z",
+            "sid" : 952,
+             "services" : [
+			  {
+				"name": "2GB_INTERNET_FOR_1_CYCLE",
+				"from": "time*2017-09-01T00:00:00Z",
+				"to": "time*2117-09-14T23:59:59Z"
+			  }
+		  ]
+		
+        },
+	{
+            "aid" : 9803,
+            "firstname" : "is007",
+            "lastname" : "is007",
+            "plan" : "PLAN-IS1",
+            "address" : "is007",
+            "country" : "is007",
+            "type" : "subscriber",
+            "from" : "time*2016-09-09T22:00:00Z",
+            "plan_activation" : "time*2017-09-10T22:00:00Z",
+            "to" : "time*2017-12-21T09:00:00Z",
+            "sid" : 982,
+	    "services" : []
+        },
+        {
+            "from" : "time*2017-08-01T00:00:00Z",
+            "aid" : 24,
+            "sid" : 25,
+            "plan" : "WITH_NOTHING",
+            "services" : [
+                    {
+                            "name" : "PERIOD_POOLED",
+                            "from" : "time*2017-08-01T00:00:00Z",
+                            "to" : "time*2017-09-01T00:00:00Z",
+                            "service_id" :"123456"
+                    }
+            ],
+            "firstname" : "d",
+            "lastname" : "d",
+            "address" : "d",
+            "country" : "d",
+            "type" : "subscriber",
+            "plan_activation" : "time*2017-08-01T00:00:00Z",
+            "to" : "time*2166-10-29T16:05:06Z",
+            "deactivation_date" : "time*2166-10-29T16:05:06Z",
+            "creation_time" : "time*2017-08-01T00:00:00Z"
+         },
+         {
+            "from" : "time*2017-08-01T00:00:00Z",
+            "aid" : 24,
+            "sid" : 26,
+            "plan" : "WITH_NOTHING",
+            "services" : [
+                    {
+                            "name" : "PERIOD_POOLED",
+                            "from" : "time*2017-08-01T00:00:00Z",
+                            "to" : "time*2017-09-01T00:00:00Z",
+                            "service_id" :"1234567"
+                    }
+            ],
+            "firstname" : "d",
+            "lastname" : "d",
+            "address" : "d",
+            "country" : "d",
+            "type" : "subscriber",
+            "plan_activation" : "time*2017-08-01T00:00:00Z",
+            "to" : "time*2166-10-29T16:05:06Z",
+            "deactivation_date" : "time*2166-10-29T16:05:06Z",
+            "creation_time" : "time*2017-08-01T00:00:00Z"
+         }  ,
+                 {
+            "from" : "time*2017-08-01T00:00:00Z",
+            "aid" : 27,
+            "sid" : 28,
+            "plan" : "WITH_NOTHING",
+            "services" : [
+                    {
+                            "name" : "PERIOD_SHARED",
+                            "from" : "time*2017-08-01T00:00:00Z",
+                            "to" : "time*2017-09-01T00:00:00Z",
+                            "service_id" :"1234568"
+                    }
+            ],
+            "firstname" : "d",
+            "lastname" : "d",
+            "address" : "d",
+            "country" : "d",
+            "type" : "subscriber",
+            "plan_activation" : "time*2017-08-01T00:00:00Z",
+            "to" : "time*2166-10-29T16:05:06Z",
+            "deactivation_date" : "time*2166-10-29T16:05:06Z",
+            "creation_time" : "time*2017-08-01T00:00:00Z"
+         },
+         {
+            "from" : "time*2017-08-01T00:00:00Z",
+            "aid" : 27,
+            "sid" : 29,
+            "plan" : "WITH_NOTHING",
+            "services" : [
+                    {
+                            "name" : "PERIOD_SHARED",
+                            "from" : "time*2017-08-01T00:00:00Z",
+                            "to" : "time*2017-09-01T00:00:00Z",
+                            "service_id" :"1234569"
+                    }
+            ],
+            "firstname" : "d",
+            "lastname" : "d",
+            "address" : "d",
+            "country" : "d",
+            "type" : "subscriber",
+            "plan_activation" : "time*2017-08-01T00:00:00Z",
+            "to" : "time*2166-10-29T16:05:06Z",
+            "deactivation_date" : "time*2166-10-29T16:05:06Z",
+            "creation_time" : "time*2017-08-01T00:00:00Z"
+         }  
+
+     
         ]
     }

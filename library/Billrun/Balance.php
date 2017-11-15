@@ -117,6 +117,9 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	protected function load() {
 		Billrun_Factory::log("Trying to load balance for subscriber " . $this->row['sid'] . ". urt: " . $this->row['urt']->sec . ". connection_type: " . $this->connection_type, Zend_Log::DEBUG);
 		$query = $this->getBalanceLoadQuery();
+		if ($query === false) {
+			return array();
+		}
 		$retEntity = $this->collection()
 				->query($query)
 				->cursor()

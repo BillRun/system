@@ -96,6 +96,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @var type 
 	 */
 	protected $config = null;
+	
+	/**
+	 * This holds the services used when pricing the row.
+	 */
+	protected $servicesUsed = array();
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
@@ -104,6 +109,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'time' => $this->row['urt']->sec,
 		);
 		$this->plan = Billrun_Factory::plan($planSettings);
+		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -127,9 +133,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		//TODO  change this to be configurable.
 		$pricingData = array();
 		$volume = $this->usagev;
+		$prepriced = isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			if (isset($this->row['prepriced']) && $this->row['prepriced']) {
+		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
+			if ($prepriced) {
 				$charges = (float) $this->row[$this->pricingField];
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
@@ -297,7 +304,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
 		}
-
 		$balance_id = (string) $this->balance->getId();
 		if (!isset($pricingData['arategroups'][$balance_id]) && 
 			((isset($pricingData['over_group']) && $pricingData['over_group']) || (isset($pricingData['out_group']) && $pricingData['out_group']))) {
@@ -307,7 +313,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			$balancePricingData = $pricingData;
 			unset($balancePricingData['arategroups']);
 			Billrun_Factory::log("Updating balance " . $balance_id . " of subscriber " . $this->row['sid'], Zend_Log::DEBUG);
-			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, (isset($pricingData['over_group']) && $pricingData['over_group'] ? $pricingData['over_group'] : $pricingData['out_group']));
+			list($query, $update) = $this->balance->buildBalanceUpdateQuery($balancePricingData, $this->row, $volume);
 
 			Billrun_Factory::dispatcher()->trigger('beforeCommitSubscriberBalance', array(&$this->row, &$pricingData, &$query, &$update, $rate, $this));
 			$ret = $this->balance->update($query, $update);
@@ -495,21 +501,20 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				'time' => $time
 			);
 			
+			if (isset($service['from']->sec)) {
+				$serviceSettings['service_start_date'] = $service['from']->sec;
+			}
+			
 			if (!($serviceObject = new Billrun_Service($serviceSettings))) {
 				continue;
 			}
 			
-			if (isset($service['from']) && $serviceObject->isExhausted($service['from'])) {
+			if (isset($service['from']) && $serviceObject->isExhausted($service['from'], $time)) {
 				continue;
 			}
 			
-			$balancePeriod = @$serviceObject->get("balance_period");
-			
-			if ($balancePeriod && Billrun_Balance_Postpaid::getSubscriberServicesByName($this->aid, $this->sid, $serviceName, $this->urt->sec) == FALSE) {
-				continue;
-			}
-			
-			if ($balancePeriod && isset($service['to']->sec)) {
+			$servicePeriod = $serviceObject->get("balance_period");
+			if ($servicePeriod && $servicePeriod !== "default" && isset($service['to']->sec)) {
 				$sortKey = (int) $service['to']->sec;
 			} else {
 				$sortKey = (int) Billrun_Billingcycle::getEndTime(Billrun_Billingcycle::getBillrunKeyByTimestamp($time)); // end of cycle
@@ -572,8 +577,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			foreach ($serviceGroups as $serviceGroup) {
 				$serviceSettings = array(
 					'service_name' => $serviceName,
-					'service_index' => $service->getServiceId(),
+					'service_id' => $service->get('service_id'),
 					'balance_period' => ((!empty($balance_period = $service->get('balance_period'))) ? $balance_period : 'default'),
+					'service_start_date' => $service->get('service_start_date'),
 				);
 				// pre-check if need to switch to other balance with the new service
 				if ($service->isGroupAccountShared($rate, $usageType, $serviceGroup) && $this->balance['sid'] != 0) { // if need to switch to shared balance (from plan)
@@ -619,6 +625,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
 						'balance' => $balance,
 					);
+					$this->servicesUsed[] = $service;
 					return array($keyRequired => 0);
 				}
 				$arategroups[(string) $balance->getId()][] = array(
@@ -637,6 +644,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				} else {
 					$valueRequired -= $value;
 				}
+				$this->servicesUsed[] = $service;
 			}
 		}
 		return array($keyRequired => $valueRequired); // volume/cost left to charge
@@ -955,4 +963,18 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		
 	}
 
+	
+	
+	//=======================================
+	public function getBalance() {
+		return $this->balance;
+	}
+	
+	public function getPlan() {
+		return $this->plan;
+	}
+	
+	public function getUsedServices() {
+		return $this->servicesUsed;
+	}
 }
