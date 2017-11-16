@@ -146,7 +146,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
 		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
-			$row['aprice'] = $this->getLineAprice($row['uf']);
+			$row['aprice'] = $this->getLineAprice($row['uf'], $row['usaget']);
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
@@ -274,8 +274,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @param type $userFields
 	 * @return aprice if the field found, false otherwise
 	 */
-	protected function getLineAprice($userFields) {
-		$usageType = $userFields['usaget'];
+	protected function getLineAprice($userFields, $usageType) {
 		$apriceField = isset($this->prepricedMapping[$usageType]['aprice_field']) ? $this->prepricedMapping[$usageType]['aprice_field'] : null;
 		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
 			$aprice = $userFields[$apriceField];
