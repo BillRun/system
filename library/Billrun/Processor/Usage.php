@@ -42,18 +42,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $volumeSrc = array();
 	
 	/**
-	 * name of the field where the price of the line placed (in case it's pre-priced)
-	 * @var type string
-	 */
-	protected $apriceField = null;
-	
-	/**
-	 * constant to multiply the price received (in case of pre-priced)
-	 * @var type float
-	 */
-	protected $apriceMult = null;
-	
-	/**
 	 * the field's name where the date is located
 	 * @var type  string
 	 */
@@ -147,9 +135,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		if ($this->isLinePrepriced($row['usaget'], static::$type)) {
+		$prepricedFields = $this->getPrepricedFields($row['usaget'], static::$type);
+		if (!empty($prepricedFields['aprice_field'])) {
 			$row['prepriced'] = true;
-			$row['aprice'] = $this->getLineAprice($row['uf']);
+			$row['aprice'] = $this->getLineAprice($row['uf'], $prepricedFields);
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
@@ -261,21 +250,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		return $volume;
 	}
-	
-	/**
-	 * Checks if the line is prepriced (aprice was supposed to be received in the CDR)
-	 * 
-	 * @return boolean
-	 */
-	protected function isLinePrepriced($usaget, $type) {
-		$prepricedSettings = Billrun_Factory::config()->getFileTypeSettings($type, true)['pricing'];
-		$prericedByUsaget = Billrun_Util::getIn($prepricedSettings, array($usaget), array());
-		$this->apriceField = $prericedByUsaget['aprice_field'];
-		if (!empty($prericedByUsaget['aprice_mult'])) {
-			$this->apriceMult = $prericedByUsaget['aprice_mult'];
-		}
-		return !empty($this->apriceField);
-	}
 
 	/**
 	 * Get the prepriced value received in the CDR
@@ -283,17 +257,24 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @param type $userFields
 	 * @return aprice if the field found, false otherwise
 	 */
-	protected function getLineAprice($userFields) {
-		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
-			$aprice = $userFields[$this->apriceField];
-			if (!is_null($this->apriceMult) && is_numeric($this->apriceMult)) {
-				$aprice *= $this->apriceMult;
+	protected function getLineAprice($userFields, $prepricedFields) {
+		$apriceField = isset($prepricedFields['aprice_field']) ? $prepricedFields['aprice_field'] : null;
+		$apriceMult = isset($prepricedFields['aprice_field']) ? $prepricedFields['aprice_mult'] : null;
+		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
+			$aprice = $userFields[$apriceField];
+			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
+				$aprice *= $apriceMult;
 			}
 			return $aprice;
 		}
 		
-		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
 		return false;
 	}
-
+	
+	protected function getPrepricedFields($usaget, $type) {
+		$prepricedSettings = Billrun_Factory::config()->getFileTypeSettings($type, true)['pricing'];
+		$prericedByUsaget = Billrun_Util::getIn($prepricedSettings, array($usaget), array());
+		return $prericedByUsaget;
+	}
 }
