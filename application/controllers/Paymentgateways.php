@@ -184,6 +184,7 @@ class PaymentGatewaysController extends ApiController {
 	}
 
 	public function successAction() {
+		$this->allowed();
 		$this->getView()->outputMethod = 'print_r';
 		$this->setOutput(array("SUCCESS", TRUE));
 	}

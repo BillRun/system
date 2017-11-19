@@ -33,6 +33,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		if (!$this->allowed('read'))
+			return false;
 		Billrun_Factory::db();
 //		session_set_cookie_params(1);
 		$this->initSession();
