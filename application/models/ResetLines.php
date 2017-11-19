@@ -342,8 +342,9 @@ class ResetLinesModel {
 	protected function resetExtendedBalances($aids, $balancesColl) {
 		if (empty($this->extendedBalanceUsageSubtract)) {
 			return;
-		}	
-		$aidsAsKeys = array_flip($aids);
+		}
+		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
+		$aidsAsKeys = array_flip($verifiedArray);
 		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);	
 		$queryBalances = array(
 			'aid' => array('$in' => $aids),
