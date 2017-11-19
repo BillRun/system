@@ -289,6 +289,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
 		} else {
@@ -305,6 +306,7 @@ class Models_Entity {
 		$this->action = 'update';
 
 		$this->checkUpdate();
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -409,6 +411,7 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -531,7 +534,7 @@ class Models_Entity {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
 
-		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+		if (!$this->validateQuery()) {
 			return false;
 		}
 		if (isset($this->config['collection_subset_query'])) {
@@ -551,6 +554,19 @@ class Models_Entity {
 
 		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
+		}
+		$this->fixEntityFields($this->before);
+		return true;
+	}
+	
+	/**
+	 * validates that the query is legitimate
+	 * 
+	 * @return boolean
+	 */
+	protected function validateQuery() {
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
+			return false;
 		}
 		return true;
 	}
@@ -578,6 +594,7 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -595,8 +612,9 @@ class Models_Entity {
 		if (isset($this->update['from'])) { // default is move from
 			return $this->moveEntry('from');
 		}
-
-		return $this->moveEntry('to');
+		$ret = $this->moveEntry('to');
+		$this->fixEntityFields($this->before);
+		return $ret;
 	}
 
 	public function reopen() {
@@ -624,6 +642,7 @@ class Models_Entity {
 		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -1049,6 +1068,10 @@ class Models_Entity {
 		}
 		$sort = array('_id' => -1);
 		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
+	}
+	
+	protected function fixEntityFields($entity) {
+		return;
 	}
 
 }

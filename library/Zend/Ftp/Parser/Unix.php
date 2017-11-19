@@ -14,7 +14,7 @@ class Zend_Ftp_Parser_Unix implements Zend_Ftp_Parser_IParser {
 	 */
 	public function parseFileDirectoryListing($fileDirListing) {
 		$matches = array();
-		if (preg_match('/^([\-dl])([rwx\-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\d+)\s+(\w+\s+\d+\s+[\d\:]+)\s+(.*)$/', $fileDirListing, $matches)) {
+		if (preg_match('/^([\-dl])([rwx\-]+)\s+(\d+)\s+([\w\-]+)\s+(\w+)\s+(\d+)\s+(\w+\s+\d+\s+[\d\:]+)\s+(.*)$/', $fileDirListing, $matches)) {
 			list($trash, $type, $permissions, $unknown, $owner, $group, $bytes, $date, $name) = $matches;
 			$time_guess = date_create_from_format("M d Y", $date) ? date_create_from_format("M d Y", $date)->format("U") : false;
 			if(!$time_guess) {
@@ -33,6 +33,7 @@ class Zend_Ftp_Parser_Unix implements Zend_Ftp_Parser_IParser {
 				'group' => $group,
 			);
 		}
+		Billrun_Factory::log()->log($fileDirListing . " is an illegal description of a file", Zend_Log::ALERT);
 		return FALSE;
 	}
 

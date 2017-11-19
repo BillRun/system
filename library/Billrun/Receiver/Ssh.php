@@ -46,8 +46,10 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 
 			// Check if private key exist
 			if (isset($config['key'])) {
+				$directoryPath = 'files/keys/input_processors/';
+				$sharedDirectoryPath = Billrun_Util::getBillRunSharedFolderPath($directoryPath);
 				$auth = array(
-					'key' => $config['key'],
+					'key' => $sharedDirectoryPath . $config['key'],
 				);
 			} else {
 				$auth = array(
@@ -149,7 +151,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						// Delete from remote
 						if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-							$this->deleteRemote($fileData['file_name']);
+							$this->deleteRemote($ssh_path . $fileData['file_name']);
 						}
 					}
 
@@ -181,9 +183,9 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 	 * delete file from remote host
 	 * @param String $file_path
 	 */
-//	protected function deleteRemote($file_path) {
-//		$this->ssh->deleteFile($file_path);
-//	}
+	protected function deleteRemote($file_path) {
+		$this->ssh->deleteFile($file_path);
+	}
 
 	/**
 	 * check if the received file was correctly received
