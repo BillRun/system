@@ -13,6 +13,8 @@
  * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
+
+	use Billrun_Traits_Api_UserPermissions;
 	
 	/**
 	 * api call output. the output will be converted to json on view
@@ -59,6 +61,7 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
+		$this->allowed();
 		try {
 			// DB heartbeat
 			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
@@ -251,11 +254,18 @@ class ApiController extends Yaf_Controller_Abstract {
 	}
 	
 	public function localeAction() {
+		$this->allowed();
 		$this->forward('Locale', 'index');
 	}
         
-        public function currenciesAction() {
+    public function currenciesAction() {
+		$this->allowed();
 		$this->forward('currencies', 'index');
 	}
+
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
+	}
+
         
 }
