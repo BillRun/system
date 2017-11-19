@@ -239,3 +239,42 @@ if(lastConfig['lines']['fields'].length > idx) {
 db.config.insert(lastConfig);
 
 db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, background: true });
+
+
+// BRCD-1189: Prepriced field per usage type
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined') {
+		continue;
+	}
+	lastConfig['file_types'][i]['pricing'] = {};
+	if (typeof lastConfig['file_types'][i]['processor']['default_usaget'] !== 'undefined') {
+		var defaultUsage = lastConfig['file_types'][i]['processor']['default_usaget'];
+		if (typeof lastConfig['file_types'][i]['processor']['aprice_field'] === 'undefined') {
+			lastConfig['file_types'][i]['pricing'][defaultUsage] = [];
+			continue;
+		}
+		lastConfig['file_types'][i]['pricing'][defaultUsage] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field']};
+		if (typeof lastConfig['file_types'][i]['processor']['aprice_mult'] !== 'undefined') {
+			lastConfig['file_types'][i]['pricing'][defaultUsage] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field'], 'aprice_mult': lastConfig['file_types'][i]['processor']['aprice_mult']};
+		}
+	} else {
+		for (var j in lastConfig['file_types'][i]['processor']['usaget_mapping']) {
+			var usageType = lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['usaget'];
+			if (typeof lastConfig['file_types'][i]['processor']['aprice_field'] === 'undefined') {
+				lastConfig['file_types'][i]['pricing'][usageType] = [];
+				continue;
+			}
+			lastConfig['file_types'][i]['pricing'][usageType] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field']};
+			if (typeof lastConfig['file_types'][i]['processor']['aprice_mult'] !== 'undefined') {
+				lastConfig['file_types'][i]['pricing'][usageType] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field'], 'aprice_mult': lastConfig['file_types'][i]['processor']['aprice_mult']};
+			}
+		}
+	}
+	delete(lastConfig['file_types'][i]['processor']['aprice_field']);
+	delete(lastConfig['file_types'][i]['processor']['aprice_mult']);
+}
+
+db.config.insert(lastConfig);
+
