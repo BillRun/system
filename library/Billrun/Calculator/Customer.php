@@ -60,7 +60,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	/**
 	 * These mapping are required raw field that must be filled by the customer calculator.
 	 */
-	const REQUIRED_ROW_ENRICHMENT_MAPPING = array('sid'=>'sid', 'aid'=>'aid', 'plan'=> 'plan');
+	const REQUIRED_ROW_ENRICHMENT_MAPPING = array(array('sid'=>'sid'), array('aid'=>'aid'), array('plan'=> 'plan'));
 		
 	public function __construct($options = array()) {
 		parent::__construct($options);
