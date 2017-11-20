@@ -52,7 +52,8 @@ class BillrunController extends ApiController {
 		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
 			throw new Exception("Already Running");
 		}
-		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished' || Billrun_Billingcycle::getCycleStatus($billrunKey) == 'to_rerun') {
+		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey);
+		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
