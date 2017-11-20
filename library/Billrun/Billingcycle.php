@@ -159,7 +159,7 @@ class Billrun_Billingcycle {
 
 	/**
 	 * Preparing database for billing cycle rerun. 
-	 * @param $billingCycleCol - billing cycle collection
+	 *
 	 * @param string $billrunKey - Billrun key
 	 * 
 	 */
@@ -379,31 +379,35 @@ class Billrun_Billingcycle {
 		if (isset(self::$cycleStatuses[$billrunKey][$size])) {
 			return self::$cycleStatuses[$billrunKey][$size];
 		}
+		$cycleStatus = '';
 		$currentBillrunKey = self::getBillrunKeyByTimestamp();
-		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
+		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
 		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
 		$cycleRunning = self::isCycleRunning($billrunKey, $size);
 		
 		$cycleStatus = '';
 		if ($billrunKey == $currentBillrunKey) {
 			$cycleStatus = 'current';
-		}
-		else if ($billrunKey > $currentBillrunKey) {
+		} else if ($billrunKey > $currentBillrunKey) {
 			$cycleStatus = 'future';
 		}
-		else if ($billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
+		$cycleToRerun = self::isToRerun($billrunKey);
+		if (empty($cycleStatus) && $cycleToRerun) {
+			$cycleStatus = 'to_rerun';
+		}
+		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
+		$cycleRunning = self::isCycleRunning($billrunKey, $size);
+		if (empty($cycleStatus) && $billrunKey < $currentBillrunKey && !$cycleEnded && !$cycleRunning) {
 			$cycleStatus = 'to_run';
-		} 
-		
-		else if ($cycleRunning) {
+		}		
+		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		
-		else if (!$cycleConfirmed && $cycleEnded) {
+		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
-		
-		else if ($cycleEnded && $cycleConfirmed) {
+		if (empty($cycleStatus) && $cycleEnded && $cycleConfirmed) {
 			$cycleStatus = 'confirmed';
 		}
 		self::$cycleStatuses[$billrunKey][$size] = $cycleStatus;
@@ -494,6 +498,30 @@ class Billrun_Billingcycle {
 		$confirmedInvoices = $billrunColl->find($query, $fields);
 		$aids = array_column(iterator_to_array($confirmedInvoices),'aid');
 		return $aids;
+	}
+	
+	/**
+	 * True if finished cycle was reseted.
+	 * @param string $billrunKey - Billrun key
+	 * 
+	 * @return bool - True if finished cycle was reseted.
+	 * 
+	 */
+	public static function isToRerun($billrunKey) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$billingCycleCol = self::getBillingCycleColl();
+		$query = array(
+			'billrun_key' => $billrunKey
+		);
+		
+		$billrunDoc = $billrunColl->query($query)->count();
+		$cycleDoc = $billingCycleCol->query($query)->count();
+		
+		
+		if ($billrunDoc > 0 && $cycleDoc <= 0) {
+			return true;
+		}
+		return false;
 	}
 	
 	/**
