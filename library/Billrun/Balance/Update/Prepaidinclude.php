@@ -85,7 +85,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include value not defined in input');
 		}
 
-		$this->chargingValue = (int) $params['value'];
+		$this->chargingValue = (float) $params['value'];
 		$this->init();
 
 		// this should be done after init (load before state)
