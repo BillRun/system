@@ -161,6 +161,66 @@ db.config.insert(lastConfig);
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
 
+// BRCD-1140 - update plan includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.plans.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+	
+		db.plans.save(obj);
+	}
+);
+
+// BRCD-1140 - update service includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+		
+		db.services.save(obj);
+	}
+);
+
 // BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -277,7 +337,6 @@ for (var i in lastConfig['file_types']) {
 }
 
 db.config.insert(lastConfig);
-
 // BRCD-441 -Add plugin support
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
