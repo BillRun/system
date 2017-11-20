@@ -81,16 +81,22 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if ($computedType === 'regex') {
 			return $firstVal;
 		}
+		$operator = $this->params['computed']['operator'];
 		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
-		$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
-		$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
+		if ($operator === '$regex') { // in case of hard coded value
+			$secondVal = $secondValKey;
+		} else {
+			$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
+			$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
+		}
+		
 		$data = array('first_val' => $firstVal);
 		$query = array(
 			'first_val' => array(
-				$this->params['computed']['operator'] => $secondVal,
+				$operator => $secondVal,
 			),
 		);
-		
+
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
 		return $this->getComputedValueResult($row, $res);
 	}
