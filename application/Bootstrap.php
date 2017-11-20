@@ -28,22 +28,15 @@ class Bootstrap extends Yaf_Bootstrap_Abstract {
 		/* register a billrun plugin system from config */
 		$config = Yaf_Application::app()->getConfig();
 		
-		$configColl = Billrun_Factory::db()->configCollection();
-		if ($configColl) {
-			$dbCursor = $configColl->query()
-				->cursor()->setReadPreference('RP_PRIMARY')
-				->sort(array('_id' => -1))
-				->limit(1)
-				->current();
-			if (!$dbCursor->isEmpty()) {
-				$dbConfig = $dbCursor->getRawData();
-			}
+		if (isset($config->plugins)) {
+			$plugins = $config->plugins->toArray();
 		}
-		if (isset($dbConfig['plugins'])) {
-			if (!is_array($dbConfig['plugins'])) {
-				$dbConfig['plugins']->toArray();
-			}
-			$plugins = $dbConfig['plugins'];
+		$definedPlugins = Billrun_Factory::config()->getConfigValue('plugins');
+		if (isset($definedPlugins) && is_array($definedPlugins)) {
+			$allPlugins = array_merge($definedPlugins, $plugins);
+			$plugins = array_unique($allPlugins);
+		}
+		if (isset($plugins)) {
 			$dispatcher = Billrun_Dispatcher::getInstance();
 
 			foreach ($plugins as $plugin) {
