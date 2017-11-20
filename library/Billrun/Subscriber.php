@@ -148,6 +148,10 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 		}
 		return null;
 	}
+	
+	public function getData() {
+		return $this->data;
+	}
 
 	/**
 	 * Return true if the subscriber has no data.

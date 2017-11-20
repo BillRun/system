@@ -85,7 +85,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include value not defined in input');
 		}
 
-		$this->chargingValue = (int) $params['value'];
+		$this->chargingValue = (float) $params['value'];
 		$this->init();
 
 		// this should be done after init (load before state)
@@ -324,6 +324,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 	 * create row to track the balance update
 	 */
 	protected function createBillingLines() {
+		Billrun_Factory::dispatcher()->trigger('beforeBalanceUpdateCreateBillingLine', array($this));
 		$row = array(
 			'source' => 'billapi',
 			'type' => 'balance',
@@ -346,6 +347,7 @@ class Billrun_Balance_Update_Prepaidinclude extends Billrun_Balance_Update_Abstr
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
 		Billrun_Factory::db()->linesCollection()->insert($row);
+		Billrun_Factory::dispatcher()->trigger('afterBalanceUpdateCreateBillingLine', array($row, $this));
 		return $row;
 	}
 
