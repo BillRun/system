@@ -39,7 +39,7 @@ class UploadedFileAction extends ApiAction {
 			if (!file_exists($sharedDirectoryPath)) {
 			   mkdir($sharedDirectoryPath, 0777, true);
 			}
-			$targetPath = $sharedDirectoryPath . $fileType;
+			$targetPath = $sharedDirectoryPath . $fileType . '_'. time();
 			if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetPath)) {
 				chmod($targetPath, 0440);
 				$result = 1;
