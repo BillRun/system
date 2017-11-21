@@ -381,11 +381,6 @@ class Billrun_Billingcycle {
 		}
 		$cycleStatus = '';
 		$currentBillrunKey = self::getBillrunKeyByTimestamp();
-		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
-		$cycleEnded = self::hasCycleEnded($billrunKey, $size);
-		$cycleRunning = self::isCycleRunning($billrunKey, $size);
-		
-		$cycleStatus = '';
 		if ($billrunKey == $currentBillrunKey) {
 			$cycleStatus = 'current';
 		} else if ($billrunKey > $currentBillrunKey) {
@@ -403,7 +398,7 @@ class Billrun_Billingcycle {
 		if (empty($cycleStatus) && $cycleRunning) {
 			$cycleStatus = 'running';
 		}
-		$cycleConfirmed = self::isCycleConfirmed($billrunKey);
+		$cycleConfirmed = !empty(self::getConfirmedCycles(array($billrunKey)));
 		if (empty($cycleStatus) && !$cycleConfirmed && $cycleEnded) {
 			$cycleStatus = 'finished';
 		}
