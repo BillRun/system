@@ -39,7 +39,8 @@ class UploadedFileAction extends ApiAction {
 			if (!file_exists($sharedDirectoryPath)) {
 			   mkdir($sharedDirectoryPath, 0777, true);
 			}
-			$targetPath = $sharedDirectoryPath . $fileType . '_'. time();
+			$time = time();
+			$targetPath = $sharedDirectoryPath . $fileType . '_'. $time;
 			if (@move_uploaded_file($_FILES['file']['tmp_name'], $targetPath)) {
 				chmod($targetPath, 0440);
 				$result = 1;
@@ -49,7 +50,7 @@ class UploadedFileAction extends ApiAction {
 		$output = array(
 			'status' => $result ? 1 : 0,
 			'desc' => $result ? 'success' : 'error',
-			'details' => $result ? array('message' => $message, 'path' => $fileType) : $message,
+			'details' => $result ? array('message' => $message, 'path' => $fileType . '_'. $time) : $message,
 		);
 		$this->getController()->setOutput(array($output));
 	}
