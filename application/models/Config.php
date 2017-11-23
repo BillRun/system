@@ -1273,7 +1273,7 @@ class ConfigModel {
 			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
 				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
 			}
-			else if (empty($processorSettings['time_field'])) {
+			else if (empty($processorSettings['time_field']) && !empty($processorSettings['time_format'])) {
 				throw new Exception('Please select time field');
 			}
 			// TODO validate date format
