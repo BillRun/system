@@ -20,11 +20,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^000$/";
 
 	protected function __construct() {
-		if (Billrun_Factory::config()->isProd()) {
-			// TODO: define 'live' url for payment gateway.
-		} else {  // test/dev environment
-			$this->EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
-		}
+		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
 
@@ -164,7 +160,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "terminal_id", "mid");
+		$params = array("user", "password", "terminal_id", "mid", "endpoint_url");
 		return $this->rearrangeParametres($params);
 	}
 
