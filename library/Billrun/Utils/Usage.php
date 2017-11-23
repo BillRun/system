@@ -21,6 +21,12 @@ class Billrun_Utils_Usage {
 				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
 				$entityQueryData['sort'] = array('from' => -1);
 				break;
+			case 'account' :
+				$entityQueryData['collection'] = 'subscribers';
+				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['sort'] = array('from' => -1);
+				break;			
+			
 			case 'plan' :
 				$entityQueryData['collection'] = 'plans';
 				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));

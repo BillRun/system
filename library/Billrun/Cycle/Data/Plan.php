@@ -31,7 +31,7 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 		$this->cycle = $options['cycle'];
 		$this->start = Billrun_Util::getFieldVal($options['start'], $this->start);
 		$this->end = Billrun_Util::getFieldVal($options['end'], $this->end);
-		$this->foreignFields = $this->getForeignFields(array('plan' => $options));
+		$this->foreignFields = $this->getForeignFields(array('plan' => $options), $this->stumpLine, TRUE);
 	}
 
 	protected function getCharges($options) {

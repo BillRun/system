@@ -22,9 +22,9 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
 		$this->quantity = Billrun_Util::getFieldVal($options['quantity'],1);
-		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);
-		$this->foreignFields = $this->getForeignFields(array('service' => $options));
+		$this->planIncluded = Billrun_Util::getFieldVal($options['included'], FALSE);		
 		$this->constructOptions($options);
+		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine, TRUE);
 	}
 	
 	/**
