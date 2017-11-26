@@ -17,11 +17,26 @@ class Billrun_Utils_Usage {
 		$cache = Billrun_Factory::cache();
 		switch ($entityType) {
 			case 'subscriber' :
+				if(empty($row['sid'])) {
+					return null;
+				}
 				$entityQueryData['collection'] = 'subscribers';
 				$entityQueryData['query'] = array_merge(array('sid' => $row['sid']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
 				$entityQueryData['sort'] = array('from' => -1);
 				break;
+			case 'account' :
+				if(empty($row['aid'])) {
+					return null;
+				}
+				$entityQueryData['collection'] = 'subscribers';
+				$entityQueryData['query'] = array_merge(array('aid' => $row['aid'],'type' => 'account' ), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
+				$entityQueryData['sort'] = array('from' => -1);
+				break;			
+			
 			case 'plan' :
+				if(empty($row['plan'])) {
+					return null;
+				}
 				$entityQueryData['collection'] = 'plans';
 				$entityQueryData['query'] = array_merge(array('name' => $row['plan']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
 				$entityQueryData['sort'] = array('from' => -1);
@@ -31,6 +46,9 @@ class Billrun_Utils_Usage {
 //				TODO find what to do with multiple possible values
 //				break;
 			case 'product' :
+				if(empty($row['arate'])) {
+					return null;
+				}
 				$entityQueryData['collection'] = 'rates';
 				$entityQueryData['query'] = array_merge(array('_id' => $row['arate']['$id']), Billrun_Utils_Mongo::getDateBoundQuery($row['urt']->sec));
 				break;
