@@ -101,7 +101,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 			if (isset($xmlObj->response->doDeal->mpiHostedPageUrl)) {
 
-				$this->redirectUrl = $xmlObj->response->doDeal->mpiHostedPageUrl;
+				$this->redirectUrl = (string)$xmlObj->response->doDeal->mpiHostedPageUrl;
 			} else {
 				Billrun_Factory::log("Error: " . 'Error Code: ' . $xmlObj->response->result .
 					'Message: ' . $xmlObj->response->message .
