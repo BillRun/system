@@ -388,7 +388,7 @@ abstract class Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			if (($fourDigits = $this->getResponseDetails($result)) === FALSE) {
+			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
 			}
@@ -398,7 +398,7 @@ abstract class Billrun_PaymentGateway {
 			throw new Exception('Too much time passed');
 		}
 		$this->savePaymentGateway();
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $fourDigits);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits']);
 	}
 
 	/**
