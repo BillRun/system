@@ -151,7 +151,7 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 						// Delete from remote
 						if (isset($config['delete_received']) && $config['delete_received']) {
 							Billrun_Factory::log()->log("SSH: Deleting file {$file} from remote host ", Zend_Log::INFO);
-							$this->deleteRemote($ssh_path . $fileData['file_name']);
+							$this->deleteRemote($ssh_path . '/' . $fileData['file_name']);
 						}
 					}
 
