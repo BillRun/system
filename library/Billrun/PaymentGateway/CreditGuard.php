@@ -41,7 +41,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
 		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
-		$addFailPage = $failPage ? '<cancelUrl>' . $failPage  . '</cancelUrl>' : '';
+		$addFailPage = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
 		return $post_array = array(
 			'user' => $credentials['user'],
