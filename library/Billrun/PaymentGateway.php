@@ -159,9 +159,9 @@ abstract class Billrun_PaymentGateway {
 		unset($accountQuery['tenant_return_url']);
 		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
 		$this->updateReturnUrlOnEror($tenantReturnUrl);
-		$okPage = $data['iframe'] ? $data['ok_page'] : $this->getOkPage($request);
-		$failPage = $data['iframe'] ? $data['fail_page'] : false;
-		if ($data['iframe'] && (is_null($okPage) || is_null($failPage))) {
+		$okPage = (isset($data['iframe']) && $data['iframe']) ? $data['ok_page'] : $this->getOkPage($request);
+		$failPage = (isset($data['iframe']) && $data['iframe']) ? $data['fail_page'] : false;
+		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
 			throw new Exception("Missing ok/fail pages");
 		}
 		if ($this->needRequestForToken()){
@@ -177,7 +177,7 @@ abstract class Billrun_PaymentGateway {
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
-			if ($data['iframe']) {
+			if (isset($data['iframe']) && $data['iframe']) {
 				return array('content'=> $this->redirectUrl, 'content_type' => 'url');
 			}	
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
@@ -388,7 +388,7 @@ abstract class Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			if ($this->getResponseDetails($result) === FALSE) {
+			if (($fourDigits = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
 			}
@@ -398,7 +398,7 @@ abstract class Billrun_PaymentGateway {
 			throw new Exception('Too much time passed');
 		}
 		$this->savePaymentGateway();
-		return $tenantUrl;
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $fourDigits);
 	}
 
 	/**

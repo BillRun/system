@@ -141,8 +141,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
+			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
+			$fourDigits = substr($cardNum, -4);
 
-			return true;
+			return $fourDigits;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}

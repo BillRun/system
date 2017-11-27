@@ -65,6 +65,12 @@ class PaymentGatewaysController extends ApiController {
 		if (isset($requestData['return_url'])) {
 			$requestData['return_url'] = urlencode($requestData['return_url']);
 		}
+		if (isset($requestData['ok_page'])) {
+			$requestData['ok_page'] = urlencode($requestData['ok_page']);
+		}
+		if (isset($requestData['fail_page'])) {
+			$requestData['fail_page'] = urlencode($requestData['fail_page']);
+		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $requestData);
 		} else {
@@ -191,7 +197,8 @@ class PaymentGatewaysController extends ApiController {
 				$returnUrl = $handleResponse;
 			} else {
 				$additionalParams = $paymentGateway->addAdditionalParameters($request);
-				$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$res = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$returnUrl = $res['tenantUrl'];
 			}
 		} catch (Exception $e) {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
@@ -201,6 +208,7 @@ class PaymentGatewaysController extends ApiController {
 			$output = array(
 				'status' => 1,
 				'desc' => 'success',
+				'details' => array('credit_card' => $res['creditCard']),
 			);
 			$this->setOutput(array($output));
 		} else {
