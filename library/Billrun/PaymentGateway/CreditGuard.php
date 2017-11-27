@@ -31,7 +31,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->transactionId = $str_response['txId'];
 	}
 
-	protected function buildPostArray($aid, $returnUrl, $okPage) {
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
 		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
 		$this->conf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
@@ -41,6 +41,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
 		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$addFailPage = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -53,7 +54,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <dateTime></dateTime>
 								 <command>doDeal</command>
 								 <doDeal>
-										 <successUrl>' . $this->conf['ok_page'] . '</successUrl>
+										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
+										  '. $addFailPage  .'
 										  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
@@ -139,8 +141,11 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
-
-			return true;
+			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
+			$fourDigits = substr($cardNum, -4);
+			$retParams['four_digits'] = $fourDigits;
+			
+			return $retParams;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}

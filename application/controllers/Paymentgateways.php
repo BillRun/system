@@ -65,6 +65,12 @@ class PaymentGatewaysController extends ApiController {
 		if (isset($requestData['return_url'])) {
 			$requestData['return_url'] = urlencode($requestData['return_url']);
 		}
+		if (isset($requestData['ok_page'])) {
+			$requestData['ok_page'] = urlencode($requestData['ok_page']);
+		}
+		if (isset($requestData['fail_page'])) {
+			$requestData['fail_page'] = urlencode($requestData['fail_page']);
+		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $requestData);
 		} else {
@@ -103,9 +109,18 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $iframe);
+			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $data);
 		} catch (Exception $e) {
-			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			if ($iframe) {
+				$output = array(
+					'status' => 0,
+					'details' =>  array('message' => $e->getMessage()),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
+			} else {
+				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			}
 		}
 		if ($result['content_type'] == 'url') {
 			if ($iframe) {
@@ -116,7 +131,6 @@ class PaymentGatewaysController extends ApiController {
 				);
 				$this->getView()->outputMethod = array('Zend_Json', 'encode');
 				$this->setOutput(array($output));
-		
 			} else {
 				$this->getView()->output = $result['content'];
 				$this->getView()->outputMethod = 'header';
@@ -183,7 +197,8 @@ class PaymentGatewaysController extends ApiController {
 				$returnUrl = $handleResponse;
 			} else {
 				$additionalParams = $paymentGateway->addAdditionalParameters($request);
-				$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$res = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$returnUrl = $res['tenantUrl'];
 			}
 		} catch (Exception $e) {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
@@ -193,6 +208,7 @@ class PaymentGatewaysController extends ApiController {
 			$output = array(
 				'status' => 1,
 				'desc' => 'success',
+				'details' => array('credit_card' => $res['creditCard']),
 			);
 			$this->setOutput(array($output));
 		} else {
