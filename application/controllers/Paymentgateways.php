@@ -103,9 +103,18 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $iframe);
+			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $data);
 		} catch (Exception $e) {
-			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			if ($iframe) {
+				$output = array(
+					'status' => 0,
+					'details' =>  array('message' => $e->getMessage()),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
+			} else {
+				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			}
 		}
 		if ($result['content_type'] == 'url') {
 			if ($iframe) {
@@ -116,7 +125,6 @@ class PaymentGatewaysController extends ApiController {
 				);
 				$this->getView()->outputMethod = array('Zend_Json', 'encode');
 				$this->setOutput(array($output));
-		
 			} else {
 				$this->getView()->output = $result['content'];
 				$this->getView()->outputMethod = 'header';
