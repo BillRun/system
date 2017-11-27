@@ -153,7 +153,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param Int $timestamp - Unix timestamp
 	 * @return Int - Account id
 	 */
-	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
+	public function redirectForToken($aid, $accountQuery, $timestamp, $request, $iframe) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
@@ -173,6 +173,9 @@ abstract class Billrun_PaymentGateway {
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
+			if ($iframe) {
+				return array('content'=> $this->redirectUrl, 'content_type' => 'url');
+			}	
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
 			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);

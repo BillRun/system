@@ -431,7 +431,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
 		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account'));
-		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ),$rowData, $foreignEntitiesToAutoload));
+		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload));
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;

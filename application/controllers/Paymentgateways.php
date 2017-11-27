@@ -88,6 +88,7 @@ class PaymentGatewaysController extends ApiController {
 
 		$name = $data['name'];
 		$aid = $data['aid'];
+		$iframe = (isset($data['iframe']) && $data['iframe']) ? true : false;
 
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
@@ -102,19 +103,19 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $iframe);
 		} catch (Exception $e) {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
 		}
 		if ($result['content_type'] == 'url') {
-			if (isset($data['iframe']) && $data['iframe']) {
-			$output = array(
-				'status' => 1,
-				'desc' => 'success',
-				'details' => empty($result) ? array() : array('url' => $result['url']),
-			);
-			$this->getView()->outputMethod = array('Zend_Json', 'encode');
-			$this->setOutput(array($output));
+			if ($iframe) {
+				$output = array(
+					'status' => 1,
+					'desc' => 'success',
+					'details' => empty($result) ? array() : array('url' => $result['content']),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
 		
 			} else {
 				$this->getView()->output = $result['content'];
