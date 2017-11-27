@@ -398,7 +398,7 @@ class ConfigModel {
 				}
 			}
 			
-			if ($field['unique']) {
+			if (isset($field['unique']) && $field['unique']) {
 				$field['mandatory'] = true;
 			}
 
