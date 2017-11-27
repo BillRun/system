@@ -44,7 +44,8 @@ trait Billrun_Traits_ForeignFields  {
 				Billrun_Factory::log("Foreign field configuration not mapped to foreign sub-field",Zend_Log::WARN);
 				continue;
 			}
-			if($autoLoadEntities && empty($foreignEntities[$fieldConf['foreign']['entity']])) {
+			if( !empty($autoLoadEntities) && empty($foreignEntities[$fieldConf['foreign']['entity']]) 
+				&& (!is_array($autoLoadEntities) || in_array($fieldConf['foreign']['entity'],$autoLoadEntities)) ) {
 				$foreignEntities[$fieldConf['foreign']['entity']] = Billrun_Utils_Usage::retriveEntityFromUsage($foreignFieldsData, $fieldConf['foreign']['entity']);
 			}
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
