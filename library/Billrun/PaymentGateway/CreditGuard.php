@@ -141,6 +141,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
+			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $fourDigits;
@@ -160,7 +161,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new MongoDate(time()),
+				'auth_number' => (string) $this->saveDetails['auth_number']
 			)
 		);
 	}
