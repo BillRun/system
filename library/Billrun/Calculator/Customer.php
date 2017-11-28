@@ -481,8 +481,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	
 	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
-		foreach($services as $service) {
-			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+		foreach (Billrun_Util::getFieldVal($services, array()) as $service) {
+			if ($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
 				$retServices[] = $service['name'];
 			}
 		}
@@ -502,7 +502,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
-		foreach($services as $service) {
+		foreach(Billrun_Util::getFieldVal($services, array()) as $service) {
 			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
 				$retServices[] = array(
 					'name' => $service['name'],
