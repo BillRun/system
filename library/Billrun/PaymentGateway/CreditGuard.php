@@ -144,7 +144,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $fourDigits;
-			
+			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
+
 			return $retParams;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
