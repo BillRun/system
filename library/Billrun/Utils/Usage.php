@@ -58,8 +58,8 @@ class Billrun_Utils_Usage {
 				return null;
 		}
 		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
-		if (!empty($cache) && Billrun_Factory::cache()->exists($cachHash)) {
-			return Billrun_Factory::cache()->get($cachHash);
+		if (!empty($cache) && ($cachedValue = Billrun_Factory::cache()->get($cachHash)) ) {
+			return $cachedValue;
 		}
 
 		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
