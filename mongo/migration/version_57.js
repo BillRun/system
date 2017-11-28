@@ -305,7 +305,7 @@ db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
-	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined') {
+	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined' || typeof lastConfig['file_types'][i]['processor'] === 'undefined') {
 		continue;
 	}
 	lastConfig['file_types'][i]['pricing'] = {};
