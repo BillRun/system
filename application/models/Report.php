@@ -119,9 +119,16 @@ class ReportModel {
 				if(!empty($lookup)) {
 					$aggregate[] = array('$lookup' => $lookup);
 				}
-				// filter by account type beacuse subscribers have AID field too 
+				// filter by account type beacuse subscribers collection is mixed 
 				if($join_entity === 'customer' ) {
 					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
+				}
+				// filter by subscriber type beacuse subscribers collection is mixed 
+				if($join_entity === 'subscription' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'subscriber');
 					if(!empty($filterByType)) {
 						$aggregate[] = array('$addFields' => $filterByType);
 					}
@@ -169,7 +176,7 @@ class ReportModel {
 		if($limit !== -1) {
 			$aggregate[] = array('$limit' => $limit);
 		}
-		
+		error_log(__FILE__ . '(' . __FUNCTION__ . ":" . __LINE__ . ") " . "\n" . "Data" . " :\n" . print_r(json_encode($aggregate), 1) . "\n");
 		$results = $collection->aggregate($aggregate);
 		$rows = [];
 		$formatters = $this->getFieldFormatters();
