@@ -152,7 +152,7 @@ class Billrun_Service {
 	 */
 	public function getRateGroups($rate, $usageType) {
 		$groups = array();
-		if (is_array($this->data['include']['groups'])) {
+		if (isset($this->data['include']['groups']) && is_array($this->data['include']['groups'])) {
 			foreach ($this->data['include']['groups'] as $groupName => $groupIncludes) {
 				if ((array_key_exists($usageType, $groupIncludes) || array_key_exists('cost', $groupIncludes) || isset($groupIncludes['usage_types'][$usageType])) && !empty($groupIncludes['rates']) && in_array($rate['key'], $groupIncludes['rates'])) {
 					$groups[] = $groupName;
@@ -417,8 +417,7 @@ class Billrun_Service {
 			return $this->data['include']['groups'][$group][$usaget];
 		}
 		$value = $this->data['include']['groups'][$group]['value'];
-		$unit = $this->data['include']['groups'][$group]['usage_types'][$usaget]['unit'];
-		return Billrun_Utils_Units::convertVolumeUnits($value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value, $usaget, $unit, true);
+		return $value == Billrun_Service::UNLIMITED_VALUE ? PHP_INT_MAX: $value;
 	}
 	
 	/**

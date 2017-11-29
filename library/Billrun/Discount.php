@@ -14,6 +14,8 @@
  */
 abstract class Billrun_Discount {
 
+	use Billrun_Traits_ForeignFields;
+	
 	/**
 	 *
 	 * @var array
@@ -60,8 +62,12 @@ abstract class Billrun_Discount {
 				$modifier = round($modifier - $lineModifier, 3);
 				$creationTime = (!empty($accountInvoice) ? static::getBillrunDate($accountInvoice->getBillrunKey()) : time() );
 
-				$discountLines[] = $this->generateCDR($lineModifier, $creationTime, $orgModifier, 
+				$discountLine = $this->generateCDR($lineModifier, $creationTime, $orgModifier, 
 													  $eligibleRow, $accountInvoice->getBillrunKey(), $quantity);
+				//Add foreign fields to the discount line
+				$discountLine = $this->addForeginFields($discountLine, $eligibleData, $accountInvoice);
+				
+				$discountLines[] = $discountLine;
 			}
 		}
 		//Apply the minimum limit of the discount
@@ -118,7 +124,6 @@ abstract class Billrun_Discount {
 			$limit = 0 < $this->discountData['limit'] ? -$this->discountData['limit'] : $this->discountData['limit'];
 			$discountLine['limit'] = $limit * $lineModifier;
 		}
-		
 
 		$discountLine['process_time'] = new MongoDate();
 		if (!empty($accountInvoice)) {
@@ -126,6 +131,11 @@ abstract class Billrun_Discount {
 		}
 
 		return $discountLine;
+	}
+	
+	protected function addForeginFields($discountLine,$eligibleData, $accountInvoice) {
+		$addedFields = $this->getForeignFields(array('billrun'=> $accountInvoice), $discountLine, true);
+		return array_merge($discountLine,$addedFields);
 	}
 
 	/**

@@ -25,7 +25,7 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 		$this->transactionId = $this->billrunToken;
 	}
 
-	protected function buildPostArray($aid, $returnUrl, $okPage) {
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		return false;
 	}
 

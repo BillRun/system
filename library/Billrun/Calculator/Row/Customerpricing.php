@@ -96,6 +96,11 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	 * @var type 
 	 */
 	protected $config = null;
+	
+	/**
+	 * This holds the services used when pricing the row.
+	 */
+	protected $servicesUsed = array();
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
@@ -104,6 +109,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			'time' => $this->row['urt']->sec,
 		);
 		$this->plan = Billrun_Factory::plan($planSettings);
+		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
@@ -127,9 +133,10 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		//TODO  change this to be configurable.
 		$pricingData = array();
 		$volume = $this->usagev;
+		$prepriced = isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-		if (in_array($this->row['type'], $typesWithoutBalance)) {
-			if (isset($this->row['prepriced']) && $this->row['prepriced']) {
+		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
+			if ($prepriced) {
 				$charges = (float) $this->row[$this->pricingField];
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
@@ -297,7 +304,6 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this, &$pricingData, $this));
 			return $pricingData;
 		}
-
 		$balance_id = (string) $this->balance->getId();
 		if (!isset($pricingData['arategroups'][$balance_id]) && 
 			((isset($pricingData['over_group']) && $pricingData['over_group']) || (isset($pricingData['out_group']) && $pricingData['out_group']))) {
@@ -621,6 +627,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 						'total' => $service->getGroupVolume($balanceType == 'cost' ? 'cost' : $usageType, $this->row['aid'], $serviceGroup),
 						'balance' => $balance,
 					);
+					$this->servicesUsed[] = $service;
 					return array($keyRequired => 0);
 				}
 				$arategroups[(string) $balance->getId()][] = array(
@@ -639,6 +646,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				} else {
 					$valueRequired -= $value;
 				}
+				$this->servicesUsed[] = $service;
 			}
 		}
 		return array($keyRequired => $valueRequired); // volume/cost left to charge
@@ -957,4 +965,18 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		
 	}
 
+	
+	
+	//=======================================
+	public function getBalance() {
+		return $this->balance;
+	}
+	
+	public function getPlan() {
+		return $this->plan;
+	}
+	
+	public function getUsedServices() {
+		return $this->servicesUsed;
+	}
 }

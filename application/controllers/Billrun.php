@@ -52,7 +52,8 @@ class BillrunController extends ApiController {
 		if (Billrun_Billingcycle::isCycleRunning($billrunKey, $this->size)) {
 			throw new Exception("Already Running");
 		}
-		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+		$cycleStatus = Billrun_Billingcycle::getCycleStatus($billrunKey);
+		if ($cycleStatus == 'finished' || $cycleStatus == 'to_rerun') {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
@@ -87,7 +88,7 @@ class BillrunController extends ApiController {
 			throw new Exception("Illgal account id's");
 		}
 		$status = Billrun_Billingcycle::getCycleStatus($billrunKey);
-		if (!in_array($status, array('to_run', 'finished'))) {
+		if (!in_array($status, array('to_run', 'finished', 'to_rerun'))) {
 			throw new Exception("Can't Run");
 		}
 		$customerAggregatorOptions = array(
@@ -357,6 +358,30 @@ class BillrunController extends ApiController {
 	
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
+	
+	/**
+	 * Resetting billing cycle by billrun key.
+	 * 
+	 */
+	public function resetCycleAction() {
+		$request = $this->getRequest();
+		$billrunKey = $request->get('stamp');
+		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
+			throw new Exception('Need to pass correct billrun key');
+		}
+		$success = false;
+		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			$success = true;
+		}
+
+		$output = array (
+			'status' => $success ? 1 : 0,
+			'desc' => $success ? 'success' : 'error',
+			'details' => array(),
+		);
+		$this->setOutput(array($output));
 	}
 
 }

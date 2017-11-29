@@ -33,7 +33,7 @@ class ConfigModel {
 	 * @var array
 	 */
 	protected $options;
-	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'receiver');
+	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
 	protected $ratingAlgorithms = array('match', 'longestPrefix');
         
 	/**
@@ -151,7 +151,7 @@ class ConfigModel {
  			throw new Exception('Unknown export_generator ' . $data['name']);
 		} else if ($category == 'template_token'){
 			$tokens = Billrun_Factory::templateTokens()->getTokens();
-			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category), $tokens);
+			$tokens = array_merge_recursive($this->_getFromConfig($currentConfig, $category, array()), $tokens);
 			return $tokens;
 		} else if ($category == 'minimum_entity_start_date'){
 			return Models_Entity::getMinimumUpdateDate();
@@ -398,7 +398,7 @@ class ConfigModel {
 				}
 			}
 			
-			if ($field['unique']) {
+			if (isset($field['unique']) && $field['unique']) {
 				$field['mandatory'] = true;
 			}
 
@@ -1012,17 +1012,20 @@ class ConfigModel {
 					$updatedFileSettings['customer_identification_fields'] = $this->validateCustomerIdentificationConfiguration($fileSettings['customer_identification_fields']);
 					if (isset($fileSettings['rate_calculators'])) {
 						$updatedFileSettings['rate_calculators'] = $this->validateRateCalculatorsConfiguration($fileSettings['rate_calculators'], $config);
-						if (isset($fileSettings['receiver'])) {
-							$updatedFileSettings['receiver'] = $this->validateReceiverConfiguration($fileSettings['receiver']);
-							$completeFileSettings = TRUE;
-						} else if (isset($fileSettings['realtime'], $fileSettings['response'])) {
-							$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
-							$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
-							$completeFileSettings = TRUE;
-						}
-						
-						if (isset($fileSettings['unify'])) {
-							$updatedFileSettings['unify'] = $fileSettings['unify'];
+						if (isset($fileSettings['pricing'])) {
+							$updatedFileSettings['pricing'] = $fileSettings['pricing'];
+							if (isset($fileSettings['receiver'])) {
+								$updatedFileSettings['receiver'] = $this->validateReceiverConfiguration($fileSettings['receiver']);
+								$completeFileSettings = TRUE;
+							} else if (isset($fileSettings['realtime'], $fileSettings['response'])) {
+								$updatedFileSettings['realtime'] = $this->validateRealtimeConfiguration($fileSettings['realtime']);
+								$updatedFileSettings['response'] = $this->validateResponseConfiguration($fileSettings['response']);
+								$completeFileSettings = TRUE;
+							}
+
+							if (isset($fileSettings['unify'])) {
+								$updatedFileSettings['unify'] = $fileSettings['unify'];
+							}
 						}
 					}
 				}
@@ -1206,7 +1209,7 @@ class ConfigModel {
 //			if ($uniqueFields != array_unique($uniqueFields)) {
 //				throw new Exception('Cannot use same field for different configurations');
 //			}
-			$billrunFields = array('type', 'usaget');
+			$billrunFields = array('type', 'usaget', 'file');
 			$customFields = array_merge($customFields, array_map(function($field) {
 				return 'uf.' . $field;
 			}, $customFields));
@@ -1275,6 +1278,9 @@ class ConfigModel {
 		if (isset($processorSettings['date_format'])) {
 			if (isset($processorSettings['time_field']) && !isset($processorSettings['time_format'])) {
 				throw new Exception('Missing processor time format (in case date format is set, and timedate are in separated fields)');
+			}
+			else if (empty($processorSettings['time_field']) && !empty($processorSettings['time_format'])) {
+				throw new Exception('Please select time field');
 			}
 			// TODO validate date format
 		}

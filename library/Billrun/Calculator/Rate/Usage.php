@@ -102,8 +102,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			'add_to_retail' => isset($rate['add_to_retail']) ? $rate['add_to_retail'] : false,
 			'rate' => $rate ? $rate->createRef() : $rate,
 		);
-	}
-		
+		}
+	
 	/**
 	 * make the calculation
 	 */
@@ -125,12 +125,12 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			}
 			
 			$rate = $this->getLineRate($row, $usaget, $type, $tariffCategory, $filters);
-			if (!$this->isRateLegitimate($rate)) {
-				return false;
-			}
+		if (!$this->isRateLegitimate($rate)) {
+			return false;
+		}
 
-			// TODO: Create the ref using the collection, not the entity object.
-			$rate->collection(Billrun_Factory::db()->ratesCollection());
+		// TODO: Create the ref using the collection, not the entity object.
+		$rate->collection(Billrun_Factory::db()->ratesCollection());		
 			$current = $row->getRawData();
 			$newData = array_merge($current, $this->getAddedValues($tariffCategory, $rate, $row));
 			if (!isset($newData['rates'])) {

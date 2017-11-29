@@ -68,7 +68,8 @@ class CliController extends Yaf_Controller_Abstract {
 				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
 				'clearcall' => 'Finds and inform about open calls without balance',
 				'collect' => 'Change collection state for accounts',
-				'run_collect_step' => 'Run action for accounts in collection'
+				'run_collect_step' => 'Run action for accounts in collection',
+				'notify' => 'notify events on cron'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);

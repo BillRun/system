@@ -22,6 +22,7 @@ class ReportModel {
 	
 	protected $config = null;
 	protected $report = null;
+	protected $cacheFormatStyle = [];
 	
 	/**
 	 *  Array of entity join map keys
@@ -118,9 +119,16 @@ class ReportModel {
 				if(!empty($lookup)) {
 					$aggregate[] = array('$lookup' => $lookup);
 				}
-				// filter by account type beacuse subscribers have AID field too 
+				// filter by account type beacuse subscribers collection is mixed 
 				if($join_entity === 'customer' ) {
 					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
+				}
+				// filter by subscriber type beacuse subscribers collection is mixed 
+				if($join_entity === 'subscription' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'subscriber');
 					if(!empty($filterByType)) {
 						$aggregate[] = array('$addFields' => $filterByType);
 					}
@@ -257,7 +265,34 @@ class ReportModel {
 	}
 	
 	protected function applyValueformat($value, $format) {
+		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$value])) {
+			return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+		}
 		switch ($format['op']) {
+			case 'date_override': {
+				if (!empty($value->sec) || is_numeric($value)) {
+					$styledValue = new MongoDate(strtotime("+{$format['value']}", $value->sec));
+				} elseif (is_string($value)){
+					$styledValue = new MongoDate(strtotime("{$value} {$format['value']}" ));
+				} else {
+					$styledValue = $value;
+				}
+				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				return $styledValue;
+			}
+			case 'billing_cycle': {
+				if (!Billrun_Util::isBillrunKey($value)) {
+					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
+					return $value;
+				} else if ($format['value'] === 'start') {
+					$styledValue = new MongoDate(Billrun_Billingcycle::getStartTime($value));
+					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+					return $styledValue;
+				}
+				$styledValue = new MongoDate(Billrun_Billingcycle::getEndTime($value));
+				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				return $styledValue;
+			}
 			case 'time_format': 
 			case 'datetime_format': 
 			case 'date_format': {
