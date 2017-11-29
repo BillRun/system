@@ -253,7 +253,7 @@ for (var field_key in fields) {
 }
 if(!found) {
 	fields.push({
-		"system":true,
+		"system":false,
 		"select_list":true,
 		"display":true,
 		"editable":true,
