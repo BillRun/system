@@ -280,7 +280,7 @@ class csiPlugin extends Billrun_Plugin_Base {
 		$addTax = $line['aprice'] * $addedTaxPercent;
 		
 		$line['tax_data']['total_amount'] += $addTax;
-		$line['tax_data']['total_rate'] = $line['tax_data']['total_amount'] / $line['aprice'];
+		$line['tax_data']['total_rate'] = empty($line['aprice']) ? 0 : $line['tax_data']['total_amount'] / $line['aprice'];
 		$line['tax_data']['taxes'][] = array( 'tax'=> $addedTaxPercent,
 											'amount' => $addTax ,
 											'type' => 'manual',

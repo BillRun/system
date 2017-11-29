@@ -20,11 +20,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected $completionCodes = "/^000$/";
 
 	protected function __construct() {
-		if (Billrun_Factory::config()->isProd()) {
-			// TODO: define 'live' url for payment gateway.
-		} else {  // test/dev environment
-			$this->EndpointUrl = "https://kupot1t.creditguard.co.il/xpo/Relay";
-		}
+		$this->EndpointUrl = $this->getGatewayCredentials()['endpoint_url'];
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 	}
 
@@ -35,7 +31,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$this->transactionId = $str_response['txId'];
 	}
 
-	protected function buildPostArray($aid, $returnUrl, $okPage) {
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
 		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
 		$this->conf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
@@ -45,6 +41,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$today = new MongoDate();
 		$account = $this->subscribers->query(array('aid' => (int) $aid, 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
 		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$addFailPage = $failPage ? '<errorUrl>' . $failPage  . '</errorUrl>' : '';
 
 		return $post_array = array(
 			'user' => $credentials['user'],
@@ -57,7 +54,8 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <dateTime></dateTime>
 								 <command>doDeal</command>
 								 <doDeal>
-										 <successUrl>' . $this->conf['ok_page'] . '</successUrl>
+										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
+										  '. $addFailPage  .'
 										  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
@@ -105,7 +103,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 			if (isset($xmlObj->response->doDeal->mpiHostedPageUrl)) {
 
-				$this->redirectUrl = $xmlObj->response->doDeal->mpiHostedPageUrl;
+				$this->redirectUrl = (string)$xmlObj->response->doDeal->mpiHostedPageUrl;
 			} else {
 				Billrun_Factory::log("Error: " . 'Error Code: ' . $xmlObj->response->result .
 					'Message: ' . $xmlObj->response->message .
@@ -143,8 +141,13 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['card_expiration'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 			$this->saveDetails['aid'] = (int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData1;
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
+			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
+			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
+			$fourDigits = substr($cardNum, -4);
+			$retParams['four_digits'] = $fourDigits;
+			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
 
-			return true;
+			return $retParams;
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
 		}
@@ -158,13 +161,14 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 				'card_expiration' => (string) $this->saveDetails['card_expiration'],
 				'personal_id' => (string) $this->saveDetails['personal_id'],
 				'transaction_exhausted' => true,
-				'generate_token_time' => new MongoDate(time())
+				'generate_token_time' => new MongoDate(time()),
+				'auth_number' => (string) $this->saveDetails['auth_number']
 			)
 		);
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "terminal_id", "mid");
+		$params = array("user", "password", "terminal_id", "mid", "endpoint_url");
 		return $this->rearrangeParametres($params);
 	}
 

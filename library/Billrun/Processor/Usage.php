@@ -42,18 +42,6 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $volumeSrc = array();
 	
 	/**
-	 * name of the field where the price of the line placed (in case it's pre-priced)
-	 * @var type string
-	 */
-	protected $apriceField = null;
-	
-	/**
-	 * constant to multiply the price received (in case of pre-priced)
-	 * @var type float
-	 */
-	protected $apriceMult = null;
-	
-	/**
 	 * the field's name where the date is located
 	 * @var type  string
 	 */
@@ -76,6 +64,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @var type string
 	 */
 	protected $timeFormat = null;
+	
+	/**
+	 * override price definitions
+	 * @var type float
+	 */
+	protected $prepricedMapping = null;
+	
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -106,14 +101,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
-		if (!empty($options['processor']['aprice_field'])){
-			$this->apriceField = $options['processor']['aprice_field'];
-			if (!empty($options['processor']['aprice_mult'])){
-				$this->apriceMult = $options['processor']['aprice_mult'];
-			}
-		}
-		
+
 		$this->dateField = $options['processor']['date_field'];
+		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings(static::$type, true)['pricing'];
+		
 	}
 
 	protected function processLines() {
@@ -153,9 +144,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		if ($this->isLinePrepriced()) {
+		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
-			$row['aprice'] = $this->getLineAprice($row['uf']);
+			$row['aprice'] = $this->getLineAprice($row['uf'], $row['usaget']);
 		}
 		$row['connection_type'] = isset($row['connection_type']) ? $row['connection_type'] : 'postpaid';
 		$row['stamp'] = md5(serialize($row));
@@ -273,8 +264,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * 
 	 * @return boolean
 	 */
-	protected function isLinePrepriced() {
-		return !empty($this->apriceField);
+	protected function isLinePrepriced($usaget) {
+		return !empty($this->prepricedMapping[$usaget]);
 	}
 
 	/**
@@ -283,17 +274,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @param type $userFields
 	 * @return aprice if the field found, false otherwise
 	 */
-	protected function getLineAprice($userFields) {
-		if (isset($userFields[$this->apriceField]) && is_numeric($userFields[$this->apriceField])) {
-			$aprice = $userFields[$this->apriceField];
-			if (!is_null($this->apriceMult) && is_numeric($this->apriceMult)) {
-				$aprice *= $this->apriceMult;
+	protected function getLineAprice($userFields, $usageType) {
+		$apriceField = isset($this->prepricedMapping[$usageType]['aprice_field']) ? $this->prepricedMapping[$usageType]['aprice_field'] : null;
+		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
+			$aprice = $userFields[$apriceField];
+			$apriceMult = isset($this->prepricedMapping[$usageType]['aprice_mult']) ? $this->prepricedMapping[$usageType]['aprice_mult'] : null;
+			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
+				$aprice *= $apriceMult;
 			}
 			return $aprice;
 		}
 		
-		Billrun_Factory::log('Price field "' . $this->apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
 		return false;
 	}
-
 }

@@ -65,6 +65,12 @@ class PaymentGatewaysController extends ApiController {
 		if (isset($requestData['return_url'])) {
 			$requestData['return_url'] = urlencode($requestData['return_url']);
 		}
+		if (isset($requestData['ok_page'])) {
+			$requestData['ok_page'] = urlencode($requestData['ok_page']);
+		}
+		if (isset($requestData['fail_page'])) {
+			$requestData['fail_page'] = urlencode($requestData['fail_page']);
+		}
 		if (!Billrun_Utils_Security::validateData($requestData)) {
 			return $this->setError("Failed to authenticate", $requestData);
 		} else {
@@ -88,6 +94,7 @@ class PaymentGatewaysController extends ApiController {
 
 		$name = $data['name'];
 		$aid = $data['aid'];
+		$iframe = (isset($data['iframe']) && $data['iframe']) ? true : false;
 
 		if (isset($data['return_url'])) {
 			$returnUrl = $data['return_url'];
@@ -102,13 +109,32 @@ class PaymentGatewaysController extends ApiController {
 		$accountQuery['tenant_return_url'] = $returnUrl;
 		$paymentGateway = Billrun_PaymentGateway::getInstance($name);
 		try {
-			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request);
+			$result = $paymentGateway->redirectForToken($aid, $accountQuery, $timestamp, $request, $data);
 		} catch (Exception $e) {
-			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			if ($iframe) {
+				$output = array(
+					'status' => 0,
+					'details' =>  array('message' => $e->getMessage()),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
+			} else {
+				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			}
 		}
 		if ($result['content_type'] == 'url') {
-			$this->getView()->output = $result['content'];
-			$this->getView()->outputMethod = 'header';
+			if ($iframe) {
+				$output = array(
+					'status' => 1,
+					'desc' => 'success',
+					'details' => empty($result) ? array() : array('url' => $result['content']),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
+			} else {
+				$this->getView()->output = $result['content'];
+				$this->getView()->outputMethod = 'header';
+			}
 		} else if ($result['content_type'] == 'html') {
 			$this->setOutput(array($result['content'], TRUE));
 		}
@@ -171,14 +197,25 @@ class PaymentGatewaysController extends ApiController {
 				$returnUrl = $handleResponse;
 			} else {
 				$additionalParams = $paymentGateway->addAdditionalParameters($request);
-				$returnUrl = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$res = $paymentGateway->saveTransactionDetails($transactionId, $additionalParams);
+				$returnUrl = $res['tenantUrl'];
 			}
 		} catch (Exception $e) {
 			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
 		}
-		Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
-		$this->getView()->outputMethod = 'header';
-		$this->getView()->output = "Location: " . $returnUrl;
+		$redirect = $request->get("redirect");
+		if (!is_null($redirect) && !$redirect) {
+			$output = array(
+				'status' => 1,
+				'desc' => 'success',
+				'details' => array('credit_card' => $res['creditCard'], 'expiration_date' => $res['expirationDate']),
+			);
+			$this->setOutput(array($output));
+		} else {
+			Billrun_Factory::log("Redirecting to: " . $returnUrl, Zend_Log::DEBUG);
+			$this->getView()->outputMethod = 'header';
+			$this->getView()->output = "Location: " . $returnUrl;
+		}
 	}
 
 	public function successAction() {
