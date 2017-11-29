@@ -86,6 +86,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+		$this->filterLines();
 		$this->prepareQueue();
 		Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this, true));
 

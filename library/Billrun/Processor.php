@@ -93,6 +93,12 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 	protected $config = null;
 	protected  $usage_type = null;
+	
+	/**
+	 * filters configuration by file type
+	 * @var array
+	 */
+	protected $filters = array();
 
 
 	/**
@@ -230,8 +236,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 				Billrun_Factory::log("Billrun_Processor: cannot parse " . $this->filePath, Zend_Log::ERR);
 				return FALSE;
 			}
-
+			
 			Billrun_Factory::dispatcher()->trigger('afterProcessorParsing', array($this));
+			$this->filterLines();
 			$this->prepareQueue();
 			Billrun_Factory::dispatcher()->trigger('beforeProcessorStore', array($this));
 
@@ -733,6 +740,96 @@ abstract class Billrun_Processor extends Billrun_Base {
 	 */
 	public function getAllLines() {
 		return $this->data['data'] + $this->doNotSaveLines;
+	}
+	
+	/**
+	 * ignore "garbage" line (by adding "skip_calc" attribute)
+	 * "garbage" lines are defined by "filters" configuration of input processor
+	 */
+	public function filterLines() {
+		$data = &$this->getData();
+		foreach ($data['data'] as &$row) {
+			$filters = $this->getFilters($row);
+			foreach ($filters as $filter) {
+				if ($this->isFilterConditionsMet($row, $filter)) {
+					$row['skip_calc'] = $this->getCalcsToSkip($filter);
+					continue 2;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * get filters relevant for a line (by file type)
+	 * 
+	 * @param array $row
+	 * @return array
+	 */
+	protected function getFilters($row) {
+		if (!isset($this->filters[$row['type']])) {
+			$config = Billrun_Factory::config()->getFileTypeSettings($row['type'], true);
+			$this->filters[$row['type']] = isset($config['filters']) ? $config['filters'] : array();
+		}
+		return $this->filters[$row['type']];
+	}
+	
+	/**
+	 * check if all conditions defined in a filter are met
+	 * 
+	 * @param array $row
+	 * @param array $filter - includes "conditions" attribute
+	 * @return boolean
+	 */
+	protected function isFilterConditionsMet($row, $filter) {
+		if (!isset($filter['conditions']) || !isset($filter['skip_calc'])) {
+			return false;
+		}
+		foreach ($filter['conditions'] as $condition) {
+			if (!$this->isConditionMet($row, $condition)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * check if a specific condition is met
+	 * 
+	 * @param array $row
+	 * @param array $condition - includes the following attributes: "field_name", "op", "value"
+	 * @return boolean
+	 */
+	protected function isConditionMet($row, $condition) {
+		$data = array('first_val' => Billrun_Util::getIn($row, $condition['field_name']));
+		$query = array(
+			'first_val' => array(
+				$condition['op'] => $condition['value'],
+			),
+		);
+		
+		return Billrun_Utils_Arrayquery_Query::exists($data, $query);
+	}
+	
+	/**
+	 * get calculators to skip according to the filter received
+	 * 
+	 * @param array $filter
+	 * @return array of calculator names to skip
+	 */
+	protected function getCalcsToSkip($filter) {
+		$filterSkipCalcs = isset($filter['skip_calc']) ? $filter['skip_calc'] : array('all');
+		if (!is_array($filterSkipCalcs)) {
+			$filterSkipCalcs = array($filterSkipCalcs);
+		}
+		if (in_array('all', $filterSkipCalcs)) {
+			$allCalcs =  Billrun_Factory::config()->getConfigValue('queue.calculators', array());
+			if (!in_array('unify', $allCalcs)) { // Unify calc sometimes added dynamically
+				$allCalcs[] = 'unify';
+			}
+			return $allCalcs;
+		}
+
+		return $filterSkipCalcs;
 	}
 
 }
