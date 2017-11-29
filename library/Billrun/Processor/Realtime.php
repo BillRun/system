@@ -47,7 +47,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		}
 		$row['usagev_unit'] = $this->usagevUnit;
 		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
-		if ($this->isLinePrepriced()) {
+		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
 			$row['aprice'] = $this->getLineAprice($row['uf']);
 		}

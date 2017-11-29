@@ -217,12 +217,12 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			foreach ($rates as &$rate) {
 				$row[$rateField] = $rate['rate'];
 				$row['retail_rate'] = $this->isRetailRate($rate);
-			$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
-			$calcRow->preUpdate();
-			$pricingData = $calcRow->update();
-			if (is_bool($pricingData)) {
-				return $pricingData;
-			}
+				$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
+				$calcRow->preUpdate();
+				$pricingData = $calcRow->update();
+				if (is_bool($pricingData)) {
+					return $pricingData;
+				}
 				$this->updatePricingData($rate, $totalPricingData, $pricingData);
 			}
 			$row->set('rates', $rates);
