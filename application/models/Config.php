@@ -1026,6 +1026,10 @@ class ConfigModel {
 							if (isset($fileSettings['unify'])) {
 								$updatedFileSettings['unify'] = $fileSettings['unify'];
 							}
+							
+							if (isset($fileSettings['filters'])) {
+								$updatedFileSettings['filters'] = $fileSettings['filters'];
+							}
 						}
 					}
 				}
