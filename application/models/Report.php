@@ -249,7 +249,10 @@ class ReportModel {
 				$value = $this->applyValueformat($value, $format);
 			}
 		}
-		return empty($value) ? 'false' : var_export($value, true);
+		if(gettype($value) == 'boolean') {
+			return $value ? 'TRUE' : 'FALSE';
+		}
+		return $value;
 	}
 	
 	protected function pluckOutputValue($value, $key, $formats) {
