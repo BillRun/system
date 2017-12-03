@@ -269,10 +269,7 @@ if(!found) {
 lastConfig['rates']['fields'] = fields;
 db.config.insert(lastConfig);
 // BRCD-1077 update all products(Rates) tariff_category field.
-db.rates.find({'tariff_category': {$exists: false}}).forEach(function (rate) {
-	rate.tariff_category = "retail";
-	db.rates.save(rate);
-});
+db.rates.update({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}},{multi:1});
 
 // BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
