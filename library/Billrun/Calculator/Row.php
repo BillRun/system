@@ -101,4 +101,10 @@ abstract class Billrun_Calculator_Row {
 		return self::$instances[$stamp];
 	}
 
+	abstract public function getBalance();
+	
+	abstract public function getPlan();
+	
+	abstract  public function getUsedServices();
+	
 }

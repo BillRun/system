@@ -289,6 +289,7 @@ class Models_Entity {
 		}
 		if ($this->duplicateCheck($this->update)) {
 			$status = $this->insert($this->update);
+			$this->fixEntityFields($this->before);
 			$this->trackChanges($this->update['_id']);
 			return isset($status['ok']) && $status['ok'];
 		} else {
@@ -305,6 +306,7 @@ class Models_Entity {
 		$this->action = 'update';
 
 		$this->checkUpdate();
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -409,6 +411,7 @@ class Models_Entity {
 		unset($this->update['_id']);
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -552,6 +555,7 @@ class Models_Entity {
 		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
 		}
+		$this->fixEntityFields($this->before);
 		return true;
 	}
 	
@@ -590,6 +594,7 @@ class Models_Entity {
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
@@ -607,8 +612,9 @@ class Models_Entity {
 		if (isset($this->update['from'])) { // default is move from
 			return $this->moveEntry('from');
 		}
-
-		return $this->moveEntry('to');
+		$ret = $this->moveEntry('to');
+		$this->fixEntityFields($this->before);
+		return $ret;
 	}
 
 	public function reopen() {
@@ -636,6 +642,7 @@ class Models_Entity {
 		$this->update['to'] = new MongoDate(strtotime(self::UNLIMITED_DATE));
 		$status = $this->insert($this->update);
 		$newId = $this->update['_id'];
+		$this->fixEntityFields($this->before);
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
@@ -932,9 +939,9 @@ class Models_Entity {
 	 * 
 	 * @return The record with revision info.
 	 */
-	public static function setRevisionInfo($record, $collection) {
+	public static function setRevisionInfo($record, $collection, $entityName) {
 		$status = self::getStatus($record, $collection);
-		$isLast = self::getIsLast($record, $collection);
+		$isLast = self::getIsLast($record, $collection, $entityName);
 		$earlyExpiration = self::isEarlyExpiration($record, $status, $isLast);
 		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
@@ -981,13 +988,14 @@ class Models_Entity {
 	 * 
 	 * @param array $record - Record to set revision info.
 	 * @param string $collection - Record collection name
+	 * @param string $entityName - Record entity name
 	 * 
 	 * @return string Status, available values are: "future", "expired", "active"
 	 */
-	static function getIsLast($record, $collection) {
+	static function getIsLast($record, $collection, $entityName) {
 		// For active records, check if it has furure revisions
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
-		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$entityName}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
 		}
@@ -1061,6 +1069,10 @@ class Models_Entity {
 		}
 		$sort = array('_id' => -1);
 		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
+	}
+	
+	protected function fixEntityFields($entity) {
+		return;
 	}
 
 }

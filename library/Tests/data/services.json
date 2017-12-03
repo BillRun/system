@@ -406,6 +406,34 @@
                 "to" : "time*2166-10-03T09:29:58Z",
                 "creation_time" : "time*2016-10-04T04:00:00Z"
         },
+	{
+		"name" : "SERVICE-IS1", "description" : "SERVICE-IS1", 
+		"from" : "time*2016-09-05T08:08:36Z", "to" : "time*2116-10-05T08:08:36Z",
+		"price" : [ { "from" : 0,"to" : 1, "price" : 10 } ],
+		"include": {
+			"groups": {
+			  "IS": {
+				"usage_types": {
+				  "call": {
+					"unit": "seconds"
+				  },
+				  "incoming_call": {
+					"unit": "seconds"
+				  },
+				  "outgoing_call": {
+					"unit": "seconds"
+				  }
+				},
+				"value": 100,
+				"account_shared": false,
+				"account_pool": false,
+				"rates": [
+				  "RATE-Q1"
+				]
+			  }
+			}
+		}
+	},
         {
               
                 "from" : "time*2017-08-01T00:00:00Z",
@@ -477,7 +505,4 @@
                 "creation_time" : "time*2017-08-01T00:00:00Z"
         }
         ]
-		
-		
-		
 }

@@ -161,6 +161,66 @@ db.config.insert(lastConfig);
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
 
+// BRCD-1140 - update plan includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.plans.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+	
+		db.plans.save(obj);
+	}
+);
+
+// BRCD-1140 - update service includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+		
+		db.services.save(obj);
+	}
+);
+
 // BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -201,4 +261,79 @@ for (var i in lastConfig['file_types']) {
 		}
 	}
 }
+db.config.insert(lastConfig);
+
+// BRCD-1152: Add service activation date to each cdr generated on the billing cycle
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if(!lastConfig['lines']) {
+	lastConfig['lines'] = {};
+}
+if(!lastConfig['lines']['fields']) {
+	lastConfig['lines']['fields'] = [];
+}
+var idx = 0;
+for (var i in lastConfig['lines']['fields']) {
+	if (lastConfig['lines']['fields'][i]['field_name'] == 'foreign.activation_date') {
+		idx = i;
+		break;
+	}
+	idx = i+1;
+}
+var addField = {
+	field_name : "foreign.activation_date",
+	foreign : { 
+		entity : "service",
+		field  :"start",
+		translate : {
+			type : "unixTimeToString",
+			format : "Y-m-d H:i:s"
+		}
+	}
+};
+if(lastConfig['lines']['fields'].length > idx) {
+	lastConfig['lines']['fields'][idx] = addField;
+} else {
+	lastConfig['lines']['fields'].push(addField);
+}
+db.config.insert(lastConfig);
+
+db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, background: true });
+
+
+// BRCD-1189: Prepriced field per usage type
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined' || typeof lastConfig['file_types'][i]['processor'] === 'undefined') {
+		continue;
+	}
+	lastConfig['file_types'][i]['pricing'] = {};
+	if (typeof lastConfig['file_types'][i]['processor']['default_usaget'] !== 'undefined') {
+		var defaultUsage = lastConfig['file_types'][i]['processor']['default_usaget'];
+		if (typeof lastConfig['file_types'][i]['processor']['aprice_field'] === 'undefined') {
+			lastConfig['file_types'][i]['pricing'][defaultUsage] = [];
+			continue;
+		}
+		lastConfig['file_types'][i]['pricing'][defaultUsage] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field']};
+		if (typeof lastConfig['file_types'][i]['processor']['aprice_mult'] !== 'undefined') {
+			lastConfig['file_types'][i]['pricing'][defaultUsage] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field'], 'aprice_mult': lastConfig['file_types'][i]['processor']['aprice_mult']};
+		}
+	} else {
+		for (var j in lastConfig['file_types'][i]['processor']['usaget_mapping']) {
+			var usageType = lastConfig['file_types'][i]['processor']['usaget_mapping'][j]['usaget'];
+			if (typeof lastConfig['file_types'][i]['processor']['aprice_field'] === 'undefined') {
+				lastConfig['file_types'][i]['pricing'][usageType] = [];
+				continue;
+			}
+			lastConfig['file_types'][i]['pricing'][usageType] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field']};
+			if (typeof lastConfig['file_types'][i]['processor']['aprice_mult'] !== 'undefined') {
+				lastConfig['file_types'][i]['pricing'][usageType] = {'aprice_field': lastConfig['file_types'][i]['processor']['aprice_field'], 'aprice_mult': lastConfig['file_types'][i]['processor']['aprice_mult']};
+			}
+		}
+	}
+	delete(lastConfig['file_types'][i]['processor']['aprice_field']);
+	delete(lastConfig['file_types'][i]['processor']['aprice_mult']);
+}
+
 db.config.insert(lastConfig);

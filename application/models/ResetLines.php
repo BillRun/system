@@ -32,6 +32,12 @@ class ResetLinesModel {
 	 * @var string
 	 */
 	protected $process_time_offset;
+	
+	/**
+	 * Usage to substract from extended balance in rebalance.
+	 * @var array
+	 */
+	protected $extendedBalanceSubstract;
 
 	public function __construct($aids, $billrun_key) {
 		$this->aids = $aids;
@@ -57,9 +63,10 @@ class ResetLinesModel {
 			$query = array_merge(
 				Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime), array('aid' => array(
 					'$in' => $aids,
-				))
+				)) , array('period' => 'default')
 			);
 			$ret = $balances_coll->remove($query); // ok ==1 && n>0
+			$this->resetExtendedBalances($aids, $balances_coll);
 		}
 		return $ret;
 	}
@@ -91,9 +98,9 @@ class ResetLinesModel {
 			'type' => array(
 				'$ne' => 'credit',
 			),
-//			'process_time' => array(
-//				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
-//			),
+			'process_time' => array(
+				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+			),
 		);
 	}
 
@@ -119,6 +126,7 @@ class ResetLinesModel {
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
+			$this->aggregateLineUsage($line);
 			$queue_line['rebalance'] = array();
 			$stamps[] = $line['stamp'];
 			if (!empty($line['rebalance'])) {
@@ -280,6 +288,84 @@ class ResetLinesModel {
 		}
 		
 		return true;
+	}
+
+	/**
+	 * method to calculate the usage need to be subtracted from the balance.
+	 * 
+	 * @param type $line
+	 * 
+	 */
+	protected function aggregateLineUsage($line) {
+		if (!isset($line['usagev'])) {
+			return;
+		}
+		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
+		foreach ($arategroups as $arategroup) {
+			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
+			$group = $arategroup['name'];
+			$arategroupValue = isset($arategroup['usagev']) ? $arategroup['usagev'] : $arategroup['cost'];
+			$aggregatedUsage = isset($this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] ) ? $this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] : 0;
+			$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] = $aggregatedUsage + $arategroupValue;
+			@$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
+		}		
+	}
+	
+	protected function getRelevantBalance($balances, $balanceId) {
+		foreach ($balances as $balance) {
+			$rawData = $balance->getRawData();
+			if (isset($rawData['_id']) && $rawData['_id']->{'$id'} == $balanceId) {
+				return $rawData;
+			}
+		}
+		return false;
+	}
+	
+	protected function buildUpdateBalance($balance, $volumeToSubstract) {
+		$update = array();
+		foreach ($volumeToSubstract as $group => $usaget) {
+			foreach ($usaget as $usageType => $usagev) {
+				if (isset($balance['balance']['groups'][$group])) {
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					if (isset($balance['balance']['groups'][$group]['usagev'])) {
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
+						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+					}
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+				}			
+			}
+		}
+		return $update;
+	}
+
+	protected function resetExtendedBalances($aids, $balancesColl) {
+		if (empty($this->extendedBalanceUsageSubtract)) {
+			return;
+		}
+		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
+		$aidsAsKeys = array_flip($verifiedArray);
+		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);	
+		$queryBalances = array(
+			'aid' => array('$in' => $aids),
+			'period' => array('$ne' => 'default')
+		);	
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		foreach ($balancesToUpdate as $aid => $packageUsage) {
+			foreach ($packageUsage as $balanceId => $usageByUsaget) {
+				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
+				if (empty($balanceToUpdate)) {
+					continue;
+				}
+				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);	
+				$query = array(
+					'_id' => new MongoId($balanceId),
+				);
+				$balancesColl->update($query, $updateData);
+			}
+		}
+			
+		$this->extendedBalanceUsageSubtract = array();
 	}
 
 }

@@ -80,7 +80,7 @@ class Models_Action_Get extends Models_Action {
 			$project = (array) json_decode($this->request['project'], true);
 			// if revision_info requested, all entity unique fields are requried for query
 			if(array_key_exists("revision_info",$project)){
-				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->getCollectionName()}.duplicate_check", array());
+				$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$this->request['collection']}.duplicate_check", array());
 				foreach ($uniqueFields as $fieldName) {
 					$project[$fieldName] = 1;
 				}
@@ -109,7 +109,7 @@ class Models_Action_Get extends Models_Action {
 				$record['invoice_id'] = (int)$record['invoice_id'];
 			}
 			if ((empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) && isset($record['from'], $record['to'])) {
-				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
+				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName(), $this->request['collection']);
 			}
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record, $this->getDateFields());
 		}

@@ -552,6 +552,17 @@
 			"from" : "time*2016-10-05T08:08:36Z",
 			"to" : "time*2116-10-05T08:08:36Z"
         },
+	{
+		"name" : "PLAN-IS1",
+		"plan_code" : "PLAN-IS1",
+		"description" : "PLAN-IS1",
+		"upfront" : false,
+		"from" : "time*2016-10-05T08:08:36Z",
+		"to" : "time*2116-10-05T08:08:36Z",
+		"include" : {
+			"services" : ["SERVICE-IS1"]
+		}
+        },
         {
 	
 	"from" : "time*2017-04-01T00:00:00Z",
