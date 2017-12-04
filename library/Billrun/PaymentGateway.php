@@ -398,7 +398,7 @@ abstract class Billrun_PaymentGateway {
 			throw new Exception('Too much time passed');
 		}
 		$this->savePaymentGateway();
-		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits']);
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
 	}
 
 	/**

@@ -208,7 +208,7 @@ class PaymentGatewaysController extends ApiController {
 			$output = array(
 				'status' => 1,
 				'desc' => 'success',
-				'details' => array('credit_card' => $res['creditCard']),
+				'details' => array('credit_card' => $res['creditCard'], 'expiration_date' => $res['expirationDate']),
 			);
 			$this->setOutput(array($output));
 		} else {

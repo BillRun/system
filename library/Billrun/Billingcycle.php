@@ -192,7 +192,7 @@ class Billrun_Billingcycle {
 	 * 
 	 * @return bool - True if billing cycle had started.
 	 */
-	protected function hasCycleStarted($billrunKey, $size) {
+	protected static function hasCycleStarted($billrunKey, $size) {
 		$billingCycleCol = self::getBillingCycleColl();
 		$existsKeyQuery = array('billrun_key' => $billrunKey, 'page_size' => $size);
 		$keyCount = $billingCycleCol->query($existsKeyQuery)->count();

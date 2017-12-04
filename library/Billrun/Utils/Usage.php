@@ -14,7 +14,8 @@ class Billrun_Utils_Usage {
 
 	static public function retriveEntityFromUsage($row, $entityType) {
 		$entityQueryData = array();
-		$cache = Billrun_Factory::cache();
+//		TODO  added the cache after complete testing is done for the cache
+//		$cache = Billrun_Factory::cache();
 		switch ($entityType) {
 			case 'subscriber' :
 				if(empty($row['sid'])) {
@@ -58,18 +59,19 @@ class Billrun_Utils_Usage {
 				return null;
 		}
 		$cachHash = Billrun_Util::generateArrayStamp($entityQueryData);
-		if (!empty($cache) && Billrun_Factory::cache()->exists($cachHash)) {
-			return Billrun_Factory::cache()->get($cachHash);
-		}
+//		TODO  added the cache after  complete testing is done
+//		if (!empty($cache) && ($cachedValue = Billrun_Factory::cache()->get($cachHash)) ) {
+//			return $cachedValue;
+//		}
 
 		$cursor = Billrun_Factory::db()->getCollection($entityQueryData['collection'])->query($entityQueryData['query'])->cursor()->limit(1);
 		if (!empty($entityQueryData['sort'])) {
 			$cursor->sort($entityQueryData['sort']);
 		}
 		$entity = $cursor->current();
-		if ($entity && !empty($cache)) {
-			Billrun_Factory::cache()->set($cachHash, $entity);
-		}
+//		if ($entity && !empty($cache)) {
+//			Billrun_Factory::cache()->set($cachHash, $entity);
+//		}
 
 		return $entity;
 	}
