@@ -124,6 +124,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
+			if(empty($tax['description'])) {
+				Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+				continue;
+			}
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
@@ -218,6 +222,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
+					if(empty($tax['description'])) {
+						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skiping...",Zend_log::DEBUG);
+						continue;
+					}
 					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
 					if( $tax['pass_to_customer'] == 1 
 						 ||
