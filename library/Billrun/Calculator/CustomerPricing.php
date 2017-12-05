@@ -213,7 +213,8 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			$rateField = 'arate';
 			$arate = $row->get($rateField, true);
 			$totalPricingData = array();
-			$rates = $row->get('rates', true);
+			$rates = (is_null($row->get('rates', true)) ? array(): $row->get('rates', true));
+			$foreignFields = array();
 			foreach ($rates as &$rate) {
 				$row[$rateField] = $rate['rate'];
 				$row['retail_rate'] = $this->isRetailRate($rate);
@@ -223,6 +224,10 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 				if (is_bool($pricingData)) {
 					return $pricingData;
 				}
+				$foreignFields = array_merge($foreignFields, $this->getForeignFields( array('balance' => $calcRow->getBalance() ,
+																			'services' => $calcRow->getUsedServices(),
+																			'plan' => $calcRow->getPlan()) ,
+																	 $row->getRawData()));
 				$this->updatePricingData($rate, $totalPricingData, $pricingData);
 			}
 			$row->set('rates', $rates);
@@ -232,10 +237,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			} else {
 				$row[$rateField] = $arate;
 			}
-			$row->setRawData(array_merge($row->getRawData(), $totalPricingData, $this->getForeignFields( array(	'balance' => $calcRow->getBalance() ,
-																			'services' => $calcRow->getUsedServices(),
-																			'plan' => $calcRow->getPlan()) ,
-																	 $row->getRawData() )));
+			$row->setRawData(array_merge($row->getRawData(), $totalPricingData, $foreignFields));
 			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
