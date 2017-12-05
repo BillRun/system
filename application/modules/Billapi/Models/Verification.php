@@ -75,16 +75,16 @@ trait Models_Verification {
 					} else {
 						$val = $params[$name];
 					}
-					$knownParams[$name] = $val;
+					$knownParams[$type][$name] = $val;
 				} else { // on generate field the value will be automatically generate
-					$knownParams[$name] = null;
+					$knownParams[$type][$name] = null;
 				}
 				unset($params[$name]);
 			}
 			if ($options['fields']) {
 				$options['method'] = ($type === 'query_parameters' && isset($requestOptions['query_method']) ? $requestOptions['query_method'] : 'and');
 				$translatorModel = new Api_TranslatorModel($options);
-				$ret = $translatorModel->translate($knownParams);
+				$ret = $translatorModel->translate($knownParams[$type]);
 				$translated[$type] = $ret['data'];
 //				Billrun_Factory::log("Translated result: " . print_r($ret, 1));
 				if (!$ret['success']) {
