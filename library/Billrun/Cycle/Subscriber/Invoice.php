@@ -124,14 +124,14 @@ class Billrun_Cycle_Subscriber_Invoice {
 		}
 		$rate_key = $rate['key'];
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
-			if(empty($tax['description'])) {
-				Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
-				continue;
-			}
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
 				$breakdowns['count'] += $count;
 				foreach($tax_data as $tax ) {
+					if(empty($tax['description'])) {
+						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+						continue;
+					}
 					@$breakdowns['taxes'][$tax['description']] += $tax['amount'];
 				}
 				return;
