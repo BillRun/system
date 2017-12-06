@@ -57,10 +57,12 @@ class BillrunController extends ApiController {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
+			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
 		}
 
 		$success = self::processCycle($billrunKey);
+		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -372,7 +374,9 @@ class BillrunController extends ApiController {
 		}
 		$success = false;
 		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+			Billrun_Factory::log("Starting reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Factory::log("Finished reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			$success = true;
 		}
 
