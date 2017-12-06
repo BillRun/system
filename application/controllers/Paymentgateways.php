@@ -118,6 +118,7 @@ class PaymentGatewaysController extends ApiController {
 				);
 				$this->getView()->outputMethod = array('Zend_Json', 'encode');
 				$this->setOutput(array($output));
+				return;
 			} else {
 				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
 			}
@@ -190,6 +191,7 @@ class PaymentGatewaysController extends ApiController {
 		if (is_null($transactionId)) {
 			return $this->setError("Operation Failed. Try Again...", $request);
 		}
+		$redirect = $request->get("redirect");
 		try {
 			$handleResponse = $paymentGateway->handleOkPageData($transactionId);
 			Billrun_Factory::log("Token received from " . $name . ", transaction: " . $transactionId, Zend_Log::DEBUG);
@@ -201,9 +203,19 @@ class PaymentGatewaysController extends ApiController {
 				$returnUrl = $res['tenantUrl'];
 			}
 		} catch (Exception $e) {
-			$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			if (!is_null($redirect) && !$redirect) {
+				$output = array(
+					'status' => 0,
+					'details' =>  array('message' => $e->getMessage()),
+				);
+				$this->getView()->outputMethod = array('Zend_Json', 'encode');
+				$this->setOutput(array($output));
+				return;
+			} else {
+				$this->forceRedirectWithMessage($paymentGateway->getReturnUrlOnError(), $e->getMessage(), 'danger');
+			}
 		}
-		$redirect = $request->get("redirect");
+
 		if (!is_null($redirect) && !$redirect) {
 			$output = array(
 				'status' => 1,
