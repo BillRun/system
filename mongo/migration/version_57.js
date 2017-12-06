@@ -186,7 +186,7 @@ var usageTypes = [];
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 var usageTypesStruct = lastConfig["usage_types"];
 for (var usageType in usageTypesStruct) {
-	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
 	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
 }
 db.plans.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
@@ -216,7 +216,7 @@ var usageTypes = [];
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 var usageTypesStruct = lastConfig["usage_types"];
 for (var usageType in usageTypesStruct) {
-	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
 	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
 }
 db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
