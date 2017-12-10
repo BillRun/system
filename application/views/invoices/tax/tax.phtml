@@ -1,0 +1,16 @@
+<?php $colspan = empty($col_count) ? 1 : $col_count-1; ?>
+<tr class="total">
+	<td colspan='<?php echo $colspan; ?>'>TAXES</td>
+	<td><?php echo $this->currencySymbol() . number_format( $data['after_vat']  - $data['before_vat'], 2); ?></td>
+</tr>
+<?php if(!empty($data['taxes'])) {	
+	$endKey = @end(array_keys($data['taxes']));
+	?>
+	<?php foreach($data['taxes'] as $key => $taxAmount) { ?>
+	<?php if($taxAmount == 0 ) { continue; } ?>
+		<tr class="<?php echo ( $endKey === $key ? 'last' : '') ?>">
+			<td colspan="<?php echo $colspan; ?>"><?php echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' .ucfirst(strtolower($key)) ?> </td>
+			<td><?php echo $this->currencySymbol() . number_format($taxAmount,2) ?></td>
+		</tr>
+	<?php }//foreach ?>
+<?php } ?>

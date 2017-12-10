@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -33,7 +33,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 * @see Billrun_Calculator_Base_Rate
 	 * @var type 
 	 */
-	protected $rateKeyMapping = array('key' => 'INTERNET_BILL_BY_VOLUME');
+	protected $rateKeyMapping = array('params.sgsn_addresses' => array('$exists' => true));
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
@@ -41,37 +41,16 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	}
 
 	/**
-	 * write the calculation into DB
-	 */
-	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
-
-		$current = $row->getRawData();
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
-
-		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
-		);
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
-	}
-
-	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
+	 * @deprecated since version 2.9
 	 */
-	protected function getLineVolume($row, $usage_type) {
+	protected function getLineVolume($row) {
 		return $row['fbc_downlink_volume'] + $row['fbc_uplink_volume'];
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineUsageType
+	 * @deprecated since version 2.9
 	 */
 	protected function getLineUsageType($row) {
 		return 'data';
@@ -82,7 +61,7 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	 */
 	protected function loadRates() {
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$rates = $rates_coll->query($this->rateKeyMapping)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$rates = $rates_coll->query($this->rateKeyMapping)->cursor();
 		$this->rates = array();
 		foreach ($rates as $value) {
 			$value->collection($rates_coll);
@@ -93,22 +72,14 @@ class Billrun_Calculator_Rate_Ggsn extends Billrun_Calculator_Rate {
 	/**
 	 * @see Billrun_Calculator_Rate::getLineRate
 	 */
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		$line_time = $row['urt'];
-		if (preg_match('/^(?=62\.90\.|37\.26\.)/', $row['sgsn_address'])) {
-			$rate = new Mongodloid_Entity();
-			foreach ($this->rates as $key => $value) {
-				if ($value['from'] <= $line_time && $line_time <= $value['to']) {
-					$rate = $value;
-				}
-			}
-			if (!$rate->isEmpty()) {
+		foreach ($this->rates as $rate) {
+			if (preg_match($rate['params']['sgsn_addresses'], $row['sgsn_address']) && $rate['from'] <= $line_time && $line_time <= $rate['to']) {
 				return $rate;
-			} else {
-				Billrun_Factory::log()->log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 			}
 		}
-		//Billrun_Factory::log()->log("International row : ".print_r($row,1),  Zend_Log::DEBUG);
+		Billrun_Factory::log("Couldn't find rate for row : " . print_r($row['stamp'], 1), Zend_Log::DEBUG);
 		return FALSE;
 	}
 

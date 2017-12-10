@@ -2,7 +2,7 @@
 
 class Admin_Graphs {
 
-	public static function prepareGraph($wholesale_data, $xTitle, $xField, $yTitles, $yFields, array $params = array(), array $options = array(), $include_filter_div = true) {
+	public static function prepareGraph($wholesale_data, $xTitle, $xField, $yFields, array $params = array(), array $options = array(), $include_filter_div = true) {
 		$output = new stdclass;
 		$graph_id = isset($params['graph_id']) ? $params['graph_id'] : "div_graphs";
 
@@ -10,30 +10,38 @@ class Admin_Graphs {
 
 		$output->data['cols'] = array(
 			array('id' => $xField == 'carrier' ? 'carrier' : 'date', 'label' => $xTitle, 'type' => $xField == 'carrier' ? 'string' : 'date'),
-			array('id' => 'hours', 'label' => 'Hours', 'type' => 'number'),
-			array('id' => 'cost', 'label' => 'Cost', 'type' => 'number'),
 		);
-
-//		$data = array(array_merge(array($xTitle), $yTitles));
-		foreach ($wholesale_data as $wholesale_data_row) {
-			$values = array();
-			if (isset($wholesale_data_row['group_by'])) {
-				if ($xField == 'dayofmonth') {
-					$day_of_month = DateTime::createFromFormat('Y-m-d', $wholesale_data_row['group_by']);
-					$values[] = array('v' => 'Date(' . $day_of_month->format('Y') . ',' . ($day_of_month->format('m') - 1) . ',' . $day_of_month->format('d') . ')');
-				} else {
-					$values[] = array('v' => $wholesale_data_row['group_by']);
-				}
-			} else {
-				$values[] = array('v' => '');
+		foreach ($yFields as $usage_type => $fields) {
+			foreach ($fields as $field) {
+				$output->data['cols'][] = array('id' => ($usage_type . '_' . $field['value']), 'label' => ($usage_type . ' ' . $field['display']), 'type' => 'number');
 			}
-			foreach ($yFields as $yField) {
-				$values[] = array('v' => isset($wholesale_data_row[$yField]) ? $wholesale_data_row[$yField] : '');
-			}
-			$output->data['rows'][] = array('c' => $values);
 		}
 
-//		$data = array_slice($data, 0, 10);
+		foreach ($wholesale_data as $usage_type => $columns) {
+			foreach ($columns as $wholesale_data_row) {
+				$values = array();
+				if (isset($wholesale_data_row['group_by'])) {
+					if ($xField == 'dayofmonth') {
+						$day_of_month = DateTime::createFromFormat('Y-m-d', $wholesale_data_row['group_by']);
+						$values[] = array('v' => 'Date(' . $day_of_month->format('Y') . ',' . ($day_of_month->format('m') - 1) . ',' . $day_of_month->format('d') . ')');
+					} else {
+						$values[] = array('v' => $wholesale_data_row['group_by']);
+					}
+				} else {
+					$values[] = array('v' => '');
+				}
+				foreach ($yFields as $usage_type2 => $columns2) {
+					foreach ($columns2 as $yField) {
+						if ($usage_type == $usage_type2) {
+							$values[] = array('v' => isset($wholesale_data_row[$yField['value']]) ? $wholesale_data_row[$yField['value']] : null);
+						} else {
+							$values[] = array('v' => null);
+						}
+					}
+				}
+				$output->data['rows'][] = array('c' => $values);
+			}
+		}
 
 		$output->target_div = array(
 			"id" => $graph_id,
@@ -49,7 +57,7 @@ class Admin_Graphs {
 					'slantedText' => $xField == 'carrier' ? true : false,
 //					'maxTextLines' => 10,
 					'textStyle' => array(
-						'fontSize' =>  $xField == 'carrier' ? 9 : 14,
+						'fontSize' => $xField == 'carrier' ? 9 : 14,
 					),
 				),
 //				'seriesType' => $xField == 'carrier' ? 'ColumnChart' : 'LineChart',
@@ -58,7 +66,7 @@ class Admin_Graphs {
 //				'legend' => array('position' => "none"),
 				'chartArea' => array(
 //					'top' => 5,
-					'left' => 60,
+					'left' => 80,
 					'width' => '82%',
 					'height' => '50%',
 				),
@@ -125,7 +133,7 @@ class Admin_Graphs {
 					)
 				)
 			);
-			if ($xField=='dayofmonth') {
+			if ($xField == 'dayofmonth') {
 //				$output->filter_options['options']['ui']['chartOptions']['chartArea']['height'] = '70%';
 				$output->filter_options['options']['ui']['chartOptions']['height'] = '80';
 			}
@@ -133,21 +141,27 @@ class Admin_Graphs {
 		return $output;
 	}
 
-	public static function printGraph($graph_metadata, $echo_output = true, $data_type = 1) {
+	public static function printGraph($graph_metadata, $echo_output = true, $data_type = 1, $tabId = null, $popupId = null) {
 		$output = '';
 		if (isset($graph_metadata->dashboard_div)) {
 			$output.='<div id="' . $graph_metadata->dashboard_div['id'] . '">';
 		}
 		$output .= '<div id="' . $graph_metadata->target_div['id'] . '" class="' . $graph_metadata->target_div['class'] . '">'
-				. '<div class="graph loading"></div>'
-				. '</div>';
+			. '<div class="graph loading"></div>'
+			. '</div>';
 		if (isset($graph_metadata->filter_div)) {
 			$output.= '<div id="' . $graph_metadata->filter_div['id'] . '" class="' . $graph_metadata->filter_div['class'] . '"></div></div>';
 		}
 		$output .= '<script type="text/javascript">';
-		$output .= '$(function() {drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
-				. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
-				. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
+		$output .= '$(function() {';
+		if (!is_null($tabId)) {
+			$output.='$(\'#' . $tabId . '\').on("shown.bs.tab", function(e) {if ($(".graph.loading",$($(e.delegateTarget).attr("href"))).length)';
+		} else if (!is_null($popupId)) {
+			$output .= '$("#' . $popupId . '").on("shown.bs.modal", function(e) {$("#' . $popupId . '").off("shown.bs.modal");';
+		}
+		$output.='drawChart(' . (isset($graph_metadata->ajax_url) ? "data" : self::outputGoogleData($graph_metadata->data)) . ', '
+			. json_encode($graph_metadata->options) . ', \'' . $graph_metadata->target_div['id']
+			. '\', \'' . $graph_metadata->chart_type . '\', ' . ($data_type ? 1 : 0) . ', ' . (isset($graph_metadata->ajax_url) ? 'true' : 'false');
 		if (isset($graph_metadata->dashboard_div) && isset($graph_metadata->filter_options)) {
 			$output.=', \'' . $graph_metadata->dashboard_div['id'] . '\', ' . json_encode($graph_metadata->filter_options);
 		} else {
@@ -156,7 +170,11 @@ class Admin_Graphs {
 		if (isset($graph_metadata->format_options)) {
 			$output.=', ' . json_encode($graph_metadata->format_options);
 		}
-		$output.=');})';
+		$output.=');';
+		if (!is_null($tabId) || !is_null($popupId)) {
+			$output.='});';
+		}
+		$output.='})';
 		$output.='</script>';
 
 		if ($echo_output) {

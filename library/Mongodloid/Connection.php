@@ -2,8 +2,8 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Connection {
 
@@ -15,6 +15,15 @@ class Mongodloid_Connection {
 	protected static $instances;
 	protected $username = '';
 	protected $password = '';
+	
+	static public $availableReadPreferences = array(
+		MongoClient::RP_PRIMARY,
+		MongoClient::RP_PRIMARY_PREFERRED,
+		MongoClient::RP_SECONDARY,
+		MongoClient::RP_SECONDARY_PREFERRED,
+		MongoClient::RP_NEAREST,
+	);
+
 
 	/**
 	 * Method to get database instance
@@ -23,7 +32,7 @@ class Mongodloid_Connection {
 	 * @param string $user user to authenticate
 	 * @param string $pass password to authenticate
 	 * 
-	 * @return Billrun_Db instance
+	 * @return Mongodloid_Db instance
 	 */
 	public function getDB($db, $user = false, $pass = false, array $options = array("connect" => TRUE)) {
 		if (!isset($this->_dbs[$db]) || !$this->_dbs[$db]) {
@@ -74,11 +83,28 @@ class Mongodloid_Connection {
 			unset($options['readPreference']);
 		}
 
+		if (isset($options['tags'])) {
+			$tags = (array) $options['tags'];
+			unset($options['tags']);
+		} else {
+			$tags = array();
+		}
+
+		if (isset($options['context'])) {
+			$driver_options = array(
+				'context' => @stream_context_create($options['context'])
+			);
+			unset($options['context']);
+			$options['ssl'] = true;
+		} else {
+			$driver_options = array();
+		}
+
 		// this can throw an Exception
-		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options);
+		$this->_connection = new MongoClient($this->_server ? $this->_server : 'mongodb://localhost:27017', $options, $driver_options);
 
 		if (!empty($readPreference) && defined('MongoClient::' . $readPreference)) {
-			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference));
+			$this->_connection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
 		}
 
 		$this->_connected = true;
@@ -99,7 +125,7 @@ class Mongodloid_Connection {
 	 * @param string $port the port of the connection
 	 * @param boolean $persistent set if the connection is persistent
 	 * 
-	 * @return Billrun_Connection
+	 * @return Mongodloid_Connection
 	 */
 	public static function getInstance($server = '', $port = '', $persistent = false) {
 

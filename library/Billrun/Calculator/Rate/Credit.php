@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -12,7 +12,7 @@
  * @package  calculator
  * @since    0.5
  */
-class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
+class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 
 	/**
 	 * the type of the object
@@ -21,75 +21,38 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate {
 	 */
 	static protected $type = "credit";
 
-	public function __construct($options = array()) {
-		parent::__construct($options);
-		$this->loadRates();
-	}
-
 	/**
-	 * Write the calculation into DB
+	 * see Billrun_Calculator_Rate_Usage::getRateQuery
+	 * 
+	 * @return string mongo query
 	 */
-	public function updateRow($row) {
-		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array($row, $this));
-		$usage_type = $this->getLineUsageType($row);
-		$volume = $this->getLineVolume($row, $usage_type);
-		$rate = $this->getLineRate($row, $usage_type);
-
-		$current = $row->getRawData();
-
-		$added_values = array(
-			'usaget' => $usage_type,
-			'usagev' => $volume,
-			$this->ratingField => $rate ? $rate->createRef() : $rate,
+	protected function getRateQuery($row, $usaget, $type) {
+		$sec = $row['urt']->sec;
+		$usec = $row['urt']->usec;
+		$match = array_merge(
+			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
+			array('key' => $row['rate'])
 		);
-		$newData = array_merge($current, $added_values);
-		$row->setRawData($newData);
-
-		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array($row, $this));
-		return true;
-	}
-
-	/**
-	 * @see Billrun_Calculator_Rate::getLineVolume
-	 */
-	protected function getLineVolume($row, $usage_type) {
-		return $row['amount_without_vat'];
-	}
-
-	/**
-	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */
-	protected function getLineUsageType($row) {
-		return 'credit';
-	}
-
-	/**
-	 * @see Billrun_Calculator_Rate::getLineRate
-	 */
-	protected function getLineRate($row, $usage_type) {
-
-		$rate_key = $row['vatable'] ? "CREDIT_VATABLE" : "CREDIT_VAT_FREE";
-		$rate = $this->rates[$rate_key];
-
-		return $rate;
-	}
-
-	/**
-	 * Caches the rates in the memory for fast computations
-	 */
-	protected function loadRates() {
-		$rates_coll = Billrun_Factory::db()->ratesCollection();
-		$query = array(
-			'key' => array(
-				'$in' => array('CREDIT_VATABLE', 'CREDIT_VAT_FREE'),
-			),
-		);
-		$rates = $rates_coll->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
-		$this->rates = array();
-		foreach ($rates as $rate) {
-			$rate->collection($rates_coll);
-			$this->rates[$rate['key']] = $rate;
+		$group = $this->getBasicGroupRateQuery($row);
+		$sort = $this->getBasicSortRateQuery($row);
+	
+		$sortQuery = array();
+		if (!empty($sort)) {
+			$sortQuery = array(array('$sort' => $sort));
 		}
+		return array_merge(array(array('$match' => $match)), array(array('$group' => $group)), $sortQuery, array(array('$limit' => 1)));
 	}
-
+	
+	/**
+	 * see Billrun_Calculator_Rate_Usage::getAddedValues
+	 * 
+	 * @return array values to add from rate
+	 */
+	protected function getAddedValues($rate, $row = array()) {
+		$added_values = parent::getAddedValues($rate);
+		$added_values['credit'] = $row['credit'];
+		$added_values['credit']['usaget'] = current(array_keys($rate['rates'])); // assumes rate is only for one usage type
+		return $added_values;
+	}
+	
 }

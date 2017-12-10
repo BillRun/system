@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -23,28 +23,34 @@ class AggregateAction extends Action_Base {
 
 		$possibleOptions = array(
 			'type' => false,
-			'stamp' => false,
+			'stamp' => true,
 			'page' => true,
 			'size' => true,
+			'fetchonly' => true,
 		);
 
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
 		$this->_controller->addOutput("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		$this->_controller->addOutput("Aggregator loaded");
 
-		if ($aggregator) {
-			$this->_controller->addOutput("Loading data to Aggregate...");
-			$aggregator->load();
-			$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
-			$aggregator->aggregate();
-			$this->_controller->addOutput("Finish to Aggregate.");
-		} else {
+		if (!$aggregator || !$aggregator->isValid()) {
 			$this->_controller->addOutput("Aggregator cannot be loaded");
+			return;
 		}
-	}
 
+		$this->_controller->addOutput("Loading data to Aggregate...");
+		$aggregator->load();
+		if (isset($options['fetchonly'])) {
+			$this->_controller->addOutput("Only fetched aggregate accounts info. Exit...");
+		}
+
+		$this->_controller->addOutput("Starting to Aggregate. This action can take a while...");
+		$aggregator->aggregate();
+		$this->_controller->addOutput("Finish to Aggregate.");
+	}
+	
+	
 }

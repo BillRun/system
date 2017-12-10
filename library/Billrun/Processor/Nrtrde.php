@@ -4,7 +4,7 @@
  * @category   Billrun
  * @package    Processor
  * @subpackage Nrtrde
- * @copyright  Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
+ * @copyright  Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
  * @license    GNU General Public License version 2 or later
  */
 
@@ -104,7 +104,7 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 	 */
 	protected function parseData($line) {
 		if (!isset($this->data['header'])) {
-			Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
+			Billrun_Factory::log("No header found", Zend_Log::ERR);
 			return false;
 		}
 
@@ -115,13 +115,42 @@ class Billrun_Processor_Nrtrde extends Billrun_Processor_Base_Separator {
 		$row = $this->parser->parse();
 		$row['source'] = static::$type;
 		$row['type'] = self::$type;
+		$row['sender'] = $this->data['header']['sender'];
+		$row['header_stamp'] = $this->data['header']['stamp'];
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = new MongoDate();
+		$row['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($row['callEventStartTimeStamp'], $row['utcTimeOffset']));
+		$row['usaget'] = $this->getLineUsageType($row);
 		settype($row['callEventDuration'], 'integer');
+		$row['usagev'] = $this->getLineVolume($row, $row['usaget']);
 		Billrun_Factory::dispatcher()->trigger('afterDataParsing', array(&$row, $this));
 		$this->data['data'][] = $row;
 		return $row;
+	}
+
+	protected function getLineUsageType($row) {
+		if ($row['callEventDuration'] > 0) {
+			if ($row['record_type'] == "MTC") {
+				return "incoming_call";
+			} else if ($row['record_type'] == "MOC") {
+				return "call";
+			}
+		} else if ($row['callEventDuration'] == 0) {
+			if ($row['record_type'] == "MTC") {
+				return "incoming_sms";
+			} else if ($row['record_type'] == "MOC") {
+				return "sms";
+			}
+		}
+	}
+
+	protected function getLineVolume($row) {
+		if ($row['usaget'] == 'sms' || $row['usaget'] == 'incoming_sms') {
+			return 1;
+		} else if ($row['usaget'] == 'call' || $row['usaget'] == 'incoming_call') {
+			return $row['callEventDuration'];
+		}
 	}
 
 }

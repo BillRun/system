@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -32,6 +32,10 @@ abstract class Billrun_Parser extends Billrun_Base {
 	 * @var string the return type of the parser (object or array)
 	 */
 	protected $return = 'array';
+	
+	protected $headerRows = array();
+	protected $dataRows = array();
+	protected $trailerRows = array();
 
 	public function __construct($options) {
 
@@ -46,7 +50,7 @@ abstract class Billrun_Parser extends Billrun_Base {
 	 * 
 	 * @return string the line that parsed
 	 */
-	public function getLine() {
+	public function getLine($fp) {
 		return $this->line;
 	}
 
@@ -64,8 +68,18 @@ abstract class Billrun_Parser extends Billrun_Base {
 
 	/**
 	 * general function to parse
-	 * 
-	 * @return mixed
 	 */
-	abstract public function parse();
+	abstract public function parse($fp);
+	
+	public function getHeaderRows() {
+		return $this->headerRows;
+	}
+	
+	public function getDataRows() {
+		return $this->dataRows;
+	}
+	
+	public function getTrailerRows() {
+		return $this->trailerRows;
+	}
 }

@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -30,7 +30,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 	 * @deprecated since version 0.4 use Billrun_Util::getLastChargeTime instead
 	 */
 	protected function get_last_charge_time($return_timestamp = false) {
-		Billrun_Factory::log()->log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
+		Billrun_Factory::log("Billrun_Plugin_BillrunPluginFraud::get_last_charge_time is deprecated; please use Billrun_Util::getLastChargeTime()", Zend_Log::DEBUG);
 		return Billrun_Util::getLastChargeTime($return_timestamp);
 	}
 
@@ -51,7 +51,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		}
 
 		$events = Billrun_Factory::db()->eventsCollection();
-		//Billrun_Factory::log()->log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
+		//Billrun_Factory::log("New Alert For {$item['imsi']}",Zend_Log::DEBUG);
 		$ret = array();
 		foreach ($items as &$item) {
 			$event = new Mongodloid_Entity($item);
@@ -60,7 +60,7 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 			$newEvent = $this->addAlertData($event);
 			$newEvent['source'] = $this->getName();
 			$newEvent['stamp'] = md5(serialize($newEvent));
-			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			$newEvent['creation_time'] = date(Billrun_Base::base_datetimeformat);
 			$item['event_stamp'] = $newEvent['stamp'];
 
 			$ret[] = $events->save($newEvent);
@@ -84,7 +84,10 @@ abstract class Billrun_Plugin_BillrunPluginFraud extends Billrun_Plugin_BillrunP
 		$ret = array();
 		$lines = Billrun_Factory::db()->linesCollection();
 		foreach ($items as &$item) {
-			$ret[] = $lines->update(array('stamp' => array('$in' => $item['lines_stamps'])), array('$set' => array('event_stamp' => $item['event_stamp'])), array('multiple' => 1));
+			$query = array('stamp' => array('$in' => $item['lines_stamps']));
+			$values = array('$set' => array('event_stamp' => $item['event_stamp']));
+			$options = array('multiple' => true);
+			$ret[] = $lines->update($query, $values, $options);
 		}
 		return $ret;
 	}

@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -46,7 +46,7 @@ abstract class Billrun_Responder_Base_LocalDir extends Billrun_Responder_Base_Fi
 			return FALSE;
 		}
 		parent::respondAFile($responseFilePath, $fileName, $logLine);
-		Billrun_Factory::log()->log("Placed response at : $exportPath", Zend_Log::DEBUG);
+		Billrun_Factory::log("Placed response at : $exportPath", Zend_Log::DEBUG);
 
 		return $exportPath;
 	}

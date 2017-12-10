@@ -2,8 +2,8 @@
 
 /**
  * @package			ASN
- * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright		Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
+ * @license			GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -23,6 +23,7 @@ class Asn_Markers {
 	const ASN_LONG_LEN = 0x80;
 	const ASN_EXTENSION_ID = 0x1F;
 	const ASN_BIT = 0x80;
-	const ASN_EOC = 0x00;
+	const ASN_EOC = 0x00;	
+	const ASN_INDEFINITE_LEN = 0x80;
 
 }

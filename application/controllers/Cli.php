@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -22,7 +22,8 @@ class CliController extends Yaf_Controller_Abstract {
 
 	public function init() {
 		$forceUser = Billrun_Factory::config()->getConfigValue('cliForceUser', '');
-		if (!empty($forceUser) && ($systemExecuterUser = trim(shell_exec('whoami'))) != $forceUser) {
+		$systemExecuterUser = trim(shell_exec('whoami'));
+		if (!empty($forceUser) && $systemExecuterUser != $forceUser && $systemExecuterUser != 'apache') {
 			Billrun_Log::getInstance()->addWriter(new Zend_Log_Writer_Stream('php://stdout'));
 			$this->addOutput('Cannot run cli command with the system user ' . $systemExecuterUser . '. Please use ' . $forceUser . ' for CLI operations');
 			exit();
@@ -48,7 +49,10 @@ class CliController extends Yaf_Controller_Abstract {
 				'g|G|generate' => 'Generate xml and csv files of specific billrun',
 				'e|E|respond' => 'Respond to files that were processed',
 				'l|L|alert' => 'Process and detect alerts',
+				'i|I|import' => 'Process and detect alerts',
 				'h|H|help' => 'Displays usage information.',
+				'cycle' => 'aggregate lines in billing_cycle',
+				'charge' => 'pay payments through payment gateway',
 				'type-s' => 'Process: Ild type to use',
 				'stamp-s' => 'Process: Stamp to use for this run',
 				'path-s' => 'Process: Path of the process file',
@@ -60,6 +64,12 @@ class CliController extends Yaf_Controller_Abstract {
 				'size-s' => 'the size of the page to aggregate',
 				'environment-s' => 'Environment of the running command',
 				'env-s' => 'Environment of the running command',
+				'tenant-s' => 'Load configuration for a specific tenant',
+				'fetchonly' => 'Only fetch data from remote or db instead of doing complete action',
+				'clearcall' => 'Finds and inform about open calls without balance',
+				'collect' => 'Change collection state for accounts',
+				'run_collect_step' => 'Run action for accounts in collection',
+				'notify' => 'notify events on cron'
 			);
 
 			$this->options = new Zend_Console_Getopt($input);
@@ -101,13 +111,13 @@ class CliController extends Yaf_Controller_Abstract {
 
 
 		//Go through all actions and run the first one that was selected
-			foreach (array_keys($this->actions) as $val) {
-				if (isset($this->options->{$val})) {
-					$this->addOutput(ucfirst($val) . "...");
-					$this->forward($val);
-				}
+		foreach (array_keys($this->actions) as $val) {
+			if (isset($this->options->{$val})) {
+				$this->addOutput(ucfirst($val) . "...");
+				$this->forward($val);
 			}
 		}
+	}
 
 	/**
 	 * method to add output to the stream and log
@@ -115,7 +125,7 @@ class CliController extends Yaf_Controller_Abstract {
 	 * @param string $content the content to add
 	 */
 	public function addOutput($content) {
-		Billrun_Log::getInstance()->log($content, Zend_Log::INFO);
+		Billrun_Factory::log($content, Zend_Log::INFO);
 	}
 
 	/**
@@ -161,6 +171,20 @@ class CliController extends Yaf_Controller_Abstract {
 			}
 		}
 
+		return $options;
+	}
+	
+	public function getParameters() {
+		$options = array();
+		foreach($this->options->getRemainingArgs() as  $cmdLineArg) {
+			$seperatedCmdStr = !strpos('=',$cmdLineArg) ? explode("=", $cmdLineArg) : explode(" ", $cmdLineArg);
+			$inLineOpt = isset($seperatedCmdStr[1]) ?  $seperatedCmdStr[1] : true;
+			foreach (array_reverse(explode("\.", $seperatedCmdStr[0])) as $field) {				
+				$inLineOpt = preg_match('/\w,\w/',$inLineOpt) ? explode(',', $inLineOpt) : $inLineOpt;
+				$inLineOpt = array( $field => $inLineOpt);
+			}
+			$options = array_merge_recursive( Billrun_Util::getFieldVal($options, array()), $inLineOpt );
+		}
 		return $options;
 	}
 

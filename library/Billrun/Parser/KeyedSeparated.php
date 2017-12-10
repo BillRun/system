@@ -2,14 +2,13 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
  * Handle string and lined based records that are keyed by value and  seperated by a separator
  *
- * @author eran
  */
 class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 
@@ -22,7 +21,7 @@ class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 			if (isset($this->structure[$key])) {
 				$retRecord[$this->structure[$key]] = $value;
 			} else {
-				Billrun_Factory::log()->log("couldn't find $key in configuration", Zend_Log::DEBUG);
+				Billrun_Factory::log("couldn't find $key in configuration", Zend_Log::DEBUG);
 			}
 		}
 		$retRecord['stamp'] = md5(serialize($retRecord));
@@ -37,7 +36,7 @@ class Billrun_Parser_KeyedSeparated extends Billrun_Parser_Separator {
 			if ($i % 2) {
 				$keyedRecord[$lastKey] = utf8_encode($this->unescape($brokenLine[$i], $this->getSeparator()));
 			} else {
-				$lastKey = $brokenLine[$i];
+				$lastKey = utf8_encode($brokenLine[$i]);
 			}
 		}
 		return $keyedRecord;

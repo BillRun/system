@@ -1,0 +1,110 @@
+<?php
+//NOTE currently not in use as yaf  doesn't  support display priority
+//	 require to use instead of general layout (layout/menu.phtml) 
+?>
+<div class="navbar-collapse collapse">
+	<ul class="nav navbar-nav">
+		<li<?php echo ($active == '' ? ' class="active"' : ''); ?>>
+			<a href="<?php echo $this->baseUrl; ?>/admin">Home</a>
+		</li>		<?php if (AdminController::authorized('read', 'lines') && AdminController::showInMenu('lines')) : ?>
+			<li<?php echo ($active == 'lines' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/lines">Lines</a>
+			</li>
+		<?php endif; ?>
+<?php if (AdminController::authorized('read', 'plans') || AdminController::authorized('read', 'rates')) : ?>
+			<li class="dropdown<?php echo (in_array($active, array('plans', 'rates')) ? ' active' : ''); ?>">
+				<a class="dropdown-toggle"
+				   data-toggle="dropdown"
+				   href="#">
+					Rating
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu"> 
+	<?php if (AdminController::authorized('read', 'plans') && AdminController::showInMenu('plans')) : ?>
+						<li<?php echo ($active == 'plans' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/plans">Plans</a>
+						</li>
+					<?php endif; ?>
+	<?php if (AdminController::authorized('read', 'rates') && AdminController::showInMenu('rates')) : ?>
+						<li<?php echo ($active == 'rates' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/rates">Rates</a>
+						</li>
+	<?php endif; ?>
+				</ul>
+			</li>			
+		<?php endif ?>
+<?php if (AdminController::authorized('read', 'subscribers') || AdminController::authorized('read', 'balances') || AdminController::authorized('read', 'subscribersautorenewservices')) : ?>
+			<li class="dropdown<?php echo (in_array($active, array('subscribers', 'balances', 'subscribersautorenewservices')) ? ' active' : ''); ?>">
+				<a class="dropdown-toggle"
+				   data-toggle="dropdown"
+				   href="#">
+					Subscribers
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu"> 
+	<?php if (AdminController::authorized('read', 'subscribers') && AdminController::showInMenu('subscribers')) : ?>
+						<li <?php echo ($active == 'subscribers' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/subscribers">List</a>
+						</li>
+					<?php endif; ?>					
+	<?php if (AdminController::authorized('read', 'balances') && AdminController::showInMenu('balances')) : ?>
+						<li<?php echo ($active == 'balances' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/balances">Balances</a>
+						</li>
+					<?php endif; ?>
+	<?php if (AdminController::authorized('read', 'subscribersautorenewservices') && AdminController::showInMenu('subscribersautorenewservices')) : ?>
+						<li <?php echo ($active == 'subscribersautorenewservices' ? ' class="active"' : ''); ?>>
+							<a href="<?php echo $this->baseUrl; ?>/admin/subscribersautorenewservices">Renew</a>
+						</li>
+	<?php endif; ?>					
+				</ul>
+			</li>
+		<?php endif ?>
+<?php if (AdminController::authorized('read', 'queue') && AdminController::showInMenu('queue')) : ?>
+			<li<?php echo ($active == 'queue' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/queue">Queue</a>
+			</li>
+		<?php endif; ?>
+<?php if (AdminController::authorized('read', 'logs') && AdminController::showInMenu('logs')) : ?>
+			<li<?php echo ($active == 'logs' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/logs">Log</a>
+			</li>
+		<?php endif; ?>
+<?php if (AdminController::authorized('read', 'cards') && AdminController::showInMenu('cards')) : ?>
+			<li <?php echo ($active == 'cards' ? ' class="active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/cards">Cards</a>
+			</li>
+		<?php endif; ?>		
+<?php if (AdminController::authorized('admin')) : ?>
+			<li class="dropdown<?php echo (in_array($active, array('users', 'config', 'operations')) ? ' active' : ''); ?>">
+				<a class="dropdown-toggle"
+				   data-toggle="dropdown"
+				   href="#">
+					Admin
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu"> 
+					<li<?php echo ($active == 'config' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/config">Config</a>
+					</li>
+					<li<?php echo ($active == 'users' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/users">Users</a>
+					</li>
+					<li<?php echo ($active == 'operations' ? ' class="active"' : ''); ?>>
+						<a href="<?php echo $this->baseUrl; ?>/admin/operations">Operations</a>
+					</li>
+				</ul>
+			</li>
+		<?php endif; ?>
+<?php if (Billrun_Factory::user() === FALSE) : ?>
+			<li<?php echo ($active == 'login' ? ' class="login active"' : ''); ?>>
+				<a href="<?php echo $this->baseUrl; ?>/admin/login">Login</a>
+			</li>
+<?php else: ?>
+			<li class="logout">
+				<a href="<?php echo $this->baseUrl; ?>/admin/logout">Logout</a>
+			</li>
+<?php endif; ?>
+
+	</ul>
+</div><!--/.navbar-collapse -->

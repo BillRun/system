@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -32,16 +32,16 @@ abstract class Billrun_Responder extends Billrun_Base {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		} else {
-			$this->workspace = Billrun_Factory::config()->getConfigValue('response.workspace');
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('response.workspace'));
 		}
 
 		if (isset($options['backup'])) {
-			$this->workspace = $options['backup'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['backup']);
 		} else {
 			$defBackup = Billrun_Factory::config()->getConfigValue('response.backup');
-			$this->workspace = Billrun_Factory::config()->getConfigValue(static::type . '.backup', $defBackup);
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::type . '.backup', $defBackup));
 		}
 	}
 

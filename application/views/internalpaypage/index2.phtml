@@ -1,0 +1,135 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/main.css">
+	</head>
+	<body>
+		<div class="topbar" style="box-sizing: border-box; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); height: 70px; padding: 0px 24px; display: flex; justify-content: space-between; background-color: rgb(33, 33, 33);">
+			<div style="position: relative; display: flex; justify-content: space-between;">
+				<img src="img/billrun-logo-tm.png" />
+			</div>
+		</div>
+		<div className="container-fluid main-content">
+			<div className="contents">
+				<div class="container">
+					<h3>Company Name</h3>
+					<form id="planform" class="form-horizontal" action="/internalpaypage/create">
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h4>Customer Information</h4>
+							</div>
+							<div class="panel-body">
+								<?php
+								foreach ($account_config as $c) {
+									if ($c['display'] === false)
+										continue;
+									echo "<div class='form-group'>";
+									echo "<div class='col-md-3'>"
+									. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
+									. "<input class='form-control' type='text' " . (!empty($account) ? 'readonly' : '') . " "
+										. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
+										. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
+									. "</div>";
+									echo "</div>";
+								}
+								?>
+								<input type="hidden" name="aid" id="aid" value="<?php echo $account['aid']; ?>" />
+							</div>
+						</div>
+						
+						<?php if ($action !== 'updatePaymentGateway') : ?>
+							<div class="panel panel-primary">
+							  <div class="panel-heading">
+								<h4>Subscriber Information</h4>
+							  </div>
+							  <div class="panel-body">
+								<?php
+								foreach ($subscriber_config as $c) {
+								if ((empty($c['display']) && empty($c['mandatory'])) || $c['field_name'] === 'plan' || (isset($c['editable']) && !$c['editable']))
+								continue;
+								echo "<div class='form-group'>";
+								echo "<div class='col-md-3'>"
+								. "<label for='" . $c['field_name'] . "' >" . $c['field_name'] . "</label>"
+								. "<input class='form-control' type='text' name='" . $c['field_name'] . "' "
+								. "placeholder=" . $c['field_name'] . " id='" . $c['field_name'] . "' "
+								. "value='" . $account[$c['field_name']] . "' " . ($c['mandatory'] ? 'required=required' : '') . " />"
+								. "</div>";
+								echo "</div>";
+								}
+								?>
+								<input type="hidden" name="aid" id="aid" value="<?php echo $account['aid']; ?>" />
+							  </div>
+							</div>
+							<div class="panel panel-primary">
+								<div class="panel-heading">
+									<h4>Plan Information</h4>
+								</div>
+								<div class="panel-body">
+									<div class="row">
+										<div class="col-md-3">
+											<label for="plan">Plan</label>
+											<?php
+											echo"<select name='plan' id='plan' class='form-control'" . ($plan ? "readonly value='$plan'" : "") . ">";
+											?>
+											<?php
+											foreach ($planNames as $p) {
+												echo "<option value='" . $p . "' " . ($plan == $p ? "selected" : "") . ">";
+														echo $p;
+												echo "</option>";
+											}
+											?>
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php if (empty($account['payment_gateway']['active']) || $action === 'updatePaymentGateway') : ?>
+							<div class="panel panel-primary">
+								<div class="panel-heading">
+									<h4>Payment Gateway</h4>
+								</div>
+								<div class="panel-body">
+									<div class="row">
+										<div class="col-md-12">
+											<label for="payment_gateway">Payment Gateway</label>
+										</div>
+									</div>
+									<div class="row">
+										<?php foreach ($payment_gateways as $pg) : ?>
+											<div class='col-md-3'>
+												<div class='radio'>
+													<label>
+														<input type='radio' name='payment_gateway' value='<?php echo htmlspecialchars($pg['name']); ?>' <?php echo ($account['payment_gateway']['active']['name'] === $pg['name']) ? 'checked' : '' ?> />
+														<?php if (!empty($pg['image_url'])) : ?>
+															<img src='<?php echo $pg['image_url'] ?>' />
+														<?php else : ?>
+															<span><?php echo $pg['name']?></span>
+														<?php endif; ?>
+													</label>
+												</div>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								</div>
+							</div>
+						<?php endif; ?>
+						<div class="pull-left">
+							<button id="submitbtn" class="btn btn-primary" type="submit" onclick="onSubmit()">Submit</button>
+							<button id="cancelbtn" class="btn btn-default" type="button" onclick="window.history.back();">Cancel</button>
+						</div>
+						<input type="hidden" name="return_url" id="aid" value="<?php echo $return_url; ?>" />
+						<input type="hidden" name="action" value="<?php echo htmlspecialchars($action); ?>" />
+					</form>
+				</div>
+			</div>
+		</div>
+		<script>
+			function onSubmit() {
+				document.getElementById('submitbtn').disabled = true;
+				document.getElementById('cancelbtn').disabled = true;
+				document.getElementById('planform').submit();
+			}
+		</script>
+	</body>
+</html>

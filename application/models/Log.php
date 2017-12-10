@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -21,10 +21,6 @@ class LogModel extends TableModel {
 		$this->search_key = "stamp";
 	}
 
-	public function toolbar() {
-		return 'log';
-	}
-
 	public function getSortFields() {
 		$sort_fields = array(
 			'source' => 'Source',
@@ -38,7 +34,7 @@ class LogModel extends TableModel {
 	}
 
 	public function getDataByStamp($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		return $cursor->current();
 	}

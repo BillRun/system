@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -13,18 +13,23 @@
  * @since    0.5
  */
 class ApiController extends Yaf_Controller_Abstract {
-
+	
 	/**
 	 * api call output. the output will be converted to json on view
 	 * 
 	 * @var mixed
 	 */
 	protected $output;
-
+	
+	protected $start_time = 0;
+		
 	/**
 	 * initialize method for yaf controller (instead of constructor)
 	 */
 	public function init() {
+		Billrun_Factory::log("Start API call", Zend_Log::DEBUG);
+		
+		$this->start_time = microtime(1);
 		// all output will be store at class output class
 		$this->output = new stdClass();
 		$this->getView()->output = $this->output;
@@ -32,8 +37,17 @@ class ApiController extends Yaf_Controller_Abstract {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace("Action");
 		$this->setActions();
 		$this->setOutputMethod();
+		
+		//TODO add security configuration
+		if( isset($_SERVER['HTTP_ORIGIN']) ) {
+			header('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']); // cross domain
+			header('Access-Control-Allow-Methods: GET,POST,PUT,DELETE,OPTIONS');
+			header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+			header('Access-Control-Allow-Credentials: true');
+		}
+		
 	}
-
+	
 	/**
 	 * method to set the available actions of the api from config declaration
 	 */
@@ -45,7 +59,30 @@ class ApiController extends Yaf_Controller_Abstract {
 	 * default method of api. Just print api works
 	 */
 	public function indexAction() {
-		$this->setOutput(array(array('status' => true, 'message' => 'Billrun API works')));
+		try {
+			// DB heartbeat
+			if (!Billrun_Factory::config()->getConfigValue('api.maintain', 0)) {
+				Billrun_Factory::db()->linesCollection()
+					->query()->cursor()->limit(1)->current();
+				$msg = 'SUCCESS';
+				$status = 1;
+			} else {
+				$msg = 'FAILED';
+				$status = 0;
+			}
+		} catch (Exception $ex) {
+			Billrun_Factory::log('API Heartbeat failed. Error ' . $ex->getCode() . ": " . $ex->getMessage(), Zend_Log::EMERG);
+			$msg = 'FAILED';
+			$status = 0;
+		}
+
+		if ($this->getRequest()->get('simple')) {
+			$this->setOutput(array($msg, 1));
+			$this->getView()->outputMethod = 'print_r';
+		} else {
+			$this->setOutput(array(array('status' => $status, 'message' => 'BillRun API ' . ucfirst($msg))));
+			$this->getView()->outputMethod = 'json_encode';
+		}
 	}
 
 	/**
@@ -58,14 +95,28 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	public function setOutput() {
 		$args = func_get_args();
+		if (isset($args[0])) {
+			$var = $args[0];
+		} else {
+			$var = $args;
+		}
+		$readable = Billrun_Utils_Mongo::convertMongoDatesToReadable($var);
+		$ret = $this->setOutputVar($readable);
+		$this->apiLogAction();
+		return $ret;
+	}
+
+	public function setOutputVar() {
+		$args = func_get_args();
 		$num_args = count($args);
 		if (is_array($args[0])) {
 			foreach ($args[0] as $key => $value) {
-				$this->setOutput($key, $value);
+				$this->setOutputVar($key, $value);
 			}
 			return true;
 		} else if ($num_args == 1) {
 			$this->output = $args[0];
+			return true; //TODO: shouldn't it also return true?
 		} else if ($num_args == 2) {
 			$key = $args[0];
 			$value = $args[1];
@@ -94,13 +145,117 @@ class ApiController extends Yaf_Controller_Abstract {
 	 */
 	protected function setOutputMethod() {
 		$action = $this->getRequest()->getActionName();
+		$usaget = $this->getRequest()->get('usaget');
 		$output_methods = Billrun_Factory::config()->getConfigValue('api.outputMethod');
-		if (is_null($output_methods[$action])) {
-			echo("No output method defined");
-			Billrun_Factory::log()->log('No output method defined in credit api', Zend_Log::ALERT);
-		} else {
-			$this->getView()->outputMethod = $output_methods[$action];
+		if (!empty($action) && !empty($usaget) &&
+			isset($output_methods[$action][$usaget]) && !is_null($output_methods[$action][$usaget])) {
+			$this->getView()->outputMethod = $output_methods[$action][$usaget];
+			return;
 		}
+		if (isset($output_methods[$action]) && is_string($output_methods[$action])) {
+			$this->getView()->outputMethod = $output_methods[$action];
+			return;
+		}
+		$this->getView()->outputMethod = array('Zend_Json', 'encode');
+		header('Content-Type: application/json');
 	}
 
+	/**
+	 * render override to handle HTTP 1.0 requests
+	 * 
+	 * @param string $tpl template name
+	 * @param array $parameters view parameters
+	 * @return string output
+	 */
+	protected function render($tpl, array $parameters = null) {
+		$ret = parent::render($tpl, $parameters);
+		if ($this->getRequest()->get('SERVER_PROTOCOL') == 'HTTP/1.0' && !is_null($ret) && is_string($ret)) {
+			header('Content-Length: ' . strlen($ret));
+		}
+		return $ret;
+	}
+
+	/**
+	 * method to log api request
+	 * 
+	 * @todo log response
+	 */
+	protected function apiLogAction() {
+		$api_log_db = Billrun_Factory::config()->getConfigValue('api.log.db.enable', 1, 'float'); // if fraction log only fraction of the API calls
+		$base = Billrun_Factory::config()->getConfigValue('api.log.db.base', 1000);
+		if ($base != 0 && (rand(1, $base)/$base) > $api_log_db) {
+			return;
+		}
+		$request = $this->getRequest();
+		$php_input = file_get_contents("php://input");
+		if ($request->action == 'index') {
+			return;
+		}
+		$logColl = Billrun_Factory::db()->logCollection();
+		$saveData = array(
+			'source' => $this->sourceToLog(),
+			'type' => $request->action,
+			'process_time' => new MongoDate(),
+			'request' => $this->getRequest()->getRequest(),
+			'response' => $this->outputToLog(),
+			'request_php_input' => $php_input,
+			'server_host' => Billrun_Util::getHostName(),
+			'server_pid' => Billrun_Util::getPid(),
+			'request_host' => $_SERVER['REMOTE_ADDR'],
+			'rand' => rand(1, 1000000),
+			'time' => (microtime(1) - $this->start_time) * 1000,
+		);
+		$saveData['stamp'] = Billrun_Util::generateArrayStamp($saveData);
+		$logColl->save(new Mongodloid_Entity($saveData), 0);
+	}
+	
+	protected function outputToLog() {
+		return $this->output;
+	}
+
+	/**
+	 * Get the source to log
+	 * @return string
+	 */
+	protected function sourceToLog() {
+		return "api";
+	}
+	
+	/**
+	 * Set an error message to the controller.
+	 * @param string $errorMessage - Error message to send to the controller.
+	 * @param object $input - The input the triggerd the error.
+	 * @return ALWAYS false.
+	 */
+	function setError($errorMessage, $input = null) {
+		Billrun_Factory::log("Sending Error : {$errorMessage}", Zend_Log::NOTICE);
+		$output = array(
+			'status' => 0,
+			'desc' => $errorMessage,
+		);
+		if (!is_null($input)) {
+			$output['input'] = $input;
+		}
+
+		// Throwing a general exception.
+		// TODO: Debug default code
+		$ex = new Billrun_Exceptions_Api(999, array(), $errorMessage);
+		throw $ex;
+		
+		// If failed to report to controller.
+		if (!$this->setOutput(array($output))) {
+			Billrun_Factory::log("Failed to set message to controller. message: " . $errorMessage, Zend_Log::CRIT);
+		}
+
+		return false;
+	}
+	
+	public function localeAction() {
+		$this->forward('Locale', 'index');
+	}
+        
+        public function currenciesAction() {
+		$this->forward('currencies', 'index');
+	}
+        
 }

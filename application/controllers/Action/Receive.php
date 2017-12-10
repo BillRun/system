@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -14,13 +14,13 @@
  * @since       1.0
  */
 class ReceiveAction extends Action_Base {
-
+	use Billrun_Traits_TypeAll;
+	
 	/**
 	 * method to execute the receive process
 	 * it's called automatically by the cli main controller
 	 */
 	public function execute() {
-
 		if (!$this->isOn()) {
 			$this->getController()->addOutput(ucfirst($this->getRequest()->action) . " is off");
 			return;
@@ -36,17 +36,36 @@ class ReceiveAction extends Action_Base {
 			return;
 		}
 
+		// If not type all process normaly.
+		if(!$this->handleTypeAll($options)) {
+			$this->loadReceiver($options);	
+		}
+	}
+
+	protected function loadReceiver($options) {
 		$this->getController()->addOutput("Loading receiver");
 		$receiver = Billrun_Receiver::getInstance($options);
-		$this->getController()->addOutput("Receiver loaded");
 
-		if ($receiver) {
-			$this->getController()->addOutput("Starting to receive. This action can take a while...");
-			$files = $receiver->receive();
-			$this->getController()->addOutput("Received " . count($files) . " files");
-		} else {
+		if (!$receiver) {
 			$this->getController()->addOutput("Receiver cannot be loaded");
+			return;
 		}
+
+		$this->getController()->addOutput("Starting to receive. This action can take a while...");
+		$files = $receiver->receive();
+		$this->getController()->addOutput("Received " . count($files) . " files");
+	}
+	
+	protected function getHandleFunction() {
+		return "loadReceiver";
+	}
+	
+	protected function getCMD() {
+		return 'php ' . APPLICATION_PATH . '/public/index.php --env ' . Billrun_Factory::config()->getEnv() . '  --tenant ' . Billrun_Factory::config()->getTenant() . ' --receive --type';
+	}
+
+	protected function getNameType() {
+		return "receiver";
 	}
 
 }

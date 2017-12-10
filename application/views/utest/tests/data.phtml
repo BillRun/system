@@ -1,0 +1,56 @@
+<form action="/utest/result?collection=<?php echo $test_collection ?>" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd></dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="imsi" class="col-sm-4 control-label text-right">IMSI</label>
+		<div class="col-sm-6">
+			<input type="text" name="imsi" value='<?php echo $imsi ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="mcc" class="col-sm-4 control-label text-right">MCC</label>
+		<div class="col-sm-6">
+			<input type="text" name="mcc" value='<?php echo $mcc ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="scenario" class="col-sm-4 text-right">Scenario</label>
+		<div class="col-sm-6">
+			<textarea rows="6" name="scenario" class="form-control"><?php echo $data_scenario ?></textarea>
+			<small class="text-muted"><strong>[ACTION_NAME|USED_BYTES]</strong> New line per action.
+				<br/>* ACTION_NAME : init / update / final
+				<br/>* USED_BYTES : bytes, default data usage is 1048576 bytes (1MB).
+			</small>
+		</div>
+	</div>
+
+	<!--	<div class="form-group row">
+			<label class="col-sm-4"></label>
+			<div class="col-sm-6">
+				<div class="checkbox">
+					<label>
+						<input type="checkbox" name="removeLines" value="remove" >Remove all existing lines for this imsi
+					</label>
+				</div>
+			</div>
+		</div>-->
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

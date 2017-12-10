@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -36,18 +36,85 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	protected $availableFields = array();
 
 	/**
-	 * extra fields 
+	 * extra fields for billrun
 	 * @var array
 	 */
-	protected $extraFields = array();
+	protected $billrunExtraFields = array();
+
+	/**
+	 * extra fields for the customer
+	 * @var array
+	 */
+	protected $customerExtraData = array();
+	protected $time;
+
+	/**
+	 * Plans the subscriber had this month
+	 * @var array
+	 */
+	protected $plans = array();
+
+	/**
+	 * The active plan at the start of the next billing cycle
+	 * @var Billrun_Plan
+	 */
+	protected $nextPlan = null;
+
+	/**
+	 * If the subscriber has a next plan, this is its first activation date
+	 * @var string
+	 */
+	protected $nextPlanActivation = null;
 
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		if (isset($options['availableFields'])) {
 			$this->availableFields = $options['availableFields'];
 		}
+		if (isset($options['extra_data'])) {
+			$this->customerExtraData = $options['extra_data'];
+		}
+		if (isset($options['data'])) {
+			$this->data = $options['data'];
+		}
+		$dataOptions = Billrun_Util::getFieldVal($options['data'], array());
+		$this->constructPlans($dataOptions);
+		if (isset($options['time'])) {
+			$this->time = $options['time'];
+		}
+		if (isset($dataOptions['next_plan'])) {
+			$params = array(
+				'name' => $dataOptions['next_plan'],
+				//TODO: Before changing to billingcycle the default start cycle was 25 instead of 1.
+				'time' => Billrun_Billingcycle::getStartTime(Billrun_Billingcycle::getFollowingBillrunKey(Billrun_Billingcycle::getBillrunKeyByTimestamp($this->time))),
+			);
+			$this->nextPlan = new Billrun_Plan($params);
+			$this->nextPlanActivation = $dataOptions['next_plan_activation'];
+		}
 	}
 
+	protected function constructPlans($dataOptions) {
+		if (!isset($dataOptions['plans']) || empty($dataOptions['plans'])) {
+			$this->plans = array();
+			return;
+		}
+		
+		$plans = array();
+		$planOptions = array('deactivation' => array());
+		foreach ($dataOptions['plans'] as &$planArr) {
+			foreach ($planArr['active_dates'] as $activeRange) {
+				$planOptions['name'] = $planArr['name'];
+				$planOptions['time'] =  strtotime($activeRange['from']);
+				$planOptions['activation'] =  $activeRange['plan_activation'];
+				if(isset($activeRange['plan_deactivation'])) {
+					$planOptions['deactivation'] =  $activeRange['plan_deactivation'];
+				}
+				$plans[] = array_merge($activeRange, array('plan' => new Billrun_Plan($planOptions)));
+			}
+		}
+		$this->plans = $plans;
+	}
+	
 	/**
 	 * method to load subsbscriber details
 	 */
@@ -74,10 +141,23 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return mixed if data field  accessible return data field, else null
 	 */
 	public function __get($name) {
-		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->extraFields)) && array_key_exists($name, $this->data)) {
+		if ((array_key_exists($name, $this->availableFields) || in_array($name, $this->billrunExtraFields)) && array_key_exists($name, $this->data)) {
 			return $this->data[$name];
+		} else if (array_key_exists($name, $this->customerExtraData) && isset($this->data['extra_data'][$name])) {
+			return $this->data['extra_data'][$name];
 		}
 		return null;
+	}
+	
+	public function getData() {
+		return $this->data;
+	}
+
+	/**
+	 * Return true if the subscriber has no data.
+	 */
+	public function isEmpty() {
+		return empty($this->data);
 	}
 
 	/**
@@ -109,13 +189,14 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 	 * @return boolean
 	 */
 	public function getBalance() {
+		// TODO: Create a getPlan function.
 		return Billrun_Factory::balance()->load($this->data['sid'], Billrun_Util::getNextChargeKey(time()));
 	}
 
 	/**
 	 * get the (paged) current account(s) plans by time
 	 */
-	abstract public function getList($page, $size, $time, $acc_id = null);
+	abstract public function getList($startTime, $endTime, $page, $size, $aid = null);
 
 	/**
 	 * get the list of active subscribers from a json file. Parse subscribers plans at the given time (unix timestamp)
@@ -124,12 +205,52 @@ abstract class Billrun_Subscriber extends Billrun_Base {
 
 	abstract public function getSubscribersByParams($params, $availableFields);
 
+	abstract public function getCredits($billrun_key, $retEntity = false);
+
+	abstract public function getServices($billrun_key, $retEntity = false);
+
 	/**
 	 * Returns field names to be saved when creating billrun
 	 * @return array
 	 */
 	public function getExtraFieldsForBillrun() {
-		return $this->extraFields;
+		return $this->billrunExtraFields;
 	}
 
+	/**
+	 * Returns extra fields for the customer
+	 * @return array
+	 */
+	public function getCustomerExtraData() {
+		return $this->customerExtraData;
+	}
+
+	public function getId() {
+		return $this->sid;
+	}
+
+	public function getNextPlanName() {
+		return $this->nextPlan;
+	}
+
+	public function getNextPlanActivationDate() {
+		return $this->nextPlanActivation;
+	}
+
+	public function getCurrentPlans() {
+		return $this->plans;
+	}
+
+	/**
+	 * 
+	 * @return Billrun_Plan
+	 */
+	public function getNextPlan() {
+		return $this->nextPlan;
+	}
+
+	
+	public function getSubscriberData() {
+		return $this->data;
+	}
 }

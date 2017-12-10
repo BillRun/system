@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -63,14 +63,14 @@ trait Billrun_Traits_FileSequenceChecking {
 				}
 			}
 		} else if ($this->hostSequenceCheckers[$hostname]->lastLogFile) {
-			$timediff = time() - strtotime($this->hostSequenceCheckers[$hostname]->lastLogFile['received_time']);
+			$timediff = time() - $this->hostSequenceCheckers[$hostname]->lastLogFile['received_time'];
 			if ($timediff > Billrun_Factory::config()->getConfigValue($this->getName() . '.receiver.max_missing_file_wait', 3600)) {
 				$mailMsg = 'Didn`t received any new ' . $this->getName() . ' files form host ' . $hostname . ' for more then ' . $timediff . ' Seconds';
 			}
 		}
 		//If there were any errors log them as high issues 
 		if ($mailMsg) {
-			Billrun_Factory::log()->log($mailMsg, Zend_Log::ALERT);
+			Billrun_Factory::log($mailMsg, Zend_Log::ALERT);
 		}
 	}
 
@@ -98,7 +98,7 @@ trait Billrun_Traits_FileSequenceChecking {
 		$log = Billrun_Factory::db()->logCollection();
 		$lastLogFile = $log->query()->equals('source', $this->getName())->exists('received_time')
 				->equals('retrieved_from', $hostname)->
-				cursor()->sort(array('_id' => -1))->limit(1)->current();
+				cursor()->setReadPreference('RP_PRIMARY')->sort(array('_id' => -1))->limit(1)->current();
 
 		return isset($lastLogFile['file_name']) ? $lastLogFile['file_name'] : false;
 	}

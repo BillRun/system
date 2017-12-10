@@ -1,0 +1,37 @@
+PERIODIC_CHARGE,COUNT(*),סוג ההטבה,SP_Name,שם מסלול,חשבון ראשי (₪),דקות שיחה בארץ ללא יעדים מיוחדים (sec),גלישה והעברת נתונים (₪),חשבון SMS (units),דקות שיחה ברשת (sec),חבילת גלישה (Octets),בונוס חודשי  (₪)
+DATA13GB12M,1263,Set,Pelephone,PP_Netstick_Talk,,,0,,,1073741824,
+DATA25GB24M,600,Set,Pelephone,PP_Netstick_Talk,,,0,,,1073741824,
+DATA37GB36M,1779,Set,Pelephone,PP_Netstick_Talk,,,0,,,1073741824,
+DATA3GB12M,305,Set,Pelephone,PP_Netstick_Talk,,,,,,3221225472,
+PREPOST_0,46418,Set,Z_Prepost,Z_Prepost_1,,600,,10,,,
+PREPOST_1,16,Set,Z_Prepost,Z_Prepost_1,,6000,0,100,,6291456,
+PREPOST_1B,22,Set,Z_Prepost,Z_Prepost_1,,6000,0,100,,6291456,
+PREPOST_2,3,Set,Z_Prepost,Z_Prepost_1,,15000,0,1000,,6291456,
+PREPOST_3,7,Set,Z_Prepost,Z_Prepost_1,,15000,0,,60000,6291456,
+PREPOST_30_1,16,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_1B,22,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_2,3,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_30_3,7,Set,Z_Prepost,Z_Prepost_1,,,,,,,30
+PREPOST_5,5,Set,Z_Prepost,Z_Prepost_1,,9000,0,150,9000,6291456,
+PREPOST_50_5,5,Set,Z_Prepost,Z_Prepost_1,,,,,,,50
+PREPOST_50_6,3,Set,Z_Prepost,Z_Prepost_1,,,,,,,50
+PREPOST_6,3,Set,Z_Prepost,Z_Prepost_1,,15000,0,,60000,6291456,
+REG_BONUS_11,1,Set,Pelephone,שאר המסלולים,,,,,,,20
+REG_BONUS_16,1,Set,Pelephone,שאר המסלולים,,,,,,,10
+REG_BONUS_18,446,Set,Pelephone,שאר המסלולים,,,,,,,15
+REG_BONUS_19,945,Set,Pelephone,שאר המסלולים,,,,,,,10
+REG_BONUS_2,23100,Set,Pelephone,שאר המסלולים,,,,,,,20
+REG_BONUS_20,6364,Set,Pelephone,שאר המסלולים,,,,,,,5
+REG_BONUS_21,16,Set,Pelephone,שאר המסלולים,,,,,,,15
+REG_BONUS_22,3,Set,Pelephone,שאר המסלולים,,,,,,,10
+REG_BONUS_23,43,Set,Pelephone,שאר המסלולים,,,,,,,10
+REG_BONUS_24,7,Set,Pelephone,שאר המסלולים,,,,,,,28
+REG_BONUS_3,6,Set,Pelephone,שאר המסלולים,,,,,,,15
+REG_BONUS_6,5,Set,Pelephone,שאר המסלולים,,,,,,,15
+REG_BONUS_7,1,Set,Pelephone,שאר המסלולים,,,,,,,10
+REG_BONUS_8,15,Set,Pelephone,שאר המסלולים,,,,,,,10
+SP_BONUS_1,41,Set,Pelephone,שאר המסלולים,,,,,,,20
+UPGRADE10,1,accumulated,Pelephone,שאר המסלולים,10,,,,,,
+UPGRADE150,2,accumulated,Pelephone,שאר המסלולים,150,,,,,,
+UPGRADE20,1,accumulated,Pelephone,שאר המסלולים,20,,,,,,
+RL_4.90,,Charge,RamiLevy,RLFIX1,-4.9,,,,,,

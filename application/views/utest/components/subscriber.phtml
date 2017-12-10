@@ -1,0 +1,20 @@
+<?php if (!empty($subscribers)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading up" data-toggle="collapse" data-target="#<?php echo $id ?>">
+			<?php echo $label ?></div>
+		<div class="panel-body collapse" id='<?php echo $id ?>'>
+			<?php foreach ($subscribers as $subscriber_id => $subscriber) : ?>
+				<div class="row well col-sm-5" style='margin: 10px 30px;'>
+					<?php foreach ($subscriber as $fieldName => $fieldValue) : ?>
+						<div class="col-sm-5 text-right">
+							<?php echo $fieldName ?>
+						</div>
+						<div class="col-sm-7 text-left">
+							<?php echo $fieldValue ?>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</div>
+<?php endif; ?>

@@ -1,0 +1,14 @@
+Start Call:
+billrun/api/realtimeevent?usaget=call&request=<?xml version = "1.0" encoding = "UTF-8"?><request><api_name>start_call</api_name>\<calling_number>0524333444</calling_number><call_reference>013D221003</call_reference><call_id>rm7123123123</call_id><imsi>XXXXXXXXXXXXX</imsi><dialed_digits>0390222222</dialed_digits><connected_number>0390222222</connected_number><event_type>2</event_type><service_key>61</service_key><vlr>972500000701</vlr><location_mcc>425</location_mcc><location_mnc>03</location_mnc><location_area>7201</location_area><location_cell>53643</location_cell><time_date>2015/08/13 11:59:03</time_date><call_type>x</call_type></request>
+
+Answer Call:
+billrun/api/realtimeevent?usaget=call&request=<?xml version = "1.0" encoding = "UTF-8"?><request><api_name>answer_call</api_name><calling_number>0524333444</calling_number><call_reference>013D221003</call_reference><call_id>rm7123123123</call_id><imsi>XXXXXXXXXXXXX</imsi><dialed_digits>0390222222</dialed_digits><connected_number>0390222222</connected_number><time_date>2015/08/13 11:59:03.325</time_date><call_type>x</call_type></request>
+
+Reservation time:
+billrun/api/realtimeevent?usaget=call&request=<?xml version = "1.0" encoding = "UTF-8"?><request><api_name>reservation_time</api_name><calling_number>0524333444</calling_number><call_reference>013D221003</call_reference><call_id>rm7123123123</call_id><imsi>XXXXXXXXXXXXX</imsi><time_date>2015/08/13 11:59:03.423</time_date></request>
+
+Reservation time:
+billrun/api/realtimeevent?usaget=call&request=<?xml version = "1.0" encoding = "UTF-8"?><request><api_name>reservation_time</api_name><calling_number>0524333444</calling_number><call_reference>013D221003</call_reference><call_id>rm7123123123</call_id><imsi>XXXXXXXXXXXXX</imsi><time_date>2015/08/13 11:59:03.423</time_date></request>
+
+Release Call:
+billrun/api/realtimeevent?usaget=call&request=<?xml version = "1.0" encoding = "UTF-8"?><request><api_name>release_call</api_name><calling_number>0524333444</calling_number><call_reference>013D221003</call_reference><call_id>rm7123123123</call_id><imsi>XXXXXXXXXXXXX</imsi><time_date>2015/08/13 11:59:03.543</time_date><duration>4000</duration><scp_release_cause>mmm</scp_release_cause><isup_release_cause>nnn</isup_release_cause><call_leg>x</call_leg></request>

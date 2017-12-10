@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -26,7 +26,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log("Resource is not configured well", Zend_Log::ERR);
+			Billrun_Factory::log("Resource is not configured well", Zend_Log::ERR);
 			return false;
 		}
 
@@ -37,7 +37,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 			switch ($record_type) {
 				case 'H': // header
 					if (isset($this->data['header'])) {
-						Billrun_Factory::log()->log("double header", Zend_Log::ERR);
+						Billrun_Factory::log("double header", Zend_Log::ERR);
 						return false;
 					}
 					$this->data['header'] = $this->buildHeader($line);
@@ -45,7 +45,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 					break;
 				case 'T': //trailer
 					if (isset($this->data['trailer'])) {
-						Billrun_Factory::log()->log("double trailer", Zend_Log::ERR);
+						Billrun_Factory::log("double trailer", Zend_Log::ERR);
 						return false;
 					}
 
@@ -54,7 +54,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 					break;
 				case 'D': //data
 					if (!isset($this->data['header'])) {
-						Billrun_Factory::log()->log("No header found", Zend_Log::ERR);
+						Billrun_Factory::log("No header found", Zend_Log::ERR);
 						return false;
 					}
 
@@ -82,7 +82,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$header['source'] = self::$type;
 		$header['type'] = static::$type;
 		$header['file'] = basename($this->filePath);
-		$header['process_time'] = date(self::base_dateformat);
+		$header['process_time'] = new MongoDate();
 		return $header;
 	}
 
@@ -97,7 +97,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$trailer['type'] = static::$type;
 		$trailer['header_stamp'] = $this->data['header']['stamp'];
 		$trailer['file'] = basename($this->filePath);
-		$trailer['process_time'] = date(self::base_dateformat);
+		$trailer['process_time'] = new MongoDate();
 		return $trailer;
 	}
 
@@ -111,7 +111,7 @@ abstract class Billrun_Processor_Base_SeparatorFieldLines extends Billrun_Proces
 		$row['type'] = static::$type;
 		$row['log_stamp'] = $this->getFileStamp();
 		$row['file'] = basename($this->filePath);
-		$row['process_time'] = date(self::base_dateformat);
+		$row['process_time'] = new MongoDate();
 		if ($this->line_numbers) {
 			$row['line_number'] = $this->current_line;
 		}

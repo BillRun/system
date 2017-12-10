@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 define('HEBCAL_WEEKDAY', 'weekday');
 define('HEBCAL_WEEKEND', 'weekend');
@@ -32,13 +32,13 @@ class Billrun_HebrewCal {
 		// Soukott
 		'01/14' => HEBCAL_SHORTDAY, // sukott evening
 		'01/15' => HEBCAL_HOLIDAY, // sukott
-		'01/16' => HEBCAL_HOLIDAY, // sukott
-		'01/17' => HEBCAL_HOLIDAY, // sukott
-		'01/18' => HEBCAL_HOLIDAY, // sukott
-		'01/19' => HEBCAL_HOLIDAY, // sukott
-		'01/20' => HEBCAL_HOLIDAY, // sukott
-		'01/21' => HEBCAL_HOLIDAY, // sukott
-		'01/22' => HEBCAL_WORKDAY, // Simchat Torah
+//		'01/16' => HEBCAL_HOLIDAY, // sukott
+//		'01/17' => HEBCAL_HOLIDAY, // sukott
+//		'01/18' => HEBCAL_HOLIDAY, // sukott
+//		'01/19' => HEBCAL_HOLIDAY, // sukott
+//		'01/20' => HEBCAL_HOLIDAY, // sukott
+		'01/21' => HEBCAL_SHORTDAY, // sukott
+		'01/22' => HEBCAL_HOLIDAY, // Simchat Torah
 		// Hanukka
 		'03/25' => HEBCAL_WORKDAY, // Hanukka
 		'03/26' => HEBCAL_WORKDAY, // Hanukka
@@ -52,16 +52,16 @@ class Billrun_HebrewCal {
 		'04/15' => HEBCAL_WORKDAY, // Tu besvaht
 		// Purim
 		'06/13' => HEBCAL_WORKDAY, // Purim evening
-		'06/14' => HEBCAL_HOLIDAY, // Purim or...
+		'06/14' => HEBCAL_WORKDAY, // Purim or...
 		// Pesaach
 		'08/14' => HEBCAL_SHORTDAY, // Pesaach evening
 		'08/15' => HEBCAL_HOLIDAY, // Pesaach
-		'08/16' => HEBCAL_HOLIDAY, // Pesaach
-		'08/17' => HEBCAL_HOLIDAY, // Pesaach
-		'08/18' => HEBCAL_HOLIDAY, // Pesaach
-		'08/19' => HEBCAL_HOLIDAY, // Pesaach
-		'08/20' => HEBCAL_HOLIDAY, // Pesaach
-		'08/21' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/16' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/17' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/18' => HEBCAL_HOLIDAY, // Pesaach
+//		'08/19' => HEBCAL_HOLIDAY, // Pesaach
+		'08/20' => HEBCAL_SHORTDAY, // Pesaach
+		'08/21' => HEBCAL_HOLIDAY, // Pesaach Sheni (Second)
 		// Yom HaShoah
 		'08/26' => HEBCAL_WORKDAY, // Yom HaShoah evening
 		'08/27' => HEBCAL_WORKDAY, // Yom HaShoah
@@ -203,7 +203,7 @@ class Billrun_HebrewCal {
 	 */
 	public static function getHebrewDate($unixtime, $asArray = false) {
 		$date = jdtojewish(gregoriantojd(date('m', $unixtime), date('d', $unixtime), date('Y', $unixtime)));
-		return $asArray ? split("/", $date) : $date;
+		return $asArray ? explode("/", $date) : $date;
 	}
 
 	public static function isLeapYear($unixtime) {

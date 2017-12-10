@@ -69,19 +69,19 @@ from_balances.forEach(function(obj){
 		diff.push(parseInt(obj));
 	}
 });
-balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}}}, {$group: {_id: {aid: "$aid"}, subs: {$addToSet: "$sid"}}}).result.forEach(function(obj) {
+balances_coll.aggregate({$match: {"billrun_month": billrun_key, sid: {$in: diff}}}, {$group: {_id: {aid: "$aid"}, subs: {$addToSet: "$sid"}}}).forEach(function(obj) {
 	var subs = new Array();
 	obj.subs.forEach(function(sub) {
 		var new_sub = new Object();
 		new_sub.subscriber_id = sub.toString();
 		new_sub.curr_plan = new_sub.next_plan = "NULL";
 		subs.push(new_sub);
-//		print(parseInt(obj._id.aid) + "," + new_sub.subscriber_id); // unmark to get csv format + mark "printjson"
+		print(obj._id.aid + "," + new_sub.subscriber_id + "," + balances_coll.findOne({'sid':sub,'billrun_month':billrun_key}).balance.cost); // comment to get json format + uncomment "printjson"
 	});
 	output[obj._id.aid] = new Object();
 	output[obj._id.aid]["subscribers"] = subs;
 });
-printjson(output);
+//printjson(output);
 ';
 
 if [ "$username" != "" ]; then

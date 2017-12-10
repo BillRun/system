@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -47,14 +47,14 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 		return $line['type'] == 'smpp';
 	}
 
-	protected function getLineRate($row, $usage_type) {
+	protected function getLineRate($row) {
 		$matchedRate = false;
 		if ($this->shouldLineBeRated($row)) {
 			$called_number = $this->extractNumber($row);
 			$line_time = $row['urt'];
 			if (isset($this->rates[$called_number])) {
 				foreach ($this->rates[$called_number] as $rate) {
-					if (isset($rate['rates'][$usage_type])) {
+					if (isset($rate['rates'][$row['usaget']])) {
 						if ($rate['from'] <= $line_time && $rate['to'] >= $line_time) {
 							$matchedRate = $rate;
 							break;
@@ -62,9 +62,8 @@ class Billrun_Calculator_Rate_Smpp extends Billrun_Calculator_Rate_Sms {
 					}
 				}
 			}
-			return $matchedRate;
 		}
+		return $matchedRate;
 	}
 
 }
-

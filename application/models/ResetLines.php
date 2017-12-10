@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -19,7 +19,7 @@ class ResetLinesModel {
 	 *
 	 * @var array
 	 */
-	protected $sids;
+	protected $aids;
 
 	/**
 	 *
@@ -27,38 +27,122 @@ class ResetLinesModel {
 	 */
 	protected $billrun_key;
 
-	public function __construct($sids, $billrun_key) {
-		$this->sids = $sids;
-		$this->billrun_key = $billrun_key;
+	/**
+	 * Don't get newly stuck lines because they might have not been inserted yet to the queue
+	 * @var string
+	 */
+	protected $process_time_offset;
+	
+	/**
+	 * Usage to substract from extended balance in rebalance.
+	 * @var array
+	 */
+	protected $extendedBalanceSubstract;
+
+	public function __construct($aids, $billrun_key) {
+		$this->aids = $aids;
+		$this->billrun_key = strval($billrun_key);
+		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
 	}
 
 	public function reset() {
-		Billrun_Factory::log()->log('Reset subscriber activated', Zend_Log::INFO);
-
-		$configModel = new ConfigModel();
-		$oldConfigValue=  $configModel->getConfig()['calculate']; 
-		$configModel->save(array('calculate'=> 0));
-		$this->resetBalances();
-		$this->resetLines();			
-
-		$configModel->save(array('calculate'=> $oldConfigValue));
-		
-		return true;
+		Billrun_Factory::log('Reset subscriber activated', Zend_Log::INFO);
+		$ret = $this->resetLines();
+		return $ret;
 	}
 
 	/**
 	 * Removes the balance doc for each of the subscribers
 	 */
-	public function resetBalances() {
-		$balances_coll = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection();
-		if (!empty($this->sids) && !empty($this->billrun_key)) {
-			$query = array(
-				'billrun_month' => $this->billrun_key,
-				'sid' => array(
-					'$in' => $this->sids,
-				),
+	public function resetBalances($aids) {
+		$ret = true;
+		$balances_coll = Billrun_Factory::db()->balancesCollection()->setReadPreference('RP_PRIMARY');
+		if (!empty($this->aids) && !empty($this->billrun_key)) {
+			$startTime = Billrun_Billingcycle::getStartTime($this->billrun_key);
+			$endTime = Billrun_Billingcycle::getEndTime($this->billrun_key);
+			$query = array_merge(
+				Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime), array('aid' => array(
+					'$in' => $aids,
+				)) , array('period' => 'default')
 			);
-			$balances_coll->remove($query);
+			$ret = $balances_coll->remove($query); // ok ==1 && n>0
+			$this->resetExtendedBalances($aids, $balances_coll);
+		}
+		return $ret;
+	}
+
+	/**
+	 * Get the reset lines query.
+	 * @param array $update_aids - Array of aid's to reset.
+	 * @return array Query to run in the collection for reset lines.
+	 */
+	protected function getResetLinesQuery($update_aids) {
+		return array(
+			'$or' => array(
+				array(
+					'billrun' => $this->billrun_key
+				),
+				array(
+					'billrun' => array(
+						'$exists' => FALSE,
+					),
+					'urt' => array(// resets non-billable lines such as ggsn with rate INTERNET_VF
+						'$gte' => new MongoDate(Billrun_Billingcycle::getStartTime($this->billrun_key)),
+						'$lte' => new MongoDate(Billrun_Billingcycle::getEndTime($this->billrun_key)),
+					)
+				),
+			),
+			'aid' => array(
+				'$in' => $update_aids,
+			),
+			'type' => array(
+				'$ne' => 'credit',
+			),
+			'process_time' => array(
+				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+			),
+		);
+	}
+
+	/**
+	 * Reset lines for subscribers based on input array of AID's
+	 * @param array $update_aids - Array of account ID's to reset.
+	 * @param array $advancedProperties - Array of advanced properties.
+	 * @param Mongodloid_Collection $lines_coll - The lines collection.
+	 * @param Mongodloid_Collection $queue_coll - The queue colection.
+	 * @return boolean true if successful false otherwise.
+	 */
+	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
+		$query = $this->getResetLinesQuery($update_aids);
+		$lines = $lines_coll->query($query);
+		$rebalanceTime = new MongoDate();
+		$stamps = array();
+		$queue_lines = array();
+		$queue_line = array(
+			'calc_name' => false,
+			'calc_time' => false,
+			'skip_fraud' => true,
+		);
+
+		// Go through the collection's lines and fill the queue lines.
+		foreach ($lines as $line) {
+			$this->aggregateLineUsage($line);
+			$queue_line['rebalance'] = array();
+			$stamps[] = $line['stamp'];
+			if (!empty($line['rebalance'])) {
+				$queue_line['rebalance'] = $line['rebalance'];
+			}
+			$queue_line['rebalance'][] = $rebalanceTime;
+			$this->buildQueueLine($queue_line, $line, $advancedProperties);
+			$queue_lines[] = $queue_line;
+		}
+
+		// If there are stamps to handle.
+		if ($stamps) {
+			// Handle the stamps.
+			if (!$this->handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime)) {
+				return false;
+			}
 		}
 	}
 
@@ -66,69 +150,222 @@ class ResetLinesModel {
 	 * Removes lines from queue, reset added fields off lines and re-insert to queue first stage
 	 * @todo support update/removal of credit lines
 	 */
-	public function resetLines() {
+	protected function resetLines() {
+		$lines_coll = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
+		$queue_coll = Billrun_Factory::db()->queueCollection()->setReadPreference('RP_PRIMARY');
+		if (empty($this->aids) || empty($this->billrun_key)) {
+			// TODO: Why return true?
+			return true;
+		}
 
-		$lines_coll = Billrun_Factory::db()->linesCollection();
-		$queue_coll = Billrun_Factory::db()->queueCollection();
-		if (!empty($this->sids) && !empty($this->billrun_key)) {
-			$offset = 0;
-			while ($update_count = count($update_sids = array_slice($this->sids, $offset, 10))) {
-				Billrun_Factory::log()->log('Resetting lines of subscribers ' . implode(',', $update_sids), Zend_Log::INFO);
-				$query = array(
-					'billrun' => $this->billrun_key,
-					'sid' => array(
-						'$in' => $update_sids,
-					),
-					'type' => array(
-						'$ne' => 'credit',
-					),
-				);
-				$lines = $lines_coll->query($query);
-				$stamps = array();
-				$queue_lines = array();
-				foreach ($lines as $line) {
-					$stamps[] = $line['stamp'];
-					$queue_lines[] = array(
-						'calc_name' => false,
-						'calc_time' => false,
-						'stamp' => $line['stamp'],
-						'type' => $line['type'],
-						'urt' => $line['urt'],
-						'skip_fraud' => true,
-					);
-				}
-				$remove = array(
-					'stamp' => array(
-						'$in' => $stamps,
-					),
-				);
-				$update = array(
-					'$unset' => array(
-						'aid' => 1,
-						'aprice' => 1,
-						'arate' => 1,
-						'billrun' => 1,
-						'out_plan' => 1,
-						'over_plan' => 1,
-						'plan' => 1,
-						'sid' => 1,
-						'usagesb' => 1,
-						'usagev' => 1,
-					),
-				);
+		$offset = 0;
+		$configFields = array('imsi', 'msisdn', 'called_number', 'calling_number');
+		$advancedProperties = Billrun_Factory::config()->getConfigValue("queue.advancedProperties", $configFields);
 
-				if ($stamps) {
-					$queue_coll->remove($remove);
-					foreach ($queue_lines as $qline) {
-						$queue_coll->insert($qline);
-					}
-					//$queue_coll->batchInsert($queue_lines);	TPDO reinstate  when 
-					$lines_coll->update($query, $update, array('multiple' => 1));
-					
-				}
-				$offset += 10;
+		while ($update_count = count($update_aids = array_slice($this->aids, $offset, 10))) {
+			Billrun_Factory::log('Resetting lines of accounts ' . implode(',', $update_aids), Zend_Log::INFO);
+			$this->resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll);
+			$offset += 10;
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Construct the queue line based on the input line from the collection.
+	 * @param array $queue_line - Line to construct.
+	 * @param array $line - Input line from the collection.
+	 * @param array $advancedProperties - Advanced config properties.
+	 */
+	protected function buildQueueLine(&$queue_line, $line, $advancedProperties) {
+		$queue_line['stamp'] = $line['stamp'];
+		$queue_line['type'] = $line['type'];
+		$queue_line['urt'] = $line['urt'];
+
+		foreach ($advancedProperties as $property) {
+			if (isset($line[$property]) && !isset($queue_line[$property])) {
+				$queue_line[$property] = $line[$property];
 			}
 		}
+	}
+
+	/**
+	 * Get the query to update the lines collection with.
+	 * @return array - Query to use to update lines collection.
+	 */
+	protected function getUpdateQuery($rebalanceTime) {
+		return array(
+			'$unset' => array(
+				'aid' => 1,
+				'sid' => 1,
+				'subscriber' => 1,
+				'apr' => 1,
+				'aprice' => 1,
+				'arate' => 1,
+				'arate_key' => 1,
+				'arategroups' => 1,
+				'firstname' => 1,
+				'lastname' => 1,
+				'billrun' => 1,
+				'in_arate' => 1,
+				'in_group' => 1,
+				'in_plan' => 1,
+				'out_plan' => 1,
+				'over_arate' => 1,
+				'over_group' => 1,
+				'over_plan' => 1,
+				'out_group' => 1,
+				'plan' => 1,
+				'plan_ref' => 1,
+				'services' => 1,
+				'connection_type' => 1,
+				'usagesb' => 1,
+//				'usagev' => 1,
+				'balance_ref' => 1,
+				'tax_data' => 1,
+				'final_charge' => 1,
+			),
+			'$set' => array(
+				'in_queue' => true,
+			),
+			'$push' => array(
+				'rebalance' => $rebalanceTime,
+			),
+		);
+	}
+
+	/**
+	 * Get the query to return all lines including the collected stamps.
+	 * @param $stamps - Array of stamps to query for.
+	 * @return array Query to run for the lines collection.
+	 */
+	protected function getStampsQuery($stamps) {
+		return array(
+			'stamp' => array(
+				'$in' => $stamps,
+			),
+		);
+	}
+
+	/**
+	 * Handle stamps for reset lines.
+	 * @param array $stamps
+	 * @param type $queue_coll
+	 * @param type $queue_lines
+	 * @param type $lines_coll
+	 * @param type $update_aids
+	 * @return boolean
+	 */
+	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
+		$update = $this->getUpdateQuery($rebalanceTime);
+		$stamps_query = $this->getStampsQuery($stamps);
+
+		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
+		if (isset($ret['err']) && !is_null($ret['err'])) {
+			return FALSE;
+		}
+
+		$ret = $this->resetBalances($update_aids); // err null
+		if (isset($ret['err']) && !is_null($ret['err'])) {
+			return FALSE;
+		}
+		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
+			$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
+			if (isset($ret['err']) && !is_null($ret['err'])) {
+				return FALSE;
+			}
+		} else {
+			foreach ($queue_lines as $qline) {
+				$ret = $queue_coll->insert($qline); // ok==1, err null
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					return FALSE;
+				}
+			}
+		}
+		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
+		if (isset($ret['err']) && !is_null($ret['err'])) {
+			return FALSE;
+		}
+		
+		return true;
+	}
+
+	/**
+	 * method to calculate the usage need to be subtracted from the balance.
+	 * 
+	 * @param type $line
+	 * 
+	 */
+	protected function aggregateLineUsage($line) {
+		if (!isset($line['usagev'])) {
+			return;
+		}
+		$arategroups = isset($line['arategroups']) ? $line['arategroups'] : array();
+		foreach ($arategroups as $arategroup) {
+			$balanceId = $arategroup['balance_ref']['$id']->{'$id'};
+			$group = $arategroup['name'];
+			$arategroupValue = isset($arategroup['usagev']) ? $arategroup['usagev'] : $arategroup['cost'];
+			$aggregatedUsage = isset($this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] ) ? $this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] : 0;
+			$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] = $aggregatedUsage + $arategroupValue;
+			@$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
+		}		
+	}
+	
+	protected function getRelevantBalance($balances, $balanceId) {
+		foreach ($balances as $balance) {
+			$rawData = $balance->getRawData();
+			if (isset($rawData['_id']) && $rawData['_id']->{'$id'} == $balanceId) {
+				return $rawData;
+			}
+		}
+		return false;
+	}
+	
+	protected function buildUpdateBalance($balance, $volumeToSubstract) {
+		$update = array();
+		foreach ($volumeToSubstract as $group => $usaget) {
+			foreach ($usaget as $usageType => $usagev) {
+				if (isset($balance['balance']['groups'][$group])) {
+					$update['$set']['balance.groups.' . $group . '.left'] = $balance['balance']['groups'][$group]['left'] + $usagev['usage'];
+					if (isset($balance['balance']['groups'][$group]['usagev'])) {
+						$update['$set']['balance.groups.' . $group . '.usagev'] = $balance['balance']['groups'][$group]['usagev'] - $usagev['usage'];
+					} else if (isset($balance['balance']['groups'][$group]['cost'])) {
+						$update['$set']['balance.groups.' . $group . '.cost'] = $balance['balance']['groups'][$group]['cost'] - $usagev['usage'];
+					}
+					$update['$set']['balance.groups.' . $group . '.count'] = $balance['balance']['groups'][$group]['count'] - $usagev['count'];
+				}			
+			}
+		}
+		return $update;
+	}
+
+	protected function resetExtendedBalances($aids, $balancesColl) {
+		if (empty($this->extendedBalanceUsageSubtract)) {
+			return;
+		}
+		$verifiedArray = Billrun_Util::verify_array($aids, 'int');
+		$aidsAsKeys = array_flip($verifiedArray);
+		$balancesToUpdate = array_intersect_key($this->extendedBalanceUsageSubtract, $aidsAsKeys);	
+		$queryBalances = array(
+			'aid' => array('$in' => $aids),
+			'period' => array('$ne' => 'default')
+		);	
+		$balances = $balancesColl->query($queryBalances)->cursor();
+		foreach ($balancesToUpdate as $aid => $packageUsage) {
+			foreach ($packageUsage as $balanceId => $usageByUsaget) {
+				$balanceToUpdate = $this->getRelevantBalance($balances, $balanceId);
+				if (empty($balanceToUpdate)) {
+					continue;
+				}
+				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);	
+				$query = array(
+					'_id' => new MongoId($balanceId),
+				);
+				$balancesColl->update($query, $updateData);
+			}
+		}
+			
+		$this->extendedBalanceUsageSubtract = array();
 	}
 
 }

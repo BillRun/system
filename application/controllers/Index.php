@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -15,10 +15,11 @@
 class IndexController extends Yaf_Controller_Abstract {
 
 	public function indexAction() {
-		$this->redirect('admin');
+		$this->redirect('index.html');
+		die;
 		$this->getView()->title = "BillRun | The best open source billing system";
 		$this->getView()->content = "Open Source Last Forever!";
-		$this->getView()->favicon = Billrun_Factory::config()->getConfigValue('favicon');
+		$this->getView()->favicon = 'favicon.ico';
 	}
 
 }

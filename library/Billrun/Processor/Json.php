@@ -1,14 +1,16 @@
 <?php
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * @package         Billing
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
- * Description of Json
+ * Billing json processor class
  *
- * @author Shani
+ * @package  Billing
+ * @since    2.0
  */
 class Billrun_Processor_Json extends Billrun_Processor {
 
@@ -19,22 +21,23 @@ class Billrun_Processor_Json extends Billrun_Processor {
 	 */
 	protected function parse() {
 		if (!is_resource($this->fileHandler)) {
-			Billrun_Factory::log()->log('Resource is not configured well', Zend_Log::ERR);
+			Billrun_Factory::log('Resource is not configured well', Zend_Log::ERR);
 			return FALSE;
 		}
 		$this->data['data'] = json_decode(stream_get_contents($this->fileHandler), true);
+		if (!isset($this->data['trailer']) && !isset($this->data['header'])) {
+			$this->data['trailer'] = array('no_trailer' => true);
+			$this->data['header'] = array('no_header' => true);
+		}
+
 		return $this->processData();
 	}
 
 	public function processData() {
 		foreach ($this->data['data'] as &$row) {
-			$row['process_time'] = Billrun_Util::generateCurrentTime();
+			$row['process_time'] = new MongoDate();
 		}
 		return true;
-	}
-
-	protected function logDB() {
-		
 	}
 
 }

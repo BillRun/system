@@ -2,8 +2,8 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Collection {
 
@@ -13,24 +13,70 @@ class Mongodloid_Collection {
 	const UNIQUE = 1;
 	const DROP_DUPLICATES = 2;
 
-	protected $w = 0;
+	protected $w = 1;
 	protected $j = false;
 
+	/**
+	 * Create a new instance of the collection object.
+	 * @param MongoCollection $collection
+	 * @param Mongodloid_DB $db
+	 */
 	public function __construct(MongoCollection $collection, Mongodloid_DB $db) {
 		$this->_collection = $collection;
 		$this->_db = $db;
 	}
 
+	/**
+	 * Update a collection.
+	 * @param type $query - Query to filter records to update.
+	 * @param type $values - Query for updating new values.
+	 * @param type $options - Mongo options.
+	 * @return mongo update result.
+	 */
 	public function update($query, $values, $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 		return $this->_collection->update($query, $values, $options);
 	}
 
+	/**
+	 * Set the fields into the entity.
+	 * @param Mongodloid_Entity - Entity to set values into.
+	 * @param type $fields - Fields to set.
+	 */
+	protected function setEntityFields($entity, $fields) {
+		foreach ($fields as $key => $value) {
+			// Set values.
+			$entity->set($key, $value);
+		}
+	}
+	
+	/**
+	 * Update a collection by entity.
+	 * @param Mongodloid_Entity $entity - Entity to update in the collection.
+	 * @param array $fields - Array of keys and values to be updated in the entity.
+	 * @return mongo update result.
+	 */
+	public function updateEntity($entity, $fields=array()) {
+		if (empty($fields)) {
+			$fields = $entity->getRawData();
+			unset($fields['_id']);
+		}
+		
+		$data = array(
+			'_id' => $entity->getId()->getMongoID()
+		);
+		
+		// This function changes fields, should I clone fields before sending?
+		$this->setEntityFields($entity, $fields);
+		
+		return $this->update($data, array('$set' => $fields));
+	}
+	
 	public function getName() {
 		return $this->_collection->getName();
 	}
@@ -57,9 +103,6 @@ class Mongodloid_Collection {
 		if ($params == self::DROP_DUPLICATES)
 			$ps['dropDups'] = true;
 
-		// I'm so sorry :(
-		if (Mongo::VERSION == '1.0.1')
-			$ps = (bool) $ps['unique'];
 
 		return $this->_collection->ensureIndex($fields, $ps);
 	}
@@ -82,6 +125,10 @@ class Mongodloid_Collection {
 		return $indexCollection->query('ns', $this->_db->getName() . '.' . $this->getName());
 	}
 
+	/**
+	 * Create a query instance based on the current collection.
+	 * @return Mongodloid_Query
+	 */
 	public function query() {
 		$query = new Mongodloid_Query($this);
 		if (func_num_args()) {
@@ -97,7 +144,13 @@ class Mongodloid_Collection {
 			$w = $this->w;
 		}
 
-		$result = $this->_collection->save($data, array('w' => $w, 'j' => $this->j));
+		$options = array('w' => $w);
+		
+		if ($this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
+			$options['j'] = $this->j;
+		}
+
+		$result = $this->_collection->save($data, $options);
 		if (!$result)
 			return false;
 
@@ -134,36 +187,106 @@ class Mongodloid_Collection {
 	public function clear() {
 		return $this->remove(array());
 	}
-
-	public function remove($query) {
+	
+	/**
+	 * Remove an entity from the collection.
+	 * @param Mongoldoid_Entity $entity - Entity to remove from the collection.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
+	public function removeEntity($entity, $options = array('w' => 1)) {
+		$query = $entity->getId();
+		return $this->remove($query, $options);
+	}
+	
+	/**
+	 * Remove an entity from the collection.
+	 * @param Mongoldoid_Entity $id - ID of mongo record to be removed.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
+	public function removeId($id, $options = array('w' => 1)) {
+		$query = array('_id' => $id->getMongoId());
+		return $this->remove($query, $options);
+	}
+	
+	/**
+	 * Remove data from the collection.
+	 * @param Query $query - Query object or Mongoldoid_Entity to use to remove data.
+	 * @param array $options - Options to send to the mongo
+	 * @return boolean true if succssfull.
+	 */
+	public function remove($query, $options = array('w' => 1)) {
+		// avoid empty database
+		if (empty($query)) {
+			return false;
+		}
+		
+		// TODO: Remove this conditions and use removeEntity and removeId instead.
 		if ($query instanceOf Mongodloid_Entity)
 			$query = $query->getId();
 
 		if ($query instanceOf Mongodloid_Id)
 			$query = array('_id' => $query->getMongoId());
 
-		return $this->_collection->remove($query);
+		return $this->_collection->remove($query, $options);
 	}
 
+	/**
+	 * @return MongoCursor a cursor for the search results.
+	 */
 	public function find($query, $fields = array()) {
-		return $this->_collection->find($query);
+		return $this->_collection->find($query, $fields);
+//		$cursor = $this->_collection->find($query, $fields);
+//		return $mongoResult? $cursor : new Mongodloid_Cursor($cursor);
+	}
+
+	/**
+	 * Check if a certain entity exists in the collection.
+	 * @return boolean true if the query returned results.
+	 */
+	public function exists($query) {
+		if(!$query) {
+			return false;
+		}
+		
+		$cursor = $this->query($query)->cursor();
+		// TODO: Validation on everything.
+		return !$cursor->current()->isEmpty();
+	}
+	
+	/**
+	 * 
+	 * @deprecated since version 4.0 - backward compatibility
+	 */
+	public function aggregatecursor() {
+		$args = func_get_args();
+		return $this->aggregate($args);
 	}
 
 	public function aggregate() {
-		$timeout = $this->getTimeout();
-		$this->setTimeout(-1);
 		$args = func_get_args();
-		$result = call_user_func_array(array($this->_collection, 'aggregate'), $args);
-		$this->setTimeout($timeout);
-		if (!isset($result['ok']) || !$result['ok']) {
-			throw new Mongodloid_Exception('aggregate failed with the following error: ' . $result['code'] . ' - ' . $result['errmsg']);
-			return false;
+		if (count($args)>1) { // Assume the array contains 'ops' for backward compatibility
+			$args = array($args);
 		}
-		return $result['result'];
+		return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
+	}
+
+	
+
+	public function aggregateWithOptions() {
+            $args = func_get_args();
+            return new Mongodloid_Cursor(call_user_func_array(array($this->_collection, 'aggregateCursor'), $args));
 	}
 
 	public function setTimeout($timeout) {
-		MongoCursor::$timeout = (int) $timeout;
+		if ($this->_db->compareClientVersion('1.5.3', '<')) {
+			@MongoCursor::$timeout = (int) $timeout;
+		} else {
+			// see bugs:
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+		}
 	}
 
 	public function getTimeout() {
@@ -180,9 +303,11 @@ class Mongodloid_Collection {
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (defined('MongoClient::' . $readPreference)) {
-			return $this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+			$this->_collection->setReadPreference(constant('MongoClient::' . $readPreference), $tags);
+		} else if (in_array($readPreference, Mongodloid_Connection::$availableReadPreferences)) {
+			$this->_collection->setReadPreference($readPreference, $tags);
 		}
-		return FALSE;
+		return $this;
 	}
 
 	/**
@@ -205,6 +330,25 @@ class Mongodloid_Collection {
 	/**
 	 * method to create Mongo DB reference object
 	 * 
+	 * @param Mongodloid_Entity $entity Entity to create ref by.
+	 * 
+	 * @return MongoDBRef
+	 */
+	public function createRefByEntity($entity) {
+		// TODO: Validate the entity?
+		if (is_array($entity)) {
+			$refData = $entity;
+		} else if ($entity instanceof Mongodloid_Entity) {
+			$refData = $entity->getRawData();
+		} else {
+			return false;
+		}
+		return $this->_collection->createDBRef($refData);
+	}
+	
+	/**
+	 * method to create Mongo DB reference object
+	 * 
 	 * @param array $a raw data of object to create reference to itself; later on you can use the return value to store in other collection
 	 * 
 	 * @return MongoDBRef
@@ -220,22 +364,17 @@ class Mongodloid_Collection {
 	 * @param array $update The update criteria
 	 * @param array $fields Optionally only return these fields
 	 * @param array $options An array of options to apply, such as remove the match document from the DB and return it
+	 * @param boolean $retEntity return Mongodloid entity instead of native return of FindAndModify
 	 * 
 	 * @return Mongodloid_Entity the original document, or the modified document when new is set.
 	 * @throws MongoResultException on failure
 	 * @see http://php.net/manual/en/mongocollection.findandmodify.php
 	 */
-	public function findAndModify(array $query, array $update = array(), array $fields = array(), array $options = array(), $asCommand = false) {
-		$ret = FALSE;
-		if (!$asCommand) {
-			$ret = new Mongodloid_Entity($this->_collection->findAndModify($query, $update, $fields, $options), $this);
-		} else {
-			return new Mongodloid_Entity($this->_db->command(array_merge(array(
-					'findAndModify' => $this->getName(),
-					'query' => $query,
-					'update' => $update,
-					'fields' => $fields,
-						), $options)));
+	public function findAndModify(array $query, array $update = array(), array $fields = null, array $options = array(), $retEntity = true) {
+		$ret = $this->_collection->findAndModify($query, $update, $fields, $options);
+
+		if ($retEntity) {
+			return new Mongodloid_Entity($ret, $this);
 		}
 		return $ret;
 	}
@@ -254,34 +393,82 @@ class Mongodloid_Collection {
 			$options['w'] = $this->w;
 		}
 
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
 
-		return $this->_collection->batchInsert($a, $options);
+		if ($this->_db->compareServerVersion('2.6', '>=') && $this->_db->compareClientVersion('1.5', '>=')) {
+			$batch = new MongoInsertBatch($this->_collection);
+			foreach($a as $doc) {
+				$batch->add($doc);
+			}
+			return $batch->execute($options);
+		} else {
+			return $this->_collection->batchInsert($a, $options);
+		}
+		
 	}
 
 	/**
 	 * method to insert document
 	 * 
-	 * @param array $a array or object. If an object is used, it may not have protected or private properties
+	 * @param array $ins array or object. If an object is used, it may not have protected or private properties
 	 * @param array $options the options for the insert; see php documentation
 	 * 
 	 * @return mixed Returns an array containing the status of the insertion if the "w" option is set. Otherwise, returns TRUE if the inserted array is not empty
 	 * @see http://www.php.net/manual/en/mongocollection.insert.php
 	 */
-	public function insert($a, array $options = array()) {
+	public function insert(&$ins, array $options = array()) {
 		if (!isset($options['w'])) {
 			$options['w'] = $this->w;
 		}
 		
-		if (!isset($options['j'])) {
+		if (!isset($options['j']) && $this->_db->compareServerVersion('3.4', '<') && !extension_loaded('mongodb')) {
 			$options['j'] = $this->j;
 		}
-
-		return $this->_collection->insert( ($a instanceof Mongodloid_Entity ? $a->getrawData() : $a), $options);
+		if ($ins instanceof Mongodloid_Entity) {
+			$a = $ins->getRawData();
+			$ret = $this->_collection->insert($a , $options);
+			$ins = new Mongodloid_Entity($a);
+		} else {
+			$a = $ins; // pass by reference - _id is not saved on by-ref var
+			$ret = $this->_collection->insert($a , $options);
+			$ins = $a;
+		}
+		return $ret;
 	}
 
+	/**
+	 * Method to create auto increment of document based on an entity.
+	 * To use this method require counters collection (see create.ini)
+	 * 
+	 * @param Mongodloid_Entity $entity - Entity to create auto inc for.
+	 * @param string $field the field to set the auto increment
+	 * @param int $min_id the default value to use for the first value
+	 * 
+	 * @return mixed the auto increment value or void on error
+	 */
+	public function createAutoIncForEntity($entity, $field, $min_id = 1) {
+		// check if already set auto increment for the field
+		$value = $entity->get($field);
+		if ($value) {
+			return $value;
+		}
+
+		// check if id exists (cannot create auto increment without id)
+		$id = $entity->getId();
+		if (!$id) {
+			Billrun_Factory::log("createAutoIncForEntity no id.");
+			// TODO: Report error?
+			return;
+		}
+
+		$inc = $this->createAutoInc($id->getMongoID(), $min_id);
+		
+		// Set the values to the entity.
+		$entity->set($field, $inc);
+		return $inc;
+	}
 	/**
 	 * Method to create auto increment of document
 	 * To use this method require counters collection (see create.ini)
@@ -305,6 +492,11 @@ class Mongodloid_Collection {
 			} else {
 				$lastSeq++;
 			}
+			if (is_string($oid)) {
+				$oidDelimiter = '#bk#';
+				$splitted = preg_split('/' . $oidDelimiter . '\d+$/', $oid);
+				$oid = $splitted[0] . $oidDelimiter . $lastSeq;
+			}
 			$insert = array(
 				'coll' => $collection_name,
 				'oid' => $oid,
@@ -313,8 +505,8 @@ class Mongodloid_Collection {
 
 			try {
 				$ret = $countersColl->insert($insert, array('w' => 1));
-			} catch (MongoCursorException $e) {
-				if ($e->getCode() == 11000) {
+			} catch (MongoException $e) {
+				if ($e->getCode() == Mongodloid_General::DUPLICATE_UNIQUE_INDEX_ERROR) {
 					// duplicate - need to check if oid already exists
 					$ret = $this->getAutoInc($oid);
 					if (empty($ret) || !is_numeric($ret)) {
@@ -330,7 +522,7 @@ class Mongodloid_Collection {
 		}
 		return $lastSeq;
 	}
-
+	
 	public function getAutoInc($oid) {
 		$countersColl = $this->_db->getCollection('counters');
 		$collection_name = $this->getName();
@@ -357,6 +549,30 @@ class Mongodloid_Collection {
 	 */
 	public function stats($item) {
 		return $this->_db->stats(array('collStats' => $this->getName()), $item);
+	}
+	
+	public function getWriteConcern($var = null) {
+		// backward compatibility with 1.4
+		if ($this->_db->compareClientVersion('1.5', '<')) {
+			$ret = array(
+				'w' => $this->w,
+				'wtimeout' => $this->getTimeout(),
+			);
+		} else {
+			$ret = $this->_collection->getWriteConcern();
+		}
+		
+		if (is_null($var)) {
+			return $ret;
+		}
+		
+		if (isset($ret[$var])) {
+			return $ret[$var];
+		}
+	}
+	
+	public function distinct($key, array $query = array()) {
+		return $this->_collection->distinct($key, $query);
 	}
 
 }

@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -32,23 +32,40 @@ class Billrun_User {
 
 	/**
 	 * Check if the user is allowed to perform an operation
-	 * @param string $permission read/write/admin
+	 * 
+	 * http://php.net/manual/en/function.array-merge.php Example #3 array_merge() with non-array types
+	 * @param string \ array $permission read/write/admin
 	 * @return boolean
 	 */
-	public function allowed($permission) {
-		return (boolean) array_intersect($this->entity['roles'], array($permission, 'admin'));
+	public function allowed($permission, $page = null) {
+		$permissions = array_merge((array)$permission, array('admin'));
+		if (isset($this->entity['roles'][$page])) {
+			return (boolean) array_intersect($this->entity['roles'][$page], $permissions);
+		}
+		return (boolean) array_intersect($this->entity['roles'], $permissions);
 	}
-	
+
 	public function valid() {
 		return !$this->entity->isEmpty();
 	}
+
+	public function getPermissions() {
+		return  isset($this->entity['roles']) ? $this->entity['roles'] : array();
+	}	
 	
 	public function getUsername() {
 		return $this->entity['username'];
 	}
 	
-	public function getMongoId() {
+	public function getMongoId($as_string = false) {
+		if ($as_string) {
+			return $this->entity['_id']->__toString();
+		}
 		return $this->entity['_id'];
 	}
-
+	
+	public function getLastLogin() {
+		return $this->entity['last_login'];
+	}
+	
 }

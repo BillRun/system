@@ -1,4 +1,5 @@
 /.directory
+.idea/*
 backups
 backup
 exports
@@ -7,4 +8,11 @@ workspace
 mongo/*.json
 *~
 exports
-logs/debug.log*
+logs
+cache
+crontab
+conf/dori.ini
+/nbproject/
+/conf/tenants/*
+/scripts/locks/*
+shared

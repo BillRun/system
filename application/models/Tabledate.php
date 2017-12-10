@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -32,6 +32,7 @@ class TabledateModel extends TableModel {
 		if (isset($params['date'])) {
 			$this->date = $params['date'];
 		}
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/validation.ini');
 	}
 
 	/**
@@ -40,7 +41,7 @@ class TabledateModel extends TableModel {
 	 * @return Mongo Cursor
 	 */
 	public function getData($filter_query = array()) {
-		$cursor = $this->collection->query($filter_query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
+		$cursor = $this->collection->query($filter_query)->cursor();
 		$this->_count = $cursor->count();
 		$resource = $cursor->sort($this->sort)->skip($this->offset())->limit($this->size);
 		return $resource;
@@ -48,8 +49,6 @@ class TabledateModel extends TableModel {
 
 	public function getItem($id) {
 		$entity = parent::getItem($id);
-		$entity['from'] = (new Zend_Date($entity['from']->sec))->toString('YYYY-MM-dd HH:mm:ss');
-		$entity['to'] = (new Zend_Date($entity['to']->sec))->toString('YYYY-MM-dd HH:mm:ss');
 		return $entity;
 	}
 
@@ -60,7 +59,7 @@ class TabledateModel extends TableModel {
 	public function isLast($entity) {
 		$to_date = new MongoDate(strtotime($entity['to']));
 		if (!$to_date) {
-			die("date error");
+			return $this->setError("date error");
 		}
 		$result = $this->getLastItem($entity[$this->search_key]);
 		return strval($result['_id']) == strval($entity['_id']);
@@ -69,6 +68,46 @@ class TabledateModel extends TableModel {
 	public function endsInFuture($entity) {
 		$to_date = strtotime($entity['to']);
 		return $to_date > time();
+	}
+	
+	public function hasEntityWithOverlappingDates($entity, $new = true) {
+		$query = $this->getOverlappingDatesQuery($entity, $new);
+		$result = $this->collection
+			->query($query)
+			->cursor()->count();
+		return $result > 0;
+	}
+	
+	public function getOverlappingDatesQuery($entity, $new = true) {
+		$from_date = new MongoDate(strtotime($entity['from']));
+		if (!$from_date) {
+			return $this->setError("date error");
+		}
+		$to_date = new MongoDate(strtotime($entity['to']));
+		if (!$to_date) {
+			return $this->setError("date error");
+		}
+		$id = new MongoId(isset($entity['_id'])? $entity['_id'] : NULL);
+		if (!$id) {
+			return $this->setError("id error");
+		}
+		$ret = array(
+			$this->search_key => $entity[$this->search_key],
+			'$or' => array(
+				array('from' => array(
+					'$gte' => $from_date,
+					'$lt' => $to_date,
+				)),
+				array('to' => array(
+					'$gte' => $from_date,
+					'$lt' => $to_date,
+				))
+			)
+		);
+		if (!$new) {
+			$ret['_id'] = array('$ne' => $id);
+		}
+		return $ret;
 	}
 
 	public function startsInFuture($entity) {
@@ -97,7 +136,7 @@ class TabledateModel extends TableModel {
 		}
 
 		// close the old line
-		$mongoCloseTime = new MongoDate($new_from->getTimestamp() - 1);
+		$mongoCloseTime = new MongoDate($new_from->getTimestamp());
 		$closed_data = $this->collection->findOne($params['_id'])->getRawData();
 		$closed_data['to'] = $mongoCloseTime;
 		$this->update($closed_data);
@@ -123,7 +162,8 @@ class TabledateModel extends TableModel {
 			$params['from'] = new MongoDate(strtotime($params['from']));
 		}
 		if (isset($params['to']) && !$params['to'] instanceof MongoDate) {
-			$params['to'] = new MongoDate(strtotime($params['to']));
+			$to = new Zend_Date($params['to'], null, 'he-IL');
+			$params['to'] = new MongoDate($to->getTimestamp());
 		}
 		return parent::update($params);
 	}
@@ -133,25 +173,26 @@ class TabledateModel extends TableModel {
 		if (!$entity->isEmpty()) {
 			$to = $entity['to'];
 			$key_name = $entity[$this->search_key];
-			$this->collection->remove($entity);
+			$this->collection->removeEntity($entity);
 			$last_item = $this->getLastItem($key_name);
-			$last_item['to'] = $to;
-			$last_item->save();
+			$this->collection->updateEntity($last_item, array('to' => $to));
 		}
 	}
 
 	public function getLastItem($key_name) {
 		$result = $this->collection
-				->query($this->search_key, $key_name)
-				->cursor()
-				->sort(array('to' => -1))
-				->limit(1)
-				->current();
+			->query($this->search_key, $key_name)
+			->cursor()
+			->sort(array('to' => -1))
+			->limit(1)
+			->current();
 		$result->collection($this->collection);
 		return $result;
 	}
 
 	public function getFilterFields() {
+		$date = new Zend_Date(null, null, new Zend_Locale('he_IL'));
+		$date->set('00:00:00', Zend_Date::TIMES);
 		$filter_fields = array(
 			'date' => array(
 				'key' => 'date',
@@ -159,36 +200,10 @@ class TabledateModel extends TableModel {
 				'input_type' => 'date',
 				'comparison' => array('$lte', '$gte'),
 				'display' => 'Date',
-				'default' => (new Zend_Date(null, null, new Zend_Locale('he_IL')))->toString('YYYY-MM-dd HH:mm:ss'),
+				'default' => $date->toString('YYYY-MM-dd HH:mm:ss'),
 			),
 		);
 		return array_merge($filter_fields, parent::getFilterFields());
-	}
-
-	public function applyFilter($filter_field, $value) {
-		if ($filter_field['input_type'] == 'date' && is_array($filter_field['db_key'])) {
-			if (is_string($value)) {
-				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
-				return array(
-					'$and' => array(
-						array(
-							$filter_field['db_key'][0] => array(
-								$filter_field['comparison'][0] => $value
-							),
-							$filter_field['db_key'][1] => array(
-								$filter_field['comparison'][1] => $value
-							),
-						),
-					),
-				);
-			}
-		} else {
-			return parent::applyFilter($filter_field, $value);
-		}
-	}
-
-	public function toolbar() {
-		return 'date';
 	}
 
 	public function getFilterFieldsOrder() {
@@ -209,5 +224,5 @@ class TabledateModel extends TableModel {
 		);
 		return $sort_fields;
 	}
-
+	
 }

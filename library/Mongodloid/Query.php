@@ -2,8 +2,8 @@
 
 /**
  * @package         Mongodloid
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Mongodloid_Query implements IteratorAggregate {
 
@@ -39,6 +39,8 @@ class Mongodloid_Query implements IteratorAggregate {
 		'mod' => '$mod',
 	);
 	private $_params = array();
+	
+	private $_project = array();
 
 	private function _parseQuery($str) {
 		$exprs = preg_split('@ AND |&&@i', $str);
@@ -63,6 +65,10 @@ class Mongodloid_Query implements IteratorAggregate {
 		}
 	}
 
+	/**
+	 * Create a new instance of the query object.
+	 * @param Mongodloid_Collection $collection - Collection for the query to reference.
+	 */
 	public function __construct(Mongodloid_Collection $collection) {
 		$this->_collection = $collection;
 	}
@@ -110,8 +116,13 @@ class Mongodloid_Query implements IteratorAggregate {
 		return $this->cursor()->count();
 	}
 
+	/**
+	 * Get the cursor pointing to the collection based on the current query.
+	 * @return \Mongodloid_Cursor
+	 */
 	public function cursor() {
-		return new Mongodloid_Cursor($this->_collection->find($this->_params));
+		// 2nd argument due to new mongodb driver (PHP7+)
+		return new Mongodloid_Cursor($this->_collection->find($this->_params, $this->_project)/*, $this->_collection->getWriteConcern('wtimeout')*/);
 	}
 
 	public function query($key, $value = null) {
@@ -133,6 +144,11 @@ class Mongodloid_Query implements IteratorAggregate {
 
 	public function getIterator() {
 		return $this->cursor();
+	}
+	
+	public function project($project) {
+		$this->_project = $project;
+		return $this;
 	}
 
 }

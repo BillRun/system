@@ -2,8 +2,8 @@
 
 /**
  * @package			ASN
- * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright		Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
+ * @license			GNU Affero General Public License Version 3; see LICENSE.txt
  */
 class Asn_Type_NumStr extends Asn_Object {
 
@@ -13,7 +13,7 @@ class Asn_Type_NumStr extends Asn_Object {
 	 * @param $data The ASN encoded data
 	 */
 	protected function parse($data) {
-		parent::parse($data);
+		return parent::parse($data);
 // 		$numarr = unpack("C*",$data);
 // 		$tempData =0;
 // 		foreach($numarr as $byte) {

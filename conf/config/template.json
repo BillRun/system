@@ -1,0 +1,104 @@
+{
+	"tenant" : {
+		"name" : "",
+		"address" : "",
+		"phone" : "",
+		"website" : "",
+		"email" : "",
+		"logo": ""
+	},
+	"collection" : {
+		"steps": [],
+		"min_debt": 10
+	},
+	"invoice_export" : {
+		"export"  : "files/invoices/",
+		"generator" : {
+			"type" : "WkPdf"
+		},
+		"disable_stamp_export_directory" : 1,
+		"theme" : "/application/views/invoices/theme/theme1.css",
+		"header"  : "<div style=\"text-align: center;\">Company : [[company_name]]</div><div>Demo Header</div>",
+		"footer"  : "<p>Demo Footer, date [[date]]</p>",
+		"sumup_template"  : "/application/views/invoices/sumup/sumup1.phtml",
+		"details_template" : "/application/views/invoices/details/details1.phtml",
+		"decimal_mark" : ".",
+		"thousands_separator":",",
+		"date_separator" : "/",
+		"move_exported" : 0,
+		"html_translation" : [
+			"company_name",
+			"date"
+		],
+		"status" : {
+			"header" : false,
+			"footer" : false
+		}
+	},
+	"menu" : {
+		"t" : "menu",
+		"v" : { "main" : { "tmp" : "tmp" } }
+	},
+	"template_token":{},
+	"payment_gateways":[],
+	"events" : {
+		"balance" : [],
+		"settings": {
+			"http": {
+				"url": "",
+				"num_of_tries": 3,
+				"method": "post",
+				"decoder": "json"
+			}
+		}
+	},
+	"taxation" :{
+		"tax_type": "vat",
+		 "CSI": {
+				"available_providers" :  {
+											"00":"ILEC",
+											"01" : "IXC",
+											"02" : "CLEC",
+											"03" : "VOIP",
+											"04" : "ISP",
+											"05" : "Wireless"
+				},
+				"taxation_mapping": [],
+				"provider": "",
+				"auth_code": "",
+				"apply_optional_charges": true
+		 },
+		 "vat" : 0
+	},
+	"discounts": {
+    "fields": [
+      {
+        "field_name": "key",
+        "mandatory": true
+      },
+      {
+        "field_name": "from",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "to",
+        "mandatory": true,
+        "type": "date"
+      },
+      {
+        "field_name": "description",
+        "mandatory": true
+      }
+    ]
+  },
+  "billrun" : {
+	"detailed_invoices":{
+		"v": false,
+		"t": "Boolean"
+		}
+  },
+	"system" : {
+		"closed_cycle_changes": false
+	}
+}

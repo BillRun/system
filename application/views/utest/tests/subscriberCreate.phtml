@@ -1,0 +1,107 @@
+<form action="/utest/result?collection=<?php echo $test_collection ?>" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt><?php echo $label ?></dt>
+			<dd>Retrieve values for creating a new subscriber</dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
+			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="imsi" class="col-sm-4 text-right">IMSI</label>
+		<div class="col-sm-6">
+			<textarea rows="4" name="imsi" class="form-control" ><?php echo $imsi ?></textarea>
+			<small class="text-muted">New line per IMSI.</small>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="msisdn" class="col-sm-4 control-label text-right">MSISDN</label>
+		<div class="col-sm-6">
+			<input type="text" name="msisdn" value='<?php echo $msisdn ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="aid" class="col-sm-4 control-label text-right">AID (BAN)</label>
+		<div class="col-sm-6">
+			<input type="text" name="aid" value='<?php echo $aid ?>' class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="plan" class="col-sm-4 control-label text-right">Plan</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='plan'>
+				<option value=""></option>
+				<?php foreach ($customer_plans as $customer_plan) : ?>
+					<option value="<?php echo $customer_plan ?>"><?php echo $customer_plan ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="service_provider" class="col-sm-4 control-label text-right">Service Provider</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='service_provider'>
+				<option value=""></option>
+				<?php foreach ($service_providers as $service_provider) : ?>
+					<option value="<?php echo $service_provider ?>" <?php if ('Pelephone' == $service_provider) echo 'selected' ?>><?php echo $service_provider ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="connection_type" class="col-sm-4 control-label text-right">Charging Type</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='connection_type'>
+				<option value=""></option>
+				<?php foreach ($connection_types as $connection_type) : ?>
+					<option value="<?php echo $connection_type ?>" <?php if ('prepaid' == $connection_type) echo 'selected' ?>><?php echo $connection_type ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="language" class="col-sm-4 control-label text-right">Language</label>
+		<div class="col-sm-6">
+			<select class="form-control" name='language'>
+				<?php foreach ($languages as $language) : ?>
+					<option value="<?php echo $language ?>" <?php if ('Hebrew' == $language) echo 'selected' ?>><?php echo $language ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label class="col-sm-4 text-right"></label>
+		<div class="col-sm-6">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="removeSubscriber" value="remove">Remove all existing Subscriber with this SID
+				</label>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

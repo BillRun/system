@@ -1,0 +1,34 @@
+						<div class="form-row">
+							<label for="field-select-services" class="form-label">Select services</label>
+							
+							<div class="form-controls">
+								<ul class="list-checkboxes">
+									<?php // foreach ($services as $service) : ?>
+									<?php for ($i = 0; $i < count($services); $i++) : 
+										$service = $services[$i];
+									?>
+									<li>
+										<div class="checkbox">
+											<label for="field-service-name-<?php echo $i; ?>" class="form-label-check">
+												<input type="checkbox" name="services[]" value="<?php echo htmlspecialchars($service['name']); ?>" id="field-service-name-<?php echo $i; ?>" />
+												
+												<span class="overlay"></span>
+
+												<span class="checkbox-icon">
+													<i class="material-icons">crop_square</i>
+													<i class="material-icons">check_box</i>
+												</span>
+
+												<h5 title="<?php echo htmlspecialchars($service['name']); ?>"><?php echo htmlspecialchars($service['name']); ?></h5>
+
+												<p title="<?php echo htmlspecialchars($service['description']); ?>"><?php echo htmlspecialchars($service['description']); ?></p>
+
+												<h2><?php echo htmlspecialchars($currency_symbol . $service['price'][0]['price']); ?> <sub><?php echo $service['price'][0]['to'] == 'UNLIMITED' ? '': $service['price'][0]['to'] . ' months'; ?></sub></h2>
+											</label>
+										</div><!-- /.checkbox -->
+									</li>
+									<?php endfor; ?>
+									
+								</ul><!-- /.list-checkboxes -->
+							</div><!-- /.form-controls -->
+						</div><!-- /.form-row -->

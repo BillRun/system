@@ -1,0 +1,34 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"test": "One subscriber upfront",
+	"subs":1,
+	"data": [
+		{
+		  "firstname": "Upfront",
+		  "lastname": "Plan",
+		  "country": "UK",
+		  "address": "10 Downing st.",
+		  "type": "account",
+		  "from": 1475280000,
+		  "plan_activation": 1475280000,
+		  "to" : 4627262024,
+		  "aid": 6
+		},
+		{
+		  "aid": "6",
+		  "firstname": "Upfront",
+		  "lastname": "Plan",
+		  "plan": "PLAN-X2",
+		  "address": "10 downing st.",
+		  "country": "UK",
+		  "type": "subscriber",
+		  "from": 1475280000,
+		  "plan_activation": 1475280000,
+		  "to": 1477872000,
+		  "sid": "7"
+		}
+
+	]
+}

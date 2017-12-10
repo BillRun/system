@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -56,7 +56,7 @@ class Billrun_Sms {
 	 */
 	public function send($message, $recipients) {
 		if (empty($message) || empty($recipients)) {
-			Billrun_Factory::log()->log("can not send the sms, there are missing params - txt: " . $this->data['message'] . " recipients: " . print_r($this->data['recipients'], TRUE) . " from: " . $this->data['from'], Zend_Log::WARN);
+			Billrun_Factory::log("can not send the sms, there are missing params - txt: " . $message . " recipients: " . print_r($this->data['recipients'], TRUE) . " from: " . $this->data['from'], Zend_Log::WARN);
 			return false;
 		}
 
@@ -96,7 +96,7 @@ class Billrun_Sms {
 				'tid' => $exploded[3],
 			);
 
-			Billrun_Factory::log()->log("phone: " . $recipient . " encoded_text: " . $message . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
+			Billrun_Factory::log("phone: " . $recipient . " encoded_text: " . $message . " url: " . $url . " result" . print_R($response, 1), Zend_Log::INFO);
 		}
 
 		return $response['error-code'] == 'success' ? true : false;

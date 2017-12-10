@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 require_once APPLICATION_PATH . '/application/controllers/Action/Credit.php';
 
@@ -14,12 +14,13 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Credit.php';
  * @since    0.8
  */
 class BulkCreditAction extends CreditAction {
-
+	
 	/**
 	 * method to execute the bulk credit
 	 * it's called automatically by the api main controller
 	 */
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest()->getPost();
 //		$request = $this->getRequest()->getQuery();
 //		$request = $this->getRequest()->getRequest(); // supports GET / POST requests
@@ -57,14 +58,15 @@ class BulkCreditAction extends CreditAction {
 		);
 
 		$receiver = Billrun_Receiver::getInstance($options);
-		if ($receiver) {
-			$files = $receiver->receive();
-			if (!$files) {
-				return $this->setError('Couldn\'t receive file', $request);
-			}
-		} else {
+		if (!$receiver) {
 			return $this->setError('Receiver cannot be loaded', $request);
 		}
+
+		$files = $receiver->receive();
+		if (!$files) {
+			return $this->setError('Couldn\'t receive file', $request);
+		}
+
 		$this->processBulkCredit();
 		$this->getController()->setOutput(array(array(
 				'status' => 1,
@@ -77,17 +79,16 @@ class BulkCreditAction extends CreditAction {
 	}
 
 	protected function processBulkCredit() {
-		$env = Billrun_Factory::config()->getEnv();
-		$cmd = 'php -t ' . APPLICATION_PATH . ' ' . APPLICATION_PATH . '/public/index.php --environment ' . $env . ' --process --type credit --parser none';
+		$cmd = 'php -t ' . APPLICATION_PATH . ' ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --process --type credit --parser none';
 		Billrun_Util::forkProcessCli($cmd);
 	}
 
 	protected function queryCredit($request) {
-		if (isset($request['stamp'])) {
-			$filtered_request['stamp'] = $request['stamp'];
-		} else {
+		if (!isset($request['stamp'])) {
 			return $this->setError('Stamp is missing', $request);
 		}
+
+		$filtered_request['stamp'] = $request['stamp'];
 
 		if (!isset($request['details'])) {
 			$filtered_request['details'] = 0;

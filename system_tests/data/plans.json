@@ -1,0 +1,147 @@
+{
+	"dates": [
+		"to","from","plan_activation" 
+	],
+	"data":
+	[
+	{
+		"name" : "PLAN-X3",
+		"code" : "PLAN-X3",
+		"description" : "PLAN-X3",
+		"recurrence" : {
+			"unit" :1,
+			"periodicity" : "month"
+		},
+		"upfront" : false,
+		"price" : [
+			{
+				"price" : "10",
+				"from" : 0,
+				"to" : 2,
+				"trial" : true
+			},
+			{
+				"price" : "25",
+				"from" : 2,
+				"to" : 999999999
+			}
+		],
+
+		"rates": {
+			"CALL-USA": {
+				"call":{
+						"rate" : [
+
+							{
+								"from" : 0,
+								"to" : 20,
+								"interval" : 1,
+								"price" : "0.2"
+							},
+							{
+								"from" : 21,
+								"to" : 999999999,
+								"interval" : 1,
+								"price" : "0.5"
+							}
+
+					]}
+			}
+		},
+		"from" :  1375654916,
+		"to": 4731328516,
+		"include" : {
+			"groups" : {
+				"GROUPO" : {
+					"call" : "100",
+					"rates": ["CALL-USA"]
+					}
+				}
+			}
+	},
+	{
+		"name" : "PLAN-A0",
+		"code" : "PLAN-A0",
+		"description" : "PLAN-A0",
+		"recurrence" : {
+		"unit" : 1,
+		"periodicity" : "month"
+		},
+		"upfront" : false,
+		"price" : [
+		  {
+			  "price" : "50",
+			  "from" : 0,
+			  "to" : 2,
+			  "trial" : true
+		  },
+		  {
+			  "price" : "25",
+			  "from" : 2,
+			  "to" : 999999999
+		  }
+	  ],
+	   "from" :  1375654916,
+		"to": 4731328516
+	},
+	{
+	  "name" : "PLAN-A1",
+	  "code" : "PLAN-A1",
+	  "description" : "PLAN-A1",
+	  "recurrence" : {
+		  "unit" : 1,
+		  "periodicity" : "month"
+	  },
+	  "upfront" : false,
+	  "price" : [
+		  {
+			  "price" : "50",
+			  "from" : 0,
+			  "to" : 2,
+			  "trial" : true
+		  },
+		  {
+			  "price" : "25",
+			  "from" : 2,
+			  "to" : 999999999
+		  }
+		],
+		"rates": {
+			"VEG": {
+				"gr":{
+						"rate" : [
+
+							{
+								"from" : 0,
+								"to" : 20,
+								"interval" : 1,
+								"price" : "0.1"
+							},
+							{
+								"from" : 21,
+								"to" : 999999999,
+								"interval" : 1,
+								"price" : "0.2"
+							}
+
+					]}
+			}
+		},
+
+		"from" :  1375654916,
+		"to": 4731328516,
+		"include" : {
+			"groups" : {
+				"AAA" : {
+					"call" : "50",
+					"rates": ["CALL-USA","VEG"]
+				},
+				"SR4" : {
+					"gr" : "50",
+					"rates": ["VEG"]
+				}
+			}
+		}
+	  }
+	]
+}

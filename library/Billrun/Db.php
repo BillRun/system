@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -29,10 +29,26 @@ class Billrun_Db extends Mongodloid_Db {
 	 */
 	public function __construct(\MongoDb $db, \Mongodloid_Connection $connection) {
 		parent::__construct($db, $connection);
+		// TODO: refatoring the collections to factory (loose coupling)
 		$this->collections = Billrun_Factory::config()->getConfigValue('db.collections', array());
 		$timeout = Billrun_Factory::config()->getConfigValue('db.timeout', 3600000); // default 60 minutes
-		Billrun_Factory::log()->log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
-		MongoCursor::$timeout = $timeout;
+		if ($this->compareClientVersion('1.5.3', '<')) {
+			Billrun_Factory::log('Set database cursor timeout to: ' . $timeout, Zend_Log::INFO);
+			@MongoCursor::$timeout = $timeout;
+		} else {
+			// see also bugs: 
+			// https://jira.mongodb.org/browse/PHP-1099
+			// https://jira.mongodb.org/browse/PHP-1080
+			$db->setWriteConcern($db->getWriteConcern()['w'], $timeout);
+		}
+	}
+	
+	/**
+	 * Get the current MongoDB
+	 * @return MongoDB
+	 */
+	public function getDb() {
+		return $this->_db;
 	}
 
 	/**
@@ -41,10 +57,11 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @return Billrun_Db instance of the Database
 	 */
 	public static function getInstance($config) {
+		$host = isset($config['host']) ? $config['host'] : '';
 		if (isset($config['port'])) {
-			$conn = Billrun_Connection::getInstance($config['host'], $config['port']);
+			$conn = Billrun_Connection::getInstance($host, $config['port']);
 		} else {
-			$conn = Billrun_Connection::getInstance($config['host']);
+			$conn = Billrun_Connection::getInstance($host);
 		}
 
 		if (!isset($config['options'])) {
@@ -81,10 +98,14 @@ class Billrun_Db extends Mongodloid_Db {
 		$suffix = 'Collection';
 		if (substr($name, (-1) * strlen($suffix)) == $suffix) {
 			$collectionName = substr($name, 0, (strpos($name, $suffix)));
-			if (in_array($collectionName, $this->collections)) {
+			if (!empty($this->collections[$collectionName])) {
 				return $this->getCollection($this->collections[$collectionName]);
 			}
+		} else if ($arguments['force']) {
+			return $this->getCollection($name);
 		}
+
+		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
 		return false;
 	}
 
@@ -94,14 +115,44 @@ class Billrun_Db extends Mongodloid_Db {
 	 * @return type the requested collection
 	 */
 	public function __get($name) {
-		if (in_array($name, $this->collections)) {
+		if (!empty($this->collections[$name])) {
 			return $this->collections[$name];
 		}
-		Billrun_Factory::log()->log('Collection or property' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
+		Billrun_Factory::log('Collection or property ' . $name . ' did not found in the DB layer', Zend_Log::ALERT);
 	}
 
 	public function execute($code, $args = array()) {
 		return $this->command(array('$eval' => $code, 'args' => $args));
+	}
+
+	/**
+	 * Change numeric references to MongoDate object in a given filed in an array.
+	 * @param MongoDate $arr 
+	 * @param type $fieldName the filed in the array to alter
+	 * @return the translated array
+	 */
+	public static function intToMongoDate($arr) {
+		if (is_array($arr)) {
+			foreach ($arr as $key => $value) {
+				if (is_numeric($value)) {
+					$arr[$key] = new MongoDate((int) $value);
+				}
+			}
+		} else if (is_numeric($arr)) {
+			$arr = new MongoDate((int) $arr);
+		}
+		return $arr;
+	}
+	
+	public function getByDBRef($dbRef) {
+		if(MongoDBRef::isRef($dbRef)) {
+			$coll = $this->getCollection($dbRef['$ref']);
+			if($coll) {
+				return $coll->getRef($dbRef);
+			}
+		}
+		
+		return FALSE;
 	}
 
 }

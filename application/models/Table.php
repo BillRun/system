@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -66,6 +66,7 @@ class TableModel {
 	 * @var array extra columns to display in the table
 	 */
 	public $extra_columns;
+	protected $error;
 
 	/**
 	 * constructor
@@ -76,20 +77,19 @@ class TableModel {
 
 		if (isset($params['collection'])) {
 			if (isset($params['db'])) {
-				$this->collection = Billrun_Factory::db(array('name' => $params['db']))->balancesCollection();
+				$this->collection = call_user_func(array(Billrun_Factory::db(array('name' => $params['db'])), $params['collection'] . 'Collection'));
 			} else {
 				$this->collection = call_user_func(array(Billrun_Factory::db(), $params['collection'] . 'Collection'));
-//                          $this->collection->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'));
 			}
 			$this->collection_name = $params['collection'];
 		}
 
 		if (isset($params['page'])) {
-			$this->page = $params['page'];
+			$this->setPage($params['page']);
 		}
 
 		if (isset($params['size'])) {
-			$this->size = $params['size'];
+			$this->setSize($params['size']);
 		}
 
 		if (isset($params['sort'])) {
@@ -99,6 +99,14 @@ class TableModel {
 		if (isset($params['extra_columns'])) {
 			$this->extra_columns = $params['extra_columns'];
 		}
+	}
+
+	public function setSize($size) {
+		$this->size = $size;
+	}
+
+	public function setPage($page) {
+		$this->page = $page;
 	}
 
 	/**
@@ -184,10 +192,10 @@ class TableModel {
 			$ret = '<ul class="pagination pagination-right">';
 			if ($current == 1) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">First</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Prev</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=1">First</a></li>'
-						. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
+					. '<li><a href="?page=' . ($current - 1) . '">Prev</a></li>';
 			}
 
 			for ($i = $min; $i < $current; $i++) {
@@ -202,10 +210,10 @@ class TableModel {
 
 			if ($current == $count) {
 				$ret .= '<li class="disabled"><a href="javascript:void(0);">Next</a></li>'
-						. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
+					. '<li class="disabled"><a href="javascript:void(0);">Last</a></li>';
 			} else {
 				$ret .= '<li><a href="?page=' . ($current + 1) . '">Next</a></li>'
-						. '<li><a href="?page=' . $count . '">Last</a></li>';
+					. '<li><a href="?page=' . $count . '">Last</a></li>';
 			}
 
 			$ret .= '</ul>';
@@ -223,7 +231,7 @@ class TableModel {
 				<ul class="dropdown-menu">';
 		// TODO: move it to config
 		$ranges = array(
-			10, 50, 100, 500, 1000
+			10, 50, 100, 500, 1000, 10000
 		);
 		foreach ($ranges as $r) {
 			$ret .= '<li><a href="?listSize=' . $r . '">' . $r . '</a></li>';
@@ -235,6 +243,24 @@ class TableModel {
 		return $ret;
 	}
 
+	public function getItemByName($name, $field_name = 'name') {
+		if (!($this->collection instanceof Mongodloid_Collection)) {
+			return false;
+		}
+
+		$entity = $this->collection->query(array($field_name => $name))->cursor()->limit(1)->current();
+
+		// convert mongo values into javascript values
+		$entity['_id'] = (string) $entity['_id'];
+		if ($entity['from'] && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->getIso();
+		if ($entity['to'] && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->getIso();
+		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
+			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
+		return $entity;
+	}
+
 	public function getItem($id) {
 		if (!($this->collection instanceof Mongodloid_Collection)) {
 			return false;
@@ -244,7 +270,12 @@ class TableModel {
 
 		// convert mongo values into javascript values
 		$entity['_id'] = (string) $entity['_id'];
-
+		if ($entity['from'] && isset($entity['from']->sec))
+			$entity['from'] = (new Zend_Date($entity['from']->sec))->getIso();
+		if ($entity['to'] && isset($entity['to']->sec))
+			$entity['to'] = (new Zend_Date($entity['to']->sec))->getIso();
+		if ($entity['creation_time'] && isset($entity['creation_time']->sec))
+			$entity['creation_time'] = (new Zend_Date($entity['creation_time']->sec))->getIso();
 		return $entity;
 	}
 
@@ -257,34 +288,56 @@ class TableModel {
 //		if (method_exists($this, $coll . 'BeforeDataSave')) {
 //			call_user_func_array(array($this, $coll . 'BeforeDataSave'), array($collection, &$newEntity));
 //		}
-		if (isset($params['_id'])) {
-			$entity = $this->collection->findOne($params['_id']);
-			$protected_keys = $this->getProtectedKeys($entity, "update");
-			$hidden_keys = $this->getHiddenKeys($entity, "update");
-			$raw_data = $entity->getRawData();
-			$new_data = array();
-			foreach ($protected_keys as $value) {
-				if (isset($raw_data[$value])) {
-					$new_data[$value] = $raw_data[$value];
-				}
-			}
-			foreach ($hidden_keys as $value) {
-				$new_data[$value] = $raw_data[$value];
-			}
-			foreach ($params as $key => $value) {
-				$new_data[$key] = $value;
-			}
-			$entity->setRawData($new_data);
-		} else {
+		if (!isset($params['_id'])) {
 			$entity = new Mongodloid_Entity($params);
+		} else {
+			$entity = $this->getEntityToUpdateById($params);
 		}
-		$entity->save($this->collection);
+		
+		$this->collection->save($entity, 1);
 //		if (method_exists($this, $coll . 'AfterDataSave')) {
 //			call_user_func_array(array($this, $coll . 'AfterDataSave'), array($collection, &$newEntity));
 //		}
 		return $entity;
 	}
 
+	/**
+	 * Get the entity object by the input _id value
+	 * @param arrray $params input params to return an entity by.
+	 * @return \Mongodloid_Entity
+	 */
+	protected function getEntityToUpdateById($params) {
+		$entity = $this->collection->findOne($params['_id']);
+		$protected_keys = $this->getProtectedKeys($entity, "update");
+		$hidden_keys = $this->getHiddenKeys($entity, "update");
+		$raw_data = $entity->getRawData();
+		$new_data = array();
+		foreach ($protected_keys as $value) {
+			if (isset($raw_data[$value])) {
+				$new_data[$value] = $raw_data[$value];
+			}
+		}
+		foreach ($hidden_keys as $value) {
+			$new_data[$value] = $raw_data[$value];
+		}
+		foreach ($params as $key => $value) {
+			if (in_array($key, array("to", "from")) && is_array($value)) {
+				if (get_class($value) !== 'MongoDate') {
+					//$value = new MongoDate((new Zend_Date($value['sec'], null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate($value['sec']);
+				}
+			} else if (in_array($key, array("to", "from"))) {
+				if (get_class($value) !== 'MongoDate') {
+					//$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					$value = new MongoDate(strtotime($value));
+				}
+			}
+			$new_data[$key] = $value;
+		}
+		$entity->setRawData($new_data);
+		return $entity;
+	}
+	
 	public function getProtectedKeys($entity, $type) {
 		return array("_id");
 	}
@@ -296,7 +349,7 @@ class TableModel {
 	public function getFilterFields() {
 		return array();
 	}
-	
+
 	public function getSortFields() {
 		return array();
 	}
@@ -309,11 +362,28 @@ class TableModel {
 		if ($filter_field['input_type'] == 'number') {
 			if ($value != '') {
 				if ($filter_field['comparison'] == 'equals') {
-					return array(
-						$filter_field['db_key'] => array(
-							'$in' => array_map('floatval', explode(',', $value)),
-						),
-					);
+					if (is_array($filter_field['db_key'])) {
+						$ret = array('$or' => array(
+								array(
+									$filter_field['db_key'][0] => array(
+										'$in' => array_map('floatval', explode(',', $value)),
+									),
+								),
+								array(
+									$filter_field['db_key'][1] => array(
+										'$in' => array_map('strval', explode(',', $value)),
+									),
+								)
+							)
+						);
+					} else {
+						$ret = array(
+							$filter_field['db_key'] => array(
+								'$in' => array_map('floatval', explode(',', $value)),
+							),
+						);
+					}
+					return $ret;
 				}
 			}
 		} else if ($filter_field['input_type'] == 'text') {
@@ -323,21 +393,58 @@ class TableModel {
 						$value = Admin_Table::convertValueByCaseType($value, $filter_field['case_type']);
 					}
 					return array(
-						$filter_field['db_key'] => array('$regex' => strval($value)),
+						$filter_field['db_key'] => array('$regex' => new MongoRegex('/' . $value . '/i')),
 					);
 				}
 			}
 		} else if ($filter_field['input_type'] == 'date') {
-			if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
+			if (is_array($filter_field['db_key']) && is_string($value)) {
 				$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
 				return array(
-					$filter_field['db_key'] => array(
-						$filter_field['comparison'] => $value
-					)
+					'$and' => array(
+						array(
+							$filter_field['db_key'][1] => array(
+								$filter_field['comparison'][1] => $value
+							),
+						),
+					),
 				);
+			} else {
+				if ($filter_field['db_key'] == 'to') {
+					$split = explode(' ', $value);
+					$value = $split[0] . ' 23:59:59';
+				} else if ($filter_field['db_key'] == 'from') {
+					$split = explode(' ', $value);
+					$value = $split[0] . ' 00:00:00';
+				}
+				if (is_string($value) && Zend_Date::isDate($value, 'yyyy-MM-dd hh:mm:ss')) { //yyyy-MM-dd hh:mm:ss
+					$value = new MongoDate((new Zend_Date($value, null, new Zend_Locale('he_IL')))->getTimestamp());
+					return array(
+						$filter_field['db_key'] => array(
+							$filter_field['comparison'] => $value
+						)
+					);
+				}
 			}
 		} else if ($filter_field['input_type'] == 'multiselect') {
+			if (isset($filter_field['ref_coll']) && isset($filter_field['ref_key'])) {
+				$collection = Billrun_Factory::db()->{$filter_field['ref_coll'] . "Collection"}();
+				$pre_query = array(
+					$filter_field['ref_key'] => array(
+						'$in' => $value,
+					),
+				);
+				$cursor = $collection->query($pre_query);
+				$value = array();
+				foreach ($cursor as $entity) {
+					$value[] = $collection->createRefByEntity($entity);
+				}
+			}
 			if (is_array($value) && !empty($value)) {
+
+				if ($this instanceof QueueModel && $filter_field['db_key'] == 'calc_name') {
+					$value = $this->prev_calc($value);
+				}
 				return array(
 					$filter_field['db_key'] => array(
 						$filter_field['comparison'] => $value
@@ -363,7 +470,7 @@ class TableModel {
 		$extra_columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.extra_columns', array());
 		return $extra_columns;
 	}
-	
+
 	public function getTableColumns() {
 		$columns = Billrun_Factory::config()->getConfigValue('admin_panel.' . $this->collection_name . '.table_columns', array());
 		if (!empty($this->extra_columns)) {
@@ -382,19 +489,100 @@ class TableModel {
 	}
 
 	public function duplicate($params) {
-		$key = $params[$this->search_key];
-		$count = $this->collection
-				->query($this->search_key, $key)
-				->count();
+		// This already done from the controller
+//		$key = $params[$this->search_key];
 
-		if ($count) {
-			die(json_encode("key already exists"));
+//		if ($key) {
+//			$count = $this->collection
+//				->query($this->search_key, $key)
+//				->count();
+//			if ($count) {
+//				return $this->setError("key already exists");
+//			}
+//		}
+		if (isset($params['_id']->{'id'})) {
+			$params['source_id'] = (string) $params['_id']->{'$id'};
+		} else if (isset($params['_id'])) {
+			$params['source_id'] = (string) $params['_id'];
 		}
 		unset($params['_id']);
 		return $this->update($params);
 	}
-	
+
 	public function getEmptyItem() {
 		return new Mongodloid_Entity();
 	}
+
+	/**
+	 * method to check if indexes exists in the query filters
+	 * 
+	 * @param type $filters the filters to search in
+	 * @param type $searched_filter the filter to search
+	 * 
+	 * @return boolean true if searched filter exists in the filters supply
+	 */
+	protected function filterExists($filters, $searched_filter) {
+		settype($searched_filter, 'array');
+		foreach ($filters as $k => $f) {
+			$keys = array_keys($f);
+			if (count(array_intersect($searched_filter, $keys))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public function exportCsvFile($params) {
+		$separator = ',';
+		$header_output[] = implode($separator, $this->prepareHeaderExport($params['columns']));
+		$data_output = $this->prepareDataExport($params['data'], array_keys($params['columns']), $separator);
+		$output = implode(PHP_EOL, array_merge($header_output, $data_output));
+		$this->export($output);
+	}
+
+	protected function export($output) {
+		header("Cache-Control: max-age=0");
+		header("Content-type: application/csv");
+		header("Content-Disposition: attachment; filename=csv_export.csv");
+		die($output);
+	}
+
+	protected function prepareHeaderExport($headerData) {
+		$row = array('#');
+		foreach ($headerData as $value) {
+			$row[] = $value;
+		}
+		return $row;
+	}
+
+	protected function prepareDataExport($data, $columns, $separator = ',') {
+		$ret = array();
+		$c = 0;
+		foreach ($data as $item) {
+			$ret[] = ++$c . $separator . $this->formatCsvRow($item, $columns, $separator);
+		}
+		return $ret;
+	}
+
+	protected function formatCsvRow($row, $columns, $separator = ',') {
+		$ret = array();
+		foreach ($columns as $h) {
+			$ret[] = $this->formatCsvCell($row, $h);
+		}
+		return implode($separator, $ret);
+	}
+
+	protected function formatCsvCell($row, $header) {
+		return $row[$header];
+	}
+
+	protected function setError($str) {
+		$this->error = $str;
+		return false;
+	}
+
+	public function getError() {
+		return $this->error;
+	}
+
 }

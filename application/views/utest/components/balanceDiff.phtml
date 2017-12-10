@@ -1,0 +1,42 @@
+<?php if (!empty($balances_after) && !empty($balances_before)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading down" data-toggle="collapse" data-target="#balance-diff">Balances Diff</div>
+		<div class="panel-body collapse in" id='balance-diff'>
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th>Name (ID)</th>
+						<th>Diff</th>
+						<th>Unit</th>
+						<th>Charging by usaget</th>
+						<th>Charging By</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($balances_before as $balance_id => $balance) : ?>
+						<tr>
+							<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="<?php echo $balance_id ?>"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
+							<td><?php echo number_format(($balances_after[$balance_id]['amount']) - ($balances_before[$balance_id]['amount']), 3) ?></td>
+							<td><?php echo $balance['charging_by_usaget_unit'] ?></td>
+							<td><?php echo $balance['charging_by_usaget'] ?></td>
+							<td><?php echo $balance['charging_by'] ?></td>
+						</tr>
+					<?php endforeach; ?>
+					<?php if (count($balances_after) > count($balances_before)) : ?>
+						<?php foreach ($balances_after as $balance_id => $balance) : ?>
+							<?php if (!array_key_exists($balance_id, $balances_before)) : ?>
+								<tr>
+									<td><a href="<?php echo $this->baseUrl; ?>/admin#/balances/update/<?php echo $balance_id ?>" target="_blank" data-toggle="tooltip" title="<?php echo $balance_id ?>"><?php echo $balance['pp_includes_name'] ?> <span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span></a></td>
+									<td><?php echo number_format(($balances_after[$balance_id]['amount']), 3) ?></td>
+									<td><?php echo $balance['charging_by_usaget_unit'] ?></td>
+									<td><?php echo $balance['charging_by_usaget'] ?></td>
+									<td><?php echo $balance['charging_by'] ?></td>
+								</tr>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+<?php endif; ?>

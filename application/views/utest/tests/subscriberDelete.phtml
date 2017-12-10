@@ -1,0 +1,58 @@
+<form action="/utest/result?collection=<?php echo $test_collection ?>" method="<?php echo $request_method ?>" class="form-horizontal">
+
+	<input type="hidden" name="type" value="<?php echo $name ?>">
+	<input type="hidden" name="testcollection" value="<?php echo $test_collection ?>" >
+
+	<div class="form-group row">
+		<dl class="col-sm-12 text-center">
+			<dt>API Subscribers Delete</dt>
+			<dd>Retrieve values for deleting a subscriber</dd>
+			<dd>The subscriber is never delete but close (to field will be set for now).</dd>
+		</dl>
+	</div>
+	<hr/>
+
+	<div class="form-group row">
+		<label for="sid" class="col-sm-4 control-label text-right">SID</label>
+		<div class="col-sm-6">
+			<input type="text" name="sid" value='<?php echo $sid ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="imsi" class="col-sm-4 control-label text-right">IMSI</label>
+		<div class="col-sm-6">
+			<input type="text" name="imsi" value='<?php echo $imsi ?>'  class="form-control">
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<label for="msisdn" class="col-sm-4 control-label text-right">MSISDN</label>
+		<div class="col-sm-6">
+			<input type="text" name="msisdn" value=''  class="form-control">
+		</div>
+	</div>	
+
+	<div class="form-group">
+		<label class="col-sm-4 control-label text-right" >Keep Balances</label>
+		<div class="col-sm-6">
+			<div class="input-group">
+				<span class="input-group-addon">
+					<input type="checkbox" class='enable-input' name="enable-keep_balances">
+					<small class="text-muted text-center">Check to send value.</small>
+				</span>
+				<select class="form-control" name='keep_balances'>
+					<option value="">False</option>
+					<option value="1" selected>True</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
+	<div class="form-group row">
+		<div class="col-sm-offset-4 col-sm-6">
+			<button type="submit" class="btn btn-success btn-block">Run Test</button>
+		</div>
+	</div>
+
+</form>

@@ -1,0 +1,25 @@
+<?php if (!empty($cards)) : ?>
+	<div class="panel panel-default">
+		<div class="panel-heading down" data-toggle="collapse" data-target="#cards">
+			<?php echo $label ?></div>
+		<div class="panel-body collapse in" id='<?php echo $id ?>'>
+			<?php foreach ($cards as $card_id => $card) : ?>
+				<div class="row well col-sm-5" style='margin: 10px 30px;'>
+					<dl class="dl-horizontal">
+						<?php foreach ($card as $fieldName => $fieldValue) : ?>
+							<dt><?php echo $fieldName ?></dt>
+							<dd>							
+								<?php if ($fieldName == 'secret') : ?>
+									<a href="#" data-toggle="tooltip" title="<?php echo $fieldValue ?>"> 
+										<span class="glyphicon glyphicon-question-sign" aria-hidden="false"></span>&nbsp;
+									</a>
+								<?php else : ?>
+									<?php echo $fieldValue ?>
+								<?php endif; ?></dd>
+						<?php endforeach; ?>
+					</dl>
+				</div>
+			<?php endforeach; ?>
+		</div>
+	</div>
+<?php endif; ?>

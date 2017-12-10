@@ -2,14 +2,13 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
  * This Trait is used  for classes that need to  implement ASN binary parsing for files such as GGSN/TAP3
  *
- * @author eran
  */
 trait Billrun_Traits_AsnParsing {
 
@@ -29,7 +28,7 @@ trait Billrun_Traits_AsnParsing {
 				foreach ($halfBytes as $byte) {
 					$tempData .= ($byte & 0xF) . ((($byte >> 4) < 10) ? ($byte >> 4) : "" );
 				}
-				Billrun_Factory::log()->log("DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData, Zend_Log::DEBUG);
+				Billrun_Factory::log("DEBUG : " . $type . " | " . $numData . " | " . $tempData . " | " . implode(unpack("H*", $fieldData)) . " | " . implode(unpack("C*", $fieldData)) . " | " . $fieldData, Zend_Log::DEBUG);
 				return "";
 			},
 			'string' => function($fieldData) {
@@ -111,7 +110,7 @@ trait Billrun_Traits_AsnParsing {
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = false;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+				Billrun_Factory::log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
@@ -120,7 +119,7 @@ trait Billrun_Traits_AsnParsing {
 		foreach ($struct as $val) {
 
 			if (isset($asnData[$val])) {
-				//Billrun_Factory::log()->log(" digging into : $val  data :". print_r($asnData[$val],1), Zend_Log::DEBUG);
+				//Billrun_Factory::log(" digging into : $val  data :". print_r($asnData[$val],1), Zend_Log::DEBUG);
 				$newStruct = $struct;
 				array_shift($newStruct);
 				return $this->parseASNData($newStruct, $asnData[$val], $fields);
@@ -141,7 +140,7 @@ trait Billrun_Traits_AsnParsing {
 		$ret = false;
 		if ((isset($struct['type']) && $struct['type'] != 'array') || !($asnData instanceof Asn_Object && $asnData->isConstructed())) {
 			if (!isset($struct['type']) || !isset($fields[$struct['type']])) {
-				Billrun_Factory::log()->log(" couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
+				Billrun_Factory::log(" couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$struct['type']], $asnData->getData());
 			}

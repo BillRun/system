@@ -2,8 +2,8 @@
 
 /**
  * @package			ASN
- * @copyright		Copyright (C) 2012 S.D.O.C. LTD. All rights reserved.
- * @license			GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright		Copyright (C) 2012 BillRun Technologies Ltd. All rights reserved.
+ * @license			GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -15,7 +15,7 @@
 class Asn_Types {
 
 	public static $TYPES = array(
-		//0x0	=> 'Asn_Type_Eoc',
+		0x0	=> 'Asn_Type_Eoc',
 		0x1 => 'Asn_Type_Boolean',
 		0x2 => 'Asn_Type_Integer',
 		0x3 => 'Asn_Type_BitStr',
@@ -32,7 +32,7 @@ class Asn_Types {
 		0x10 => 'Asn_Type_Sequence',
 		0x11 => 'Asn_Type_Set',
 		0x12 => 'Asn_Type_NumStr',
-		0x13 => 'Asn_Type_Printstr',
+		0x13 => 'Asn_Type_PrintStr',
 		0x14 => 'Asn_Type_T61Str',
 		0x15 => 'Asn_Type_VidTexStr',
 		0x16 => 'Asn_Type_IA5Str',

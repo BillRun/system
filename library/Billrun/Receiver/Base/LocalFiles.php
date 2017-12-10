@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -44,13 +44,13 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		parent::__construct($options);
 
 		if (isset($options['workspace'])) {
-			$this->workspace = $options['workspace'];
+			$this->workspace = Billrun_Util::getBillRunSharedFolderPath($options['workspace']);
 		}
 
 		if (isset($options['path'])) {
-			$this->srcPath = $options['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['path']);
 		} else if (isset($options['receiver']['path'])) {
-			$this->srcPath = $options['receiver']['path'];
+			$this->srcPath = Billrun_Util::getBillRunSharedFolderPath($options['receiver']['path']);
 		}
 
 		if (isset($options['receiver']['sort'])) {
@@ -73,7 +73,7 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 
 		$type = static::$type;
 		if (!file_exists($this->srcPath)) {
-			Billrun_Factory::log()->log("NOTICE : SKIPPING $type !!! directory " . $this->srcPath . " not found!!", Zend_Log::NOTICE);
+			Billrun_Factory::log("Skipping $type. Directory " . $this->srcPath . " not found!", Zend_Log::ERR);
 			return array();
 		}
 		$files = $this->getFiles($this->srcPath, $this->sort, $this->order);
@@ -81,19 +81,31 @@ abstract class Billrun_Receiver_Base_LocalFiles extends Billrun_Receiver {
 		$receivedCount = 0;
 		foreach ($files as $file) {
 			$path = $this->srcPath . DIRECTORY_SEPARATOR . $file;
-			if (!$this->isFileValid($file, $path) || $this->isFileReceived($file, $type) || is_dir($path)) {
-				Billrun_Factory::log('File ' . $file . ' is not valid or received already', Zend_Log::INFO);
+			if (!$this->isFileValid($file, $path) || is_dir($path)) {
+				Billrun_Factory::log('File ' . $file . ' is not valid', Zend_Log::INFO);
 				continue;
 			}
-			Billrun_Factory::log()->log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
-			$path = $this->handleFile($path, $file);
-			if (!$path) {
-				Billrun_Factory::log()->log("NOTICE : Couldn't relocate file from  $path.", Zend_Log::NOTICE);
+			if (!$this->lockFileForReceive($file, $type)) {
+				Billrun_Factory::log('File ' . $file . ' has been received already', Zend_Log::INFO);
 				continue;
 			}
+			Billrun_Factory::log("Billrun_Receiver_Base_LocalFiles::receive - handle file {$file}", Zend_Log::DEBUG);
 
-			if ($this->logDB($path) !== FALSE) {
-				$ret[] = $path;
+			$fileData = $this->getFileLogData($file, $type);
+			$fileData['path'] = $this->handleFile($path, $file);
+
+			if (!$fileData['path']) {
+				Billrun_Factory::log("Couldn't relocate file from $path.", Zend_Log::NOTICE);
+				continue;
+			}
+			if (!empty($this->backupPaths)) {
+				$backedTo = $this->backup($fileData['path'], $file, $this->backupPaths, FALSE, FALSE);
+				Billrun_Factory::dispatcher()->trigger('beforeReceiverBackup', array($this, &$fileData['path']));
+				$fileData['backed_to'] = $backedTo;
+				Billrun_Factory::dispatcher()->trigger('afterReceiverBackup', array($this, &$fileData['path']));
+			}
+			if ($this->logDB($fileData) !== FALSE) {
+				$ret[] = $fileData['path'];
 
 				if (( ++$receivedCount) >= $this->limit) {
 					break;

@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -41,7 +41,7 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	public function execute() {
 
-		Billrun_Factory::log()->log("Handler execute start", Zend_Log::INFO);
+		Billrun_Factory::log("Handler execute start", Zend_Log::INFO);
 
 		$collect_data = $this->collect();
 
@@ -51,7 +51,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		$this->notify();
 
-		Billrun_Factory::log()->log("Handler execute finished", Zend_Log::INFO);
+		Billrun_Factory::log("Handler execute finished", Zend_Log::INFO);
 	}
 
 	/**
@@ -61,11 +61,11 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	protected function collect() {
 
-		Billrun_Factory::log()->log("Handler collect start", Zend_Log::INFO);
+		Billrun_Factory::log("Handler collect start", Zend_Log::INFO);
 
 		$items = Billrun_Factory::dispatcher()->trigger('handlerCollect', array($this->options));
 
-		Billrun_Factory::log()->log("Handler collect finished", Zend_Log::INFO);
+		Billrun_Factory::log("Handler collect finished", Zend_Log::INFO);
 
 		return $items;
 	}
@@ -77,11 +77,11 @@ class Billrun_Handler extends Billrun_Base {
 	 */
 	protected function notify() {
 
-		Billrun_Factory::log()->log("Handler notify start", Zend_Log::INFO);
+		Billrun_Factory::log("Handler notify start", Zend_Log::INFO);
 
 		$items = Billrun_Factory::dispatcher()->trigger('handlerNotify', array($this, $this->options));
 
-		Billrun_Factory::log()->log("Handler notify finished", Zend_Log::INFO);
+		Billrun_Factory::log("Handler notify finished", Zend_Log::INFO);
 
 		return $items;
 	}
@@ -94,10 +94,10 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return boolean true if success
 	 */
 	protected function alert(&$items) {
-		Billrun_Factory::log()->log("Handler alert start", Zend_Log::INFO);
+		Billrun_Factory::log("Handler alert start", Zend_Log::INFO);
 
 		if (!is_array($items) || !count($items)) {
-			Billrun_Factory::log()->log("Handler alert items not found", Zend_Log::NOTICE);
+			Billrun_Factory::log("Handler alert items not found", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
@@ -112,7 +112,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		// TODO: check return values
 
-		Billrun_Factory::log()->log("Handler alert finished", Zend_Log::INFO);
+		Billrun_Factory::log("Handler alert finished", Zend_Log::INFO);
 		return TRUE;
 	}
 
@@ -124,10 +124,10 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return boolean true if success
 	 */
 	protected function markdown(&$items) {
-		Billrun_Factory::log()->log("Handler markdown start", Zend_Log::INFO);
+		Billrun_Factory::log("Handler markdown start", Zend_Log::INFO);
 
 		if (!is_array($items) || !count($items)) {
-			Billrun_Factory::log()->log("Handler markdown items not found", Zend_Log::NOTICE);
+			Billrun_Factory::log("Handler markdown items not found", Zend_Log::NOTICE);
 			return FALSE;
 		}
 
@@ -141,7 +141,7 @@ class Billrun_Handler extends Billrun_Base {
 
 		// TODO: check return values
 
-		Billrun_Factory::log()->log("Handler markdown finished", Zend_Log::INFO);
+		Billrun_Factory::log("Handler markdown finished", Zend_Log::INFO);
 		return TRUE;
 	}
 

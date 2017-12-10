@@ -2,8 +2,8 @@
 
 /**
  * @package         Billing
- * @copyright       Copyright (C) 2012-2013 S.D.O.C. LTD. All rights reserved.
- * @license         GNU General Public License version 2 or later; see LICENSE.txt
+ * @copyright       Copyright (C) 2012-2016 BillRun Technologies Ltd. All rights reserved.
+ * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 
 /**
@@ -28,7 +28,7 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 		foreach ($this->getProcessedFilesForType(self::$type) as $filename => $logLine) {
 			$filePath = $this->workspace . DIRECTORY_SEPARATOR . self::$type . DIRECTORY_SEPARATOR . $filename;
 			if (!file_exists($filePath)) {
-				Billrun_Factory::log()->log("NOTICE : SKIPPING $filename for type : " . self::$type . "!!! ,path -  $filePath not found!!", Zend_Log::NOTICE);
+				Billrun_Factory::log("Skipping $filename for type : " . self::$type . ". Path $filePath not found!", Zend_Log::ERR);
 				continue;
 			}
 
@@ -49,7 +49,6 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 
 		$logLines = $log->query()->equals('type', $type)->exists('process_time')->notExists('response_time');
 		foreach ($logLines as $logEntry) {
-			$logEntry->collection($log);
 			$files[$logEntry->get('file')] = $logEntry;
 		}
 
@@ -61,11 +60,11 @@ abstract class Billrun_Responder_Base_FilesResponder extends Billrun_Responder {
 	abstract protected function getResponseFilename($receivedFilename, $logLine);
 
 	protected function respondAFile($responseFilePath, $fileName, $logLine) {
-		Billrun_Factory::log()->log("Responding on : $fileName", Zend_Log::DEBUG);
+		Billrun_Factory::log("Responding on : $fileName", Zend_Log::DEBUG);
 		$data = $logLine->getRawData();
 		$data['response_time'] = time();
 		$logLine->setRawData($data);
-		$logLine->save();
+		Billrun_Factory::db()->logCollection()->save($logLine);
 		return $responseFilePath;
 	}
 

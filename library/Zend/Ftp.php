@@ -150,7 +150,7 @@ class Zend_Ftp {
 
 			$login = @ftp_login($this->_connection, $this->_username, $this->_password);
 			if ($login === false) {
-				throw new Zend_Ftp_Exception('Unable to login with username "' . $this->_username);
+				throw new Zend_Ftp_Exception('Unable to login with username "' . $this->_username . '"');
 			}
 
 			if ($this->_passive) {
