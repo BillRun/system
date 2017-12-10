@@ -36,7 +36,7 @@ class Billrun_EventsManager {
 	 */
 	protected static $instance;
 	protected $eventsSettings;
-	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp');
+	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'line_usagev' => 'line_usagev', 'urt' => 'urt');
 
 	/**
 	 *
@@ -56,7 +56,7 @@ class Billrun_EventsManager {
 		return self::$instance;
 	}
 
-	public function trigger($eventType, $entityBefore, $entityAfter, $row, $additionalEntities = array(), $extraParams = array()) {
+	public function trigger($eventType, $entityBefore, $entityAfter, $additionalEntities = array(), $extraParams = array()) {
 		if (empty($this->eventsSettings[$eventType])) {
 			return;
 		}
@@ -73,7 +73,7 @@ class Billrun_EventsManager {
 				}
 				$conditionSettings = $rawEventSettings;
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $row, $conditionSettings, $extraParams);
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams);
 		}
 	}
 
@@ -131,7 +131,7 @@ class Billrun_EventsManager {
 		return Billrun_Utils_Arrayquery_Query::exists(array($data), $query);
 	}
 
-	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $row, $conditionSettings, $extraParams = array()) {
+	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new MongoDate();
@@ -142,8 +142,6 @@ class Billrun_EventsManager {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
 		}
-		$event['line_usagev'] = $row['usagev'];
-		$event['urt'] = $row['urt']->sec;	
 		$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
 		$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
 		$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
