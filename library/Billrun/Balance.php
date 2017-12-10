@@ -119,7 +119,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 		$query = $this->getBalanceLoadQuery();
 		if ($query === false) {
 			return array();
-		}
+	}
 		$retEntity = $this->collection()
 				->query($query)
 				->cursor()
@@ -127,14 +127,14 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 				->setReadPreference('RP_PRIMARY')
 				->limit(1)
 				->current();
-		
+
 		if (!$retEntity instanceof Mongodloid_Entity || $retEntity->isEmpty()) {
 			return array();
 		}
-		
+
 		return $retEntity->getRawData();
 	}
-	
+
 	public function reload() {
 		$balance_values = $this->load();
 		$this->setRawData($balance_values);
