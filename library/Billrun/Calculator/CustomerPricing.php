@@ -230,14 +230,16 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 																	 $row->getRawData()));
 				$this->updatePricingData($rate, $totalPricingData, $pricingData);
 			}
-			$row->set('rates', $rates);
+			
 			unset($row['retail_rate']);
 			if (empty($arate)) {
 				unset($row[$rateField]);
 			} else {
 				$row[$rateField] = $arate;
 			}
+			
 			$row->setRawData(array_merge($row->getRawData(), $totalPricingData, $foreignFields));
+			$row->set('rates', $rates);
 			$this->afterCustomerPricing($row);
 			Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		} catch (Exception $e) {
@@ -336,7 +338,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	}
 
 	public function getPossiblyUpdatedFields() {
-		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate'));
+		return array_merge(parent::getPossiblyUpdatedFields(), array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroups', 'over_arate', 'over_group', 'in_group', 'in_arate', 'rates'));
 	}
 
 	public function getPricingField() {
