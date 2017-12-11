@@ -36,7 +36,7 @@ class Billrun_EventsManager {
 	 */
 	protected static $instance;
 	protected $eventsSettings;
-	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'line_usagev' => 'line_usagev', 'urt' => 'urt');
+	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 
 	/**
 	 *
