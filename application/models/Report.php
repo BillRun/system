@@ -385,8 +385,13 @@ class ReportModel {
 				case 'current':
 					return Billrun_Billrun::getActiveBillrun();
 				case 'first_unconfirmed':
-					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
-					return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					}
+					if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+					}
+					return $lastStarted;
 				case 'last_confirmed':
 					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
 				case 'confirmed':
