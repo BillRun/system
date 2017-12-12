@@ -99,17 +99,17 @@ class Billrun_EventsManager {
 			case self::CONDITION_HAS_CHANGED_FROM:
 				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityBefore, $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
 			case self::CONDITION_REACHED_CONSTANT:
-				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
 				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
 			case self::CONDITION_REACHED_CONSTANT_RECURRING:
-				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = ceil($rawValueBefore / $eventValue);
 				$valueAfter = ceil($rawValueAfter / $eventValue);
-				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
+				return (intval($valueBefore) != intval($valueAfter));
 			default:
 				return FALSE;
 		}
