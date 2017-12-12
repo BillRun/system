@@ -18,25 +18,6 @@ if (lastConfig.property_types && lastConfig.property_types.filter(element => ele
 	db.config.insert(lastConfig);
 }
 
-// BRCD-1078: add rate categories
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
-for (var i in lastConfig['file_types']) {
-	var firstKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'])[0];
-	var secKey = Object.keys(lastConfig['file_types'][i]['rate_calculators'][firstKey])[0];
-	if (secKey == 0) {
-		lastConfig['file_types'][i]['rate_calculators']['retail'] = {};
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-			if (usaget === 'retail') {
-				continue;
-			}
-			lastConfig['file_types'][i]['rate_calculators']['retail'][usaget] = lastConfig['file_types'][i]['rate_calculators'][usaget];
-			delete lastConfig['file_types'][i]['rate_calculators'][usaget];
-		}
-	}
-}
-db.config.insert(lastConfig);
-
 // BRCD-988 - rating priorities
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -240,36 +221,6 @@ db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
 		db.services.save(obj);
 	}
 );
-
-// BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
-var fields = lastConfig['rates']['fields'];
-var found = false;
-for (var field_key in fields) {
-	if (fields[field_key].field_name === "tariff_category") {
-		found = true;
-	}
-}
-if(!found) {
-	fields.push({
-		"system":false,
-		"select_list":true,
-		"display":true,
-		"editable":true,
-		"field_name":"tariff_category",
-		"default_value":"retail",
-		"show_in_list":true,
-		"title":"Tariff category",
-		"mandatory":true,
-		"select_options":"retail",
-		"changeable_props": ["select_options"]
-	});
-}
-lastConfig['rates']['fields'] = fields;
-db.config.insert(lastConfig);
-// BRCD-1077 update all products(Rates) tariff_category field.
-db.rates.update({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}},{multi:1});
 
 // BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
