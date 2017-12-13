@@ -30,7 +30,7 @@ class Billrun_Handler extends Billrun_Base {
 	 * @return self instance
 	 * @todo make args signature to avoid over loading of instance
 	 */
-	static public function getInstance($args = array()) {
+	public static function getInstance($args = array()) {
 
 		//$args = func_get_args();
 		return new self($args);
