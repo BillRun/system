@@ -26,7 +26,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 	 * 
 	 * @return string mongo query
 	 */
-	protected function getRateQuery($row, $usaget, $type) {
+	protected function getRateQuery($row, $usaget, $type, $tariffCategory, $filters) {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
 		$match = array_merge(
@@ -48,8 +48,8 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 	 * 
 	 * @return array values to add from rate
 	 */
-	protected function getAddedValues($rate, $row = array()) {
-		$added_values = parent::getAddedValues($rate);
+	protected function getAddedValues($tariffCategory, $rate, $row = array()) {
+		$added_values = parent::getAddedValues($tariffCategory, $rate, $row);
 		$added_values['credit'] = $row['credit'];
 		$added_values['credit']['usaget'] = current(array_keys($rate['rates'])); // assumes rate is only for one usage type
 		return $added_values;
