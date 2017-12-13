@@ -285,7 +285,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
-
+							$subServices = is_null($subscriber['services']) ? array() : $subscriber['services'];
+							$freezeService = array_filter($subServices, function($service) {
+								return $service['service_name'] == 'FREEZE_FLAT_RATE';
+							});
+							if (count($freezeService) > 1) {
+								Billrun_Factory::log()->log("There can only be one freeze service for subscriber", Zend_Log::ALERT);
+							}
+							$subscriber['freeze'] = current($freezeService);
+							
 							$concat['data']['activation_start'] = isset($subscriber['activation']) ? Billrun_Util::convertToBillrunDate($subscriber['activation']) : null;
 							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? Billrun_Util::convertToBillrunDate($subscriber['deactivate']) : null;
 							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['from_date']) : null;
