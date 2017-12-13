@@ -224,6 +224,9 @@ class ResetLinesModel {
 				'balance_ref' => 1,
 				'tax_data' => 1,
 				'final_charge' => 1,
+				'rates' => 1,
+				'services_data' => 1,
+				'foreign' => 1, // this should be replaced by querying lines.fields and resetting all custom fields found there
 			),
 			'$set' => array(
 				'in_queue' => true,
