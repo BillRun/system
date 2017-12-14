@@ -285,7 +285,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
-							$subServices = is_null($subscriber['services']) ? array() : $subscriber['services'];
+							$subServices = empty($subscriber['services']) ? array() : $subscriber['services'];
 							$freezeService = array_filter($subServices, function($service) {
 								return $service['service_name'] == 'FREEZE_FLAT_RATE';
 							});
