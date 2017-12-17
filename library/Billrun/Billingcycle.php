@@ -447,7 +447,8 @@ class Billrun_Billingcycle {
 		if (!$registrationDate) {
 			return $lastBillrunKey;
 		}
-		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
+		$monthBeforeRegistration = strtotime('- 1 month', $registrationDate->sec);
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration);
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
