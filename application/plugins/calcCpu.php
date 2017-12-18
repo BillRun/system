@@ -121,6 +121,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 
 	protected function invoiceExport($accountInvoice, $aggragator) {
+		if (!$aggragator->getGeneratePdf()) {
+			return;
+		}
 		$options = array(
 			'type' => 'invoice_export',
 			'stamp' => $accountInvoice->getBillrunKey(),

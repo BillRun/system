@@ -28,9 +28,12 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 */
 	protected $billrun_data;
 	
+	protected $billrunColl;
+	
 	public function __construct($options) {
 		parent::__construct($options);
 		
+		$this->billrunColl = Billrun_Factory::db()->billrunCollection();
 		$this->filePermissions = Billrun_Util::getFieldVal( $options['file_permisison'], 0666 );		
 		
 		//handle accounts both as  an array and as a comma seperated list (CSV row)
@@ -168,6 +171,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			Billrun_Factory::log('Generating invoice '.$account['billrun_key']."_".$account['aid']."_".$account['invoice_id']." to : $pdf" ,Zend_Log::INFO);
 			exec($this->wkpdf_exec . " -R 0.1 -L 0 --print-media-type --header-html {$this->tmp_paths['header']} --footer-html {$this->tmp_paths['footer']} {$html} {$pdf}");
 			chmod( $pdf,$this->filePermissions );
+			$this->updateInvoicePropertyToBillrun($account, $pdf);
 	}
 	
 	protected function accountSpecificViewParams($billrunData) {
@@ -341,5 +345,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		}
 	}
 	
-	
+	protected function updateInvoicePropertyToBillrun($account, $pdfPath) {		
+		$account['invoice_file'] = $pdfPath;		
+		$this->billrunColl->save($account);
+	}
+
 }

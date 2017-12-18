@@ -96,7 +96,11 @@
 	"detailed_invoices":{
 		"v": false,
 		"t": "Boolean"
-		}
+		},
+	"generate_pdf":{
+		"v": true,
+		"t": "Boolean"
+	}
   },
 	"system" : {
 		"closed_cycle_changes": false

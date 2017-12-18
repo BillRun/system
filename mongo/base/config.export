@@ -72,6 +72,10 @@
 		"email_after_confirmation":{
 			"v": false,
 			"t": "Boolean"
+		},
+		"generate_pdf":{
+			"v": true,
+			"t": "Boolean"
 		}
     },
     "subscribers": {
