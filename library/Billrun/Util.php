@@ -105,7 +105,7 @@ class Billrun_Util {
 		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
         
-        /**
+    /**
 	 * generate array  stamp only  for specific field  within the array
 	 * @param array $ar array to generate the stamp from
 	 * @return string the array stamp
@@ -1538,7 +1538,7 @@ class Billrun_Util {
 		
 		foreach ($translations as $key => $trans) {
 			$sourceKey = Billrun_Util::getIn($trans, array('translation', 'source_key'), $key);
-			if (!isset($source[$sourceKey])) {
+			if (!isset($source[$sourceKey])&& empty($trans['nullable'])) {
 				Billrun_Factory::log("Couldn't translate field $key with translation of  :".print_r($trans,1),Zend_Log::ERR);
 			} else if(is_string($trans) && isset($source[$sourceKey])){
 				//Handle s simple field copy  translation
@@ -1547,12 +1547,12 @@ class Billrun_Util {
 				//Handle funtion based transaltion
 				case 'function' :
 					if (!empty($instance) && method_exists($instance, $trans['translation']['function'])) {
-						$retData[$key] = $instance->{$trans['translation']['function']}($source[$sourceKey],
+						$retData[$key] = $instance->{$trans['translation']['function']}(@$source[$sourceKey],
 																						Billrun_Util::getFieldVal($trans['translation']['values'], array()),
 																						$source,
 																						$userData);
 					} else if (function_exists($trans['translation']['function'])) {
-						$retData[$key] = call_user_func_array($trans['translation']['function'], array($source[$sourceKey],
+						$retData[$key] = call_user_func_array($trans['translation']['function'], array(@$source[$sourceKey],
 																									   $userData) );
 					} else {
 						Billrun_Factory::log("Couldn't translate field $key using function.",Zend_Log::ERR);
@@ -1562,7 +1562,7 @@ class Billrun_Util {
 				case 'regex' :
 					if (isset($trans['translation'][0]) && is_array($trans)) {
 						foreach ($trans['translation'] as $value) {
-							$retData[$key] = preg_replace(key($value), reset($value), $source[$sourceKey]);
+							$retData[$key] = preg_replace(key($value), reset($value), @$source[$sourceKey]);
 						}
 					} else if(isset($trans['translation'])) {
 						$retData[$key] = preg_replace(key($trans['translation']), reset($trans['translation']), $source[$sourceKey]);

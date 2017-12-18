@@ -32,7 +32,7 @@ trait Billrun_Traits_ForeignFields  {
 	}
 	
 
-	protected function getForeignFields($foreignEntities,$existsingFields = array()) {
+	protected function getForeignFields($foreignEntities,$existsingFields = array(),$autoLoadEntities = FALSE, $fullData = array()) {
 		$this->clearAddedForeignFields();
 		$foreignFieldsData = !empty($existsingFields) ? $existsingFields : array();
 		$foreignFieldsConf = array_filter(Billrun_Factory::config()->getConfigValue('lines.fields', array()), function($value) {
@@ -43,6 +43,13 @@ trait Billrun_Traits_ForeignFields  {
 			if(!preg_match('/^'.$this->foreginFieldPrefix.'\./',$fieldConf['field_name'])) {
 				Billrun_Factory::log("Foreign field configuration not mapped to foreign sub-field",Zend_Log::WARN);
 				continue;
+			}
+			if( $autoLoadEntities && empty($foreignEntities[$fieldConf['foreign']['entity']])
+				&& (!is_array($autoLoadEntities) || in_array($fieldConf['foreign']['entity'],$autoLoadEntities)) ) {
+				$entityValue = Billrun_Utils_Usage::retriveEntityFromUsage(array_merge($foreignFieldsData,$fullData), $fieldConf['foreign']['entity']);
+				if($entityValue != null) {
+					$foreignEntities[$fieldConf['foreign']['entity']] = $entityValue;
+				}
 			}
 			if (!empty($foreignEntities[$fieldConf['foreign']['entity']]) ) {
 				if(!is_array($foreignEntities[$fieldConf['foreign']['entity']]) || Billrun_Util::isAssoc($foreignEntities[$fieldConf['foreign']['entity']])) {
