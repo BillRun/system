@@ -53,4 +53,9 @@ for (var i in lastConfig['file_types']) {
 // BRCD-1077 update all products(Rates) tariff_category field.
 db.rates.update({'tariff_category': {$exists: false}},{$set:{'tariff_category':'retail'}},{multi:1});
 
+// BRCD-938: Option to not generate pdfs for the cycle
+if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
+	lastConfig['billrun']['generate_pdf'] = {"v": true ,"t" : "Boolean"};
+}
+
 db.config.insert(lastConfig);
