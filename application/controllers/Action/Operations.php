@@ -17,9 +17,12 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  */
 class OperationsAction extends ApiAction {
 	
+	use Billrun_Traits_Api_UserPermissions;
+	
 	protected $orphanTime = '1 day ago';
 	
 	public function execute() {
+		$this->allowed();
 		$request = $this->getRequest();
 		$action = $request->get('action');
 		$filtration = $request->get('filtration');
@@ -44,5 +47,9 @@ class OperationsAction extends ApiAction {
 			'details' =>  array($ret),
 		);
 		$this->getController()->setOutput(array($output));
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 }
