@@ -24,7 +24,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	protected $billrun_key;
 	protected $freeze_start = null;
 	protected $freeze_end = null;
-	protected $services = null;
+	protected $services = array();
 
 
 
@@ -59,7 +59,6 @@ class Subscriber_Golan extends Billrun_Subscriber {
 				mkdir($this->crm_output_dir, 0777, true);
 			}
 		}
-		$this->services = Billrun_Factory::config()->getConfigValue('golan.services');
 		$this->billing_method = Billrun_Factory::config()->getConfigValue('golan.flat_charging', "postpaid");
 		$creditCalcOptions = array_merge(array('type' => 'Rate_Credit', 'autoload' => false), Billrun_Factory::config()->getConfigValue('Rate_Credit.calculator', array()));
 		$this->creditCalc = Billrun_Calculator::getInstance($creditCalcOptions);
@@ -286,7 +285,15 @@ class Subscriber_Golan extends Billrun_Subscriber {
 									'sid' => $sid,
 								),
 							);
-
+							$subServices = empty($subscriber['services']) ? array() : $subscriber['services'];
+							$freezeService = array_filter($subServices, function($service) {
+								return $service['service_name'] == 'FREEZE_FLAT_RATE';
+							});
+							if (count($freezeService) > 1) {
+								Billrun_Factory::log()->log("There can only be one freeze service for subscriber", Zend_Log::ALERT);
+							}
+							$subscriber['freeze'] = current($freezeService);
+							
 							$concat['data']['activation_start'] = isset($subscriber['activation']) ? Billrun_Util::convertToBillrunDate($subscriber['activation']) : null;
 							$concat['data']['activation_end'] = isset($subscriber['deactivate']) ? Billrun_Util::convertToBillrunDate($subscriber['deactivate']) : null;
 							$concat['data']['freeze_start_date'] = isset($subscriber['freeze']['from_date']) ? Billrun_Util::convertToBillrunDate($subscriber['freeze']['from_date']) : null;
@@ -336,69 +343,37 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								$concat['data']['credits'] = $credits;
 							}
 							
-							if (isset($subscriber['addons']) && is_array($subscriber['addons'])) {
-								foreach ($subscriber['addons'] as $service) {
-									$usaget = $service['type'];
-									$this->services[$service['service_name']] = $usaget;
-									$subscriber[$usaget] = $service;
-								}
-							}
-												
-							$service_types = array();
-							foreach ($this->services as $service_name => $usaget) {
-								if (isset($subscriber[$usaget])) {
-									$service_types[$service_name] = array('usaget' => $usaget);
-								}
-							}
-							$reduced = array();
-							foreach ($service_types as $service_name => $service) {
-								if (isset($subscriber[$service['usaget']])) {
-									if (is_array(current($subscriber[$service['usaget']]))) {
-										$count = count($subscriber[$service['usaget']]);
-									} else {
-										$count = 1;
-									}
-									$reduced[$service_name] = $count;
-								}
-							}
-
-							if (!empty($reduced)) {
+							if (isset($subscriber['services']) && is_array($subscriber['services'])) {
 								$services = array();
-								foreach ($reduced as $service_name => $service_count) {
+								foreach ($subscriber['services'] as $serviceDetails) {
 									$service = array();
-									$service['service_name'] = $service_name;
-									$service['usaget'] = $service_types[$service_name]['usaget'];
-									$service_dates = $subscriber[$service['usaget']];
-									if (!is_array(current($service_dates))) {
-										$service_dates = array($service_dates);
+									$service['id'] = $serviceDetails['id'];
+									$service['service_name'] = $serviceDetails['service_name'];
+									$service['usaget'] = $serviceDetails['type'];
+									$service['from_date'] = $serviceDetails['from_date'];
+									$service['to_date'] = $serviceDetails['to_date'];
+									if ((!is_null($concat['data']['activation_end'])) && ($concat['data']['activation_end'] < $service['to_date'])){
+										$service['to_date'] = $concat['data']['activation_end'];
 									}
-									for ($index = 0; $index < $service_count; $index++) {
-										$service['from_date'] = $service_dates[$index]['from_date'];
-										$service['to_date'] = $service_dates[$index]['to_date'];
-										if ((!is_null($concat['data']['activation_end'])) && ($concat['data']['activation_end'] < $service['to_date'])){
-											$service['to_date'] = $concat['data']['activation_end'];
-										}
-										$service['fraction'] = $this->calcServiceFraction($service['from_date'], $service['to_date'], $sid);
-										$service['count'] = 1;
-										$service['aid'] = $concat['data']['aid'];
-										$service['sid'] = $concat['data']['sid'];
-										if ($sid) {
-											$service['plan'] = $concat['data']['plan'];
-										} else {
-											$service['plan'] = 'ACCOUNT';
-										}
-										$stamp = Billrun_Util::generateArrayStamp($service);
-										if (isset($services[$stamp])) {
-											$services[$stamp]['count'] ++;
-											continue;
-										}
-										$services[$stamp] = $service;
+									$service['fraction'] = $this->calcServiceFraction($service['from_date'], $service['to_date'], $sid);
+									$service['count'] = 1;
+									$service['aid'] = $concat['data']['aid'];
+									$service['sid'] = $concat['data']['sid'];
+									if ($sid) {
+										$service['plan'] = $concat['data']['plan'];
+									} else {
+										$service['plan'] = 'ACCOUNT';
 									}
+									$stamp = Billrun_Util::generateArrayStamp($service);
+									if (isset($services[$stamp])) {
+										$services[$stamp]['count'] ++;
+										continue;
+									}
+									$services[$stamp] = $service;	
 								}
 								$services = array_values($services);
 								$concat['data']['sub_services'] = $services;
 							}
-
 							foreach ($billrun_fields as $field) {
 								if (isset($subscriber[$field])) {
 									$concat['data'][$field] = $subscriber[$field];
