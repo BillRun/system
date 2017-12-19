@@ -482,10 +482,10 @@ class Tests_Updaterowt extends UnitTestCase {
 			$message .= $this->fail;
 			$passed = False;
                 }
-                if(!empty($charge)){     
+                 if(!empty($charge)){     
                     foreach ($charge as $category => $price){
                         $checkRate = current(array_filter($returnRow['rates'],function(array $cat) use ($category){return $cat['tariff_category'] ===  $category;}));
-                            if(!empty($checkRate)){
+                           if(!empty($checkRate)){
                             //when the tariff_category is retail check if aprice equle to him charge
                             if ($checkRate['tariff_category']=='retail'){
                                     if( $aprice == $checkRate['pricing']['charge'] ){
@@ -502,6 +502,8 @@ class Tests_Updaterowt extends UnitTestCase {
                                     $message .= "— $category {$checkRate['pricing']['charge']} $this->fail";
                                     $passed = False;
                             } 
+                            } else {
+                                 $passed = False;
                             }
                     }
                 }
