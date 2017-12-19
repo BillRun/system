@@ -318,8 +318,10 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
-			case 'default_empty':
+			case 'default_hard_coded':
 				return ($value === "" || is_null($value)) ? $format['value'] : $value;
+			case 'default_empty':
+				return ' BE notice - change this to current time';
 			default:
 				return $value;
 		}
