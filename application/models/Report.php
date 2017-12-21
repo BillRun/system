@@ -23,6 +23,7 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $currentTime = null;
 	
 	/**
 	 *  Array of entity join map keys
@@ -318,15 +319,29 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
-			case 'default_hard_coded':
-				return ($value === "" || is_null($value)) ? $format['value'] : $value;
 			case 'default_empty':
-				return ' BE notice - change this to current time';
+				$a = $value;
+				if ($value === "" || is_null($value)) {
+					if(!$this->cacheFormatStyle[$format['op']][$format['value']][$value]) {
+						$a = $this->currentTime();
+						$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $a;
+					}
+					return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+				}
+				return $value;
 			default:
 				return $value;
 		}
 	}
 	
+	protected function currentTime() {
+		if(!$this->currentTime) {
+			$this->currentTime = date('m-d-Y H:i:s');
+		}
+		return $this->currentTime;
+	}
+
+
 	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
