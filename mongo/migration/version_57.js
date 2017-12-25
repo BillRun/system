@@ -338,3 +338,10 @@ for (var i in lastConfig['file_types']) {
 }
 
 db.config.insert(lastConfig);
+// BRCD-441 -Add plugin support
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+if (!lastConfig['plugins']) {
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+}
+db.config.insert(lastConfig);
