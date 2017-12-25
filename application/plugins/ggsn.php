@@ -269,8 +269,8 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 			//convert to unified time GMT  time.
 			$timeOffset = (isset($cdrLine['ms_timezone']) ? $cdrLine['ms_timezone'] : date('P') );
 			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso($cdrLine['record_opening_time'], $timeOffset));
-				if (!empty(Billrun_Factory::config()->getConfigValue('constants.ggsn_golan_definitions'))) {
-					$cdrLine = $this->activateGolanDefinitions($cdrLine);
+				if (!empty(Billrun_Factory::config()->getConfigValue('constants.ggsn_nokia_definitions'))) {
+					$cdrLine = $this->activateNokiaDefinitions($cdrLine);
 					if ($cdrLine == false) {
 						return false;
 					}
@@ -595,7 +595,7 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		return 'data';
 	}
 	
-	protected function activateGolanDefinitions($cdrLine) {
+	protected function activateNokiaDefinitions($cdrLine) {
 		if (is_array($cdrLine['rating_group'])) {
 			$fbc_uplink_volume = $fbc_downlink_volume = 0;
 			$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
