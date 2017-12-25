@@ -3,6 +3,7 @@
     "cg_return_url": "",
     "shared_secret": [],
     "usage_types": [],
+    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"],
     "resetlines": {
         "limit": {
             "v": 10,

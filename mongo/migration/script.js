@@ -58,4 +58,9 @@ if (typeof lastConfig['billrun']['generate_pdf']  === 'undefined') {
 	lastConfig['billrun']['generate_pdf'] = {"v": true ,"t" : "Boolean"};
 }
 
+// BRCD-441 -Add plugin support
+if (!lastConfig['plugins']) {
+	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
+}
+
 db.config.insert(lastConfig);
