@@ -177,7 +177,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$authArray = $this->buildInquireQuery($params);
 		$authString = http_build_query($authArray);
 		if (function_exists("curl_init")) {
-			Billrun_Factory::log("Sending to Credit Guard: " . $params['endpoint_url'] . ' ' . $authString, Zend_Log::DEBUG);
+			Billrun_Factory::log("Sending to Credit Guard (authenticateCredentials): " . $params['endpoint_url'] . ' ' . $authString, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($params['endpoint_url'], $authString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (strpos(strtoupper($result), 'HEB')) {
@@ -185,10 +185,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		$xmlObj = simplexml_load_string($result);
 		$codeResult = (string) $xmlObj->response->result;
-		$message = (string) $xmlObj->response->message;
-		Billrun_Factory::log("Credit Guard response:" . $message, Zend_Log::DEBUG);
+		Billrun_Factory::log("Credit Guard response (authenticateCredentials):" . print_r($xmlObj, 1), Zend_Log::DEBUG);
 		if ($codeResult == "405" || empty($result)) {
-			Billrun_Factory::log("Credit Guard error:" . $message, Zend_Log::ERR);
+			Billrun_Factory::log("Credit Guard error (authenticateCredentials):" . print_r($xmlObj, 1), Zend_Log::ERR);
 			return false;
 		} else {
 			return true;
