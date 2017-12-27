@@ -77,6 +77,9 @@ trait Billrun_Traits_AsnParsing {
 			'json' => function($fieldData) {
 				return json_encode($this->utf8encodeArr($fieldData));
 			},
+			'ia5string' => function($fieldData) {
+				return utf8_encode(preg_replace('/[\x00-\x1F\x7F]/', '', $fieldData));
+			}
 		);
 	}
 

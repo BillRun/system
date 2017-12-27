@@ -43,20 +43,21 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 	 * @param $data the raw row data
 	 * @return Array that conatins all the parsed and processed data.
 	 */
-	public function buildDataRow($data) {
+	public function buildDataRow($data, $fileHandle) {
 		$row = false;
 		$this->getParser()->setLine($data);
-		$rawRow = $this->getParser()->parse();
+		$rawRow = $this->getParser()->parse($fileHandle);
 		if ($rawRow) {
 			$row = $this->filterFields($rawRow);
-			$row['stamp'] = md5(serialize($row));
-			$row['type'] = static::$type;
-			$row['source'] = self::$type;
-			$row['file'] = basename($this->filePath);
-			$row['log_stamp'] = $this->getFileStamp();
-			$row['process_time'] = new MongoDate();
+			$newRowStruct['uf'] = $row;
+			$newRowStruct['stamp'] = md5(serialize($row));
+			$newRowStruct['type'] = static::$type;
+			$newRowStruct['source'] = self::$type;
+			$newRowStruct['file'] = basename($this->filePath);
+			$newRowStruct['log_stamp'] = $this->getFileStamp();
+			$newRowStruct['process_time'] = new MongoDate();
 		}
-		return $row;
+		return $newRowStruct;
 	}
 
 	/**
@@ -69,7 +70,7 @@ abstract class Billrun_Processor_Base_Binary extends Billrun_Processor {
 		$trailer['data'] = ($data && !is_array($data)) ? $this->getParser()->parseTrailer($data) : $data;
 		$trailer['stamp'] = md5(serialize($trailer));
 		$trailer['type'] = static::$type;
-		$trailer['header_stamp'] = $this->data['header']['stamp'];
+		$trailer['header_stamp'] = isset($this->data['header']['stamp']) ? $this->data['header']['stamp'] : 'no_header_stamp';
 		$trailer['file'] = basename($this->filePath);
 		$trailer['process_time'] = new MongoDate();
 
