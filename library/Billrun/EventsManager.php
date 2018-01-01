@@ -103,7 +103,18 @@ class Billrun_EventsManager {
 				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
-				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
+				if (preg_match('/\d+,\d+/', $eventValue)) {
+					$eventValues = explode(',', $eventValue);
+				} else {
+					$eventValues = array($eventValue);
+				}
+				foreach ($eventValues as $eventVal) {
+					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
+						return true;
+					}
+				}
+				
+				return false;
 			case self::CONDITION_REACHED_CONSTANT_RECURRING:
 				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
