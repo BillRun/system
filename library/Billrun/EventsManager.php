@@ -36,7 +36,7 @@ class Billrun_EventsManager {
 	 */
 	protected static $instance;
 	protected $eventsSettings;
-	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp');
+	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
 
 	/**
@@ -72,8 +72,9 @@ class Billrun_EventsManager {
 				if (!$this->isConditionMet($rawEventSettings['type'], $rawEventSettings, $conditionEntityBefore, $conditionEntityAfter)) {
 					continue 2;
 				}
+				$conditionSettings = $rawEventSettings;
 			}
-			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $extraParams);
+			$this->saveEvent($eventType, $event, $entityBefore, $entityAfter, $conditionSettings, $extraParams);
 		}
 	}
 
@@ -100,24 +101,35 @@ class Billrun_EventsManager {
 			case self::CONDITION_HAS_CHANGED_FROM:
 				return (Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL) != Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL)) && $this->arrayMatches($entityBefore, $rawEventSettings['path'], '$eq', $rawEventSettings['value']);
 			case self::CONDITION_REACHED_CONSTANT:
-				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+				$valueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$valueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
-				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
+				if (preg_match('/\d+,\d+/', $eventValue)) {
+					$eventValues = explode(',', $eventValue);
+				} else {
+					$eventValues = array($eventValue);
+				}
+				foreach ($eventValues as $eventVal) {
+					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
+						return true;
+					}
+				}
+				
+				return false;
 			case self::CONDITION_REACHED_CONSTANT_RECURRING:
-				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], NULL);
-				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], NULL);
+				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
+				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = ceil($rawValueBefore / $eventValue);
 				$valueAfter = ceil($rawValueAfter / $eventValue);
-				return ($valueBefore < $eventValue && $eventValue <= $valueAfter) || ($valueBefore > $eventValue && $valueAfter <= $eventValue);
+				return (intval($valueBefore) != intval($valueAfter));
 			default:
 				return FALSE;
 		}
 	}
 	
 	protected function getWhichEntity($rawEventSettings, $entityBefore, $entityAfter) {
-		return $rawEventSettings['which'] == self::ENTITY_BEFORE ? $entityBefore : $entityAfter;
+		return (isset($rawEventSettings['which']) && ($rawEventSettings['which'] == self::ENTITY_BEFORE) ? $entityBefore : $entityAfter);
 	}
 
 	protected function arrayMatches($data, $path, $operator, $value = NULL) {
@@ -131,7 +143,7 @@ class Billrun_EventsManager {
 		return Billrun_Utils_Arrayquery_Query::exists(array($data), $query);
 	}
 
-	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $extraParams = array()) {
+	protected function saveEvent($eventType, $rawEventSettings, $entityBefore, $entityAfter, $conditionSettings, $extraParams = array()) {
 		$event = $rawEventSettings;
 		$event['event_type'] = $eventType;
 		$event['creation_time'] = new MongoDate();
@@ -141,6 +153,15 @@ class Billrun_EventsManager {
 			if (isset(self::$allowedExtraParams[$key])) {
 				$event['extra_params'][self::$allowedExtraParams[$key]] = $value;
 			}
+		}
+		$event['before'] = $this->getEntityValueByPath($entityBefore, $conditionSettings['path']);
+		$event['after'] =  $this->getEntityValueByPath($entityAfter, $conditionSettings['path']);
+		$event['based_on'] = $this->getEventBasedOn($conditionSettings['path']);
+		if ($eventType == 'balance' && $this->isConditionOnGroup($conditionSettings['path'])) {
+			$pathArray = explode('.', $conditionSettings['path']);
+			array_pop($pathArray);
+			$path = implode('.', $pathArray) . '.total';
+			$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
 		}
 		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
 		self::$collection->insert($event);
@@ -238,4 +259,46 @@ class Billrun_EventsManager {
 		
 		self::$collection->update($query, $update);
 	}
+	
+	/**
+	 * get the value in entity by the defined path.
+	 * 
+	 * @param array $entity
+	 * @param string $path
+	 * 
+	 */
+	protected function getEntityValueByPath($entity, $path) {
+		$pathArray = explode('.', $path);
+		foreach($pathArray as $value) {
+			$entity = isset($entity[$value]) ? $entity[$value] : 0;
+			if (!$entity) {
+				return 0;
+			}
+		}
+		return $entity;
+	}
+	
+		
+	/**
+	 * is the event usage / monetary based.
+	 * 
+	 * @param string $path
+	 * 
+	 */
+	protected function getEventBasedOn($path) {
+		return (substr_count($path, 'cost') == 0) ? 'usage' : 'monetary';
+	}
+	
+			
+	/**
+	 * retuns true for conditions on groups.
+	 * 
+	 * @param string $path
+	 * 
+	 */
+	protected function isConditionOnGroup($path) {
+		return (substr_count($path, 'balance.groups') > 0);
+	}
+	
+	
 }

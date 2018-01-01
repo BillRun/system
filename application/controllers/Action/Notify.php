@@ -22,7 +22,7 @@ class NotifyAction extends Action_Base {
 			return;
 		}
 		$this->getController()->addOutput("Notify on events");
-		CronController::eventsNotifierAction();
+		Billrun_Factory::eventsManager()->notify();
 		$this->getController()->addOutput("Notifying Done");
 	}
 

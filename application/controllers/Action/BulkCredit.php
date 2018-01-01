@@ -15,6 +15,8 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Credit.php';
  */
 class BulkCreditAction extends CreditAction {
 	
+	use Billrun_Traits_Api_UserPermissions;	
+	
 	/**
 	 * method to execute the bulk credit
 	 * it's called automatically by the api main controller
@@ -147,6 +149,10 @@ class BulkCreditAction extends CreditAction {
 		}
 		$this->getController()->setOutput(array($output));
 		return true;
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

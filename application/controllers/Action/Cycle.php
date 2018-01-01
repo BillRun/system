@@ -73,6 +73,11 @@ class CycleAction extends Action_Base {
 	 */
 	public function execute() {		
 		$options = $this->buildOptions();
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
+
 		$this->billingCycleCol = Billrun_Factory::db()->billing_cycleCollection();
 		$processInterval = $this->getProcessInterval();
 

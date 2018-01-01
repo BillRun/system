@@ -22,10 +22,10 @@ if (lastConfig.property_types && lastConfig.property_types.filter(element => ele
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-		if (lastConfig['file_types'][i]['rate_calculators'][usaget].length) {
-			if (typeof lastConfig['file_types'][i]['rate_calculators'][usaget][0][0] === 'undefined') {
-				lastConfig['file_types'][i]['rate_calculators'][usaget] = [lastConfig['file_types'][i]['rate_calculators'][usaget]];
+	for (var rateCat in lastConfig['file_types'][i]['rate_calculators']) {
+		for (var usaget in lastConfig['file_types'][i]['rate_calculators'][rateCat]) {
+			if (typeof lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget][0][0] === 'undefined') {
+				lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget] = [lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget]];
 			}
 		}
 	}
@@ -74,7 +74,8 @@ if (existingCollections.indexOf('prepaidgroups') === -1) {
 	db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
 	}
 
-//// BRCD-1143 - Input Processors fields new strucrure
+
+// BRCD-1143 - Input Processors fields new strucrure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
@@ -166,7 +167,7 @@ var usageTypes = [];
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 var usageTypesStruct = lastConfig["usage_types"];
 for (var usageType in usageTypesStruct) {
-	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
 	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
 }
 db.plans.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
@@ -196,7 +197,7 @@ var usageTypes = [];
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 var usageTypesStruct = lastConfig["usage_types"];
 for (var usageType in usageTypesStruct) {
-	if (usageTypesStruct[usageType]["usage_type"] == "") continue;
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
 	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
 }
 db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
@@ -336,4 +337,14 @@ for (var i in lastConfig['file_types']) {
 	delete(lastConfig['file_types'][i]['processor']['aprice_mult']);
 }
 
+db.config.insert(lastConfig);
+
+//BRCD-1229 - Input processor re-enabled when not requested
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (lastConfig[i]['enabled'] == undefined) {
+		lastConfig[i]['enabled'] = true;
+	}
+}
 db.config.insert(lastConfig);

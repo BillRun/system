@@ -152,7 +152,7 @@ class Billrun_Billingcycle {
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billing_cycleCollection()->query(array())->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {
-			return '197001';
+			return self::getFirstTheoreticalBillingCycle();
 		}
 		return $entry['billrun_key'];
 	}
@@ -432,7 +432,7 @@ class Billrun_Billingcycle {
 			$date = strtotime(($i + 1) . ' months ago');
 			$billrunKey = self::getBillrunKeyByTimestamp($date);
 		}
-		return '197001';
+		return self::getFirstTheoreticalBillingCycle();
 	}
 	
 	/**
@@ -447,7 +447,8 @@ class Billrun_Billingcycle {
 		if (!$registrationDate) {
 			return $lastBillrunKey;
 		}
-		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($registrationDate->sec);
+		$monthBeforeRegistration = strtotime('- 1 month', $registrationDate->sec);
+		$registrationBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($monthBeforeRegistration);
 		return max(array($registrationBillrunKey, $lastBillrunKey));
 	}
 
@@ -565,6 +566,25 @@ class Billrun_Billingcycle {
 		}
 		$resetCycles = array_diff($billrunCount, $cycleCount);
 		return $resetCycles;
+	}
+	
+	public static function getFirstTheoreticalBillingCycle() {
+		return '197001';
+	}
+	
+	/**
+	 * method to get the first billing cycle that was started
+	 * if no cycle has been started, returns NULL
+	 * 
+	 * @return string format YYYYmm
+	 */
+	public static function getFirstStartedBillingCycle() {
+		$sort = array("billrun_key" => 1);
+		$entry = Billrun_Factory::db()->billing_cycleCollection()->query()->cursor()->sort($sort)->limit(1)->current();
+		if ($entry->isEmpty()) {
+			return NULL;
+		}
+		return $entry['billrun_key'];
 	}
 
 }
