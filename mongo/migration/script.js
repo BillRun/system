@@ -65,8 +65,8 @@ if (!lastConfig['plugins']) {
 
 //BRCD-1229 - Input processor re-enabled when not requested
 for (var i in lastConfig['file_types']) {
-	if (lastConfig[i]['enabled'] == undefined) {
-		lastConfig[i]['enabled'] = true;
+	if (lastConfig['file_types'][i]['enabled'] === undefined) {
+		lastConfig['file_types'][i]['enabled'] = true;
 	}
 }
 db.config.insert(lastConfig);
