@@ -338,3 +338,13 @@ for (var i in lastConfig['file_types']) {
 }
 
 db.config.insert(lastConfig);
+
+//BRCD-1229 - Input processor re-enabled when not requested
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+delete lastConfig['_id'];
+for (var i in lastConfig['file_types']) {
+	if (lastConfig[i]['enabled'] == undefined) {
+		lastConfig[i]['enabled'] = true;
+	}
+}
+db.config.insert(lastConfig);
