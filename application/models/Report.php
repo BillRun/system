@@ -320,15 +320,13 @@ class ReportModel {
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
 			case 'default_empty':
-				$a = $value;
-				if ($value === "" || is_null($value)) {
+				if ($format['value'] === 'current_time' || $format['value'] === '' || is_null($format['value'])) {
 					if(!$this->cacheFormatStyle[$format['op']][$format['value']][$value]) {
-						$a = $this->currentTime();
-						$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $a;
+						$this->cacheFormatStyle[$format['op']][$format['value']] = $this->currentTime();
 					}
-					return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+					return $this->cacheFormatStyle[$format['op']][$format['value']];
 				}
-				return $value;
+				return $format['value'];
 			default:
 				return $value;
 		}
