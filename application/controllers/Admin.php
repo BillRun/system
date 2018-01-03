@@ -14,11 +14,11 @@
  */
 class AdminController extends Yaf_Controller_Abstract {
 	use Billrun_Traits_Api_PageRedirect;
-	
+
 	/**
 	 * use for page title
-	 *
-	 * @var string
+	 * 
+	 * @var string 
 	 */
 	protected $title = null;
 	protected $session = null;
@@ -33,6 +33,8 @@ class AdminController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		if (!$this->allowed('read'))
+			return false;
 		Billrun_Factory::db();
 //		session_set_cookie_params(1);
 		$this->initSession();
@@ -40,7 +42,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->initConfig();
 		$this->initBaseUrl();
 		$this->initHtmlHeaders();
-	}
+			}
 	
 	protected function initSession() {
 		Billrun_Util::setHttpSessionTimeout();
@@ -51,7 +53,7 @@ class AdminController extends Yaf_Controller_Abstract {
 			$this->commit = md5(time());
 		}
 	}
-	
+
 	protected function initConfig() {
 		Yaf_Loader::getInstance(APPLICATION_PATH . '/application/helpers')->registerLocalNamespace('Admin');
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/view/admin_panel.ini');
@@ -125,7 +127,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		$this->addJs($this->baseUrl . '/js/controllers/SidePanelController.js');
 		$this->addJs($this->baseUrl . '/js/controllers/BandwidthCapController.js');
 	}
-	
+
 	protected function addCss($path) {
 		$this->cssPaths[] = $path;
 	}
@@ -825,7 +827,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$data = @json_decode($flatData, true);
 		unset($data['id']);
-		
+
 		if (empty($data) || ($type != 'new' && empty($id)) || empty($coll)) {
 
 			return $this->responseError($v->setReport(array("Data is empty !!!")));
@@ -866,7 +868,7 @@ class AdminController extends Yaf_Controller_Abstract {
 				//$this->getRequest()->set('update', $this->getRequest()->get('data'));
 				$this->forward("Api", "Cards", $this->getRequest());
 			} else {
-				$saveStatus = $model->update($params);
+			$saveStatus = $model->update($params);
 			}
 		} else if ($type == 'close_and_new') {
 			$model->closeAndNew($params);
@@ -933,10 +935,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to save all related rates after save
-	 *
+	 * 
 	 * @param Mongodloid_Collection $collection The collection to save to
 	 * @param Mongodolid_Entity $entity The entity to save
-	 *
+	 * 
 	 * @return void
 	 * @todo move to model
 	 */
@@ -1064,7 +1066,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		if ($username != '' && !is_null($password)) {
 			$adapter = new Zend_Auth_Adapter_MongoDb(
-				$db, 'username', 'password'
+					$db, 'username', 'password'
 			);
 
 			$adapter->setIdentity($username);
@@ -1117,7 +1119,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		// TODO: use ready pager/paginiation class (zend? joomla?) with auto print
 		$params = array_merge(array(
 			'title' => $this->title,
-			), $params);
+				), $params);
 //		$params = array_merge($options, $params, $this->getTableViewParams($filter_query), $this->createFilterToolbar($table));
 
 		$ret = $this->renderView('login', $params);
@@ -1126,11 +1128,11 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to check if user is authorize to resource
-	 *
+	 * 
 	 * @param string/array $permission the permission require authorization
-	 *
+	 * 
 	 * @return boolean true if have access, else false
-	 *
+	 * 
 	 * @todo: refactoring to core
 	 */
 	static public function authorized($permission, $page = null) {
@@ -1148,11 +1150,11 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to check if user is allowed to access page, if not redirect or show error message
-	 *
+	 * 
 	 * @param string/array $permission the permission required to the page
-	 *
+	 * 
 	 * @return boolean true if have access, else false
-	 *
+	 * 
 	 */
 	protected function allowed($permission) {
 		$action = $this->getRequest()->getActionName();
@@ -1160,15 +1162,15 @@ class AdminController extends Yaf_Controller_Abstract {
 			$page = $action;
 		} else {
 			$page = null;
-		}
+			}
 		if (self::authorized($permission, $page)) {
 			return true;
 		}
 
 		if (Billrun_Factory::user()) {
-			$this->forward('error');
-			return false;
-		}
+				$this->forward('error');
+				return false;
+			}
 
 		$this->forward('permission', array('ret_action' => $action));
 		return false;
@@ -1335,14 +1337,14 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$this->getView()->component = $this->buildTableComponent($table, $query);
 	}
-
+	
 	/**
 	 * config controller of admin
 	 */
 	public function operationsAction() {
 		if (!$this->allowed('operations'))
 			return false;
-
+		
 		$this->getView()->component = $this->renderView('operations');
 	}
 
@@ -1378,7 +1380,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to render component page
-	 *
+	 * 
 	 * @param string $viewName the view name to render
 	 * @return type
 	 */
@@ -1395,10 +1397,10 @@ class AdminController extends Yaf_Controller_Abstract {
 
 	/**
 	 * method to render table view
-	 *
+	 * 
 	 * @param string $table the db table to render
 	 * @param array $columns the columns to show
-	 *
+	 * 
 	 * @return string the render page (HTML)
 	 * @todo refactoring this function
 	 */
@@ -1448,10 +1450,10 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 *
+	 * 
 	 * @param string $tpl the default tpl the controller used; this will be override to use the general admin layout
 	 * @param array $parameters parameters of the view
-	 *
+	 * 
 	 * @return string the render layout including the page (component)
 	 */
 	protected function render($tpl, array $parameters = null) {
@@ -1483,7 +1485,7 @@ class AdminController extends Yaf_Controller_Abstract {
 
 		$parameters['css'] = $this->fetchCssFiles();
 		$parameters['js'] = $this->fetchJsFiles();
-
+		
 		return $this->getView()->render($tpl . ".phtml", $parameters);
 	}
 
@@ -1534,7 +1536,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	}
 
 	/**
-	 *
+	 * 
 	 * @param string $table the table name
 	 */
 	protected function getSession($table) {
@@ -1594,7 +1596,7 @@ class AdminController extends Yaf_Controller_Abstract {
 	protected function applyFilters($table, $session = false) {
 		$model = $this->model;
 		if (!$session) {
-			$session = $this->getSession($table);
+		$session = $this->getSession($table);
 		}
 		$filter_fields = $model->getFilterFields();
 		$query = array();
@@ -1642,8 +1644,8 @@ class AdminController extends Yaf_Controller_Abstract {
 			} else if ($table === "lines") {
 				$sort = array('urt' => -1);
 			} else {
-				$sort = array();
-			}
+			$sort = array();
+		}
 		}
 		return $sort;
 	}
@@ -1669,7 +1671,7 @@ class AdminController extends Yaf_Controller_Abstract {
 					'type' => 'text',
 				)
 			);
-		}
+			}
 
 		// If model is unidentified return false;
 		return false;
@@ -1689,23 +1691,23 @@ class AdminController extends Yaf_Controller_Abstract {
 			case 'dbref':
 				$returnValue = $inputValue;
 				break;
-			case 'number':
+				case 'number':
 				$returnValue = floatval($inputValue);
-				break;
-			case 'date':
+					break;
+				case 'date':
 				// TODO: If the date is not in this format, should report error?
 				if (Zend_Date::isDate($inputValue, 'yyyy-MM-dd hh:mm:ss')) {
 					$returnValue = new MongoDate((new Zend_Date($inputValue, null, new Zend_Locale('he_IL')))->getTimestamp());
-				} else {
+					} else {
 					return false;
-				}
+					}
 				break;
-			default:
-				break;
-		}
+				default:
+					break;
+			}
 
 		return $returnValue;
-	}
+			}
 
 	/**
 	 * Translate the value by the case option.
@@ -1750,7 +1752,7 @@ class AdminController extends Yaf_Controller_Abstract {
 		if ($translator != null) {
 			// TODO: decoupling to config of fields
 			return $translator->translate($value);
-		}
+			}
 
 		// If no translator found return the input parameters.
 		return array($operator => $value);
@@ -1766,14 +1768,14 @@ class AdminController extends Yaf_Controller_Abstract {
 		$collection = Billrun_Factory::db()->{$advancedOptionsKey['collection'] . "Collection"}();
 		$pre_query = null;
 		$pre_query[$advancedOptionsKey['collection_key']][$inputOperator] = $inputValue;
-		$cursor = $collection->query($pre_query);
+				$cursor = $collection->query($pre_query);
 		$value = array();
-		foreach ($cursor as $entity) {
+				foreach ($cursor as $entity) {
 			$value[] = $collection->createRefByEntity($entity);
-		}
+				}
 
 		return array('$in' => $value);
-	}
+			}
 
 	/**
 	 * Set the naual filter for a key to the query.
