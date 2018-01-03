@@ -298,7 +298,7 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Deactivated account: {$this->aid} no need to create invoice.", Zend_Log::DEBUG);
 			return;
 		}
-			$ret = $this->billrun_coll->save($this->data);
+		$ret = $this->billrun_coll->save($this->data);
 		if (!$ret) {
 			Billrun_Factory::log("Failed to create invoice for account " . $this->aid, Zend_Log::INFO);
 		} else {
