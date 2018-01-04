@@ -103,7 +103,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 
 		$this->dateField = $options['processor']['date_field'];
-		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings(static::$type, true)['pricing'];
+		$this->prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($options['file_type'], true)['pricing'];
 		
 	}
 
