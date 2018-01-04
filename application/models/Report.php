@@ -249,6 +249,9 @@ class ReportModel {
 				$value = $this->applyValueformat($value, $format);
 			}
 		}
+		if(gettype($value) == 'boolean') {
+			return $value ? 'TRUE' : 'FALSE';
+		}
 		return $value;
 	}
 	
