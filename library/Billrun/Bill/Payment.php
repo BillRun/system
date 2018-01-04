@@ -13,7 +13,8 @@
  * @since    5.0
  */
 abstract class Billrun_Bill_Payment extends Billrun_Bill {
-
+	
+	use Billrun_Traits_Api_OperationsLock;
 	/**
 	 *
 	 * @var string
@@ -38,6 +39,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 */
 	protected $optionalFields = array('payer_name', 'aaddress', 'azip', 'acity', 'IBAN', 'bank_name', 'BIC', 'cancel', 'RUM', 'correction', 'rejection', 'rejected', 'original_txid', 'rejection_code', 'source', 'pays', 'country');
 
+	protected static $aids;
 	/**
 	 * 
 	 * @param type $options
@@ -433,6 +435,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			'waiting_for_confirmation' => true,
 			'last_checked_pending' => array('$lte' => $paymentsOrphan)
 		);
+		if (!empty(self::$aids)) {
+			$query['aid'] = array('$in' => self::$aids);
+		}	
 		$payments = Billrun_Bill_Payment::queryPayments($query);
 		$res = array();
 		foreach ($payments as $payment) {
@@ -445,17 +450,18 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	/**
 	 * Responsible for paying payments and classifying payments responses: completed, pending or rejected.
 	 * 
-	 * @param string $stamp - Billrun key that represents the cycle.
+	 * @param array $chargeOptions - Options regarding charge operation.
 	 *
 	 */
-	public static function makePayment($stamp) {
-		$paymentParams = array(
-			'dd_stamp' => $stamp
-		);
-		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
-			throw new Exception('Error removing payments before rerun');
+	public static function makePayment($chargeOptions) {
+		if (!empty($chargeOptions['aids'])) {
+			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers());
+		if (!static::lock()) {
+			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
+			return;
+		}
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
@@ -473,17 +479,28 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 		foreach ($customers as $customer) {
 			$subscriber = $subscribers_in_array[$customer['aid']];
+			$gatewayDetails = $subscriber['payment_gateway']['active'];
+			if (!Billrun_PaymentGateway::isValidGatewayStructure($gatewayDetails)) {			
+				Billrun_Factory::log("Non valid payment gateway for aid = " . $customer['aid'], Zend_Log::ALERT);
+				continue;
+			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
-			$gatewayDetails = $subscriber['payment_gateway']['active'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = $customer['currency'];
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
+			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
+		
+		if (!static::release()) {
+			Billrun_Factory::log("Problem in releasing operation", Zend_Log::ALERT);
+			return;
+		}
+		
 	}
 	
 	/**
@@ -494,7 +511,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	 * @param String $gatewayName - name of the payment gateway.
 	 * 
 	 */
-	public function updateAccordingToStatus($response, $payment, $gatewayName) {
+	public static function updateAccordingToStatus($response, $payment, $gatewayName) {
 		if ($response['stage'] == "Completed") { // payment succeeded 
 			$payment->updateConfirmation();
 			$payment->setPaymentStatus($response['status'], $gatewayName);
@@ -513,7 +530,10 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		}
 	}
 	
-	public static function checkPendingStatus(){
+	public static function checkPendingStatus($pendingOptions){
+		if (!empty($pendingOptions['aids'])) {
+			self::$aids = Billrun_Util::verify_array($pendingOptions['aids'], 'int');
+		}
 		$pendingPayments = self::loadPending();
 		foreach ($pendingPayments as $payment) {
 			$gatewayName = $payment->getPaymentGatewayName();
@@ -522,12 +542,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 				continue;
 			}
 			$txId = $payment->getPaymentGatewayTransactionId();
+			Billrun_Factory::log("Checking status of pending payments", Zend_Log::INFO);
 			$status = $paymentGateway->verifyPending($txId);
 			if ($paymentGateway->isPending($status)) { // Payment is still pending
+				Billrun_Factory::log("Payment with transaction id=" . $txId . ' is still pending', Zend_Log::INFO);
 				$payment->updateLastPendingCheck();
 				continue;
 			}
 			$response = $paymentGateway->checkPaymentStatus($status, $paymentGateway);
+			Billrun_Factory::log("Updating payment with transaction id=" . $txId . ' to status ' . $response['stage'], Zend_Log::INFO);
 			self::updateAccordingToStatus($response, $payment, $gatewayName);
 		}
 	}
@@ -556,4 +579,33 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 	public function setGatewayChargeFailure($message){
 		return $this->data['failure_message'] = $message;
 	}
+	
+	protected function getConflictingQuery() {
+		if (!empty(self::$aids)){
+			return array(
+				'$or' => array(
+					array('filtration' => 'all'),
+					array('filtration' => array('$in' => self::$aids)),
+				),
+			);
+		}
+		
+		return array();
+	}
+	
+	protected function getInsertData() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
+		);
+	}
+	
+	protected function getReleaseQuery() {
+		return array(
+			'action' => 'charge_account',
+			'filtration' => (empty(self::$aids) ? 'all' : self::$aids),
+			'end_time' => array('$exists' => false)
+		);
+	}
+	
 }

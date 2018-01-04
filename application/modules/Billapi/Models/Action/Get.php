@@ -38,6 +38,17 @@ class Models_Action_Get extends Models_Action {
 	 * @var array
 	 */
 	protected $sort = array();
+	
+	protected function __construct(array $params = array()) {
+		if (isset($params['request'])) {
+			$this->request = $params['request'];
+		}
+		
+		if (isset($params['settings']) && isset($params['settings']['query_parameters'])) {
+			$params['settings']['query_parameters'] = array_merge($params['settings']['query_parameters'], $this->getQueryCustomFields());
+		}
+		return parent::__construct($params);
+	}
 
 	public function execute() {
 //		if (!empty($this->request['query'])) {
@@ -94,12 +105,35 @@ class Models_Action_Get extends Models_Action {
 
 		$records =  array_values(iterator_to_array($ret));
 		foreach($records as  &$record) {
-			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
-			if(empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) {
+			if ((empty($project) || (array_key_exists('revision_info', $project) && $project['revision_info'])) && isset($record['from'], $record['to'])) {
 				$record = Models_Entity::setRevisionInfo($record, $this->getCollectionName());
 			}
+			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
 		}
 		return $records;
+	}
+	
+	/**
+	 * add option to query also by custom fields
+	 */
+	protected function getQueryCustomFields() {
+		$ret = array();
+		$customFieldsKey = $this->getCustomFieldsKey();
+		$customFields = Billrun_Factory::config()->getConfigValue("$customFieldsKey.fields", array());
+		foreach ($customFields as $field) {
+			if (Billrun_Util::getFieldVal($field['searchable'], false)) {
+				$ret [] = array(
+					'name' => $field['field_name'],
+					'type' => 'string',
+				);
+			}
+		}
+		
+		return $ret;
+	}
+	
+	protected function getCustomFieldsKey() {
+		return $this->getCollectionName();
 	}
 
 	/**

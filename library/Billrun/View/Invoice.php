@@ -55,33 +55,69 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return $usageName;
 	}
 	
+	public function getAllDiscount($lines) {
+		$discounts = array('lines' => array(), 'total'=> 0);
+		foreach($lines as $subLines) {
+			foreach($subLines as $line) {
+				if($line['usaget'] == 'discount') {
+					@$discounts['lines'][$this->getLineUsageName($line)] += $line['aprice'];
+					@$discounts['total'] +=$line['aprice'];
+				}
+			}
+		}
+		return $discounts;
+	}
+	
 	public function buildSubscriptionListFromLines($lines) {
 		$subscriptionList = array();
 		$typeNames = array_flip($this->details_keys);
 		foreach($lines as $subLines) {
 			foreach($subLines as $line) {
-				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0) {
+				if($line['usaget'] == 'discount') {
+					
+				}
+				if(in_array($line['type'],$this->flat_line_types) && $line['aprice'] != 0 && $line['usaget'] != 'discount') {
 					$rate = $this->getRateForLine($line);
 					$flatData =  ($line['type'] == 'credit') ? $rate['rates']['call']['BASE']['rate'][0] : $rate;
 					
 					$line->collection(Billrun_Factory::db()->linesCollection());
 					$name = $this->getLineUsageName($line);
-					$subscriptionList[$name]['desc'] = $name;	
-					$subscriptionList[$name]['type'] = $typeNames[$line['type']];
+					$key = $this->getLineAggregationKey($line, $rate, $name);
+					$subscriptionList[$key]['desc'] = $name;	
+					$subscriptionList[$key]['type'] = $typeNames[$line['type']];
 					//TODO : HACK : this is an hack to add rate to the highcomm invoice need to replace is  with the actual logic once the  pricing  process  will also add the  used rates to the line pricing information.
-					$subscriptionList[$name]['rate'] = max(@$subscriptionList[$name]['rate'],(isset($flatData['price'][0]['price']) ? $flatData['price'][0]['price'] : $flatData['price']));
-					@$subscriptionList[$name]['count']++;
-					$subscriptionList[$name]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$name]['amount'],0) + $line['aprice'];
+					$subscriptionList[$key]['rate'] = max(@$subscriptionList[$key]['rate'],$this->getLineRatePrice($flatData,$line));
+					@$subscriptionList[$key]['count']+= Billrun_Util::getFieldVal($line['usagev'],1);
+					$subscriptionList[$key]['amount'] = Billrun_Util::getFieldVal($subscriptionList[$key]['amount'],0) + $line['aprice'];
+					$subscriptionList[$key]['start'] = empty($line['start']) ? @$subscriptionList[$key]['start'] : $line['start'] ;
+					$subscriptionList[$key]['end'] = empty($line['end']) ? @$subscriptionList[$key]['end'] : $line['end'] ;
+					$subscriptionList[$key]['span'] = $this->getListItemSpan($subscriptionList[$key]);
 				}
 			}
 		}
 		return $subscriptionList;
 	}
 	
+	public function currencySymbol() {
+		return Billrun_Rates_Util::getCurrencySymbol(Billrun_Factory::config()->getConfigValue('pricing.currency','USD'));
+	}
+	
+	protected function getLineRatePrice($rate, $line) {
+		$pricePerUsage = 0;		
+		if(isset($rate['price'][0]['price'])) {
+			$priceByCycle = Billrun_Util::mapArrayToStructuredHash($rate['price'], array('from'));
+			$pricePerUsage = $priceByCycle[empty($line['cycle']) ? 0 : $line['cycle']]['price'];
+		} else {
+			$pricePerUsage = $rate['price'];
+		}
+		return $pricePerUsage;
+	}
+	
 	protected function getRateForLine($line) {
 		$rate = FALSE;
 		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
+			$rate = MongoDBRef::isRef($line['arate']) ? Billrun_Rates_Util::getRateByRef($line['arate']) : $line['arate'];
+			$rate = $rate->getRawData();
 		} else {
 			$flatRate = $line['type'] == 'flat' ? 
 				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
@@ -90,4 +126,27 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		return $rate;			
 	}
+	
+	protected function getLineAggregationKey($line,$rate,$name) {
+		$key = $name;
+		if($line['type'] == 'service' && $rate['quantitative']) {
+			$key .= $line['usagev']. $line['sid'];
+		}
+		if(!empty($line['start'])) {
+			$key .= date('ymd',$line['start']->sec);
+		}
+		if(!empty($line['end'])) {
+			$key .=  date('ymd',$line['end']->sec);
+		}
+		if(!empty($line['cycle'])) {
+			$key .= $line['cycle'];
+		}
+		return $key;
+	}
+	
+	protected function getListItemSpan($item) {
+		return (empty($item['start']) ? '' : 'Starting '.date(date($this->date_format,$item['start']->sec))) .
+				(empty($item['start']) || empty($item['end']) ? '' : ' - ') .
+				(empty($item['end'])   ? '' : 'Ending '.date(date($this->date_format,$item['end']->sec)));
+	}	
 }

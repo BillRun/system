@@ -104,6 +104,17 @@ class Billrun_Util {
 		
 		return md5(serialize(empty($filter) ? $ar : array_intersect_key($ar, array_flip($filter))));
 	}
+        
+        /**
+	 * generate array  stamp only  for specific field  within the array
+	 * @param array $ar array to generate the stamp from
+	 * @return string the array stamp
+	 */
+	public static function generateFilteredArrayStamp( $ar, $filter = FALSE ) {
+		$releventKeys = !empty($filter) ?  array_flip( $filter ) : FALSE ;
+		$filteredArray = $releventKeys ? array_intersect_key( $ar, $releventKeys  ) : $ar ;
+		return Billrun_Util::generateArrayStamp($filteredArray);
+	}
 
 	/**
 	 * generate a random number of reqested length based on microtime
@@ -542,9 +553,23 @@ class Billrun_Util {
 	 * @return Boolean true on success else FALSE
 	 */
 	public static function forkProcessCli($cmd) {
+		if (!defined('STDERR')) {
+			define('STDERR', fopen('php://stderr', 'w'));
+		}
 		$syscmd = $cmd . " > /dev/null & ";
-		if (system($syscmd) === FALSE) {
-			error_log("Can't fork PHP process");
+		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
+			$syscmd = 'export APPLICATION_MULTITENANT=1 ; ' . $syscmd;
+		}
+		$descriptorspec = array(
+			2 => STDERR,
+		);
+		$process = proc_open($syscmd, $descriptorspec, $pipes);
+		if ($process === FALSE) {
+			Billrun_Factory::log('Can\'t execute CLI command',Zend_Log::ERR);
+			return false;
+		}
+		if (proc_close($process) === -1) {
+			Billrun_Factory::log('CLI command returned with error ',Zend_Log::ERR);
 			return false;
 		}
 		return true;
@@ -924,11 +949,12 @@ class Billrun_Util {
 	 * Returns an array value if it is set
 	 * @param mixed $field the array value
 	 * @param mixed $defVal the default value to return if $field is not set
+	 * @param callable $callback a callback function to run on the field in case it is set and return its value
 	 * @return mixed the array value if it is set, otherwise returns $defVal
 	 */
-	static public function getFieldVal(&$field, $defVal) {
+	static public function getFieldVal(&$field, $defVal, $callback = false) {
 		if (isset($field)) {
-			return $field;
+			return $callback ? call_user_func($callback, $field) : $field;
 		}
 		return $defVal;
 	}
@@ -1458,7 +1484,7 @@ class Billrun_Util {
 	 */
 	public static function getCmdEnvParams() {
 		$ret = '--env ' . Billrun_Factory::config()->getEnv();
-		if (RUNNING_FROM_CLI && defined('APPLICATION_MULTITENANT')) {
+		if (defined('APPLICATION_MULTITENANT') && APPLICATION_MULTITENANT) {
 			$ret .= ' --tenant ' . Billrun_Factory::config()->getTenant();
 		}
 		return $ret;
@@ -1467,6 +1493,11 @@ class Billrun_Util {
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
+	
+	public static function IsUnixTimestampValue($value) {
+		return is_numeric($value) && $value > strtotime('-30 years') &&  $value < strtotime('+30 years');
+	}
+	
 	
 	public static function setHttpSessionTimeout($timeout = null) {
 		if (!is_null($timeout)) {
@@ -1555,7 +1586,7 @@ class Billrun_Util {
 	 * @param mixed $value - new value to set
 	 */
 	public static function setIn(&$arr, $keys, $value) {
-		if (!$arr) {
+		if (!is_array($arr)) {
 			return;
 		}
 		
@@ -1577,6 +1608,9 @@ class Billrun_Util {
 		}
 		
 		if (!is_array($keys)) {
+			if (isset($arr[$keys])) {
+				return $arr[$keys];
+			}
 			$keys = explode('.', $keys);
 		}
 		

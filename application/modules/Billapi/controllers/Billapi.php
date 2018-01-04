@@ -55,6 +55,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	public function init() {
 		$request = $this->getRequest();
 		$this->collection = $request->getParam('collection');
+		$this->params['options'] = json_decode($request->get('options', '{}'), JSON_OBJECT_AS_ARRAY);
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $this->collection . '.ini');
 		$this->action = strtolower($request->getParam('action'));
 		$this->errorBase = Billrun_Factory::config()->getConfigValue('billapi.error_base', 10400);
@@ -86,25 +87,18 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	}
 
 	protected function runOperation() {
-		$entityModel = $this->getModel();
+		$this->params['collection'] = $this->collection;
+		$entityModel = Models_Entity::getInstance($this->params);
 		$this->output->status = 1;
 		$this->output->details = $entityModel->{$this->action}();
-	}
-
-	/**
-	 * Get the right model, depending on the requested collection
-	 * @return \Models_Entity
-	 */
-	protected function getModel() {
-		$modelPrefix = 'Models_';
-		$className = $modelPrefix . ucfirst($this->collection);
-		if (!@class_exists($className)) {
-			$className = $modelPrefix . 'Entity';
+		$entity = $entityModel->getAfter();
+		if ($entity instanceof Mongodloid_Entity) {
+			$this->output->entity = $entity->getRawData();
+		} else {
+			$this->output->entity = $entity;
 		}
-		$this->params['collection'] = $this->collection;
-		return new $className($this->params);
 	}
-
+	
 	/**
 	 * Get the relevant billapi config depending on the requested collection + action
 	 * @return array
@@ -220,7 +214,7 @@ abstract class BillapiController extends Yaf_Controller_Abstract {
 	 *
 	 * @return string the render layout including the page (component)
 	 */
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		return $this->getView()->render('index.phtml', $parameters);
 	}
 

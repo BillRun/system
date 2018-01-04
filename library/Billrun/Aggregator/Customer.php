@@ -81,7 +81,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * Accounts to override
 	 * @var array
 	 */
-	protected $overrideAccountIds = array();
+	protected $forceAccountIds = array();
 
 	/**
 	 * the amount of account lines to preload from the db at a time.
@@ -128,6 +128,13 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 */
 	protected $canLoad = false;
 	
+	/**
+	 * If true need to override data in billrun collection, 
+	 * @var boolean
+	 */
+	protected $overrideMode;
+	
+	
 	public function __construct($options = array()) {
 		$this->isValid = false;
 		parent::__construct($options);
@@ -172,18 +179,24 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$this->bulkAccountPreload = (int) $options['aggregator']['bulk_account_preload'];
 		}
 
-		if (isset($options['aggregator']['override_accounts'])) {
-			$this->overrideAccountIds = $options['aggregator']['override_accounts'];
+		if (isset($options['aggregator']['force_accounts'])) {
+			$this->forceAccountIds = $options['aggregator']['force_accounts'];
 		}
 		
 		if (isset($options['action']) && $options['action'] == 'cycle') {
 			$this->billingCycle = Billrun_Factory::db()->billing_cycleCollection();
 			$this->isCycle = true;
 		}
+				
+		if (!$this->shouldRunAggregate($options['stamp'])) {
+			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
+			return;
+		}
 		
 		$this->plans = Billrun_Factory::db()->plansCollection();
 		$this->lines = Billrun_Factory::db()->linesCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
+		$this->overrideMode = Billrun_Factory::config()->getConfigValue('customer.aggregator.override_mode', true);
 
 		if (!$this->recreateInvoices && $this->isCycle){
 			$maxProcesses = Billrun_Factory::config()->getConfigValue('customer.aggregator.processes_per_host_limit');
@@ -194,7 +207,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			}
 			$this->page = $pageResult;
 		}
-		
+
 		$this->isValid = true;
 	}
 	
@@ -296,14 +309,17 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$servicesResults = $this->aggregateServices($mongoCycle);
 		Billrun_Factory::log("ServicesResults: " . count($servicesResults));
 		$result = array('plans' => $planResults, 'rates' => $ratesResults, 'services' => $servicesResults);
-		if (!$this->overrideAccountIds) {
+		if (!$this->forceAccountIds) {
 			$data = $this->aggregateMongo($mongoCycle, $this->page, $this->size);
 			$result['data'] = $data;
 			return $result;
 		}
 		
 		$data = array();
-		foreach ($this->overrideAccountIds as $account_id) {
+		foreach ($this->forceAccountIds as $account_id) {
+			if (Billrun_Bill_Invoice::isInvoiceConfirmed($account_id, $mongoCycle->key())) {
+				continue;
+			}
 			$data = array_merge($data, $this->aggregateMongo($mongoCycle, 0, 1, $account_id));
 		}
 		$result['data'] = $data;
@@ -324,7 +340,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$accountData = array();
 		$billrunData = array(
 			'billrun_key' => $cycle->key(),
-			'autoload' => !empty($this->overrideAccountIds));
+			'autoload' => !empty($this->overrideMode));
 		foreach ($outputArr as $subscriberPlan) {
 			$aid = $subscriberPlan['id']['aid'];
 			
@@ -388,10 +404,11 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 
 		$billrunData['aid'] = $aid;
 		$billrunData['attributes'] = $accountData['attributes'];
+		$billrunData['override_mode'] = $this->overrideMode;
 		$invoice = new Billrun_Cycle_Account_Invoice($billrunData);
 
 		// Check if already exists.
-		if($invoice->exists()) {
+		if(!$this->overrideMode && $invoice->exists()) {
 			Billrun_Factory::log("Billrun " . $cycle->key() . " already exists for account " . $aid, Zend_Log::ALERT);
 			return false;
 		} 
@@ -425,7 +442,6 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	protected function constructAccountAttributes($subscriberPlan) {
 		$firstname = $subscriberPlan['id']['first_name'];
 		$lastname = $subscriberPlan['id']['last_name'];
-		
 		$paymentDetails = 'No payment details';
 		if (isset($subscriberPlan['card_token']) && !empty($token = $subscriberPlan['card_token'])) {
 			$paymentDetails = Billrun_Util::getTokenToDisplay($token);
@@ -436,7 +452,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'lastname' => $lastname,
 			'fullname' => $firstname . ' ' . $lastname,
 			'address' => $subscriberPlan['id']['address'],
-			'payment_details' => $paymentDetails
+			'payment_details' => $paymentDetails,
 		);
 		
 		foreach(Billrun_Factory::config()->getConfigValue(static::$type.'.aggregator.passthrough_data',array()) as  $invoiceField => $subscriberField) {
@@ -476,7 +492,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$dataKeys = array_keys($data);
 		//$existingAccounts = array();			
 		foreach ($dataKeys as $key => $aid) {
-			if (!$this->overrideAccountIds && $this->billrun->exists($aid)) {
+			if (!$this->overrideMode && $this->billrun->exists($aid)) {
 				unset($dataKeys[$key]);
 			}
 		}
@@ -488,6 +504,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		// Write down the invoice data.
 		foreach ($this->acounts as $account) {
 			$account->writeInvoice($this->min_invoice_id);
+			$this->save($account->getAppliedDiscounts());
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($account));
 		}
 		
 		$end_msg = "Finished iterating page $this->page of size $this->size. Memory usage is " . memory_get_usage() / 1048576 . " MB\n";
@@ -577,6 +595,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			'$project' => array(
 				'plan' => '$name',
 				'upfront' => 1,
+				'prorated' => 1,
 				'vatable' => 1,
 				'price' => 1,
 				'recurrence.periodicity' => 1,
@@ -599,9 +618,12 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			$page = 0;
 			$size = 1;
 		}
+		if (is_null($page)) {
+			$page = 0;
+		}
 		$pipelines[] = $this->getMatchPiepline($cycle);
 		if ($aid) {
-			$pipelines[count($pipelines) - 1]['$match']['aid'] = intval($aid);
+			$pipelines[count($pipelines) - 1]['$match']['$and'][] = array('aid' => intval($aid));
 		}
 		$addedPassthroughFields = $this->getAddedPassthroughValuesQuery();
 		$pipelines[] = array(
@@ -715,7 +737,7 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$match = array(
 			'$match' => array(
 				'$or' => array(
-					array_merge( // Account records
+					array_merge(// Account records
 						array('type' => 'account'), Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $mongoCycle->start()->sec, $mongoCycle->end()->sec)
 					),
 					array(// Subscriber records
@@ -739,17 +761,25 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			)
 		);
 
-
 		// If the accounts should not be overriden, filter the existing ones before.
-		if (!$this->overrideAccountIds) {
+		if (!$this->overrideMode) {
 			// Get the aid exclusion query
 			$exclusionQuery = $this->billrun->existingAccountsQuery();
 			$match['$match']['aid'] = $exclusionQuery;
 		}
 
+		$confirmedAids = Billrun_Billingcycle::getConfirmedAccountIds($mongoCycle->key());
+		if ($confirmedAids) {
+			$match['$match']['$and'][] = array(
+				'aid' => array(
+					'$nin' => $confirmedAids,
+				)
+			);
+		}
+
 		return $match;
 	}
-	
+
 	protected function getSortPipeline() {
 		return array(
 			'$sort' => array(
@@ -774,7 +804,18 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 			return;
 		}
 		$linesCol = Billrun_Factory::db()->linesCollection();
-		$linesCol->batchInsert($results);
+		try {	
+			$linesCol->batchInsert($results);
+		} catch (Exception $e) {
+			Billrun_Factory::log($e->getMessage(), Zend_Log::ALERT);
+			foreach ($results as $line) {
+				try {
+					$linesCol->insert($line);
+				} catch (Exception $ex) {
+					Billrun_Factory::log($ex->getMessage(), Zend_Log::ALERT);
+				}
+			}
+		}
 	}
 
 	/**
@@ -918,5 +959,50 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		$options = empty($account['options']) ? array() : $this->getOptionEntries($billrun, $account);
 		$billrun->populateInvoiceWithAccountData($account, $options);
 	}
-
+	
+	protected function shouldRunAggregate($stamp) {
+		$allowPrematureRun = (int)Billrun_Factory::config()->getConfigValue('cycle.allow_premature_run', false);
+		if (!$allowPrematureRun && time() < Billrun_Billingcycle::getEndTime($stamp)) {
+			return false;
+		}
+		return true;
+	}
+	
+	protected function beforeAggregate($accounts) {
+		if ($this->overrideMode && $accounts) {
+			$aids = array();
+			foreach ($accounts as $account) {
+				$aids[] = $account->getInvoice()->getAid();
+			}
+			$billrunKey = $this->billrun->key();
+			self::removeBeforeAggregate($billrunKey, $aids);
+		}
+	}
+	
+	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
+		$linesColl = Billrun_Factory::db()->linesCollection();
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		$notBilled = $billrunColl->query($billrunQuery)->cursor();
+		$notBilledAids = array();
+		foreach ($notBilled as $account) {
+			$notBilledAids[] = $account['aid'];
+		}
+		if (empty($aids)) {
+			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$billrunRemoveQuery = $billrunQuery;
+		} else {
+			$aids =array_values(array_intersect($notBilledAids, $aids));
+			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
+										'billrun' => $billrunKey, 
+										'$or' => array(
+											array( 'type' => array('$in' => array('service', 'flat')) ),
+											array( 'type'=>'credit','usaget'=>'discount' )
+											));
+			$billrunRemoveQuery = array('aid' => array('$in' => $aids), 'billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
+		}
+		$linesColl->remove($linesRemoveQuery);
+		$billrunColl->remove($billrunRemoveQuery);
+	}
+	
 }

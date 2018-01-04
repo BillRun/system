@@ -33,10 +33,10 @@ class Billrun_Plans_Charge {
 		}
 		
 		// Get the charge.
-		$charge = $chargeObj->getPrice();
+		$charge = $chargeObj->getPrice( Billrun_Util::getFieldVal($plan['quantity'],1));
 		
 		if($charge !== null) {
-			$results['charge'] = $charge;
+			$results['charge'] = $charge ;
 		}
 		
 		// Check if has refund

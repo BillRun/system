@@ -140,7 +140,7 @@ abstract class ApiAction extends Action_Base {
 	 * @param array $parameters view parameters
 	 * @return string output
 	 */
-	protected function render($tpl, array $parameters = array()) {
+	protected function render($tpl, array $parameters = null) {
 		$ret = parent::render($tpl, $parameters);
 		if ($this->getRequest()->get('SERVER_PROTOCOL') == 'HTTP/1.0' && !is_null($ret) && is_string($ret)) {
 			header('Content-Length: ' . strlen($ret));

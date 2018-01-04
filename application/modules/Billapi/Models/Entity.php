@@ -15,7 +15,7 @@
 class Models_Entity {
 
 	use Models_Verification;
-	
+
 	/**
 	 * Entirty available statuses values
 	 */
@@ -94,20 +94,40 @@ class Models_Entity {
 	protected $action = 'change';
 
 	/**
+	 * Gets the minimum date for moving entities in time (unix timestamp)
+	 * 
+	 * @var int
+	 */
+	protected static $minUpdateDatetime = null;
+	
+	/**
 	 * the change action applied on the entity
 	 * 
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
+	
+	public static function getInstance($params) {
+		$modelPrefix = 'Models_';
+		$className = $modelPrefix . ucfirst($params['collection']);
+		if (!@class_exists($className)) {
+			$className = $modelPrefix . 'Entity';
+		}
+		return new $className($params);
+	}
 
 	public function __construct($params) {
-		if ($params['collection'] == 'accounts') {
+		if ($params['collection'] == 'accounts') { //TODO: remove coupling on this condition
 			$this->collectionName = 'subscribers';
 		} else {
 			$this->collectionName = $params['collection'];
 		}
 		$this->collection = Billrun_Factory::db()->{$this->collectionName . 'Collection'}();
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/conf/modules/billapi/' . $params['collection'] . '.ini');
 		$this->config = Billrun_Factory::config()->getConfigValue('billapi.' . $params['collection'], array());
+		if (isset($params['no_init']) && $params['no_init']) {
+			return;
+		}
 		if (isset($params['request']['action'])) {
 			$this->action = $params['request']['action'];
 		}
@@ -120,6 +140,7 @@ class Models_Entity {
 		if (json_last_error() != JSON_ERROR_NONE) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Input parsing error');
 		}
+
 		list($translatedQuery, $translatedUpdate) = $this->validateRequest($query, $update, $this->action, $this->config[$this->action], 999999);
 		$this->setQuery($translatedQuery);
 		$this->setUpdate($translatedUpdate);
@@ -149,25 +170,84 @@ class Models_Entity {
 //		$ad = $this->getCustomFields();
 		$customFields = $this->getCustomFields();
 		$additionalFields = array_column($customFields, 'field_name');
-		$mandatorylValues = array_map(function($field) {return isset($field['mandatory']) ? $field['mandatory'] : false;}, $customFields);
-		$mandatoryFields = array_combine($additionalFields, $mandatorylValues);
+		$mandatoryFields = array();
+		$uniqueFields = array();
+		$defaultFieldsValues = array();
+
+		foreach ($customFields as $customField) {
+			$fieldName = $customField['field_name'];
+			$mandatoryFields[$fieldName] = Billrun_Util::getFieldVal($customField['mandatory'], false);
+			$uniqueFields[$fieldName] = Billrun_Util::getFieldVal($customField['unique'], false);
+			$defaultFieldsValues[$fieldName] = Billrun_Util::getFieldVal($customField['default_value'], false);
+		}
+
 		$defaultFields = array_column($this->config[$this->action]['update_parameters'], 'name');
 		$customFields = array_diff($additionalFields, $defaultFields);
 //		print_R($customFields);
 		foreach ($customFields as $field) {
-			if ($mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
+			if ($this->action == 'create' && $mandatoryFields[$field] && (Billrun_Util::getIn($originalUpdate, $field, '') === '')) {
 				throw new Billrun_Exceptions_Api(0, array(), "Mandatory field: $field is missing");
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, false);
-			if ($val) {
+			if ($val !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $val)) {
+				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
+			}
+			if ($val !== FALSE) {
 				Billrun_Util::setIn($this->update, $field, $val);
+			} else if ($this->action === 'create' && $defaultFieldsValues[$field] !== false) {
+				Billrun_Util::setIn($this->update, $field, $defaultFieldsValues[$field]);
 			}
 		}
 //		print_R($this->update);die;
 	}
 
+	protected function hasEntitiesWithSameUniqueFieldValue($data, $field, $val) {
+		$nonRevisionsQuery = $this->getNotRevisionsOfEntity($data);
+		$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
+		$startTime = strtotime($data['from']);
+		$endTime = strtotime($data['to']);
+		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
+		if ($nonRevisionsQuery) {
+			$query['$and'][] = $nonRevisionsQuery;
+		}
+
+		return $this->collection->query($query)->count() > 0;
+	}
+
+	/**
+	 * builds a query that gets all entities that are not revisions of the current entity
+	 * 
+	 * @param type $data
+	 */
+	protected function getNotRevisionsOfEntity($data) {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		$query['$or'] = array();
+		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			if (!isset($data[$fieldName])) {
+				continue;
+			}
+			$query['$or'][] = array(
+				$fieldName => array('$ne' => $data[$fieldName]),
+			);
+		}
+
+		if (empty($query['$or'])) {
+			unset($query['$or']);
+		}
+
+		return $query;
+	}
+
 	protected function getCustomFields() {
 		return Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array());
+	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".fields";
 	}
 
 	/**
@@ -200,16 +280,40 @@ class Models_Entity {
 	 * @param array $data
 	 */
 	public function update() {
+		$this->action = 'update';
+
+		$this->checkUpdate();
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	/**
+	 * Performs the changepassword action by a query and data to update
+	 * @param array $query
+	 * @param array $data
+	 */
+	public function changePassword() {
+		$this->action = 'changepassword';
+		
+		$this->checkUpdate();
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
+		return true;
+	}
+	
+	protected function checkUpdate() {
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
+			return;
+		}
+		
+		$this->protectKeyField();
+
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
-		$this->action = 'update';
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
-		$this->trackChanges($this->query['_id']);
-		return true;
 	}
 
 	/**
@@ -218,12 +322,12 @@ class Models_Entity {
 	 * 
 	 * @throws Billrun_Exceptions_Api
 	 */
-	protected function preCheckUpdate() {
-		$ret = $this->checkDateRangeFields();
+	protected function preCheckUpdate($time = null) {
+		$ret = $this->checkDateRangeFields($time);
 		Billrun_Factory::dispatcher()->trigger('beforeBillApiUpdate', array($this->before, &$this->query, &$this->update, &$ret));
 		return $ret;
 	}
-	
+
 	/**
 	 * method to check date range fields
 	 * by default checking only to field (not in the past)
@@ -236,7 +340,7 @@ class Models_Entity {
 		if (is_null($time)) {
 			$time = time();
 		}
-		if (isset($this->before['to']->sec) && $this->before['to']->sec < $time) {
+		if (isset($this->before['to']->sec) && $this->before['to']->sec < self::getMinimumUpdateDate()) {
 			return false;
 		}
 		return true;
@@ -250,22 +354,30 @@ class Models_Entity {
 	 * @todo avoid overlapping of entities
 	 */
 	public function closeandnew() {
+		$this->action = 'closeandnew';
+		if (!isset($this->update['from'])) {
+			$this->update['from'] = new MongoDate();
+		}
+		if (!is_null($this->before)) {
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$this->update = array_merge($prevEntity, $this->update);
+		}
 		if ($this->preCheckUpdate() !== TRUE) {
 			return false;
 		}
-		$this->action = 'closeandnew';
-		$now = new MongoDate();
-		if (!isset($this->update['from'])) {
-			$this->update['from'] = $now;
+
+		$this->protectKeyField();
+		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		$this->verifyLastEntry();
+
+		if ($this->before['from']->sec > $this->update['from']->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'Revision update minimum date is ' . date('Y-m-d', $this->before['from']->sec));
+			return false;
 		}
-		if ($this->update['from']->sec < $now->sec) {
-			throw new Billrun_Exceptions_Api(1, array(), 'closeandnew must get a future update');
-		}
-		$closeAndNewPreUpdateOperation = array(
-			'$set' => array(
-				'to' => new MongoDate($this->update['from']->sec)
-			)
-		);
+
+		$closeAndNewPreUpdateOperation = $this->getCloseAndNewPreUpdateCommand();
+		
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
 		if (!isset($res['nModified']) || !$res['nModified']) {
 			return false;
@@ -277,6 +389,42 @@ class Models_Entity {
 		$newId = $this->update['_id'];
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
+	}
+	
+	/**
+	 * method to get the db command that run on close and new operation
+	 * 
+	 * @return array db update command
+	 */
+	protected function getCloseAndNewPreUpdateCommand() {
+		return array(
+			'$set' => array(
+				'to' => new MongoDate($this->update['from']->sec)
+			)
+		);
+	}
+
+	/**
+	 * method to protect key field update
+	 * used on update & closeandnew operation
+	 */
+	protected function protectKeyField() {
+		$keyField = $this->getKeyField();
+		if (isset($this->update[$keyField]) && $this->update[$keyField] != $this->before[$keyField]) {
+			$this->update[$keyField] = $this->before[$keyField];
+		}
+	}
+
+	/**
+	 * method get the minimum time to update
+	 * 
+	 * @return unix timestamp
+	 */
+	public static function getMinimumUpdateDate() {
+		if (is_null(self::$minUpdateDatetime)) {
+			self::$minUpdateDatetime = ($billrunKey = Billrun_Billingcycle::getLastNonRerunnableCycle()) ? Billrun_Billingcycle::getEndTime($billrunKey) : 0;
+		}
+		return self::$minUpdateDatetime;
 	}
 
 	/**
@@ -299,13 +447,50 @@ class Models_Entity {
 		}
 		return $ret;
 	}
-	
+
 	/**
 	 * Verify that an entity can be deleted.
 	 * 
 	 * @return boolean
 	 */
 	protected function canEntityBeDeleted() {
+		return true;
+	}
+
+	/**
+	 * method to check if the current query allocate the last entry
+	 * 
+	 * @return boolean true if the last entry else false
+	 */
+	protected function verifyLastEntry() {
+		$entry = $this->collection->query($this->query)->cursor()->sort(array('_id' => 1))->current();
+		if (isset($entry['_id']) && $this->before['_id'] != $entry['_id']) {
+			throw new Billrun_Exceptions_Api(1500, array(), "Cannot remove old entries, but only the last created entry that exists");
+		}
+		return true;
+	}
+
+	/**
+	 * method to check minimum date by the last billing cycle
+	 * 
+	 * @param array $params the parameters the field exists
+	 * @param string $field the field to check
+	 * @param string $action the action that is checking
+	 * 
+	 * @return true on success else false
+	 * 
+	 * @throws Billrun_Exceptions_Api
+	 */
+	protected function checkMinimumDate($params, $field = 'to', $action = null) {
+		if (is_null($action)) {
+			$action = $this->action;
+		}
+
+		$fromMinTime = self::getMinimumUpdateDate();
+		if (isset($params[$field]->sec) && $params[$field]->sec < $fromMinTime) {
+			throw new Billrun_Exceptions_Api(1, array(), ucfirst($action) . ' minimum date is ' . date('Y-m-d', $fromMinTime));
+			return false;
+		}
 		return true;
 	}
 
@@ -320,16 +505,21 @@ class Models_Entity {
 		if (!$this->canEntityBeDeleted()) {
 			throw new Billrun_Exceptions_Api(2, array(), 'entity cannot be deleted');
 		}
-		if (!$this->query || empty($this->query) || $this->before->isEmpty()) { // currently must have some query
+
+		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) && $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
+
+		$this->verifyLastEntry();
+		$this->checkMinimumDate($this->before, 'from');
+
 		$status = $this->remove($this->query); // TODO: check return value (success to remove?)
 		if (!isset($status['ok']) || !$status['ok']) {
 			return false;
 		}
 		$this->trackChanges(null); // assuming remove by _id
-		
-		if (isset($this->before['from']->sec) && $this->before['from']->sec > time()) {
+
+		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
 			return $this->reopenPreviousEntry();
 		}
 		return true;
@@ -352,11 +542,104 @@ class Models_Entity {
 			);
 		}
 
+		$this->checkMinimumDate($this->update);
+
 		$status = $this->dbUpdate($this->query, $this->update);
 		if (!isset($status['nModified']) || !$status['nModified']) {
 			return false;
 		}
 		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+
+	public function move() {
+		$this->action = 'move';
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) { // currently must have some query
+			return;
+		}
+
+		if (!isset($this->update['from']) && !isset($this->update['to'])) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Move operation must have from or to input');
+		}
+		
+		if (isset($this->update['from'])) { // default is move from
+			return $this->moveEntry('from');
+		}
+
+		return $this->moveEntry('to');
+	}
+
+	/**
+	 * move from date of entity including change the previous entity to field
+	 * 
+	 * @return boolean true on success else false
+	 */
+	protected function moveEntry($edge = 'from') {
+		if ($edge == 'from') {
+			$otherEdge = 'to';
+		} else { // $current == 'to'
+			$otherEdge = 'from';
+		}
+		if (!isset($this->update[$edge])) {
+			$this->update = array(
+				$edge => new MongoDate()
+			);
+		}
+
+		if (($edge == 'from' && $this->update[$edge]->sec >= $this->before[$otherEdge]->sec) 
+			|| ($edge == 'to' && $this->update[$edge]->sec <= $this->before[$otherEdge]->sec)) {
+			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than or equal to end date');
+		}
+
+		$this->checkMinimumDate($this->update, $edge);
+
+		$keyField = $this->getKeyField();
+
+		if ($edge == 'from') {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$lte' => $this->before[$edge],
+				)
+			);
+			$sort = -1;
+			$rangeError = 'Requested start date is less than previous end date';
+		} else {
+			$query = array(
+				$keyField => $this->before[$keyField],
+				$otherEdge => array(
+					'$gte' => $this->before[$edge],
+				)
+			);
+			$sort = 1;
+			$rangeError = 'Requested end date is greater than next start date';
+		}
+
+		// previous entry on move from, next entry on move to
+		$followingEntry = $this->collection->query($query)->cursor()
+			->sort(array($otherEdge => $sort))
+			->current();
+
+		if (!empty($followingEntry) && !$followingEntry->isEmpty() && (
+			($edge == 'from' && $followingEntry[$edge]->sec > $this->update[$edge]->sec) ||
+			($edge == 'to' && $followingEntry[$edge]->sec < $this->update[$edge]->sec)
+			)
+		) {
+			throw new Billrun_Exceptions_Api(0, array(), $rangeError);
+		}
+
+		$status = $this->dbUpdate($this->query, $this->update);
+		if (!isset($status['nModified']) || !$status['nModified']) {
+			return false;
+		}
+		$this->trackChanges($this->query['_id']);
+
+		if (!empty($followingEntry) && !$followingEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $followingEntry['_id']->getMongoID()));
+			$this->setUpdate(array($otherEdge => new MongoDate($this->update[$edge]->sec)));
+			$this->setBefore($followingEntry);
+			return $this->update();
+		}
 		return true;
 	}
 
@@ -392,9 +675,9 @@ class Models_Entity {
 		if ($sort) {
 			$res = $res->sort($sort);
 		}
-		
-		$records =  array_values(iterator_to_array($res));
-		foreach($records as  &$record) {
+
+		$records = array_values(iterator_to_array($res));
+		foreach ($records as &$record) {
 			$record = Billrun_Utils_Mongo::recursiveConvertRecordMongoDatetimeFields($record);
 		}
 		return $records;
@@ -407,7 +690,7 @@ class Models_Entity {
 	protected function remove($query) {
 		return $this->collection->remove($query);
 	}
-	
+
 	/**
 	 * future entity was removed - need to update the to of the previous change
 	 */
@@ -437,7 +720,7 @@ class Models_Entity {
 	public function setUpdate($u) {
 		$this->update = $u;
 	}
-	
+
 	/**
 	 * method to update the query instruct
 	 * @param array $q mongo query instruct
@@ -452,6 +735,24 @@ class Models_Entity {
 	 */
 	public function setBefore($b) {
 		$this->before = $b;
+	}
+
+	/**
+	 * method to return the before state of the entity
+	 *
+	 * @return array $b the before state entity
+	 */
+	public function getBefore() {
+		return $this->before;
+	}
+
+	/**
+	 * method to return the after state of the entity
+	 *
+	 * @return array $b the after state entity
+	 */
+	public function getAfter() {
+		return $this->after;
 	}
 
 	/**
@@ -471,38 +772,12 @@ class Models_Entity {
 		if ($newId) {
 			$this->after = $this->loadById($newId);
 		}
-
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => $this->action,
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => $this->collectionName,
-				'old' => !is_null($this->before) ? $this->before->getRawData() : null,
-				'new' => !is_null($this->after) ? $this->after->getRawData() : null,
-				'key' => isset($this->update[$field]) ? $this->update[$field] : 
-							(isset($this->before[$field]) ? $this->before[$field] : null),
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		
+		$old = !is_null($this->before) ? $this->before->getRawData() : null;
+		$new = !is_null($this->after) ? $this->after->getRawData() : null;
+		$key = isset($this->update[$field]) ? $this->update[$field] :
+				(isset($this->before[$field]) ? $this->before[$field] : null);
+		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
 	}
 
 	/**
@@ -556,11 +831,13 @@ class Models_Entity {
 				return 'username';
 			case 'rates':
 				return 'key';
+			case 'accounts':
+				return 'aid'; // for account it should be 'aid'
 			default:
 				return 'name';
 		}
 	}
-	
+
 	/**
 	 * Add revision info (status, early_expiration) to record
 	 * 
@@ -569,16 +846,27 @@ class Models_Entity {
 	 * 
 	 * @return The record with revision info.
 	 */
-	static function setRevisionInfo($record, $collection) {
+	public static function setRevisionInfo($record, $collection) {
 		$status = self::getStatus($record, $collection);
 		$earlyExpiration = self::isEarlyExpiration($record, $status);
+		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
 			"status" => $status,
 			"early_expiration" => $earlyExpiration,
+			"updatable" => $isCurrentCycle,
+			"closeandnewable" => $isCurrentCycle,
+			"movable" => $isCurrentCycle,
+			"removable" => $isCurrentCycle,
+			"movable_from" => self::isDateMovable($record['from']->sec),
+			"movable_to" => self::isDateMovable($record['to']->sec)
 		);
 		return $record;
 	}
 	
+	protected static function isDateMovable($timestamp) {
+		return self::getMinimumUpdateDate() <= $timestamp;
+	}
+
 	/**
 	 * Calculate record status
 	 * 
@@ -588,27 +876,27 @@ class Models_Entity {
 	 * @return string Status, available values are: "future", "expired", "active_with_future", "active"
 	 */
 	static function getStatus($record, $collection) {
-		if (strtotime($record['to']) < time()) {
+		if ($record['to']->sec < time()) {
 			return self::EXPIRED;
 		}
-		if (strtotime($record['from']) > time()) {
+		if ($record['from']->sec > time()) {
 			return self::FUTURE;
 		}
 		// For active records, check if it has furure revisions
-		$query = Billrun_Utils_Mongo::getDateBoundQuery(strtotime($record['to']), true);
+		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
 		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
 		}
 		$recordCollection = Billrun_Factory::db()->{$collection . 'Collection'}();
 		$isFutureExist = $recordCollection->query($query)->count() > 0;
-		
+
 		if ($isFutureExist) {
 			return self::ACTIVE_WITH_FUTURE;
 		}
 		return self::ACTIVE;
 	}
-	
+
 	/**
 	 * Check if record was closed by close action.
 	 * true if the "to" field is less than 50 years from record "from" date.
@@ -618,11 +906,28 @@ class Models_Entity {
 	 * 
 	 * @return bool
 	 */
-	static function isEarlyExpiration($record, $status) {
+	protected static function isEarlyExpiration($record, $status) {
 		if ($status === self::FUTURE || $status === self::ACTIVE) {
-			return strtotime("+50 years", strtotime($record['from'])) > strtotime($record['to']);
+			return $record['to']->sec < strtotime("+10 years");
 		}
 		return false;
+	}
+	
+	public function getCollectionName() {
+		return $this->collectionName;
+	}
+	
+	public function getCollection() {
+		return $this->collection;
+	}
+	
+	public function getMatchSubQuery() {
+		$query = array();
+		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
+			$query[$fieldName] = $fieldValue;
+		}
+		
+		return $query;
 	}
 
 }

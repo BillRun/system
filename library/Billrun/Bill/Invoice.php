@@ -122,5 +122,20 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		$instance->setRawData($rawData);
 		return $instance;
 	}
+	
+	public function isInvoiceConfirmed($aid, $key) {
+		$billrunColl = Billrun_Factory::db()->billrunCollection();
+		$query = array(
+			'aid' => (int) $aid,
+			'billrun_key' => $key,
+			'billed' => 1
+		);
+		
+		$confirmed = $billrunColl->query($query)->count();
+		if ($confirmed) {
+			return true;
+		}
+		return false; 
+	}
 
 }

@@ -270,7 +270,7 @@ class Billrun_Plan extends Billrun_Service {
 
 		$startOffset = static::getMonthsDiff($firstActivation, date(Billrun_Base::base_dateformat, strtotime('-1 day', strtotime($from))));
 		$endOffset = static::getMonthsDiff($firstActivation, $to);
-		$charge = 0;
+		$charges = array();
 		if ($this->isUpfrontPayment()) {
 			return $this->getPriceForUpfrontPayment($startOffset);
 		}
@@ -281,9 +281,10 @@ class Billrun_Plan extends Billrun_Service {
 		}
 
 		foreach ($this->data['price'] as $tariff) {
-			$charge += self::getPriceByTariff($tariff, $startOffset, $endOffset);
+			$price = self::getPriceByTariff($tariff, $startOffset, $endOffset);
+			$charges[] = array('value' => $price['price'], 'cycle' => $tariff['from']);
 		}
-		return $charge;
+		return $charges;
 	}
 
 	/**
@@ -323,7 +324,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * @param type $endOffset
 	 * @return int
 	 */
-	public static function getPriceByTariff($tariff, $startOffset, $endOffset) {
+	public static function getPriceByTariff($tariff, $startOffset, $endOffset ,$activation = FALSE) {
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
@@ -331,14 +332,28 @@ class Billrun_Plan extends Billrun_Service {
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
-		if ($tariff['from'] > $startOffset) {
+		if ($tariff['from'] > $startOffset) {			
 			$startPricing = $tariff['from'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+				$startFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$startPricing += ((($startFratcion * date('t',$activation)+1) /  $currentDays) - $startFratcion);
+			}
 		}
 		if (!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $endOffset) {
 			$endPricing = $tariff['to'];
+			// HACK :  fix for the month length differance between the  activation and the  plan change
+			if(round($endOffset -1,6) == round($startOffset,6) && $activation && $startOffset > 0) {
+				$endFratcion = 1 -($startOffset-floor($startOffset));
+				$currentDays = date('t',Billrun_Plan::monthDiffToDate($endOffset, $activation)-1);
+				$endPricing += (( ($endFratcion * date('t',$activation)+1) / $currentDays) - $endFratcion);
+			}
 		}
 
-		return ($endPricing - $startPricing) * $tariff['price'];
+		return array('start' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $startPricing,
+			'end' => round(($endPricing - $startPricing), 5) == 1 ? FALSE : $endPricing,
+			'price' => ($endPricing - $startPricing) * $tariff['price']);
 	}
 
 	/**
@@ -453,6 +468,43 @@ class Billrun_Plan extends Billrun_Service {
 				break;
 		}
 		return ($minDate->format('t') - $minDate->format('d') + 1) / $minDate->format('t') + $maxDate->format('d') / $maxDate->format('t') + $months;
+	}
+	
+	/**
+	 * calcualte the date based on monthly difference from activation.
+	 * @return the unix time of the  monthly fraction from activation.
+	 */
+	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE) {
+		if(empty($cycleFraction) ) {
+			return $isStart ? $activationTime : $deactivationTime;
+		}
+		$activation  = strtotime(date('Y-m-d 00:00:00', $activationTime));
+		$dayInSec = Billrun_Utils_Time::daysToSeconds(1);
+		$addedDays = 0;
+		$baseMonth = date('m',$activation);
+		$baseYear = date('Y',$activation);
+		$i = $cycleFraction ;
+		for(; $i >=1; $i-=1) {
+			$addMonths= ($baseMonth + floor($i));
+			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
+			$addedDays +=  $daysInMonth;
+		}
+		
+		if( $i != 0 ) {	
+			//add the starting month  fraction
+			$startFraction = (date('t',$activation) - date('d',$activation) + 1) / date('t',$activation);
+			$addMonths= ($baseMonth + floor($startFraction) );
+			$daysInMonth = date('t',  strtotime(date($baseYear + floor($addMonths / 12).'-'.($addMonths % 12).'-01',$activation)));
+			$addedDays +=  $daysInMonth * (($startFraction));
+			//based on the starting month fraction  retrive the  current month fraction
+			$endFraction = $i - $startFraction;
+			$daysInMonth = date('t', $activation + (ceil($addedDays) * $dayInSec ) + 1);
+			$addedDays +=  $daysInMonth * ( $endFraction );
+		}
+		
+		$dayLightSavingDiff = date('Z',$activation) - date('Z',$activation + (($addedDays * $dayInSec) )) ;
+		
+		return $activation + (($addedDays * $dayInSec) ) + $dayLightSavingDiff + ($isStart ? 0 : -1);
 	}
 
 	public static function calcFractionOfMonthUnix($billrunKey, $start_date, $end_date) {

@@ -22,16 +22,21 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 	/**
 	 * Get the price of the current plan.
 	 */
-	public function getPrice() {
+	public function getPrice($quantity = 1) {
 
-		$charge = 0;
-		
+		$charges = array();
 		foreach ($this->price as $tariff) {
-			$charge += Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset);
+			$price = Billrun_Plan::getPriceByTariff($tariff, $this->startOffset, $this->endOffset ,$this->activation);
+			if (!empty($price)) {
+				$charges[] = array('value' => $price['price'] * $quantity,
+					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
+					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
+					'cycle' => $tariff['from']);
+			}
 		}
-		return $charge;
+		return $charges;
 	}
-	
+
 	/**
 	 * Get the price of the current plan.
 	 */
@@ -43,6 +48,8 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 		$this->startOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatStart);
 		$this->endOffset = Billrun_Plan::getMonthsDiff($formatActivation, $formatEnd);
 	}
+	
+
 	
 	
 }

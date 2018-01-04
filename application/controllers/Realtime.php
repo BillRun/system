@@ -43,6 +43,10 @@ class RealtimeController extends ApiController {
 	protected function setDataFromRequest() {
 		$request = $this->getRequest()->getRequest();
 		$this->config = Billrun_Factory::config()->getFileTypeSettings($request['file_type'], true);
+		if (!$this->config) {
+			Billrun_Factory::log('File type cannot be loaded', Zend_Log::ALERT);
+			throw new Billrun_Exceptions_Api(10000, 'Cannot load file type');
+		}
 		$decoder = Billrun_Decoder_Manager::getDecoder(array(
 				'decoder' => $this->config['parser']['type']
 		));
@@ -57,7 +61,7 @@ class RealtimeController extends ApiController {
 			$requestBody = file_get_contents("PHP://input");
 		}
 
-		$this->event['uf'] = Billrun_Util::parseDataToBillrunConvention($decoder->decode($requestBody));
+		$this->event['uf'] = $decoder->decode($requestBody);
 	}
 
 	/**
@@ -67,7 +71,6 @@ class RealtimeController extends ApiController {
 		$this->event['source'] = 'realtime';
 		$this->event['type'] = $this->getEventType();
 		$this->event['request_type'] = $this->getRequestType();
-		$this->event['request_num'] = $this->getRequestNum();
 		$recordType = $this->getDataRecordType($this->event);
 		if ($recordType != 'postpay_charge_request') {
 			$this->event['session_id'] = $this->getSessionId();
@@ -117,19 +120,6 @@ class RealtimeController extends ApiController {
 			return (isset($this->event['uf']['request_type']) ? $this->event['uf']['request_type'] : null);
 		}
 		return $this->event['uf'][$requestTypeField];
-	}
-	
-	/**
-	 * Gets the request num from the request
-	 * 
-	 * @return string request num
-	 */
-	protected function getRequestNum() {
-		if (!isset($this->config['realtime']['request_num_field'])) {
-			return (isset($this->event['uf']['request_num']) ? $this->event['uf']['request_num'] : null);
-		}
-		$requestNumField = $this->config['realtime']['request_num_field'];
-		return $this->event['uf'][$requestNumField];
 	}
 
 	/**

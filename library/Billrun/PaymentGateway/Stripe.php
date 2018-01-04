@@ -170,12 +170,16 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 	protected function createCustomer($additionalParams) {
 		$credentials = $this->getGatewayCredentials();
 		$this->setApiKey($credentials['secret_key']);
-		$customer = \Stripe\Customer::create(array(
-				'card' => $additionalParams['token'],
-				'email' => $additionalParams['email']
-				)
-		);
-
+		try {
+			$customer = \Stripe\Customer::create(array(
+					'card' => $additionalParams['token'],
+					'email' => $additionalParams['email']
+					)
+			);
+		} catch(Exception $e) {
+			throw new Exception('Error creating customer!');
+		}
+		
 		return $customer;
 	}
 
@@ -219,5 +223,13 @@ class Billrun_PaymentGateway_Stripe extends Billrun_PaymentGateway {
 
 	public function handleOkPageData($txId) {
 		return true;
+	}
+	
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['customer_id']) && !empty($structure['token']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		return false;
 	}
 }

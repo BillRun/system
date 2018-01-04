@@ -187,7 +187,7 @@ abstract class Billrun_Bill {
 		$project2 = array(
 			'$project' => array(
 				'_id' => 0,
-				'contractor_no' => '$_id',
+				'aid' => '$_id',
 				'total' => 1,
 				'total2' =>  1,
 			),
@@ -214,20 +214,28 @@ abstract class Billrun_Bill {
 			}, $results);
 		}
 		return array_combine(array_map(function($ele) {
-				return $ele['contractor_no'];
+				return $ele['aid'];
 			}, $results), $results);
 	}
 
+	/**
+	 * Return total / total waiting due for account
+	 * @param int $aid
+	 * @param boolean $notFormatted
+	 * @return array
+	 */
 	public static function getTotalDueForAccount($aid, $notFormatted = false) {
 		$query = array('aid' => $aid);
 		$results = static::getTotalDue($query, $notFormatted);
 		if (count($results)) {
-			return array('total' => current($results)['total'], 'without_waiting' => current($results)['total2']);
+			$total =  current($results)['total'];
+			$totalWaiting = current($results)['total2'];
 		} else if ($notFormatted) {
-			return 0;
+			$total = $totalWaiting = 0;
 		} else {
-			return Billrun_Util::getChargableAmount(0);
+			$total = $totalWaiting = Billrun_Util::getChargableAmount(0);
 		}
+		return array('total' => $total, 'without_waiting' => $totalWaiting);
 	}
 
 	public static function payUnpaidBillsByOverPayingBills($aid) {
@@ -284,7 +292,7 @@ abstract class Billrun_Bill {
 	 * @return array
 	 */
 	public static function getUnpaidQuery() {
-		return array_merge(array('due' => array('$gt' => 0,), 'paid' => array('$ne' => TRUE,),), static::getNotRejectedOrCancelledQuery()
+		return array_merge(array('due' => array('$gt' => 0,), 'paid' => array('$nin' => array(TRUE, '1', '2'),),), static::getNotRejectedOrCancelledQuery()
 		);
 	}
 
@@ -361,6 +369,7 @@ abstract class Billrun_Bill {
 				$amount += array_sum($this->data['paid_by']['rec']);
 			}
 			$this->data['total_paid'] = $amount;
+			$this->data['left_to_pay'] = $this->getLeftToPay();
 			$this->data['vatable_left_to_pay'] = min($this->getLeftToPay(), $this->getDueBeforeVat());
 			if (is_null($status)){
 				$this->data['paid'] = $this->isPaid();
@@ -564,6 +573,12 @@ abstract class Billrun_Bill {
 						$gatewayDetails = $payment->getPaymentGatewayDetails();
 						$gatewayName = $gatewayDetails['name'];
 						$gateway = Billrun_PaymentGateway::getInstance($gatewayName);
+						if (is_null($gateway)) {
+							Billrun_Factory::log("Illegal payment gateway object", Zend_Log::ALERT);
+						} else {
+							Billrun_Factory::log("Paying bills through " . $gatewayName, Zend_Log::INFO);
+							Billrun_Factory::log("Charging payment gateway details: " . "name=" . $gatewayName . ", amount=" . $gatewayDetails['amount'] . ', charging account=' . $aid, Zend_Log::DEBUG);
+						}
 						try {
 							$paymentStatus = $gateway->pay($gatewayDetails);
 						} catch (Exception $e) {
@@ -625,7 +640,7 @@ abstract class Billrun_Bill {
 					$result = '2';
 				}
 				else {
-					$result = '1';
+					$result = $this->isPaid() ? '1' : '0'; 
 				}
 				break;
 

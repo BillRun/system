@@ -31,6 +31,10 @@ class Billrun_Helpers_QueueCalculators {
 	protected $options = array();
 	
 	protected $realtime = false;
+	
+	protected $calculatorFailed = false;
+	
+	protected $stuckInQueue = array();
 
 	public function __construct($options) {
 		$this->options = $options;
@@ -52,7 +56,7 @@ class Billrun_Helpers_QueueCalculators {
 			}
 			$queue_data = $processor->getQueueData();
 			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
-			$calc->prepareData($data['data']);
+			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
 			foreach ($data['data'] as $key => &$line) {
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
 					$line['realtime'] = $this->realtime;
@@ -65,6 +69,8 @@ class Billrun_Helpers_QueueCalculators {
 								$processor->setQueueRowStep($entity['stamp'], $calc_name);
 								$processor->addAdvancedPropertiesToQueueRow($line);
 							}
+						} else {
+							$this->stuckInQueue[$line['stamp']] = true;
 						}
 						$this->calcPricingCase($entity, $calc_name);
 					} else {
@@ -75,10 +81,15 @@ class Billrun_Helpers_QueueCalculators {
 						}
 					}
 					$line = $entity->getRawData();
+				} else {
+					$this->stuckInQueue[$line['stamp']] = true;
 				}
 
-				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name) {
+				if ($this->realtime && $processor->getQueueData()[$line['stamp']]['calc_name'] !== $calc_name && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
+					$line['usagev'] = 0;
+					$line['apr'] = 0;
 					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.' . $calc_name, -999);
+					$this->calculatorFailed = true;
 					$this->unifyCalc($processor, $data);
 					return false;
 				}
@@ -152,7 +163,9 @@ class Billrun_Helpers_QueueCalculators {
 		Billrun_Factory::log('Plugin calc Cpu unifying ' . count($queue_data) . ' lines', Zend_Log::INFO);
 		foreach ($data['data'] as $key => &$line) {
 			if ($this->shouldSkipCalc($line, 'unify')) {
-				$processor->unsetQueueRow($line['stamp']);
+				if ($this->shouldRemoveFromQueue($line)) {
+					$processor->unsetQueueRow($line['stamp']);
+				}
 				continue;
 			}
 			$this->unifyCalc = Billrun_Calculator_Unify::getInstance(array('type' => 'unify', 'autoload' => false, 'line' => $line));
@@ -164,7 +177,7 @@ class Billrun_Helpers_QueueCalculators {
 				} else {
 					//Billrun_Factory::log("Line $key isnt legitimate : ".print_r($line,1), Zend_Log::INFO);
 					// if this is last calculator, remove from queue
-					if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify') {
+					if ($this->queue_calculators[count($this->queue_calculators) - 1] == 'unify' && $this->shouldRemoveFromQueue($line)) {
 						$processor->unsetQueueRow($entity['stamp']);
 					} else {
 						$processor->setQueueRowStep($entity['stamp'], 'unify');
@@ -204,6 +217,19 @@ class Billrun_Helpers_QueueCalculators {
 		if (isset($this->unifyCalc)) {
 			$this->unifyCalc->releaseAllLines();
 		}
+	}
+	
+	/**
+	 * Should only remove lines from queue if the didn't failed in one of the calculators.
+	 * Realtime prepaid lines should also be removed
+	 * 
+	 * @param type $line
+	 * @return bool
+	 */
+	protected function shouldRemoveFromQueue($line) {
+		return !$this->calculatorFailed ||
+			($this->realtime && $line['request_type'] != Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST'));
+			
 	}
 
 }

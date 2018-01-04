@@ -13,7 +13,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 
 	protected $defaultUsaget = 'general';
 	protected $usagetMapping = null;
-	protected $usagevField = null;
+	protected $usagevFields = array();
 	protected $dateField = null;
 	protected $dateFormat = null;
 	protected $timeField = null;
@@ -30,8 +30,11 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (empty($options['processor']['date_field'])) {
 			return FALSE;
 		}
-		if (!empty($options['processor']['volume_field'])) {
-			$this->usagevField = $options['processor']['volume_field'];
+		if (isset($options['processor']['volume_field'])) {
+			if (!is_array($options['processor']['volume_field'])) {
+				$options['processor']['volume_field'] = array($options['processor']['volume_field']);
+			}
+			$this->usagevFields = $options['processor']['volume_field'];
 		}
 		if (!empty($options['processor']['date_format'])){
 			$this->dateFormat = $options['processor']['date_format'];
@@ -144,11 +147,16 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getLineUsageType($userFields) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
-				if (!isset($usagetMapping['pattern'],$usagetMapping['src_field'])) {
+				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field'])) {
 					return $usagetMapping['usaget'];
 				}
-				if (isset($userFields[$usagetMapping['src_field']]) && preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
-					return $usagetMapping['usaget'];
+				if (isset($userFields[$usagetMapping['src_field']])) {
+					if (!Billrun_Util::isValidRegex($usagetMapping['pattern'])) {
+						$usagetMapping['pattern'] = "/^" . preg_quote($usagetMapping['pattern']) . "$/";
+					}
+					if (preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
+						return $usagetMapping['usaget'];
+					}
 				}
 			}
 		}
@@ -156,13 +164,18 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 
 	protected function getLineUsageVolume($userFields) {
-		if (!empty($this->usagevField)) {
-			if (isset($userFields[$this->usagevField]) && is_numeric($userFields[$this->usagevField])) {
-				return intval($userFields[$this->usagevField]);
+		$volume = 0;
+		if (!empty($this->usagevFields)) {
+			foreach ($this->usagevFields as $usagevField) {
+				if (isset($userFields[$usagevField]) && is_numeric($userFields[$usagevField])) {
+					$volume += intval($userFields[$usagevField]);
+				}
+				else {
+					Billrun_Factory::log('Usage volume field ' . $usagevField . ' is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+				}
 			}
-			Billrun_Factory::log('Usage volume is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
 		}
-		return 1;
+		return $volume;
 	}
 
 }

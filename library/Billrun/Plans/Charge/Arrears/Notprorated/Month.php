@@ -17,13 +17,16 @@ class Billrun_Plans_Charge_Arrears_Notprorated_Month extends Billrun_Plans_Charg
 	/**
 	 * Get the price of the current plan.
 	 */
-	public function getPrice() {
-		$charge = 0;
-		
+	public function getPrice($quantity = 1) {
+		$charges = array();
+
 		foreach ($this->price as $tariff) {
-			$charge += Billrun_Plan::getPriceByTariff($tariff, max(0,floor($this->startOffset)), ceil($this->endOffset));
+			$price = Billrun_Plan::getPriceByTariff($tariff, max(0, floor($this->startOffset+1)), floor($this->endOffset+1));
+			if (!empty($price)) {
+				$charges[] = array('value' => $price['price'], 'cycle' => $tariff['from']);
+			}
 		}
-		
-		return $charge;
+
+		return $charges;
 	}
 }

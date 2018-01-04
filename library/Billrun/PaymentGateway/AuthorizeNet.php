@@ -71,10 +71,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 
 	protected function updateRedirectUrl($result) {
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = simplexml_load_string($result);
+			$xmlObj = @simplexml_load_string($result);
 			$token = (string) $xmlObj->token;
 			if (empty($token)) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
 				throw new Exception($errorMessage);
 			}
 			$this->htmlForm = $this->createHtmlRedirection($token);
@@ -107,6 +108,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
 				throw new Exception($errorMessage);
 			}
 			$customerProfile = $xmlObj->profile;
@@ -191,7 +193,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		if (function_exists("curl_init")) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $authRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
-		$xmlObj = simplexml_load_string($result);
+		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
 		if (($resultCode != 'Ok')) {
 			$errorMessage = (string) $xmlObj->messages->message->text;
@@ -218,7 +220,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	 * Inquire Transaction by transaction Id to check status of a payment.
 	 * 
 	 * @param string $txId - String that represents the transaction.
-	 * @return array - array of the response from PayPal
+	 * @return array - array of the response from Authorize.Net
 	 */
 	protected function getCheckoutDetails($txId) {
 		$credentials = $this->getGatewayCredentials();
@@ -233,9 +235,11 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 						  </getTransactionDetailsRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for pending payment status: " . $transDetails, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $transDetails, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response for Authorize.Net for pending payment status request: " . $result, Zend_Log::DEBUG);
 		}
-		$xmlObj = simplexml_load_string($result);
+		$xmlObj = @simplexml_load_string($result);
 		$resultCode = (string) $xmlObj->messages->resultCode;
 		if ($resultCode != 'Ok') {
 			$errorMessage = (string) $xmlObj->messages->message->text;
@@ -274,14 +278,29 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 							</createCustomerProfileRequest>";
 
 		if (function_exists("curl_init")) {
+			Billrun_Factory::log("Request for creating customer: " . $customerRequest, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $customerRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
+			Billrun_Factory::log("Response for Authorize.Net for creating customer request: " . $result, Zend_Log::DEBUG);
 		}
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = simplexml_load_string($result);
+			$xmlObj = @simplexml_load_string($result);
 			$customerId = (string) $xmlObj->customerProfileId;
-			if (empty($customerId)) {
-				$errorMessage = (string) $xmlObj->messages->message->text;
-				throw new Exception($errorMessage);
+			$resultCode = (string) $xmlObj->messages->resultCode;
+			if ($resultCode == 'Error') {
+				$errorCode = (string) $xmlObj->messages->message->code;
+				$errorMessage = (string) $xmlObj->messages->message->text;	
+				if ($errorCode == 'E00039') {
+					$errorArray = preg_grep("/^[0-9]+$/", explode(' ', $errorMessage));
+					if (count($errorArray) ==! 1) {
+						Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+						throw new Exception($errorMessage); 
+					}
+					$customerId = current($errorArray);
+				}
+				if (empty($customerId)) {
+					Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
+					throw new Exception($errorMessage);
+				}
 			}
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
@@ -345,16 +364,15 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $deleteAccountRequest, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 		}
 		if (function_exists("simplexml_load_string")) {
-			$xmlObj = simplexml_load_string($result);
+			$xmlObj = @simplexml_load_string($result);
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
+				$errorCode = (string) $xmlObj->messages->message->code;
+				if ($errorCode == 'E00040') {	// Error: Record not found(non-existing customer)
+					return;
+				}
 				$errorMessage = (string) $xmlObj->messages->message->text;
 				throw new Exception($errorMessage);
-			} else {
-				$message = (string) $xmlObj->messages->message->text;
-				if ($message != 'Successful.') {
-					throw new Exception($message);
-				}
 			}
 		} else {
 			die("simplexml_load_string function is not support, upgrade PHP version!");
@@ -362,7 +380,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 	}
 	
 	public function getNeededParamsAccountUpdate($account) {
-		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => $account['payment_profile_id']);
+		return array('customer_profile_id' => $account['customer_profile_id'], 'payment_id' => isset($account['payment_profile_id']) ? $account['payment_profile_id'] : '');
 	}
 	
 	protected function checkIfCustomerExists ($aid) {
@@ -373,6 +391,9 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$account = $subscribers->query($accountQuery)->cursor()->current();
 		$formerGateways = $account['payment_gateway.former'];
+		if (is_null($formerGateways)) {
+			return $customerProfileId;
+		}
 		foreach ($formerGateways as $gateway) {
 			if ($gateway['name'] == 'AuthorizeNet') {
 				$customerProfileId = $gateway['params']['customer_profile_id'];
@@ -403,6 +424,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 			$resultCode = (string) $xmlObj->messages->resultCode;
 			if (($resultCode != 'Ok')) {
 				$errorMessage = (string) $xmlObj->messages->message->text;
+				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError . ' message: ' . $errorMessage, Zend_Log::ALERT);
 				throw new Exception($errorMessage);
 			}
 			$customerProfile = $xmlObj->profile;
@@ -444,5 +466,34 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		
 		return true;
 	}
-
+	
+	/**
+	 * Returns True if there is a need to update the account's payment gateway structure.
+	 * 
+	 * @param array $params - array of gateway parameters
+	 * @return Boolean - True if update needed.
+	 */
+	public function needUpdateFormerGateway($params) {
+		return !empty($params['customer_profile_id']);
+	}
+	protected function validateStructureForCharge($structure) {
+		return !empty($structure['customer_profile_id']) && !empty($structure['payment_profile_id']);
+	}
+	
+	protected function handleTokenRequestError($response, $params) {
+		$xmlObj = @simplexml_load_string($response);
+		$resultCode = (string) $xmlObj->messages->resultCode;
+		if (($resultCode == 'Error')) {
+			$errorCode = (string) $xmlObj->messages->message->code;
+			if ($errorCode == 'E00040') {
+				$subscribersColl = Billrun_Factory::db()->subscribersCollection();
+				$accountQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+				$accountQuery['type'] = 'account';
+				$accountQuery['aid'] = $params['aid'];	
+				$subscribersColl->update($accountQuery, array('$pull' => array('payment_gateway.former' => array('name' => array('$in' => array($this->billrunName))))));			
+				return true;
+			}
+		}
+		return false;
+	}
 }

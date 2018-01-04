@@ -12,6 +12,7 @@
  * @package  Application
  * @subpackage Plugins
  * @since    5.3
+ * @deprecated since version 5.5
  */
 class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 
@@ -128,12 +129,10 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$findQuery = array(
 			"sid" => $row['sid'],
 			"session_id" => $row['session_id'],
-			"request_num" => array('$lt' => $row['request_num']),
 		);
 		$sort = array(
 			'sid' => 1,
-			'session_id' => 1,
-			'request_num' => -1, 
+			'session_id' => 1, 
 			'_id' => -1,
 		);
 		$line = $lines_archive_coll->query($findQuery)->cursor()->sort($sort)->limit(1);
@@ -209,7 +208,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 		$row = $lineToRebalance;
 		$row['billrun_pretend'] = true;
 		$row['usagev'] = $realUsagev;
-		$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['charging_type']);
+		$calcRow = Billrun_Calculator_Row::getInstance('Customerpricing', $row, $this, $row['connection_type']);
 		return $calcRow->update();
 	}
 	
@@ -241,6 +240,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param $group
 	 * @param $rebalanceKey - key to rebalance (cost/usagev/count...)
 	 * @param $rebalanceValue
+	 * @deprecated since version 5.5
 	 */
 	protected function handleRebalanceOfZones(&$balance, $plan, $group, $rebalanceKey, $rebalanceValue) {
 		$optionDetails = $plan->getOptionByKey($group);
@@ -275,13 +275,13 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 			$balance->collection($balances_coll);
 			$plan = Billrun_Factory::plan(array('name' => $originalRow['plan'], 'time' => $originalRow['urt']->sec, 'disableCache' => true));
-			$balance_totals_key = $plan->getBalanceTotalsKey($usaget, $rate);
+			$balance_totals_key = $plan->getBalanceTotalsKey($usaget, $rate); //TODO: use $balance->getBalanceTotalsKey in customerpricing
 			$balance['balance.totals.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
 			
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
 				$group = $lineToRebalance['arategroup'];
 				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.usagev'] += $rebalanceUsagev;
-				$this->handleRebalanceOfZones($balance, $plan, $group, 'usagev', $rebalanceUsagev);
+				//$this->handleRebalanceOfZones($balance, $plan, $group, 'usagev', $rebalanceUsagev);
 			}
 		}
 
@@ -293,7 +293,7 @@ class realtimePlugin extends Billrun_Plugin_BillrunPluginBase {
 			$balance['balance.cost'] -= $rebalanceAprice;
 			$balance['balance.totals.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			if (isset($lineToRebalance['arategroup'])) { // handle groups
-				$group = $lindefault_valueseToRebalance['arategroup'];
+				$group = $lineToRebalance['arategroup'];
 				$balance['balance.groups.' . $group . '.' . $balance_totals_key . '.cost'] -= $rebalanceAprice;
 			}
 			$balance->save();

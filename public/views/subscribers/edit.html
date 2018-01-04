@@ -53,12 +53,12 @@
 					</select>
 				</div>
 			</div>
-			<div class="row" ng-if='utils.display("charging_type", "subscribers")'>
+			<div class="row" ng-if='utils.display("connection_type", "subscribers")'>
 				<div class="col-md-2">
-					{{utils.getDisplayValue('charging_type', 'subscribers')}}
+					{{utils.getDisplayValue('connection_type', 'subscribers')}}
 				</div>
 				<div class="col-md-6">
-					<select ng-model='entity.charging_type' class='form-control' ng-disabled='utils.disabled("charging_type", "subscribers")'>
+					<select ng-model='entity.connection_type' class='form-control' ng-disabled='utils.disabled("connection_type", "subscribers")'>
 						<option value='' disabled>Select Charging Type</option>
 						<option ng-repeat='chargingType in availableChargingTypes' value='{{chargingType}}'>{{chargingType}}</option>
 					</select>

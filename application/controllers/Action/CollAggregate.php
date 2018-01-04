@@ -48,16 +48,32 @@ class AggregateAction extends ApiAction {
 			}
 			if (empty($request['collection']) || !in_array($request['collection'], Billrun_Util::getFieldVal($config['permitted_collections'], array()))) {
 				$this->setError('Illegal collection name: ' . $request['collection'], $request);
-				return TRUE;		
+				return TRUE;
 			}
+			$lookups = array_filter($pipelines, function($pipeline) {
+				return key($pipeline) == '$lookup';
+			});
 			
-				$collection = $request['collection'];
+			if (!empty($lookups)) {
+				$lookupError = array_filter($lookups, function($lookup) use ($config) {
+					$collectionName = Billrun_Util::getFieldVal($lookup['$lookup']['from'], false);
+					return (!in_array($collectionName, Billrun_Util::getFieldVal($config['permitted_collections'], array())));
+				});
+				
+				if (!empty($lookupError)) {
+					$this->setError('Illegal collection name in lookup pipeline', $request);
+					return TRUE;
+				}
+			}
+
+			$collection = $request['collection'];
 			
 			$cursor = Billrun_Factory::db()->{$collection . 'Collection'}()->aggregate($pipelines);
 			
 			// Set timeout of 1 minute
-			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
-			$cursor->timeout($timeout);
+			// marked-out due to new mongodb driver (PHP7+)
+//			$timeout = Billrun_Factory::config()->getConfigValue("api.config.aggregate.timeout", 60000);
+//			$cursor->timeout($timeout);
 			$entities = iterator_to_array($cursor);
 				$entities = array_map(function($ele) {
 					return $ele->getRawData();
@@ -115,5 +131,25 @@ class AggregateAction extends ApiAction {
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
+	
+	protected function render($tpl, array $parameters = null) {
+		$request = $this->getRequest()->getRequest();
+		if (isset($request['response_type']) && $request['response_type'] === 'csv') {
+			return $this->renderCsv($request, $parameters);
+		}
+		return parent::render($tpl, $parameters);
+	}
 
+	protected function renderCsv($request, array $parameters = null) {
+		$filename = isset($request['file_name']) ? $request['file_name'] : 'aggregated';
+		$headers = isset($request['headers']) ? $request['headers'] : array();
+		$delimiter = isset($request['delimiter']) ? $request['delimiter'] : ',';
+		$this->getController()->setOutputVar('headers', $headers);
+		$this->getController()->setOutputVar('delimiter', $delimiter);
+		$resp = $this -> getResponse();
+		$resp->setHeader("Cache-Control", "max-age=0");
+		$resp->setHeader("Content-type",  "application/csv");
+		$resp->setHeader('Content-disposition', 'inline; filename="' . $filename . '.csv"');
+		return $this->getView()->render('api/aggregatecsv.phtml', $parameters);
+	}
 }

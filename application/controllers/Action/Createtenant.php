@@ -162,18 +162,12 @@ class CreatetenantAction extends ApiAction {
 		return true;
 	}
 
-	protected function createSecret() {
-		$key = bin2hex(openssl_random_pseudo_bytes(16));
-		$crc = hash("crc32b", $key);
-		return array(
-			'key' => $key,
-			'crc' => $crc
-		);
-	}
-
 	protected function addDbConfigData(&$dbConfig) {
-		$dbConfig['shared_secret'] = $this->createSecret();
+		$dbConfig['shared_secret'][] = Billrun_Utils_Security::generateSecretKey();
+		$dbConfig['creation_date'] = new MongoDate();
+		$dbConfig['name'] = 'Initial Secret';
 		$dbConfig['company_name'] = $this->tenant;
+		$dbConfig['registration_date'] = new MongoDate();
 	}
 
 	/**

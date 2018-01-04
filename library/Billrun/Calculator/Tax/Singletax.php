@@ -26,6 +26,9 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 										array('tax'=> $this->tax, 'amount' => $line['aprice'] * $this->tax, 'description' => "Vat" , 'pass_to_customer'=> 1 )
 									)
 								);
+		
+		$line['final_charge'] = $line['tax_data']['total_amount'] + $line['aprice'];
+		
 		return $line;
 	}
 }

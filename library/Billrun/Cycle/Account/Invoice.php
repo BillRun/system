@@ -48,6 +48,18 @@ class Billrun_Cycle_Account_Invoice {
 	protected $subscribers = array();
 	
 	/**
+	 * If true need to override data in billrun collection, 
+	 * @var boolean
+	 */
+	protected $overrideMode = true;
+	/**
+	 * Hold all the discounts that are  applied to the account.
+	 * @var array 
+	 */
+	protected $discounts= array();
+
+
+	/**
 	 * 
 	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
@@ -68,7 +80,9 @@ class Billrun_Cycle_Account_Invoice {
 			Billrun_Factory::log("Returning an empty billrun!", Zend_Log::NOTICE);
 			return;
 		}
-		
+		if (isset($options['override_mode'])) {
+			$this->overrideMode = $options['override_mode'];
+		}
 		$this->aid = $options['aid'];
 		$this->key = $options['billrun_key'];
 		$force = (isset($options['autoload']) && $options['autoload']);
@@ -89,12 +103,15 @@ class Billrun_Cycle_Account_Invoice {
 	 */
 	protected function load($force) {
 		$this->loadData();
-		if (!$this->data->isEmpty()) {
+		if (!$this->data->isEmpty() && !$this->overrideMode) {
 			$this->exists = !$force;
 			return;
 		}
-		
-		$this->reset();
+		$invoiceId = null;
+		if ($this->overrideMode && !$this->data->isEmpty()) {
+			$invoiceId = isset($this->data['invoice_id']) ? $this->data['invoice_id'] : null;
+		}
+		$this->reset($invoiceId);
 	}
 	
 	/**
@@ -144,6 +161,22 @@ class Billrun_Cycle_Account_Invoice {
 		return $this->key;
 	}
 
+	public function applyDiscounts() {
+		$dm = new Billrun_DiscountManager();
+		$this->discounts = $dm->getEligibleDiscounts($this);
+		
+		foreach($this->discounts as $discount) {			
+			foreach($this->subscribers as  $subscriber) {
+				if($subscriber->getData()['sid'] == $discount['sid']) {
+					$rawDiscount = $discount->getRawData();
+					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
+					continue 2;
+				}
+			}
+		}
+		$this->updateTotals();
+	}
+        
 	/**
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
@@ -157,7 +190,11 @@ class Billrun_Cycle_Account_Invoice {
 		$invoiceRawData = $this->getRawData();
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
-		$newRawData = $this->setInvoicID($rawDataWithSubs, $invoiceId);
+		if (!$this->overrideMode || !isset($invoiceRawData['invoice_id'])) {
+			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
+		} else {
+			$newRawData = $rawDataWithSubs;
+		}
 		$this->data->setRawData($newRawData);		
 
 		$ret = $this->billrun_coll->save($this->data);
@@ -190,10 +227,9 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param integer $invoiceId - Min invoice id
 	 * @return array Raw data with the invoice id
 	 */
-	protected function setInvoicID(array $invoiceRawData, $invoiceId) {
+	protected function setInvoiceID(array $invoiceRawData, $invoiceId) {
 		$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);
-
+		$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);	
 		$invoiceRawData['invoice_id'] = $currentId;
 		return $invoiceRawData;
 	}
@@ -230,9 +266,15 @@ class Billrun_Cycle_Account_Invoice {
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'refund'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'charge'=>array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'past_balance'=>array('after_vat'=> 0),
 		);
 		foreach ($this->subscribers as $sub) {
 			$newTotals = $sub->updateTotals($newTotals);
+		}
+		//Add the past balance to the invoice document if it will decresse the amount to pay to cover the invoice
+		$pastBalance = Billrun_Bill::getTotalDueForAccount($this->getAid());
+		if($pastBalance['total'] <  -0.005 ) {
+			$newTotals['past_balance']['after_vat'] = $pastBalance['total'];
 		}
 		$rawData['totals'] = $newTotals;
 		$this->data->setRawData($rawData);
@@ -241,10 +283,13 @@ class Billrun_Cycle_Account_Invoice {
 	/**
 	 * Resets the billrun data. If an invoice id exists, it will be kept.
 	 */
-	public function reset() {
+	public function reset($invoiceId) {
 		$this->exists = false;
 		$empty_billrun_entry = $this->getAccountEmptyBillrunEntry($this->aid, $this->key);
 		$id_field = (isset($this->data['_id']) ? array('_id' => $this->data['_id']->getMongoID()) : array());
+		if (!empty($invoiceId)) {
+			$empty_billrun_entry['invoice_id'] = $invoiceId;
+		}
 		$rawData = array_merge($empty_billrun_entry, $id_field);
 		$this->data = new Mongodloid_Entity($rawData, $this->billrun_coll);
 		
@@ -274,4 +319,22 @@ class Billrun_Cycle_Account_Invoice {
 		$initData['due_date'] = new MongoDate(strtotime(Billrun_Factory::config()->getConfigValue('billrun.due_date_interval', "+14 days"), $billrunDate));
 		$this->data->setRawData($initData);
 	}
+        
+        //======================================================
+        
+        public function getAid() {
+		return $this->aid;
+	}
+	
+        public function getSubscribers() {
+            return $this->subscribers;
+        }
+        
+        public function getTotals() {
+            return $this->data['totals'];
+        }
+		
+		public function getAppliedDiscounts() {
+			return $this->discounts;
+		}
 }

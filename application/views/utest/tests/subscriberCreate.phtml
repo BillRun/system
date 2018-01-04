@@ -65,12 +65,12 @@
 	</div>
 
 	<div class="form-group row">
-		<label for="charging_type" class="col-sm-4 control-label text-right">Charging Type</label>
+		<label for="connection_type" class="col-sm-4 control-label text-right">Charging Type</label>
 		<div class="col-sm-6">
-			<select class="form-control" name='charging_type'>
+			<select class="form-control" name='connection_type'>
 				<option value=""></option>
-				<?php foreach ($charging_types as $charging_type) : ?>
-					<option value="<?php echo $charging_type ?>" <?php if ('prepaid' == $charging_type) echo 'selected' ?>><?php echo $charging_type ?></option>
+				<?php foreach ($connection_types as $connection_type) : ?>
+					<option value="<?php echo $connection_type ?>" <?php if ('prepaid' == $connection_type) echo 'selected' ?>><?php echo $connection_type ?></option>
 				<?php endforeach; ?>
 			</select>
 		</div>

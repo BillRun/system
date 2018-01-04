@@ -27,7 +27,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @param MongoCursor $cursor - Mongo cursor pointing to a collection.
 	 * @param type $timeout
 	 */
-	public function __construct($cursor, $timeout = null) {
+	public function __construct($cursor) {
 		// Check that the cursor is a mongocursor
 		if (!$this->validateInputCursor($cursor)) {
 			// TODO: Report error?
@@ -35,9 +35,10 @@ class Mongodloid_Cursor implements Iterator, Countable {
 		}
 		$this->_cursor = $cursor;
 		
-		if (!is_null($timeout)) {
-			$this->_cursor->timeout((int) $timeout);
-		}
+		// mark-out due to new mongodb driver (PHP7+)
+//		if (!is_null($timeout)) {
+//			$this->_cursor->timeout((int) $timeout);
+//		}
 		
 		if ($this->_cursor instanceof MongoCommandCursor) {
 			$this->rewind();
@@ -144,7 +145,7 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	 * @param string $readPreference The read preference mode: RP_PRIMARY, RP_PRIMARY_PREFERRED, RP_SECONDARY, RP_SECONDARY_PREFERRED or RP_NEAREST
 	 * @param array $tags An array of zero or more tag sets, where each tag set is itself an array of criteria used to match tags on replica set members
 	 * 
-	 * @return Mongodloid_Collection self object
+	 * @return Mongodloid_Cursor self object
 	 */
 	public function setReadPreference($readPreference, array $tags = array()) {
 		if (method_exists($this->_cursor, 'setReadPreference')) {

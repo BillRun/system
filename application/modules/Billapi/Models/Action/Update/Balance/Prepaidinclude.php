@@ -30,7 +30,13 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * the charging value to update
 	 * @var type 
 	 */
-	protected $chargeValue;
+	protected $chargingValue;
+
+	/**
+	 * the charging limit for the prepaid include
+	 * @var type 
+	 */
+	protected $chargingLimit;
 
 	/**
 	 * query to form on update
@@ -49,6 +55,12 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @var array
 	 */
 	protected $after = null;
+
+	/**
+	 * the balance entry after
+	 * @var array
+	 */
+	protected $normalizeValue = 0;
 
 	/**
 	 * expiration date
@@ -72,13 +84,17 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			throw new Billrun_Exceptions_Api(0, array(), 'Prepaid include value not defined in input');
 		}
 
-		$this->chargeValue = (int) $params['value'];
+		$this->chargingValue = (int) $params['value'];
 		$this->init();
 
 		// this should be done after init (load before state)
 		if (isset($params['expiration_date'])) {
 			$this->setTo($params['expiration_date']);
+		} else {
+			$this->setTo();
 		}
+		
+		$this->chargingLimit = $this->getChargingLimit();;
 	}
 
 	public function getBefore() {
@@ -89,7 +105,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		return $this->after;
 	}
 
-	protected function setTo($expirationDate) {
+	protected function setTo($expirationDate = null) {
 		if (isset($this->data['unlimited']) && $this->data['unlimited']) {
 			$this->to = new MongoDate(strtotime(Billrun_Utils_Time::UNLIMITED_DATE));
 		} else if ($expirationDate instanceof MongoDate) {
@@ -99,10 +115,26 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		} else if (is_string($expirationDate)) {
 			$this->to = new MongoDate(strtotime($expirationDate));
 		} else { // fallback to 30 days charge (@TODO move to config)
-			$this->to = new MongoDate(strtotime('tomorrow', strtotime('+1 month')) - 1);
+			$this->to = new MongoDate(strtotime('tomorrow +1 month') - 1);
 		}
 	}
+	
+	/**
+	 * method to get the limit of the charging
+	 * 
+	 * @return number
+	 */
+	protected function getChargingLimit() {
+		$query = Billrun_Utils_Mongo::getDateBoundQuery();
+		$query['plan'] = $this->subscriber['plan'];
+		$plan = Billrun_Factory::db()->plansCollection()->query($query)->cursor()->current();
 
+		if (isset($plan['pp_threshold'][$this->data['external_id']])) {
+			return $plan['pp_threshold'][$this->data['external_id']];
+		}
+		return (-1) * PHP_INT_MAX;
+	}
+	
 	protected function init() {
 		$this->query = array(
 			'sid' => $this->subscriber['sid'],
@@ -125,6 +157,17 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		}
 	}
 
+	public function preValidate() {
+		if (parent::preValidate() === false) {
+			return false;
+		}
+
+		$balanceValue = $this->getBalanceValue($this->before);
+		if (!$this->data['unlimited'] && $this->chargingLimit > ($balanceValue + $this->chargingValue)) {
+			return false;
+		}
+		return true;
+	}
 	/**
 	 * 
 	 * @param type $ppQuery
@@ -147,40 +190,38 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	}
 
 	public function update() {
-		switch ($this->data['charging_by']) :
-			case 'cost':
-			case 'usagev':
-				$key = 'balance.totals.' . $this->data['charging_by_usaget'] . '.' . $this->data['charging_by'];
-				break;
-			case 'total_cost':
-			default:
-				$key = 'balance.cost';
-		endswitch;
 		$update = array(
 			'$setOnInsert' => array(
 				'from' => new MongoDate(),
 				'aid' => $this->subscriber['aid'],
-				'charging_type' => 'prepaid',
+//				'charging_type' => 'prepaid',
+				'connection_type' => 'prepaid',
 				'charging_by' => $this->data['charging_by'],
 				'charging_by_usaget' => $this->data['charging_by_usaget'],
 				'priority' => $this->data['priority'],
 				'pp_includes_name' => isset($this->data['name']) ? $this->data['name'] : $this->data['pp_includes_name'],
 			),
 		);
+		
+		if (isset($this->subscriber['service_provider'])) {
+			$update['$setOnInsert']['service_provider'] = $this->subscriber['service_provider'];
+		}
+
+		$field =  $this->getChargingField();
 
 		switch ($this->operation) :
 			case 'new':
 				$this->query['rand'] = rand(0, 1000000); // this will make the FAM to always insert
-			// do not break here, need to set value
+				// do not break here, need to set value
 			case 'set':
 				$update['$set'] = array(
-					$key => $this->chargeValue,
+					$field => $this->chargingValue,
 				);
 				break;
 			case 'inc':
 			default:
 				$update['$inc'] = array(
-					$key => $this->chargeValue,
+					$field => $this->chargingValue,
 				);
 
 				break;
@@ -205,6 +246,65 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'upsert' => true,
 		);
 		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($this->query, $update, null, $findAndModify);
+		$this->handleMaxBalanceAfterUpdate();
+	}
+	
+	/**
+	 * method to handle maximum charging limit of balance
+	 * @return type
+	 */
+	protected function handleMaxBalanceAfterUpdate() {
+		if (!isset($this->after['_id'])) {
+			return;
+		}
+		
+		$balanceValue = $this->getBalanceValue($this->after);
+		// value is negative
+		if ($this->chargingLimit > $balanceValue) { 
+			return;
+		}
+		
+		$query = array('_id' => $this->after['_id']);
+		$update = array(
+			'$set' => array(
+				$this->getChargingField() => $this->chargingLimit,
+			)
+		);
+		
+		$options = array(
+			'upsert' => false,
+			'new' => true,
+		);
+		
+		$this->after = Billrun_Factory::db()->balancesCollection()->findAndModify($query, $update, null, $options);
+		$this->normalizeValue = $this->getBalanceValue($this->after) - $balanceValue;
+	}
+	
+	protected function getChargingField() {
+		switch ($this->data['charging_by']) :
+			case 'cost':
+			case 'usagev':
+				$key = 'balance.totals.' . $this->data['charging_by_usaget'] . '.' . $this->data['charging_by'];
+				break;
+			case 'total_cost':
+			default:
+				$key = 'balance.cost';
+		endswitch;
+		
+		return $key;
+	}
+	
+	public function getBalanceValue($balance) {
+		switch ($this->data['charging_by']) :
+			case 'cost':
+			case 'usagev':
+				return isset($balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']]) ?
+					$balance['balance']['totals'][$this->data['charging_by_usaget']][$this->data['charging_by']] : 0;
+				break;
+			case 'total_cost':
+			default:
+				return isset($balance['balance']['cost']) ? $balance['balance']['cost'] : 0;
+		endswitch;
 	}
 
 	protected function preload() {
@@ -230,8 +330,9 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 			'balance_ref' => Billrun_Factory::db()->balancesCollection()->createRefByEntity($this->after),
 			'balance_before' => $this->getBalanceBefore(),
 			'balance_after' => $this->getBalanceAfter(),
+			'balance_normalized' => $this->normalizeValue,
 		);
-		if (isset($this->data['service_provider'])) { // backward compatibility
+		if (isset($this->subscriber['service_provider'])) { // backward compatibility
 			$row['service_provider'] = $this->data['service_provider'];
 		}
 		$row['stamp'] = Billrun_Util::generateArrayStamp($row);
@@ -243,7 +344,7 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 		if (is_null($afterValue)) {
 			$afterValue = $this->getBalanceAfter();
 		}
-		return $afterValue - $this->chargeValue;
+		return $afterValue - $this->chargingValue;
 	}
 
 	protected function getBalanceAfter() {
@@ -259,36 +360,8 @@ class Models_Action_Update_Balance_Prepaidinclude extends Models_Action_Update_B
 	 * @return true on success log change else false
 	 */
 	protected function trackChanges() {
-		try {
-			$user = Billrun_Factory::user();
-			if (!is_null($user)) {
-				$trackUser = array(
-					'_id' => $user->getMongoId()->getMongoID(),
-					'name' => $user->getUsername(),
-				);
-			} else { // in case 3rd party API update with token => there is no user
-				$trackUser = array(
-					'_id' => null,
-					'name' => '_3RD_PARTY_TOKEN_',
-				);
-			}
-			$logEntry = array(
-				'source' => 'audit',
-				'type' => 'update',
-				'urt' => new MongoDate(),
-				'user' => $trackUser,
-				'collection' => 'balances',
-				'old' => $this->before->getRawData(),
-				'new' => $this->after->getRawData(),
-				'key' => $this->subscriber['aid'] . '_' . $this->subscriber['sid'],
-			);
-			$logEntry['stamp'] = Billrun_Util::generateArrayStamp($logEntry);
-			Billrun_Factory::db()->logCollection()->save(new Mongodloid_Entity($logEntry));
-			return true;
-		} catch (Exception $ex) {
-			Billrun_Factory::log('Failed on insert to audit trail. ' . $ex->getCode() . ': ' . $ex->getMessage(), Zend_Log::ERR);
-		}
-		return false;
+		return Billrun_AuditTrail_Util::trackChanges('update', $this->subscriber['aid'] . '_' . $this->subscriber['sid'], 
+			'balances', $this->before->getRawData(), $this->after->getRawData());
 	}
 
 }

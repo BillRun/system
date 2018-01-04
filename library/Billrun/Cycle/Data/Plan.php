@@ -14,6 +14,8 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	protected $vatable = null;
 	protected $charges = array();
 	protected $stumpLine = array();
+	protected $start = 0;
+	protected $end = PHP_INT_MAX;
 	
 	/**
 	 *
@@ -29,6 +31,8 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	
 		$this->plan = $options['plan'];
 		$this->cycle = $options['cycle'];
+		$this->start = Billrun_Util::getFieldVal($options['start'],$this->start);
+		$this->end = Billrun_Util::getFieldVal($options['end'],$this->end);
 		$this->constructOptions($options);
 	}
 
@@ -52,15 +56,31 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	// TODO: Implement
 	public function getLine() {
 		$entries = array();
-		foreach ($this->charges as $key => $value) {
-			$entry = $this->getFlatLine();
-			$entry['aprice'] = $value;
-			$entry['charge_op'] = $key;
-			$entry['stamp'] = $this->generateLineStamp($entry);
-			if(!empty($entry['vatable'])) {
-				$entry = $this->addTaxationToLine($entry);
+		foreach ($this->charges as $key => $charges) {
+			$chargesArr = is_array($charges) && isset($charges[0]) || count($charges) == 0 ? $charges : array($charges);
+			foreach ($chargesArr as $charge) {
+				$entry = $this->getFlatLine();
+				$entry['aprice'] = $charge['value'];
+				$entry['charge_op'] = $key;
+				if(isset($charge['cycle'])) {
+					$entry['cycle'] = $charge['cycle'];
+				}
+				$entry['stamp'] = $this->generateLineStamp($entry);
+				if(!empty($charge['start']) && $this->cycle->start() < $charge['start'] ) {
+					$entry['start'] =  new MongoDate($charge['start']);
+				}
+				if(!empty($charge['end']) && $this->cycle->end()-1 > $charge['end'] ) {
+					$entry['end'] =  new MongoDate($charge['end']);
+				}
+				
+				if(!empty($entry['vatable'])) {
+					$entry = $this->addTaxationToLine($entry);
+				}
+				if (!empty($this->plan)) {
+					$entry['plan'] = $this->plan;
+				}
+				$entries[] = $entry;
 			}
-			$entries[] = $entry;
 		}
 		
 		return $entries;
@@ -83,7 +103,7 @@ class Billrun_Cycle_Data_Plan implements Billrun_Cycle_Data_Line {
 	}
 	
 	protected function generateLineStamp($line) {
-		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key());
+		return md5($line['charge_op'] .'_'. $line['aid'] . '_' . $line['sid'] . $this->plan . '_' . $this->cycle->start() . $this->cycle->key().'_'.$line['aprice']);
 	}
 	
 	protected function addTaxationToLine($entry) {

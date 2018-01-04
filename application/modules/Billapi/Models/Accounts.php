@@ -17,6 +17,9 @@ class Models_Accounts extends Models_Entity {
 	protected function init($params) {
 		parent::init($params);
 		$this->update['type'] = 'account';
+		if (empty($this->before)) { // this is new account
+			$this->update['creation_time'] = new MongoDate();
+		}
 	}
 
 	public function get() {
@@ -33,6 +36,10 @@ class Models_Accounts extends Models_Entity {
 		$customFields = parent::getCustomFields();
 		$accountFields = Billrun_Factory::config()->getConfigValue($this->collectionName . ".account.fields", array());
 		return array_merge($accountFields, $customFields);
+	}
+	
+	public function getCustomFieldsPath() {
+		return $this->collectionName . ".account.fields";
 	}
 
 }

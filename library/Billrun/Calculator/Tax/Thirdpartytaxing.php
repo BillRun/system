@@ -30,7 +30,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		//TODO  query the API  with lines
 		$queryData = array();
 		foreach($lines as $line) {
-			if(!$this->isLineLegitimate($line)) { continue; }
+			if(!$this->isLineTaxable($line)) { continue; }
 			$subscriber = new Billrun_Subscriber_Db();
 			$subscriber->load(array('sid'=>$line['sid'],'time'=>date('Ymd H:i:sP',$line['urt']->sec)));
 			$account = new Billrun_Account_Db();
@@ -48,6 +48,7 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 	protected function updateRowTaxInforamtion($line, $subscriber, $account) {
 		if(isset($this->taxDataResults[$line['stamp']])) {
 			$line['tax_data'] = $this->taxDataResults[$line['stamp']];
+
 		} else {
 			$singleData = $this->constructSingleRowData($line, $subscriber, $account);
 			$data = $this->constructRequestData($this->thirdpartyConfig['request'],array('data'=> array($singleData), 'config'=>$this->config));
@@ -58,7 +59,18 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 				return FALSE;
 			}
 		}
-			return $line;
+		$this->onAddManualTaxationToRow($line, $subscriber, $account);
+		$line['final_charge']  = $line['tax_data']['total_amount'] + $line['aprice'];
+		return $line;
+	}
+	
+	protected function onAddManualTaxationToRow(&$line, $subscriber, $account) {
+		
+		foreach(Billrun_Factory::config()->getConfigValue("taxation.{$this->config['tax_type']}.added_manual_taxes", array()) as $title =>  $precent) {
+			//$taxRate = Billrun_Factory::db()->query(array_merge(array('key'=>$taxRateKey,"rates.{$line['usaget']}"=>array('$exists'=>1)),  Billrun_Utils_Mongo::getDateBoundQuery($line['urt']->sec)))->cursor()->limit(1)->current();
+			$line = $this->addTaxRateToLine($line, $precent, $title);
+		}
+		return $line;
 	}
 	
 	protected function queryAPIforTaxes($data) {
@@ -203,18 +215,17 @@ class Billrun_Calculator_Tax_Thirdpartytaxing extends Billrun_Calculator_Tax {
 		return $retData;
 	}
 	
-	protected function getRateForLine($line) {
-		$rate = FALSE;
-		if(!empty($line['arate'])) {
-			$rate = @Billrun_Rates_Util::getRateByRef($line['arate'])->getRawData();
-		} else {
-			$flatRate = $line['type'] == 'flat' ? 
-				new Billrun_Plan(array('name'=> $line['name'], 'time'=> $line['urt']->sec)) : 
-				new Billrun_Service(array('name'=> $line['name'], 'time'=> $line['urt']->sec));
-			$rate = $flatRate->getData();
-		}
-		return $rate;			
+	protected function addTaxRateToLine($line, $addedTaxPercent ,$title) {
+		$addTax = $line['aprice'] * $addedTaxPercent;
+		
+		$line['tax_data']['total_amount'] += $addTax;
+		$line['tax_data']['total_rate'] = (!empty($line['aprice'])) ?  $line['tax_data']['total_amount'] / $line['aprice'] : 0;
+		$line['tax_data']['taxes'][] = array( 'tax'=> $addedTaxPercent,
+											'amount' => $addTax ,
+											'type' => 'manual',
+											'description' => $title,
+											'pass_to_customer' => 1,
+											'dont_report_to_thirdparty' => 1);
+		return $line;
 	}
-	
-
 }

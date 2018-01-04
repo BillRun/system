@@ -208,13 +208,13 @@ abstract class Billrun_Calculator_Rate extends Billrun_Calculator {
 		$current = $row->getRawData();
 		$rate = $this->getLineRate($row);
 		if (is_null($rate) || $rate === false) {
-			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.no_rate');
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;
 		}
 
 		if ($this->isRateBlockedByPlan($row, $rate)) {
-			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('prepaid.customer.block_rate');
+			$row['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.failed_calculator.rate');
 			$row['usagev'] = 0;
 			return false;
 		}

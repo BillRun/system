@@ -47,9 +47,6 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$data = &$processor->getData();
-		if ($realtime) {
-			$this->reuseExistingFields($data, $options);
-		}
 		$this->queueCalculators = new Billrun_Helpers_QueueCalculators($options);
 		if (!$this->queueCalculators->run($processor, $data)) {
 			return false;
@@ -91,15 +88,13 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	/**
 	 * extend the customer aggregator to generate the invoice right after the aggregator finished. EXPERIMENTAL feature.
 	 * 
-	 * @param int                 $accid account id
-	 * @param account             $account account subscribers details
-	 * @param Billrun_Billrun     $account_billrun the billrun data of the account
-	 * @param array               $lines the lines that was aggregated
-	 * @param Billrun_Aggregator  $aggregator the aggregator class that fired the event
+	 * @param Billrun_Cycle_Account     $account_billrun the billrun data of the account
 	 * 
 	 * @return void
 	 */
-	public function afterAggregateAccount($accid, $account, Billrun_Billrun $account_billrun, $lines, Billrun_Aggregator $aggregator) {
+	public function afterAggregateAccount(Billrun_Cycle_Account $accountBillrun) {
+		if(Billrun_Factory::config()->getConfigValue('calcCpu.dont_auto_generate_invoice', FALSE)) { return; }
+		
 		$forkXmlGeneration = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlGeneration', 0);
 		if ($forkXmlGeneration && function_exists("pcntl_fork")) {
 			$forkXmlLimit = Billrun_Factory::config()->getConfigValue('calcCpu.forkXmlLimit', 100);
@@ -112,7 +107,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if ($pid == 0) {
 						Billrun_Util::resetForkProcess();
 						Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in async mode', Zend_Log::INFO);
-						$this->makeXml($account_billrun, $lines);
+						$this->invoiceExport($accountBillrun->getInvoice());
 						exit(0); // exit from child process after finish creating xml; continue on parent
 					}
 					$this->childProcesses++;
@@ -122,17 +117,19 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 		Billrun_Factory::log('Plugin calc cpu afterAggregateAccount run it in sync mode', Zend_Log::INFO);
-		$this->makeXml($account_billrun, $lines);
+		$this->invoiceExport($accountBillrun->getInvoice());
 	}
 
-	protected function makeXml($account_billrun, $lines) {
+	protected function invoiceExport($accountInvoice) {
 		$options = array(
-			'type' => 'xml',
-			'stamp' => $account_billrun->getBillrunKey(),
+			'type' => 'invoice_export',
+			'stamp' => $accountInvoice->getBillrunKey(),
+			'accounts' => array($accountInvoice->getAid()),
 		);
 
 		$generator = Billrun_Generator::getInstance($options);
-		$generator->createXmlInvoice($account_billrun->getRawData(), $lines);
+		$generator->load();
+		$generator->generate();
 	}
 
 	protected function releaseZombies($waitNum) {
@@ -148,6 +145,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param type $data
 	 * @param type $options
 	 * @todo do this with one query
+	 * @todo if use is required, fix session_id to work with new conventions
 	 */
 	protected function reuseExistingFields(&$data, $options) {
 		$sessionIdFields = Billrun_Factory::config()->getConfigValue('session_id_field', array());

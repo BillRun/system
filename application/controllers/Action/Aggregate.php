@@ -32,7 +32,6 @@ class AggregateAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-
 		$this->_controller->addOutput("Loading aggregator");
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		$this->_controller->addOutput("Aggregator loaded");
@@ -52,5 +51,6 @@ class AggregateAction extends Action_Base {
 		$aggregator->aggregate();
 		$this->_controller->addOutput("Finish to Aggregate.");
 	}
-
+	
+	
 }
