@@ -88,6 +88,16 @@ class Models_Subscribers extends Models_Entity {
 			}
 		}
 	}
+	
+		
+	/**
+	 * Return the key field
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		return 'sid';
+	}
 
 	/**
 	 * move from date of entity including change the previous entity to field
