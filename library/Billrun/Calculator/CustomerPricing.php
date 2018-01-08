@@ -340,7 +340,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	public function writeLine($line, $dataKey) {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
 		$save = array();
-		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances');
+		$saveProperties = array($this->pricingField, 'billrun', 'over_plan', 'in_plan', 'out_plan', 'plan_ref', 'usagesb', 'arategroup', 'over_arate', 'over_group', 'in_group', 'in_arate', 'vf_count_days', 'roaming_balances', 'addon_balances');
 		foreach ($saveProperties as $p) {
 			if (!is_null($val = $line->get($p, true))) {
 				$save['$set'][$p] = $val;
@@ -415,7 +415,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		if (isset($subRaw['tx']) && array_key_exists($stamp, $subRaw['tx'])) { // we're after a crash
 			$pricingData = $subRaw['tx'][$stamp]; // restore the pricingData before the crash
 			$row['tx_saved'] = true; // indication for transaction existence in balances. Won't & shouldn't be saved to the db.
-			Billrun_Factory::dispatcher()->trigger('handleRoamingBalancesOnCrash', array(&$pricingData, $row));
+			Billrun_Factory::dispatcher()->trigger('handleExtraBalancesOnCrash', array(&$pricingData, $row));
 			return $pricingData;
 		}
 		$pricingData = $this->getLinePricingData($volume, $usage_type, $rate, $balance, $plan);
@@ -431,7 +431,7 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 			// update balance group (if exists)
 			if ($plan->isRateInPlanGroup($rate, $usage_type)) {
 				$group = $plan->getPlanGroup();
-				if ($group !== FALSE) {
+				if ($group !== FALSE && !is_null($group)) {
 					// @TODO: check if $usage_type should be $key
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.usagev'] = $value;
 					$update['$inc']['balance.groups.' . $group . '.' . $usage_type . '.cost'] = $pricingData[$this->pricingField];

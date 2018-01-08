@@ -213,7 +213,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_outside_gift_novat = 0;
 		$invoice_total_did_premium = 0;
 		$invoice_total_freeze_flat_rate = 0;
-		$invoice_total_data_recurring = 0;
+		$invoice_total_data_recurring_2gb = 0;
+		$invoice_total_data_recurring_5gb = 0;
 		$invoice_total_rbt_premium = 0;
 		$invoice_total_rbt_regular = 0;
 		$billrun_key = $billrun['billrun_key'];
@@ -441,6 +442,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE);
 			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB);
+			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost'] : 0));
+			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_5GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB);
 			$subscriber_sumup_TOTAL_RBT_PREMIUM= floatval((isset($subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_RBT_PREMIUM', $subscriber_sumup_TOTAL_RBT_PREMIUM);
 			$subscriber_sumup_TOTAL_RBT_REGULAR= floatval((isset($subscriber['breakdown']['service']['base']['RBT_REGULAR']['cost']) ? $subscriber['breakdown']['service']['base']['RBT_REGULAR']['cost'] : 0));
@@ -476,7 +479,8 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
 			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
 			$invoice_total_freeze_flat_rate += $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE;
-			$invoice_total_data_recurring += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB;
+			$invoice_total_data_recurring_2gb += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB;
+			$invoice_total_data_recurring_5gb += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB;
 			$invoice_total_rbt_premium += $subscriber_sumup_TOTAL_RBT_PREMIUM;
 			$invoice_total_rbt_regular += $subscriber_sumup_TOTAL_RBT_REGULAR;
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
@@ -760,7 +764,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
 		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
 		$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $invoice_total_freeze_flat_rate);
-		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $invoice_total_data_recurring);
+		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $invoice_total_data_recurring_2gb);
+		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_5GB', $invoice_total_data_recurring_5gb);
 		$this->writer->writeElement('TOTAL_RBT_PREMIUM', $invoice_total_rbt_premium);
 		$this->writer->writeElement('TOTAL_RBT_REGULAR', $invoice_total_rbt_regular);
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
