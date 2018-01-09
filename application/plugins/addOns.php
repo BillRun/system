@@ -111,7 +111,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if (!($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call')) || isset($row['roaming']))) {
+		if ($row['type'] == 'ggsn' && !($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call')) || isset($row['roaming']))) {
 			if (isset($row['urt'])) {
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
@@ -140,7 +140,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
 		$this->updateBasePlanUsage($update);
-		if (!is_null($this->package) && (!(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {
+		if (!is_null($this->package) && ($row['type'] == 'ggsn' && !(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['addon_service'] = $this->package;
 			$balancesIncludeRow = array();
