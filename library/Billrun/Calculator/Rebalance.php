@@ -50,7 +50,7 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					return FALSE;
 				}
-				$rebalance_queue->remove(array('aid' => array('$in' => $aids)));
+				$rebalance_queue->remove(array('aid' => array('$in' => $aids), 'billrun_key' => strval($billrun_key)));
 			} catch (Exception $exc) {
 				Billrun_Factory::log('Error resetting aids ' . implode(',', $aids) . ' of billrun ' . $billrun_key . '. Error was ' . $exc->getMessage() . ' : ' . $exc->getTraceAsString(), Zend_Log::ALERT);
 				return FALSE;
