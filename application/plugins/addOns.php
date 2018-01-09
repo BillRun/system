@@ -128,7 +128,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$this->row = $row;
-		$this->ownedPackages = !empty($row['packages']) ? $row['packages'] : array();
+		$this->ownedPackages = !empty($row['packages_national']) ? $row['packages_national'] : array();
 		$this->exhaustedBalances = array();
 		$this->balanceToUpdate = null;
 		$this->package = null;
