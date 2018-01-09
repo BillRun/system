@@ -203,7 +203,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && (!(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {	
+		if (!is_null($this->package) && ($row['type'] == 'ggsn' &&  !(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {	
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
