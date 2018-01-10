@@ -103,6 +103,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $rebalanceUsageSubtract = array();
 
+	protected $dataRates = array('INTERNET_BILL_BY_VOLUME');
 
 	public function __construct() {
 		$this->addOnsServices = Billrun_Factory::config()->getConfigValue('addOns.available_services');
@@ -139,7 +140,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
-		$this->updateBasePlanUsage($update);
+		$this->updateBasePlanUsage($row, $update);
 		if (!is_null($this->package) && ($row['type'] == 'ggsn')) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['addon_service'] = $this->package;
@@ -430,7 +431,12 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->balances->update(array('_id' => array('$in' => $balanceIds)), array('$set' => array('tx.' . $row['stamp'] . '.addon_balances' => $row['addon_balances'])));
 	}
 	
-	protected function updateBasePlanUsage(&$update) {
+	protected function updateBasePlanUsage($row, &$update) {
+		if (in_array($row['arate_key'], $this->dataRates)) {
+			$update['$inc']['balance.totals.total_local_data.usagev'] = $row['usagev'];
+			$update['$inc']['balance.totals.total_local_data.cost'] = 0;
+			$update['$inc']['balance.totals.total_local_data.count'] = 1;
+		}
 		if (!$this->isBaseUsage) {
 			return;
 		}
@@ -441,7 +447,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$update['$inc']['balance.groups.' . $groupName . '.data.count'] = 1;
 			}
 		}
-		
+	
 		$update['$inc']['balance.totals.base_plan_data.usagev'] = $this->basePlanCurrentUse;
 		$update['$inc']['balance.totals.base_plan_data.cost'] = 0;
 		$update['$inc']['balance.totals.base_plan_data.count'] = 1;
