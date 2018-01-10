@@ -111,7 +111,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function beforeUpdateSubscriberBalance($balance, $row, $rate, $calculator) {
-		if ($row['type'] == 'ggsn' && !($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call')) || isset($row['roaming']))) {
+		if ($row['type'] == 'ggsn') {
 			if (isset($row['urt'])) {
 				$this->lineTime = $row['urt']->sec;
 				$this->lineType = $row['type'];
@@ -140,7 +140,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator){
 		$this->updateBasePlanUsage($update);
-		if (!is_null($this->package) && ($row['type'] == 'ggsn' && !(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {
+		if (!is_null($this->package) && ($row['type'] == 'ggsn')) {
 			Billrun_Factory::log()->log("Updating balance " . $this->balanceToUpdate['billrun_month'] . " of subscriber " . $row['sid'], Zend_Log::DEBUG);
 			$row['addon_service'] = $this->package;
 			$balancesIncludeRow = array();
@@ -156,6 +156,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 				$addonUpdate['$set']['balance.totals.' . $row['usaget'] . '.cost'] = 0;
 				$addonUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 				$addonUpdate['$set']['tx'][$row['stamp']] = array('package' => $this->package, 'usaget' => $row['usaget'], 'usagev' => floor($this->extraUsage / $this->coefficient));
+				$addonUpdate['$set']['national'] = true;
 				$balanceIds[] = $this->balanceToUpdate->getRawData()['_id'];
 				$this->balances->update($addonQuery, $addonUpdate, array('w' => 1));
 				$balancesIncludeRow[] = array(
@@ -188,6 +189,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$exhaustedUpdate['$inc']['balance.totals.' . $row['usaget'] . '.count'] = 1;
 					$exhaustedUpdate['$set']['balance.totals.' . $row['usaget'] . '.exhausted'] = true;	
 					$exhaustedUpdate['$set']['tx'][$row['stamp']] = array('package' => $exhaustedBalance['service_name'], 'usaget' => $row['usaget'], 'usagev' => $usageLeft);
+					$exhaustedUpdate['$set']['national'] = true;
 					$balanceIds[] = $exhaustedBalance['_id'];
 					$this->balances->update(array('_id' => $exhaustedBalance['_id']), $exhaustedUpdate);
 				}
@@ -203,7 +205,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	}
 	
 	public function afterUpdateSubscriberBalance($row, $balance, &$pricingData, $calculator) {
-		if (!is_null($this->package) && ($row['type'] == 'ggsn' &&  !(($row['type'] == 'tap3' && in_array($row['usaget'], array('call', 'data', 'incoming_call'))) || isset($row['roaming'])))) {	
+		if (!is_null($this->package) && ($row['type'] == 'ggsn')) {	
 			$this->removeRoamingBalanceTx($row);
 		}
 	}
@@ -381,75 +383,15 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to update addon balances once the regular balance was removed.
 	 * 
 	 */
-	public function afterResetBalances($rebalanceSids, $rebalanceStamps) {
-		if (empty($this->rebalanceUsageSubtract)) {
-			return;
-		}
+	public function afterResetBalances($rebalanceSids, $rebalanceStamps, $billrunKey) {
 		$balancesColl = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
-		$sidsAsKeys = array_flip($rebalanceSids);
-		$balancesToUpdate = array_intersect_key($this->rebalanceUsageSubtract, $sidsAsKeys);			
 		$queryBalances = array(
-			'sid' => array('$in' => array_keys($balancesToUpdate)),
+			'sid' => array('$in' => $rebalanceSids),
+			'from' =>  array('$gte' => new MongoDate(Billrun_Util::getStartTime($billrunKey))),
+			'to' => array('$lte' => new MongoDate(Billrun_Util::getEndTime($billrunKey))),
+			'national' => true,
 		);
-		$balances = $balancesColl->query($queryBalances)->cursor();
-		foreach ($balancesToUpdate as $sid => $packageUsage) {
-			foreach ($packageUsage as $packageId => $usageByUsaget) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, $packageId);
-				$updateData = $this->buildUpdateBalance($balanceToUpdate, $usageByUsaget);
-				
-				$query = array(
-					'sid' => $sid,
-					'service_id' => $packageId,
-				);
-				
-				$balancesColl->update($query, $updateData);
-			}
-		}
-			
-		$this->rebalanceUsageSubtract = array();
-		$linesColl = Billrun_Factory::db()->linesCollection()->setReadPreference('RP_PRIMARY');
-		$linesColl->update(array('stamp' => array('$in' => $rebalanceStamps)), array('$unset' => array('roaming_balances' => 1)), array('multiple' => true));
-	}
-	
-	/**
-	 * method to calculate the usage need to be subtracted from the addon balance.
-	 * 
-	 * @param type $line
-	 * 
-	 */
-	public function beforeResetLines($line) {
-		if (!isset($line['addon_balances'])) {
-			return;
-		}	
-		foreach ($line['addon_balances'] as $addonBalance) {
-			$packageId = $addonBalance['package_id'];
-			$aggregatedUsage = isset($this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] ) ? $this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] : 0;
-			$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['usage'] = $aggregatedUsage + $addonBalance['added_usage'];
-			@$this->rebalanceUsageSubtract[$line['sid']][$packageId][$line['usaget']]['count'] += 1; 
-		}
-	}
-	
-	protected function getRelevantBalance($balances, $packageId) {
-		foreach ($balances as $balance) {
-			$rawData = $balance->getRawData();
-			if (isset($rawData['service_id'] ) && $rawData['service_id'] == $packageId) {
-				return $rawData;
-			}
-		}
-	}
-	
-	protected function buildUpdateBalance($balance, $volumeToSubstract) {
-		$update = array();
-		foreach ($volumeToSubstract as $usaget => $usagev) {
-			if (isset($balance['balance']['totals'][$usaget]['usagev'])) {
-				$update['$set']['balance.totals.' . $usaget . '.usagev'] = $balance['balance']['totals'][$usaget]['usagev'] - $usagev['usage'];
-				$update['$set']['balance.totals.' . $usaget . '.count'] = $balance['balance']['totals'][$usaget]['count'] - $usagev['count'];
-			}
-			if (isset($balance['balance']['totals'][$usaget]['exhausted']) && ($usagev['usage'] > 0)) {
-				$update['$unset']['balance.totals.' . $usaget . '.exhausted'] = 1;
-			}
-		}
-		return $update;
+		$balancesColl->remove($queryBalances, array('w' => 1));
 	}
 
 	public function handleExtraBalancesOnCrash(&$pricingData, $row) {

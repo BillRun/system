@@ -380,7 +380,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * method to update roaming balances once the regular balance was removed.
 	 * 
 	 */
-	public function afterResetBalances($rebalanceSids, $rebalanceStamps) {
+	public function afterResetBalances($rebalanceSids, $rebalanceStamps, $billrunKey) {
 		if (empty($this->rebalanceUsageSubtract)) {
 			return;
 		}
