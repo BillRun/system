@@ -455,5 +455,20 @@
 				}
 			]
 		}
-	}
+	},
+  "lines": {
+    "fields": [
+      {
+        "field_name": "foreign.activation_date",
+        "foreign": {
+          "entity": "service",
+          "field": "start",
+          "translate": {
+            "type": "unixTimeToString",
+            "format": "Y-m-d H:i:s"
+          }
+        }
+      }
+    ]
+  }
 }
