@@ -264,7 +264,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$notBilledAids[] = $account['aid'];
 		}
 		if (empty($aids)) {
-			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, '$or' => array(
+											array( 'type' => array('$in' => array('service', 'flat')) ),
+											array( 'type'=>'credit','usaget'=>'discount' )
+											));
 			$billrunRemoveQuery = $billrunQuery;
 		} else {
 			$aids =array_values(array_intersect($notBilledAids, $aids));
