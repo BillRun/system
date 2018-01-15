@@ -15,6 +15,11 @@
 class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public $lines = array();
+	protected $tariffMultiplier = array(
+		'call' => 60,
+		'incoming_call' => 60,
+		'data' => 1024*1024
+	);
 	
 	/*
 	 * get and set lines of the account
@@ -162,5 +167,34 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return (empty($item['start']) ? '' : 'Starting '.date(date($this->date_format,$item['start']->sec))) .
 				(empty($item['start']) || empty($item['end']) ? '' : ' - ') .
 				(empty($item['end'])   ? '' : 'Ending '.date(date($this->date_format,$item['end']->sec)));
-	}	
+	}
+
+	public function getFormatedPrice($price,$precision = 2, $priceSymbol = '₪') {
+		return "{$priceSymbol} ". number_format((isset($price) ? floatval($price): 0), $precision)  ;
+	}
+	
+	public function getFormatedUsage($usage,$usaget, $showUnits = false) {
+		$usage = empty($usage) ? 0 :$usage;
+		$unit = Billrun_Utils_Units::getInvoiceUnit($usaget);
+		return Billrun_Utils_Units::convertVolumeUnits( $usage , $usaget,  $unit) ." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '') ;
+	}
+
+	public function getRateTariff($rateName, $usaget) {
+		if(!empty($rateName)) {
+			$rate = Billrun_Rates_Util::getRateByName($rateName, $this->data['end_date']->sec);
+			if(!empty($rate)) {
+				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget);
+			
+			}
+		}
+		return (empty($tariff) ? 0 : Billrun_Tariff_Util::getTariffForVolume($tariff, 0))  * Billrun_Util::getFieldVal($this->tariffMultiplier[$usaget], 1);
+	}
+
+	public function getPlanDescription($subscriberiptionData) {
+		if(!empty($subscriberiptionData['plan'])) {
+			$plan = Billrun_Factory::plan(array('name'=>$subscriberiptionData['plan'],'time'=>$this->data['end_date']->sec));
+			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new MongoDate())->sec), $plan->get('description'));
+		}
+		return "";
+	}
 }
