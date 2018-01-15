@@ -163,19 +163,48 @@ class Billrun_Cycle_Account_Invoice {
 	public function applyDiscounts() {
 		$dm = new Billrun_DiscountManager();
 		$this->discounts = $dm->getEligibleDiscounts($this);
-		
-		foreach($this->discounts as $discount) {			
+		$sidDiscounts = array();
+		foreach($this->discounts as $discount) {
 			foreach($this->subscribers as  $subscriber) {
 				if($subscriber->getData()['sid'] == $discount['sid']) {
 					$rawDiscount = $discount->getRawData();
 					$subscriber->updateInvoice(array('credit'=> $rawDiscount['aprice']), $rawDiscount, $rawDiscount, !empty($rawDiscount['tax_data']));			
+					$sidDiscounts[$discount['sid']][] =$discount;
 					continue 2;
 				}
 			}
 		}
+		foreach($this->subscribers as  $subscriber) {
+			$sid = $subscriber->getData()['sid'];
+			if( !empty($sidDiscounts[$subscriber->getData()['sid'] ]) ) {
+				$subscriber->aggregateLinesToBreakdown($sidDiscounts[$sid]);
+			}
+		}
+		$this->aggregateIntoInvoice(Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.added_data',array()));
 		$this->updateTotals();
 	}
         
+	
+	/**
+	 * 
+	 * @param type $subLines
+	 */
+	public function aggregateIntoInvoice($untranslatedAggregationConfig) {
+		$translations = array('BillrunKey' => $this->data['billrun_key'], 'Aid'=>$this->data['aid']);
+		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
+		$rawData = $this->data->getRawData();
+		foreach($aggregationConfig as $addedvalueKey => $aggregateConf) {
+				$aggrResults = Billrun_Factory::Db()->getCollection($aggregateConf['collection'])->aggregate($aggregateConf['pipeline'])->setRawReturn(true);
+				if($aggrResults) {
+					foreach($aggrResults as $aggregateValue) {
+						$rawData['added_data'][$addedvalueKey][] = $aggregateValue;
+					}
+			}
+		}
+		$this->data->setRawData($rawData);
+	}
+	
 	/**
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
@@ -253,6 +282,7 @@ class Billrun_Cycle_Account_Invoice {
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'refund' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'charge' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'discount' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'past_balance' => array('after_vat' => 0),
 		);
 		foreach ($this->subscribers as $sub) {

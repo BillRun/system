@@ -78,8 +78,18 @@ class Billrun_Config {
 	
 	public function addConfig($path) {
 		if (file_exists($path)) {
-			$addedConf = new Yaf_Config_Ini($path);
-			$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf->toArray()));
+			if(preg_match('/\.json$/',$path)) {
+					$addedConf = json_decode(file_get_contents($path),TRUE);
+					
+			} else {
+					$addedConf = (new Yaf_Config_Ini($path))->toArray();
+			}
+			if(is_array($addedConf)) {
+				$this->config = new Yaf_Config_Simple(self::mergeConfigs($this->config->toArray(), $addedConf));
+			} else {
+				error_log("Couldn't load Configuration File {$path} !!");
+			}
+			
 		} else {
 			error_log("Configuration File {$path} doesn't exists or BillRun lack access permissions!!");
 		}
