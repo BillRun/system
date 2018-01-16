@@ -250,7 +250,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
 			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
 		});
-		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
+		if (empty($matchedPackages) || !$this->checkPackageCorrelation($groupSelected, $matchedPackages)) {
 			$groupSelected = FALSE;
 			return;
 		}
@@ -453,5 +453,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$update['$inc']['balance.totals.base_plan_data.count'] = 1;
 	}
 	
-
+	protected function checkPackageCorrelation($groupSelected, $matchedPackages) {
+		foreach ($matchedPackages as $matchedPackage) {
+			$includedServices[] = $matchedPackage['service_name'];
+		}
+		return in_array($groupSelected, $includedServices);
+	}
 }

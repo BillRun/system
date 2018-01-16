@@ -240,7 +240,7 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
 			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
 		});	
-		if (empty($matchedPackages) || !in_array($groupSelected, array_column($matchedPackages,'service_name'))) {
+		if (empty($matchedPackages) || !$this->checkPackageCorrelation($groupSelected, $matchedPackages)) {
 			$groupSelected = FALSE;
 			return;
 		}
@@ -532,5 +532,11 @@ class roamingPackagesPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$this->balances->update(array('_id' => array('$in' => $balanceIds)), array('$set' => array('tx.' . $row['stamp'] . '.roaming_balances' => $row['roaming_balances'])));
 	}
 	
+	protected function checkPackageCorrelation($groupSelected, $matchedPackages) {
+		foreach ($matchedPackages as $matchedPackage) {
+			$includedServices[] = $matchedPackage['service_name'];
+		}
+		return in_array($groupSelected, $includedServices);
+	}
 
 }
