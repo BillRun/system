@@ -263,8 +263,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
 			$aids = array_values(array_diff($aids, $billedAids));
-			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
-			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
 										'billrun' => $billrunKey, 
 										'$or' => array(
@@ -275,6 +273,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$linesColl->remove($linesRemoveQuery);
 		$billrunColl->remove($billrunRemoveQuery);
+		if (empty($aids)) {
+			Billrun_Factory::log("Removing flat and service lines", Zend_Log::DEBUG);
+			Billrun_Factory::log("Removing billrun of " . $billrunKey, Zend_Log::DEBUG);
+		} else {
+			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
+			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
+		}
 	}
 
 	public function isFakeCycle() {
