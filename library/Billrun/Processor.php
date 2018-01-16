@@ -585,7 +585,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$collection->save($entity);
 				$this->data['stored_data'][] = $row;
 			} catch (Exception $e) {
-				Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+				Billrun_Factory::log("Processor store " . basename($this->filePath) . " failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 				continue;
 			}
 		}
@@ -598,7 +598,7 @@ abstract class Billrun_Processor extends Billrun_Base {
 				$entity = new Mongodloid_Entity($row, $queue);
 				$queue->save($entity);
 			} catch (Exception $e) {
-				Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::NOTICE);
+				Billrun_Factory::log("Processor store " . basename($this->filePath) . " to queue failed on stamp : " . $row['stamp'] . " with the next message: " . $e->getCode() . ": " . $e->getMessage(), Zend_Log::ALERT);
 				continue;
 			}
 		}
