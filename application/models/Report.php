@@ -337,7 +337,7 @@ class ReportModel {
 	
 	protected function currentTime() {
 		if(!$this->currentTime) {
-			$this->currentTime = date('m-d-Y H:i:s');
+			$this->currentTime = date('m/d/Y H:i:s');
 		}
 		return $this->currentTime;
 	}
