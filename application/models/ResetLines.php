@@ -60,7 +60,7 @@ class ResetLinesModel {
 				),
 			);
 			$ret = $balances_coll->remove($query, array('w' => 1)); // ok ==1 && n>0
-			Billrun_Factory::dispatcher()->trigger('afterResetBalances', array($sids, $lineStamps));
+			Billrun_Factory::dispatcher()->trigger('afterResetBalances', array($sids, $lineStamps, $this->billrun_key));
 		}		
 		return $ret;
 	}

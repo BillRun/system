@@ -533,6 +533,7 @@ class Billrun_Util {
 			'fraction' => array(),
 			'source_amount_without_vat' => array(),
 			'additional' => array(),
+			'id' => array(),
 		);
 		$filtered_request = array();
 

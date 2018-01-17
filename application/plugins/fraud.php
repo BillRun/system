@@ -102,6 +102,17 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				case 'usage':
 					$this->usageCheck($limits, $row, $balance);
 					break;
+				case 'addon':
+					if (!isset($row['addon_balances'])) {
+						break;
+					}
+					
+					$addonBalances = $row['addon_balances'];
+					foreach ($addonBalances as $addonBalance) {
+						$this->addonUsageCheck($limits, $row, $addonBalance);
+					}
+					break;
+
 				default:
 					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $type, Zend_Log::WARN);
 					break;
@@ -109,6 +120,58 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		return true;
+	}
+
+	protected function addonUsageCheck($limits, $row, $balance) {
+		$ret = array();
+		if ($row['usagev'] === 0) {
+			return false;
+		}
+		foreach ($limits['rules'] as $rule) {
+			if (empty($rule['service_name']) || !in_array($balance['service_name'], $rule['service_name'])) {
+				continue;
+			}
+			$ret[] = $this->checkAddonUsageRule($rule, $row, $balance);
+		}
+		return $ret;
+	}
+	
+	protected function checkAddonUsageRule($rule, $row, $balance) {
+		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
+			return false;
+		}
+		$usaget = $row['usaget'];
+		if ($usaget == 'data' && $rule['unit'] == 'BYTE') {
+			$before = $balance['usage_before']['data'];
+			$after = $before + $row['usagev'];
+		} else if (in_array($usaget, array('call', 'sms', 'incoming_call')) && $rule['unit'] == 'SMSEC') {
+			$callUsageBefore = $balance['usage_before']['call'] + $balance['usage_before']['incoming_call'];
+			$smsUsageBefore = $balance['usage_before']['sms'];
+			$before	= $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
+			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
+			$after = $before + $currentUsage;
+		}
+		if (!isset($before)) {
+			return;
+		}
+		$threshold = $rule['threshold'];
+		$recurring = isset($rule['recurring']) && $rule['recurring'];
+		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
+		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
+		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
+			$addonService['service_name'] = $balance['service_name'];
+			$addonService['package_id'] = $balance['package_id'];
+			$channelAddon = isset($rule['channel']) ? $rule['channel'] : '' ;
+			$addonService['channel'] = "Addon_Service_" . $balance['package_id'] . $channelAddon;
+			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
+			if (isset($rule['priority'])) {
+				$priority = (int) $rule['priority'];
+			} else {
+				$priority = null;
+			}
+			$this->insert_fraud_event($after, $before, $row, $threshold, $rule['unit'], $rule['name'], $priority, $recurring, $addonService);
+			return $rule;
+		}
 	}
 
 	protected function costCheck($limits, $row, $balance, $rowPrice) {
@@ -257,7 +320,19 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		$after = $before + $row['usagev'];
 
-		$threshold = $rule['threshold'];
+		if ($rule['threshold'] == 'from_plan') {
+			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
+			if (isset($rule['group'])) {
+				$groupName = $rule['group'];
+				$threshold = (int)($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
+			} else {
+				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
+			}
+		} else {
+			$threshold = $rule['threshold'];
+		}
+		
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
@@ -347,7 +422,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @param string $event_type the event type
 	 * @param bool $recurring is the event is recurring
 	 */
-	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false) {
+	protected function insert_fraud_event($value, $value_before, $row, $threshold, $units, $event_type, $priority = null, $recurring = false, $addonService = null) {
 
 		$newEvent = new Mongodloid_Entity();
 		$newEvent['value'] = (float) $value;
@@ -384,7 +459,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$newEvent['priority'] = (int) $priority;
 		}
-
+		
+		if (!is_null($addonService)) {
+			foreach ($addonService as $key => $value) {
+				$newEvent[$key] = $value;
+			}
+		}
 		$newEvent['stamp'] = md5(serialize($newEvent));
 		$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
 
