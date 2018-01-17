@@ -222,7 +222,7 @@ class Zend_Pdf
      *
      * @return Zend_Memory_Manager
      */
-    static public function getMemoryManager()
+    public static function getMemoryManager()
     {
         if (self::$_memoryManager === null) {
             // require_once 'Zend/Memory.php';
@@ -237,7 +237,7 @@ class Zend_Pdf
      *
      * @param Zend_Memory_Manager $memoryManager
      */
-    static public function setMemoryManager(Zend_Memory_Manager $memoryManager)
+    public static function setMemoryManager(Zend_Memory_Manager $memoryManager)
     {
         self::$_memoryManager = $memoryManager;
     }

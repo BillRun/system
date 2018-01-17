@@ -27,7 +27,7 @@ class Billrun_Config {
 	 * @var Yaf_Config
 	 */
 	protected $config;
-	
+
 	/**
 	 * the name of the tenant (or null if not running with tenant)
 	 * 
@@ -137,8 +137,8 @@ class Billrun_Config {
 		$stamp = Billrun_Util::generateArrayStamp($config);
 		if (empty(self::$instance[$stamp])) {
 			if (empty($config)) {
-				$config = Yaf_Application::app()->getConfig();
-			}
+			$config = Yaf_Application::app()->getConfig();
+		}
 			self::$instance[$stamp] = new self($config);
 			self::$instance[$stamp]->loadDbConfig();
 		}
@@ -161,7 +161,7 @@ class Billrun_Config {
 			return ((!$enabledOnly || Billrun_Config::isFileTypeConfigEnabled($fileSettings)) ? $fileSettings['file_type'] : null);
 		}, $this->getConfigValue('file_types')));
 	}
-
+	
 	public function loadDbConfig() {
 		try {
 			$configColl = Billrun_Factory::db()->configCollection();
@@ -189,10 +189,10 @@ class Billrun_Config {
 //			Billrun_Factory::log('Cannot load database config', Zend_Log::CRIT);
 //			Billrun_Factory::log($e->getCode() . ": " . $e->getMessage(), Zend_Log::CRIT);
 			throw $e;
-		}
-		
+			}
+
 		return true;
-	}
+		}
 
 	/**
 	 * Refresh the values from the config in the DB.
@@ -215,7 +215,7 @@ class Billrun_Config {
 		// Setting the default timezone.
 		$setTimezone = @date_default_timezone_set($timezone);
 	}
-	
+
 	/**
 	 * method to get config value
 	 * 
@@ -347,7 +347,7 @@ class Billrun_Config {
 	public function getEnv() {
 		return APPLICATION_ENV;
 	}
-	
+
 	/**
 	 * method to retrieve the tenant name
 	 * 

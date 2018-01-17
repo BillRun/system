@@ -1,7 +1,7 @@
 var globalSetting = {
   storageVersion: '0.0.1',
   serverUrl: "",
-  serverApiVersion: '5.7.11',
+  serverApiVersion: '5.8.0.2',
   serverApiTimeOut: 300000, // 5 minutes
   serverApiDebug: false,
   serverApiDebugQueryString: 'XDEBUG_SESSION_START=netbeans-xdebug',

@@ -133,6 +133,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected $fakeCycle = false;
 	
+	/**
+	 * If false don't automatically generate pdf. 
+	 * @var boolean
+	 */
+	protected $generatePdf = true;
+
 	
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -175,7 +181,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if ((isset($options['aggregator']['page']) || isset($options['page'])) && !$this->isCycle) {
 			$this->page = isset($options['page']) ? (int) $options['page'] : (int) $options['aggregator']['page'];
 		}
-			
+		
+		if (isset($options['generate_pdf'])) {
+			$this->generatePdf = ($options['generate_pdf'] == 'false' ? false : true);
+		}
+	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
@@ -254,7 +264,6 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billedAids[] = $account['aid'];
 		}
 		if (empty($aids)) {
-			Billrun_Factory::log("Removing flat and service lines for all aids beside " . implode(',', $billedAids), Zend_Log::DEBUG);
 			$linesRemoveQuery = array('aid' => array('$nin' => $billedAids), 'billrun' => $billrunKey, 
 									'$or' => array(
 										array( 'type' => array('$in' => array('service', 'flat')) ),
@@ -641,4 +650,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return true;
 	}
+	
+	public function getGeneratePdf() {
+		return $this->generatePdf;
+	}
+
 }

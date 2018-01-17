@@ -12,7 +12,7 @@
  * @package  Controller
  * @since    5.0
  */
-class ExternalPaypageController extends Yaf_Controller_Abstract {
+class ExternalPaypageController extends Yaf_Controller_Abstract { // CAUTIOUS WHEN ENABLING THIS CLASS
 	public function init() {
 		Billrun_Factory::db();
 	}
