@@ -106,7 +106,7 @@ class Processor_Mergerates extends Billrun_Processor_Base_Separator {
 					break;
 				case 'C':
 					$rateType = 'call';
-					$record_type = array("01", "11");
+					$record_type = array("01", "11","30");
 					$unit = 'seconds';
 					break;
 				case 'I':
