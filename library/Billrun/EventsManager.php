@@ -235,7 +235,7 @@ class Billrun_EventsManager {
 			'notify_time' => array('$exists' => false),
 			'$or' => array(
 				array('start_notify_time' => array('$exists' => false)),
-				array('start_notify_time' => array('$lte' => new MongoDate(strtotime($notifyOrphanTime))))
+				array('start_notify_time' => array('$lte' => new MongoDate(strtotime('-' . $notifyOrphanTime))))
 			)
 		);
 		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
