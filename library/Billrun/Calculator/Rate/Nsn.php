@@ -51,11 +51,11 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				return 'sms';
 			case '02':
 			case '12':
+			case '31':				
 				return 'incoming_call';
 			case '11':
 			case '01':
 			case '30':
-			case '31':
 			default:
 				return 'call';
 		}
