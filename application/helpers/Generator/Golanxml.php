@@ -444,7 +444,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB);
 			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB_NEW']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB_NEW']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW', $subscriber_sumup_ADD_ON_DATA_RECURRING_2GB_NEW);
+			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW);
 			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost'] : 0));
 			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_5GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB);
 			$subscriber_sumup_TOTAL_RBT_PREMIUM= floatval((isset($subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost'] : 0));
