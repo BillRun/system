@@ -353,12 +353,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function isCustomerable($line) {
 		if ($line['type'] == 'nsn') {
 			$record_type = $line['record_type'];
-			if ($record_type == '11' || $record_type == '12') {
-				$relevant_cg = $record_type == '11' ? $line['in_circuit_group'] : $line['out_circuit_group'];
+			if (in_array($record_type, array('11','30','12','31')) ){
+				$relevant_cg = in_array($record_type, array('11','30')) ? $line['in_circuit_group'] : $line['out_circuit_group'];
 				if (!in_array($relevant_cg, Billrun_Util::getRoamingCircuitGroups())) {
 					return false;
 				}
-				if ($record_type == '11' && in_array($line['out_circuit_group'], array('3060', '3061'))) {
+				if (in_array($record_type, array('11','30')) && in_array($line['out_circuit_group'], array('3060', '3061'))) {
 					return false;
 				}
 				// what about GOLAN IN direction (3060/3061)?
@@ -394,7 +394,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function isOutgoingCallOrSms($line) {
 		$outgoing = true;
 		if ($line['type'] == 'nsn') {
-			$outgoing = in_array($line['record_type'], array('01', '11'));
+			$outgoing = in_array($line['record_type'], array('01', '11','30'));
 		}
 		if ($line['type'] == 'smsc') {
 			$outgoing = in_array($line['record_type'], array('2'));
