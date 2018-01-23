@@ -341,9 +341,6 @@ class ReportModel {
 			case 'last_days':
 				return 'between';
 		}
-		if(substr($field, 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.') {
-			return 'and';
-		}
 		// search by field_name
 		if($field === 'billrun') {
 			switch ($value) {
@@ -385,17 +382,6 @@ class ReportModel {
 					'from' => strtotime("{$days} day midnight"),
 					'to' => strtotime("today") - 1	
 				);
-		}
-		// complex query if tariff_category present
-		if  (substr($field, 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.') {
-			$parts = explode(".", $field);
-			$rates = $parts[0];
-			$tariff = $parts[1];
-			$category_name = $parts[2];
-			$field_name = array_slice($parts, 3);
-			$condition['field'] = implode(".", array(implode("_", array('rate', $tariff, $category_name)), implode(".", $field_name)));
-			$parsedCondition = $this->parseMatchCondition($condition);
-			return array(array($parsedCondition['field'] => $parsedCondition['query']));
 		}
 		// search by field_name
 		if($field === 'billrun') {
@@ -449,6 +435,13 @@ class ReportModel {
 	
 	protected function formatInputMatchField($condition, $entity) {
 		$field = $condition['field'];
+		if  ($this->isRatesTariffCategoryField($field)) {
+			$parts = explode(".", $field);
+			$tariff = $parts[1];
+			$category_name = $parts[2];
+			$field_name = array_slice($parts, 3);
+			return implode(".", array(implode("_", array('rate', $tariff, $category_name)), implode(".", $field_name)));
+		}
 		switch ($field) {
 			case 'logfile_status':
 				switch ($condition['value']) {
@@ -660,7 +653,7 @@ class ReportModel {
 	protected function getAddFields($entity) {
 		$newFields = array();
 		foreach ($this->report['columns'] as $key => $column) {
-			if  (substr($column['field_name'], 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.') {
+			if  ($this->isRatesTariffCategoryField($column['field_name'])) {
 				$parts = explode(".", $column['field_name']);
 				$rates = $parts[0]; // rates
 				$tariff = $parts[1]; // tariff_category
@@ -865,5 +858,9 @@ class ReportModel {
 			}
 		}
 		return $sorts;
+	}
+	
+	protected function isRatesTariffCategoryField($field) {
+		return (substr($field, 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.');
 	}
 }
