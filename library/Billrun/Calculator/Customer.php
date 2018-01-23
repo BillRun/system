@@ -56,7 +56,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideMandatoryFields = TRUE;
-
+	
+	/**
+	 * These mapping are required raw field that must be filled by the customer calculator.
+	 */
+	const REQUIRED_ROW_ENRICHMENT_MAPPING = array(array('sid'=>'sid'), array('aid'=>'aid'), array('plan'=> 'plan'));
+		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -426,7 +431,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function enrichWithSubscriberInformation($row, $subscriber) {
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
-		$enrinchmentMapping = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array());
+		$enrinchmentMapping = array_merge( Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array()) , static::REQUIRED_ROW_ENRICHMENT_MAPPING );
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}

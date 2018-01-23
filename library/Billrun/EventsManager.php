@@ -37,6 +37,7 @@ class Billrun_EventsManager {
 	protected static $instance;
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
+	protected $notifyHash;
 
 	/**
 	 *
@@ -170,17 +171,23 @@ class Billrun_EventsManager {
 	 * used for Cron to handle the events exists in the system
 	 */
 	public function notify() {
+		$this->lockNotifyEvent();
 		$events = $this->getEvents();
 		foreach ($events as $event) {
-			$response = Billrun_Events_Notifier::notify($event->getRawData());
-			if ($response === false) {
-				Billrun_Factory::log('Error notify event. Event details: ' . print_R($event, 1), Billrun_Log::NOTICE);
-				continue;
+			try {
+				$response = Billrun_Events_Notifier::notify($event->getRawData());
+				if ($response === false) {
+					Billrun_Factory::log('Error notify event. Event details: ' . print_R($event, 1), Billrun_Log::NOTICE);
+					$this->unlockNotifyEvent($event);
+					continue;
+				}
+				$this->addEventResponse($event, $response);
+			} catch (Exception $e) {
+				$this->unlockNotifyEvent($event);
 			}
-			$this->addEventResponse($event, $response);
 		}
 	}
-	
+
 	/**
 	 * get all events that were found in the system and was not already handled
 	 * 
@@ -189,6 +196,7 @@ class Billrun_EventsManager {
 	protected function getEvents() {
 		$query = array(
 			'notify_time' => array('$exists' => false),
+			'hash' => $this->notifyHash,
 		);
 		
 		return self::$collection->query($query);
@@ -213,6 +221,43 @@ class Billrun_EventsManager {
 		);
 		
 		return self::$collection->update($query, $update);
+	}
+	
+	/**
+	 * lock event before sending it.
+	 * 
+	 * @param array $event
+	 */
+	protected function lockNotifyEvent() {
+		$this->notifyHash = md5(time() . rand(0, PHP_INT_MAX));
+		$notifyOrphanTime = Billrun_Factory::config()->getConfigValue('events.settings.notify.notify_orphan_time', '1 hour');
+		$query = array(
+			'notify_time' => array('$exists' => false),
+			'$or' => array(
+				array('start_notify_time' => array('$exists' => false)),
+				array('start_notify_time' => array('$lte' => new MongoDate(strtotime($notifyOrphanTime))))
+			)
+		);
+		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
+	}
+	
+	
+	/**
+	 * unlock event in case of failue.
+	 * 
+	 * @param array $event
+	 */
+	protected function unlockNotifyEvent($event) {
+		$query = array(
+			'_id' => $event->getId()->getMongoId(),
+		);
+		$update = array(
+			'$unset' => array(
+				'hash' => true,
+			),
+		);
+		
+		self::$collection->update($query, $update);
 	}
 	
 	/**

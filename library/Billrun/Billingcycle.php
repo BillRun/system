@@ -179,6 +179,7 @@ class Billrun_Billingcycle {
 		if (count($invoicesToRemove) > 0) { // remove leftovers
 			$countersColl->remove(array('coll' => 'billrun', 'seq' => array('$in' => $invoicesToRemove)));
 		}
+		Billrun_Factory::log("Removing billing cycle records for " . $billrunKey, Zend_Log::DEBUG);
 		$billingCycleCol->remove(array('billrun_key' => $billrunKey));
 		Billrun_Aggregator_Customer::removeBeforeAggregate($billrunKey);
 	}

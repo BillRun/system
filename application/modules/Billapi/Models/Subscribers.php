@@ -88,6 +88,16 @@ class Models_Subscribers extends Models_Entity {
 			}
 		}
 	}
+	
+		
+	/**
+	 * Return the key field
+	 * 
+	 * @return String
+	 */
+	protected function getKeyField() {
+		return 'sid';
+	}
 
 	/**
 	 * move from date of entity including change the previous entity to field
@@ -362,5 +372,11 @@ class Models_Subscribers extends Models_Entity {
 		}
 		$revisions = $this->getSubscriberRevisions($entity);
 		$this->fixSubscriberFields($revisions);
+	}
+	
+	public function permanentChange() {
+		unset($this->update['plan_activation']);
+		unset($this->update['type']);
+		parent::permanentChange();
 	}
 }
