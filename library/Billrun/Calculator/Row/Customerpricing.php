@@ -137,7 +137,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
 			if ($prepriced) {
-				$charges = (float) $this->row[$this->pricingField];
+				$charges = (float) $this->getLineAprice($this->row['uf'], $this->row['usaget']);
 			} else {
 				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
 			}
@@ -979,5 +979,27 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	
 	public function getUsedServices() {
 		return $this->servicesUsed;
+	}
+
+	/**
+	 * Get the prepriced value received in the CDR
+	 * 
+	 * @param type $userFields
+	 * @return aprice if the field found, false otherwise
+	 */
+	protected function getLineAprice($userFields, $usageType) {
+		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
+		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
+		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
+			$aprice = $userFields[$apriceField];
+			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
+			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
+				$aprice *= $apriceMult;
+			}
+			return $aprice;
+		}
+		
+		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		return false;
 	}
 }

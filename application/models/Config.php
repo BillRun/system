@@ -1035,6 +1035,9 @@ class ConfigModel {
 				}
 			}
 		}
+		if (isset($fileSettings['enabled'])) {
+			$updatedFileSettings['enabled'] = $fileSettings['enabled'];
+		}
 		if (!$allowPartial && !$completeFileSettings) {
 			throw new Exception('File settings is not complete.');
 		}
