@@ -86,6 +86,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
+				'invoice_file' => $invoice['invoice_file'],
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];

@@ -15,10 +15,13 @@
  */
 class CronController extends Yaf_Controller_Abstract {
 
+	use Billrun_Traits_Api_UserPermissions;	
+	
 	protected $mailer;
 	protected $smser;
 
 	public function init() {
+		$this->allowed();
 		$this->getView()->message = "BillRun cron is running with " . $this->getRequest()->action . " action";
 		Billrun_Factory::log($this->getView()->message, Zend_Log::INFO);
 		set_time_limit(9999);
@@ -338,6 +341,10 @@ class CronController extends Yaf_Controller_Abstract {
 		$sids = array_column(iterator_to_array($balances), 'sid');
 
 		Billrun_Factory::dispatcher()->trigger('handleSendRquestErrors', array($sids));
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
 	}
 
 }

@@ -13,6 +13,8 @@
  * @since    4.0
  */
 class UtestController extends Yaf_Controller_Abstract {
+	
+	use Billrun_Traits_Api_UserPermissions;	
 
 	/**
 	 * base url for API calls
@@ -58,6 +60,7 @@ class UtestController extends Yaf_Controller_Abstract {
 	 * method to control and navigate the user to the right view
 	 */
 	public function init() {
+		$this->allowed();
 		Billrun_Factory::log('Start Unit testing');
 
 		if (Billrun_Factory::config()->isProd()) {
@@ -585,6 +588,10 @@ class UtestController extends Yaf_Controller_Abstract {
 		$label = preg_replace('/(?!^)[A-Z]{2,}(?=[A-Z][a-z])|[A-Z][a-z]/', ' $0', $label);
 		$label = ucwords($label);
 		return $label;
+	}
+	
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_READ;
 	}
 
 }

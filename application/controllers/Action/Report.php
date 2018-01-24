@@ -30,6 +30,7 @@ class ReportAction extends ApiAction {
 	protected $headers = array();
 	
 	public function execute() {
+		$this->allowed();
 		$this->request = $this->getRequest(); // supports GET / POST requests;
 		$action = $this->request->getRequest('action', '');
 		if (!method_exists($this, $action)) {
