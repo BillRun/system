@@ -66,8 +66,8 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				$cdrLine['record_type'] = $type;
 			}
 			//convert to unified time GMT time.
-			if (!empty(Billrun_Factory::config()->getConfigValue('constants.ggsn_nokia_definitions'))) {
-				$cdrLine = $this->activateNokiaDefinitions($cdrLine);
+			if (!empty(Billrun_Factory::config()->getConfigValue('constants.hnadle_multiple_volume',TRUE))) {
+				$cdrLine = $this->handleMultipleVolume($cdrLine);
 				if ($cdrLine == false) {
 					return false;
 				}
@@ -75,6 +75,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		} else {
 			Billrun_Factory::log("couldn't find definition for {$type}", Zend_Log::INFO);
 		}
+		
 		//Billrun_Factory::log($asnObject->getType() . " : " . print_r($cdrLine,1) ,  Zend_Log::DEBUG);
 		return $cdrLine;
 	}
@@ -128,7 +129,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 
 		foreach ($struct as $val) {
 			if (($val == "*" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
-				if (isset($asnData[0])) {// Taking as an assumption there will never be a 0 key in the ASN types 
+				if (isset($asnData[0]) && is_array($asnData) && array_keys($asnData) == range(0, count($asnData)-1) ) {// Taking as an assumption there will never be a 0 key in the ASN types 
 					$newStruct = $struct;
 					array_shift($newStruct);
 					$sum = null;
@@ -151,14 +152,14 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		return null;
 	}
 	
-	protected function activateNokiaDefinitions($cdrLine) {
-		if (is_array($cdrLine['rating_group'])) {
+	protected function handleMultipleVolume($cdrLine) {
+		if (isset($cdrLine['rating_group']) && is_array($cdrLine['rating_group'])) {
 			$fbc_uplink_volume = $fbc_downlink_volume = 0;
 			$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
 			$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
 			$cdrLine['org_rating_group'] = $cdrLine['rating_group'];
 			foreach ($cdrLine['rating_group'] as $key => $rateVal) {
-				if (isset($this->ggsnConfig['rating_groups'][$rateVal])) {
+				if (!empty($this->ggsnConfig['rating_groups'][$rateVal])) {
 					$fbc_uplink_volume += $cdrLine['fbc_uplink_volume'][$key];
 					$fbc_downlink_volume += $cdrLine['fbc_downlink_volume'][$key];
 				}
@@ -166,9 +167,19 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			$cdrLine['fbc_uplink_volume'] = $fbc_uplink_volume;
 			$cdrLine['fbc_downlink_volume'] = $fbc_downlink_volume;
 			$cdrLine['rating_group'] = 0;
-		} else if ($cdrLine['rating_group'] == 10) {
+		} else if (isset($cdrLine['rating_group']) && $cdrLine['rating_group'] == 10) {
 			return false;
-		}
+		} else {
+			if(is_array($cdrLine['fbc_uplink_volume'])) {
+				$cdrLine['org_fbc_uplink_volume'] = $cdrLine['fbc_uplink_volume'];
+				$cdrLine['fbc_uplink_volume'] = array_sum($cdrLine['fbc_uplink_volume']);
+			}
+			if(is_array($cdrLine['fbc_downlink_volume'])) {
+				$cdrLine['org_fbc_downlink_volume'] = $cdrLine['fbc_downlink_volume'];
+				$cdrLine['fbc_downlink_volume'] = array_sum($cdrLine['fbc_downlink_volume']);
+			}
+		} 
+		
 		
 		return $cdrLine;
 	}
