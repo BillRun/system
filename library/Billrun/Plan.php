@@ -296,22 +296,22 @@ class Billrun_Plan extends Billrun_Service {
 	 */
 	protected static function validatePriceByTariff($tariff, $startOffset, $endOffset) {
 		if ($tariff['from'] > $tariff['to'] && !static::isValueUnlimited($tariff['to']) ) {
-			Billrun_Factory::log("getPriceByTariff received invalid tariff.");
+			Billrun_Factory::log("getPriceByTariff received invalid tariff.", Zend_Log::CRIT);
 			return false;
 		}
 
 		if ($startOffset > $endOffset) {
-			Billrun_Factory::log("getPriceByTariff received invalid offset values.");
+			Billrun_Factory::log("getPriceByTariff received invalid offset values.", Zend_Log::CRIT);
 			return false;
 		}
 
 		if ($startOffset > $tariff['to'] && !static::isValueUnlimited($tariff['to'])) {
-			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.");
+			Billrun_Factory::log("getPriceByTariff start offset is out of bounds.", Zend_Log::CRIT);
 			return false;
 		}
 
 		if ($endOffset < $tariff['from']) {
-			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.");
+			Billrun_Factory::log("getPriceByTariff end offset is out of bounds.", Zend_Log::CRIT);
 			return false;
 		}
 		return true;
@@ -453,7 +453,8 @@ class Billrun_Plan extends Billrun_Service {
 //			return $maxDate->diff($minDate)->m + round($maxDate->diff($minDate)->d / 30);
 //		}
 		if ($minDate->format('d') == 1 && (new DateTime($from))->modify('-1 day')->format('t') == $maxDate->format('d')) {
-			return $maxDate->diff((new DateTime($from))->modify('-1 day'))->m;
+			$diff = $maxDate->diff((new DateTime($from))->modify('-1 day'));
+			return $diff->m + ($diff->y * 12);
 		}
 		if ($minDate->format('Y') == $maxDate->format('Y') && $minDate->format('m') == $maxDate->format('m')) {
 			return ($maxDate->format('d') - $minDate->format('d') + 1) / $minDate->format('t');
