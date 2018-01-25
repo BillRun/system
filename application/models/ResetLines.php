@@ -96,7 +96,7 @@ class ResetLinesModel {
 				'$in' => $update_aids,
 			),
 			'type' => array(
-				'$ne' => 'credit',
+				'$nin' => array('credit', 'flat', 'service'),
 			),
 			'process_time' => array(
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
