@@ -230,7 +230,7 @@ class Models_Entity {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
 		$startTime = strtotime($data['from']);
-		$endTime = strtotime($data['to']);
+		$endTime = strtotime(isset($data['to'])? $data['to']: '+100 years');
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
