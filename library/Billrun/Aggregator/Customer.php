@@ -257,20 +257,21 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		$linesColl = Billrun_Factory::db()->linesCollection();
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
-		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));
-		$notBilled = $billrunColl->query($billrunQuery)->cursor();
-		$notBilledAids = array();
-		foreach ($notBilled as $account) {
-			$notBilledAids[] = $account['aid'];
+		$billrunQuery = array('billrun_key' => $billrunKey, 'billed' => array('$eq' => 1));
+		$billed = $billrunColl->query($billrunQuery)->cursor();
+		$billedAids = array();
+		foreach ($billed as $account) {
+			$billedAids[] = $account['aid'];
 		}
 		if (empty($aids)) {
-			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, '$or' => array(
-											array( 'type' => array('$in' => array('service', 'flat')) ),
-											array( 'type'=>'credit','usaget'=>'discount' )
-											));
-			$billrunRemoveQuery = $billrunQuery;
+			$linesRemoveQuery = array('aid' => array('$nin' => $billedAids), 'billrun' => $billrunKey, 
+									'$or' => array(
+										array( 'type' => array('$in' => array('service', 'flat')) ),
+										array( 'type'=>'credit','usaget'=>'discount' )
+									));
+			$billrunRemoveQuery = array('billrun_key' => $billrunKey, 'billed' => array('$ne' => 1));;
 		} else {
-			$aids =array_values(array_intersect($notBilledAids, $aids));
+			$aids = array_values(array_diff($aids, $billedAids));
 			$linesRemoveQuery = array(	'aid' => array('$in' => $aids),
 										'billrun' => $billrunKey, 
 										'$or' => array(
@@ -281,6 +282,13 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		$linesColl->remove($linesRemoveQuery);
 		$billrunColl->remove($billrunRemoveQuery);
+		if (empty($aids)) {
+			Billrun_Factory::log("Removing flat and service lines", Zend_Log::DEBUG);
+			Billrun_Factory::log("Removing billrun of " . $billrunKey, Zend_Log::DEBUG);
+		} else {
+			Billrun_Factory::log("Removing flat and service lines for aids " . implode(',', $aids), Zend_Log::DEBUG);
+			Billrun_Factory::log("Removing billrun of " . $billrunKey . " for aids " . implode(',', $aids), Zend_Log::DEBUG);
+		}
 	}
 
 	public function isFakeCycle() {

@@ -373,4 +373,10 @@ class Models_Subscribers extends Models_Entity {
 		$revisions = $this->getSubscriberRevisions($entity);
 		$this->fixSubscriberFields($revisions);
 	}
+	
+	public function permanentChange() {
+		unset($this->update['plan_activation']);
+		unset($this->update['type']);
+		parent::permanentChange();
+	}
 }
