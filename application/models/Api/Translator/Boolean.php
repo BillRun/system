@@ -13,7 +13,7 @@
  * @since    5.3
  */
 class Api_Translator_BooleanModel extends Api_Translator_TypeModel {
-	
+
 	/**
 	 * Translate an array
 	 * @param mixed $data - Input data
@@ -21,12 +21,19 @@ class Api_Translator_BooleanModel extends Api_Translator_TypeModel {
 	 */
 	public function internalTranslateField($data) {
 		try {
+			if (is_array($data)) {
+				$ret = array();
+				foreach ($data as $cond => $date) {
+					$ret[$cond] = boolval($date);
+				}
+				return $ret;
+			}
 			return boolval($data);
 		} catch (MongoException $ex) {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * method to validate the trasnlated value.
 	 * 

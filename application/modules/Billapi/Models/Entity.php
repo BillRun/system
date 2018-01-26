@@ -210,7 +210,7 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
-			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
+			if ($this->action != 'permanentchange' && $uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
 			if (!is_null($val)) {
@@ -231,7 +231,7 @@ class Models_Entity {
 		}
 		$startTime = strtotime($data['from']);
 		$endTime = strtotime($data['to']);
-		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+                $overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
 			$query['$and'][] = $nonRevisionsQuery;
@@ -311,12 +311,60 @@ class Models_Entity {
 	 */
 	public function update() {
 		$this->action = 'update';
-
 		$this->checkUpdate();
 		$this->fixEntityFields($this->before);
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
+	
+	/**
+	 * Performs the permanentchange action by a query.
+	 */
+	public function permanentChange() {
+		$this->action = 'permanentchange';
+		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
+			return;
+		}
+		if ($this->update['from']->sec < $this->before['from']->sec || $this->update['from']->sec > $this->before['to']->sec) {
+			throw new Billrun_Exceptions_Api(1, array(), 'From field must be between ' . date('Y-m-d', $this->before['from']->sec) . ' to ' . date('Y-m-d', $this->before['to']->sec)) ;
+		}
+		$this->protectKeyField();
+		$permanentQuery = $this->getPermanentChangeQuery();
+		$permanentUpdate = $this->getPermanentChangeUpdate();
+		$this->checkMinimumDate($this->update, 'from', 'Revision update');
+		if ($this->update['from']->sec != $this->before['from']->sec && $this->update['from']->sec != $this->before['to']->sec) {
+			$res = $this->collection->update($this->query, array('$set' => array('to' => $this->update['from'])));
+			if (!isset($res['nModified']) || !$res['nModified']) {
+				return false;
+			}
+			$prevEntity = $this->before->getRawData();
+			unset($prevEntity['_id']);
+			$prevEntity['from'] = $this->update['from'];
+			$this->insert($prevEntity);
+		}
+		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
+		$this->fixEntityFields($this->before);
+		$this->trackChanges($this->query['_id']);
+		return true;
+	}
+	
+	protected function getPermanentChangeQuery() {
+		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
+		foreach ($duplicateCheck as $fieldName) {
+			$query[$fieldName] = $this->before[$fieldName];
+		}
+		$query['from'] = array('$gte' => $this->update['from']);
+		return $query;
+	}
+	
+	protected function getPermanentChangeUpdate() {
+		$update = $this->update;
+		unset($update['from']);
+		return array(
+			'$set' => $update,
+		);
+	}
+	
 	
 	/**
 	 * Performs the changepassword action by a query and data to update
