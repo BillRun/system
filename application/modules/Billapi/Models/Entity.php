@@ -210,7 +210,7 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
-			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
+			if ($this->action != 'permanentchange' && $uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
 			if (!is_null($val)) {
@@ -230,8 +230,8 @@ class Models_Entity {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
 		$startTime = strtotime($data['from']);
-		$endTime = strtotime(isset($data['to'])? $data['to']: '+100 years');
-		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
+		$endTime = strtotime($data['to']);
+                $overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
 			$query['$and'][] = $nonRevisionsQuery;
