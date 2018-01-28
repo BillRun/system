@@ -152,7 +152,7 @@ class Billrun_Utils_Arrayquery_Expression {
 	 * @return type
 	 */
 	protected function _regex($field, $value) {
-		$value = preg_match('/^\/.*\/$/', $value) ? $value : '/' .$value.'/';
+		$value = preg_match('/^\/.*\/\w*$/', $value) ? $value : '/' .$value.'/';
 		
 		$arrayRegexFunc = function($subject) use ($value) {
 			
