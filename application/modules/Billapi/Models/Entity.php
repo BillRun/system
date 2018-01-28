@@ -210,6 +210,12 @@ class Models_Entity {
 			}
 			$val = Billrun_Util::getIn($originalUpdate, $field, null);
 			$uniqueVal = Billrun_Util::getIn($originalUpdate, $field, Billrun_Util::getIn($this->before, $field, false));
+			foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+				if (!isset($originalUpdate[$fieldName])) {
+					$dupFieldVal = Billrun_Util::getIn($originalUpdate, $fieldName, Billrun_Util::getIn($this->before, $fieldName, false));
+					$originalUpdate[$fieldName] = $dupFieldVal;
+				}
+			}
 			if ($uniqueVal !== FALSE && $uniqueFields[$field] && $this->hasEntitiesWithSameUniqueFieldValue($originalUpdate, $field, $uniqueVal)) {
 				throw new Billrun_Exceptions_Api(0, array(), "Unique field: $field has other entity with same value");
 			}
