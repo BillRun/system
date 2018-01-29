@@ -66,7 +66,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				$cdrLine['record_type'] = $type;
 			}
 			//convert to unified time GMT time.
-			if (!empty(Billrun_Factory::config()->getConfigValue('constants.hnadle_multiple_volume',TRUE))) {
+			if (!empty(Billrun_Factory::config()->getConfigValue('constants.handle_multiple_volume',TRUE))) {
 				$cdrLine = $this->handleMultipleVolume($cdrLine);
 				if ($cdrLine == false) {
 					return false;
