@@ -120,7 +120,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		if (preg_match("/\[(\w+)\]/", $struct[0], $matches) || !is_array($asnData)) {
 			$ret = null;
 			if (!isset($matches[1]) || !$matches[1] || !isset($fields[$matches[1]])) {
-				Billrun_Factory::log()->log(" couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
+			//	Billrun_Factory::log()->log("Couldn't digg into : {$struct[0]} struct : " . print_r($struct, 1) . " data : " . print_r($asnData, 1), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$matches[1]], $asnData);
 			}
@@ -145,7 +145,9 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			if (isset($asnData[$val])) {
 				$newStruct = $struct;
 				array_shift($newStruct);
-				return $this->parseASNData($newStruct, $asnData[$val], $fields);
+				if( preg_match("/\[(\w+)\]/", $newStruct[0]) || is_array($asnData[$val]) ) {
+					return $this->parseASNData($newStruct, $asnData[$val], $fields);
+				}
 			}
 		}
 
