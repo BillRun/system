@@ -40,7 +40,7 @@ abstract class Billrun_Parser_Base_Binary extends Billrun_Parser {
 	 *
 	 * @return string the line that parsed
 	 */
-	public function getLine() {
+	public function getLine($fp) {
 		return $this->line;
 	}
 

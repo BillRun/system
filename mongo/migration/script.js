@@ -63,6 +63,19 @@ if (!lastConfig['plugins']) {
 	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
 }
 
+db.config.insert(lastConfig);
+
+//-------------------------------------------------------------------
+// BRCD-1278 - backward support for new template
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).next();
+delete lastConfig['_id'];
+if(lastConfig.invoice_export) {
+	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
+	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
+}
+
+db.config.insert(lastConfig);
+
 //BRCD-1229 - Input processor re-enabled when not requested
 for (var i in lastConfig['file_types']) {
 	if (lastConfig['file_types'][i]['enabled'] === undefined) {

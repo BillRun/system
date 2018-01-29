@@ -335,5 +335,11 @@ class Billrun_Rates_Util {
 		return false;
 	}
 
+	public static  function getRateByName($rateName, $timestamp) {
+		$timestamp = empty($timestamp) ? time() : $timestamp;
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$rate = $rates_coll->query(array_merge(array('key'=>$rateName), Billrun_Utils_Mongo::getDateBoundQuery($timestamp)))->cursor()->limit(1)->current();
+		return $rate;
+	}
 
 }
