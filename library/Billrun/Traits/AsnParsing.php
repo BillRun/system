@@ -143,7 +143,7 @@ trait Billrun_Traits_AsnParsing {
 		$ret = false;
 		if ((isset($struct['type']) && $struct['type'] != 'array') || !($asnData instanceof Asn_Object && $asnData->isConstructed())) {
 			if (!isset($struct['type']) || !isset($fields[$struct['type']])) {
-				Billrun_Factory::log(" couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
+				Billrun_Factory::log("Couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$struct['type']], $asnData->getData());
 			}
