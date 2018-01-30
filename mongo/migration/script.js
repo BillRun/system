@@ -83,3 +83,19 @@ for (var i in lastConfig['file_types']) {
 	}
 }
 db.config.insert(lastConfig);
+
+// BRCD-1278 : add minutes:seconds support  for time display
+db.config.find({}).sort({_id:-1}).limit(1).forEach(function(cfg){
+    var found =false;
+    for(var i in cfg["property_types"][0]["uom"] ) {
+        if(cfg["property_types"][0]["uom"][i]['name'] == "mmss" ) {
+            found = true;
+        }
+    }
+    if(!found) { 
+        cfg["property_types"][0]["uom"].push({"name":"mmss","label":"mm:ss","function_name":"parseTime","arguments":{"format":"_I:s"}});
+    }
+    cfg["property_types"][0]['invoice_uom'] ="mmss";
+    delete(cfg._id);
+    db.config.insert(cfg);
+});
