@@ -44,7 +44,7 @@ trait Billrun_Traits_FileSequenceChecking {
 	 */
 	protected function checkFilesSeq($filepaths, $hostname) {
 		if (!isset($this->hostSequenceCheckers[$hostname])) {
-			throw new Exception('Couldn`t find hostname in sequence checker might be a problem with the program flow.');
+			Billrun_Factory::log('Couldn`t find hostname in sequence checker might be a problem with the program flow.', Zend_Log::WARN);
 		}
 		$mailMsg = FALSE;
 

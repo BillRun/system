@@ -22,16 +22,16 @@ class Billrun_Billrun {
 	protected static $vatAtDates = array();
 	protected static $vatsByBillrun = array();
 	protected static $fileTypes = null;
-	
+
 	/**
 	 * lines collection
-	 * @var Mongodloid_Collection 
+	 * @var Mongodloid_Collection
 	 */
 	protected $lines = null;
 
 	/**
 	 * fields to filter when pulling account lines
-	 * @var array 
+	 * @var array
 	 */
 	protected $filter_fields = array();
 
@@ -44,12 +44,12 @@ class Billrun_Billrun {
 
 	/**
 	 * billrun collection
-	 * @var Mongodloid_Collection 
+	 * @var Mongodloid_Collection
 	 */
 	protected $billrun_coll = null;
 
 	/**
-	 * 
+	 *
 	 * @param type $options
 	 * @todo used only in current balance API. Needs refactoring
 	 */
@@ -185,7 +185,7 @@ class Billrun_Billrun {
 	}
 
 	/**
-	 * Return an array of account ID's which exist in the 
+	 * Return an array of account ID's which exist in the
 	 * billrun for a specific key.
 	 * @param string $key - The billrun key
 	 * @return array
@@ -195,16 +195,16 @@ class Billrun_Billrun {
 		$query = array('billrun_key' => $key);
 		$project = array('_id' => 0, 'aid' => 1);
 		$cursor = $billColl->find($query, $project);
-		
+
 		$idList = array();
 		foreach ($cursor as $account) {
 			$idList[] = $account['aid'];
 		}
 		Billrun_Factory::log("Found " . count($idList) . " accounts already existing for key: " . $key);
-		
+
 		return array('$nin' => $idList);
 	}
-	
+
 	/**
 	 * Checks if a billrun document exists in the db
 	 * @param int $aid the account id
@@ -337,18 +337,18 @@ class Billrun_Billrun {
 	/**
 	 * Returns the breakdown key for the row
 	 * @param Mongodloid_Entity $row the row to insert to the billrun
-	
+
 	 * @return breakdown key
 	 */
 	protected static function getBreakdownKey($row) {
 		if (in_array($row['type'], array('flat', 'service'))) {
 			return $row['type'];
 		}
-		
+
 		if (in_array($row['type'], self::getFileTypes())) {
 			return 'usage';
-		} 
-		
+		}
+
 		Billrun_Factory::log("Cannot get type for line. Details: " . print_R($row, 1), Zend_Log::ALERT);
 		return FALSE;
 	}
@@ -497,8 +497,8 @@ class Billrun_Billrun {
 		}
 		$zone['vat'] = ($vatable ? floatval($this->vat) : 0); //@TODO we assume here that all the lines would be vatable or all vat-free
 	}
-	
-	protected function updateBreakdown(&$sraw, $breakdownKey, $rate, $cost, $count) {
+
+	protected function updateBreakdown(&$sraw, $breakdownKey, $rate, $cost, $usagev) {
 		if (!isset($sraw['breakdown'][$breakdownKey])) {
 			$sraw['breakdown'][$breakdownKey] = array();
 		}
@@ -506,11 +506,12 @@ class Billrun_Billrun {
 		foreach ($sraw['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
-				$breakdowns['count'] += $count;
+				$breakdowns['usagev'] += $usagev;
+				$breakdowns['count'] += 1;
 				return;
 			}
 		}
-		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count' => $count, 'cost' => $cost);
+		$sraw['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count'=> 1, 'usagev' => $usagev, 'cost' => $cost);
 	}
 
 	/**
@@ -537,7 +538,7 @@ class Billrun_Billrun {
 //		} else {
 //			$this->addLineToNonCreditSubscriber($counters, $row, $pricingData, $vatable, $sraw, $zone, $plan_key, $category_key, $zone_key);
 //		}
-		
+
 		// TODO: apply arategroups to new billrun object
 		// TODO: change arategroups to the new array structure
 		if (isset($row['arategroups'])) {
@@ -549,7 +550,7 @@ class Billrun_Billrun {
 				$sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['cost'] = $this->getFieldVal($sraw['groups'][$row['arategroups']]['over_plan']['totals'][key($counters)]['cost'], 0) + $row['aprice'];
 			}
 		}
-		
+
 //		if ($usage_type == 'data' && $row['type'] != 'tap3') {
 //			$date_key = date("Ymd", $row['urt']->sec);
 //			$sraw['lines'][$usage_type]['counters'][$date_key]['usagev'] = $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key]['usagev'], 0) + $row['usagev'];
@@ -566,7 +567,7 @@ class Billrun_Billrun {
 //				$sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'] = $this->getDayPlanFlagByDataRow($row, $this->getFieldVal($sraw['lines'][$usage_type]['counters'][$date_key][$data_generation]['plan_flag'], 'in'));
 //			}
 //		}
-		
+
 		if (!isset($sraw['totals'][$breakdownKey])) {
 			$sraw['totals'][$breakdownKey] = array();
 		}
@@ -632,9 +633,9 @@ class Billrun_Billrun {
 		  $rawData['totals']['after_vat'] =  $this->getFieldVal($rawData['totals'],array('after_vat'), 0) + $price_after_vat;
 		  $rawData['totals']['vatable'] = $pricingData['aprice'];
 		 */
-		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0, 
-			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
-			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0), 
+		$newTotals = array('before_vat' => 0, 'after_vat' => 0, 'after_vat_rounded' => 0, 'vatable' => 0,
+			'flat' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
+			'service' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0),
 			'usage' => array('before_vat' => 0, 'after_vat' => 0, 'vatable' => 0)
 		);
 		foreach ($this->data['subs'] as $sub) {
@@ -734,7 +735,7 @@ class Billrun_Billrun {
 
 	/**
 	 * This function loads all data from a givven structure of DB collumns.
-	 * @TODO: This should not be here, this logic is for some DB class, 
+	 * @TODO: This should not be here, this logic is for some DB class,
 	 * find a beter place to put it, or receive as strategy a Billrun_DBProxy type
 	 * @param type $colls - Collums of the DB.
 	 */
@@ -749,7 +750,7 @@ class Billrun_Billrun {
 	/**
 	 * Add all lines of the account to the billrun object
 	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
-	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
+	 * @param int $start_time lower bound date to get lines from. A unix timestamp
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function addLines($manual_lines = array(), &$deactivated_subscribers = array()) {
@@ -765,11 +766,11 @@ class Billrun_Billrun {
 		$this->updateTotals();
 		return $updatedLines;
 	}
-	
+
 	/**
 	 * Add all lines of the account to the billrun object
 	 * @param boolean $update_lines whether to set the billrun key as the billrun stamp of the lines
-	 * @param int $start_time lower bound date to get lines from. A unix timestamp 
+	 * @param int $start_time lower bound date to get lines from. A unix timestamp
 	 * @return array the stamps of the lines used to create the billrun
 	 */
 	public function saveLines($lines, &$deactivated_subscribers = array()) {
@@ -917,7 +918,7 @@ class Billrun_Billrun {
 
 	/**
 	 * Remove account lines from the preload cache.
-	 * @param $aids a list of  aids to remove  of FALSE to remove all the  cached account lines. 	 
+	 * @param $aids a list of  aids to remove  of FALSE to remove all the  cached account lines.
 	 */
 	static public function clearPreLoadedLines($aids = FALSE) {
 		if ($aids === FALSE) {
@@ -993,14 +994,14 @@ class Billrun_Billrun {
 		$status = $subscriber['subscriber_status'];
 		return ( ($status == "closed") && !isset($subscriber['breakdown']));
 	}
-	
+
 	protected static function getFileTypes($enabledOnly = false) {
 		if (empty(self::$fileTypes)) {
 			self::$fileTypes = Billrun_Factory::config()->getFileTypes($enabledOnly);
 		}
 		return self::$fileTypes;
 	}
-	
+
 	/**
 	 * Get an empty billrun account entry structure.
 	 * @param int $aid the account id of the billrun document
@@ -1020,7 +1021,7 @@ class Billrun_Billrun {
 
 		$this->data['attributes'] = $attr;
 	}
-	
+
 	protected function initBillrunDates() {
 		$billrunDate = self::getEndTime($this->getBillrunKey());
 		$this->data['creation_date'] = new MongoDate(time());
@@ -1031,16 +1032,16 @@ class Billrun_Billrun {
 	}
 
 	protected function getVatFromRow($row,$rate) {
-		$vat = ($row['type'] == 'flat') 
-					? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0) 
+		$vat = ($row['type'] == 'flat')
+					? (is_null($plan->get('vatable')) ? self::getVATByBillrunKey($this->billrun_key) : 0)
 					: ( (!(isset($rate['vatable']) && !$rate['vatable']) || (!isset($rate['vatable']) && !$this->vatable)) ? self::getVATByBillrunKey($this->billrun_key): 0 ) ;
 		if($row['tax_data']) {
 			$vat = $row['tax_data']['total_tax'];
 		}
-		
+
 		return $vat;
 	}
-	
+
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.

@@ -257,7 +257,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							 <language>HEB</language>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
-							  <terminalNumber>' . $params['tid'] . '</terminalNumber>
+							  <terminalNumber>' . $params['terminal_id'] . '</terminalNumber>
 							  <mainTerminalNumber/>
 							  <queryName>mpiTransaction</queryName>
 							  <mid>' . (int)$params['mid'] . '</mid>

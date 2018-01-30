@@ -304,7 +304,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params = $this->getIdentityParams($row);
 
 		if (count($params) == 0) {
-			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::ERR);
+			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::WARN);
 			return;
 		}
 		
