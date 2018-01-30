@@ -30,19 +30,18 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		$sec = $row['urt']->sec;
 		$usec = $row['urt']->usec;
 		$match = array_merge(
-			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec),
-			array('key' => $row['rate'])
+			Billrun_Utils_Mongo::getDateBoundQuery($sec, FALSE, $usec), array('key' => $row['rate'])
 		);
 		$group = $this->getBasicGroupRateQuery($row);
 		$sort = $this->getBasicSortRateQuery($row);
-	
+
 		$sortQuery = array();
 		if (!empty($sort)) {
 			$sortQuery = array(array('$sort' => $sort));
 		}
 		return array_merge(array(array('$match' => $match)), array(array('$group' => $group)), $sortQuery, array(array('$limit' => 1)));
 	}
-	
+
 	/**
 	 * see Billrun_Calculator_Rate_Usage::getAddedValues
 	 * 
@@ -54,5 +53,55 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		$added_values['credit']['usaget'] = current(array_keys($rate['rates'])); // assumes rate is only for one usage type
 		return $added_values;
 	}
+
+	public function updateRow($row) {
+		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
+		$usaget = $row['usaget'];
+		$type = $row['type'];
+		$rate = $this->getLineRate($row, $usaget, $type, array(), array());
+		if (!$this->isRateLegitimate($rate)) {
+			return false;
+		}
+		$rate->collection(Billrun_Factory::db()->ratesCollection());
+		$current = $row->getRawData();
+		$newData = array_merge($current, $this->getForeignFields(array('rate' => $rate), $current));
+		if (!isset($newData['rates'])) {
+			$newData['rates'] = array();
+		}
+		$newData['rates'][] = $this->getRateData('retail', $rate);
+		$row->setRawData($newData);
+
+		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
+		return $row;
+	}
+
+	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
+		return $this->getRateByParams($row,$usaget,$type, $tariffCategory, $filters);
+	}
 	
+		/**
+	 * Get a matching rate by config params
+	 * @return Mongodloid_Entity the matched rate or false if none found
+	 */
+	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
+		$query = $this->getRateQuery($row, $usaget, $type, array(), array());
+		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
+		$rates_coll = Billrun_Factory::db()->ratesCollection();
+		$matchedRate = $rates_coll->aggregate($query)->current();
+		if (empty($matchedRate) || $matchedRate->isEmpty()) {
+			return false;
+		}
+
+ 		$rawData = $matchedRate->getRawData();
+		
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 			return false;	
+ 		}
+ 		$idQuery = array(
+ 			"key" => $rawData['key'], // this is for sharding purpose
+ 			"_id" => $rawData['_id']['_id'],
+ 		);
+ 		
+ 		return $rates_coll->query($idQuery)->cursor()->current();
+	}
 }
