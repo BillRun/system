@@ -47,7 +47,7 @@ class Billrun_Calculator_Tax_Singletax extends Billrun_Calculator_Tax {
 	 *  @see Billrun_Calculator_Tax::removeTax
 	 */
 	public static function removeTax($taxedPrice, $taxedLine = NULL) {
-		$defaultTax = $taxedPrice / (1 + Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun()));
+		$defaultTax = $taxedPrice - ($taxedPrice / (1 + Billrun_Billrun::getVATByBillrunKey(Billrun_Billrun::getActiveBillrun())));
 		return $taxedPrice - Billrun_Util::getFieldVal(	$taxedLine['tax_data']['tax_amount'], $defaultTax );
 	}
 }

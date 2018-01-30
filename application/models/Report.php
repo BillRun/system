@@ -23,6 +23,7 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $currentTime = null;
 	
 	/**
 	 *  Array of entity join map keys
@@ -119,9 +120,16 @@ class ReportModel {
 				if(!empty($lookup)) {
 					$aggregate[] = array('$lookup' => $lookup);
 				}
-				// filter by account type beacuse subscribers have AID field too 
+				// filter by account type beacuse subscribers collection is mixed 
 				if($join_entity === 'customer' ) {
 					$filterByType = $this->getFilterByType($join_entity, 'type', 'account');
+					if(!empty($filterByType)) {
+						$aggregate[] = array('$addFields' => $filterByType);
+					}
+				}
+				// filter by subscriber type beacuse subscribers collection is mixed 
+				if($join_entity === 'subscription' ) {
+					$filterByType = $this->getFilterByType($join_entity, 'type', 'subscriber');
 					if(!empty($filterByType)) {
 						$aggregate[] = array('$addFields' => $filterByType);
 					}
@@ -242,6 +250,9 @@ class ReportModel {
 				$value = $this->applyValueformat($value, $format);
 			}
 		}
+		if(gettype($value) == 'boolean') {
+			return $value ? 'TRUE' : 'FALSE';
+		}
 		return $value;
 	}
 	
@@ -258,32 +269,33 @@ class ReportModel {
 	}
 	
 	protected function applyValueformat($value, $format) {
-		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$value])) {
-			return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+		$cacheKey = (string)$value;
+		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey])) {
+			return $this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey];
 		}
 		switch ($format['op']) {
 			case 'date_override': {
 				if (!empty($value->sec) || is_numeric($value)) {
 					$styledValue = new MongoDate(strtotime("+{$format['value']}", $value->sec));
-				} elseif (is_string($value)){
+				} elseif (is_string($value) && $value !== ""){
 					$styledValue = new MongoDate(strtotime("{$value} {$format['value']}" ));
 				} else {
 					$styledValue = $value;
 				}
-				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 				return $styledValue;
 			}
 			case 'billing_cycle': {
 				if (!Billrun_Util::isBillrunKey($value)) {
-					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $value;
 					return $value;
 				} else if ($format['value'] === 'start') {
 					$styledValue = new MongoDate(Billrun_Billingcycle::getStartTime($value));
-					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 					return $styledValue;
 				}
 				$styledValue = new MongoDate(Billrun_Billingcycle::getEndTime($value));
-				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 				return $styledValue;
 			}
 			case 'time_format': 
@@ -293,12 +305,11 @@ class ReportModel {
 				return $time !== false ? date($format['value'], $time) : $value;
 			}
 			case 'vat_format': {
-				if (is_numeric($value)) {
+				if (is_numeric($value) && $value != 0 ) {
 					$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
-					if ($format['value'] === 'remove_tax') {
-						return $taxCalc->removeTax($value);
-					}
-					return $taxCalc->addTax($value);
+					$styledValue = ($format['value'] === 'remove_tax') ? $taxCalc->removeTax($value) : $taxCalc->addTax($value);
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
 				}
 				return $value;
 			}
@@ -312,12 +323,26 @@ class ReportModel {
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
 			case 'default_empty':
-				return ($value === "" || is_null($value)) ? $format['value'] : $value;
+				if ($format['value'] === 'current_time' || $format['value'] === '' || is_null($format['value'])) {
+					if(!$this->cacheFormatStyle[$format['op']][$format['value']][$value]) {
+						$this->cacheFormatStyle[$format['op']][$format['value']] = $this->currentTime();
+					}
+					return $this->cacheFormatStyle[$format['op']][$format['value']];
+				}
+				return $format['value'];
 			default:
 				return $value;
 		}
 	}
 	
+	protected function currentTime() {
+		if(!$this->currentTime) {
+			$this->currentTime = date('m/d/Y H:i:s');
+		}
+		return $this->currentTime;
+	}
+
+
 	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
@@ -378,8 +403,13 @@ class ReportModel {
 				case 'current':
 					return Billrun_Billrun::getActiveBillrun();
 				case 'first_unconfirmed':
-					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
-					return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					}
+					if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+					}
+					return $lastStarted;
 				case 'last_confirmed':
 					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
 				case 'confirmed':
@@ -680,15 +710,15 @@ class ReportModel {
 						);
 					} elseif ($type === 'number') {
 						$formatedExpression = array(
-							'\${$op}' => floatval($value)
+							"\${$op}" => floatval($value)
 						);
 					} elseif ($type === 'boolean') {
 						$formatedExpression = array(
-							'\${$op}' => (bool)$value
+							"\${$op}" => (bool)$value
 						);
 					} else {
 						$formatedExpression = array(
-							'\${$op}' => $value
+							"\${$op}" => $value
 						);
 					}
 					break;

@@ -88,6 +88,13 @@ class Models_Entity {
 	protected $after = null;
 	
 	/**
+	 * the previous revision of the entity
+	 * 
+	 * @var array
+	 */
+	protected $previousEntry = null;
+	
+	/**
 	 * the line that was added as part of the action
 	 * 
 	 * @var array
@@ -552,7 +559,7 @@ class Models_Entity {
 		}
 		$this->trackChanges(null); // assuming remove by _id
 
-		if (isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate()) {
+		if ($this->shouldReopenPreviousEntry()) {
 			return $this->reopenPreviousEntry();
 		}
 		$this->fixEntityFields($this->before);
@@ -772,11 +779,13 @@ class Models_Entity {
 	protected function remove($query) {
 		return $this->collection->remove($query);
 	}
-
+	
 	/**
-	 * future entity was removed - need to update the to of the previous change
+	 * gets the previous revision of the entity
+	 * 
+	 * @return Mongodloid_Entity
 	 */
-	protected function reopenPreviousEntry() {
+	protected function getPreviousEntity() {
 		$key = $this->getKeyField();
 		$previousEntryQuery = array(
 			$key => $this->before[$key],
@@ -784,12 +793,32 @@ class Models_Entity {
 		$previousEntrySort = array(
 			'_id' => -1
 		);
-		$previousEntry = $this->collection->query($previousEntryQuery)->cursor()
+		return $this->collection->query($previousEntryQuery)->cursor()
 				->sort($previousEntrySort)->limit(1)->current();
-		if (!$previousEntry->isEmpty()) {
-			$this->setQuery(array('_id' => $previousEntry['_id']->getMongoID()));
+	}
+	
+	/**
+	 * future entity was removed - checks if needs to reopen the previous entity
+	 * 
+	 * @return boolean - is reopen required
+	 */
+	protected function shouldReopenPreviousEntry() {
+		if (!(isset($this->before['from']->sec) && $this->before['from']->sec >= self::getMinimumUpdateDate())) {
+			return false;
+		}
+		$this->previousEntry = $this->getPreviousEntity();
+		return !$this->previousEntry->isEmpty() &&
+			($this->before['from'] == $this->previousEntry['to']);
+	}
+
+	/**
+	 * future entity was removed - need to update the to of the previous change
+	 */
+	protected function reopenPreviousEntry() {
+		if (!$this->previousEntry->isEmpty()) {
+			$this->setQuery(array('_id' => $this->previousEntry['_id']->getMongoID()));
 			$this->setUpdate(array('to' => $this->before['to']));
-			$this->setBefore($previousEntry);
+			$this->setBefore($this->previousEntry);
 			return $this->update();
 		}
 		return TRUE;
@@ -922,8 +951,6 @@ class Models_Entity {
 				return 'username';
 			case 'rates':
 				return 'key';
-			case 'subscribers':
-				return 'sid'; // for account it should be 'aid'
 			case 'accounts':
 				return 'aid'; // for account it should be 'aid'
 			default:
@@ -939,9 +966,9 @@ class Models_Entity {
 	 * 
 	 * @return The record with revision info.
 	 */
-	public static function setRevisionInfo($record, $collection) {
+	public static function setRevisionInfo($record, $collection, $entityName) {
 		$status = self::getStatus($record, $collection);
-		$isLast = self::getIsLast($record, $collection);
+		$isLast = self::getIsLast($record, $collection, $entityName);
 		$earlyExpiration = self::isEarlyExpiration($record, $status, $isLast);
 		$isCurrentCycle = $record['from']->sec >= self::getMinimumUpdateDate();
 		$record['revision_info'] = array(
@@ -988,13 +1015,14 @@ class Models_Entity {
 	 * 
 	 * @param array $record - Record to set revision info.
 	 * @param string $collection - Record collection name
+	 * @param string $entityName - Record entity name
 	 * 
 	 * @return string Status, available values are: "future", "expired", "active"
 	 */
-	static function getIsLast($record, $collection) {
+	static function getIsLast($record, $collection, $entityName) {
 		// For active records, check if it has furure revisions
 		$query = Billrun_Utils_Mongo::getDateBoundQuery($record['to']->sec, true, $record['to']->usec);
-		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$collection}.duplicate_check", array());
+		$uniqueFields = Billrun_Factory::config()->getConfigValue("billapi.{$entityName}.duplicate_check", array());
 		foreach ($uniqueFields as $fieldName) {
 			$query[$fieldName] = $record[$fieldName];
 		}

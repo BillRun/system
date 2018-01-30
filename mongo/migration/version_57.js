@@ -22,10 +22,10 @@ if (lastConfig.property_types && lastConfig.property_types.filter(element => ele
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
-	for (var usaget in lastConfig['file_types'][i]['rate_calculators']) {
-		if (lastConfig['file_types'][i]['rate_calculators'][usaget].length) {
-			if (typeof lastConfig['file_types'][i]['rate_calculators'][usaget][0][0] === 'undefined') {
-				lastConfig['file_types'][i]['rate_calculators'][usaget] = [lastConfig['file_types'][i]['rate_calculators'][usaget]];
+	for (var rateCat in lastConfig['file_types'][i]['rate_calculators']) {
+		for (var usaget in lastConfig['file_types'][i]['rate_calculators'][rateCat]) {
+			if (typeof lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget][0][0] === 'undefined') {
+				lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget] = [lastConfig['file_types'][i]['rate_calculators'][rateCat][usaget]];
 			}
 		}
 	}
@@ -74,7 +74,8 @@ if (existingCollections.indexOf('prepaidgroups') === -1) {
 	db.prepaidgroups.ensureIndex({ 'description': 1}, { unique: false, background: true });
 	}
 
-//// BRCD-1143 - Input Processors fields new strucrure
+
+// BRCD-1143 - Input Processors fields new strucrure
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
@@ -161,6 +162,66 @@ db.config.insert(lastConfig);
 // BRCD-1164 - Don't set balance_period field when it's irrelevant
 db.services.update({balance_period:"default"},{$unset:{balance_period:1}},{multi:1})
 
+// BRCD-1140 - update plan includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.plans.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+	
+		db.plans.save(obj);
+	}
+);
+
+// BRCD-1140 - update service includes new structure 
+var usageTypes = [];
+var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
+var usageTypesStruct = lastConfig["usage_types"];
+for (var usageType in usageTypesStruct) {
+if (usageTypesStruct[usageType] == null || usageTypesStruct[usageType]["usage_type"] == "") continue;
+	usageTypes.push(usageTypesStruct[usageType]["usage_type"]);
+}
+db.services.find({include:{$exists:1}, 'include.groups':{$ne:[]}}).forEach(
+	function (obj) {
+			var groups = obj.include.groups;
+			for(var group in groups) {
+				var oldStrcuture = groups[group];
+				if (typeof oldStrcuture.usage_types !== 'undefined') continue;
+				for (var field in oldStrcuture) {
+					if (usageTypes.indexOf(field) == -1) continue;
+					oldStrcuture["value"] = parseFloat(oldStrcuture[field]);
+					var key = field;
+					var newStructure = {};
+					newStructure[key] = {"unit": oldStrcuture["unit"]};
+					oldStrcuture["usage_types"] = newStructure;
+					delete oldStrcuture["unit"];
+					delete oldStrcuture[key];
+				}
+			}
+		
+		db.services.save(obj);
+	}
+);
+
 // BRCD-1168: remove invalid "used_usagev_field" value of [undefined]
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -245,7 +306,7 @@ db.services.ensureIndex({'name':1, 'from': 1, 'to': 1}, { unique: true, backgrou
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
 for (var i in lastConfig['file_types']) {
-	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined') {
+	if (typeof lastConfig['file_types'][i]['pricing'] !== 'undefined' || typeof lastConfig['file_types'][i]['processor'] === 'undefined') {
 		continue;
 	}
 	lastConfig['file_types'][i]['pricing'] = {};
@@ -277,4 +338,3 @@ for (var i in lastConfig['file_types']) {
 }
 
 db.config.insert(lastConfig);
-

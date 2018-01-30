@@ -29,9 +29,9 @@ class Api_TranslatorModel {
 	
 	/**
 	 *
-	 * @var string
+	 * @var array
 	 */
-	protected $method;
+	protected $orFields;
 	
 	/**
 	 * Create a new instance of the data translator object.
@@ -41,7 +41,7 @@ class Api_TranslatorModel {
 	 */
 	public function __construct(array $options) {
 		$fields = $options['fields'];
-		$this->method = Billrun_Util::getFieldVal($options['method'], 'and');
+		$this->orFields = Billrun_Util::getFieldVal($options['or_fields'], array());
 		
 		// Go through the input fields.
 		foreach ($fields as $current) {
@@ -119,7 +119,7 @@ class Api_TranslatorModel {
 			return array('success' => false, 'data' => $invalidFields);
 		}
 		
-		return array('success' => true, 'data' => $this->convertOutputByMethod($output));
+		return array('success' => true, 'data' => $this->forceOutputByOrFields($output));
 	}
 	
 	/**
@@ -128,11 +128,17 @@ class Api_TranslatorModel {
 	 * @param array $output
 	 * @return array
 	 */
-	protected function convertOutputByMethod($output) {
-		if ($this->method !== 'or') {
+	protected function forceOutputByOrFields($output) {
+		if (empty($this->orFields)) {
 			$ret = $output;
 		} else {
-			$ret['$or'] = array_chunk($output, 1, true);
+			foreach ($this->orFields as $field) {
+				if (isset($output[$field])) {
+					$orFields[$field] = $output[$field];
+				}
+			}
+			$ret['$or'] = array_chunk($orFields, 1, true);
+			$ret = array_merge($ret, array_diff_key($output, $orFields));
 		}
 		
 		return $ret;

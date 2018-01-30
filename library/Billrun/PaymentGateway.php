@@ -153,15 +153,19 @@ abstract class Billrun_PaymentGateway {
 	 * @param Int $timestamp - Unix timestamp
 	 * @return Int - Account id
 	 */
-	public function redirectForToken($aid, $accountQuery, $timestamp, $request) {
+	public function redirectForToken($aid, $accountQuery, $timestamp, $request, $data) {
 		$subscribers = Billrun_Factory::db()->subscribersCollection();
 		$tenantReturnUrl = $accountQuery['tenant_return_url'];
 		unset($accountQuery['tenant_return_url']);
 		$subscribers->update($accountQuery, array('$set' => array('tenant_return_url' => $tenantReturnUrl)));
 		$this->updateReturnUrlOnEror($tenantReturnUrl);
-		$okPage = $this->getOkPage($request);
+		$okPage = (isset($data['iframe']) && $data['iframe']) ? $data['ok_page'] : $this->getOkPage($request);
+		$failPage = (isset($data['iframe']) && $data['iframe']) ? $data['fail_page'] : false;
+		if (isset($data['iframe']) && $data['iframe'] && (is_null($okPage) || is_null($failPage))) {
+			throw new Exception("Missing ok/fail pages");
+		}
 		if ($this->needRequestForToken()){
-			$response = $this->getToken($aid, $tenantReturnUrl, $okPage);
+			$response = $this->getToken($aid, $tenantReturnUrl, $okPage, $failPage);
 		} else {
 			$updateOkPage = $this->adjustOkPage($okPage);
 			$response = $updateOkPage;
@@ -173,6 +177,9 @@ abstract class Billrun_PaymentGateway {
 		$this->signalStartingProcess($aid, $timestamp);
 		if ($this->isUrlRedirect()){
 			Billrun_Factory::log("Redirecting to: " . $this->redirectUrl . " for account " . $aid, Zend_Log::DEBUG);
+			if (isset($data['iframe']) && $data['iframe']) {
+				return array('content'=> $this->redirectUrl, 'content_type' => 'url');
+			}	
 			return array('content'=> "Location: " . $this->redirectUrl, 'content_type' => 'url');
 		} else if ($this->isHtmlRedirect()){
 			Billrun_Factory::log("Redirecting to: " .  $this->billrunName, Zend_Log::DEBUG);
@@ -221,7 +228,7 @@ abstract class Billrun_PaymentGateway {
 	 * @param String $okPage - the action to be called after success in filling personal details.
 	 * @return array - represents the request
 	 */
-	abstract protected function buildPostArray($aid, $returnUrl, $okPage);
+	abstract protected function buildPostArray($aid, $returnUrl, $okPage, $failPage);
 
 	/**
 	 *  Build request to Query for getting transaction details.
@@ -341,11 +348,11 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return  response from the payment gateway.
 	 */
-	protected function getToken($aid, $returnUrl, $okPage, $maxTries = 10) {
+	protected function getToken($aid, $returnUrl, $okPage, $failPage, $maxTries = 10) {
 		if ($maxTries < 0) {
 			throw new Exception("Payment gateway error, number of requests for token reached it's limit");
 		}
-		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage);
+		$postArray = $this->buildPostArray($aid, $returnUrl, $okPage, $failPage);
 		if ($this->isNeedAdjustingRequest()){
 			$postString = http_build_query($postArray);
 		} else {
@@ -355,7 +362,7 @@ abstract class Billrun_PaymentGateway {
 			Billrun_Factory::log("Requesting token from " . $this->billrunName . " for account " . $aid, Zend_Log::DEBUG);
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
 			if ($this->handleTokenRequestError($result, array('aid' => $aid, 'return_url' => $returnUrl, 'ok_page' => $okPage))) {
-				$response = $this->getToken($aid, $returnUrl, $okPage, $maxTries - 1);
+				$response = $this->getToken($aid, $returnUrl, $okPage, $failPage, $maxTries - 1);
 			} else {
 				$response = $result;
 			}
@@ -381,7 +388,7 @@ abstract class Billrun_PaymentGateway {
 		$this->updateReturnUrlOnEror($tenantUrl);
 		if (function_exists("curl_init") && $this->isTransactionDetailsNeeded()) {
 			$result = Billrun_Util::sendRequest($this->EndpointUrl, $postString, Zend_Http_Client::POST, array('Accept-encoding' => 'deflate'), null, 0);
-			if ($this->getResponseDetails($result) === FALSE) {
+			if (($retParams = $this->getResponseDetails($result)) === FALSE) {
 				Billrun_Factory::log("Error: Redirecting to " . $this->returnUrlOnError, Zend_Log::ALERT);
 				throw new Exception('Operation Failed. Try Again...');
 			}
@@ -391,7 +398,7 @@ abstract class Billrun_PaymentGateway {
 			throw new Exception('Too much time passed');
 		}
 		$this->savePaymentGateway();
-		return $tenantUrl;
+		return array('tenantUrl' => $tenantUrl, 'creditCard' => $retParams['four_digits'], 'expirationDate' => $retParams['expiration_date']);
 	}
 
 	/**

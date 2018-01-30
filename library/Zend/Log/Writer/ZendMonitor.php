@@ -66,7 +66,7 @@ class Zend_Log_Writer_ZendMonitor extends Zend_Log_Writer_Abstract
      * @param  array|Zend_Config $config
      * @return Zend_Log_Writer_ZendMonitor
      */
-    static public function factory($config)
+    public static function factory($config)
     {
         return new self();
     }

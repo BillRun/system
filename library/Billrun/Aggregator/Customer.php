@@ -133,6 +133,12 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	 */
 	protected $fakeCycle = false;
 	
+	/**
+	 * If false don't automatically generate pdf. 
+	 * @var boolean
+	 */
+	protected $generatePdf = true;
+
 	
 	public function __construct($options = array()) {
 		$this->isValid = false;
@@ -175,7 +181,11 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		if ((isset($options['aggregator']['page']) || isset($options['page'])) && !$this->isCycle) {
 			$this->page = isset($options['page']) ? (int) $options['page'] : (int) $options['aggregator']['page'];
 		}
-			
+		
+		if (isset($options['generate_pdf'])) {
+			$this->generatePdf = ($options['generate_pdf'] == 'false' ? false : true);
+		}
+	
 		if (!$this->shouldRunAggregate($options['stamp'])) {
 			$this->_controller->addOutput("Can't run aggregate before end of billing cycle");
 			return;
@@ -254,7 +264,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$notBilledAids[] = $account['aid'];
 		}
 		if (empty($aids)) {
-			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, 'type' => array('$in' => array('service', 'flat')));
+			$linesRemoveQuery = array('aid' => array('$in' => $notBilledAids), 'billrun' => $billrunKey, '$or' => array(
+											array( 'type' => array('$in' => array('service', 'flat')) ),
+											array( 'type'=>'credit','usaget'=>'discount' )
+											));
 			$billrunRemoveQuery = $billrunQuery;
 		} else {
 			$aids =array_values(array_intersect($notBilledAids, $aids));
@@ -629,4 +642,9 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		}
 		return true;
 	}
+	
+	public function getGeneratePdf() {
+		return $this->generatePdf;
+	}
+
 }

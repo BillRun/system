@@ -35,14 +35,6 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$query = array(
 			'billrun_key' => (string) $this->stamp,
 			'billed' => array('$ne' => 1),
-			'$or' => array(
-				array(
-					'totals.after_vat_rounded' => array('$gte' => $this->minimum_absolute_amount_for_bill),
-				),
-				array(
-					'totals.after_vat_rounded' => array('$lte' => -$this->minimum_absolute_amount_for_bill),
-				),
-			),
 			'invoice_id' => $invoiceQuery,
 		);
 		$invoices = $this->billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
@@ -94,6 +86,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 				'RUM' => Billrun_Util::getFieldVal($invoice['attributes']['payment_info']['rum'],null),
 				'urt' => new MongoDate(),
 				'invoice_date' => $invoice['invoice_date'],
+				'invoice_file' => $invoice['invoice_file'],
 			);
 		if ($bill['due'] < 0) {
 			$bill['left'] = $bill['amount'];

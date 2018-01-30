@@ -132,7 +132,7 @@ class Zend_Pdf_ElementFactory implements Zend_Pdf_ElementFactory_Interface
      * @param integer $objCount
      * @return Zend_Pdf_ElementFactory_Interface
      */
-    static public function createFactory($objCount)
+    public static function createFactory($objCount)
     {
         // require_once 'Zend/Pdf/ElementFactory/Proxy.php';
         return new Zend_Pdf_ElementFactory_Proxy(new Zend_Pdf_ElementFactory($objCount));

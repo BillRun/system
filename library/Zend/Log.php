@@ -124,7 +124,7 @@ class Zend_Log
      * @return Zend_Log
      * @throws Zend_Log_Exception
      */
-    static public function factory($config = array())
+    public static function factory($config = array())
     {
         if ($config instanceof Zend_Config) {
             $config = $config->toArray();

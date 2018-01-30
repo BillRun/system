@@ -56,7 +56,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideMandatoryFields = TRUE;
-
+	
+	/**
+	 * These mapping are required raw field that must be filled by the customer calculator.
+	 */
+	const REQUIRED_ROW_ENRICHMENT_MAPPING = array(array('sid'=>'sid'), array('aid'=>'aid'), array('plan'=> 'plan'));
+		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -299,7 +304,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params = $this->getIdentityParams($row);
 
 		if (count($params) == 0) {
-			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::ALERT);
+			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::ERR);
 			return;
 		}
 		
@@ -426,11 +431,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function enrichWithSubscriberInformation($row, $subscriber) {
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
-		$enrinchmentMapping = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array());
+		$enrinchmentMapping = array_merge( Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array()) , static::REQUIRED_ROW_ENRICHMENT_MAPPING );
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}
-		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ),$rowData));
+		$foreignEntitiesToAutoload = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.foreign_entities_autoload', array('account'));
+		$enrichedData = array_merge ($enrichedData , $this->getForeignFields(array('subscriber' => $subscriber ), $enrichedData, $foreignEntitiesToAutoload, $rowData));
 		if(!empty($enrichedData)) {
 			if($row instanceof Mongodloid_Entity) {
 				$rowData['subscriber'] = $enrichedData;
@@ -480,8 +486,8 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	
 	public function getServicesFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
-		foreach($services as $service) {
-			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
+		foreach (Billrun_Util::getFieldVal($services, array()) as $service) {
+			if ($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
 				$retServices[] = $service['name'];
 			}
 		}
@@ -501,7 +507,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 */
 	public function getServicesDataFromRow($services, $translationRules,$subscriber,$row) {
 		$retServices = array();
-		foreach($services as $service) {
+		foreach(Billrun_Util::getFieldVal($services, array()) as $service) {
 			if($service['from'] <= $row['urt'] && $row['urt'] < $service['to']) {
 				$retServices[] = array(
 					'name' => $service['name'],

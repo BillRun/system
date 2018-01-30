@@ -168,7 +168,7 @@ abstract class Zend_Uri
      *
      * @param Zend_Config|array $config
      */
-    static public function setConfig($config)
+    public static function setConfig($config)
     {
         if ($config instanceof Zend_Config) {
             $config = $config->toArray();

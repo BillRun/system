@@ -35,7 +35,7 @@ class Billrun_PaymentGateway_AuthorizeNet extends Billrun_PaymentGateway {
 		$this->transactionId = $this->customerId;
 	}
 
-	protected function buildPostArray($aid, $returnUrl, $okPage) {
+	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$customerProfileId = $this->checkIfCustomerExists($aid);
 		if (empty($customerProfileId)) {
 			$customerProfileId = $this->createCustomer($aid);
