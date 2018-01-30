@@ -28,14 +28,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * @var string
 	 */
 	protected $lineType = null;
-	
-	/**
-	 * the addons services names.
-	 * 
-	 * @var array
-	 */
-	protected $addOnsServices;
-	
+
 
 	protected $package = null;
 	
@@ -106,7 +99,6 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected $dataRates = array('INTERNET_BILL_BY_VOLUME');
 
 	public function __construct() {
-		$this->addOnsServices = Billrun_Factory::config()->getConfigValue('addOns.available_services');
 		$this->balances = Billrun_Factory::db(array('name' => 'balances'))->balancesCollection()->setReadPreference('RP_PRIMARY');
 		$this->concurrentMaxRetries = (int) Billrun_Factory::config()->getConfigValue('updateValueEqualOldValueMaxRetries', 8);
 	}
@@ -224,7 +216,8 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 * 
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
-		if (!in_array($groupSelected, $this->addOnsServices) || !isset($this->lineType)) {
+		$national = $plan->get('include.groups.' . $groupSelected . '.limits.national');
+		if (empty($national) || !$national || !isset($this->lineType)) {
 			return;
 		}
 		if (isset($limits['base_usage']) && $limits['base_usage'] && isset($plan->get('include.groups.' . $groupSelected)[$usageType])) {

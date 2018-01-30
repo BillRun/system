@@ -211,13 +211,8 @@ class Generator_Golanxml extends Billrun_Generator {
 		$invoice_total_manual_correction_charge_fixed = 0;
 		$invoice_total_manual_correction_refund_fixed = 0;
 		$invoice_total_outside_gift_novat = 0;
-		$invoice_total_did_premium = 0;
-		$invoice_total_freeze_flat_rate = 0;
-		$invoice_total_data_recurring_2gb = 0;
-		$invoice_total_data_recurring_2gb_new = 0;
-		$invoice_total_data_recurring_5gb = 0;
-		$invoice_total_rbt_premium = 0;
-		$invoice_total_rbt_regular = 0;
+		$servicesTotalCost = array();
+		$servicesCost = array();
 		$billrun_key = $billrun['billrun_key'];
 		$aid = $billrun['aid'];
 		Billrun_Factory::log()->log("xml account " . $aid, Zend_Log::INFO);
@@ -437,20 +432,10 @@ class Generator_Golanxml extends Billrun_Generator {
 			$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED);
 			$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT = floatval((isset($subscriber['costs']['credit']['refund']['vat_free']) ? $subscriber['costs']['credit']['refund']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['credit']['charge']['vat_free']) ? $subscriber['costs']['credit']['charge']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['out_plan']['vat_free']) ? $subscriber['costs']['out_plan']['vat_free'] : 0)) + floatval((isset($subscriber['costs']['over_plan']['vat_free']) ? $subscriber['costs']['over_plan']['vat_free'] : 0));
 			$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT);
-			$subscriber_sumup_TOTAL_DID_PREMIUM = floatval((isset($subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['DID_PREMIUM']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_DID_PREMIUM', $subscriber_sumup_TOTAL_DID_PREMIUM);
-			$subscriber_sumup_TOTAL_FREEZE_FLAT_RATE = floatval((isset($subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost']) ? $subscriber['breakdown']['service']['base']['FREEZE_FLAT_RATE']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE);
-			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB);
-			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB_NEW']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_2GB_NEW']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW);
-			$subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB = floatval((isset($subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost']) ? $subscriber['breakdown']['service']['base']['ADD_ON_DATA_RECURRING_5GB']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_5GB', $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB);
-			$subscriber_sumup_TOTAL_RBT_PREMIUM= floatval((isset($subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost']) ? $subscriber['breakdown']['service']['base']['RBT_PREMIUM']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_RBT_PREMIUM', $subscriber_sumup_TOTAL_RBT_PREMIUM);
-			$subscriber_sumup_TOTAL_RBT_REGULAR= floatval((isset($subscriber['breakdown']['service']['base']['RBT_REGULAR']['cost']) ? $subscriber['breakdown']['service']['base']['RBT_REGULAR']['cost'] : 0));
-			$this->writer->writeElement('TOTAL_RBT_REGULAR', $subscriber_sumup_TOTAL_RBT_REGULAR);
+			foreach ($subscriber['breakdown']['service']['base'] as $serviceName => $details) {
+				$servicesCost = array($serviceName => floatval((isset($details['cost']) ? $details['cost'] : 0))); 
+				$this->writer->writeElement("TOTAL_$serviceName", $servicesCost[$serviceName]);
+			}
 			$subscriber_before_vat = $this->getSubscriberTotalBeforeVat($subscriber);
 			$subscriber_after_vat = $this->getSubscriberTotalAfterVat($subscriber);
 			$this->writer->writeElement('TOTAL_VAT', $subscriber_after_vat - $subscriber_before_vat);
@@ -480,13 +465,12 @@ class Generator_Golanxml extends Billrun_Generator {
 			$invoice_total_manual_correction_charge_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_CHARGE_FIXED;
 			$invoice_total_manual_correction_refund_fixed += $subscriber_sumup_TOTAL_MANUAL_CORRECTION_REFUND_FIXED;
 			$invoice_total_outside_gift_novat +=$subscriber_sumup_TOTAL_OUTSIDE_GIFT_NOVAT;
-			$invoice_total_did_premium += $subscriber_sumup_TOTAL_DID_PREMIUM;
-			$invoice_total_freeze_flat_rate += $subscriber_sumup_TOTAL_FREEZE_FLAT_RATE;
-			$invoice_total_data_recurring_2gb += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB;
-			$invoice_total_data_recurring_2gb_new += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW;
-			$invoice_total_data_recurring_5gb += $subscriber_sumup_TOTAL_ADD_ON_DATA_RECURRING_5GB;
-			$invoice_total_rbt_premium += $subscriber_sumup_TOTAL_RBT_PREMIUM;
-			$invoice_total_rbt_regular += $subscriber_sumup_TOTAL_RBT_REGULAR;
+			foreach ($servicesCost as $name => $serviceCost) {
+				if (!isset($servicesTotalCost[$name])) {
+					$servicesTotalCost[$name] = 0;
+				}
+				$servicesTotalCost[$name] += $serviceCost;
+			}
 			$this->writer->endElement(); // end SUBSCRIBER_SUMUP
 			
 			$this->writer->startElement('SUBSCRIBER_BREAKDOWN');
@@ -766,13 +750,9 @@ class Generator_Golanxml extends Billrun_Generator {
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CREDIT_FIXED', $invoice_total_manual_correction_credit_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_CHARGE_FIXED', $invoice_total_manual_correction_charge_fixed);
 		$this->writer->writeElement('TOTAL_MANUAL_CORRECTION_REFUND_FIXED', $invoice_total_manual_correction_refund_fixed);
-		$this->writer->writeElement('TOTAL_DID_PREMIUM', $invoice_total_did_premium);
-		$this->writer->writeElement('TOTAL_FREEZE_FLAT_RATE', $invoice_total_freeze_flat_rate);
-		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB', $invoice_total_data_recurring_2gb);
-		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_2GB_NEW', $invoice_total_data_recurring_2gb_new);
-		$this->writer->writeElement('TOTAL_ADD_ON_DATA_RECURRING_5GB', $invoice_total_data_recurring_5gb);
-		$this->writer->writeElement('TOTAL_RBT_PREMIUM', $invoice_total_rbt_premium);
-		$this->writer->writeElement('TOTAL_RBT_REGULAR', $invoice_total_rbt_regular);
+		foreach ($servicesTotalCost as $serviceNameTotal => $totalCost) {
+			$this->writer->writeElement("TOTAL_$serviceNameTotal", $totalCost);
+		}
 		$this->writer->writeElement('TOTAL_OUTSIDE_GIFT_NOVAT', $invoice_total_outside_gift_novat);
 		$this->writer->writeElement('TOTAL_VAT', $account_after_vat - $account_before_vat);
 		$this->writer->writeElement('TOTAL_CHARGE_NO_VAT', $account_before_vat);
