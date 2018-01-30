@@ -159,7 +159,7 @@ class CreditAction extends ApiAction {
 	protected function response() {
 		$this->getController()->setOutput(array(
 			array(
-				'status' => $this->status,
+				'status' => (int)$this->status,
 				'desc' => $this->desc,
 				'stamp' => $this->event['stamp'],
 				'input' => $this->request,
