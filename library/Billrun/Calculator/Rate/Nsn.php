@@ -49,13 +49,21 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			case '08':
 			case '09':
 				return 'sms';
+
 			case '02':
 			case '12':
 				return 'incoming_call';
+				
+			case '31':
+				if(preg_match('/^RCEL/',$row['out_circuit_group_name'])) {
+					return 'incoming_call';
+				} else {
+					return 'call';
+				}
+				
 			case '11':
 			case '01':
 			case '30':
-			case '31':
 			default:
 				return 'call';
 		}
