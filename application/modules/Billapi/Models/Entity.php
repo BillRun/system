@@ -22,7 +22,6 @@ class Models_Entity {
 	const FUTURE = 'future';
 	const EXPIRED = 'expired';
 	const ACTIVE = 'active';
-
 	const UNLIMITED_DATE = '+149 years';
 
 	/**
@@ -252,6 +251,10 @@ class Models_Entity {
 		}
 		$query['$or'] = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
+			if (!isset($data[$fieldName])) {
+				$dupFieldVal = Billrun_Util::getIn($data, $fieldName, Billrun_Util::getIn($this->before, $fieldName, false));
+				$data[$fieldName] = $dupFieldVal;
+			}
 			$query['$or'][] = array(
 				$fieldName => array('$ne' => $data[$fieldName]),
 			);
@@ -265,8 +268,9 @@ class Models_Entity {
 	}
 
 	protected function getCustomFields() {
-		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()),
-			function($customField) {return !Billrun_Util::getFieldVal($customField['system'], false);});
+		return array_filter(Billrun_Factory::config()->getConfigValue($this->collectionName . ".fields", array()), function($customField) {
+			return !Billrun_Util::getFieldVal($customField['system'], false);
+		});
 	}
 	
 	public function getCustomFieldsPath() {
@@ -361,7 +365,6 @@ class Models_Entity {
 			'$set' => $update,
 		);
 	}
-	
 	
 	/**
 	 * Performs the changepassword action by a query and data to update
@@ -716,8 +719,7 @@ class Models_Entity {
 			);
 		}
 
-		if (($edge == 'from' && $this->update[$edge]->sec >= $this->before[$otherEdge]->sec) 
-			|| ($edge == 'to' && $this->update[$edge]->sec <= $this->before[$otherEdge]->sec)) {
+		if (($edge == 'from' && $this->update[$edge]->sec >= $this->before[$otherEdge]->sec) || ($edge == 'to' && $this->update[$edge]->sec <= $this->before[$otherEdge]->sec)) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Requested start date greater than or equal to end date');
 		}
 
