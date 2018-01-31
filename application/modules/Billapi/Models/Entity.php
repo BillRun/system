@@ -229,7 +229,7 @@ class Models_Entity {
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
-		$startTime = strtotime(isset($data['from'])? $data['from'] : ($this->action == 'permanentchange'? '+100 years' : $this->before['from']));
+		$startTime = strtotime(isset($data['from'])? $data['from'] : ($this->action == 'permanentchange'? '1970-01-02 00:00:00' : $this->before['from']));
 		$endTime = strtotime(isset($data['to'])? $data['to'] : ($this->action == 'permanentchange'? '+100 years' : $this->before['to']));
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
