@@ -3,10 +3,6 @@
  * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
-//var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-//delete lastConfig['_id'];
-//db.config.insert(lastConfig);
-
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -63,18 +59,12 @@ if (!lastConfig['plugins']) {
 	lastConfig.plugins = ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"];
 }
 
-db.config.insert(lastConfig);
-
 //-------------------------------------------------------------------
 // BRCD-1278 - backward support for new template
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).next();
-delete lastConfig['_id'];
 if(lastConfig.invoice_export) {
 	lastConfig.invoice_export.header = "/application/views/invoices/header/header_tpl.html";
 	lastConfig.invoice_export.footer = "/application/views/invoices/footer/footer_tpl.html";
 }
-
-db.config.insert(lastConfig);
 
 //BRCD-1229 - Input processor re-enabled when not requested
 for (var i in lastConfig['file_types']) {
@@ -82,11 +72,8 @@ for (var i in lastConfig['file_types']) {
 		lastConfig['file_types'][i]['enabled'] = true;
 	}
 }
-db.config.insert(lastConfig);
 
 // BRCD-1278 : add minutes:seconds support  for time display
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).next();
-delete lastConfig['_id'];
 var found =false;
 for(var i in lastConfig["property_types"][0]["uom"]) {
 		if(lastConfig["property_types"][0]["uom"][i]['name'] == "mmss" ) {
@@ -97,4 +84,5 @@ if(!found) {
 		lastConfig["property_types"][0]["uom"].push({"name":"mmss","label":"mm:ss","function_name":"parseTime","arguments":{"format":"_I:s"}});
 }
 lastConfig["property_types"][0]['invoice_uom'] = "mmss";
+
 db.config.insert(lastConfig);
