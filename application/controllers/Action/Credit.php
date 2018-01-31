@@ -18,7 +18,7 @@ class CreditAction extends ApiAction {
 	
 	protected $request = null;
 	protected $event = null;
-	protected $status = true;
+	protected $status = 1;
 	protected $desc = 'success';
 	
 	/**
@@ -56,7 +56,7 @@ class CreditAction extends ApiAction {
 		$processor = Billrun_Processor::getInstance($options);
 		$processor->addDataRow($this->event);
 		if ($processor->process() === false) {
-			$this->status = false;
+			$this->status = 0;
 			$this->desc = 'Processor error';
 		}
 		Billrun_Factory::log("Process of credit ended", Zend_Log::INFO);
@@ -159,7 +159,7 @@ class CreditAction extends ApiAction {
 	protected function response() {
 		$this->getController()->setOutput(array(
 			array(
-				'status' => (int)$this->status,
+				'status' => $this->status,
 				'desc' => $this->desc,
 				'stamp' => $this->event['stamp'],
 				'input' => $this->request,
