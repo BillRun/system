@@ -85,14 +85,14 @@ class Models_Entity {
 	 * @var array
 	 */
 	protected $after = null;
-	
+
 	/**
 	 * the previous revision of the entity
 	 * 
 	 * @var array
 	 */
 	protected $previousEntry = null;
-	
+
 	/**
 	 * the line that was added as part of the action
 	 * 
@@ -113,14 +113,14 @@ class Models_Entity {
 	 * @var int
 	 */
 	protected static $minUpdateDatetime = null;
-	
+
 	/**
 	 * the change action applied on the entity
 	 * 
 	 * @var string
 	 */
 	protected $availableOperations = array('query', 'update', 'sort');
-	
+
 	public static function getInstance($params) {
 		$modelPrefix = 'Models_';
 		$className = $modelPrefix . ucfirst($params['collection']);
@@ -272,7 +272,7 @@ class Models_Entity {
 			return !Billrun_Util::getFieldVal($customField['system'], false);
 		});
 	}
-	
+
 	public function getCustomFieldsPath() {
 		return $this->collectionName . ".fields";
 	}
@@ -317,7 +317,7 @@ class Models_Entity {
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
-	
+
 	/**
 	 * Performs the permanentchange action by a query.
 	 */
@@ -327,7 +327,7 @@ class Models_Entity {
 			return;
 		}
 		if ($this->update['from']->sec < $this->before['from']->sec || $this->update['from']->sec > $this->before['to']->sec) {
-			throw new Billrun_Exceptions_Api(1, array(), 'From field must be between ' . date('Y-m-d', $this->before['from']->sec) . ' to ' . date('Y-m-d', $this->before['to']->sec)) ;
+			throw new Billrun_Exceptions_Api(1, array(), 'From field must be between ' . date('Y-m-d', $this->before['from']->sec) . ' to ' . date('Y-m-d', $this->before['to']->sec));
 		}
 		$this->protectKeyField();
 		$permanentQuery = $this->getPermanentChangeQuery();
@@ -348,7 +348,7 @@ class Models_Entity {
 		$this->trackChanges($this->query['_id']);
 		return true;
 	}
-	
+
 	protected function getPermanentChangeQuery() {
 		$duplicateCheck = isset($this->config['duplicate_check']) ? $this->config['duplicate_check'] : array();
 		foreach ($duplicateCheck as $fieldName) {
@@ -357,7 +357,7 @@ class Models_Entity {
 		$query['from'] = array('$gte' => $this->update['from']);
 		return $query;
 	}
-	
+
 	protected function getPermanentChangeUpdate() {
 		$update = $this->update;
 		unset($update['from']);
@@ -373,17 +373,17 @@ class Models_Entity {
 	 */
 	public function changePassword() {
 		$this->action = 'changepassword';
-		
+
 		$this->checkUpdate();
-		Billrun_Factory::log("Password changed successfully for " . $this->before['username'],  Zend_Log::INFO);
+		Billrun_Factory::log("Password changed successfully for " . $this->before['username'], Zend_Log::INFO);
 		return true;
 	}
-	
+
 	protected function checkUpdate() {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id'])) {
 			return;
 		}
-		
+
 		$this->protectKeyField();
 
 		if ($this->preCheckUpdate() !== TRUE) {
@@ -456,7 +456,7 @@ class Models_Entity {
 		}
 
 		$closeAndNewPreUpdateOperation = $this->getCloseAndNewPreUpdateCommand();
-		
+
 		$res = $this->collection->update($this->query, $closeAndNewPreUpdateOperation);
 		if (!isset($res['nModified']) || !$res['nModified']) {
 			return false;
@@ -470,7 +470,7 @@ class Models_Entity {
 		$this->trackChanges($newId);
 		return isset($status['ok']) && $status['ok'];
 	}
-	
+
 	/**
 	 * method to get the db command that run on close and new operation
 	 * 
@@ -562,7 +562,7 @@ class Models_Entity {
 	 * @throws Billrun_Exceptions_Api
 	 */
 	protected function checkMinimumDate($params, $field = 'to', $action = null) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)){
+		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
 			return true;
 		}
 		if (is_null($action)) {
@@ -613,7 +613,7 @@ class Models_Entity {
 		$this->fixEntityFields($this->before);
 		return true;
 	}
-	
+
 	/**
 	 * validates that the query is legitimate
 	 * 
@@ -663,7 +663,7 @@ class Models_Entity {
 		if (!isset($this->update['from']) && !isset($this->update['to'])) {
 			throw new Billrun_Exceptions_Api(0, array(), 'Move operation must have from or to input');
 		}
-		
+
 		if (isset($this->update['from'])) { // default is move from
 			return $this->moveEntry('from');
 		}
@@ -678,11 +678,11 @@ class Models_Entity {
 		if (!$this->query || empty($this->query) || !isset($this->query['_id']) || !isset($this->before) || $this->before->isEmpty()) { // currently must have some query
 			return false;
 		}
-		
+
 		if (!isset($this->update['from'])) {
 			throw new Billrun_Exceptions_Api(2, array(), 'reopen "from" field is missing');
 		}
-		
+
 		$lastRevision = $this->getLastRevisionOfEntity($this->before, $this->collectionName);
 		if (!$lastRevision || !isset($lastRevision['to']) || !self::isItemExpired($lastRevision) || $lastRevision['to']->sec > $this->update['from']->sec) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity - reopen "from" date must be greater than last revision\'s "to" date');
@@ -690,7 +690,7 @@ class Models_Entity {
 		if ($this->update['from']->sec < self::getMinimumUpdateDate()) {
 			throw new Billrun_Exceptions_Api(3, array(), 'cannot reopen entity in a closed cycle');
 		}
-		
+
 		$prevEntity = $this->before->getRawData();
 		$this->update = array_merge($prevEntity, $this->update);
 		unset($this->update['_id']);
@@ -747,7 +747,7 @@ class Models_Entity {
 			$sort = 1;
 			$rangeError = 'Requested end date is greater than next start date';
 		}
-		
+
 		// previous entry on move from, next entry on move to
 		$followingEntry = $this->collection->query($query)->cursor()
 			->sort(array($otherEdge => $sort))
@@ -826,7 +826,7 @@ class Models_Entity {
 	protected function remove($query) {
 		return $this->collection->remove($query);
 	}
-	
+
 	/**
 	 * gets the previous revision of the entity
 	 * 
@@ -843,7 +843,7 @@ class Models_Entity {
 		return $this->collection->query($previousEntryQuery)->cursor()
 				->sort($previousEntrySort)->limit(1)->current();
 	}
-	
+
 	/**
 	 * future entity was removed - checks if needs to reopen the previous entity
 	 * 
@@ -939,11 +939,11 @@ class Models_Entity {
 		if ($newId) {
 			$this->after = $this->loadById($newId);
 		}
-		
+
 		$old = !is_null($this->before) ? $this->before->getRawData() : null;
 		$new = !is_null($this->after) ? $this->after->getRawData() : null;
 		$key = isset($this->update[$field]) ? $this->update[$field] :
-				(isset($this->before[$field]) ? $this->before[$field] : null);
+			(isset($this->before[$field]) ? $this->before[$field] : null);
 		return Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $old, $new);
 	}
 
@@ -1031,9 +1031,9 @@ class Models_Entity {
 		);
 		return $record;
 	}
-	
+
 	protected static function isDateMovable($timestamp) {
-		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)){
+		if (Billrun_Factory::config()->getConfigValue('system.closed_cycle_changes', false)) {
 			return true;
 		}
 		return self::getMinimumUpdateDate() <= $timestamp;
@@ -1056,7 +1056,7 @@ class Models_Entity {
 		}
 		return self::ACTIVE;
 	}
-	
+
 	/**
 	 * Calculate record status
 	 * 
@@ -1092,24 +1092,24 @@ class Models_Entity {
 		}
 		return false;
 	}
-	
+
 	public function getCollectionName() {
 		return $this->collectionName;
 	}
-	
+
 	public function getCollection() {
 		return $this->collection;
 	}
-	
+
 	public function getMatchSubQuery() {
 		$query = array();
 		foreach (Billrun_Util::getFieldVal($this->config['collection_subset_query'], []) as $fieldName => $fieldValue) {
 			$query[$fieldName] = $fieldValue;
 		}
-		
+
 		return $query;
 	}
-	
+
 	protected function updateCreationTime($keyField, $edge) {
 		$queryCreation = array(
 			$keyField => $this->before[$keyField],
@@ -1130,7 +1130,7 @@ class Models_Entity {
 	protected static function isItemExpired($item, $expiredField = 'to') {
 		return $item[$expiredField]->sec < strtotime("+10 years");
 	}
-	
+
 	/**
 	 * gets the last revision of the entity (might be expired, active, future)
 	 * 
@@ -1144,7 +1144,7 @@ class Models_Entity {
 		$sort = array('_id' => -1);
 		return $this->collection->find($query)->sort($sort)->limit(1)->getNext();
 	}
-	
+
 	protected function fixEntityFields($entity) {
 		return;
 	}
