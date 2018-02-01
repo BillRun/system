@@ -166,7 +166,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($before)) {
 			return;
 		}
-		$threshold = floatval($rule['threshold']);
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
