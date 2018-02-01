@@ -85,4 +85,36 @@ if(!found) {
 }
 lastConfig["property_types"][0]['invoice_uom'] = "mmss";
 
+// BRCD-1152: Add service activation date to each cdr generated on the billing cycle
+if(!lastConfig['lines']) {
+	lastConfig['lines'] = {};
+}
+if(!lastConfig['lines']['fields']) {
+	lastConfig['lines']['fields'] = [];
+}
+var idx = 0;
+for (var i in lastConfig['lines']['fields']) {
+	if (lastConfig['lines']['fields'][i]['field_name'] == 'foreign.activation_date') {
+		idx = i;
+		break;
+	}
+	idx = i+1;
+}
+var addField = {
+	field_name : "foreign.activation_date",
+	foreign : { 
+		entity : "service",
+		field  :"start",
+		translate : {
+			type : "unixTimeToString",
+			format : "Y-m-d H:i:s"
+		}
+	}
+};
+if(lastConfig['lines']['fields'].length > idx) {
+	lastConfig['lines']['fields'][idx] = addField;
+} else {
+	lastConfig['lines']['fields'].push(addField);
+}
+
 db.config.insert(lastConfig);
