@@ -58,7 +58,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		Billrun_Factory::dispatcher()->trigger('beforeCalculatorUpdateRow', array(&$row, $this));
 		$usaget = $row['usaget'];
 		$type = $row['type'];
-		$rate = $this->getLineRate($row, $usaget, $type, array(), array());
+		$rate = $this->getLineRate($row, $usaget, $type, 'retail', array());
 		if (!$this->isRateLegitimate($rate)) {
 			return false;
 		}
@@ -74,17 +74,13 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorUpdateRow', array(&$row, $this));
 		return $row;
 	}
-
-	protected function getLineRate($row, $usaget, $type, $tariffCategory, $filters) {
-		return $this->getRateByParams($row,$usaget,$type, $tariffCategory, $filters);
-	}
 	
-		/**
+	/**
 	 * Get a matching rate by config params
 	 * @return Mongodloid_Entity the matched rate or false if none found
 	 */
-	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {
-		$query = $this->getRateQuery($row, $usaget, $type, array(), array());
+	protected function getRateByParams($row, $usaget, $type, $tariffCategory, $filters) {		
+		$query = $this->getRateQuery($row, $usaget, $type, 'retail', array());
 		Billrun_Factory::dispatcher()->trigger('extendRateParamsQuery', array(&$query, &$row, &$this));
 		$rates_coll = Billrun_Factory::db()->ratesCollection();
 		$matchedRate = $rates_coll->aggregate($query)->current();
@@ -92,16 +88,6 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 			return false;
 		}
 
- 		$rawData = $matchedRate->getRawData();
-		
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
- 			return false;	
- 		}
- 		$idQuery = array(
- 			"key" => $rawData['key'], // this is for sharding purpose
- 			"_id" => $rawData['_id']['_id'],
- 		);
- 		
- 		return $rates_coll->query($idQuery)->cursor()->current();
+		return $this->findRateByMatchedRate($matchedRate, $rates_coll);
 	}
 }
