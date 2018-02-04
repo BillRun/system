@@ -171,12 +171,43 @@ class Billrun_Utils_Units {
 	 * assistance function to display time
 	 * 
 	 * @param float $seconds
+	 * @param mixed $data structure that should contain the requested format under arguments.format
 	 * @return string
 	 */
-	protected static function parseTime($seconds) {
-		return gmdate("H:i:s", $seconds);
+	protected static function parseTime($seconds, $data = null) {
+		$formating = [
+			'h' => ['mod' => 12, 'div' => 3600],
+			'H' => ['mod' => 24, 'div' => 3600, 'pad' => '%02s'],
+			'i' => ['mod' => 60, 'div' => 60, 'pad' => '%02s'],
+			's' => ['mod' => 60, 'pad' => '%02s'],
+			'_' => [
+				'sub_format' => true,
+				'H' => [ 'div' => 3600, 'pad' => '%02s'],
+				'I' => [ 'div' => 60, 'pad' => '%02s'],
+				'S' => [ 'pad' => '%02s'],
+			]
+		];
+		$currFormat = $formating;
+		$retValue = "";
+		$format = !empty($data['arguments']['format']) && is_string($data['arguments']['format']) ? $data['arguments']['format'] : "H:i:s";
+
+		foreach (str_split($format) as $key) {
+			if (!empty($currFormat[$key])) {
+				if (!empty($currFormat[$key]['sub_format'])) {
+					$currFormat = $currFormat[$key];
+					continue;
+				}
+				$val = floor(empty($currFormat[$key]['div']) ? $seconds : $seconds / $currFormat[$key]['div']);
+				$modedVal = floor(empty($currFormat[$key]['mod']) ? $val : $val % $currFormat[$key]['mod']);
+				$retValue .= empty($currFormat[$key]['pad']) ? $modedVal : sprintf($currFormat[$key]['pad'], $modedVal);
+			} else {
+				$retValue .= $key;
+				$currFormat = $formating;
+			}
+		}
+		return $retValue;
 	}
-	
+
 	/**
 	 * assistance function to convert data usage to automatic units
 	 * 
