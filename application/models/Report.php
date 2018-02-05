@@ -326,14 +326,17 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
-			case 'default_empty':
-				if ($format['value'] === 'current_time' || $format['value'] === '' || is_null($format['value'])) {
-					if(!$this->cacheFormatStyle[$format['op']][$format['value']][$value]) {
-						$this->cacheFormatStyle[$format['op']][$format['value']] = $this->currentTime();
-					}
-					return $this->cacheFormatStyle[$format['op']][$format['value']];
+			case 'default_empty': {
+				if ($value !== "" && !is_null($value)){
+					$styledValue = $value;
+				} else if ($format['value'] === 'current_time') {
+					$styledValue = $this->currentTime();
+				} else {
+					$styledValue = $format['value'];
 				}
-				return $format['value'];
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+				return $styledValue;
+			}
 			default:
 				return $value;
 		}
