@@ -320,7 +320,7 @@ class Billrun_Util {
 			return $number;
 		}
 
-		return 0;
+		return  $includeUnit ? 0 . $unit : 0;
 	}
 
 	/**
