@@ -128,7 +128,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 		}
 
 		foreach ($struct as $val) {
-			if (($val == "*" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
+			if (($val == "*" || $val == "**" || $val == "+" || $val == "-" || $val == ".")) {  // This is  here to handle cascading  data arrays
 				if (isset($asnData[0]) && is_array($asnData) && array_keys($asnData) == range(0, count($asnData)-1) ) {// Taking as an assumption there will never be a 0 key in the ASN types 
 					$newStruct = $struct;
 					array_shift($newStruct);
@@ -217,6 +217,12 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 				}
 				$ret[] = $data;
 				break;
+			case "**":
+				if ($prevVal == null) {
+					$ret = array();
+				}
+				$ret = array_merge($ret, $data);
+				break;
 			default:
 			case ".":
 				if ($prevVal == null) {
@@ -288,7 +294,13 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 			'default' => function($type, $data) {
 				return (is_array($data) ? '' : implode('', unpack($type, $data)));
 			},
-		);
+			'multi_ip' => function($fieldData) {
+
+				return is_array($fieldData) ? array_map(function($data) {
+							return implode('.', unpack('C*', $data));
+						}, $fieldData) : array(implode('.', unpack('C*', $fieldData)));
+			},
+			);
 
 		$this->parsingMethods = array_merge($this->parsingMethods, $newParsingMethods);
 	}
