@@ -184,10 +184,17 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'target_plans' => 'target_plans',
 			'group' => 'group'
 		);
-
+		
 		foreach ($required_args as $key => $argsKey) {
 			$required_args[$key] = isset($args[$argsKey]) ? (is_array($args[$argsKey]) ? implode(",", $args[$argsKey]) : $args[$argsKey] ) : null;
 			unset($args[$argsKey]);
+		}
+		
+		$dupKeys = Billrun_Factory::config()->getConfigValue('fraudAlerts.request_keys_dup',array('package_id'),'array');
+		foreach ($dupKeys as $dKey) {
+			if(isset($args[$dKey])) {
+				$required_args[$dKey] = (is_array($args[$dKey]) ? implode(",", $args[$dKey]) : $args[$dKey] );
+			}
 		}
 
 		$ret = $this->notifyRemoteServer($required_args, $args);
@@ -206,7 +213,8 @@ class fraudAlertsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		// http://framework.zend.com/manual/1.12/en/zend.http.client.adapters.html#zend.http.client.adapters.curl
 		$url = 'http://' . $this->alertServer . $this->alertPath . '?' . http_build_query($query_args);
 		unset($post_args['stamps']);
-		$post_array = @array_diff($post_args, $query_args);
+		$query_args_without_dup = array_diff_key($query_args, array_flip(Billrun_Factory::config()->getConfigValue('fraudAlerts.request_keys_dup',array('package_id'),'array')));
+		$post_array = @array_diff($post_args, $query_args_without_dup);
 		$post_fields = array(
 			'extra_data' => Zend_Json::encode($post_array)
 		);
