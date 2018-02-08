@@ -122,7 +122,7 @@ class Billrun_EventsManager {
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = ceil($rawValueBefore / $eventValue);
 				$valueAfter = ceil($rawValueAfter / $eventValue);
-				return (intval($valueBefore) != intval($valueAfter));
+				return ((intval($valueBefore) != intval($valueAfter) && $rawValueAfter > $eventValue) || ($rawValueAfter % $eventValue == 0 && $rawValueAfter != 0));
 			default:
 				return FALSE;
 		}
