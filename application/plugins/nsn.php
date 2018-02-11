@@ -147,7 +147,7 @@ class nsnPlugin extends Billrun_Plugin_BillrunPluginFraud implements Billrun_Plu
 			array(
 				'$match' => array(
 					'event_stamp' => array('$exists' => false),
-					'record_type' => array('$in' => array('01', '11')),
+					'record_type' => array('$in' => array('01', '11','30')),
 					'called_number' => array('$regex' => '^(?=10[^1]|1016|016|97216)....'),
 					'duration' => array('$gt' => 0),
 					//@TODO  switch to unified time once you have the time to test it
