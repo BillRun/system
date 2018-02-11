@@ -154,7 +154,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($before)) {
 			return;
 		}
-		$threshold = $rule['threshold'];
+		$threshold = floatval($rule['threshold']);
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
@@ -325,7 +325,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
 			if (isset($rule['group'])) {
 				$groupName = $rule['group'];
-				$threshold = (int)($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
+				$threshold = (float)floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
 			} else {
 				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
 			}
