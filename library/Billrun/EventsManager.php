@@ -123,7 +123,7 @@ class Billrun_EventsManager {
 				$valueBefore = ceil($rawValueBefore / $eventValue);
 				$valueAfter = ceil($rawValueAfter / $eventValue);
 				$triggerEquality = $rawValueAfter / $eventValue;
-				$whole = floor($rawValueAfter / $eventValue);
+				$whole = floor($triggerEquality);
 				$fraction = $triggerEquality - $whole;
 				return ((intval($valueBefore) != intval($valueAfter) && $rawValueAfter > $eventValue) || ($fraction == 0 && $rawValueAfter != 0));
 			default:
