@@ -20,6 +20,7 @@ class PackagesAction extends ApiAction {
 		$request = $this->getRequest();
 		$sid = $request->get("sid");
 		$packageId = $request->get("id");
+		$billrunKey = $request->get("billrun");
 		Billrun_Factory::log()->log("Execute packages api call to " . $sid . ' package ' . $packageId, Zend_Log::INFO);
 		if (!is_numeric($sid)) {
 			return $this->setError("sid is not numeric", $request);
@@ -36,18 +37,32 @@ class PackagesAction extends ApiAction {
 			'sid' => $sid, 
 			'service_id' => $packageId
 		);
-		$results = $balancesColl->query($query)->cursor()->current();
-		if (!$results->isEmpty()) {
-			$callsUsage = $results['balance']['totals']['call']['usagev'] + $results['balance']['totals']['incoming_call']['usagev'];
-			$smsUsage = $results['balance']['totals']['sms']['usagev'];
-			$dataUsage = $results['balance']['totals']['data']['usagev'];
+		if (!is_null($billrunKey)) {
+			if (Billrun_Util::isBillrunKey($billrunKey)) {
+				$startTime = Billrun_Util::getStartTime($billrunKey);
+				$endTime = Billrun_Util::getEndTime($billrunKey);
+				$query['from'] = array('$gte' => new MongoDate($startTime));
+				$query['to'] = array('$lte' => new MongoDate ($endTime));
+			} else {
+				return $this->setError("Billrun key is incorrect", $request);
+			}
+		}
+		$results = $balancesColl->query($query)->cursor();
+		if (count($results) > 1) {
+			return $this->setError("There is more than one matching package", $request);
+		}
+		$current = $results->current();
+		if (!$current->isEmpty()) {
+			$callsUsage = $current['balance']['totals']['call']['usagev'] + $current['balance']['totals']['incoming_call']['usagev'];
+			$smsUsage = $current['balance']['totals']['sms']['usagev'];
+			$dataUsage = $current['balance']['totals']['data']['usagev'];
 			$packageUsage = array(
 				'Call' => $callsUsage,
 				'Sms' => $smsUsage,
 				'Data' => $dataUsage
 			);
 		} else {
-			$packageUsage = "There isn't a matching package"; 
+			$packageUsage = "There isn't a matching package";
 		}
 		
 		$this->getController()->setOutput(array(array(

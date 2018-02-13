@@ -128,7 +128,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return false;
 		}
 		foreach ($limits['rules'] as $rule) {
-			if (empty($rule['service_name']) || !in_array($balance['service_name'], $rule['service_name'])) {
+			if (empty($rule['service_names']) || !in_array($balance['service_name'], $rule['service_names'])) {
 				continue;
 			}
 			$ret[] = $this->checkAddonUsageRule($rule, $row, $balance);
@@ -136,11 +136,23 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		return $ret;
 	}
 	
-	protected function checkAddonUsageRule($rule, $row, $balance) {
+	protected function checkAddonUsageRule($rule, $row, $balance) {	
 		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
 		}
 		$usaget = $row['usaget'];
+		if ($rule['threshold'] == 'from_plan') {
+			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
+			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
+			if (isset($rule['service_names']) && in_array($balance['service_name'], $rule['service_names'])) {
+				$groupName = $balance['service_name'];
+				$threshold = (float)floor($plan->get('include.groups.' . $groupName)[$row['usaget']] * $percentage);
+			} else {
+				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
+			}
+		} else {
+			Billrun_Log::getInstance()->log("Threshold need to be taken from plan", Zend_log::ALERT);
+		}
 		if ($usaget == 'data' && $rule['unit'] == 'BYTE') {
 			$before = $balance['usage_before']['data'];
 			$after = $before + $row['usagev'];
@@ -154,7 +166,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!isset($before)) {
 			return;
 		}
-		$threshold = floatval($rule['threshold']);
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
