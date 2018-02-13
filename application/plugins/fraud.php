@@ -580,7 +580,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function insertIntlNsn($lines) {
 		$roamingLines = array();
 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
-		$record_types = array('01', '11');
+		$record_types = array('01', '11','30');
 		$rates_ref_list = Billrun_Util::getIntlRateRefs();			
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {

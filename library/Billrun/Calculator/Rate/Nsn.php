@@ -49,13 +49,21 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			case '08':
 			case '09':
 				return 'sms';
+
 			case '02':
 			case '12':
 				return 'incoming_call';
+				
+			case '31':
+				if(preg_match('/^RCEL/',$row['out_circuit_group_name'])) {
+					return 'incoming_call';
+				} else {
+					return 'call';
+				}
+				
 			case '11':
 			case '01':
 			case '30':
-			case '31':
 			default:
 				return 'call';
 		}
@@ -74,7 +82,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 		$matchedRate = false;
                 
 		if ($record_type == "01" || //MOC call
-				($record_type == "11" && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+				(in_array($record_type, array("11","30")) && in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
 			$ocg != '3060' && $ocg != '3061') // Roaming on Cellcom and not redirection
 		) {
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
@@ -82,7 +90,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 			$called_number = preg_replace('/^016/', '', $called_number);
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
 		} else if ($record_type == "31" //STC call
-			&& in_array($icg, Billrun_Util::getRoamingCircuitGroups()) &&
+			&& in_array($icg, Billrun_Util::getRoamingCircuitGroups()) && $usage_type != 'incoming_call' &&
 			$ocg != '3060' && $ocg != '3061' // Roaming on Cellcom and not redirection
 		) { 
 			$matchedRate = $this->getRateByParams($called_number, $usage_type, $line_time, $ocg);
