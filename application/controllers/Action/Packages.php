@@ -44,7 +44,7 @@ class PackagesAction extends ApiAction {
 				$query['from'] = array('$gte' => new MongoDate($startTime));
 				$query['to'] = array('$lte' => new MongoDate ($endTime));
 			} else {
-				return $this->setError("sid is not numeric", $request);
+				return $this->setError("Billrun key is incorrect", $request);
 			}
 		}
 		$results = $balancesColl->query($query)->cursor();
