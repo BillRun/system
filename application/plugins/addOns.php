@@ -219,7 +219,10 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$national = $plan->get('include.groups.' . $groupSelected . '.limits.national');
 		if (empty($national) || !$national || !isset($this->lineType)) {
 			return;
-		}
+		}	
+		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
+			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
+		});	
 		if (isset($limits['base_usage']) && $limits['base_usage'] && isset($plan->get('include.groups.' . $groupSelected)[$usageType])) {
 			$baseUsagePlanIncluded = $plan->get('include.groups.' . $groupSelected)[$usageType];
 			$usedDataInBasePlan = isset($subscriberBalance->get('balance.totals.base_plan_data')['usagev']) ? $subscriberBalance->get('balance.totals.base_plan_data.usagev') : 0;
@@ -237,12 +240,12 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->basePlanCurrentUse = $baseUsagePlanIncluded - $usedDataInBasePlan;
 			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse));
 			$this->isBaseUsage = true;
+			if (empty($matchedPackages)) {
+				return;
+			}
 			$groupSelected = FALSE;
 			return;
 		}
-		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
-			return in_array($package['service_name'], $rate['rates'][$usageType]['groups']);
-		});
 		if (empty($matchedPackages) || !$this->checkPackageCorrelation($groupSelected, $matchedPackages)) {
 			$groupSelected = FALSE;
 			return;
