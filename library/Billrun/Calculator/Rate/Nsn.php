@@ -144,7 +144,7 @@ class Billrun_Calculator_Rate_Nsn extends Billrun_Calculator_Rate {
 				$rate_key = 'IL_1700';
 			}
 		}
-		if(	in_array($row['record_type'],array('12','02','30')) &&
+		if(	in_array($row['record_type'],array('12','02','30','31')) &&
 					 preg_match('/(^RCEL)|(^$)/',$row['out_circuit_group_name']) && ( (preg_match('/^(972)?5/',$row['called_number'])) || !$rate_key) ) {
 			$rate_key = 'IL_MOBILE';
 		}
