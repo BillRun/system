@@ -444,10 +444,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
 						$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
 						$balanceType = key($value);
-						$ret['over_group'] = $ret['over_plan'] = current($value);
+						$ret['out_group'] = $ret['out_plan'] = $ret['over_group'] = $ret['over_plan'] = current($value);
 						$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $ret['over_group'];
 						$valueToCharge = $ret['over_group'];
-						unset($ret['out_group'], $ret['out_plan']);
 					}
 				}
 			} else {
