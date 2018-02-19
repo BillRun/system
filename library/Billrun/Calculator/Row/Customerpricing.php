@@ -134,7 +134,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$pricingData = array();
 		$volume = $this->usagev;
 		$prepriced = isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
-		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
+		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
 		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
 			if ($prepriced) {
 				$charges = (float) $this->getLineAprice($this->row['uf'], $this->row['usaget']);

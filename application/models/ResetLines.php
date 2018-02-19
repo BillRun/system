@@ -44,8 +44,11 @@ class ResetLinesModel {
 	 * @var array
 	 */
 	protected $balanceSubstract;
+	
+	protected $balances;
 
 	public function __construct($aids, $billrun_key) {
+		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
@@ -99,6 +102,9 @@ class ResetLinesModel {
 			),
 			'process_time' => array(
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
+			),
+			'aprice' => array(
+				'$exists' => true,
 			),
 		);
 	}
@@ -310,28 +316,31 @@ class ResetLinesModel {
 			$arategroupValue = isset($arategroup['usagev']) ? $arategroup['usagev'] : $arategroup['cost'];
 			$aggregatedUsage = isset($this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage']) ? $this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] : 0;
 			$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'] = $aggregatedUsage + $arategroupValue;
-			@$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;
-			$this->balanceSubstract[$line['aid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['usage'];
-			@$this->balanceSubstract[$line['aid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
+			@$this->extendedBalanceUsageSubtract[$line['aid']][$balanceId][$group][$line['usaget']]['count'] += 1;		
+			$groupUsage = isset($this->balanceSubstract[$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] : 0;
+			$this->balanceSubstract[$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['usage'] = $groupUsage + $arategroupValue;
+			@$this->balanceSubstract[$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
 		}
-		
-		$balanceUsaget = $line['usaget'];
-		$balanceUsagev = $line['usagev'];
-		if (isset($line['out_plan']) && $line['out_plan'] > 0) {
-			$balanceUsaget = 'out_plan_' . $line['usaget'];
-			$balanceUsagev = $line['out_plan'];	
-			if (isset($line['in_plan'])) {
-				$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
-				$this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$line['usaget']]['usage'] = $aggregatedUsage + $line['in_plan'];
-				@$this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;	
+
+		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups)) {
+			$balanceUsaget = $line['usaget'];
+			$balanceUsagev = $line['usagev'];
+			if (isset($line['out_plan']) && $line['out_plan'] > 0) {
+				$balanceUsaget = 'out_plan_' . $line['usaget'];
+				$balanceUsagev = $line['out_plan'];
+				if (isset($line['in_plan'])) {
+					$aggregatedUsage = isset($this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage']) ? $this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] : 0;
+					$this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$line['usaget']]['usage'] = $aggregatedUsage + $line['in_plan'];
+					@$this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$line['usaget']]['count'] += 1;
+				}
 			}
+			$aggregatedUsage = isset($this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
+			$this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
+			$aggregatedPrice = isset($this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
+			$this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
+			@$this->balanceSubstract[$line['sid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
+			@$this->balanceSubstract[$line['sid']][$billrunKey]['cost'] += $line['aprice'];
 		}
-		$aggregatedUsage = isset($this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['usage']) ? $this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['usage'] : 0;
-		$this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['usage'] = $aggregatedUsage + $balanceUsagev;
-		$aggregatedPrice = isset($this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['cost']) ? $this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['cost'] : 0;
-		$this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['cost'] = $aggregatedPrice + $line['aprice'];
-		@$this->balanceSubstract[$line['aid']][$billrunKey]['totals'][$balanceUsaget]['count'] += 1;
-		@$this->balanceSubstract[$line['aid']][$billrunKey]['cost'] += $line['aprice'];
 	}
 
 	protected function getRelevantBalance($balances, $balanceId, $params = array()) {
@@ -344,7 +353,7 @@ class ResetLinesModel {
 			if (empty($balanceId) && !empty($params)) {
 				$startTime = Billrun_Billingcycle::getStartTime($params['billrun_key']);
 				$endTime = Billrun_Billingcycle::getEndTime($params['billrun_key']);
-				if ($params['aid'] == $rawData['aid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
+				if ($params['sid'] == $rawData['sid'] && $startTime == $rawData['from']->sec && $endTime == $rawData['to']->sec) {
 					return $rawData;
 				}
 			}
@@ -419,9 +428,9 @@ class ResetLinesModel {
 		);
 
 		$balances = $balancesColl->query($queryBalances)->cursor();
-		foreach ($this->balanceSubstract as $aid => $usageByMonth) {
+		foreach ($this->balanceSubstract as $sid => $usageByMonth) {
 			foreach ($usageByMonth as $billrunKey => $usage) {
-				$balanceToUpdate = $this->getRelevantBalance($balances, '', array('aid' => $aid, 'billrun_key' => $billrunKey));
+				$balanceToUpdate = $this->getRelevantBalance($balances, '', array('sid' => $sid, 'billrun_key' => $billrunKey));
 				if (empty($balanceToUpdate)) {
 					continue;
 				}
@@ -435,6 +444,30 @@ class ResetLinesModel {
 		}
 		$this->balanceSubstract = array();
 		return $ret;
+	}
+	
+	protected function initBalances($aids) {
+		$queryBalances = array(
+			'aid' => array('$in' => $aids),
+		);
+		
+		$balances = Billrun_Factory::db()->balancesCollection()->query($queryBalances)->cursor();
+		foreach ($balances as $balance) {
+			$balanceId = $balance->getRawData()['_id']->{'$id'};
+			$this->balances[$balanceId] = $balance;
+		}
+	}
+	
+	protected function isInExtendedBalance($arategroups) {
+		$arategroupBalances = array_column($arategroups, 'balance_ref');
+		foreach ($arategroupBalances as $balanceRef) {
+			$balanceId = $balanceRef['$id']->{'$id'};
+			if (isset($this->balances[$balanceId]) && $this->balances[$balanceId]['period'] != 'default') {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 }
