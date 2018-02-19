@@ -72,6 +72,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 					return false;
 				}
 			}
+			$cdrLine['ggsn_type'] = $type;
 		} else {
 			Billrun_Factory::log("couldn't find definition for {$type}", Zend_Log::INFO);
 		}
