@@ -117,7 +117,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-db.config.insert(lastConfig);
 //BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
 db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
 		function(obj) {
@@ -128,3 +127,5 @@ db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"
 			db.subscribers.save(obj)
 		}
 )
+
+db.config.insert(lastConfig);
