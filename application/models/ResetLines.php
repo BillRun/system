@@ -272,9 +272,19 @@ class ResetLinesModel {
 			return FALSE;
 		}
 		if (Billrun_Factory::db()->compareServerVersion('2.6', '>=') === true) {
-			$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
-			if (isset($ret['err']) && !is_null($ret['err'])) {
-				return FALSE;
+			try{
+				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
+				if (isset($ret['err']) && !is_null($ret['err'])) {
+					return FALSE;
+				}
+			} catch (Exception $e) {
+				Billrun_Factory::log("Batch insert Failed, inserting line by line", Zend_Log::DEBUG);
+				foreach ($queue_lines as $qline) {
+					$ret = $queue_coll->insert($qline); // ok==1, err null
+					if (isset($ret['err']) && !is_null($ret['err'])) {
+						return FALSE;
+					}
+				}
 			}
 		} else {
 			foreach ($queue_lines as $qline) {
