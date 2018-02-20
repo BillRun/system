@@ -275,6 +275,7 @@ class ResetLinesModel {
 			try{
 				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
 				if (isset($ret['err']) && !is_null($ret['err'])) {
+					Billrun_Factory::log('Insert Error: ' . $ret['err'], Zend_Log::DEBUG);
 					return FALSE;
 				}
 			} catch (Exception $e) {
@@ -282,7 +283,8 @@ class ResetLinesModel {
 				foreach ($queue_lines as $qline) {
 					$ret = $queue_coll->insert($qline); // ok==1, err null
 					if (isset($ret['err']) && !is_null($ret['err'])) {
-						return FALSE;
+						Billrun_Factory::log('Insert Error: ' .$ret['err'] . ' failed_line ' . var_dump($qline), Zend_Log::DEBUG);
+						continue;
 					}
 				}
 			}
