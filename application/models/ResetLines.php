@@ -322,7 +322,7 @@ class ResetLinesModel {
 			@$this->balanceSubstract[$line['sid']][$billrunKey]['groups'][$group][$line['usaget']]['count'] += 1;
 		}
 
-		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups)) {
+		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups) || (isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0)) {
 			$balanceUsaget = $line['usaget'];
 			$balanceUsagev = $line['usagev'];
 			if (isset($line['out_plan']) && $line['out_plan'] > 0) {
