@@ -279,11 +279,11 @@ class ResetLinesModel {
 					return FALSE;
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log("Batch insert Failed, inserting line by line", Zend_Log::DEBUG);
+				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line", Zend_Log::DEBUG);
 				foreach ($queue_lines as $qline) {
 					$ret = $queue_coll->insert($qline); // ok==1, err null
 					if (isset($ret['err']) && !is_null($ret['err'])) {
-						Billrun_Factory::log('Insert Error: ' .$ret['err'] . ' failed_line ' . var_dump($qline), Zend_Log::DEBUG);
+						Billrun_Factory::log('Rebalance: line insertion to queue failed, Insert Error: ' .$ret['err'] . ', failed_line ' . print_r($qline, 1), Zend_Log::DEBUG);
 						continue;
 					}
 				}
