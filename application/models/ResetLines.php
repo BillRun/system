@@ -276,7 +276,7 @@ class ResetLinesModel {
 				$ret = $queue_coll->batchInsert($queue_lines); // ok==true, nInserted==0 if w was 0
 				if (isset($ret['err']) && !is_null($ret['err'])) {
 					Billrun_Factory::log('Rebalance: batch insertion to queue failed, Insert Error: ' .$ret['err'], Zend_Log::ALERT);
-					return FALSE;
+					throw new Exception();
 				}
 			} catch (Exception $e) {
 				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line", Zend_Log::ERR);
