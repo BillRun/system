@@ -85,8 +85,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	
 	
 	public function isLineLegitimate($line) {
-		return true;
-		}
+		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
+	}
 	
 	/**
 	 * gets the data object to save under the line's "rates" attribute

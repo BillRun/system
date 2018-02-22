@@ -395,7 +395,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		return true;
+		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
 	}
 
 	protected function isCustomerable($line) {		
