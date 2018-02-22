@@ -33,8 +33,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 
 	protected function buildPostArray($aid, $returnUrl, $okPage, $failPage) {
 		$credentials = $this->getGatewayCredentials();
-		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount');
-		$this->conf['cg_gateway_url'] = Billrun_Factory::config()->getConfigValue('CG.conf.gateway_url');
+		$this->conf['amount'] = (int) Billrun_Factory::config()->getConfigValue('CG.conf.amount', 100);
 		$this->conf['aid'] = $aid;
 		$this->conf['ok_page'] = $okPage;
 		$this->conf['return_url'] = $returnUrl;
@@ -56,7 +55,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								 <doDeal>
 										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
 										  '. $addFailPage  .'
-										  <terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
 										  <mainTerminalNumber/>
 										  <cardNo>CGMPI</cardNo>
 										  <total>' . $this->conf['amount'] . '</total>
@@ -73,7 +72,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 										  <user>something</user>
 										  <mid>' . (int) $credentials['mid'] . '</mid>
 										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
-										  <mpiValidation>Normal</mpiValidation>
+										  <mpiValidation>Verify</mpiValidation>
 										  <email>someone@creditguard.co.il</email>
 										  <clientIP/>
 										  <customerData>
@@ -118,7 +117,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	protected function buildTransactionPost($txId, $additionalParams) {
 		$params = $this->getGatewayCredentials();
 		$params['txId'] = $txId;
-		$params['tid'] = $params['terminal_id'];
+		$params['tid'] = $params['redirect_terminal'];
 
 		return $this->buildInquireQuery($params);
 	}
@@ -169,7 +168,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	}
 
 	public function getDefaultParameters() {
-		$params = array("user", "password", "terminal_id", "mid", "endpoint_url");
+		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url");
 		return $this->rearrangeParametres($params);
 	}
 
@@ -225,7 +224,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 								<language>Eng</language>
 								<mayBeDuplicate>0</mayBeDuplicate>
 									<doDeal>
-										<terminalNumber>' . $credentials['terminal_id'] . '</terminalNumber>
+										<terminalNumber>' . $credentials['charging_terminal'] . '</terminalNumber>
 										<cardId>' . $gatewayDetails['card_token'] . '</cardId>
 										<cardExpiration>' . $gatewayDetails['card_expiration'] . '</cardExpiration>
 										<creditType>RegularCredit</creditType>
@@ -258,7 +257,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 							 <language>HEB</language>
 							 <command>inquireTransactions</command>
 							 <inquireTransactions>
-							  <terminalNumber>' . $params['terminal_id'] . '</terminalNumber>
+							  <terminalNumber>' . $params['redirect_terminal'] . '</terminalNumber>
 							  <mainTerminalNumber/>
 							  <queryName>mpiTransaction</queryName>
 							  <mid>' . (int)$params['mid'] . '</mid>

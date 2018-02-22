@@ -128,4 +128,16 @@ db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"
 		}
 )
 
+// BRCD-1353: CreditGuard fixes
+var paymentGateways = lastConfig['payment_gateways'];
+for (var paymentGateway in paymentGateways) {
+	if (paymentGateways[paymentGateway].name === "CreditGuard" && paymentGateways[paymentGateway]['params']['terminal_id'] !== undefined) {
+		if (paymentGateways[paymentGateway]['params']['redirect_terminal'] === undefined || paymentGateways[paymentGateway]['params']['charging_terminal'] === undefined) {
+			paymentGateways[paymentGateway]['params']['redirect_terminal'] = paymentGateways[paymentGateway]['params']['terminal_id'];
+			paymentGateways[paymentGateway]['params']['charging_terminal'] = paymentGateways[paymentGateway]['params']['terminal_id'];
+			delete paymentGateways[paymentGateway]['params']['terminal_id'];
+		}
+	}
+}
+
 db.config.insert(lastConfig);
