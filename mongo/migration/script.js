@@ -117,7 +117,6 @@ if(lastConfig['lines']['fields'].length > idx) {
 	lastConfig['lines']['fields'].push(addField);
 }
 
-db.config.insert(lastConfig);
 //BRCD-1324 - Save CreditGuard last 4 digits in the account active payment gateway field
 db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"}).forEach(
 		function(obj) {
@@ -130,8 +129,6 @@ db.subscribers.find({type:"account", 'payment_gateway.active.name':"CreditGuard"
 )
 
 // BRCD-1353: CreditGuard fixes
-var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
-delete lastConfig['_id'];
 var paymentGateways = lastConfig['payment_gateways'];
 for (var paymentGateway in paymentGateways) {
 	if (paymentGateways[paymentGateway].name === "CreditGuard" && paymentGateways[paymentGateway]['params']['terminal_id'] !== undefined) {
