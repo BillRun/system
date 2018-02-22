@@ -101,7 +101,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	}
 
 	public function isLineLegitimate($line) {
-		return true;
+		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
 	}	
 	
 	protected function isLineTaxable($line) {
