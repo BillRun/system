@@ -449,56 +449,57 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	//checks return data
 	protected function compareExpected($key, $returnRow) {
-                $charge =(array_key_exists('charge',$this->expected[$key]))? $this->expected[$key]['charge']:'';
+		$charge = (array_key_exists('charge', $this->expected[$key])) ? $this->expected[$key]['charge'] : '';
 		$passed = True;
 		$epsilon = 0.000001;
 		$inGroupE = $this->expected[$key]['in_group'];
 		$overGroupE = $this->expected[$key]['over_group'];
-		$aprice = round(10 * ($this->expected[$key]['aprice']), (1/$epsilon)) / 10;
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#'  . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br>';
-                if(is_array($charge)){
-                    foreach ($charge as $key => $value){
-                        $message .= "— $key : $value <br>";
-                        }
-                }
-                $message .= '<b> Result: </b> <br>';
+		$aprice = round(10 * ($this->expected[$key]['aprice']), (1 / $epsilon)) / 10;
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br>';
+		if (is_array($charge)) {
+			foreach ($charge as $key => $value) {
+				$message .= "— $key : $value <br>";
+			}
+		}
+		$message .= '<b> Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
-      
-		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)){
-                   
+
+		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
+
 			$message .= $this->pass;
 		} else {
 			$message .= $this->fail;
 			$passed = False;
-                }
-                if(!empty($charge)){     
-                    foreach ($charge as $category => $price){
-                $checkRate = current(array_filter($returnRow['rates'], function(array $cat) use ($category) {
-                            return $cat['tariff_category'] === $category;
-                        }));
-                if (!empty($checkRate)) {
-                           if(!empty($checkRate)){
-                            //when the tariff_category is retail check if aprice equle to him charge
-                            if ($checkRate['tariff_category']=='retail'){
-                                    if( $aprice == $checkRate['pricing']['charge'] ){
-                                            $message .= "— $category equle to aprice  $this->pass ";
-                                    } else {
-                                            $message .= "— The difference between $category vs aprice its ".abs($aprice -$price)."$this->fail";
-                                            $passed = False;
-                               }
-                            }
-                            //check if the charge is currect 
-                            if ($price == $checkRate['pricing']['charge']){
-                                    $message .= "— $category {$checkRate['pricing']['charge']} $this->pass ";
-                            } else {
-                                    $message .= "— $category {$checkRate['pricing']['charge']} $this->fail";
-                                    $passed = False;
-                            } 
-                } else {
-                    $passed = False;
-                }
-                    }
-                }
+		}
+		if (!empty($charge)) {
+			foreach ($charge as $category => $price) {
+				$checkRate = current(array_filter($returnRow['rates'], function(array $cat) use ($category) {
+						return $cat['tariff_category'] === $category;
+					}));
+				if (!empty($checkRate)) {
+					if (!empty($checkRate)) {
+						//when the tariff_category is retail check if aprice equle to him charge
+						if ($checkRate['tariff_category'] == 'retail') {
+							if ($aprice == $checkRate['pricing']['charge']) {
+								$message .= "— $category equle to aprice  $this->pass ";
+							} else {
+								$message .= "— The difference between $category vs aprice its " . abs($aprice - $price) . "$this->fail";
+								$passed = False;
+							}
+						}
+						//check if the charge is currect 
+						if ($price == $checkRate['pricing']['charge']) {
+							$message .= "— $category {$checkRate['pricing']['charge']} $this->pass ";
+						} else {
+							$message .= "— $category {$checkRate['pricing']['charge']} $this->fail";
+							$passed = False;
+						}
+					} else {
+						$passed = False;
+					}
+				}
+			}
+		}
 		if ($inGroupE == 0) {
 			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'], 0, $epsilon)) {
 				$message .= '— in_group: 0' . $this->pass;

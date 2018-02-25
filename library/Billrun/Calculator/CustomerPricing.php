@@ -366,6 +366,9 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
+		if (!empty($line['skip_calc']) && in_array(static::$type, $line['skip_calc'])) {
+			return FALSE;
+		}
 		if (empty($line['rates'])) {
 			return false;
 		}
