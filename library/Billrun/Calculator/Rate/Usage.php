@@ -85,8 +85,8 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	
 	
 	public function isLineLegitimate($line) {
-		return true;
-		}
+		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
+	}
 	
 	/**
 	 * gets the data object to save under the line's "rates" attribute
@@ -205,17 +205,7 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 			return false;
 		}
 
- 		$rawData = $matchedRate->getRawData();
-		
- 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
- 			return false;	
- 		}
- 		$idQuery = array(
- 			"key" => $rawData['key'], // this is for sharding purpose
- 			"_id" => $rawData['_id']['_id'],
- 		);
- 		
- 		return $rates_coll->query($idQuery)->cursor()->current();
+		return $this->findRateByMatchedRate($matchedRate, $rates_coll);
 	}
 
 	/**
@@ -284,6 +274,20 @@ class Billrun_Calculator_Rate_Usage extends Billrun_Calculator_Rate {
 	 */
 	protected function getRateCustomFilters($type) {
 		return Billrun_Factory::config()->getFileTypeSettings($type, true)['rate_calculators'];
+	}
+	
+	protected function findRateByMatchedRate($rate, $ratesColl) {
+		$rawData = $rate->getRawData();
+		
+ 		if (!isset($rawData['key']) || !isset($rawData['_id']['_id']) || !($rawData['_id']['_id'] instanceof MongoId)) {
+ 			return false;	
+ 		}
+ 		$idQuery = array(
+ 			"key" => $rawData['key'], // this is for sharding purpose
+ 			"_id" => $rawData['_id']['_id'],
+ 		);
+ 		
+ 		return $ratesColl->query($idQuery)->cursor()->current();
 	}
 
 }

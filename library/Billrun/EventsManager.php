@@ -122,7 +122,10 @@ class Billrun_EventsManager {
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = ceil($rawValueBefore / $eventValue);
 				$valueAfter = ceil($rawValueAfter / $eventValue);
-				return (intval($valueBefore) != intval($valueAfter));
+				$triggerEquality = $rawValueAfter / $eventValue;
+				$whole = floor($triggerEquality);
+				$fraction = $triggerEquality - $whole;
+				return ((intval($valueBefore) != intval($valueAfter) && $rawValueAfter > $eventValue) || ($fraction == 0 && $rawValueAfter != 0));
 			default:
 				return FALSE;
 		}
@@ -235,7 +238,7 @@ class Billrun_EventsManager {
 			'notify_time' => array('$exists' => false),
 			'$or' => array(
 				array('start_notify_time' => array('$exists' => false)),
-				array('start_notify_time' => array('$lte' => new MongoDate(strtotime($notifyOrphanTime))))
+				array('start_notify_time' => array('$lte' => new MongoDate(strtotime('-' . $notifyOrphanTime))))
 			)
 		);
 		self::$collection->update($query, array('$set' => array('hash' => $this->notifyHash, 'start_notify_time' => new MongoDate())), array('multiple' => true));
