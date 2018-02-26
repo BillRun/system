@@ -83,7 +83,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 
 		// first check we are not on tap3, because we prevent intl roaming fraud on nrtrde
-		if ($row['type'] == 'tap3' ) {
+		if ($row['type'] == 'tap3') {
 			return true;
 		}
 
@@ -106,7 +106,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 					if (!isset($row['addon_balances'])) {
 						break;
 					}
-					
+
 					$addonBalances = $row['addon_balances'];
 					foreach ($addonBalances as $addonBalance) {
 						$this->addonUsageCheck($limits, $row, $addonBalance);
@@ -115,7 +115,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				case 'condition':
 					$this->conditionCheck($limits, $row, $balance);
 					break;
-				
+
 				default:
 					Billrun_Factory::log("Fraud plugin - method doesn't exists " . $type, Zend_Log::WARN);
 					break;
@@ -138,8 +138,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		return $ret;
 	}
-	
-	protected function checkAddonUsageRule($rule, $row, $balance) {	
+
+	protected function checkAddonUsageRule($rule, $row, $balance) {
 		if (!isset($row['usaget']) || (!empty($rule['usaget']) && !in_array($row['usaget'], $rule['usaget']))) {
 			return false;
 		}
@@ -149,7 +149,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
 			if (isset($rule['service_names']) && in_array($balance['service_name'], $rule['service_names'])) {
 				$groupName = $balance['service_name'];
-				$threshold = (float)floor($plan->get('include.groups.' . $groupName)[$row['usaget']] * $percentage);
+				$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$row['usaget']] * $percentage);
 			} else {
 				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
 			}
@@ -162,7 +162,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else if (in_array($usaget, array('call', 'sms', 'incoming_call')) && $rule['unit'] == 'SMSEC') {
 			$callUsageBefore = $balance['usage_before']['call'] + $balance['usage_before']['incoming_call'];
 			$smsUsageBefore = $balance['usage_before']['sms'];
-			$before	= $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
+			$before = $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
 			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
 			$after = $before + $currentUsage;
 		}
@@ -175,7 +175,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($this->isThresholdTriggered($before, $after, $threshold, $recurring, $minimum, $maximum)) {
 			$addonService['service_name'] = $balance['service_name'];
 			$addonService['package_id'] = $balance['package_id'];
-			$channelAddon = isset($rule['channel']) ? $rule['channel'] : '' ;
+			$channelAddon = isset($rule['channel']) ? $rule['channel'] : '';
 			$addonService['channel'] = "Addon_Service_" . $balance['package_id'] . $channelAddon;
 			Billrun_Factory::log("Fraud plugin - line stamp " . $row['stamp'] . ' trigger event ' . $rule['name'], Zend_Log::INFO);
 			if (isset($rule['priority'])) {
@@ -339,14 +339,14 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
 			if (isset($rule['group'])) {
 				$groupName = $rule['group'];
-				$threshold = (float)floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
+				$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
 			} else {
 				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
 			}
 		} else {
 			$threshold = $rule['threshold'];
 		}
-		
+
 		$recurring = isset($rule['recurring']) && $rule['recurring'];
 		$minimum = (isset($rule['minimum']) && $rule['minimum']) ? (int) $rule['minimum'] : 0;
 		$maximum = (isset($rule['maximum']) && $rule['maximum']) ? (int) $rule['maximum'] : -1;
@@ -473,7 +473,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else {
 			$newEvent['priority'] = (int) $priority;
 		}
-		
+
 		if (!is_null($addonService)) {
 			foreach ($addonService as $key => $value) {
 				$newEvent[$key] = $value;
@@ -520,17 +520,16 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 				if (isset($line['sid'])) {
 					$line['subscriber_id'] = $line['sid'];
 				}
-				
+
 				$line['insert_process_time'] = new MongoDate();
 			}
 			$fraud_lines_collection = Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->linesCollection();
 			$fraud_lines_collection->batchInsert($lines, array('w' => 0));
-			
 		} catch (Exception $e) {
 			Billrun_Factory::log()->log("Fraud plugin - Failed to insert line with the stamp: " . $line['stamp'] . " to the fraud lines collection, got Exception : " . $e->getCode() . " : " . $e->getMessage(), Zend_Log::ERR);
 		}
 	}
-	
+
 	/**
 	 * Save lines reference to the fraud DB queue to be priced by fruad.
 	 * @param type $lines
@@ -540,15 +539,15 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			Billrun_Factory::log()->log('Fraud plugin - Inserting ' . count($lines) . ' Lines to fraud lines collection', Zend_Log::INFO);
 			$queueLines = array();
 			foreach ($lines as $line) {
-				$queueLine = array( 'stamp'=> $line['stamp'],
-									'urt'=>$line['urt'],
-									'type'=>$line['type'],
-									'calc_time' => false,
-									'calc_name' => false,
-								);
-				if(isset($line['aid']) && isset($line['sid']) && Billrun_Factory::config()->getConfigValue('fraud.queue.set_calc_name_customer', false)) {
-					$queueLine['aid'] =  $line['aid'];
-					$queueLine['sid'] =  $line['sid'];
+				$queueLine = array('stamp' => $line['stamp'],
+					'urt' => $line['urt'],
+					'type' => $line['type'],
+					'calc_time' => false,
+					'calc_name' => false,
+				);
+				if (isset($line['aid']) && isset($line['sid']) && Billrun_Factory::config()->getConfigValue('fraud.queue.set_calc_name_customer', false)) {
+					$queueLine['aid'] = $line['aid'];
+					$queueLine['sid'] = $line['sid'];
 					$queueLine['calc_name'] = 'customer';
 				}
 				$queueLine['insert_process_time'] = new MongoDate();
@@ -583,12 +582,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 	protected function insertIntlNsn($lines) {
 		$roamingLines = array();
 		$circuit_groups = Billrun_Util::getIntlCircuitGroups();
-		$record_types = array('01', '11','30');
-		$rates_ref_list = Billrun_Util::getIntlRateRefs();			
+		$record_types = array('01', '11', '30');
+		$rates_ref_list = Billrun_Util::getIntlRateRefs();
 		foreach ($lines as $line) {
 			if (isset($line['out_circuit_group']) && in_array($line['out_circuit_group'], $circuit_groups) && in_array($line['record_type'], $record_types)) {
 				$roamingLines[] = $line;
-			} else if(!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
+			} else if (!empty($line['arate']) && in_array($line['arate']['$id']->{'$id'}, $rates_ref_list)) {
 				$roamingLines[] = $line;
 			}
 		}
@@ -596,7 +595,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->insertToFraudLines($roamingLines);
 		}
 	}
-	
+
 	/**
 	 * Inserting sms lines to fruad for monitoring roaming packages usage
 	 * detect roaming sms lines
@@ -614,7 +613,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->insertToFraudQueue($roamingLines);
 		}
 	}
-
 
 	/**
 	 * TODO
@@ -651,7 +649,6 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			} else if ($type == "smsc") {
 				$this->insertRoamingSms($processor->getData()['data']);
 			}
-
 		}
 		Billrun_Factory::log('Plugin fraud afterProcessorStore was ended', Zend_Log::INFO);
 	}
@@ -676,7 +673,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$this->triggerCallingNumber($line);
 		}
 	}
-	
+
 	protected function triggerCalledNumber($line) {
 		$called_number = Billrun_Util::msisdn($line['called_number']);
 		$query = array(
@@ -747,9 +744,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 
 	public function beforeCommitSubscriberBalance(&$row, &$pricingData, &$query, &$update, $arate, $calculator) {
 		if ($arate['key'] == 'INTERNET_VF') {
-			$lineTime =  date(Billrun_Base::base_dateformat, $row['urt']->sec);
+			$lineTime = date(Billrun_Base::base_dateformat, $row['urt']->sec);
 			$sid = $row['sid'];
-			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' && 
+			if (isset($pricingData['arategroup']) && $pricingData['arategroup'] == 'VF_INCLUDED' &&
 				is_numeric($rowVfDays = $this->queryVFDaysApi($sid, $lineTime)) &&
 				$rowVfDays <= Billrun_Factory::config()->getConfigValue('fraud.usageabroad.days')) {
 				$query = array('sid' => $query['sid'], 'billrun_month' => $query['billrun_month']);
@@ -765,30 +762,30 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 	}
-	
+
 	protected function queryVFDaysApi($sid, $lineTime) {
 		$url = Billrun_Factory::config()->getConfigValue('fraud.vfdays.url');
 		$lineYear = date('Y', strtotime($lineTime));
 		$yearDay = date('z', strtotime($lineTime));
 		try {
 			if (!isset($this->cachedResults[$sid][$lineYear . $yearDay])) {
-				Billrun_Factory::log('Quering Fraud server for '.$sid.' vfdays count', Zend_Log::DEBUG);
+				Billrun_Factory::log('Quering Fraud server for ' . $sid . ' vfdays count', Zend_Log::DEBUG);
 				$result = Billrun_Util::sendRequest($url, array('sid' => $sid, 'max_datetime' => $lineTime), Zend_Http_Client::GET);
 			} else {
 				return $this->cachedResults[$sid][$lineYear . $yearDay];
 			}
-		} catch(Exception $e) {
+		} catch (Exception $e) {
 			Billrun_Factory::log('Fraud server not responding', Zend_Log::WARN);
 			return 0;
 		}
 		$resultArray = json_decode($result, true);
-		if (!$resultArray['status']) { 
+		if (!$resultArray['status']) {
 			return 0;
 		}
 		$this->cachedResults[$sid][$lineYear . $yearDay] = $resultArray['details']['days'];
 		return $resultArray['details']['days'];
 	}
-	
+
 	protected function conditionCheck($limits, $row, $balance) {
 		foreach ($limits['rules'] as $rule) {
 			if (isset($rule['usaget']) && ($row['usaget'] == $rule['usaget'])) {
@@ -803,21 +800,21 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		if ((isset($rule['limitPlans']) && is_array($rule['limitPlans']) && !in_array(strtoupper($row['plan']), $rule['limitPlans'])) ||
 			(isset($rule['excludePlans']) && is_array($rule['excludePlans']) && in_array(strtoupper($row['plan']), $rule['excludePlans']))) {
-				return false;
+			return false;
 		}
 		$conditionsLogic = $rule['conditions']['logic'];
-			switch ($conditionsLogic) {
-				case 'or':
-					$conditionsValue = $this->isOrConditionSatisfied($rule, $row);
-					break;
-				case 'and':
-					$conditionsValue = $this->isAndConditionSatisfied($rule, $row);
-					break;
-				default:
-					$conditionsValue = false;
-					break;
-			}
-		
+		switch ($conditionsLogic) {
+			case 'or':
+				$conditionsValue = $this->isOrConditionSatisfied($rule, $row);
+				break;
+			case 'and':
+				$conditionsValue = $this->isAndConditionSatisfied($rule, $row);
+				break;
+			default:
+				$conditionsValue = false;
+				break;
+		}
+
 		if ($conditionsValue == false) {
 			return;
 		}
@@ -856,7 +853,7 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			return $rule;
 		}
 	}
-	
+
 	protected function isOrConditionSatisfied($rule, $row) {
 		foreach ($rule['condition_on_fields'] as $index => $field) {
 			$condition = $rule['conditions'][$index];
@@ -865,26 +862,28 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			if (($func == 'isset') && (isset($row[$field]) == $value)) {
 				return true;
 			}
+			if (($func == 'equal') && ($row[$field] == $value)) {
+				return true;
+			}
 		}
-		
+
 		return false;
 	}
-	
+
 	protected function isAndConditionSatisfied($rule, $row) {
 		foreach ($rule['condition_on_fields'] as $index => $field) {
 			$condition = $rule['conditions'][$index];
 			$func = key($condition);
 			$value = $condition[key($condition)];
-			if ($func != 'isset') {
+			if ($func == 'equal' && $row[$field] != $value) {
 				return false;
 			}
-			if (isset($row[$field]) != $value) {
+			if ($func == 'isset' && isset($row[$field]) != $value) {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
-
 
 }
