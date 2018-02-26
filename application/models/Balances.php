@@ -39,7 +39,7 @@ class BalancesModel extends TableModel {
 		$query = array(
 			'aid' => array('$gte' => (int) $from_account_id, '$lte' => (int) $to_account_id),
 			'billrun_month' => $billrun,
-			'balance.totals.data.usagev' => array('$gt' => (float) $data_usage_bytes),
+			'balance.totals.total_local_data.usagev' => array('$gt' => (float) $data_usage_bytes),
 			'current_plan' => Billrun_Factory::db()->plansCollection()->createRef($id),
 		);
 //		print_R($query);die;
