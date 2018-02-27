@@ -63,7 +63,8 @@ class RatesAction extends ApiAction {
 		if (!isset($params['query'])) {
 			$params['query'] = array();
 		}
-		$params['query']['$or'] = array(
+		
+		$hiddenFromApi = array(
 				array(
 					'hiddenFromApi' => array(
 						'$exists' => 0,
@@ -76,7 +77,9 @@ class RatesAction extends ApiAction {
 					'hiddenFromApi' => 0
 				)
 		);
-		$results = $this->model->getData($params['query'], $params['filter']);
+
+		$query = array('$and' => array($params['query'], array('$or' => $hiddenFromApi)));
+		$results = $this->model->getData($query, $params['filter']);
 		if (isset($params['strip']) && !empty($params['strip'])) {
 			$results = $this->stripResults($results, $params['strip']);
 		}
