@@ -722,7 +722,7 @@ class ReportModel {
 		switch ($op) {
 			case 'like':
 				$formatedExpression = array(
-					'$regex' => "^{$value}$",
+					'$regex' => ".*{$value}.*",
 					'$options' => 'i'
 				);
 				break;
