@@ -223,7 +223,6 @@ class ResetLinesModel {
 				'plan' => 1,
 				'plan_ref' => 1,
 				'services' => 1,
-				'connection_type' => 1,
 				'usagesb' => 1,
 //				'usagev' => 1,
 				'balance_ref' => 1,
