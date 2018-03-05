@@ -240,6 +240,9 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			$before	= $callUsageBefore + $smsUsageBefore * 60; // convert sms units to seconds
 			$currentUsage = ($usaget == 'sms') ? $row['usagev'] * 60 : $row['usagev'];
 			$after = $before + $currentUsage;
+		} else if (in_array($usaget, array('call', 'incoming_call')) && $rule['unit'] == 'SEC') {
+			$before = $balance['usage_before']['call'] + $balance['usage_before']['incoming_call'];
+			$after = $before + $row['usagev'];
 		}
 		if (!isset($before)) {
 			return;
