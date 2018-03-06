@@ -447,14 +447,22 @@ class RatesModel extends TabledateModel {
 
 	public function getRateByVLR($vlr) {
 		$prefixes = Billrun_Util::getPrefixes($vlr);
-		$match = array('$match' => array(
+		$match = array(
+			'$match' => array(
 				'params.serving_networks' => array(
 					'$exists' => true,
 				),
 				'kt_prefixes' => array(
 					'$in' => $prefixes,
 				),
-			),);
+				'from' => array(
+					'$lt' => new MongoDate(),
+				),
+				'to' => array(
+					'$gt' => new MongoDate(),
+				)
+			),
+		);
 		$unwind = array(
 			'$unwind' => '$kt_prefixes',
 		);
