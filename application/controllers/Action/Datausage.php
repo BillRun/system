@@ -48,7 +48,7 @@ class DatausageAction extends Action_Base {
 		$counter = 0;
 		$accounts = array();
 		foreach ($results as $result) {
-			$accounts['aid'][$result['aid']]['subs'][$result['sid']] = Billrun_Util::byteFormat($result['balance']['totals']['data']['usagev'], 'MB', 2, false, '.', '');
+			$accounts['aid'][$result['aid']]['subs'][$result['sid']] = Billrun_Util::byteFormat($result['balance']['totals']['total_local_data']['usagev'], 'MB', 2, false, '.', '');
 			$counter++;
 		}
 
