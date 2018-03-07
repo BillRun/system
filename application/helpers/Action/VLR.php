@@ -26,7 +26,7 @@ class VLRAction extends ApiAction {
 			return $this->setError('VLR number is empty', $request->getRequest());
 		}
 
-		$max_prefix_length = 7;
+		$max_prefix_length = 15;
 		if (strlen($vlr) > $max_prefix_length) {
 			$vlr = substr($vlr, 0, $max_prefix_length);
 		}
