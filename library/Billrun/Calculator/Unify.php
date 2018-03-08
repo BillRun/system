@@ -324,7 +324,7 @@ class Billrun_Calculator_Unify extends Billrun_Calculator {
 	}
 
 	public function isNsnLineLegitimate($line) {
-		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && (isset($line['sid']) || (isset($line['record_type']) && ($line['record_type'] == '30' || $line['record_type'] == '31')))) ||
+		if ((isset($line['arate']) && $line['arate'] !== false) || (isset($line['usaget']) && (isset($line['sid']))) ||
 			(in_array($line['out_circuit_group'], array('2090','2091','2092')) || in_array($line['in_circuit_group'], array('2090','2091','2092')))) {
 			return false;
 		}
