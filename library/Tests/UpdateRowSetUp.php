@@ -21,8 +21,8 @@ class Tests_UpdateRowSetUp {
 	 * 
 	 * @var array
 	 */
-	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
-	protected $importData = ['plans', 'services', 'subscribers', 'rates'];
+	protected $collectionToClean = ['config','plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
+	protected $importData = ['config','plans', 'services', 'subscribers', 'rates',];
 	protected $backUpData = array();
 
 	public function __construct() {
@@ -94,7 +94,7 @@ class Tests_UpdateRowSetUp {
 	 * @param array $colNames array of collectins names to clean
 	 */
 	protected function cleanCollection($colNames) {
-	
+
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
 			Billrun_Factory::db() -> $colName() -> remove([null]);

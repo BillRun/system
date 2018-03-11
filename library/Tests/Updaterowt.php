@@ -21,6 +21,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $plansCol;
 	protected $linesCol;
 	protected $calculator;
+	protected $config;
 	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
@@ -322,6 +323,9 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 99 t1
 		array('row' => array('stamp' => 't1', 'aid' => 27, 'sid' => 30, 'rates' => array('NEW-CALL-USA' => 'retail', 'CALL' => 'wholesale'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('in_group' => 0, 'over_group' => 60, 'aprice' => 30, 'charge' => array('retail' => 30, 'wholesale' => 60))),
+//Test num 100 u1
+		array('row' => array('stamp' => 'u1', 'aid' => 27, 'sid' => 31, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'prepriced' => "true", 'type' => 'Preprice_Dynamic', 'uf' => array('preprice' => 100), 'usaget' => 'call', 'usagev' => 15, 'urt' => '2017-08-14 11:00:00+03:00',),
+			'expected' => array('in_group' => 0, 'over_group' => 0, 'aprice' => 100, 'charge' => array('retail' => 100,))),
 	];
 
 	public function __construct($label = false) {
@@ -340,6 +344,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services_data'=>$this->servicesToUse)),array("multiple" => true));
 		//running test
 		foreach ($this->rows as $key => $row) {
+			if (isset($this->rows[$key]['row']['prepriced'])) {
+				Billrun_Config::getInstance()->loadDbConfig();
+			}
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
@@ -361,9 +368,9 @@ class Tests_Updaterowt extends UnitTestCase {
 		return ($entityAfter);
 	}
 
-	//checks return data
-	protected function compareExpected($key, $returnRow) {
-                $charge =(array_key_exists('charge',$this->expected[$key]))? $this->expected[$key]['charge']:'';
+	protected function compareExpected($key, $returnRow, $row) {
+
+		$charge = (array_key_exists('charge', $row["expected"])) ? $row["expected"]['charge'] : '';
 		$passed = True;
 		$epsilon = 0.000001;
 		$inGroupE = $row["expected"]['in_group'];
@@ -468,6 +475,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	protected function fixRow($row, $key) {
+
 		if (!array_key_exists('urt', $row)) {
 			$row['urt'] = new MongoDate(time() + $key);
 		} else {
@@ -485,7 +493,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		if (!isset($row['usaget'])) {
 			$row['usaget'] = 'call';
 		}
-		
+
 		if (isset($row['services_data'])) {
 			foreach ($row['services_data'] as $key => $service) {
 				if (!is_array($service)) {
@@ -519,5 +527,5 @@ class Tests_Updaterowt extends UnitTestCase {
 		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
 		return $row;
 	}
-	
+
 }
