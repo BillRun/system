@@ -330,11 +330,12 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
+		
 	}
 
 	public function testUpdateRow() {
 
-		date_default_timezone_set('Asia/Jerusalem');
+		
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
@@ -344,9 +345,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services_data'=>$this->servicesToUse)),array("multiple" => true));
 		//running test
 		foreach ($this->rows as $key => $row) {
-			if (isset($this->rows[$key]['row']['prepriced'])) {
-				Billrun_Config::getInstance()->loadDbConfig();
-			}
+			Billrun_Config::getInstance()->loadDbConfig();
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);

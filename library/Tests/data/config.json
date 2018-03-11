@@ -85,7 +85,7 @@
 							}
 						},
 						"timezone": {
-							"v": "UTC",
+							"v": "Asia/Jerusalem",
 							"t": "Timezone"
 						},
 						"start_hours_lag": {
