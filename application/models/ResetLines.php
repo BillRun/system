@@ -223,7 +223,6 @@ class ResetLinesModel {
 				'plan' => 1,
 				'plan_ref' => 1,
 				'services' => 1,
-				'connection_type' => 1,
 				'usagesb' => 1,
 //				'usagev' => 1,
 				'balance_ref' => 1,
@@ -449,6 +448,9 @@ class ResetLinesModel {
 					}
 					$groups = !empty($usage['groups']) ? $usage['groups'] : array();
 					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $usage['totals'], $usage['cost']);
+					if (empty($updateData)) {
+						continue;
+					}
 					$query = array(
 						'_id' => $balanceToUpdate['_id'],
 					);
