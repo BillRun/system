@@ -995,7 +995,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 			return $aprice;
 		}
 		
-		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
+		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
 		return false;
 	}
 	
