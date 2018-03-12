@@ -447,7 +447,9 @@ class ResetLinesModel {
 						continue;
 					}
 					$groups = !empty($usage['groups']) ? $usage['groups'] : array();
-					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $usage['totals'], $usage['cost']);
+					$totals = !empty($usage['totals']) ? $usage['totals'] : array();
+					$cost = !empty($usage['cost']) ? $usage['cost'] : array();
+					$updateData = $this->buildUpdateBalance($balanceToUpdate, $groups, $totals, $cost);
 					if (empty($updateData)) {
 						continue;
 					}
