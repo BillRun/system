@@ -41,7 +41,7 @@ class Billrun_Exceptions_NoPermission extends Billrun_Exceptions_Base {
 	protected function userLoggedin() {
 		$user = Billrun_Factory::user();
 		if (!$user || !$user->valid()) {
-			Billrun_Factory::log("Failed to get billrun user", Zend_Log::ERR);
+			Billrun_Factory::log("Failed to get billrun user", Zend_Log::INFO);
 			return false;
 		}
 		return true;
