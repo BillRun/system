@@ -1,373 +1,455 @@
-  {
-    "collection": "ratesCollection",
-    "data":
-    [
-      {
-        "key" : "CALL-USA","code" : "CALL-USA","description" : "Calls to United States of America","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.5"
-                        }
-                    ]
-                },
-				"PLAN-X3" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.4"
-                        }
-                    ]
-                },
-				
-                "groups" : ["GROUPO","AAA","BBB"]
-            }
-        }
-      },
-      {
-        "key" : "CALL-EUROPE","code" : "CALL-EUROPE","description" : "Calls to Europe","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.1"
-                        }
-                    ]
-                }
-            }
-        }
-      },
-      {
-        "key" : "VEG","code" : "VEG","description" : "rate for basic vegtables","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "gr" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.2"
-                        }
-                    ]
-                },
-                "groups" : ["SR4","AAA"]
-            }
-        }
-      },
-	  {
-        "key" : "NEW-CALL-USA","code" : "NEW-CALL-USA","description" : "Calls to United States of America","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.5"
-                        }
-                    ]
-                }
-               
-            }
-        }
-      },
-      {
-        "key" : "NEW-CALL-EUROPE","code" : "NEW-CALL-EUROPE","description" : "Calls to Europe","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.1"
-                        }
-                    ]
-                }
-            }
-        }
-      },
-      {
-        "key" : "NEW-VEG","code" : "NEW-VEG","description" : "rate for basic vegtables","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "gr" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.2"
-                        }
-                    ]
-                }
-                
-            }
-        }
-      },
-      {
-        "key" : "SHARED-RATE","code" : "SHARED-RATE","description" : "rate for testing shared accounts","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : "0.1"
-                        }
-                    ]
-                }
-            }
-        }
-      },
-      {
-        "key" : "RATE-L3","code" : "SHARED-RATE","description" : "rate for testing shared accounts","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.1
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-N1","code" : "RATE-N1","description" : "RATE-N1","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.1
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-N1b","code" : "RATE-N1b","description" : "RATE-N1b","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "incoming_call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.1
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-N3","code" : "RATE-N3","description" : "RATE-N3","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 30,
-                            "price" : 0.5
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-O1","code" : "RATE-O1","description" : "RATE-O1","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.01
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-O2","code" : "RATE-O2","description" : "RATE-O2","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 10,
-                            "price" : 0.01
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-N5","code" : "RATE-N5","description" : "RATE-N5","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.5
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-O4","code" : "RATE-O4","description" : "RATE-O4","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.1
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-Q1","code" : "RATE-O4","description" : "RATE-O4","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 10,
-                            "price" : 0.1
-                        }
-                    ]
-                }
-            }
-        }
-      },
-	  {
-        "key" : "RATE-Q2","code" : "RATE-O4","description" : "RATE-O4","vatable" : true,"from" : "time*2016-10-15T18:11:43Z","to" : "time*2116-10-15T18:11:43Z",
-        "rates" : {
-            "call" : {
-                "BASE" : {
-                    "rate" : [
-                        {
-                            "from" : 0,
-                            "to" : 999999999,
-                            "interval" : 1,
-                            "price" : 0.05
-                        }
-                    ]
-                }
-            }
-        }
-      },
-      {
-	"from" : "time*2016-10-04T04:00:00Z",
-	"key" : "INTERNET",
-	"rates" : {
-		"data" : {
-			"BASE" : {
-				"rate" : [
-					{
-						"from" : 0,
-						"to" : "UNLIMITED",
-						"interval" : 1000000,
-						"price" : "1",
-						"uom_display" : {
-							"range" : "mb1000",
-							"interval" : "mb1000"
+{
+	"collection": "ratesCollection",
+	"data":
+			[
+				{
+					"key": "CALL-USA",
+					"code": "CALL-USA",
+					"description": "Calls to United States of America",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.5"
+									}
+								]
+							},
+							"PLAN-X3": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.4"
+									}
+								]
+							},
+
+							"groups": ["GROUPO", "AAA", "BBB"]
 						}
 					}
-				]
-			}
-		}
-	},
-	"description" : "internet",
-	"params" : {
-		"prefix" : [ ],
-		"file_type" : [ ]
-	},
-	"vatable" : true,
-	"pricing_method" : "tiered",
-	"to" : "time*2166-10-03T09:22:38Z",
-	"creation_time" :"time*2016-10-04T04:00:00Z"
-        },
-        {
-
-	"from" : "time*2017-06-01T00:00:00Z",
-	"key" : "CALL",
-	"rates" : {
-		"call" : {
-			"BASE" : {
-				"rate" : [
-					{
-						"from" : 0,
-						"to" : "UNLIMITED",
-						"interval" : 1,
-						"price" : "1",
-						"uom_display" : {
-							"range" : "seconds",
-							"interval" : "seconds"
+				},
+				{
+					"key": "CALL-EUROPE",
+					"code": "CALL-EUROPE",
+					"description": "Calls to Europe",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
 						}
 					}
-				]
-			}
-		}
-	},
-	"description" : "call",
-	"params" : [ ],
-	"vatable" : true,
-	"pricing_method" : "tiered",
-	"to" : "time*2166-12-25T09:15:40Z",
-	"creation_time" : "time*2017-06-01T00:00:00Z"
-       }
+				},
+				{
+					"key": "VEG",
+					"code": "VEG",
+					"description": "rate for basic vegtables",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"gr": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.2"
+									}
+								]
+							},
+							"groups": ["SR4", "AAA"]
+						}
+					}
+				},
+				{
+					"key": "NEW-CALL-USA",
+					"code": "NEW-CALL-USA",
+					"description": "Calls to United States of America",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.5"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "NEW-CALL-EUROPE",
+					"code": "NEW-CALL-EUROPE",
+					"description": "Calls to Europe",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "NEW-VEG",
+					"code": "NEW-VEG",
+					"description": "rate for basic vegtables",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"gr": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.2"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "SHARED-RATE",
+					"code": "SHARED-RATE",
+					"description": "rate for testing shared accounts",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": "0.1"
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-L3",
+					"code": "SHARED-RATE",
+					"description": "rate for testing shared accounts",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N1",
+					"code": "RATE-N1",
+					"description": "RATE-N1",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N1b",
+					"code": "RATE-N1b",
+					"description": "RATE-N1b",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"incoming_call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N3",
+					"code": "RATE-N3",
+					"description": "RATE-N3",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 30,
+										"price": 0.5
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O1",
+					"code": "RATE-O1",
+					"description": "RATE-O1",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.01
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O2",
+					"code": "RATE-O2",
+					"description": "RATE-O2",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 10,
+										"price": 0.01
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-N5",
+					"code": "RATE-N5",
+					"description": "RATE-N5",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.5
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-O4",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-Q1",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 10,
+										"price": 0.1
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"key": "RATE-Q2",
+					"code": "RATE-O4",
+					"description": "RATE-O4",
+					"vatable": true,
+					"from": "time*2016-10-15T18:11:43Z",
+					"to": "time*2116-10-15T18:11:43Z",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": 999999999,
+										"interval": 1,
+										"price": 0.05
+									}
+								]
+							}
+						}
+					}
+				},
+				{
+					"from": "time*2016-10-04T04:00:00Z",
+					"key": "INTERNET",
+					"rates": {
+						"data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1000000,
+										"price": "1",
+										"uom_display": {
+											"range": "mb1000",
+											"interval": "mb1000"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "internet",
+					"params": {
+						"prefix": [],
+						"file_type": []
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-10-03T09:22:38Z",
+					"creation_time": "time*2016-10-04T04:00:00Z"
+				},
+				{
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call",
+					"params": [],
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z"
+				}
 
 
-	  
-    ]
-    }
+
+			]
+}
