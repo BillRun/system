@@ -36,12 +36,13 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		parent::__construct($options);
 		$this->template = array(
 			'line' => array(
-				'called_number' => 'called_number',
+				'called_number' => 'uf.destination',
 				'call_from' => 'call_from',
 				'call_to' => 'call_to',
 				'final_charge' => 'final_charge'
 			),
 			'local_sms' => array(
+				'called_number' => 'uf.destination',
 				'title' => 'הודעות טקסט'
 			),
 			'local_mms' => array(
@@ -171,7 +172,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
-		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page);
+		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['urt'=>1]);
 	}
 
 	public function setData($billrunData) {
