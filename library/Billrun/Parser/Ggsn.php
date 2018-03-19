@@ -21,6 +21,10 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 	}
 	
 	public function parse($fp) {
+		$this->dataRows = array();
+		$this->headerRows = array();
+		$this->trailerRows = array();
+
 		$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
 		$fileReadAheadLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_file_read_ahead_length');
 		$headerLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_header_length');
@@ -72,6 +76,7 @@ class Billrun_Parser_Ggsn extends Billrun_Parser_Base_Binary {
 					return false;
 				}
 			}
+			$cdrLine['ggsn_type'] = $type;
 		} else {
 			Billrun_Factory::log("couldn't find definition for {$type}", Zend_Log::INFO);
 		}

@@ -335,7 +335,7 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	public function testUpdateRow() {
 
-		
+		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
