@@ -11,30 +11,37 @@
  * @package  calculator
  * @since    0.5
  */
-
 require_once(APPLICATION_PATH . '/library/simpletest/autorun.php');
 
 define('UNIT_TESTING', 'true');
 
 class Tests_Ratetest extends UnitTestCase {
-	
+
 	protected $ratesCol;
 	protected $plansCol;
 	protected $linesCol;
 	protected $calculator;
 	protected $config;
 	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
-	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
-	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
+	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span>';
+	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span>';
 	protected $rows = [
-		array('row' => array('stamp' => 'm1', 'aid' => 8880, 'sid' => 800, 'type' => 'Preprice_Dynamic','plan' => 'NEW-PLAN-A2','uf'=>['sid' => 800,'usage'=>'call','rate'=>'CALL'], 'rate'=>'CALL','usaget' => 'call', 'usagev' => 10,),
-			'expected' => array('rates' => array('CALL' => 'retail'))),
+		//Test num 1 a1 sanity
+		array('row' => array('stamp' => 'a1', 'aid' => 8880, 'sid' => 800, 'type' => 'Preprice_Dynamic', 'plan' => 'NEW-PLAN-A2', 'rate' => 'CALL', 'usaget' => 'call', 'usagev' => 10,),
+			'expected' => array('CALL' => 'retail')),
+		//Test num 2 b1 test multi tariff category
+		array('row' => array('stamp' => 'b1', 'aid' => 27, 'sid' => 30, 'type' => 'Wholesale', 'plan' => 'WITH_NOTHING', 'RetailRate' => 'CALL', 'WholesaleRate' => 'CALL_wholesale', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('CALL_wholesale' => 'wholesale', 'CALL' => 'retail')),
+		//Test num 3 c1 test computed (the rate filed need to be equel to test filed)
+		array('row' => array('stamp' => 'c1', 'aid' => 27, 'sid' => 30, 'type' => 'computed_regex', 'plan' => 'WITH_NOTHING', 'test' => 'CALL', 'rate' => 'CALL', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('CALL' => 'retail')),
+		//Test num 4 d1 test multi tariff category
+//		array('row' => array('stamp' => 'd1', 'aid' => 27, 'sid' => 30, 'type' => 'Wholesale', 'plan' => 'WITH_NOTHING', 'RetailRate' => 'CALL', 'WholesaleRate' => 'CALL_wholesale', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+//			'expected' => array('CALL_wholesale' => 'wholesale', 'CALL' => 'retail')),
 	];
 
 	public function __construct($label = false) {
-	    Billrun_Config::getInstance()->loadDbConfig();
 		parent::__construct("test Rate");
-		
 	}
 
 	public function testUpdateRow() {
@@ -46,7 +53,7 @@ class Tests_Ratetest extends UnitTestCase {
 		$init->setColletions();
 
 		foreach ($this->rows as $key => $row) {
-            Billrun_Config::getInstance()->loadDbConfig();
+			Billrun_Config::getInstance()->loadDbConfig();
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
@@ -62,18 +69,41 @@ class Tests_Ratetest extends UnitTestCase {
 		$entity = $this->linesCol->query(array('stamp' => $stamp))->cursor()->current();
 		$ret = $this->calculator->updateRow($entity);
 		$entityAfter = $entity->getRawData();
-		
 		return ($entityAfter);
 	}
 
 	protected function compareExpected($key, $returnRow, $row) {
-		
+		$retunrRates = !empty($returnRow['rates']) ? $returnRow['rates'] : '';
+		$message = '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . '). <b> Expected: </b> ';
+		$error = '<span style="font: 14px arial; color: red;"> ';
+		foreach ($row['expected'] as $key => $value) {
+			$message .= "</br>rate_key: $key => Tariff_Category  :  $value ";
+		}
+		$message .= '<b></br> Result: </b> </br> ';
 		$passed = True;
-		$epsilon = 0.000001;
-		
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ';
-		$message .= '<b> Result: </b> <br>';
-		$message .= ' </p>';
+		if (!empty($retunrRates)) {
+			foreach ($row['expected'] as $rate => $tariff) {
+				$checkRate = current(array_filter($retunrRates, function(array $cat) use ($tariff) {
+						return $cat['tariff_category'] === $tariff;
+					}));
+
+				if (!empty($checkRate)) {
+					if ($checkRate['tariff_category'] === $tariff && $checkRate['key'] === $rate) {
+						$message .= "rate_key: {$checkRate['key']} => Tariff_Category  :  {$checkRate['tariff_category']}  $this->pass";
+					} else {
+						$message .= $error . "rate_key: {$checkRate['key']} => Tariff_Category  :  {$checkRate['tariff_category']} </span> $this->fail ";
+						$passed = false;
+					}
+				} else {
+					$passed = false;
+					$message .= $error . "No found any product and category  ";
+				}
+				$message .= ' </span></br>';
+			}
+		} else {
+			$passed = false;
+			$message .= $error . "No found any product and category  ";
+		}
 		return [$passed, $message];
 	}
 
@@ -89,12 +119,6 @@ class Tests_Ratetest extends UnitTestCase {
 		}
 		if (!isset($row['sid'])) {
 			$row['sid'] = 1234;
-		}
-		if (!isset($row['type'])) {
-			$row['type'] = 'mytype';
-		}
-		if (!isset($row['usaget'])) {
-			$row['usaget'] = 'call';
 		}
 
 		if (isset($row['services_data'])) {
@@ -113,7 +137,6 @@ class Tests_Ratetest extends UnitTestCase {
 				}
 			}
 		}
-
 
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
 		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));

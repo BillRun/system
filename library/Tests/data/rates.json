@@ -446,8 +446,39 @@
 					"vatable": true,
 					"pricing_method": "tiered",
 					"to": "time*2166-12-25T09:15:40Z",
-					"creation_time": "time*2017-06-01T00:00:00Z"
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "retail"
+				},
+				{
+					"from": "time*2017-06-01T00:00:00Z",
+					"key": "CALL_wholesale",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "0.5",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "call_wholesale",
+					"params": [],
+					"vatable": true,
+					"pricing_method": "tiered",
+					"to": "time*2166-12-25T09:15:40Z",
+					"creation_time": "time*2017-06-01T00:00:00Z",
+					"tariff_category": "wholesale"
 				}
+
 
 
 
