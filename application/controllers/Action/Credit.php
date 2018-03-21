@@ -72,6 +72,7 @@ class CreditAction extends ApiAction {
 			'usagev' => $ret['usagev'],
 			'credit_by' => 'rate',
 			'rate' => $ret['rate'],
+			'usaget' => $this->getUsageTypeFromRate($credit_row['rate'])
 		);
 		if ($this->isCreditByPrice($ret)) {
 			$this->parseCreditByPrice($ret);
@@ -171,6 +172,11 @@ class CreditAction extends ApiAction {
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+	}
+
+	protected function getUsageTypeFromRate($rateName) {
+		$rate = Billrun_Rates_Util::getRateByName($rateName);
+		return key($rate['rates']);
 	}
 
 }
