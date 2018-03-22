@@ -26,7 +26,7 @@ class Tests_Ratetest extends UnitTestCase {
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span>';
 	protected $rows = [
-		//Test num 1 a1 sanity
+		//Test num 1 a1 rate by rate filed and rate key
 		array('row' => array('stamp' => 'a1', 'aid' => 8880, 'sid' => 800, 'type' => 'Preprice_Dynamic', 'plan' => 'NEW-PLAN-A2', 'rate' => 'CALL', 'usaget' => 'call', 'usagev' => 10,),
 			'expected' => array('CALL' => 'retail')),
 		//Test num 2 b1 test multi tariff category
@@ -35,9 +35,24 @@ class Tests_Ratetest extends UnitTestCase {
 		//Test num 3 c1 test computed (the rate filed need to be equel to test filed)
 		array('row' => array('stamp' => 'c1', 'aid' => 27, 'sid' => 30, 'type' => 'computed_regex', 'plan' => 'WITH_NOTHING', 'test' => 'CALL', 'rate' => 'CALL', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL' => 'retail')),
-		//Test num 4 d1 test multi tariff category
-//		array('row' => array('stamp' => 'd1', 'aid' => 27, 'sid' => 30, 'type' => 'Wholesale', 'plan' => 'WITH_NOTHING', 'RetailRate' => 'CALL', 'WholesaleRate' => 'CALL_wholesale', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
-//			'expected' => array('CALL_wholesale' => 'wholesale', 'CALL' => 'retail')),
+		//Test num 4 d1 test prefix
+		array('row' => array('stamp' => 'd1', 'aid' => 27, 'sid' => 30, 'type' => 'prefix', 'plan' => 'WITH_NOTHING', 'prefix' => '770', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('CALL' => 'retail')),
+		//Test num 5 d2 test tow fildes with longest prefix 
+		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '972533406999', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
+			'expected' => array('CALL_A' => 'retail')),
+		//Test num 6 d3 test Long prefix exists but it's in an expired revision: Take the shorter prefix from an active revision
+		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('SMS' => 'retail')),
+		//Test num 7 d4 test No product found although an expired matching revision exists
+		array('row' => array('stamp' => 'd4', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '456789', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 8 e1  Must met
+		array('row' => array('stamp' => 'e1', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called'=>'123456','calling'=>'123456', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('SELF_SMS' => 'retail')),
+		//Test num 9 e2 false "Must met" fails the whole priority
+		array('row' => array('stamp' => 'e2', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called'=>'123456','calling'=>'789', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
 	];
 
 	public function __construct($label = false) {
@@ -74,15 +89,16 @@ class Tests_Ratetest extends UnitTestCase {
 
 	protected function compareExpected($key, $returnRow, $row) {
 		$retunrRates = !empty($returnRow['rates']) ? $returnRow['rates'] : '';
-		$message = '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . '). <b> Expected: </b> ';
+		$message = '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . ')</br> Input Processors : ' . $row['row']['type'] . ' </br><b> Expected: </b> ';
 		$error = '<span style="font: 14px arial; color: red;"> ';
 		foreach ($row['expected'] as $key => $value) {
 			$message .= "</br>rate_key: $key => Tariff_Category  :  $value ";
 		}
-		$message .= '<b></br> Result: </b> </br> ';
+		$message .= '<b></br> Result:</b> </br> ';
 		$passed = True;
 		if (!empty($retunrRates)) {
 			foreach ($row['expected'] as $rate => $tariff) {
+				$message .= (array_keys($row['expected'])[0] != $rate) ? '</br>' : '';
 				$checkRate = current(array_filter($retunrRates, function(array $cat) use ($tariff) {
 						return $cat['tariff_category'] === $tariff;
 					}));
@@ -96,10 +112,12 @@ class Tests_Ratetest extends UnitTestCase {
 					}
 				} else {
 					$passed = false;
-					$message .= $error . "No found any product and category  ";
+					$message .= $error . "No found any product and category";
 				}
-				$message .= ' </span></br>';
 			}
+			$message .= ' </span></br>';
+		} elseif ($row['expected']['result'] == 'Rate not found') {
+			$message .= "rate_key: <u><i>not found</i></u> $this->pass";
 		} else {
 			$passed = false;
 			$message .= $error . "No found any product and category  ";

@@ -922,6 +922,497 @@
 							"unify": [],
 							"filters": [],
 							"enabled": true
+						},
+						{
+							"file_type": "prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "prefix"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"prefix"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "prefix"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "p",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "longest_prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "phone"
+									},
+									{
+										"name": "code"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"phone",
+									"code"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.phone",
+												"line_key": "phone"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.code",
+												"line_key": "code"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "longest_prefix",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "old_revision",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "code"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"code"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "sms",
+								"default_unit": "counter",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"sms": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.code",
+												"line_key": "code"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"sms": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "old_revision",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "computed",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "called"
+									},
+									{
+										"name": "calling"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"called",
+									"calling"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"sms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "params.self",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "called"
+														},
+														{
+															"key": "calling"
+														}
+													],
+													"operator": "$eq",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "condition_result"
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									],
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "params.self",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "called"
+														},
+														{
+															"key": "calling"
+														}
+													],
+													"operator": "$eq",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "condition_result"
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"sms": [],
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "computed",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
 						}
 					],
 					"receive": "1",
@@ -1219,5 +1710,6 @@
 					"system": {
 						"closed_cycle_changes": false
 					}
-				}]
+				}
+			]
 }
