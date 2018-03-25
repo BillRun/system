@@ -48,10 +48,10 @@ class Tests_Ratetest extends UnitTestCase {
 		array('row' => array('stamp' => 'd4', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '456789', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
 			'expected' => array('result' => 'Rate not found')),
 		//Test num 8 e1  Must met
-		array('row' => array('stamp' => 'e1', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called'=>'123456','calling'=>'123456', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+		array('row' => array('stamp' => 'e1', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called' => '123456', 'calling' => '123456', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
 			'expected' => array('SELF_SMS' => 'retail')),
 		//Test num 9 e2 false "Must met" fails the whole priority
-		array('row' => array('stamp' => 'e2', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called'=>'123456','calling'=>'789', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+		array('row' => array('stamp' => 'e2', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called' => '123456', 'calling' => '789', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
 			'expected' => array('result' => 'Rate not found')),
 	];
 
@@ -91,8 +91,12 @@ class Tests_Ratetest extends UnitTestCase {
 		$retunrRates = !empty($returnRow['rates']) ? $returnRow['rates'] : '';
 		$message = '<span style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . ')</br> Input Processors : ' . $row['row']['type'] . ' </br><b> Expected: </b> ';
 		$error = '<span style="font: 14px arial; color: red;"> ';
-		foreach ($row['expected'] as $key => $value) {
-			$message .= "</br>rate_key: $key => Tariff_Category  :  $value ";
+		if (in_array('Rate not found', $row['expected'])) {
+			$message .= "</br> Should not find a rate";
+		} else {
+			foreach ($row['expected'] as $key => $value) {
+				$message .= "</br>rate_key: $key => Tariff_Category  :  $value ";
+			}
 		}
 		$message .= '<b></br> Result:</b> </br> ';
 		$passed = True;
@@ -116,7 +120,7 @@ class Tests_Ratetest extends UnitTestCase {
 				}
 			}
 			$message .= ' </span></br>';
-		} elseif ($row['expected']['result'] == 'Rate not found') {
+		} elseif (!empty ($row['expected']['result']) ) {
 			$message .= "rate_key: <u><i>not found</i></u> $this->pass";
 		} else {
 			$passed = false;
