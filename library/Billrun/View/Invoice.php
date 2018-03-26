@@ -198,4 +198,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		}
 		return "";
 	}
+	
+	public function getBillrunKey() {
+		return $this->data['billrun_key'];
+	}
 }

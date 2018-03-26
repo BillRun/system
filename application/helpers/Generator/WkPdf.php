@@ -41,12 +41,17 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				'call_to' => 'call_to',
 				'final_charge' => 'final_charge'
 			),
+			'local_calls' => array(
+				'called_number' => 'uf.called_party_number',
+				'title' => 'שיחות טלפון בישראל'
+			),
 			'local_sms' => array(
 				'called_number' => 'uf.destination',
-				'title' => 'הודעות טקסט'
+				'title' => 'הודעות טקסט בישראל'
 			),
 			'local_mms' => array(
-				'title' => 'הודעות מולטימדיה'
+				'called_number' => 'uf.destination',
+				'title' => 'הודעות מולטימדיה בישראל'
 			),
 			'roaming_sms' => array(
 				'title' => 'הודעות טקסט שנשלחו בחו״ל'
@@ -55,7 +60,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 				'title' => 'הודעות מולטימדיה שנשלחו בחו״ל'
 			),
 			'local_data' => array(
-				'title' => 'גלישה סלולארית'
+				'title' => 'גלישה סלולארית בישראל'
 			),
 			'roaming_data' => array(
 				'title' => 'גלישה סלולארית בחו״ל'
@@ -80,6 +85,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.view_path', '/views/invoices/') ;
 		$this->linesColl = Billrun_Factory::db()->linesCollection();
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
+		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
 		$this->servicesColl = Billrun_Factory::db()->servicesCollection();
 
 		$this->paths = array(
