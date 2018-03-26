@@ -23,6 +23,7 @@ class ReportModel {
 	protected $config = null;
 	protected $report = null;
 	protected $cacheFormatStyle = [];
+	protected $currentTime = null;
 	
 	/**
 	 *  Array of entity join map keys
@@ -103,6 +104,11 @@ class ReportModel {
 		
 		$aggregate = array();
 		
+		$addFields = $this->getAddFields($report_entity);
+		if(!empty($addFields)) {
+			$aggregate[] = array('$addFields' => $addFields);
+		}
+		
 		$match = $this->getMatch($report_entity);
 		if(!empty($match)) {
 			$aggregate[] = array('$match' => $match);
@@ -150,7 +156,6 @@ class ReportModel {
 				}
 			}
 		}
-
 
 		$group = $this->getGroup();
 		if(!empty($group)) {
@@ -233,7 +238,7 @@ class ReportModel {
 	}
 	
 	protected function formatOutputValue($value, $key, $formats) {
-		if(!is_scalar($value) && get_class($value) !== 'MongoDate'){
+		if(!is_scalar($value) && (is_array($value) || get_class($value) !== 'MongoDate')){
 			// array result like addToSet
 			if(count(array_filter(array_keys($value), 'is_string')) === 0){
 				$values = array();
@@ -248,6 +253,9 @@ class ReportModel {
 			foreach ($formats as $format) {
 				$value = $this->applyValueformat($value, $format);
 			}
+		}
+		if(gettype($value) == 'boolean') {
+			return $value ? 'TRUE' : 'FALSE';
 		}
 		return $value;
 	}
@@ -265,32 +273,33 @@ class ReportModel {
 	}
 	
 	protected function applyValueformat($value, $format) {
-		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$value])) {
-			return $this->cacheFormatStyle[$format['op']][$format['value']][$value];
+		$cacheKey = (string)$value;
+		if(!empty($this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey])) {
+			return $this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey];
 		}
 		switch ($format['op']) {
 			case 'date_override': {
 				if (!empty($value->sec) || is_numeric($value)) {
 					$styledValue = new MongoDate(strtotime("+{$format['value']}", $value->sec));
-				} elseif (is_string($value)){
+				} elseif (is_string($value) && $value !== ""){
 					$styledValue = new MongoDate(strtotime("{$value} {$format['value']}" ));
 				} else {
 					$styledValue = $value;
 				}
-				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 				return $styledValue;
 			}
 			case 'billing_cycle': {
 				if (!Billrun_Util::isBillrunKey($value)) {
-					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $value;
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $value;
 					return $value;
 				} else if ($format['value'] === 'start') {
 					$styledValue = new MongoDate(Billrun_Billingcycle::getStartTime($value));
-					$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 					return $styledValue;
 				}
 				$styledValue = new MongoDate(Billrun_Billingcycle::getEndTime($value));
-				$this->cacheFormatStyle[$format['op']][$format['value']][$value] = $styledValue;
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
 				return $styledValue;
 			}
 			case 'time_format': 
@@ -300,12 +309,11 @@ class ReportModel {
 				return $time !== false ? date($format['value'], $time) : $value;
 			}
 			case 'vat_format': {
-				if (is_numeric($value)) {
+				if (is_numeric($value) && $value != 0 ) {
 					$taxCalc = Billrun_Calculator::getInstance(array('autoload' => false, 'type' => 'tax'));
-					if ($format['value'] === 'remove_tax') {
-						return $taxCalc->removeTax($value);
-					}
-					return $taxCalc->addTax($value);
+					$styledValue = ($format['value'] === 'remove_tax') ? $taxCalc->removeTax($value) : $taxCalc->addTax($value);
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
 				}
 				return $value;
 			}
@@ -318,13 +326,30 @@ class ReportModel {
 			}
 			case 'multiplication':
 				return (is_numeric($value) && is_numeric($format['value'])) ? $value * $format['value'] : $value;
-			case 'default_empty':
-				return ($value === "" || is_null($value)) ? $format['value'] : $value;
+			case 'default_empty': {
+				if ($value !== "" && !is_null($value)){
+					$styledValue = $value;
+				} else if ($format['value'] === 'current_time') {
+					$styledValue = $this->currentTime();
+				} else {
+					$styledValue = $format['value'];
+				}
+				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+				return $styledValue;
+			}
 			default:
 				return $value;
 		}
 	}
 	
+	protected function currentTime() {
+		if(!$this->currentTime) {
+			$this->currentTime = date('m/d/Y H:i:s');
+		}
+		return $this->currentTime;
+	}
+
+
 	
 	protected function formatInputMatchOp($condition, $field) {
 		$op = $condition['op'];
@@ -385,8 +410,13 @@ class ReportModel {
 				case 'current':
 					return Billrun_Billrun::getActiveBillrun();
 				case 'first_unconfirmed':
-					$last = Billrun_Billingcycle::getLastConfirmedBillingCycle();
-					return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					if (($last = Billrun_Billingcycle::getLastConfirmedBillingCycle()) != Billrun_Billingcycle::getFirstTheoreticalBillingCycle()) {
+						return Billrun_Billingcycle::getFollowingBillrunKey($last);
+					}
+					if (is_null($lastStarted = Billrun_Billingcycle::getFirstStartedBillingCycle())) {
+						return $last;
+					}
+					return $lastStarted;
 				case 'last_confirmed':
 					return Billrun_Billingcycle::getLastConfirmedBillingCycle();
 				case 'confirmed':
@@ -426,6 +456,13 @@ class ReportModel {
 	
 	protected function formatInputMatchField($condition, $entity) {
 		$field = $condition['field'];
+		if  ($this->isRatesTariffCategoryField($field)) {
+			$parts = explode(".", $field);
+			$tariff = $parts[1];
+			$category_name = $parts[2];
+			$field_name = array_slice($parts, 3);
+			return implode(".", array(implode("_", array('rate', $tariff, $category_name)), implode(".", $field_name)));
+		}
 		switch ($field) {
 			case 'logfile_status':
 				switch ($condition['value']) {
@@ -596,6 +633,9 @@ class ReportModel {
 		$group = array();
 		if ($this->report['type'] === 1) {
 			foreach ($this->report['columns'] as $column) {
+				if  (substr($column['field_name'], 0, strlen('rate_tariff_category_')) === 'rate_tariff_category_') {
+					$column['field_name'] = implode(".", array($column['field_name'], implode(".", $column['field_key'])));
+				}
 				$op = $column['op'];
 				$field = $column['field_name'];
 				//remove JOIN entity name prefix
@@ -631,132 +671,168 @@ class ReportModel {
 		return $group;
 	}
 	
+	protected function getAddFields($entity) {
+		$newFields = array();
+		foreach ($this->report['columns'] as $key => $column) {
+			if  ($this->isRatesTariffCategoryField($column['field_name'])) {
+				$parts = explode(".", $column['field_name']);
+				$rates = $parts[0]; // rates
+				$tariff = $parts[1]; // tariff_category
+				$category_name = $parts[2];
+				$field_name = array_slice($parts, 3);
+			
+				$new_field_name = "rate_tariff_category_" . $category_name;
+				$filter = array(
+						'$filter' => array(
+						"input" => '$rates', 
+						"as" => "rate", 
+						"cond" => array( '$eq'=> array( '$$rate.tariff_category', $category_name ) )
+					)
+				);
+				$newFields[$new_field_name] = array(
+					'$arrayElemAt' => array($filter, 0)
+				);
+				// Change the field name of this filed in report settings for other operations
+				$this->report['columns'][$key]['field_name'] = $new_field_name;
+				$this->report['columns'][$key]['field_key'] = $field_name;
+			}
+		}
+		return $newFields;
+	}
+	
 	protected function getMatch($entity) {
 		$matchs = $this->getDefaultEntityMatch();
 		foreach ($this->report['conditions'] as $condition) {
 			$condition_entity = $this->getFieldEntity($condition);
 			if($condition_entity !== $entity) {
-				continue;
+				return array();
 			}
-			$type = $condition['type'];
-			$field = $this->formatInputMatchField($condition, $condition_entity);
-			$op = $this->formatInputMatchOp($condition, $field);
-			$value = $this->formatInputMatchValue($condition, $field, $type);
-			switch ($op) {
-				case 'like':
-					$formatedExpression = array(
-						'$regex' => "^{$value}$",
-						'$options' => 'i'
-					);
-					break;
-				case 'starts_with':
-					$formatedExpression = array(
-						'$regex' => "^{$value}",
-						'$options' => 'i'
-					);
-					break;
-				case 'ends_with':
-					$formatedExpression = array(
-						'$regex' => "{$value}$",
-						'$options' => 'i'
-					);
-					break;
-				case 'in':
-				case 'nin':
-					//TODO: add support for dates
-					if ($type === 'number') {
-						$values = array_map('floatval', explode(',', $value));
-					} else {
-						$values = explode(',',$value);
-					}
-					$formatedExpression = array(
-						"\${$op}" => $values
-					);
-					break;
-				case 'ne':
-				case 'eq':
-					if ($type === 'date') {
-						$date = strtotime($value);
-						$beginOfDay = strtotime("midnight", $date);
-						$endOfDay = strtotime("tomorrow", $date) - 1;
-						$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
-						$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
-						$formatedExpression = array(
-							'$gte' => new MongoDate($gteDate),
-							'$lt' => new MongoDate($ltDate),
-						);
-					} elseif ($type === 'number') {
-						$formatedExpression = array(
-							'\${$op}' => floatval($value)
-						);
-					} elseif ($type === 'boolean') {
-						$formatedExpression = array(
-							'\${$op}' => (bool)$value
-						);
-					} else {
-						$formatedExpression = array(
-							'\${$op}' => $value
-						);
-					}
-					break;
-				case 'between':
-					if ($type === 'date') {
-						$formatedExpression = array(
-							'$gte' => new MongoDate($value['from']),
-							'$lte' => new MongoDate($value['to']),
-						);
-					} elseif ($type === 'number') {
-						$formatedExpression = array(
-							'$gte' => floatval($value['from']),
-							'$lt' => floatval($value['to']),
-						);
-					} else {
-						$formatedExpression = array(
-							'$gte' => $value['from'],
-							'$lte' => $value['to'],
-						);
-					}
-					break;
-				case 'lt':
-				case 'lte':
-				case 'gt':
-				case 'gte':
-					if ($type === 'date') {
-						$date = strtotime($value);
-						$queryDate = ($op === 'lt' || $op === 'lte')
-							? strtotime("tomorrow", $date) - 1
-							: strtotime("midnight", $date);
-						$formatedExpression = array(
-							"\${$op}" => new MongoDate($queryDate),
-						);
-					} elseif ($type === 'number') {
-						$formatedExpression = array(
-							"\${$op}" => floatval($value)
-						);
-					} else {
-						$formatedExpression = array(
-							"\${$op}" => $value
-						);
-					}
-				break;	
-				case 'exists':
-					$formatedExpression = array(
-						"\${$op}" => (bool)$value
-					);
-					break;
-				case 'and': // for complex queries
-					$field = '$and';
-					$formatedExpression = $value;
-					break;
-				default:
-					throw new Exception("Invalid filter operator $op");
-					break;
-			}
-			$matchs[][$field] = $formatedExpression;
+			$parsedCondition = $this->parseMatchCondition($condition);
+			$matchs[][$parsedCondition['field']] = $parsedCondition['query'];
 		}
 		return !empty($matchs) ? array('$and' => $matchs) : array();
 	}
 	
+	protected function parseMatchCondition($condition) {
+		$condition_entity = $this->getFieldEntity($condition);
+		$type = $condition['type'];
+		$field = $this->formatInputMatchField($condition, $condition_entity);
+		$op = $this->formatInputMatchOp($condition, $field);
+		$value = $this->formatInputMatchValue($condition, $field, $type);
+		switch ($op) {
+			case 'like':
+				$formatedExpression = array(
+					'$regex' => "{$value}",
+					'$options' => 'i'
+				);
+				break;
+			case 'starts_with':
+				$formatedExpression = array(
+					'$regex' => "^{$value}",
+					'$options' => 'i'
+				);
+				break;
+			case 'ends_with':
+				$formatedExpression = array(
+					'$regex' => "{$value}$",
+					'$options' => 'i'
+				);
+				break;
+			case 'in':
+			case 'nin':
+				//TODO: add support for dates
+				if ($type === 'number') {
+					$values = array_map('floatval', explode(',', $value));
+				} else {
+					$values = explode(',', $value);
+				}
+				$formatedExpression = array(
+					"\${$op}" => $values
+				);
+				break;
+			case 'ne':
+			case 'eq':
+				if ($type === 'date') {
+					$date = strtotime($value);
+					$beginOfDay = strtotime("midnight", $date);
+					$endOfDay = strtotime("tomorrow", $date) - 1;
+					$gteDate = ($op === 'eq') ? $beginOfDay : $endOfDay;
+					$ltDate = ($op === 'eq') ? $endOfDay : $beginOfDay;
+					$formatedExpression = array(
+						'$gte' => new MongoDate($gteDate),
+						'$lt' => new MongoDate($ltDate),
+					);
+				} elseif ($type === 'number') {
+					$formatedExpression = array(
+						"\${$op}" => floatval($value)
+					);
+				} elseif ($type === 'boolean') {
+					$formatedExpression = array(
+						"\${$op}" => (bool) $value
+					);
+				} else {
+					$formatedExpression = array(
+						"\${$op}" => $value
+					);
+				}
+				break;
+			case 'between':
+				if ($type === 'date') {
+					$formatedExpression = array(
+						'$gte' => new MongoDate($value['from']),
+						'$lte' => new MongoDate($value['to']),
+					);
+				} elseif ($type === 'number') {
+					$formatedExpression = array(
+						'$gte' => floatval($value['from']),
+						'$lt' => floatval($value['to']),
+					);
+				} else {
+					$formatedExpression = array(
+						'$gte' => $value['from'],
+						'$lte' => $value['to'],
+					);
+				}
+				break;
+			case 'lt':
+			case 'lte':
+			case 'gt':
+			case 'gte':
+				if ($type === 'date') {
+					$date = strtotime($value);
+					$queryDate = ($op === 'lt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
+					$formatedExpression = array(
+						"\${$op}" => new MongoDate($queryDate),
+					);
+				} elseif ($type === 'number') {
+					$formatedExpression = array(
+						"\${$op}" => floatval($value)
+					);
+				} else {
+					$formatedExpression = array(
+						"\${$op}" => $value
+					);
+				}
+				break;
+			case 'exists':
+				$formatedExpression = array(
+					"\${$op}" => (bool) $value
+				);
+				break;
+			case 'and': // for complex queries
+				$field = '$and';
+				$formatedExpression = $value;
+				break;
+			default:
+				throw new Exception("Invalid filter operator $op");
+				break;
+		}
+		return array(
+			'field' => $field,
+			'query' => $formatedExpression
+		);
+	}
+
 	protected function getSkip($size = -1, $page = -1) {
 		if ($size === -1 && $page === -1) {
 			return 0;
@@ -775,6 +851,10 @@ class ReportModel {
 			throw new Exception("Columns list is empty, nothing to display");
 		}
 		foreach ($this->report['columns'] as $column) {
+			// special care for rates.tariff.category
+			if (substr($column['field_name'], 0, strlen('rate_tariff_category_')) === 'rate_tariff_category_') {
+				$column['field_name'] = implode(".", array($column['field_name'], implode(".", $column['field_key'])));
+			}
 			$field_name = str_replace('$', '', $column['field_name']);
 			if ($isReportGrouped) {
 				// (FIX for Error: the group aggregate field name 'xx.yy' cannot be used because $group's field names cannot contain '.')
@@ -787,7 +867,6 @@ class ReportModel {
 			$project[$column['key']] = array(
 				'$ifNull' => array("\${$field_name}", '')
 			);
-
 		}
 		return $project;
 	}
@@ -800,5 +879,9 @@ class ReportModel {
 			}
 		}
 		return $sorts;
+	}
+	
+	protected function isRatesTariffCategoryField($field) {
+		return (substr($field, 0, strlen('rates.tariff_category.')) === 'rates.tariff_category.');
 	}
 }

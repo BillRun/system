@@ -118,7 +118,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	}
 
 	
-	protected function updateBreakdown($breakdownKey, $rate, $cost, $count, $tax_data) {
+	protected function updateBreakdown($breakdownKey, $rate, $cost, $usagev, $taxData, $addedData = array() ) {
 		if (!isset($this->data['breakdown'][$breakdownKey])) {
 			$this->data['breakdown'][$breakdownKey] = array();
 		}
@@ -126,9 +126,17 @@ class Billrun_Cycle_Subscriber_Invoice {
 		foreach ($this->data['breakdown'][$breakdownKey] as &$breakdowns) {
 			if ($breakdowns['name'] === $rate_key) {
 				$breakdowns['cost'] += $cost;
-				$breakdowns['count'] += $count;
-				foreach($tax_data as $tax ) {
+				$breakdowns['usagev'] += $usagev;
+				$breakdowns['count'] += 1;
+				foreach($taxData as $tax ) {
+					if(empty($tax['description'])) {
+						Billrun_Factory::log('Received Tax  with empty  decription Skiping...',Zend_log::DEBUG);
+						continue;
+					}
 					@$breakdowns['taxes'][$tax['description']] += $tax['amount'];
+				}
+				if(!empty($addedData)) {
+					$breakdowns = array_merge($breakdowns,$addedData);
 				}
 				return;
 			}
@@ -138,7 +146,11 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$rate_key = "Plans and Services";
 		}
 		
-		$this->data['breakdown'][$breakdownKey][] = array('name' => $rate_key, 'count' => $count, 'cost' => $cost);
+		$newBrkDown =  array('name' => $rate_key, 'count' => 1 , 'usagev' => $usagev, 'cost' => $cost);
+		if(!empty($addedData)) {
+			$newBrkDown = array_merge( $newBrkDown, $addedData);
+		}
+		$this->data['breakdown'][$breakdownKey][] = $newBrkDown;
 	}
 
 		/**
@@ -218,6 +230,10 @@ class Billrun_Cycle_Subscriber_Invoice {
 			$priceAfterVat = $this->addLineVatableData($pricingData, $breakdownKey, Billrun_Util::getFieldVal($row['tax_data'],array()));
 			if(!empty($row['tax_data']['taxes'])) {
 				foreach ($row['tax_data']['taxes'] as $tax) {
+					if(empty($tax['description'])) {
+						Billrun_Factory::log("Received Tax with empty decription on row {$row['stamp']} , Skiping...",Zend_log::DEBUG);
+						continue;
+					}
 					//TODO change to a generic optional tax configuration  (taxation.CSI.apply_optional_charges)
 					if( $tax['pass_to_customer'] == 1 
 						 ||
@@ -287,7 +303,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 * @return type
 	 */
 	public function updateTotals($newTotals) {
-		$totalsKeys = array('flat','service','refund','charge','usage');
+		$totalsKeys = array('flat','service','refund','charge','usage','discount');
 		foreach($totalsKeys as $totalsKey) {
 			$newTotals[$totalsKey]['before_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['before_vat'], 0);
 			$newTotals[$totalsKey]['after_vat'] += Billrun_Util::getFieldVal($this->data['totals'][$totalsKey]['after_vat'], 0);
@@ -331,6 +347,7 @@ class Billrun_Cycle_Subscriber_Invoice {
 	 */
 	protected function processLines($subLines) {
 		$updatedLines = array();
+		
 		foreach ($subLines as $line) {
 			
 			// the check fix 2 issues:
@@ -349,7 +366,35 @@ class Billrun_Cycle_Subscriber_Invoice {
 			//Billrun_Factory::log("Done Processing account Line for $sid : ".  microtime(true));
 			$updatedLines[$line['stamp']] = $line;
 		}
+		
+		$this->aggregateLinesToBreakdown($subLines);
+		
 		return $updatedLines;
+	}
+	
+	/**
+	 * 
+	 * @param type $subLines
+	 */
+	public function aggregateLinesToBreakdown($subLines) {
+		$untranslatedAggregationConfig = Billrun_Factory::config()->getConfigValue('billrun.invoice.aggregate.pipelines',array());
+		$translations = array('BillrunKey' => $this->data['key']);
+		$aggregationConfig  = json_decode(Billrun_Util::translateTemplateValue(json_encode($untranslatedAggregationConfig),$translations),JSON_OBJECT_AS_ARRAY);
+		$aggregate = new Billrun_Utils_Arrayquery_Aggregate();
+		foreach($aggregationConfig as $brkdwnKey => $brkdownConfigs) {
+			foreach($brkdownConfigs as $breakdownConfig) {
+				$aggrResults = $aggregate->aggregate($breakdownConfig, $subLines);
+				if($aggrResults) {
+					foreach($aggrResults as $aggregateValue) {
+						
+						//$this->data['breakdown'][$brkdwnKey] = array();
+						$key = ( empty($aggregateValue['name']) ? $aggregateValue['_id'] : $aggregateValue['name'] );
+						$this->updateBreakdown($brkdwnKey, array('key'=> $key), $aggregateValue['price'], $aggregateValue['usagev'], array(), array_merge(array_diff_key($aggregateValue,array('_id'=>1,'price'=>1,'usagev'=>1)), 
+																																									array('conditions' =>json_encode($breakdownConfig[0]['$match']))) );
+					}
+				}
+			}
+		}
 	}
 
 	/**

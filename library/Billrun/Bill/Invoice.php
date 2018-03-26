@@ -123,7 +123,7 @@ class Billrun_Bill_Invoice extends Billrun_Bill {
 		return $instance;
 	}
 	
-	public function isInvoiceConfirmed($aid, $key) {
+	public static function isInvoiceConfirmed($aid, $key) {
 		$billrunColl = Billrun_Factory::db()->billrunCollection();
 		$query = array(
 			'aid' => (int) $aid,

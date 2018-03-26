@@ -189,7 +189,7 @@ class Zend_Log_Writer_MongoDb extends Zend_Log_Writer_Abstract
      * @param array $config
      * @return Zend_Log_Writer_MongoDb
      */
-    static public function factory ($config)
+    public static function factory ($config)
     {
         $config = self::_parseConfig($config);
 

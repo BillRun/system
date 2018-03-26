@@ -77,6 +77,9 @@ trait Billrun_Traits_AsnParsing {
 			'json' => function($fieldData) {
 				return json_encode($this->utf8encodeArr($fieldData));
 			},
+			'ia5string' => function($fieldData) {
+				return utf8_encode(preg_replace('/[\x00-\x1F\x7F]/', '', $fieldData));
+			}
 		);
 	}
 
@@ -140,7 +143,7 @@ trait Billrun_Traits_AsnParsing {
 		$ret = false;
 		if ((isset($struct['type']) && $struct['type'] != 'array') || !($asnData instanceof Asn_Object && $asnData->isConstructed())) {
 			if (!isset($struct['type']) || !isset($fields[$struct['type']])) {
-				Billrun_Factory::log(" couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
+				Billrun_Factory::log("Couldn't digg into struct : " . print_r($struct, 1) . " data : " . $asnData->getData(), Zend_Log::DEBUG);
 			} else {
 				$ret = $this->parseField($fields[$struct['type']], $asnData->getData());
 			}

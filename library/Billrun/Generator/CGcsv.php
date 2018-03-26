@@ -77,7 +77,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	//		$payment = payAction::pay('credit', array($paymentParams), $options)[0];
 			$line = array(
 				0 => '001',
-				1 => $this->gatewayCredentials['terminal_id'],
+				1 => $this->gatewayCredentials['redirect_terminal'],
 				2 => $paymentParams['amount'],
 				3 => 1,
 				4 => $account['card_token'] ,
@@ -100,7 +100,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	}
 
 	protected function setFilename() {
-		$this->filename = 'c' . $this->extractionDateFormat . '.' . $this->gatewayCredentials['terminal_id'];
+		$this->filename = 'c' . $this->extractionDateFormat . '.' . $this->gatewayCredentials['redirect_terminal'];
 	}
 
 	protected function writeHeaders() {

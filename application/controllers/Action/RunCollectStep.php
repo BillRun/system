@@ -15,8 +15,11 @@ require_once APPLICATION_PATH . '/application/controllers/Action/Api.php';
  * @since    2.6
  */
 class  Run_collect_stepAction extends ApiAction {
+	
+	use Billrun_Traits_Api_UserPermissions;
 
 	public function execute() {
+		$this->allowed();
 		Billrun_Factory::log()->log("Execute collect api call", Zend_Log::INFO);
 		$request = $this->getRequest();
 
@@ -52,4 +55,7 @@ class  Run_collect_stepAction extends ApiAction {
 		return $result;
 	}
 
+	protected function getPermissionLevel() {
+		return Billrun_Traits_Api_IUserPermissions::PERMISSION_ADMIN;
+	}
 }

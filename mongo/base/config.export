@@ -3,6 +3,7 @@
     "cg_return_url": "",
     "shared_secret": [],
     "usage_types": [],
+    "plugins": ["calcCpuPlugin", "csiPlugin", "autorenewPlugin"],
     "resetlines": {
         "limit": {
             "v": 10,
@@ -71,6 +72,10 @@
 		},
 		"email_after_confirmation":{
 			"v": false,
+			"t": "Boolean"
+		},
+		"generate_pdf":{
+			"v": true,
 			"t": "Boolean"
 		}
     },
@@ -237,7 +242,20 @@
             "field_name": "rates",
             "system": true,
             "mandatory": true
-        }]
+        },
+		{
+			"system":false,
+			"select_list":true,
+			"display":true,
+			"editable":true,
+			"field_name":"tariff_category",
+			"default_value":"retail",
+			"show_in_list":true,
+			"title":"Tariff category",
+			"mandatory":true,
+			"select_options":"retail",
+			"changeable_props": ["select_options"]
+		}]
     },
     "plans": {
         "fields": [{
@@ -321,8 +339,8 @@
       },
       "disable_stamp_export_directory": 1,
       "theme": "/application/views/invoices/theme/theme1.css",
-      "header": "",
-      "footer": "",
+      "header": "/application/views/invoices/header/header_tpl.html",
+      "footer": "/application/views/invoices/footer/footer_tpl.html",
       "sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
       "details_template": "/application/views/invoices/details/details1.phtml",
       "decimal_mark": ".",
@@ -450,5 +468,20 @@
 				}
 			]
 		}
-	}
+	},
+  "lines": {
+    "fields": [
+      {
+        "field_name": "foreign.activation_date",
+        "foreign": {
+          "entity": "service",
+          "field": "start",
+          "translate": {
+            "type": "unixTimeToString",
+            "format": "Y-m-d H:i:s"
+          }
+        }
+      }
+    ]
+  }
 }

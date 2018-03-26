@@ -56,7 +56,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @var boolean
 	 */
 	protected $overrideMandatoryFields = TRUE;
-
+	
+	/**
+	 * These mapping are required raw field that must be filled by the customer calculator.
+	 */
+	const REQUIRED_ROW_ENRICHMENT_MAPPING = array(array('sid'=>'sid'), array('aid'=>'aid'), array('plan'=> 'plan'));
+		
 	public function __construct($options = array()) {
 		parent::__construct($options);
 
@@ -299,7 +304,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$params = $this->getIdentityParams($row);
 
 		if (count($params) == 0) {
-			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::ERR);
+			Billrun_Factory::log('Couldn\'t identify subscriber for line of stamp ' . $row->get('stamp'), Zend_Log::WARN);
 			return;
 		}
 		
@@ -390,7 +395,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	 * @see Billrun_Calculator::isLineLegitimate
 	 */
 	public function isLineLegitimate($line) {
-		return true;
+		return empty($line['skip_calc']) || !in_array(static::$type, $line['skip_calc']);
 	}
 
 	protected function isCustomerable($line) {		
@@ -426,7 +431,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 	protected function enrichWithSubscriberInformation($row, $subscriber) {
 		$enrichedData = array();
 		$rowData = $row instanceof Mongodloid_Entity  ? $row->getRawData() : $row;
-		$enrinchmentMapping = Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array());
+		$enrinchmentMapping = array_merge( Billrun_Factory::config()->getConfigValue(static::$type.'.calculator.row_enrichment', array()) , static::REQUIRED_ROW_ENRICHMENT_MAPPING );
 		foreach($enrinchmentMapping as $mapping ) {
 			$enrichedData = array_merge($enrichedData,Billrun_Util::translateFields($subscriber->getSubscriberData(), $mapping, $this, $rowData));
 		}

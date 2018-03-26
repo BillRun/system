@@ -133,14 +133,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		//TODO  change this to be configurable.
 		$pricingData = array();
 		$volume = $this->usagev;
-		$prepriced = isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
-		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'service'));
-		if (in_array($this->row['type'], $typesWithoutBalance) || $prepriced) {
-			if ($prepriced) {
-				$charges = (float) $this->row[$this->pricingField];
-			} else {
-				$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);
-			}
+		$typesWithoutBalance = Billrun_Factory::config()->getConfigValue('customerPricing.calculator.typesWithoutBalance', array('credit', 'flat', 'service'));
+		if (in_array($this->row['type'], $typesWithoutBalance)) {
+			$charges = Billrun_Rates_Util::getTotalCharge($this->rate, $this->usaget, $volume, $this->row['plan'], $this->getCallOffset(), $this->row['urt']->sec);			$pricingData = array($this->pricingField => $charges);
 			$pricingData = array($this->pricingField => $charges);
 		} else {
 			$pricingData = $this->updateSubscriberBalance($this->usaget, $this->rate);
@@ -191,7 +186,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				return false;
 			}
 			usleep($this->countConcurrentRetries);
-			return $this->updateSubscriberBalance($this->row, $this->usaget, $this->rate);
+			return $this->updateSubscriberBalance();
 		}
 		Billrun_Factory::dispatcher()->trigger('afterUpdateSubscriberBalance', array(array_merge($this->row->getRawData(), $pricingData), $this->balance, &$pricingData, $this));
 		return $pricingData;
@@ -444,10 +439,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					if ($valueToCharge > 0 && $this->isRateInServicesGroups($rate, $usageType, $services)) {
 						$value = $this->usageLeftInServicesGroups($rate, $usageType, $services, array($balanceType => $valueToCharge), $ret['arategroups']);
 						$balanceType = key($value);
-						$ret['over_group'] = $ret['over_plan'] = current($value);
+						$ret['out_group'] = $ret['out_plan'] = $ret['over_group'] = $ret['over_plan'] = current($value);
 						$ret['in_plan'] = $ret['in_group'] += $valueToCharge - $ret['over_group'];
 						$valueToCharge = $ret['over_group'];
-						unset($ret['out_group'], $ret['out_plan']);
 					}
 				}
 			} else {
@@ -465,9 +459,9 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 				}
 			}
 		}
-
-		if (isset($this->row['prepriced']) && $this->row['prepriced']) {
-			$prepriced = Billrun_Util::getIn($this->row, array($this->pricingField), false);
+		
+		if ($this->isPrepriced()) {
+			$prepriced = $this->getLineAprice();
 			if ($prepriced === false) {
 				return false;
 			}
@@ -979,5 +973,38 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 	
 	public function getUsedServices() {
 		return $this->servicesUsed;
+	}
+
+	/**
+	 * Get the prepriced value received in the CDR
+	 * 
+	 * @param type $userFields
+	 * @return aprice if the field found, false otherwise
+	 */
+	protected function getLineAprice() {
+		$userFields = $this->row['uf'];
+		$usageType = $this->row['usaget'];
+		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
+		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
+		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
+			$aprice = $userFields[$apriceField];
+			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
+			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
+				$aprice *= $apriceMult;
+			}
+			return $aprice;
+		}
+		
+		Billrun_Factory::log('Price field "' . $apriceField . '" is missing or invalid for line ' . $this->row['stamp'] . ', file ' . $this->row['file'], Zend_Log::ALERT);
+		return false;
+	}
+	
+	/**
+	* method to define if row is pre-priced
+	* 
+	* @return boolean true if prepriced else false
+	*/
+	public function isPrepriced() {
+		return isset($this->row['prepriced']) ? $this->row['prepriced'] : false;
 	}
 }

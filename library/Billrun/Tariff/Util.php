@@ -102,6 +102,21 @@ class Billrun_Tariff_Util {
 
 		return $charge;
 	}
+	
+	public static function getTariffForVolume($tariff,$volume) {
+		foreach ($tariff['rate'] as $currRate) {
+			if (!is_array($currRate)) {
+				Billrun_Factory::log("Invalid rate in tariff utils." . print_r($currRate, 1), Zend_Log::WARN);
+				continue;
+			}
+			if($volume > $currRate['to']) {
+				continue;
+			}
+			return $currRate['price'];
+		}
+		Billrun_Factory::log("Invalid tariff :" . print_r($tariff, 1), Zend_Log::WARN);
+		return 0;
+	}
 
 	/**
 	 * Build a rate according to another rate

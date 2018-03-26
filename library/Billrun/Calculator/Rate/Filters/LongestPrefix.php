@@ -52,7 +52,7 @@ class Billrun_Calculator_Rate_Filters_LongestPrefix extends Billrun_Calculator_R
 	 * @return array query for all prefixes
 	 */
 	protected function getPrefixMatchQuery($value) {
-		return array('$in' => Billrun_Util::getPrefixes($value));
+		return array('$in' => Billrun_Util::getPrefixes(!is_array($value)? $value : current($value)));
 	}
 
 }

@@ -27,7 +27,7 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $rows = [
 		//New tests for new override price and includes format
 //		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
-		array('stamp' => 'f1', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
+		array('stamp' => 'f1', 'sid' => 62, 'rates' => array('NEW-CALL-USA'=>'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f2', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f3', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 50, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
 		array('stamp' => 'f4', 'sid' => 62, 'arate_key' => 'NEW-CALL-USA', 'plan' => 'NEW-PLAN-X3', 'usagev' => 280, 'services_data' => ["NEW-SERVICE1", "NEW-SERVICE2"]),
@@ -151,7 +151,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('stamp' => 'o6', 'aid' => 9502, 'sid' => 951, 'arate_key' => 'RATE-O4',
 			'plan' => 'NEW-PLAN-O4',  'usaget' => 'call', 'usagev' => 75, 'services_data' => [["name"=> "SERVICE-O4", "service_id" => 5950, "from"=> "2017-09-01T00:00:00+03:00", "to"=> "2017-09-14T23:59:59+03:00"]],
 			'urt' => '2017-09-14 14:00:00+03:00'),
-
 		// O6- plan includes - use part of it
 		// O7 - try to use service includes
 		// p1 service with limited cycle's 
@@ -180,8 +179,6 @@ class Tests_Updaterowt extends UnitTestCase {
 						['name'=>'2GB_INTERNET_FOR_1_CYCLE' , 'from'=> '2017-09-01 00:00:00+03:00', 'to'=>'2018-09-01 00:00:00+03:00']
 					],
 			   'urt' => '2017-10-14 14:00:00+03:00'),
-				
-		
 		//Q1
 		array('stamp' => 'q1', 'aid' => 9702, 'sid' => 971, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 70, 
@@ -202,7 +199,6 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 250, 
 			'services_data' => [["name" => "SERVICE-Q1", "from" => "2017-09-20 00:00:00+03:00", "to" => "2017-10-01 00:00:00+03:00", "service_id" => 4567],["name" => "SERVICE-Q2", "from" => "2017-09-25 00:00:00+03:00", "to" => "2017-09-30 00:00:00+03:00", "service_id" => 4568]],
 			'urt' => '2017-09-27 11:00:00+03:00'),
-		
 		//R1
 		array('stamp' => 'r1', 'aid' => 9802, 'sid' => 981, 'arate_key' => 'RATE-Q1',
 			'plan' => 'NEW-PLAN-Q1',  'usaget' => 'call', 'usagev' => 235, 
@@ -259,8 +255,6 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'PLAN-IS1',  'usaget' => 'call', 'usagev' => 75, 
 			'services_data' => [["name" => "SERVICE-IS1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-12-21 00:00:00+03:00", "service_id" => 1234]],
 			'urt' => '2017-09-14 11:00:00+03:00'),
-		
-		
 		// s custom period with pooled/shard
 		// s1 & s2 are one test case for check service period pooled
 		array('stamp' => 's1', 'aid' => 24, 'sid' => 25, 'arate_key' => 'CALL',
@@ -280,12 +274,15 @@ class Tests_Updaterowt extends UnitTestCase {
 			'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 15, 
 			'services_data' => [["name" => "PERIOD_SHARED", "from" => "2017-08-01 00:00:00+03:00", "to" => "2017-09-01 00:00:00+03:00", "service_id" => 1234569]],
 			'urt' => '2017-08-14 11:00:00+03:00'),
-            
+                 //T test for wholesale
+                array('stamp' => 't1', 'aid' => 27, 'sid' => 30, 'rates' => array('NEW-CALL-USA'=>'retail','CALL'=>'wholesale'),
+                            'plan' => 'WITH_NOTHING',  'usaget' => 'call', 'usagev' => 60,
+                            'urt' => '2017-08-14 11:00:00+03:00')
 	];
 	protected $expected = [
 		//New tests for new override price and includes format
 		//case F expected
-		array('in_group' => 60, 'over_group' => 0, 'aprice' => 0),
+        	array('in_group' => 60, 'over_group' => 0, 'aprice' => 0 ,'charge' => array('retail' => 0)),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 50, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 55, 'over_group' => 225, 'aprice' => 106.5),
@@ -374,7 +371,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 35, 'over_group' => 0, 'aprice' => 0), //O1
 		array('in_group' => 0, 'over_group' => 62, 'aprice' => 0.62), //O2
 		array('in_group' => 25, 'over_group' => 20, 'aprice' => 0.02), //O3
-
 		array('in_group' => 40, 'over_group' => 0, 'aprice' => 0), //O4
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //O5
 		array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5), //O6
@@ -384,14 +380,12 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 75000000, 'over_group' => 0, 'aprice' => 0),
 		array('in_group' => 0, 'over_group' => 7500000, 'aprice' => 8,),
 		array('in_group' => 0, 'over_group' => 75000000, 'aprice' => 75,),
-                
 //		
 		//case Q expected
 		array('in_group' => 70, 'over_group' => 0, 'aprice' => 0), //Q1
 		array('in_group' => 30, 'over_group' => 0, 'aprice' => 0), //Q2
 		array('in_group' => 150, 'over_group' => 0, 'aprice' => 0), //Q3
 		array('in_group' => 120, 'over_group' => 130, 'aprice' => 1.30), //Q4; service2 - take 20, service1 - take 100
-		
 		//case R expected
 		array('in_group' => 235, 'over_group' => 0, 'aprice' => 0), //R1
 		array('in_group' => 245, 'over_group' => 0, 'aprice' => 0), //R2
@@ -399,7 +393,6 @@ class Tests_Updaterowt extends UnitTestCase {
 		array('in_group' => 0, 'over_group' => 120, 'aprice' => 1.2), //R4
 		array('in_group' => 0, 'over_group' => 60, 'aprice' => 0.6), //R5
 		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //R6
-		
 		// case IS expected
 		array('in_group' => 75, 'over_group' => 0, 'aprice' => 0), //IS1
 		array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8), //IS2
@@ -412,6 +405,8 @@ class Tests_Updaterowt extends UnitTestCase {
 		 // case s3/s4 tast for period service shard 
 		array('in_group' => 20, 'over_group' => 0, 'aprice' => 0), //s3
 		array('in_group' => 10, 'over_group' => 5, 'aprice' => 5), //s4
+                //T wholesale
+                array('in_group' => 0, 'over_group' => 60, 'aprice' => 30 ,'charge' => array('retail' => 30,'wholesale' => 60))//T1
 		]; 
 
 	public function __construct($label = false) {
@@ -454,18 +449,56 @@ class Tests_Updaterowt extends UnitTestCase {
 
 	//checks return data
 	protected function compareExpected($key, $returnRow) {
+		$charge = (array_key_exists('charge', $this->expected[$key])) ? $this->expected[$key]['charge'] : '';
 		$passed = True;
 		$epsilon = 0.000001;
 		$inGroupE = $this->expected[$key]['in_group'];
 		$overGroupE = $this->expected[$key]['over_group'];
-		$aprice = round(10 * ($this->expected[$key]['aprice']), (1/$epsilon)) / 10;
-		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#'  . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br> <b> &nbsp;&nbsp;&nbsp; Result: </b> <br>';
+		$aprice = round(10 * ($this->expected[$key]['aprice']), (1 / $epsilon)) / 10;
+		$message = '<p style="font: 14px arial; color: rgb(0, 0, 80);"> ' . ($key + 1) . '(#' . $returnRow['stamp'] . '). <b> Expected: </b> <br> — aprice: ' . $aprice . '<br> — in_group: ' . $inGroupE . '<br> — over_group: ' . $overGroupE . '<br>';
+		if (is_array($charge)) {
+			foreach ($charge as $key => $value) {
+				$message .= "— $key : $value <br>";
+			}
+		}
+		$message .= '<b> Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
+
 		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
+
 			$message .= $this->pass;
 		} else {
 			$message .= $this->fail;
 			$passed = False;
+		}
+		if (!empty($charge)) {
+			foreach ($charge as $category => $price) {
+				$checkRate = current(array_filter($returnRow['rates'], function(array $cat) use ($category) {
+						return $cat['tariff_category'] === $category;
+					}));
+				if (!empty($checkRate)) {
+					if (!empty($checkRate)) {
+						//when the tariff_category is retail check if aprice equle to him charge
+						if ($checkRate['tariff_category'] == 'retail') {
+							if ($aprice == $checkRate['pricing']['charge']) {
+								$message .= "— $category equle to aprice  $this->pass ";
+							} else {
+								$message .= "— The difference between $category vs aprice its " . abs($aprice - $price) . "$this->fail";
+								$passed = False;
+							}
+						}
+						//check if the charge is currect 
+						if ($price == $checkRate['pricing']['charge']) {
+							$message .= "— $category {$checkRate['pricing']['charge']} $this->pass ";
+						} else {
+							$message .= "— $category {$checkRate['pricing']['charge']} $this->fail";
+							$passed = False;
+						}
+					} else {
+						$passed = False;
+					}
+				}
+			}
 		}
 		if ($inGroupE == 0) {
 			if ((!isset($returnRow['in_group'])) || Billrun_Util::isEqual($returnRow['in_group'], 0, $epsilon)) {
@@ -550,8 +583,19 @@ class Tests_Updaterowt extends UnitTestCase {
 				}
 			}
 		}
-		$rate = $this->ratesCol->query(array('key' => $row['arate_key']))->cursor()->current();
-		$row['arate'] = MongoDBRef::create('rates', (new MongoId((string) $rate['_id'])));
+
+                if(isset($row['arate_key'])){
+                    $row['rates'] = array($row['arate_key']=>'retail');
+                }
+                $keys = [];
+                foreach ($row['rates'] as $rate_key => $tariff_category){
+                    $rate = $this->ratesCol->query(array('key' => $rate_key))->cursor()->current();
+                    $keys[] = array(
+                        'rate' => MongoDBRef::create('rates', (new MongoId((string) $rate['_id']))),
+                        'tariff_category' => $tariff_category,
+                    );
+                }
+                $row['rates'] = $keys;
 		$plan = $this->plansCol->query(array('name' => $row['plan']))->cursor()->current();
 		$row['plan_ref'] = MongoDBRef::create('plans', (new MongoId((string) $plan['_id'])));
 		return $row;

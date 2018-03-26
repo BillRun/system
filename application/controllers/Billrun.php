@@ -45,6 +45,7 @@ class BillrunController extends ApiController {
 			throw new Exception('Need to pass correct billrun key');
 		}
 		$rerun = $request->get('rerun');
+		$generatedPdf = $request->get('generate_pdf');
 		$currentBillrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp();
 		if ($billrunKey >= $currentBillrunKey) {
 			throw new Exception("Can't run billing cycle on active or future cycles");
@@ -57,10 +58,12 @@ class BillrunController extends ApiController {
 			if (is_null($rerun) || !$rerun) {
 				throw new Exception("For rerun pass rerun value as true");
 			}
+			Billrun_Factory::log("Rerunning cycle " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
 		}
 
-		$success = self::processCycle($billrunKey);
+		$success = self::processCycle($billrunKey, $generatedPdf);
+		Billrun_Factory::log("Finished running cycle " . $billrunKey, Zend_Log::DEBUG);
 		$output = array (
 			'status' => $success ? 1 : 0,
 			'desc' => $success ? 'success' : 'error',
@@ -239,6 +242,7 @@ class BillrunController extends ApiController {
 		if (Billrun_Billingcycle::hasCycleEnded($billrunKey, $this->size)) {
 			$setting['confirmation_percentage'] = Billrun_Billingcycle::getCycleConfirmationPercentage($billrunKey);
 		}
+		$setting['generate_pdf'] = Billrun_Factory::config()->getConfigValue('billrun.generate_pdf');
 		$output = array(
 			'status' => !empty($setting) ? 1 : 0,
 			'desc' => !empty($setting) ? 'success' : 'error',
@@ -247,11 +251,11 @@ class BillrunController extends ApiController {
 		$this->setOutput(array($output));
 	}
 
-	protected function processCycle($billrunKey) {
+	protected function processCycle($billrunKey, $generatedPdf = true) {
 		if (empty($billrunKey) || !Billrun_Util::isBillrunKey($billrunKey)) {
 			throw new Exception('Need to pass correct billrun key');
 		}
-		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey;
+		$cmd = 'php ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams() . ' --cycle --type customer --stamp ' . $billrunKey . ' generate_pdf=' . $generatedPdf;
 		return Billrun_Util::forkProcessCli($cmd);
 	}
 
@@ -372,7 +376,9 @@ class BillrunController extends ApiController {
 		}
 		$success = false;
 		if (Billrun_Billingcycle::getCycleStatus($billrunKey) == 'finished') {
+			Billrun_Factory::log("Starting reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			Billrun_Billingcycle::removeBeforeRerun($billrunKey);
+			Billrun_Factory::log("Finished reset cycle for " . $billrunKey, Zend_Log::DEBUG);
 			$success = true;
 		}
 

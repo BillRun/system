@@ -26,9 +26,11 @@ class Billrun_Utils_Arrayquery_Expression {
 		'$and' => '_and',
 		'$or' => '_or',
 		'$not' => '_not',
+		'$exists' => '_exists',
 		'$regex' => '_regex',
 		'*' => '_search',
 		'**' => '_deepSearch',
+		'__callback' => '_callback'
 	);
 	
 	public function __construct($mapping = array()) {
@@ -59,7 +61,7 @@ class Billrun_Utils_Arrayquery_Expression {
 					
 					$ret &= $this->{$this->mapping[$key]}($field,$value);
 					
-				} else if(isset($field[$key])) {
+				} else if(($field instanceof ArrayAccess || is_array($field)) && isset($field[$key])) {
 					
 					$ret &= $this->evaluate($field[$key], $value);
 					
@@ -144,6 +146,15 @@ class Billrun_Utils_Arrayquery_Expression {
 			return $this->evaluate($field, $val);			
 		}));
 	}
+	/**
+	 *
+	 * @param type $field
+	 * @param type $value
+	 * @return type
+	 */
+	protected function _exists($field, $value) {
+		return $value  ^ !isset($value);
+	}
 	
 	/**
 	 * compare field to regex or array values to regex
@@ -152,13 +163,15 @@ class Billrun_Utils_Arrayquery_Expression {
 	 * @return type
 	 */
 	protected function _regex($field, $value) {
+		$value = preg_match('/^\/.*\/\w*$/', $value) ? $value : '/' .$value.'/';
+		
 		$arrayRegexFunc = function($subject) use ($value) {
-			return preg_match('/' . $value . '/', $subject);
+			return preg_match($value, $subject);
 		};
 		
 		return  (is_array($field) && !empty(array_filter($field, $arrayRegexFunc)))
 					|| 
-				preg_match('/' . $value . '/', $field);
+				preg_match($value, $field);
 	}
 	
 	//======================================= Searching logic ==================================
@@ -198,5 +211,17 @@ class Billrun_Utils_Arrayquery_Expression {
 		}
 		
 		return $ret;
+	}
+
+	//==================================== Programatic extenstions logic =======================
+	/**
+	 * This is
+	 * @param type $data
+	 * @param type $expression
+	 * @param type $pastValue
+	 * @return type
+	 */
+	protected function _callback($field, $value) {
+		return empty($value['callback']) ? FALSE : call_user_func_array($value['callback'],array($field,$value['arguments']));
 	}
 }
