@@ -797,5 +797,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 		}
 		return false;
 	}
+	
+	public function isPrepaidAccount() {
+		return (isset($this->data['prepaid']) && $this->data['prepaid']); 
+	}
 
 }

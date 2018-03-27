@@ -115,6 +115,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			$subscriber = $this->loadSubscriberForLine($row);
 		}
 		if (!$subscriber || !$subscriber->isValid()) {
+			if ($subscriber->isPrepaidAccount()) {
+				Billrun_Factory::log('Skipping prepaid line ' . $row->get('stamp'), Zend_Log::INFO);
+				return $row;
+			}
 			if ($this->isOutgoingCallOrSms($row)) {
 				Billrun_Factory::log('Missing subscriber info for line with stamp : ' . $row->get('stamp'), Zend_Log::NOTICE);
 				return false;
@@ -199,6 +203,10 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		if (!isset($line['usagev']) || $line['usagev'] === 0) {
 			$this->garbageQueueLines[] = $line['stamp'];
 			unset($this->data[$dataKey]);
+		}
+		
+		if (!empty($line['prepaid'])) {
+			$this->garbageQueueLines[] = $line['stamp'];
 		}
 
 		Billrun_Factory::dispatcher()->trigger('afterCalculatorWriteLine', array('data' => $line, 'calculator' => $this));
