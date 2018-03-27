@@ -27,6 +27,40 @@
 							"property_type": "data",
 							"invoice_uom": "mb1000",
 							"input_uom": "mb1000"
+						},
+						{
+							"usage_type": "call_usa",
+							"label": "call_usa",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_uk",
+							"label": "call_uk",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_to_la",
+							"label": "call_to_la",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						},
+						{
+							"usage_type": "call_to_gaza",
+							"label": "call_to_gaza",
+							"property_type": "time",
+							"invoice_uom": "seconds",
+							"input_uom": "seconds"
+						}, {
+							"usage_type": "mms",
+							"label": "mms",
+							"property_type": "counter",
+							"invoice_uom": "counter",
+							"input_uom": "counter"
 						}
 					],
 					"plugins": [
@@ -1404,6 +1438,648 @@
 										"user": "ftp_user",
 										"password": "j8(B2c_sV",
 										"name": "computed",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "many_prefix",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "prefix_a"
+									},
+									{
+										"name": "prefix_b"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"prefix_a",
+									"prefix_b"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"sms": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix_a",
+												"line_key": "prefix_a"
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix_b",
+												"line_key": "prefix_b"
+											}
+										]
+									],
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "usaget",
+												"line_key": "usage"
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"sms": [],
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "many_prefix",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi"
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
+						},
+						{
+							"file_type": "conditions",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "a"
+									},
+									{
+										"name": "b"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"a",
+									"b"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "data",
+										"usaget": "data",
+										"unit": "kb1000",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "usa",
+										"usaget": "call_usa",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "uk",
+										"usaget": "call_uk",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "gaza",
+										"usaget": "call_to_gaza",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "la",
+										"usaget": "call_to_la",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call_to_la": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"data": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call_usa": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call_uk": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call_to_gaza": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"mms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"sms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "b"
+														}
+													],
+													"operator": "$eq",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "/123/"
+														}
+													}
+												}
+											}
+										]
+									],
+									"call_to_la": [
+										[
+											{
+												"type": "match",
+												"rate_key": "params.abcdef",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "//"
+														}
+													],
+													"operator": "$regex",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									],
+									"data": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "b"
+														}
+													],
+													"operator": "$lte",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate"
+														}
+													}
+												}
+											}
+										]
+									],
+									"call_usa": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "b"
+														}
+													],
+													"operator": "$gt",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate"
+														}
+													}
+												}
+											}
+										]
+									],
+									"call_uk": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "b"
+														}
+													],
+													"operator": "$gte",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate"
+														}
+													}
+												}
+											}
+										]
+									],
+									"call_to_gaza": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": ""
+														}
+													],
+													"operator": "$regex",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									],
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "a"
+														},
+														{
+															"key": "b"
+														}
+													],
+													"operator": "$lt",
+													"type": "condition",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "rate"
+														}
+													}
+												}
+											}
+										]
+									],
+									"mms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "rate",
+															"regex": "/123/"
+														}
+													],
+													"operator": "",
+													"type": "regex",
+													"must_met": false,
+													"projection": {
+														"on_true": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"sms": [],
+								"call_to_la": [],
+								"data": [],
+								"call_usa": [],
+								"call_uk": [],
+								"call_to_gaza": [],
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "conditions",
 										"host": "46.101.149.208",
 										"remote_directory": "/yossi"
 									}

@@ -6,7 +6,7 @@
  * @license         GNU Affero General Public License Version 3; see LICENSE.txt
  */
 /**
- * Billing calculator for  pricing  billing lines with customer price.
+ * Billing calculator for finding rates  of lines
  *
  * @package  calculator
  * @since    0.5
@@ -42,7 +42,7 @@ class Tests_Ratetest extends UnitTestCase {
 		array('row' => array('stamp' => 'd2', 'aid' => 27, 'sid' => 31, 'type' => 'longest_prefix', 'plan' => 'WITH_NOTHING', 'phone' => '972533406999', 'code' => '1234', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('CALL_A' => 'retail')),
 		//Test num 6 d3 test Long prefix exists but it's in an expired revision: Take the shorter prefix from an active revision
-		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+		array('row' => array('stamp' => 'd3', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '033060985', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-04-14 11:00:00+03:00'),
 			'expected' => array('SMS' => 'retail')),
 		//Test num 7 d4 test No product found although an expired matching revision exists
 		array('row' => array('stamp' => 'd4', 'aid' => 27, 'sid' => 31, 'type' => 'old_revision', 'plan' => 'WITH_NOTHING', 'code' => '456789', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
@@ -53,22 +53,74 @@ class Tests_Ratetest extends UnitTestCase {
 		//Test num 9 e2 false "Must met" fails the whole priority
 		array('row' => array('stamp' => 'e2', 'aid' => 27, 'sid' => 31, 'type' => 'computed', 'plan' => 'WITH_NOTHING', 'called' => '123456', 'calling' => '789', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
 			'expected' => array('result' => 'Rate not found')),
+		//Test num 10 f1  3 rates with 2 prefixes fildes the sms_c have longest prefix_a but it's prefix_b is incorrectly ,prefix_a of sms_b biger then sms_a
+		//(sms_a:prefix_a = 1 prefix_b = 56 ,sms_b:prefix_a = 12 prefix_b = 5 ,sms_c:prefix_a = 123 prefix_b = 8 )
+		array('row' => array('stamp' => 'f1', 'aid' => 27, 'sid' => 31, 'type' => 'many_prefix', 'plan' => 'WITH_NOTHING', 'prefix_a' => '123456', 'prefix_b' => '56789', 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('SMS_B' => 'retail')),
+		//Test num 11 g1 condition: a equel to b ,Value when True: rate filed  with regx"123"
+		array('row' => array('stamp' => 'g1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'SMS','a' => 1, 'b' => 1, 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('SMS' => 'retail')),
+	    //Test num 12 g2 ***negative test*** condition: a equel to b ,Value when True: rate filed , actuali a is greater then b 
+		array('row' => array('stamp' => 'g2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'SMS','a' => 2, 'b' => 1, 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 13 g3 ***negative test*** condition: a equel to b ,Value when True: rate filed , actuali b is then a 
+		array('row' => array('stamp' => 'g3', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'SMS','a' => 1, 'b' => 2, 'usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 14 h1 condition:a Is Less Than Or Equal b ,Value when True: rate filed ,a less
+		array('row' => array('stamp' => 'h1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'DATA','a' => 1, 'b' => 2, 'usaget' => 'data', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('DATA' => 'retail')),
+		//Test num 15 h2 condition:a Is Less Than Or Equal b ,Value when True: rate filed , a equel to b 
+		array('row' => array('stamp' => 'h2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'DATA','a' => 1, 'b' => 1, 'usaget' => 'data', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('DATA' => 'retail')),
+		//Test num 16 h3 ***negative test*** condition:a Is Less Than Or Equal b ,Value when True: rate filed ,a is greater then b
+		array('row' => array('stamp' => 'h3', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'DATA','a' => 2, 'b' => 1, 'usaget' => 'data', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 17  i1 condition:a Is Greater Than b ,Value when True: rate filed 
+		array('row' => array('stamp' => 'i1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_USA','a' => 2, 'b' => 1, 'usaget' => 'call_usa', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('C_USA' => 'retail')),
+		//Test num 18  i2 ***negative test*** condition:a Is Greater Than b ,Value when True: rate filed actuali b Is Greater Than a
+		array('row' => array('stamp' => 'i2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_USA','a' => 1, 'b' => 2, 'usaget' => 'call_usa', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 19  i3 ***negative test*** condition:a Is Greater Than b ,Value when True: rate filed actuali b Is equel to a
+		array('row' => array('stamp' => 'i3', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_USA','a' => 1, 'b' => 1, 'usaget' => 'call_usa', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 20  l1  condition:a Is Greater Than Or Equal b ,Value when True: rate filed 
+		array('row' => array('stamp' => 'l1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_UK','a' => 2, 'b' => 1, 'usaget' => 'call_uk', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('C_UK' => 'retail')),
+		//Test num 21  l2  condition:a Is Greater Than Or Equal b ,Value when True: rate filed 
+		array('row' => array('stamp' => 'l2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_UK','a' => 1, 'b' => 1, 'usaget' => 'call_uk', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('C_UK' => 'retail')),
+		//Test num 22  l3  ***negative test*** condition:a Is Greater Than Or Equal b ,Value when True: rate filed 
+		array('row' => array('stamp' => 'l3', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_UK','a' => 1, 'b' => 2, 'usaget' => 'call_uk', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 23  m1   condition:a Matches regular expression Second Field is emptey,Value when True: rate filed 
+		array('row' => array('stamp' => 'm1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_GAZA','a' => 1, 'b' => 2, 'usaget' => 'call_to_gaza', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('C_GAZA' => 'retail')),
+		//Test num 24  m2   condition:a Matches regular expression Second Field has //,Value when True: rate filed 
+		array('row' => array('stamp' => 'm2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'C_LA','a' => 1, 'b' => 2, 'usaget' => 'call_to_la', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('C_LA' => 'retail')),
+		//Test num 25  n1   Computation Type Regex ,Condition Field rate× Regex/123/,Value when True: rate filed 
+		array('row' => array('stamp' => 'n1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'123MMS','a' => 1, 'b' => 2, 'usaget' => 'mms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('MMS' => 'retail')),
+		//Test num 26  n2   Computation Type Regex ,Condition Field rate× Regex/123/,Value when True: rate filed 
+		array('row' => array('stamp' => 'n2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'MMS','a' => 1, 'b' => 2, 'usaget' => 'mms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('MMS' => 'retail')),
 	];
-
+	
+   
 	public function __construct($label = false) {
 		parent::__construct("test Rate");
-	}
-
-	public function testUpdateRow() {
-		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
+        $this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'Rate_Usage', 'autoload' => false));
-		$init = new Tests_UpdateRowSetUp();
-		$init->setColletions();
+		$this->init = new Tests_UpdateRowSetUp();
+		$this->init->setColletions();
+		Billrun_Config::getInstance()->loadDbConfig();
+	}
 
+	public function testUpdateRow() {
 		foreach ($this->rows as $key => $row) {
-			Billrun_Config::getInstance()->loadDbConfig();
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
@@ -77,7 +129,7 @@ class Tests_Ratetest extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$init->restoreColletions();
+		$this->init->restoreColletions();
 	}
 
 	protected function runT($stamp) {
@@ -100,6 +152,7 @@ class Tests_Ratetest extends UnitTestCase {
 		}
 		$message .= '<b></br> Result:</b> </br> ';
 		$passed = True;
+
 		if (!empty($retunrRates)) {
 			foreach ($row['expected'] as $rate => $tariff) {
 				$message .= (array_keys($row['expected'])[0] != $rate) ? '</br>' : '';
@@ -111,20 +164,20 @@ class Tests_Ratetest extends UnitTestCase {
 					if ($checkRate['tariff_category'] === $tariff && $checkRate['key'] === $rate) {
 						$message .= "rate_key: {$checkRate['key']} => Tariff_Category  :  {$checkRate['tariff_category']}  $this->pass";
 					} else {
-						$message .= $error . "rate_key: {$checkRate['key']} => Tariff_Category  :  {$checkRate['tariff_category']} </span> $this->fail ";
+						$message .= "rate_key:" . $error . " {$checkRate['key']} </span>=> Tariff_Category  :  {$checkRate['tariff_category']}  $this->fail ";
 						$passed = false;
 					}
 				} else {
 					$passed = false;
-					$message .= $error . "No found any product and category";
+					$message .= $error . "1No found any product and category";
 				}
 			}
 			$message .= ' </span></br>';
-		} elseif (!empty ($row['expected']['result']) ) {
+		} elseif (!empty($row['expected']['result'])) {
 			$message .= "rate_key: <u><i>not found</i></u> $this->pass";
 		} else {
 			$passed = false;
-			$message .= $error . "No found any product and category  ";
+			$message .= $error . "2No found any product and category  ";
 		}
 		return [$passed, $message];
 	}

@@ -325,27 +325,26 @@ class Tests_Updaterowt extends UnitTestCase {
 			'expected' => array('in_group' => 0, 'over_group' => 60, 'aprice' => 30, 'charge' => array('retail' => 30, 'wholesale' => 60))),
 //Test num 100 u1
 		array('row' => array('stamp' => 'u1', 'aid' => 27, 'sid' => 31, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'prepriced' => "true", 'type' => 'Preprice_Dynamic', 'uf' => array('preprice' => 100), 'usaget' => 'call', 'usagev' => 15, 'urt' => '2017-08-14 11:00:00+03:00',),
-			'expected' => array('in_group' => 0, 'over_group' => 0, 'aprice' => 100, 'charge' => array('retail' => 100,))),
+			'expected' => array('in_group' => 0, 'over_group' => 15, 'aprice' => 100, 'charge' => array('retail' => 100,))),
 	];
 
 	public function __construct($label = false) {
 		parent::__construct("test UpdateRow");
-		
-	}
-
-	public function testUpdateRow() {
-
 		date_default_timezone_set('Asia/Jerusalem');
 		$this->ratesCol = Billrun_Factory::db()->ratesCollection();
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		$init = new Tests_UpdateRowSetUp();
-		$init->setColletions();
+		$this->init = new Tests_UpdateRowSetUp();
+		$this->init->setColletions();
+		Billrun_Config::getInstance()->loadDbConfig();
+	}
+
+	public function testUpdateRow() {
+   
 		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services_data'=>$this->servicesToUse)),array("multiple" => true));
 		//running test
-		foreach ($this->rows as $key => $row) {
-			Billrun_Config::getInstance()->loadDbConfig();
+		foreach ($this->rows as $key => $row) {			
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
@@ -354,7 +353,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$init->restoreColletions();
+		$this->init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 

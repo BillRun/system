@@ -682,6 +682,294 @@
 					"tariff_category": "retail",
 					"to": "time*2167-03-22T11:27:40Z",
 					"creation_time": "time*2017-03-23T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_A",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_a",
+					"params": {
+						"prefix_a": [
+							"1"
+						],
+						"prefix_b": [
+							"56"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T08:58:32Z",
+					"creation_time": "time*2017-03-26T00:00:00Z"
+				},
+				{
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_B",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 0,
+										"price": "",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_b",
+					"params": {
+						"prefix_b": [
+							"5"
+						],
+						"prefix_a": [
+							"12"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T08:59:44Z",
+					"creation_time": "time*2017-03-26T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-26T00:00:00Z",
+					"key": "SMS_C",
+					"rates": {
+						"sms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "sms_c",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-25T11:20:20Z",
+					"creation_time": "time*2017-03-26T00:00:00Z",
+					"params": {
+						"prefix_a": [
+							"123"
+						],
+						"prefix_b": [
+							"8"
+						]
+					}
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_GAZA",
+					"rates": {
+						"call_to_gaza": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_gaza",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:03:39",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_LA",
+					"rates": {
+						"call_to_la": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_la",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:04:32",
+					"creation_time": "time*2018-03-27T00:00:00",
+					"params": {
+						"abcdef": true
+					}
+				},
+				{
+
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_UK",
+					"rates": {
+						"call_uk": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "",
+											"interval": ""
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_uk",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:03:10",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+					"from": "time*2017-03-27T00:00:00",
+					"key": "C_USA",
+					"rates": {
+						"call_usa": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "c_usa",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-26T08:02:31",
+					"creation_time": "time*2017-03-27T00:00:00"
+				},
+				{
+					"from": "time*2017-11-01T00:00:00Z",
+					"key": "DATA",
+					"rates": {
+						"data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1000000,
+										"price": "1",
+										"uom_display": {
+											"range": "mb1000",
+											"interval": "mb1000"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "data",
+					"params": [],
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-01-10T08:13:13Z",
+					"creation_time": "time*2017-11-01T00:00:00Z"
+				},
+				{
+
+					"from": "time*2017-03-28T00:00:00Z",
+					"key": "MMS",
+					"rates": {
+						"mms": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "counter",
+											"interval": "counter"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "mms",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-27T08:32:29Z",
+					"creation_time": "time*2017-03-28T00:00:00Z"
 				}
+
+
 			]
 }
