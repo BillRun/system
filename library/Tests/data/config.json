@@ -8,6 +8,13 @@
 					"shared_secret": [],
 					"usage_types": [
 						{
+							"usage_type": "roming_data",
+							"label": "roming_data",
+							"property_type": "data",
+							"invoice_uom": "byte",
+							"input_uom": "byte"
+						},
+						{
 							"usage_type": "call",
 							"label": "call",
 							"property_type": "time",
@@ -1852,6 +1859,16 @@
 											}
 										]
 									],
+									"roming_data": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "file"
+											}
+										]
+									],
+
 									"call_to_la": [
 										[
 											{

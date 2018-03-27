@@ -21,7 +21,6 @@ class Tests_Ratetest extends UnitTestCase {
 	protected $plansCol;
 	protected $linesCol;
 	protected $calculator;
-	protected $config;
 	protected $servicesToUse = ["SERVICE1", "SERVICE2"];
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span>';
@@ -105,6 +104,9 @@ class Tests_Ratetest extends UnitTestCase {
 		//Test num 26  n2   Computation Type Regex ,Condition Field rate× Regex/123/,Value when True: rate filed 
 		array('row' => array('stamp' => 'n2', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING', 'rate'=>'MMS','a' => 1, 'b' => 2, 'usaget' => 'mms', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
 			'expected' => array('MMS' => 'retail')),
+		//Test num 27 o1  file_name vs rate_key
+		array('row' => array('stamp' => 'o1', 'aid' => 27, 'sid' => 31, 'type' => 'conditions', 'plan' => 'WITH_NOTHING',"file"=>'USA_DATA','rate'=>'MMS','a' => 1, 'b' => 2, 'usaget' => 'roming_data', 'usagev' => 20, 'urt' => '2018-05-14 11:00:00+03:00'),
+			'expected' => array('USA_DATA' => 'retail')),
 	];
 	
    

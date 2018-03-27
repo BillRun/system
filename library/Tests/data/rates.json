@@ -968,7 +968,36 @@
 					"tariff_category": "retail",
 					"to": "time*2167-03-27T08:32:29Z",
 					"creation_time": "time*2017-03-28T00:00:00Z"
+				},
+				{
+					"from": "time*2017-03-28T00:00:00Z",
+					"key": "USA_DATA",
+					"rates": {
+						"roming_data": {
+							"BASE": {
+								"rate": [
+									{
+										"from": 0,
+										"to": "UNLIMITED",
+										"interval": 1,
+										"price": "1",
+										"uom_display": {
+											"range": "byte",
+											"interval": "byte"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "usa_data",
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-03-27T15:06:30Z",
+					"creation_time": "time*2017-03-28T00:00:00Z"
 				}
+
 
 
 			]
