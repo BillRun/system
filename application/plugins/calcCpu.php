@@ -47,6 +47,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		}
 		
 		$data = &$processor->getData();
+		if ($this->isCreditGuardResponse($processor)) {
+			return;
+		}
 		$this->queueCalculators = new Billrun_Helpers_QueueCalculators($options);
 		if (!$this->queueCalculators->run($processor, $data)) {
 			return false;
@@ -183,6 +186,16 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Returns true if processor is CGfeedback.
+	 * 
+	 * @param type $processor
+	 * 
+	 */
+	protected function isCreditGuardResponse($processor) {
+		return $processor->getType() == 'CGfeedback';
 	}
 
 }

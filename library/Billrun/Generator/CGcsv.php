@@ -38,6 +38,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 		$this->initLogFile($options['stamp']);
 
 		parent::__construct($options);
+		$this->export_dir = $options['export']['dir'];
 	}
 
 	public function load() {
@@ -75,17 +76,18 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			$paymentParams['source'] = $customer['source'];
 			
 	//		$payment = payAction::pay('credit', array($paymentParams), $options)[0];
+			$amount = $this->convertAmountToSend($paymentParams['amount']);
 			$line = array(
 				0 => '001',
 				1 => $this->gatewayCredentials['redirect_terminal'],
-				2 => $paymentParams['amount'],
+				2 => $amount,
 				3 => 1,
-				4 => $account['card_token'] ,
-				5 => $account['card_expiration'],
+				4 => $account['payment_gateway']['active']['card_token'],
+				5 => $account['payment_gateway']['active']['card_expiration'],
 				6 => '01',
 				7 => 1,
 				8 => '',
-				9 => $account['transaction_id'],
+				9 => '',
 				10 => '',
 				11 => '',
 				12 => 4,
@@ -177,6 +179,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 		$this->dd_log_file->setSequenceNumber();
 		$this->setFilename();
 		$this->dd_log_file->setFileName($this->filename);
+		$this->dd_log_file->setStamp();
 	}
 
 	protected function initPaymentGatwayDetails() {
@@ -196,6 +199,11 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	protected function loadConfig($path) {
 		$structConfig = (new Yaf_Config_Ini($path))->toArray();
 		$this->generateStructure = $structConfig['generator'];
+	}
+	
+	protected function convertAmountToSend($amount) {
+		$amount = round($amount, 2);
+		return $amount * 100;
 	}
 
 }

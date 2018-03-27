@@ -11,7 +11,7 @@
  * @package  Billing
  * @since    5.7
  */
-class Billrun_Processor_CreditGuard extends Billrun_Processor {
+class Billrun_Processor_CGfeedback extends Billrun_Processor {
 
 	/**
 	 *
@@ -82,32 +82,32 @@ class Billrun_Processor_CreditGuard extends Billrun_Processor {
  		$emailsToSend = array();
 		$rejections = Billrun_Bill_Payment::getRejections();
 		foreach ($data['data'] as $row) {
-			$bills = $this->findBill($row);
-			$bill = Billrun_Bill_Payment::getInstanceByid($bills->current()['txid']);
-			$bill->updateConfirmation();
+			//$row['transaction_id'] = '0000000000001';
+			$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
+			if (is_null($bill)) {
+				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
+			} else {
+				$bill->updateConfirmation();
+			}
 			if ($this->isValidTransaction($row)) {
 				continue;
 			}else{
-				if (count($bills) == 0) {
-					Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
-				} else {
-					if (!$bill->isRejected()) {
-						if (!Billrun_Util::isEqual(Billrun_Util::getChargableAmount($bill->getAmount()), Billrun_Util::getChargableAmount($row['amount']), Billrun_Bill::precision)) {
-							Billrun_Factory::log('Charge not matching for transaction id ' . $row['transaction_id'] . '. Skipping.', Zend_Log::ALERT);
-							continue;
-						}
-						Billrun_Factory::log('Rejecting transaction  ' . $row['transaction_id'], Zend_Log::DEBUG);
-						$rejection = $bill->getRejectionPayment($row['ret_code']);
-						$rejection->save();
-						$bill->markRejected();
-
-						$this->incrementGoodLinesCounter();
-						if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
-							$emailsToSend = $this->defineEmailToSend($bill, $row, $rejections);
-						}
-					} else {
-						Billrun_Factory::log('Transaction ' . $row['transaction_id'] . ' already rejected', Zend_Log::NOTICE);
+				if (!$bill->isRejected()) {
+					if (!Billrun_Util::isEqual(Billrun_Util::getChargableAmount($bill->getAmount()), Billrun_Util::getChargableAmount($row['amount']), Billrun_Bill::precision)) {
+						Billrun_Factory::log('Charge not matching for transaction id ' . $row['transaction_id'] . '. Skipping.', Zend_Log::ALERT);
+						continue;
 					}
+					Billrun_Factory::log('Rejecting transaction  ' . $row['transaction_id'], Zend_Log::DEBUG);
+					$rejection = $bill->getRejectionPayment($row['ret_code']);
+					$rejection->save();
+					$bill->markRejected();
+
+					$this->incrementGoodLinesCounter();
+					if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
+						$emailsToSend = $this->defineEmailToSend($bill, $row, $rejections);
+					}
+				} else {
+					Billrun_Factory::log('Transaction ' . $row['transaction_id'] . ' already rejected', Zend_Log::NOTICE);
 				}
 			}
 		}
@@ -158,14 +158,32 @@ class Billrun_Processor_CreditGuard extends Billrun_Processor {
 		}
 	}
 	
-	protected function findBill($row){
-		return $this->bills->query('txid', $row['transaction_id'])->cursor();
-	}
-	
 	protected function getRowDateTime($dateStr) {
 		$datetime = new DateTime();
 		$date = $datetime->createFromFormat('ymdHis', $dateStr);
 		return $date;
+	}
+	
+	protected function store() {
+		if (!isset($this->data['data'])) {
+			Billrun_Factory::log('Got empty data from file  : ' . basename($this->filePath), Zend_Log::ERR);
+			return false;
+		}
+
+		$lines = Billrun_Factory::db()->linesCollection();
+		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
+
+		if ($this->bulkInsert) {
+			settype($this->bulkInsert, 'int');
+			if (!$this->bulkAddToCollection($lines)) {
+				return false;
+			}
+		} else {
+			$this->addToCollection($lines);
+		}
+
+		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
+		return true;
 	}
 
 }
