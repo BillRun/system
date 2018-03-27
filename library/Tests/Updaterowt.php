@@ -26,6 +26,8 @@ class Tests_Updaterowt extends UnitTestCase {
 	protected $fail = ' <span style="color:#ff3385; font-size: 80%;"> failed </span> <br>';
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span> <br>';
 	protected $rows = [
+		//New tests for new override price and includes format
+		//case F: NEW-PLAN-X3+NEW-SERVICE1+NEW-SERVICE2
 //Test num 1 f1
 		array('row' => array('stamp' => 'f1', 'sid' => 62, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 60, 'services_data' => ['NEW-SERVICE1', 'NEW-SERVICE2']),
 			'expected' => array('in_group' => 60, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0))),
@@ -41,6 +43,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 5 f5
 		array('row' => array('stamp' => 'f5', 'sid' => 62, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 180, 'services_data' => ['NEW-SERVICE1', 'NEW-SERVICE2'],),
 			'expected' => array('in_group' => 0, 'over_group' => 180, 'aprice' => 18, 'charge' => array('retail' => 18,))),
+		//case G: NEW-PLAN-X3+NEW-SERVICE3
 //Test num 6 g1
 		array('row' => array('stamp' => 'g1', 'sid' => 63, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 120, 'services_data' => ['NEW-SERVICE3'],),
 			'expected' => array('in_group' => 120, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -53,6 +56,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 9 g5
 		array('row' => array('stamp' => 'g5', 'sid' => 63, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-X3', 'usagev' => 8, 'services_data' => ['NEW-SERVICE3',],),
 			'expected' => array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
+		//case H: NEW-PLAN-A0 (without groups)+NEW-SERVICE1+NEW-SERVICE4  
 //Test num 10 h1
 		array('row' => array('stamp' => 'h1', 'sid' => 64, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ['NEW-SERVICE4',],),
 			'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -68,6 +72,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 14 h5
 		array('row' => array('stamp' => 'h5', 'sid' => 64, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 0, 'over_group' => 12, 'aprice' => 6, 'charge' => array('retail' => 6,))),
+		//case I NEW-PLAN-A1 (with two groups) no services
 //Test num 15 i1
 		array('row' => array('stamp' => 'i1', 'sid' => 65, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
 			'expected' => array('in_group' => 24, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -83,6 +88,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 19 i5
 		array('row' => array('stamp' => 'i5', 'sid' => 65, 'rates' => array('NEW-CALL-EUROPE' => 'retail'), 'plan' => 'NEW-PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
 			'expected' => array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.1, 'charge' => array('retail' => 5.1,))),
+		//case J NEW-PLAN-A2 multiple groups with same name
 //Test num 20 j1
 		array('row' => array('stamp' => 'j1', 'sid' => 66, 'rates' => array('NEW-CALL-USA' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 30, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -95,6 +101,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 23 j4
 		array('row' => array('stamp' => 'j4', 'sid' => 66, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services_data' => ['NEW-SERVICE1',],),
 			'expected' => array('in_group' => 0, 'over_group' => 30, 'aprice' => 6, 'charge' => array('retail' => 6,))),
+		//case K shared account test
 //Test num 24 k1
 		array('row' => array('stamp' => 'k1', 'aid' => 7770, 'sid' => 71, 'rates' => array('SHARED-RATE' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 8, 'services_data' => ['SHARED-SERVICE1'],),
 			'expected' => array('in_group' => 8, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -110,6 +117,8 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 28 k5
 		array('row' => array('stamp' => 'k5', 'aid' => 7772, 'sid' => 75, 'rates' => array('SHARED-RATE' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 20, 'services_data' => ['SHARED-SERVICE1', 'NO-SHARED-SERVICE2',],),
 			'expected' => array('in_group' => 5, 'over_group' => 15, 'aprice' => 1.5, 'charge' => array('retail' => 1.5,))),
+		//old tests
+		//case A: PLAN-X3+SERVICE1+SERVICE2
 //Test num 29 a1
 		array('row' => array('stamp' => 'a1', 'sid' => 51, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-X3', 'usagev' => 60, 'services_data' => ['SERVICE1', 'SERVICE2',],),
 			'expected' => array('in_group' => 60, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -125,6 +134,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 33 a5
 		array('row' => array('stamp' => 'a5', 'sid' => 51, 'rates' => array('CALL-EUROPE' => 'retail'), 'plan' => 'PLAN-X3', 'usagev' => 180, 'services_data' => ['SERVICE1', 'SERVICE2',],),
 			'expected' => array('in_group' => 0, 'over_group' => 180, 'aprice' => 18, 'charge' => array('retail' => 18,))),
+		//case B: PLAN-X3+SERVICE3
 //Test num 34 b1
 		array('row' => array('stamp' => 'b1', 'sid' => 52, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-X3', 'usagev' => 120, 'services_data' => ['SERVICE3',],),
 			'expected' => array('in_group' => 120, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -137,6 +147,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 37 b5
 		array('row' => array('stamp' => 'b5', 'sid' => 52, 'rates' => array('CALL-EUROPE' => 'retail'), 'plan' => 'PLAN-X3', 'usagev' => 8, 'services_data' => ['SERVICE3',],),
 			'expected' => array('in_group' => 0, 'over_group' => 8, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
+		//case C: PLAN-A0 (without groups)+SERVICE1+SERVICE4  
 //Test num 38 c1
 		array('row' => array('stamp' => 'c1', 'sid' => 53, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'gr', 'usagev' => 35, 'services_data' => ['SERVICE4',],),
 			'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -152,6 +163,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 42 c5
 		array('row' => array('stamp' => 'c5', 'sid' => 53, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A0', 'usaget' => 'call', 'usagev' => 12, 'services_data' => ['SERVICE1',],),
 			'expected' => array('in_group' => 0, 'over_group' => 12, 'aprice' => 6, 'charge' => array('retail' => 6,))),
+		//case D PLAN-A1 (with two groups) no services
 //Test num 43 d1
 		array('row' => array('stamp' => 'd1', 'sid' => 54, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 24),
 			'expected' => array('in_group' => 24, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -167,6 +179,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 47 d5
 		array('row' => array('stamp' => 'd5', 'sid' => 54, 'rates' => array('CALL-EUROPE' => 'retail'), 'plan' => 'PLAN-A1', 'usaget' => 'call', 'usagev' => 50.5),
 			'expected' => array('in_group' => 0, 'over_group' => 50.5, 'aprice' => 5.1, 'charge' => array('retail' => 5.1,))),
+//case E PLAN-A2 multiple groups with same name
 //Test num 48 e1
 		array('row' => array('stamp' => 'e1', 'sid' => 55, 'rates' => array('CALL-USA' => 'retail'), 'plan' => 'PLAN-A2', 'usaget' => 'call', 'usagev' => 30, 'services_data' => ['SERVICE1',],),
 			'expected' => array('in_group' => 30, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -179,6 +192,8 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 51 e4
 		array('row' => array('stamp' => 'e4', 'sid' => 55, 'rates' => array('VEG' => 'retail'), 'plan' => 'PLAN-A2', 'usaget' => 'gr', 'usagev' => 30, 'services_data' => ['SERVICE1']),
 			'expected' => array('in_group' => 0, 'over_group' => 30, 'aprice' => 6, 'charge' => array('retail' => 6,))),
+		/*		 * ** NEW TEST CASES *** */
+//case L cost
 //Test num 52 l1
 		array('row' => array('stamp' => 'l1', 'aid' => 23457, 'sid' => 77, 'rates' => array('NEW-VEG' => 'retail'), 'plan' => 'NEW-PLAN-Z5', 'usaget' => 'gr', 'usagev' => 240, 'services_data' => ['NEW-SERVICE5']),
 			'expected' => array('in_group' => 30, 'over_group' => 18, 'aprice' => 18, 'charge' => array('retail' => 18,))),
@@ -191,6 +206,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 55 l4
 		array('row' => array('stamp' => 'l4', 'aid' => 23458, 'sid' => 80, 'rates' => array('RATE-L3' => 'retail'), 'plan' => 'PLAN-L4-SHARED', 'usaget' => 'call', 'usagev' => 240, 'services_data' => ['SERVICE-L2',],),
 			'expected' => array('in_group' => 35, 'over_group' => 205, 'aprice' => 20.5, 'charge' => array('retail' => 20.5,))),
+		//case M pooled account services
 //Test num 56 m1
 		array('row' => array('stamp' => 'm1', 'aid' => 8880, 'sid' => 800, 'rates' => array('SHARED-RATE' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 10, 'services_data' => ['POOLED-SERVICE1',],),
 			'expected' => array('in_group' => 10, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -212,15 +228,18 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 62 m7
 		array('row' => array('stamp' => 'm7', 'aid' => 8885, 'sid' => 809, 'rates' => array('SHARED-RATE' => 'retail'), 'plan' => 'NEW-PLAN-A2', 'usaget' => 'call', 'usagev' => 100, 'services_data' => ['POOLED-SERVICE3',],),
 			'expected' => array('in_group' => 60, 'over_group' => 40, 'aprice' => 4, 'charge' => array('retail' => 4,))),
+		// case N - new structure support multiple usage types
 //Test num 63 n1
 		array('row' => array('stamp' => 'n1', 'aid' => 9001, 'sid' => 900, 'rates' => array('RATE-N1' => 'retail'), 'plan' => 'NEW-PLAN-N1', 'usaget' => 'call', 'usagev' => 125, 'services_data' => ['SERVICE-N1',],),
 			'expected' => array('in_group' => 125, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+// N2 - depend on N1
 //Test num 64 n2
 		array('row' => array('stamp' => 'n2', 'aid' => 9001, 'sid' => 900, 'rates' => array('RATE-N1b' => 'retail'), 'plan' => 'NEW-PLAN-N1', 'usaget' => 'incoming_call', 'usagev' => 275, 'services_data' => ['SERVICE-N1',],),
 			'expected' => array('in_group' => 175, 'over_group' => 100, 'aprice' => 10, 'charge' => array('retail' => 10,))),
 //Test num 65 n3
 		array('row' => array('stamp' => 'n3', 'aid' => 9001, 'sid' => 900, 'rates' => array('RATE-N3' => 'retail'), 'plan' => 'NEW-PLAN-N1', 'usaget' => 'call', 'usagev' => 240, 'services_data' => ['SERVICE-N3',],),
 			'expected' => array('in_group' => 240, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		// N4 - depend on N1
 //Test num 66 n4
 		array('row' => array('stamp' => 'n4', 'aid' => 9001, 'sid' => 900, 'rates' => array('RATE-N3' => 'retail'), 'plan' => 'NEW-PLAN-N1', 'usaget' => 'call', 'usagev' => 475, 'services_data' => ['SERVICE-N3'],),
 			'expected' => array('in_group' => 60, 'over_group' => 415, 'aprice' => 7, 'charge' => array('retail' => 7,))),
@@ -233,6 +252,7 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 69 n7
 		array('row' => array('stamp' => 'n7', 'aid' => 9001, 'sid' => 900, 'rates' => array('RATE-N5' => 'retail'), 'plan' => 'NEW-PLAN-N5', 'usaget' => 'call', 'usagev' => 5),
 			'expected' => array('in_group' => 0, 'over_group' => 5, 'aprice' => 2.5, 'charge' => array('retail' => 2.5,))),
+		// case O - custom period balance support
 //Test num 70 o1
 		array('row' => array('stamp' => 'o1', 'aid' => 9501, 'sid' => 950, 'rates' => array('RATE-O1' => 'retail'), 'plan' => 'NEW-PLAN-O1', 'usaget' => 'call', 'usagev' => 35, 'services_data' => [['name' => 'SERVICE-O1', 'from' => '2017-09-01T00:00:00+03:00', 'to' => '2017-09-14T23:59:59+03:00',]], 'urt' => '2017-09-01 09:00:00+03:00'),
 			'expected' => array('in_group' => 35, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
@@ -242,12 +262,16 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 72 o3
 		array('row' => array('stamp' => 'o3', 'aid' => 9501, 'sid' => 950, 'rates' => array('RATE-O2' => 'retail'), 'plan' => 'NEW-PLAN-O1', 'usaget' => 'call', 'usagev' => 45, 'services_data' => [['name' => 'SERVICE-O1', 'from' => '2017-09-01T00:00:00+03:00', 'to' => '2017-09-14T23:59:59+03:00',]], 'urt' => '2017-09-14 09:00:00+03:00',),
 			'expected' => array('in_group' => 25, 'over_group' => 20, 'aprice' => 0.02, 'charge' => array('retail' => 0.02,))),
+		// O4- plan includes - use all
 //Test num 73 o4
 		array('row' => array('stamp' => 'o4', 'aid' => 9502, 'sid' => 951, 'rates' => array('RATE-O4' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'call', 'usagev' => 40, 'services_data' => [['name' => 'SERVICE-O4', 'from' => '2017-09-01T00:00:00+03:00', 'to' => '2017-09-14T23:59:59+03:00',]], 'urt' => '2017-09-14 09:00:00+03:00',),
 			'expected' => array('in_group' => 40, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
-//Test num 74 o5
+//Test num 74 o5  try to use service includes
 		array('row' => array('stamp' => 'o5', 'aid' => 9502, 'sid' => 951, 'rates' => array('RATE-O4' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'call', 'usagev' => 30, 'services_data' => [['name' => 'SERVICE-O4', 'from' => '2017-09-01T00:00:00+03:00', 'to' => '2017-09-14T23:59:59+03:00',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 30, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+		// O6- plan includes - use part of it
+		// O7 - try to use service includes
+		// p1 service with limited cycle's 
 //Test num 75 o6
 		array('row' => array('stamp' => 'o6', 'aid' => 9502, 'sid' => 951, 'rates' => array('RATE-O4' => 'retail'), 'plan' => 'NEW-PLAN-O4', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-O4', 'from' => '2017-09-01T00:00:00+03:00', 'to' => '2017-09-14T23:59:59+03:00',]], 'urt' => '2017-09-14 14:00:00+03:00',),
 			'expected' => array('in_group' => 70, 'over_group' => 5, 'aprice' => 0.5, 'charge' => array('retail' => 0.5,))),
@@ -296,33 +320,43 @@ class Tests_Updaterowt extends UnitTestCase {
 //Test num 90 r6
 		array('row' => array('stamp' => 'r6', 'aid' => 9802, 'sid' => 981, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'NEW-PLAN-Q1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-Q1', 'from' => '2017-09-10 00:00:00+03:00', 'to' => '2017-09-21 00:00:00+03:00', "service_id" => 1234], ["name" => "SERVICE-Q1", "from" => "2017-09-10 00:00:00+03:00", "to" => "2017-09-21 00:00:00+03:00", "service_id" => 1235]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
+//Included services
+		//is1 should be included
 //Test num 91 is1
 		array('row' => array('stamp' => 'is1', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10 00:00:00+03:00', 'to' => '2017-12-21 00:00:00+03:00',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 75, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
+//is2 after the service time  (by the service price cycles not the plan de-activation)
 //Test num 92 is2
 		array('row' => array('stamp' => 'is2', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10 00:00:00+03:00', 'to' => '2017-12-21 00:00:00+03:00',]], 'urt' => '2017-11-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
+//should be half included
 //Test num 93 is4
 		array('row' => array('stamp' => 'is4', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10 00:00:00+03:00', 'to' => '2017-12-21 00:00:00+03:00',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 25, 'over_group' => 50, 'aprice' => 0.5, 'charge' => array('retail' => 0.5,))),
+//should not be included
 //Test num 94 is5
 		array('row' => array('stamp' => 'is5', 'aid' => 9803, 'sid' => 982, 'rates' => array('RATE-Q1' => 'retail'), 'plan' => 'PLAN-IS1', 'usaget' => 'call', 'usagev' => 75, 'services_data' => [['name' => 'SERVICE-IS1', 'from' => '2017-09-10 00:00:00+03:00', 'to' => '2017-12-21 00:00:00+03:00',]], 'urt' => '2017-09-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 75, 'aprice' => 0.8, 'charge' => array('retail' => 0.8,))),
+// s custom period with pooled/shard
+		// s1 & s2 are one test case for check service period pooled
 //Test num 95 s1
 		array('row' => array('stamp' => 's1', 'aid' => 24, 'sid' => 25, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 15, 'services_data' => [['name' => 'PERIOD_POOLED', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2017-09-01 00:00:00+03:00']], 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 15, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 96 s2
 		array('row' => array('stamp' => 's2', 'aid' => 24, 'sid' => 26, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 10, 'services_data' => [['name' => 'PERIOD_POOLED', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2017-09-01 00:00:00+03:00',]], 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 5, 'over_group' => 5, 'aprice' => 5, 'charge' => array('retail' => 5,))),
+		//s3 & s4 are one test case for check service period shard
 //Test num 97 s3
 		array('row' => array('stamp' => 's3', 'aid' => 27, 'sid' => 28, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 20, 'services_data' => [['name' => 'PERIOD_SHARED', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2017-09-01 00:00:00+03:00']], 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 20, 'over_group' => 0, 'aprice' => 0, 'charge' => array('retail' => 0,))),
 //Test num 98 s4
 		array('row' => array('stamp' => 's4', 'aid' => 27, 'sid' => 29, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 15, 'services_data' => [['name' => 'PERIOD_SHARED', 'from' => '2017-08-01 00:00:00+03:00', 'to' => '2017-09-01 00:00:00+03:00'],], 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 10, 'over_group' => 5, 'aprice' => 5, 'charge' => array('retail' => 5,))),
+		//T test for wholesale
 //Test num 99 t1
 		array('row' => array('stamp' => 't1', 'aid' => 27, 'sid' => 30, 'rates' => array('NEW-CALL-USA' => 'retail', 'CALL' => 'wholesale'), 'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 60, 'urt' => '2017-08-14 11:00:00+03:00'),
 			'expected' => array('in_group' => 0, 'over_group' => 60, 'aprice' => 30, 'charge' => array('retail' => 30, 'wholesale' => 60))),
+		//test for prepriced line
 //Test num 100 u1
 		array('row' => array('stamp' => 'u1', 'aid' => 27, 'sid' => 31, 'rates' => array('CALL' => 'retail'), 'plan' => 'WITH_NOTHING', 'prepriced' => "true", 'type' => 'Preprice_Dynamic', 'uf' => array('preprice' => 100), 'usaget' => 'call', 'usagev' => 15, 'urt' => '2017-08-14 11:00:00+03:00',),
 			'expected' => array('in_group' => 0, 'over_group' => 15, 'aprice' => 100, 'charge' => array('retail' => 100,))),
@@ -341,10 +375,10 @@ class Tests_Updaterowt extends UnitTestCase {
 	}
 
 	public function testUpdateRow() {
-   
+
 		//Billrun_Factory::db()->subscribersCollection()->update(array('type' => 'subscriber'),array('$set' =>array('services_data'=>$this->servicesToUse)),array("multiple" => true));
 		//running test
-		foreach ($this->rows as $key => $row) {			
+		foreach ($this->rows as $key => $row) {
 			$fixrow = $this->fixRow($row['row'], $key);
 			$this->linesCol->insert($fixrow);
 			$updatedRow = $this->runT($fixrow['stamp']);
