@@ -66,7 +66,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$customerOptions = array(
 			'type' => 'customer',
 			'calculator' => $customerAPISettings,
-		);
+		); 
 		$customerCalc = Billrun_Calculator::getInstance(array_merge($options, $customerOptions));
 		$queue_data = $processor->getQueueData();
 		if ($customerCalc->isBulk()) {
@@ -97,6 +97,9 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 					$processor->setQueueRowStep($entity['stamp'], 'customer');
 				}
 				$line = $entity->getRawData();
+				if (!empty($line['prepaid'])) {
+					$processor->unsetQueueRow($line['stamp']);
+				}
 			}
 		}
 
