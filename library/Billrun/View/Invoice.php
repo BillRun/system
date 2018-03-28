@@ -173,10 +173,11 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return "{$priceSymbol} ". number_format((isset($price) ? floatval($price): 0), $precision)  ;
 	}
 	
-	public function getFormatedUsage($usage,$usaget, $showUnits = false) {
+	public function getFormatedUsage($usage, $usaget, $showUnits = false, $precision = 0) {
 		$usage = empty($usage) ? 0 :$usage;
 		$unit = Billrun_Utils_Units::getInvoiceUnit($usaget);
-		return Billrun_Utils_Units::convertVolumeUnits( $usage , $usaget,  $unit) ." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '') ;
+		$volume = Billrun_Utils_Units::convertVolumeUnits( $usage , $usaget,  $unit);
+		return (preg_match('/^[\d.]+$/', $volume) && $volume ?  number_format($volume,$precision) : $volume )." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '');
 	}
 
 	public function getRateTariff($rateName, $usaget) {
@@ -193,8 +194,12 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getPlanDescription($subscriberiptionData) {
 		if(!empty($subscriberiptionData['plan'])) {
 			$plan = Billrun_Factory::plan(array('name'=>$subscriberiptionData['plan'],'time'=>$this->data['end_date']->sec));
-			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new MongoDate())->sec), $plan->get('description'));
+			return str_replace('[[NextPlanStage]]', date(Billrun_Base::base_dateformat, Billrun_Util::getFieldVal($subscriberiptionData['next_plan_price_tier'],new MongoDate())->sec), $plan->get('invoice_description'));
 		}
 		return "";
+	}
+	
+	public function getBillrunKey() {
+		return $this->data['billrun_key'];
 	}
 }
