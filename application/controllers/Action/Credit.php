@@ -70,7 +70,7 @@ class CreditAction extends ApiAction {
 		$ret['usaget'] = $this->getCreditUsaget($ret);
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		if ($rate->isEmpty()) {
-			throw new Exception("Rate isn't exists");
+			throw new Exception("Rate doesn't exist");
 		}
 		$ret['credit'] = array(
 			'usagev' => $ret['usagev'],
