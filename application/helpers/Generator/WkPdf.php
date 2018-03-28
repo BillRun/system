@@ -24,6 +24,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $plansColl;
 	protected $servicesColl;
 	protected $template;
+	protected $is_fake_generation = FALSE;
 
 	/**
 	 *
@@ -111,6 +112,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->render_usage_details = Billrun_Util::getFieldVal($options['usage_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_usage_details', FALSE));
 		$this->render_subscription_details = Billrun_Util::getFieldVal($options['subscription_details'], Billrun_Factory::config()->getConfigValue(self::$type . '.default_print_subscription_details', TRUE));
 		$this->tanent_css = $this->buildTanentCss(Billrun_Factory::config()->getConfigValue(self::$type . '.invoice_tanent_css', ''));
+		$this->is_fake_generation = Billrun_Util::getFieldVal($options['is_fake'],FALSE);
 	}
 
 	/**
@@ -394,7 +396,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 	protected function updateInvoicePropertyToBillrun($account, $pdfPath) {
 		$account['invoice_file'] = $pdfPath;
-		$this->billrunColl->save($account);
+		if(!$this->is_fake_generation) {
+			$this->billrunColl->save($account);
+		}
 	}
 
 	protected function excludeFirstAndLastPages($fileName, $pdfName, $firstPage, $lastPage) {
