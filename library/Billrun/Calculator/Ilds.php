@@ -32,6 +32,7 @@ class Billrun_Calculator_Ilds extends Billrun_Calculator {
 
 		return $lines->query()
 			->equals('source', static::$type)
+			->notExists('prepaid')
 			->notExists('price_customer');
 //			->notExists('price_provider'); // @todo: check how to do or between 2 not exists		
 	}
