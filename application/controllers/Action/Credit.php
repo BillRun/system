@@ -68,10 +68,15 @@ class CreditAction extends ApiAction {
 		$ret['skip_calc'] = $this->getSkipCalcs($ret);
 		$ret['process_time'] = new MongoDate();
 		$ret['usaget'] = $this->getCreditUsaget($ret);
+		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
+		if ($rate->isEmpty()) {
+			throw new Exception("Rate doesn't exist");
+		}
 		$ret['credit'] = array(
 			'usagev' => $ret['usagev'],
 			'credit_by' => 'rate',
 			'rate' => $ret['rate'],
+			'usaget' => $this->getUsageTypeFromRate($rate)
 		);
 		if ($this->isCreditByPrice($ret)) {
 			$this->parseCreditByPrice($ret);
@@ -171,6 +176,10 @@ class CreditAction extends ApiAction {
 
 	protected function getPermissionLevel() {
 		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+	}
+
+	protected function getUsageTypeFromRate($rate) {
+		return key($rate['rates']);
 	}
 
 }
