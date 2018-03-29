@@ -21,10 +21,12 @@ class Tests_UpdateRowSetUp {
 	 * 
 	 * @var array
 	 */
-	protected $collectionToClean = ['config','plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
-	protected $importData = ['config','plans', 'services', 'subscribers', 'rates',];
+	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
+	protected $importData = ['config', 'plans', 'services', 'subscribers', 'rates',];
 	protected $backUpData = array();
+	protected $config;
 
+	//protected $config;
 	public function __construct() {
 		
 	}
@@ -33,9 +35,9 @@ class Tests_UpdateRowSetUp {
 	 * executes set up for update row test
 	 */
 	public function setColletions() {
-		$this->backUpCollection($this->collectionToClean);
+		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
-
+		//$this->backUpConfig();
 		foreach ($this->importData as $file) {
 			$dataAsText = file_get_contents(dirname(__FILE__) . '/data/' . $file . '.json');
 			$parsedData = json_decode($dataAsText, true);
@@ -94,10 +96,9 @@ class Tests_UpdateRowSetUp {
 	 * @param array $colNames array of collectins names to clean
 	 */
 	protected function cleanCollection($colNames) {
-
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
-			Billrun_Factory::db() -> $colName() -> remove([null]);
+			Billrun_Factory::db()->$colName()->remove([null]);
 		}
 	}
 
@@ -115,9 +116,18 @@ class Tests_UpdateRowSetUp {
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {
 			if (count($items) > 0) {
-				Billrun_Factory::db()->$colName()->batchInsert($items);
+				if ($colName == 'configCollection') {
+					unset($items[0]['_id']);
+					echo "<pre>";
+				//	print_r($items[0]);
+			//	Billrun_Factory::db()->configCollection()->batchInsert($items[0]);
+					MongoCollection::insert($items[0]); 
+				} else {
+					Billrun_Factory::db()->$colName()->batchInsert($items);
+				}
 			}
 		}
+
 	}
 
 }
