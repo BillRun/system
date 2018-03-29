@@ -202,4 +202,8 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	public function getBillrunKey() {
 		return $this->data['billrun_key'];
 	}
+	
+	public function shouldProvideDetails() {
+		return !empty($this->data['attributes']['detailed_invoice']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
+	}
 }
