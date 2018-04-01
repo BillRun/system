@@ -160,7 +160,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 */
 	public function move(){
 		if (!is_null($this->ssh)){
-			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename, NET_SFTP_LOCAL_FILE); // instead of test 2&3 put the name of the generated file.
+			$localPath = $this->export_directory . '/' . $this->filename;
+			if (!empty(file_get_contents($localPath))) {
+				$this->ssh->put($localPath, $this->export_dir . '/' . $this->filename); // instead of test 2&3 put the name of the generated file.
+			}
 		}
 		else{
 			if ($this->move_exported) {

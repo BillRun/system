@@ -79,39 +79,18 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 
 	protected function updateData() {
 		$data = $this->getData();
- 		$emailsToSend = array();
-		$rejections = Billrun_Bill_Payment::getRejections();
 		foreach ($data['data'] as $row) {
-			//$row['transaction_id'] = '0000000000001';
 			$bill = Billrun_Bill_Payment::getInstanceByid($row['transaction_id']);
 			if (is_null($bill)) {
 				Billrun_Factory::log('Unknown transaction ' . $row['transaction_id'], Zend_Log::ALERT);
-			} else {
-				$bill->updateConfirmation();
-			}
-			if ($this->isValidTransaction($row)) {
 				continue;
-			}else{
-				if (!$bill->isRejected()) {
-					if (!Billrun_Util::isEqual(Billrun_Util::getChargableAmount($bill->getAmount()), Billrun_Util::getChargableAmount($row['amount']), Billrun_Bill::precision)) {
-						Billrun_Factory::log('Charge not matching for transaction id ' . $row['transaction_id'] . '. Skipping.', Zend_Log::ALERT);
-						continue;
-					}
-					Billrun_Factory::log('Rejecting transaction  ' . $row['transaction_id'], Zend_Log::DEBUG);
-					$rejection = $bill->getRejectionPayment($row['ret_code']);
-					$rejection->save();
-					$bill->markRejected();
-
-					$this->incrementGoodLinesCounter();
-					if (Billrun_Factory::config()->getConfigValue('CGfeedback.send_email')) {
-						$emailsToSend = $this->defineEmailToSend($bill, $row, $rejections);
-					}
-				} else {
-					Billrun_Factory::log('Transaction ' . $row['transaction_id'] . ' already rejected', Zend_Log::NOTICE);
-				}
+			}	
+			$paymentResponse = $this->getPaymentResponse($row);
+			Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $bill, 'CreditGuard');
+			if ($paymentResponse['stage'] == 'Completed') {
+				$this->updateInvoicePaidStatus($bill);
 			}
 		}
-		$this->sendEmail($emailsToSend);
 	}
 
 	/**
@@ -184,6 +163,34 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 
 		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
 		return true;
+	}
+	
+	protected function getPaymentResponse($row) {
+		$stage = 'Rejected';
+		if ($this->isValidTransaction($row)) {
+			$stage = 'Completed';
+		}
+
+		return array('status' => $row['ret_code'], 'stage' => $stage);
+	}
+	
+	protected function updateInvoicePaidStatus($rec) {
+		$recId = $rec->getId();
+		$invoiceId = $rec->getInvoiceIdFromReceipt();
+		$query = array(
+			'invoice_id' => $invoiceId
+		);
+		$update = array(
+			'$set' => array(
+				'paid' => '1',
+			),
+			'$pull' => array(
+				'waiting_payments' => array(
+					'$in' => array($recId)
+				)
+			)
+		);
+		$this->bills->update($query, $update);
 	}
 
 }

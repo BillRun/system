@@ -70,12 +70,12 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			if (!$this->isActiveGatewayCreditGuard($account)) {
 				continue;
 			}
+			$options = array('collect' => false, 'credit_guard_file' => true);
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
 			$paymentParams['source'] = $customer['source'];
-			
-	//		$payment = payAction::pay('credit', array($paymentParams), $options)[0];
+			$payment = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
 			$amount = $this->convertAmountToSend($paymentParams['amount']);
 			$line = array(
 				0 => '001',
@@ -87,7 +87,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 				6 => '01',
 				7 => 1,
 				8 => '',
-				9 => '',
+				9 => $payment[0]->getId(),
 				10 => '',
 				11 => '',
 				12 => 4,

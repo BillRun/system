@@ -608,4 +608,8 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		);
 	}
 	
+	public function getInvoiceIdFromReceipt() {
+		$inv = $this->data['pays']['inv'];
+		return key($inv);
+	}
 }
