@@ -204,6 +204,11 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 			$this->view->setLines($lines);
 		}
 
+				$this->tmp_paths = array(
+			'header' => $this->paths['tmp'].$account['aid'] . 'tmp_header.html',
+			'footer' => $this->paths['tmp'].$account['aid'] . 'tmp_footer.html',
+		);
+		
 		$file_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".html";
 		$pdf_name = $account['billrun_key'] . "_" . $account['aid'] . "_" . $account['invoice_id'] . ".pdf";
 		$html = $this->paths['html'] . $file_name;
