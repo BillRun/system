@@ -413,6 +413,7 @@ abstract class Billrun_PaymentGateway {
 		if (!$this->validateStructureForCharge($setQuery['payment_gateway.active'])) {
 			throw new Exception("Non valid payment gateway for aid = " . $query['aid'], Zend_Log::ALERT);
 		}
+		Billrun_Factory::log('Saving payment gateway ' . $setQuery['payment_gateway.active']['name'] . ' for ' . $query['aid'], Zend_Log::DEBUG);
 		$this->subscribers->update($query, array('$set' => $setQuery));
 		Billrun_Factory::log($setQuery['payment_gateway.active']['name'] . " was defined successfully for " . $query['aid'], Zend_Log::INFO);
 	}
@@ -420,7 +421,10 @@ abstract class Billrun_PaymentGateway {
 	protected function signalStartingProcess($aid, $timestamp) {
 		$paymentColl = Billrun_Factory::db()->creditproxyCollection();
 		$query = array("name" => $this->billrunName, "tx" => (string) $this->transactionId, "stamp" => md5($timestamp . $this->transactionId), "aid" => (int)$aid);
+		$textualQuery = json_encode($query);
+		Billrun_Factory::log('Querying creditproxy with ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentRow = $paymentColl->query($query)->cursor()->current();
+		Billrun_Factory::log('Finished querying creditproxy', Zend_Log::DEBUG);
 		if (!$paymentRow->isEmpty()) {
 			if (isset($paymentRow['done'])) {
 				return;
@@ -430,7 +434,9 @@ abstract class Billrun_PaymentGateway {
 
 		// Signal start process
 		$query['t'] = $timestamp;
+		Billrun_Factory::log('Inserting to creditproxy object ' . $textualQuery, Zend_Log::DEBUG);
 		$paymentColl->insert($query);
+		Billrun_Factory::log('Finished inserting to creditproxy', Zend_Log::DEBUG);
 	}
 
 	/**
