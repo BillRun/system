@@ -37,16 +37,13 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	 */
 	protected function sendRequest() {
 		$requestUrl = $this->getRequestUrl();
-		$numOfTries = $this->getNumberOfTries();
 		$data = $this->getRequestBody();
 		$method = $this->getMethod();
-		for ($i = 0; $i < $numOfTries; $i++) {
-			Billrun_Factory::log('HTTP request - sending request to prov, try number ' . ($i + 1) . '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
-			$response = $this->parseResponse(Billrun_Util::sendRequest($requestUrl, $data, $method));
-			if ($this->isResponseValid($response)) {
-				Billrun_Factory::log('Got HTTP response. Details: ' . $response, Zend_Log::DEBUG);
-				return $this->getSuccessResponse($response);
-			}
+		Billrun_Factory::log('HTTP request - sending request to prov '. '. Details: ' . print_r($data, 1), Zend_Log::DEBUG);
+		$response = $this->parseResponse(Billrun_Util::sendRequest($requestUrl, $data, $method));
+		if ($this->isResponseValid($response)) {
+			Billrun_Factory::log('Got HTTP response. Details: ' . $response, Zend_Log::DEBUG);
+			return $this->getSuccessResponse($response);
 		}
 		Billrun_Factory::log('HTTP request - no response. Request details: ' . print_r($data, 1), Zend_Log::ALERT);
 		return $this->getFailureResponse();
@@ -60,16 +57,7 @@ class Billrun_Events_Notifiers_Http extends Billrun_Events_Notifiers_Base {
 	protected function getRequestUrl() {
 		return $this->getSettingValue('url', '');
 	}
-	
-	/**
-	 * gets number of tries to send the request before failing
-	 * gets the value from event or params or general settings
-	 * @return int
-	 */
-	protected function getNumberOfTries() {
-		return $this->getSettingValue('num_of_tries', 3);
-	}
-	
+
 	/**
 	 * gets the method to send the request (POST/GET/...)
 	 * gets the value from event or params or general settings
