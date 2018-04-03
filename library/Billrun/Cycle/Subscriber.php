@@ -367,18 +367,19 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			foreach($subscriber['services'] as  $tmpService) {
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['plan'],
 										'start'=> $tmpService['from']->sec,
 										'end'=> min($tmpService['to']->sec, $endTime ) );
 				 if($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
 					$currServices[$stamp] = $serviceData;
 				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
 			$serviceCompare = function  ($a, $b)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
-				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
+				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity','service_id'));
+				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity','service_id'));
 				return strcmp($aStamp , $bStamp);
 			};
 
