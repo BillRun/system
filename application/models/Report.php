@@ -800,7 +800,7 @@ class ReportModel {
 			case 'gte':
 				if ($type === 'date') {
 					$date = strtotime($value);
-					$queryDate = ($op === 'lt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
+					$queryDate = ($op === 'gt' || $op === 'lte') ? strtotime("tomorrow", $date) - 1 : strtotime("midnight", $date);
 					$formatedExpression = array(
 						"\${$op}" => new MongoDate($queryDate),
 					);
