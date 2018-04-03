@@ -32,13 +32,13 @@ class MongoClient
     use Helper\WriteConcern;
 
     const VERSION = '1.6.12';
-    const DEFAULT_HOST = "localhost" ;
-    const DEFAULT_PORT = 27017 ;
-    const RP_PRIMARY = "primary" ;
-    const RP_PRIMARY_PREFERRED = "primaryPreferred" ;
-    const RP_SECONDARY = "secondary" ;
-    const RP_SECONDARY_PREFERRED = "secondaryPreferred" ;
-    const RP_NEAREST = "nearest" ;
+    const DEFAULT_HOST = "localhost";
+    const DEFAULT_PORT = 27017;
+    const RP_PRIMARY = "primary";
+    const RP_PRIMARY_PREFERRED = "primaryPreferred";
+    const RP_SECONDARY = "secondary";
+    const RP_SECONDARY_PREFERRED = "secondaryPreferred";
+    const RP_NEAREST = "nearest";
 
     /**
      * @var bool
@@ -86,11 +86,15 @@ class MongoClient
             $server = 'mongodb://' . self::DEFAULT_HOST . ':' . self::DEFAULT_PORT;
         }
 
+        if (isset($options['readPreferenceTags'])) {
+            $options['readPreferenceTags'] = [$this->getReadPreferenceTags($options['readPreferenceTags'])];
+        }
+
         $this->applyConnectionOptions($server, $options);
 
         $this->server = $server;
-        if (false === strpos($this->server, 'mongodb://')) {
-            $this->server = 'mongodb://'.$this->server;
+        if (false === strpos($this->server, '://')) {
+            $this->server = 'mongodb://' . $this->server;
         }
         $this->client = new Client($this->server, $options, $driverOptions);
         $info = $this->client->__debugInfo();
@@ -236,7 +240,7 @@ class MongoClient
      * @param int|MongoInt64 $id The ID of the cursor to kill.
      * @return bool
      */
-    public function killCursor($server_hash , $id)
+    public function killCursor($server_hash, $id)
     {
         $this->notImplemented();
     }
@@ -332,8 +336,12 @@ class MongoClient
      */
     private function forceConnect()
     {
-        $command = new \MongoDB\Driver\Command(['ping' => 1]);
-        $this->manager->executeCommand('db', $command);
+        try {
+            $command = new \MongoDB\Driver\Command(['ping' => 1]);
+            $this->manager->executeCommand('db', $command);
+        } catch (\MongoDB\Driver\Exception\Exception $e) {
+            throw ExceptionConverter::toLegacy($e);
+        }
     }
 
     private function notImplemented()
@@ -344,7 +352,7 @@ class MongoClient
     /**
      * @return array
      */
-    function __sleep()
+    public function __sleep()
     {
         return [
             'connected', 'status', 'server', 'persistent'
@@ -409,13 +417,10 @@ class MongoClient
             unset($options['wTimeout']);
         }
 
-        if (isset($options['readPreferenceTags'])) {
-            $options['readPreferenceTags'] = [$this->getReadPreferenceTags($options['readPreferenceTags'])];
-
-            // Special handling for readPreferenceTags which are merged
-            if (isset($urlOptions['readPreferenceTags'])) {
-                $options['readPreferenceTags'] = array_merge($urlOptions['readPreferenceTags'], $options['readPreferenceTags']);
-            }
+        // Special handling for readPreferenceTags which are merged
+        if (isset($options['readPreferenceTags']) && isset($urlOptions['readPreferenceTags'])) {
+            $options['readPreferenceTags'] = array_merge($urlOptions['readPreferenceTags'], $options['readPreferenceTags']);
+            unset($urlOptions['readPreferenceTags']);
         }
 
         $urlOptions = array_merge($urlOptions, $options);
