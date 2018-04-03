@@ -11,7 +11,7 @@
  * @package  Billing
  * @since    5.7
  */
-class Billrun_Processor_CGfeedback extends Billrun_Processor {
+class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 
 	/**
 	 *
@@ -25,9 +25,13 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 	protected $dataStructure;
 	protected $deals_num;
 	protected $bills;
+	protected $processorDefinitions;
+	protected $parserDefinitions;
 
-	
+
 	public function __construct($options) {
+		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.config_path'));
+		$options = array_merge($options, $this->getProcessorDefinitions());
 		parent::__construct($options);
 		$this->bills = Billrun_Factory::db()->billsCollection();
 	}
@@ -36,7 +40,6 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 	 * @see Billrun_Plugin_Interface_IProcessor::processData
 	 */
 	protected function processLines() {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue(self::$type . '.config_path'));		
 		$parser = $this->getParser();
 		$parser->setHeaderStructure($this->headerStructure);
 		$parser->setDataStructure($this->dataStructure);
@@ -55,7 +58,6 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 			$row['row_number'] = ++$rowCount;
 			$this->addDataRow($row);
 		}
-		$this->updateData();
 		return true;		
 	}
 
@@ -101,6 +103,8 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 		$this->structConfig = (new Yaf_Config_Ini($path))->toArray();
 		$this->headerStructure = $this->structConfig['header'];
 		$this->dataStructure = $this->structConfig['data'];
+		$this->processorDefinitions = $this->structConfig['processor'];
+		$this->parserDefinitions = $this->structConfig['parser'];
 	}
 	
 	
@@ -142,29 +146,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 		$date = $datetime->createFromFormat('ymdHis', $dateStr);
 		return $date;
 	}
-	
-	protected function store() {
-		if (!isset($this->data['data'])) {
-			Billrun_Factory::log('Got empty data from file  : ' . basename($this->filePath), Zend_Log::ERR);
-			return false;
-		}
 
-		$lines = Billrun_Factory::db()->linesCollection();
-		Billrun_Factory::log("Store data of file " . basename($this->filePath) . " with " . count($this->data['data']) . " lines", Zend_Log::INFO);
-
-		if ($this->bulkInsert) {
-			settype($this->bulkInsert, 'int');
-			if (!$this->bulkAddToCollection($lines)) {
-				return false;
-			}
-		} else {
-			$this->addToCollection($lines);
-		}
-
-		Billrun_Factory::log("Finished storing data of file " . basename($this->filePath), Zend_Log::INFO);
-		return true;
-	}
-	
 	protected function getPaymentResponse($row) {
 		$stage = 'Rejected';
 		if ($this->isValidTransaction($row)) {
@@ -176,9 +158,9 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 	
 	protected function updateInvoicePaidStatus($rec) {
 		$recId = $rec->getId();
-		$invoiceId = $rec->getInvoiceIdFromReceipt();
+		$invoicesId = $rec->getInvoicesIdFromReceipt();
 		$query = array(
-			'invoice_id' => $invoiceId
+			'invoice_id' => array('$in' => $invoicesId)
 		);
 		$update = array(
 			'$set' => array(
@@ -190,7 +172,23 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor {
 				)
 			)
 		);
-		$this->bills->update($query, $update);
+		$this->bills->update($query, $update, array('multiple' => true));
+	}
+	
+	public function skipQueueCalculators() {
+		return true;
+	}
+
+	protected function getProcessorDefinitions() {
+		$processorDefinitions = array();
+		$parserDefinitions = array();
+		foreach ($this->processorDefinitions  as $key => $value) {
+			$processorDefinitions[$key] = $value;
+		}
+		foreach ($this->parserDefinitions as $key => $value) {
+			$parserDefinitions[$key] = $value;
+		}
+		return array('processor' => $processorDefinitions, 'parser' => $parserDefinitions);
 	}
 
 }

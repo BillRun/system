@@ -599,7 +599,7 @@ abstract class Billrun_Bill {
 						if ($payment->getDir() == 'fc') {
 							foreach ($payment->getPaidBills() as $billType => $bills) {
 								foreach ($bills as $billId => $amountPaid) {
-									if (isset($options['credit_guard_file']) && $options['credit_guard_file']) {
+									if (isset($options['file_based_charge']) && $options['file_based_charge']) {
 										$responseFromGateway['stage'] = 'Pending';
 									}
 									$updateBills[$billType][$billId]->attachPayingBill($payment->getType(), $payment->getId(), $amountPaid, empty($responseFromGateway['stage'])? 'Completed' : $responseFromGateway['stage'])->save();

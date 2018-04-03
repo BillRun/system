@@ -160,10 +160,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 */
 	public function move(){
 		if (!is_null($this->ssh)){
-			$localPath = $this->export_directory . '/' . $this->filename;
-			if (!empty(file_get_contents($localPath))) {
-				$this->ssh->put($localPath, $this->export_dir . '/' . $this->filename); // instead of test 2&3 put the name of the generated file.
-			}
+			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // instead of test 2&3 put the name of the generated file.
 		}
 		else{
 			if ($this->move_exported) {
@@ -181,6 +178,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 			mkdir($path, octdec(Billrun_Factory::config()->getConfigValue(static::$type.'.new_folder_permissions','0775')), true);
 			umask($old_umask);
 		}
+	}
+	
+	public function shouldFileBeMoved() {
+		return true;
 	}
 	
 }

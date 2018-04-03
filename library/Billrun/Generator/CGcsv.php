@@ -30,9 +30,12 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	protected $gateway;
 	protected $extractionDateFormat;
 	protected $generateStructure;
+	protected $exportDefinitions;
 
 	public function __construct($options) {
 		$this->initPaymentGatwayDetails();
+		$this->loadConfig(Billrun_Factory::config()->getConfigValue('CGcsv.config_path'));
+		$options = array_merge($options, $this->getAllExportDefinitions());
 		$this->subscribers = Billrun_Factory::db()->subscribersCollection();
 		$this->extractionDateFormat = date('YmdHis');
 		$this->initLogFile($options['stamp']);
@@ -42,7 +45,6 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	}
 
 	public function load() {
-		$this->loadConfig(Billrun_Factory::config()->getConfigValue('CGcsv.config_path'));
 		$today = new MongoDate();
 		$paymentParams = array(
 			'dd_stamp' => $this->getStamp(),
@@ -70,7 +72,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			if (!$this->isActiveGatewayCreditGuard($account)) {
 				continue;
 			}
-			$options = array('collect' => false, 'credit_guard_file' => true);
+			$options = array('collect' => false, 'file_based_charge' => true);
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
@@ -79,7 +81,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			$amount = $this->convertAmountToSend($paymentParams['amount']);
 			$line = array(
 				0 => '001',
-				1 => $this->gatewayCredentials['redirect_terminal'],
+				1 => $this->gatewayCredentials['charging_terminal'],
 				2 => $amount,
 				3 => 1,
 				4 => $account['payment_gateway']['active']['card_token'],
@@ -102,7 +104,7 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	}
 
 	protected function setFilename() {
-		$this->filename = 'c' . $this->extractionDateFormat . '.' . $this->gatewayCredentials['redirect_terminal'];
+		$this->filename = 'c' . $this->extractionDateFormat . '.' . $this->gatewayCredentials['charging_terminal'];
 	}
 
 	protected function writeHeaders() {
@@ -199,11 +201,32 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	protected function loadConfig($path) {
 		$structConfig = (new Yaf_Config_Ini($path))->toArray();
 		$this->generateStructure = $structConfig['generator'];
+		$this->exportDefinitions = $structConfig['export'];
 	}
 	
 	protected function convertAmountToSend($amount) {
 		$amount = round($amount, 2);
 		return $amount * 100;
+	}
+	
+	public function shouldFileBeMoved() {
+		$localPath = $this->export_directory . '/' . $this->filename;
+		if (!empty(file_get_contents($localPath))) {
+			return true;
+		}
+		return false;
+	}
+	
+	protected function getAllExportDefinitions() {
+		$exportDefinitions = array();
+		foreach ($this->exportDefinitions  as $key => $value) {
+			$exportDefinitions[$key] = $value;
+		}
+		$dbExportDefinitions = $this->gateway->getGatewayExport();
+		foreach ($dbExportDefinitions as $key => $value) { // db definitions ran over ini configuration + add new definitions
+			$exportDefinitions[$key] = $value;
+		}
+		return array('export' => $exportDefinitions);
 	}
 
 }
