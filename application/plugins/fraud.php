@@ -332,7 +332,12 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		} else { // fallback: rule based on general usage
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
-		$after = $before + $row['usagev'];
+		if (isset($rule['inPlanThreshold']) && $rule['inPlanThreshold']) {
+			$overPlan = isset($row['over_plan']) ? $row['over_plan'] : 0;
+			$after = $before + $row['in_plan'] + $overPlan;
+		} else {
+			$after = $before + $row['usagev'];
+		}
 
 		if ($rule['threshold'] == 'from_plan') {
 			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
