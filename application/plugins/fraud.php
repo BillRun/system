@@ -329,12 +329,13 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		} else if (isset($rule['limitGroups'])) {
 			$before = isset($balance['groups'][$row['arategroup']][$usaget]['usagev']) ? $balance['groups'][$row['arategroup']][$usaget]['usagev'] : 0;
-		} else { // fallback: rule based on general usage
+		} else { // fallback: rule based on general usage 
 			$before = $balance['totals'][$usaget]['usagev'];
 		}
 		if (isset($rule['inPlanThreshold']) && $rule['inPlanThreshold']) {
 			$overPlan = isset($row['over_plan']) ? $row['over_plan'] : 0;
-			$after = $before + $row['in_plan'] + $overPlan;
+			$inPlan = isset($row['in_plan']) ? $row['in_plan'] : 0;
+			$after = $before + $inPlan + $overPlan;
 		} else {
 			$after = $before + $row['usagev'];
 		}
