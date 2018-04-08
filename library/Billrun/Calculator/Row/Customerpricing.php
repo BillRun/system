@@ -564,7 +564,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$keyRequired = key($required);
 		$valueRequired = current($required);
 		foreach ($services as $service) {
-			if ($valueRequired <= 0) {
+			if ($valueRequired < 0) {
 				break;
 			}
 			
@@ -633,11 +633,7 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 					'balance' => $balance,
 				);
 				if ($keyRequired != $balanceType) {
-					if ($keyRequired == 'cost') {
-						$valueRequired -= $comparedValue;
-					} else {
-						$valueRequired -= $comparedValue;
-					}
+					$valueRequired -= $comparedValue;
 				} else {
 					$valueRequired -= $value;
 				}
