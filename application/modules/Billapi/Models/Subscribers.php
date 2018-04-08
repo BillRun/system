@@ -353,18 +353,14 @@ class Models_Subscribers extends Models_Entity {
 	 * get all revisions of a subscriber.
 	 * 
 	 * @param int $entity subscriber revision.
-	 * @param boolean $changedAid if true search subscriber revisions with different aid then the current subscriber.
+	 * @param int $aid - account id 
 	 */
-	protected function getSubscriberRevisions($entity, $changedAid = false) {
+	protected function getSubscriberRevisions($entity, $aid) {
 		$query = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
 			$query[$fieldName] = $entity[$fieldName];
 		}
-		if ($changedAid) {
-			$query['aid'] = array('$ne' => $entity['aid']);
-		} else {
-			$query['aid'] = $entity['aid'];
-		}
+		$query['aid'] = $aid;
 		$revisions = $this->collection->query($query)->cursor();
 		return $revisions;
 	}
@@ -376,11 +372,11 @@ class Models_Subscribers extends Models_Entity {
 			$this->collection->update(array('_id' => $this->update['_id']), $update);
 			return;
 		}
-		$revisions = $this->getSubscriberRevisions($entity, false);
-		$differentAidRevisions = $this->getSubscriberRevisions($entity, true);
+		$revisions = $this->getSubscriberRevisions($entity, $entity['aid']);
 		$this->fixSubscriberFields($revisions);
-		if ($differentAidRevisions->count() > 0) {
-			$this->fixSubscriberFields($differentAidRevisions);
+		if ($entity['aid'] != $this->update['aid']) {
+			$revisions = $this->getSubscriberRevisions($entity, $this->update['aid']);
+			$this->fixSubscriberFields($revisions);
 		}
 	}
 	
