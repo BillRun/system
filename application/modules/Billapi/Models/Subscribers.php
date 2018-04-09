@@ -300,14 +300,13 @@ class Models_Subscribers extends Models_Entity {
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$revisions = $this->collection->query($revisionsQuery)->cursor();
-		$subscriberActivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->current()['from'];
+		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
 		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
-		foreach ($revisions as $revision) {
+		$subscriberActivation = $revisionsFrom->current()['from'];
+		foreach ($revisionsFrom as $revision) {
 			$revisionsArray[] = $revision->getRawData();
 		}
-		$sortedByFrom = array_reverse($revisionsArray);
-		foreach ($sortedByFrom as &$revision) {
+		foreach ($revisionsArray as &$revision) {
 			$revisionId = $revision['_id']->{'$id'};
 			if (empty($revision['deactivation_date']) || $subscriberDeactivation != $revision['deactivation_date']) {
 				$needUpdate[$revisionId]['deactivation_date'] = $subscriberDeactivation;
@@ -336,7 +335,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 	
 		foreach($plansDeactivation as $index => $deactivationDate) {
-			foreach($sortedByFrom as $revision2) {
+			foreach($revisionsArray as $revision2) {
 				$revisionId = $revision2['_id']->{'$id'};
 				if ($revision2['indicator'] == $index && (!isset($revision2['plan_deactivation']) || $revision2['plan_deactivation'] != $deactivationDate)) {
 					$needUpdate[$revisionId]['plan_deactivation'] = $deactivationDate;
