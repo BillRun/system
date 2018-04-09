@@ -22,9 +22,10 @@ class Tests_UpdateRowSetUp {
 	 * @var array
 	 */
 	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
-	protected $importData = ['config', 'plans', 'services', 'subscribers', 'rates',];
+	protected $importData = ['plans', 'services', 'subscribers', 'rates',];
 	protected $backUpData = array();
 	protected $config;
+	protected $configCollection;
 
 	//protected $config;
 	public function __construct() {
@@ -103,6 +104,7 @@ class Tests_UpdateRowSetUp {
 	}
 
 	protected function backUpCollection($colNames) {
+		
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
 			$items = iterator_to_array(Billrun_Factory::db()->$colName()->query(array())->getIterator());
@@ -110,21 +112,22 @@ class Tests_UpdateRowSetUp {
 			foreach ($items as $item) {
 				array_push($this->backUpData[$colName], $item->getRawData());
 			}
+
 		}
 	}
+	protected function backUpConfig() {
+			$items = iterator_to_array(Billrun_Factory::db()->configCollection()->query(array())->getIterator());
+			$this->configCollection = $item->getRawData();
+			
+//			echo "<pre>";
+//			print_r($this->backUpData[$colName]);die;
+		}
+	
 
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {
 			if (count($items) > 0) {
-				if ($colName == 'configCollection') {
-					unset($items[0]['_id']);
-					echo "<pre>";
-				//	print_r($items[0]);
-			//	Billrun_Factory::db()->configCollection()->batchInsert($items[0]);
-					MongoCollection::insert($items[0]); 
-				} else {
 					Billrun_Factory::db()->$colName()->batchInsert($items);
-				}
 			}
 		}
 
