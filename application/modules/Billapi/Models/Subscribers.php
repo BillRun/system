@@ -358,12 +358,14 @@ class Models_Subscribers extends Models_Entity {
 	 * get all revisions of a subscriber.
 	 * 
 	 * @param int $entity subscriber revision.
+	 * @param int $aid - account id 
 	 */
-	protected function getSubscriberRevisionsQuery($entity) {
+	protected function getSubscriberRevisionsQuery($entity, $aid) {
 		$query = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
 			$query[$fieldName] = $entity[$fieldName];
 		}
+		$query['aid'] = $aid;
 		return $query;
 	}
 	
@@ -374,8 +376,12 @@ class Models_Subscribers extends Models_Entity {
 			$this->collection->update(array('_id' => $this->update['_id']), $update);
 			return;
 		}
-		$revisionsQuery = $this->getSubscriberRevisionsQuery($entity);
+		$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $entity['aid']);
 		$this->fixSubscriberFields($revisionsQuery);
+		if ($entity['aid'] != $this->update['aid']) {
+			$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $this->update['aid']);
+			$this->fixSubscriberFields($revisionsQuery);
+		}
 	}
 	
 	public function permanentChange() {

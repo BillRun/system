@@ -44,7 +44,7 @@ class TypeConverter
             case $value instanceof BSON\Type:
                 return $value;
             case is_array($value):
-            case is_object($value);
+            case is_object($value):
                 $result = [];
 
                 foreach ($value as $key => $item) {
@@ -97,14 +97,14 @@ class TypeConverter
      * this was never documented, the legacy driver applied the same conversion.
      *
      * @param array $fields
-     * @return array
+     * @return array|null
      *
      * @throws \MongoException
      */
     public static function convertProjection($fields)
     {
         if (! is_array($fields) || $fields === []) {
-            return [];
+            return null;
         }
 
         if (! TypeConverter::isNumericArray($fields)) {

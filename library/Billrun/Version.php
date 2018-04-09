@@ -21,13 +21,13 @@ class Billrun_Version {
 	public static $RELEASE = '5.8';
 
 	/** @var  string  Maintenance version. */
-	public static $DEV_LEVEL = '3';
+	public static $DEV_LEVEL = '5';
 
 	/** @var  string  Development STATUS. */
 	public static $DEV_STATUS = 'Stable';
 
 	/** @var  string  Build number. */
-	public static $BUILD = '0';
+	public static $BUILD = '1';
 
 	/** @var  string  Release date. */
 	public static $RELDATE = '22-February-2018';
