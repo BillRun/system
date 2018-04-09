@@ -292,15 +292,17 @@ class Models_Subscribers extends Models_Entity {
 	/**
 	 * method to keep maintenance of subscriber fields.
 	 * 
-	 * @param MongoCursor $revisions array of the subscriber revisions
+	 * @param array $revisionsQuery query to get the correct revisions
 	 */
-	protected function fixSubscriberFields($revisions) {
+	protected function fixSubscriberFields($revisionsQuery) {
 		$needUpdate = array();
 		$previousRevision = array();
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$subscriberDeactivation = $revisions->sort(array('to' => -1))->current()['to'];
+		$revisions = $this->collection->query($revisionsQuery)->cursor();
+		$subscriberActivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1))->current()['from'];
+		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
 		foreach ($revisions as $revision) {
 			$revisionsArray[] = $revision->getRawData();
 		}
@@ -309,6 +311,9 @@ class Models_Subscribers extends Models_Entity {
 			$revisionId = $revision['_id']->{'$id'};
 			if (empty($revision['deactivation_date']) || $subscriberDeactivation != $revision['deactivation_date']) {
 				$needUpdate[$revisionId]['deactivation_date'] = $subscriberDeactivation;
+			}
+			if (empty($revision['activation_date']) || $subscriberActivation != $revision['activation_date']) {
+				$needUpdate[$revisionId]['activation_date'] = $subscriberActivation;
 			}
 			$currentPlan = $revision['plan'];
 			if ($currentPlan != $previousPlan && (empty($previousRevision) || $previousRevision['to'] == $revision['from']) || 
@@ -354,13 +359,12 @@ class Models_Subscribers extends Models_Entity {
 	 * 
 	 * @param int $entity subscriber revision.
 	 */
-	protected function getSubscriberRevisions($entity) {
+	protected function getSubscriberRevisionsQuery($entity) {
 		$query = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
 			$query[$fieldName] = $entity[$fieldName];
 		}
-		$revisions = $this->collection->query($query)->cursor();
-		return $revisions;
+		return $query;
 	}
 	
 	protected function fixEntityFields($entity) {
@@ -370,8 +374,8 @@ class Models_Subscribers extends Models_Entity {
 			$this->collection->update(array('_id' => $this->update['_id']), $update);
 			return;
 		}
-		$revisions = $this->getSubscriberRevisions($entity);
-		$this->fixSubscriberFields($revisions);
+		$revisionsQuery = $this->getSubscriberRevisionsQuery($entity);
+		$this->fixSubscriberFields($revisionsQuery);
 	}
 	
 	public function permanentChange() {
