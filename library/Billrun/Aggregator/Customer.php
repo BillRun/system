@@ -602,7 +602,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	}
 
 	protected function aggregatePipelines(array $pipelines, Mongodloid_Collection $collection) {
-		$cursor = $collection->aggregate($pipelines);
+		$cursor = $collection->aggregateWithOptions($pipelines,['allowDiskUse'=> true]);
 		$results = iterator_to_array($cursor);
 		if (!is_array($results) || empty($results) ||
 			(isset($results['success']) && ($results['success'] === FALSE))) {

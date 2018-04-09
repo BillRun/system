@@ -143,7 +143,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		do {
 			$bufferCount += $addCount;
 			$cursor = $linesCol->query($query)->cursor()->fields($fields)
-					->sort($sort)->skip($bufferCount)->limit($limit);
+					->sort($sort)->skip($bufferCount)->limit($limit)->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout',14400000));
 			foreach ($cursor as $line) {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
@@ -362,6 +362,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$retServices = &$previousServices;
 		$sto = $subscriber['sto'];
 		$sfrom = $subscriber['sfrom'];
+		$activationDate = @$subscriber['activation_date']->sec ?: 0;
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
@@ -369,7 +370,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['plan'],
-										'start'=> $tmpService['from']->sec,
+										'start'=> max($tmpService['from']->sec, $activationDate),
 										'end'=> min($tmpService['to']->sec, $endTime ) );
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
