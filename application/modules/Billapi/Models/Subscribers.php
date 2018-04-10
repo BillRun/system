@@ -370,7 +370,7 @@ class Models_Subscribers extends Models_Entity {
 	
 	protected function fixEntityFields($entity) {
 		if (is_null($entity)) { // create action
-			$update['$set']['plan_activation'] = $this->update['from'];
+			$update['$set']['plan_activation'] = $update['$set']['activation_date'] = $this->update['from'];
 			$update['$set']['plan_deactivation'] = $update['$set']['deactivation_date'] = $this->update['to'];
 			$this->collection->update(array('_id' => $this->update['_id']), $update);
 			return;
