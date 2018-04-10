@@ -143,10 +143,21 @@ class MongoDB
         }
 
         $getCollectionInfo = function (CollectionInfo $collectionInfo) {
-            return [
-                'name' => $collectionInfo->getName(),
-                'options' => $collectionInfo->getOptions(),
-            ];
+            // @todo do away with __debugInfo once https://jira.mongodb.org/browse/PHPLIB-226 is fixed
+            $info = $collectionInfo->__debugInfo();
+
+            return array_filter(
+                [
+                    'name' => $collectionInfo->getName(),
+                    'type' => isset($info['type']) ? $info['type'] : null,
+                    'options' => $collectionInfo->getOptions(),
+                    'info' => isset($info['info']) ? (array) $info['info'] : null,
+                    'idIndex' => isset($info['idIndex']) ? (array) $info['idIndex'] : null,
+                ],
+                function ($item) {
+                    return $item !== null;
+                }
+            );
         };
 
         $eligibleCollections = array_filter(
@@ -258,7 +269,7 @@ class MongoDB
      * @param bool $backup_original_files [optional] <p>If original files should be backed up.</p>
      * @return array <p>Returns db response.</p>
      */
-    public function repair($preserve_cloned_files = FALSE, $backup_original_files = FALSE)
+    public function repair($preserve_cloned_files = false, $backup_original_files = false)
     {
         $command = [
             'repairDatabase' => 1,
@@ -534,14 +545,14 @@ class MongoDB
                 throw new \Exception('Database name contains invalid characters');
             }
         }
-
     }
 
     /**
      * @param bool $includeSystemCollections
      * @return Closure
      */
-    private function getSystemCollectionFilterClosure($includeSystemCollections = false) {
+    private function getSystemCollectionFilterClosure($includeSystemCollections = false)
+    {
         return function (CollectionInfo $collectionInfo) use ($includeSystemCollections) {
             return $includeSystemCollections || ! preg_match('#^system\.#', $collectionInfo->getName());
         };

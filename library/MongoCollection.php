@@ -37,7 +37,7 @@ class MongoCollection
     /**
      * @var MongoDB
      */
-    public $db = NULL;
+    public $db = null;
 
     /**
      * @var string
@@ -170,7 +170,7 @@ class MongoCollection
                 'waitedMS' => 0,
             ];
         } catch (\MongoDB\Driver\Exception\Exception $e) {
-            throw ExceptionConverter::toLegacy($e,'MongoResultException');
+            throw ExceptionConverter::toLegacy($e, 'MongoResultException');
         }
     }
 
@@ -254,7 +254,7 @@ class MongoCollection
      * @param bool $scan_data Only validate indices, not the base collection.
      * @return array Returns the database's evaluation of this object.
      */
-    public function validate($scan_data = FALSE)
+    public function validate($scan_data = false)
     {
         $command = [
             'validate' => $this->name,
@@ -282,9 +282,7 @@ class MongoCollection
             return;
         }
 
-        if (! count((array)$a)) {
-            throw new \MongoException('document must be an array or object');
-        }
+        $this->mustBeArrayOrObject($a);
 
         try {
             $result = $this->collection->insertOne(
@@ -335,7 +333,7 @@ class MongoCollection
                     }
                 }
             } catch (MongoException $e) {
-                if ( ! $continueOnError) {
+                if (! $continueOnError) {
                     throw $e;
                 }
             }
@@ -368,14 +366,20 @@ class MongoCollection
      * Update records based on a given criteria
      *
      * @link http://www.php.net/manual/en/mongocollection.update.php
-     * @param array $criteria Description of the objects to update.
-     * @param array $newobj The object with which to update the matching records.
+     * @param array|object $criteria Description of the objects to update.
+     * @param array|object $newobj The object with which to update the matching records.
      * @param array $options
-     * @throws MongoCursorException
-     * @return boolean
+     * @return bool|array
+     * @throws MongoException
+     * @throws MongoWriteConcernException
      */
-    public function update(array $criteria , array $newobj, array $options = [])
+    public function update($criteria, $newobj, array $options = [])
     {
+        $this->mustBeArrayOrObject($criteria);
+        $this->mustBeArrayOrObject($newobj);
+
+        $this->checkKeys((array) $newobj);
+
         $multiple = isset($options['multiple']) ? $options['multiple'] : false;
         $isReplace = ! \MongoDB\is_first_key_operator($newobj);
 
@@ -408,7 +412,7 @@ class MongoCollection
             'n' => $result->getMatchedCount(),
             'err' => null,
             'errmsg' => null,
-            'updatedExisting' => $result->getUpsertedCount() == 0,
+            'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
         ];
     }
 
@@ -705,7 +709,7 @@ class MongoCollection
      */
     public function getIndexInfo()
     {
-        $convertIndex = function(\MongoDB\Model\IndexInfo $indexInfo) {
+        $convertIndex = function (\MongoDB\Model\IndexInfo $indexInfo) {
             $infos = [
                 'v' => $indexInfo->getVersion(),
                 'key' => $indexInfo->getKey(),
@@ -811,7 +815,7 @@ class MongoCollection
                 'n' => $result->getUpsertedCount() + $result->getModifiedCount(),
                 'err' => null,
                 'errmsg' => null,
-                'updatedExisting' => $result->getUpsertedCount() == 0,
+                'updatedExisting' => $result->getUpsertedCount() == 0 && $result->getModifiedCount() > 0,
             ];
             if ($result->getUpsertedId() !== null) {
                 $resultArray['upserted'] = TypeConverter::toLegacy($result->getUpsertedId());
@@ -884,14 +888,14 @@ class MongoCollection
         $command = [
             'group' => [
                 'ns' => $this->name,
-                '$reduce' => (string)$reduce,
+                '$reduce' => (string) $reduce,
                 'initial' => $initial,
                 'cond' => $condition,
             ],
         ];
 
         if ($keys instanceof MongoCode) {
-            $command['group']['$keyf'] = (string)$keys;
+            $command['group']['$keyf'] = (string) $keys;
         } else {
             $command['group']['key'] = $keys;
         }
@@ -900,7 +904,7 @@ class MongoCollection
         }
         if (array_key_exists('finalize', $condition)) {
             if ($condition['finalize'] instanceof MongoCode) {
-                $condition['finalize'] = (string)$condition['finalize'];
+                $condition['finalize'] = (string) $condition['finalize'];
             }
             $command['group']['finalize'] = $condition['finalize'];
         }
@@ -976,26 +980,31 @@ class MongoCollection
         return $options;
     }
 
+    private function checkKeys(array $array)
+    {
+        foreach ($array as $key => $value) {
+            if (empty($key) && $key !== 0) {
+                throw new \MongoException('zero-length keys are not allowed, did you use $ with double quotes?');
+            }
+
+            if (is_object($value) || is_array($value)) {
+                $this->checkKeys((array) $value);
+            }
+        }
+    }
+
     /**
      * @param array|object $document
      * @return MongoId
      */
     private function ensureDocumentHasMongoId(&$document)
     {
-        $checkKeys = function($array) {
-            foreach (array_keys($array) as $key) {
-                if (empty($key) && $key !== 0) {
-                    throw new \MongoException('zero-length keys are not allowed, did you use $ with double quotes?');
-                }
-            }
-        };
-
         if (is_array($document)) {
             if (! isset($document['_id'])) {
                 $document['_id'] = new \MongoId();
             }
 
-            $checkKeys($document);
+            $this->checkKeys($document);
 
             return $document['_id'];
         } elseif (is_object($document)) {
@@ -1010,7 +1019,7 @@ class MongoCollection
                 $document->_id = new \MongoId();
             }
 
-            $checkKeys((array) $document);
+            $this->checkKeys((array) $document);
 
             return $document->_id;
         }
@@ -1033,5 +1042,12 @@ class MongoCollection
     public function __sleep()
     {
         return ['db', 'name'];
+    }
+
+    private function mustBeArrayOrObject($a)
+    {
+        if (!is_array($a) && !is_object($a)) {
+            throw new \MongoException('document must be an array or object');
+        }
     }
 }
