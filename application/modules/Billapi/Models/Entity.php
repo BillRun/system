@@ -665,7 +665,9 @@ class Models_Entity {
 		}
 
 		if (isset($this->update['from'])) { // default is move from
-			return $this->moveEntry('from');
+			$ret = $this->moveEntry('from');
+			$this->fixEntityFields($this->before);
+			return $ret;
 		}
 		$ret = $this->moveEntry('to');
 		$this->fixEntityFields($this->before);
