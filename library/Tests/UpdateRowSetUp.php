@@ -22,10 +22,11 @@ class Tests_UpdateRowSetUp {
 	 * @var array
 	 */
 	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
-	protected $importData = ['plans', 'services', 'subscribers', 'rates',];
+	protected $importData = ['plans', 'services', 'subscribers', 'rates'];
 	protected $backUpData = array();
 	protected $config;
 	protected $configCollection;
+	protected $data;
 
 	//protected $config;
 	public function __construct() {
@@ -36,10 +37,13 @@ class Tests_UpdateRowSetUp {
 	 * executes set up for update row test
 	 */
 	public function setColletions() {
+		$this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
-		//$this->backUpConfig();
-		foreach ($this->importData as $file) {
+		$collectionsToSet = $this->importData;
+		array_unshift($collectionsToSet, 'config');
+		foreach ($collectionsToSet as $file) {
+
 			$dataAsText = file_get_contents(dirname(__FILE__) . '/data/' . $file . '.json');
 			$parsedData = json_decode($dataAsText, true);
 			if ($parsedData === null) {
@@ -104,7 +108,6 @@ class Tests_UpdateRowSetUp {
 	}
 
 	protected function backUpCollection($colNames) {
-		
 		foreach ($colNames as $colName) {
 			$colName = $colName . 'Collection';
 			$items = iterator_to_array(Billrun_Factory::db()->$colName()->query(array())->getIterator());
@@ -112,25 +115,32 @@ class Tests_UpdateRowSetUp {
 			foreach ($items as $item) {
 				array_push($this->backUpData[$colName], $item->getRawData());
 			}
-
 		}
 	}
-	protected function backUpConfig() {
-			$items = iterator_to_array(Billrun_Factory::db()->configCollection()->query(array())->getIterator());
-			$this->configCollection = $item->getRawData();
-			
-//			echo "<pre>";
-//			print_r($this->backUpData[$colName]);die;
-		}
-	
+
+	protected function loadConfig() {
+		$this->config = Billrun_Factory::db()->configCollection();
+		$ret = $this->config->query()
+			->cursor()
+			->sort(array('_id' => -1))
+			->limit(1)
+			->current()
+			->getRawData();
+		$this->data = $ret;
+	}
+
+	public function setConfig() {
+		unset($this->data['_id']);
+		$this->config->insert($this->data);
+	}
 
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {
 			if (count($items) > 0) {
-					Billrun_Factory::db()->$colName()->batchInsert($items);
+				Billrun_Factory::db()->$colName()->batchInsert($items);
 			}
 		}
-
+		$this->setConfig();
 	}
 
 }

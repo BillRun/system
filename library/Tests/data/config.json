@@ -3,6 +3,7 @@
 	"data":
 			[
 				{
+					"unit_test_config": true,
 					"shared_folder": "shared",
 					"cg_return_url": "",
 					"shared_secret": [],
