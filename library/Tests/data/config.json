@@ -2,7 +2,9 @@
 	"collection": "configCollection",
 	"data":
 			[
+
 				{
+
 					"unit_test_config": true,
 					"shared_folder": "shared",
 					"cg_return_url": "",
@@ -63,7 +65,8 @@
 							"property_type": "time",
 							"invoice_uom": "seconds",
 							"input_uom": "seconds"
-						}, {
+						},
+						{
 							"usage_type": "mms",
 							"label": "mms",
 							"property_type": "counter",
@@ -361,6 +364,28 @@
 								"display": false,
 								"editable": false,
 								"mandatory": false
+							},
+							{
+								"field_name": "params.prefix",
+								"title": "prefix",
+								"multiple": true,
+								"display": true,
+								"editable": true
+							},
+							{
+								"system": false,
+								"select_list": true,
+								"display": true,
+								"editable": true,
+								"field_name": "tariff_category",
+								"default_value": "retail",
+								"show_in_list": true,
+								"title": "Tariff category",
+								"mandatory": true,
+								"select_options": "retail",
+								"changeable_props": [
+									"select_options"
+								]
 							}
 						]
 					},
@@ -1869,7 +1894,6 @@
 											}
 										]
 									],
-
 									"call_to_la": [
 										[
 											{
@@ -2107,6 +2131,147 @@
 							"unify": [],
 							"filters": [],
 							"enabled": true
+						},
+						{
+							"file_type": "Duplicate_mapping",
+							"parser": {
+								"type": "separator",
+								"separator": ",",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "phone"
+									}
+								],
+								"csv_has_header": true,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"phone"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Usage",
+								"date_field": "date",
+								"default_usaget": "call",
+								"default_unit": "seconds",
+								"default_volume_src": [
+									"volume"
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "sid"
+														},
+														{
+															"key": "sid"
+														}
+													],
+													"operator": "$eq",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_false": [],
+														"on_true": {
+															"key": "phone"
+														}
+													}
+												}
+											},
+											{
+												"type": "longestPrefix",
+												"rate_key": "params.prefix",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "phone"
+														},
+														{
+															"key": "phone"
+														}
+													],
+													"operator": "$eq",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_false": [],
+														"on_true": {
+															"key": "phone"
+														}
+													}
+												}
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": []
+							},
+							"receiver": {
+								"type": "ftp",
+								"connections": [
+									{
+										"passive": false,
+										"delete_received": false,
+										"user": "ftp_user",
+										"password": "j8(B2c_sV",
+										"name": "Duplicate_mapping",
+										"host": "46.101.149.208",
+										"remote_directory": "/yossi",
+										"filename_regex": ""
+									}
+								],
+								"limit": 3
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
 						}
 					],
 					"receive": "1",
@@ -2132,8 +2297,8 @@
 						},
 						"disable_stamp_export_directory": 1,
 						"theme": "/application/views/invoices/theme/theme1.css",
-						"header": "",
-						"footer": "",
+						"header": "/application/views/invoices/header/header_tpl.html",
+						"footer": "/application/views/invoices/footer/footer_tpl.html",
 						"sumup_template": "/application/views/invoices/sumup/sumup1.phtml",
 						"details_template": "/application/views/invoices/details/details1.phtml",
 						"decimal_mark": ".",
@@ -2152,9 +2317,10 @@
 							"params": {
 								"user": "SDOC",
 								"password": "sD#4R!3r",
-								"terminal_id": "0962832",
 								"mid": "10912",
-								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay"
+								"endpoint_url": "https://kupot1t.creditguard.co.il/xpo/Relay",
+								"redirect_terminal": "0962832",
+								"charging_terminal": "0962832"
 							}
 						}
 					],
@@ -2199,9 +2365,17 @@
 									"name": "hhmmss",
 									"label": "hh:mm:ss",
 									"function_name": "parseTime"
+								},
+								{
+									"name": "mmss",
+									"label": "mm:ss",
+									"function_name": "parseTime",
+									"arguments": {
+										"format": "_I:s"
+									}
 								}
 							],
-							"invoice_uom": "hhmmss"
+							"invoice_uom": "mmss"
 						},
 						{
 							"system": true,
@@ -2403,7 +2577,23 @@
 					},
 					"system": {
 						"closed_cycle_changes": false
+					},
+					"lines": {
+						"fields": [
+							{
+								"field_name": "foreign.activation_date",
+								"foreign": {
+									"entity": "service",
+									"field": "start",
+									"translate": {
+										"type": "unixTimeToString",
+										"format": "Y-m-d H:i:s"
+									}
+								}
+							}
+						]
 					}
 				}
+
 			]
 }

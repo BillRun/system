@@ -996,7 +996,42 @@
 					"tariff_category": "retail",
 					"to": "time*2167-03-27T15:06:30Z",
 					"creation_time": "time*2017-03-28T00:00:00Z"
+				},
+				{
+					
+					"from": "time*2017-04-11T21:00:00Z",
+					"key": "I_CALL",
+					"rates": {
+						"call": {
+							"BASE": {
+								"rate": [
+									{
+										"from": "0",
+										"to": "UNLIMITED",
+										"interval": "1",
+										"price": "1",
+										"uom_display": {
+											"range": "seconds",
+											"interval": "seconds"
+										}
+									}
+								]
+							}
+						}
+					},
+					"description": "i_call",
+					"params": {
+						"prefix": [
+							"051"
+						]
+					},
+					"vatable": true,
+					"pricing_method": "tiered",
+					"tariff_category": "retail",
+					"to": "time*2167-04-11T13:35:36Z",
+					"creation_time": "time*2017-04-11T21:00:00Z"
 				}
+
 
 
 
