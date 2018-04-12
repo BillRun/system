@@ -13,21 +13,21 @@
  * @since 5.0
  */
 class Billrun_Calculator_Rate_Filters_Base {
-	
+
 	public $params = array();
-	
+
 	/**
 	 * wheather or not this can handle the rate query
 	 * @var boolean
 	 */
 	protected $canHandle = true;
-	
+
 	public function __construct($params = array()) {
 		$this->params = $params;
 	}
 
 	public function updateQuery(&$match, &$additional, &$group, &$additionalAfterGroup, &$sort, $row) {
-		
+
 		$this->updateMatchQuery($match, $row);
 		$a = $this->updateAdditionalQuery($row);
 		if ($a) {
@@ -40,7 +40,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		}
 		$this->updateSortQuery($sort, $row);
 	}
-	
+
 	protected function getRowFieldValue($row, $field, $regex = '') {
 		if ($field === 'computed') {
 			return $this->getComputedValue($row);
@@ -48,22 +48,22 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (isset($row['uf'][$field])) {
 			return $this->regexValue($row['uf'][$field], $regex);
 		}
-		
+
 		if (isset($row[$field])) {
 			return $this->regexValue($row[$field], $regex);
 		}
-		Billrun_Factory::log("Cannot get row value for rate. field: " . $field ." stamp: " . $row['stamp'], Zend_Log::NOTICE);
+		Billrun_Factory::log("Cannot get row value for rate. field: " . $field . " stamp: " . $row['stamp'], Zend_Log::NOTICE);
 		return '';
 	}
-	
+
 	protected function regexValue($value, $regex) {
 		if (empty($regex) || !Billrun_Util::isValidRegex($regex)) {
 			return $value;
 		}
-		
-		return preg_replace($regex,'',$value);	
+
+		return preg_replace($regex, '', $value);
 	}
-	
+
 	/**
 	 * Gets a computed (regex/condition) field value
 	 * 
@@ -85,11 +85,17 @@ class Billrun_Calculator_Rate_Filters_Base {
 		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
 		if ($operator === '$regex') { // in case of hard coded value
 			$secondVal = $secondValKey;
+		} else if ($operator === '$exists') {
+			$secondVal = true;
+		} else if ($operator === '$not_exists') {
+			$operator = '$exists';
+			$secondVal = false;
+			return $this->getComputedValueResult($row, $firstVal == '');
 		} else {
 			$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
 			$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
 		}
-		
+
 		$data = array('first_val' => $firstVal);
 		$query = array(
 			'first_val' => array(
@@ -100,7 +106,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
 		return $this->getComputedValueResult($row, $res);
 	}
-	
+
 	/**
 	 * returns a value for a computed line key (the value received by a calculation on the CDR fields)
 	 * 
@@ -113,7 +119,7 @@ class Billrun_Calculator_Rate_Filters_Base {
 			$this->canHandle = false;
 			return false;
 		}
-		
+
 		$projectionKey = $conditionRes ? 'on_true' : 'on_false';
 		$key = Billrun_Util::getIn($this->params, array('computed', 'projection', $projectionKey, 'key'), '');
 		switch ($key) {
@@ -126,22 +132,27 @@ class Billrun_Calculator_Rate_Filters_Base {
 				return $this->getRowFieldValue($row, $key, $regex);
 		}
 	}
-	
+
 	protected function updateMatchQuery(&$match, $row) {
+		
 	}
-	
+
 	protected function updateAdditionalQuery($row) {
+		
 	}
-	
+
 	protected function updateGroupQuery(&$group, $row) {
+		
 	}
-	
+
 	protected function updateAdditionaAfterGrouplQuery($row) {
+		
 	}
-	
+
 	protected function updateSortQuery(&$sort, $row) {
+		
 	}
-	
+
 	/**
 	 * Whether or not the current filter can handle the query building
 	 * currently, will return false only if a must_met condition is set on the CDR fields and the values are not equal
@@ -151,4 +162,5 @@ class Billrun_Calculator_Rate_Filters_Base {
 	public function canHandle() {
 		return $this->canHandle;
 	}
+
 }
