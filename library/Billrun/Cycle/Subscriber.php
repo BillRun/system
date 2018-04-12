@@ -363,6 +363,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$sto = $subscriber['sto'];
 		$sfrom = $subscriber['sfrom'];
 		$activationDate = @$subscriber['activation_date']->sec ?: 0;
+		$deactivationDate = @$subscriber['deactivation_date']->sec ?: PHP_INT_MAX;
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
@@ -371,7 +372,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['plan'],
 										'start'=> max($tmpService['from']->sec, $activationDate),
-										'end'=> min($tmpService['to']->sec, $endTime ) );
+										'end'=> min($tmpService['to']->sec, $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
 					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
 					$currServices[$stamp] = $serviceData;
