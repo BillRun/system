@@ -74,6 +74,10 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (!isset($this->params['computed'])) {
 			return '';
 		}
+		$spceialQueries = array(
+			'$exists' => array('$exists' => 1),
+			'$existsFalse' => array('$exists' => 0),
+		);
 		$computedType = Billrun_Util::getIn($this->params, array('computed', 'type'), 'regex');
 		$firstValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'key'), '');
 		$firstValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 0, 'regex'), '');
@@ -85,23 +89,25 @@ class Billrun_Calculator_Rate_Filters_Base {
 		$secondValKey = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'key'), '');
 		if ($operator === '$regex') { // in case of hard coded value
 			$secondVal = $secondValKey;
-		} else if ($operator === '$exists') {
-			$secondVal = true;
-		} else if ($operator === '$not_exists') {
-			$operator = '$exists';
-			$secondVal = false;
-			return $this->getComputedValueResult($row, $firstVal == '');
 		} else {
 			$secondValRegex = Billrun_Util::getIn($this->params, array('computed', 'line_keys', 1, 'regex'), '');
 			$secondVal = $this->getRowFieldValue($row, $secondValKey, $secondValRegex);
 		}
-
+		
 		$data = array('first_val' => $firstVal);
 		$query = array(
 			'first_val' => array(
 				$operator => $secondVal,
 			),
 		);
+		if (!empty($spceialQueries[$operator]) ) {
+			$data = $row;
+			$query = array('$or' => [
+					[$firstValKey => $spceialQueries[$operator]],
+					['uf.'.$firstValKey => $spceialQueries[$operator]],
+				]
+			);
+		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
 		return $this->getComputedValueResult($row, $res);
