@@ -46,12 +46,19 @@ class ResetLinesModel {
 	protected $balanceSubstract;
 	
 	protected $balances;
+	
+	/**
+	 * Conditions to add to the query when rebalancing.
+	 * @var array
+	 */
+	protected $conditions;
 
-	public function __construct($aids, $billrun_key) {
+	public function __construct($aids, $billrun_key, $conditions) {
 		$this->initBalances($aids, $billrun_key);
 		$this->aids = $aids;
 		$this->billrun_key = strval($billrun_key);
 		$this->process_time_offset = Billrun_Config::getInstance()->getConfigValue('resetlines.process_time_offset', '15 minutes');
+		$this->conditions = $conditions;
 	}
 
 	public function reset() {
@@ -118,7 +125,9 @@ class ResetLinesModel {
 	 * @return boolean true if successful false otherwise.
 	 */
 	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
-		$query = $this->getResetLinesQuery($update_aids);
+		$conditionsQuery = $this->buildConditionsQuery($update_aids);
+		$basicQuery = $this->getResetLinesQuery($update_aids);
+		$query = array_merge($basicQuery, array('$and' => array($conditionsQuery)));
 		$lines = $lines_coll->query($query);
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
@@ -486,6 +495,48 @@ class ResetLinesModel {
 		}
 
 		return false;
+	}
+	
+	protected function buildConditionsQuery($updateAids) {
+		if (empty($this->conditions)) {
+			return array();
+		}
+		$conditionsQuery = array();
+		$groupedAids = array();
+		$conditionsHashArray = array();
+		foreach ($this->conditions as $aid => $conditions) {
+			if (!in_array($aid, $updateAids)) {
+				continue;
+			}
+			$conditionsHashArray[key($conditions)] = current($conditions);
+			$groupedAids[key($conditions)][] = $aid;		
+		}
+		foreach ($groupedAids as $conditionHash => $aids) {
+			$translatedCondition = $this->translateConditionArrayToQuery($conditionsHashArray[$conditionHash]);
+			$conditionsQuery['$or'][] = array_merge(
+				array('aid' => array('$in' => $aids)),
+				$translatedCondition
+			);
+		}
+		
+		return $conditionsQuery;
+	}
+	
+	protected function translateConditionArrayToQuery($conditionArray) {
+		foreach ($conditionArray as $orCondValue) {
+			$andStructure = array();
+			foreach ($orCondValue as $andCondValue) {
+				$andStructure[] = $this->translateCondition($andCondValue);
+			}
+			$orStructure[] = array('$and' => $andStructure);
+		}
+		
+		return array('$or' => $orStructure);
+	}
+	
+	protected function translateCondition($condition) {
+		$op = $condition['op'];
+		return array($condition['field_name'] => array("$op" => $condition['value']));
 	}
 
 }
