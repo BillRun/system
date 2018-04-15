@@ -40,6 +40,20 @@ trait Models_Verification {
 				$config['query_parameters'] = $updatedQueryParams;
 			}
 		}
+		if (!empty($config['update_parameters_regex'])) {
+			foreach ($config['update_parameters_regex'] as $regexDefinitions) {
+				$updateFieldRegex = $regexDefinitions['regex'];
+				$updateFieldType = $regexDefinitions['type'];
+				foreach ($data as $fieldName => $value) {
+					if (preg_match($updateFieldRegex, $fieldName)) {
+						$config['update_parameters'][] = array(
+							'name' => $fieldName,
+							'type' => $updateFieldType,
+						);
+					}
+				}
+			}
+		}
 		foreach (array('query_parameters' => $query, 'update_parameters' => $data) as $type => $params) {
 			$options['fields'] = array();
 			$translated[$type] = array();
