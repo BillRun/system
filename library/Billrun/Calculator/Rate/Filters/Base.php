@@ -102,7 +102,8 @@ class Billrun_Calculator_Rate_Filters_Base {
 		);
 		if (!empty($spceialQueries[$operator]) ) {
 			$data = $row;
-			$query = array('$or' => [
+			$op = $operator === '$existsFalse' ? '$and' : '$or';
+			$query = array($op => [
 					[$firstValKey => $spceialQueries[$operator]],
 					['uf.'.$firstValKey => $spceialQueries[$operator]],
 				]
