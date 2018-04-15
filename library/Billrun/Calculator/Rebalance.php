@@ -41,12 +41,15 @@ class Billrun_Calculator_Rebalance extends Billrun_Calculator {
 		$conditions = array();
 		foreach ($results as $result) {
 			$billruns[$result['billrun_key']][] = $result['aid'];
-			$conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
+			if (!empty($result['conditions'])) {
+				$conditions[$result['billrun_key']][$result['aid']][$result['conditions_hash']] = $result['conditions'];
+			}
 			$all_aids[] = $result['aid'];
 		}
 
 		foreach ($billruns as $billrun_key => $aids) {
-			$model = new ResetLinesModel($aids, $billrun_key, $conditions[$billrun_key]);
+			$conditionsByBillrunKey = !empty($conditions[$billrun_key]) ? $conditions[$billrun_key] : array();
+			$model = new ResetLinesModel($aids, $billrun_key, $conditionsByBillrunKey);
 			try {
 				$ret = $model->reset();
 				if (isset($ret['err']) && !is_null($ret['err'])) {

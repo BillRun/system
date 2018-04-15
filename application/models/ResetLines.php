@@ -127,7 +127,11 @@ class ResetLinesModel {
 	protected function resetLinesForAccounts($update_aids, $advancedProperties, $lines_coll, $queue_coll) {
 		$conditionsQuery = $this->buildConditionsQuery($update_aids);
 		$basicQuery = $this->getResetLinesQuery($update_aids);
-		$query = array_merge($basicQuery, array('$and' => array($conditionsQuery)));
+		if (!empty($conditionsQuery)) {
+			$query = array_merge($basicQuery, array('$and' => array($conditionsQuery)));
+		} else {
+			$query = $basicQuery;
+		}
 		$lines = $lines_coll->query($query);
 		$rebalanceTime = new MongoDate();
 		$stamps = array();
