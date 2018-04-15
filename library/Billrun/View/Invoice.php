@@ -20,6 +20,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		'incoming_call' => 60,
 		'data' => 1024*1024
 	);
+	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^0+972/'=>'0');
 	
 	/*
 	 * get and set lines of the account
@@ -205,5 +206,15 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 	
 	public function shouldProvideDetails() {
 		return !empty($this->data['attributes']['detailed_invoice']) || in_array($this->data['aid'],  Billrun_Factory::config()->getConfigValue('invoice_export.aid_with_detailed_invoices',array()));
+	}
+	
+	public function getInvoicePhonenumber($rawNumber) {
+		$retNumber = $rawNumber;
+		
+		foreach($this->destinationsNumberTransforms as $regex => $transform) {
+			$retNumber = preg_replace($regex,$transform,$retNumber);
+		}
+		
+		return $retNumber;
 	}
 }
