@@ -193,7 +193,9 @@ class Mongodloid_Cursor implements Iterator, Countable {
 	}
 
 	public function timeout($ms) {
-		if (method_exists($this->_cursor, 'timeout')) {
+		if (method_exists($this->_cursor, 'maxTimeMS')) {
+			$this->_cursor->maxTimeMS($ms);
+		} else if (method_exists($this->_cursor, 'timeout')) {
 			$this->_cursor->timeout($ms);
 		}
 		return $this;

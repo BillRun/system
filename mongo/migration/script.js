@@ -140,6 +140,22 @@ for (var paymentGateway in paymentGateways) {
 	}
 }
 
+// BRCD-1390 - Add activation_date field to subscriber
+db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
+	function(obj) {
+		var activationDate = -1;
+		db.subscribers.find({sid:obj.sid, aid:obj.aid, activation_date:{$exists:0}}).sort({'from': 1}).forEach(
+			function(obj2) {
+				if (activationDate == -1) {
+					activationDate = obj2.from;
+				}
+				obj2.activation_date = activationDate;
+				db.subscribers.save(obj2);
+			}
+		);
+	}
+);
+
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
 	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
