@@ -143,7 +143,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		do {
 			$bufferCount += $addCount;
 			$cursor = $linesCol->query($query)->cursor()->fields($fields)
-					->sort($sort)->skip($bufferCount)->limit($limit);
+					->sort($sort)->skip($bufferCount)->limit($limit)->timeout(Billrun_Factory::config()->getConfigValue('db.long_queries_timeout',14400000));
 			foreach ($cursor as $line) {
 				$ret[$line['stamp']] = $line->getRawData();
 			}
@@ -362,23 +362,26 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 		$retServices = &$previousServices;
 		$sto = $subscriber['sto'];
 		$sfrom = $subscriber['sfrom'];
+		$activationDate = @$subscriber['activation_date']->sec ?: 0;
+		$deactivationDate = @$subscriber['deactivation_date']->sec ?: PHP_INT_MAX;
 
 		if(isset($subscriber['services']) && is_array($subscriber['services'])) {
 			foreach($subscriber['services'] as  $tmpService) {
 				 $serviceData = array(  'name' => $tmpService['name'],
 										'quantity' => Billrun_Util::getFieldVal($tmpService['quantity'],1),
+										'service_id' => Billrun_Util::getFieldVal($tmpService['service_id'],null),
 										'plan' => $subscriber['plan'],
-										'start'=> $tmpService['from']->sec,
-										'end'=> min($tmpService['to']->sec, $endTime ) );
+										'start'=> max($tmpService['from']->sec, $activationDate),
+										'end'=> min($tmpService['to']->sec, $endTime , $deactivationDate) );
 				 if($serviceData['start'] !== $serviceData['end']) {
-					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity'));
+					$stamp = Billrun_Util::generateArrayStamp($serviceData,array('name','start','quantity','service_id'));
 					$currServices[$stamp] = $serviceData;
 				 }
 			}
 			// Function to Check for removed services in the current subscriber record.
 			$serviceCompare = function  ($a, $b)  {
-				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity'));
-				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity'));
+				$aStamp = Billrun_Util::generateArrayStamp($a ,array('name','start','quantity','service_id'));
+				$bStamp = Billrun_Util::generateArrayStamp($b ,array('name','start','quantity','service_id'));
 				return strcmp($aStamp , $bStamp);
 			};
 

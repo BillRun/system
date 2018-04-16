@@ -488,7 +488,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
 			$gatewayDetails['amount'] = $customer['due'];
-			$gatewayDetails['currency'] = $customer['currency'];
+			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
