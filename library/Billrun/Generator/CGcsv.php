@@ -49,9 +49,6 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 		$paymentParams = array(
 			'dd_stamp' => $this->getStamp(),
 		);
-		if (!Billrun_Bill_Payment::removePayments($paymentParams)) { // removePayments if this is a rerun
-			throw new Exception('Error removing payments before rerun');
-		}
 		$this->customers = iterator_to_array($this->gateway->getCustomers());
 		
 		Billrun_Factory::log()->log('generator entities loaded: ' . count($this->customers), Zend_Log::INFO);
@@ -62,7 +59,9 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$accounts = $this->subscribers->query(array('aid' => array('$in' => $customersAids), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor();
+		$newAccount = new Billrun_Account_Db();
+		$accountQuery = array('aid' => array('$in' => $customersAids), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account");
+		$accounts = $newAccount->getAccountsByQuery($accountQuery);
 		foreach ($accounts as $account){
 			$subscribers_in_array[$account['aid']] = $account;
 		}

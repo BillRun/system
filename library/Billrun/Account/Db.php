@@ -203,5 +203,13 @@ class Billrun_Account_Db extends Billrun_Account {
 		}
 		return $results;
 	}
+	
+	/**
+	 * Get accounts by transferred query.
+	 * @param array $query - query.
+	 */
+	public function getAccountsByQuery($query) {
+		return $this->collection->query($query)->cursor();
+	}
 
 }

@@ -523,8 +523,8 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-		/**
-	 * Get the Credentials of the current payment gateway. 
+	/**
+	 * Get the export details of the current payment gateway. 
 	 * 
 	 * @return Array - the status and stage of the payment.
 	 */
@@ -539,7 +539,7 @@ abstract class Billrun_PaymentGateway {
 	}
 	
 		/**
-	 * Get the Credentials of the current payment gateway. 
+	 * Get the receiver details of the current payment gateway. 
 	 * 
 	 * @return Array - the status and stage of the payment.
 	 */

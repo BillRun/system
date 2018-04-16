@@ -55,7 +55,7 @@ class Billrun_Receiver_CGfeedback extends Billrun_Receiver_Ssh {
 				unset($receiverIniDefinitions['port']);
 				continue;
 			}
-			Billrun_Factory::log()->log("There isn't defined port", Zend_Log::NOTICE);
+			Billrun_Factory::log()->log("Missing port definition in Credit Guard configuration", Zend_Log::NOTICE);
 		}
 		$dbReceiverDefinitions['connections'] = $connections;
 		foreach ($dbReceiverDefinitions as $key => $value) {

@@ -673,5 +673,9 @@ abstract class Billrun_Bill {
 		$this->data['waiting_payments'] = $pending;
 	}
 
-
+	public function updatePendingBillToConfirmed($billId, $status) {
+		$paidBy = $this->getPaidByBills();
+		$this->updatePaidBy($paidBy, $billId, $status);
+		return $this;
+	}
 }

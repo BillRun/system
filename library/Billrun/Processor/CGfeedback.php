@@ -27,6 +27,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 	protected $bills;
 	protected $processorDefinitions;
 	protected $parserDefinitions;
+	protected $workspace;
 
 
 	public function __construct($options) {
@@ -62,20 +63,8 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 	}
 
 	protected function getBillRunLine($rawLine) {
-		$row['uf'] = $rawLine;
-
-		$datetime = $this->getRowDateTime($row['uf']['date']);
-		if (!$datetime) {
-			Billrun_Factory::log('Cannot set urt for line. Data: ' . print_R($row, 1), Zend_Log::ALERT);
-			return false;
-		}
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));	
+		$row = $rawLine;
 		$row['stamp'] = md5(serialize($row));
-		$row['type'] = static::$type;
-		$row['source'] = self::$type;
-		$row['file'] = basename($this->filePath);
-		$row['log_stamp'] = $this->getFileStamp();
-		$row['process_time'] = new MongoDate();
 		return $row;
 	}
 
@@ -90,7 +79,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 			$paymentResponse = $this->getPaymentResponse($row);
 			Billrun_Bill_Payment::updateAccordingToStatus($paymentResponse, $bill, 'CreditGuard');
 			if ($paymentResponse['stage'] == 'Completed') {
-				$this->updateInvoicePaidStatus($bill);
+				$bill->markApproved($paymentResponse['stage']);
 			}
 		}
 	}
@@ -105,6 +94,7 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 		$this->dataStructure = $this->structConfig['data'];
 		$this->processorDefinitions = $this->structConfig['processor'];
 		$this->parserDefinitions = $this->structConfig['parser'];
+		$this->workspace = $this->structConfig['config']['workspace'];
 	}
 	
 	
@@ -113,31 +103,6 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 			return true;
 		} else{
 			return false;
-		}
-	}
-	
-	protected function defineEmailToSend($bill, $row, $rejections) {
-		return array(
-			'aid' => $bill->getAccountNo(),
-			'amount' => $bill->getAmount(),
-			'date' => $row['process_time'],
-			'reason' => $rejections[$row['ret_code']],
-		);
-	}
-	
-	protected function sendEmail($emailsToSend) {
-		if ($emailsToSend) {
-			$subscriber = Billrun_Factory::subscriber();
-			$data = array(
-				'operation' => 'CGfeedback',
-				'entities' => $emailsToSend,
-			);
-			$emailsResult = $subscriber->sendBillingOperationsNotifications($data);
-			if (isset($emailsResult['status']) && $emailsResult['status'] == 1) {
-				Billrun_Factory::log()->log('CG Deal rejection: ' . $emailsResult['emails_sent'] . ' emails queued for sending.', Zend_Log::INFO);
-			} else {
-				Billrun_Factory::log()->log('CRM returned with error when trying to send emails (CG Deal rejection)', Zend_Log::ALERT);
-			}
 		}
 	}
 	
@@ -188,7 +153,8 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 		foreach ($this->parserDefinitions as $key => $value) {
 			$parserDefinitions[$key] = $value;
 		}
-		return array('processor' => $processorDefinitions, 'parser' => $parserDefinitions);
+		
+		return array('processor' => $processorDefinitions, 'parser' => $parserDefinitions, 'workspace' => $this->workspace);
 	}
 
 }
