@@ -137,7 +137,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 			'$project' => array(
 				'_id' => 0,
 				'id' => '$_id',
-				'plan_dates' => 1,
+//				'plan_dates' => 1,
 				'card_token' => 1,
 				'passthrough' => $addedPassthroughFields['project'],
 			)

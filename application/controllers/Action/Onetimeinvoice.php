@@ -129,6 +129,7 @@ class OnetimeinvoiceAction extends ApiAction {
 		$ret['rand'] = rand(1, 1000000);
 		$ret['stamp'] = Billrun_Util::generateArrayStamp($credit_row);
 		$ret['process_time'] = new MongoDate();
+		$ret['urt'] = new MongoDate( empty($credit_row['credit_time']) ? time() : strtotime($credit_row['credit_time']));
 		$rate = Billrun_Rates_Util::getRateByName($credit_row['rate']);
 		$ret['usaget'] = $this->getCreditUsaget($ret,$rate);
 		if ($rate->isEmpty()) {
@@ -194,7 +195,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function getCreditUsaget($row, $rate) {
 		if (!isset($row['aprice'])) {
-			return key($rate['rates']);
+			return key(@$rate['rates']);
 		}
 		return ($row['aprice'] >= 0 ? 'charge' : 'refund');
 	}
