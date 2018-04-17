@@ -295,6 +295,10 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 	public function isFakeCycle() {
 		return $this->fakeCycle;
 	}
+	
+	public function isOneTime() {
+		return false;
+	}
 
 	//--------------------------------------------------------------------
 

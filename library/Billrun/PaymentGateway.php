@@ -523,14 +523,18 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-	public static function getCustomers($aids = array()) {
-		$billsColl = Billrun_Factory::db()->billsCollection();		
-		if (!empty($aids)){
-			$pipelines[] = array(
+	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		if (!empty($aids)) {
+			$match = array(
 				'$match' => array(
 					'aid' => array('$in' => $aids),
 				),
-			);		
+			);
+			if (!empty($specificInvoices)) {
+				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
+			}
+			$pipelines[] = $match;
 		}
 		$pipelines[] = array(
 			'$sort' => array(
@@ -596,7 +600,7 @@ abstract class Billrun_PaymentGateway {
 		$res = $billsColl->aggregate($pipelines);
 		return $res;
 	}
-	
+
 	protected function rearrangeParametres($params){
 		foreach ($params as $value) {
 			$arranged[$value] = '';

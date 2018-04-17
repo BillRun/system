@@ -441,7 +441,7 @@ class Billrun_Cycle_Subscriber extends Billrun_Cycle_Common {
 			}
 			$subend = max($subscriber['sto'], $subend);
 			// Get the plans
-			$subscriberPlans= array_merge($subscriberPlans,$subscriber['plans']);
+			$subscriberPlans= array_merge($subscriberPlans,Billrun_Util::getFieldVal($subscriber['plans'],array()));
 
 			// Get the services for the subscriber.
 			$services = $this->buildServicesSubAggregator($subscriber, $services, $endTime);
