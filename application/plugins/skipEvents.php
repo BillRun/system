@@ -22,16 +22,16 @@ class skipEventsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	protected $name = 'skipEvents';
 
-	public function BeforeRebalancingLines($line) {
+	public function beforeRebalancingLines($line) {
 		$line['skip_events'] = true;
-		Billrun_Factory::log('Line ' . $line['stamp'] . ' marked as skip events', Zend_Log::INFO);
 	}
 	
-	public function BeforeUpdateRebalanceLines(&$skipEvents) {
-		$skipEvents = true;
+	public function beforeUpdateRebalanceLines(&$updateQuery) {
+		Billrun_Factory::log('Plugin skipEvents triggered', Zend_Log::INFO);
+		$updateQuery['$set']['skip_events'] = true;
 	}
 	
-	public function BeforeTriggerEvents($skipEvents, $row) {
+	public function beforeTriggerEvents($skipEvents, $row) {
 		if (!empty($row['skip_events'])) {
 			$skipEvents = true;
 		}
