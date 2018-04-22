@@ -198,7 +198,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 		$key = func_get_arg(0);
 
-		if ($key == '_id') {
+		if ($key === '_id') {
 			return $this->getId();
 		}
 
@@ -372,7 +372,21 @@ class Mongodloid_Entity implements ArrayAccess {
 
 	//=============== ArrayAccess Implementation =============
 	public function offsetExists($offset) {
-		return isset($this->_values[$offset]);
+		$result = $this->_values;
+
+		// if this is chained key, let's pull it
+		if (strpos($offset, '.') !== FALSE) {
+			do {
+				list($current, $offset) = explode('.', $offset, 2);
+				if (isset($result[$current])) {
+					$result = $result[$current];
+				} else {
+					// if key is not in the values, let's return null -> not found key
+					return null;
+				}
+			} while (strpos($offset, '.') !== FALSE);
+		}
+		return isset($result[$offset]);
 	}
 
 	public function offsetGet($offset) {
