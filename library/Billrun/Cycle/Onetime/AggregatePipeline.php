@@ -31,16 +31,7 @@ class Billrun_Cycle_Onetime_AggregatePipeline {
 	// TODO: Move this function to a "collection aggregator class"
 	public function getCycleDateMatchPipeline($cycle) {
 		$mongoCycle = new Billrun_DataTypes_MongoCycleTime($cycle);
-		return array(
-			'$match' => array(
-				'from' => array(
-					'$lt' => $mongoCycle->end()
-					),
-				'to' => array(
-					'$gt' => $mongoCycle->start()
-					)
-				)
-			);
+		return  array('$match' => Billrun_Utils_Mongo::getOverlappingWithRange('from','to',$mongoCycle->start(),$mongoCycle->end()));
 	}
 	
 	// TODO: Move this function to a "collection aggregator class"
