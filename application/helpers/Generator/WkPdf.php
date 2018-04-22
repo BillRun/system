@@ -87,7 +87,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
 		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
 		$this->servicesColl = Billrun_Factory::db()->servicesCollection();
-
+		if(!empty($options['is_onetime']) ) {
+			$this->export_directory = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR.'one_time'. DIRECTORY_SEPARATOR . $this->stamp);
+		}
 		$this->paths = array(
 			'html' => $this->export_directory . DIRECTORY_SEPARATOR . 'html/',
 			'pdf' => (empty(Billrun_Util::getFieldVal($options['temp_pdf'], FALSE)) ? $this->export_directory : $this->getTempDir($this->stamp)) . DIRECTORY_SEPARATOR . 'pdf/',
@@ -100,8 +102,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
-		$this->header_path =  APPLICATION_PATH . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/application/views/invoices/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/application/views/invoices/header/header_tpl.html') ) );
-		$this->footer_path =  APPLICATION_PATH . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/application/views/invoices/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/application/views/invoices/footer/footer_tpl.html' ) ) );
+		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/header/header_tpl.html') ) );
+		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/footer/footer_tpl.html' ) ) );
 		$this->custom = array(
 			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
 			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
