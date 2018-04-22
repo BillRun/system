@@ -61,6 +61,15 @@ class OnetimeinvoiceAction extends ApiAction {
 		$billrunToBill->generate();
         Billrun_Bill_Payment::makePayment([ 'aids' => [$aid], 'invoices' => [$invoice->getInvoiceID()] ]);
         
+		if(empty($request['send_back_invoices'])) {
+			$this->getController()->setOutput(array(array(
+					'status' => 1,
+					'desc' => 'success',
+					'details' => [ 'invoice_path' => $pdfPath ],
+					'input' => $request
+			)));
+			return TRUE;
+		} // else 
         return  $this->sendBackInvoice($pdfPath);
     }
 
