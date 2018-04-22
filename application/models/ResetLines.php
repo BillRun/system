@@ -144,6 +144,7 @@ class ResetLinesModel {
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
+			Billrun_Factory::dispatcher()->trigger('BeforeRebalancingLines', array(&$line));
 			$this->aggregateLineUsage($line);
 			$queue_line['rebalance'] = array();
 			$stamps[] = $line['stamp'];
@@ -212,7 +213,7 @@ class ResetLinesModel {
 	 * @return array - Query to use to update lines collection.
 	 */
 	protected function getUpdateQuery($rebalanceTime) {
-		return array(
+		$updateQuery = array(
 			'$unset' => array(
 				'aid' => 1,
 				'sid' => 1,
@@ -252,6 +253,14 @@ class ResetLinesModel {
 				'rebalance' => $rebalanceTime,
 			),
 		);
+		
+		$skipEvents = false;
+		Billrun_Factory::dispatcher()->trigger('BeforeUpdateRebalanceLines', array(&$skipEvents));
+		if (!empty($skipEvents)) {
+			$updateQuery['$set']['skip_events'] = $skipEvents;
+		}
+		
+		return $updateQuery;
 	}
 
 	/**
