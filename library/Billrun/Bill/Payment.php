@@ -461,7 +461,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, $chargeOptions['invoices'] ?: FALSE));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {

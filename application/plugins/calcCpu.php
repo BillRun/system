@@ -129,6 +129,7 @@ class calcCpuPlugin extends Billrun_Plugin_BillrunPluginBase {
 			'stamp' => $accountInvoice->getBillrunKey(),
 			'accounts' => array($accountInvoice->getAid()),
 			'is_fake' => $aggragator->isFakeCycle(),
+			'is_onetime' => $aggragator->isOneTime(),
 		);
 		
 		if($aggragator->isFakeCycle()) {

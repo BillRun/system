@@ -66,7 +66,7 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 		$time = strtotime($datetime);
 		
 		// If the timebase is not empty, apply it.
-		if($this->timeBase) {
+		if($this->timeBase &&   strlen($key) !== 14) {
 			$time = strtotime($this->timeBase, $time);
 		} 
 		return $time;
@@ -82,7 +82,7 @@ class Billrun_DataTypes_CachedChargingTimeTable  extends Billrun_DataTypes_Cache
 	protected function getDatetime($billrunKey, $defaultChargingDay=1) {
 		$config = Billrun_Factory::config();
 		$dayofmonth = $config->getConfigValue('billrun.charging_day', $defaultChargingDay);
-		return $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
+		return strlen($billrunKey) == 14 ? $billrunKey : $billrunKey . str_pad($dayofmonth, 2, '0', STR_PAD_LEFT) . "000000";
 	}
 	
 	/**

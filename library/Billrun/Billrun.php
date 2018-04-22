@@ -1042,6 +1042,13 @@ class Billrun_Billrun {
 		return $vat;
 	}
 
+	public function getInvoicePath() {
+		return @$this->data['invoice_file'];
+	}
+
+	public function getInvoiceID() {
+		return @$this->data['invoice_id'];
+	}
 }
 
 // TODO: Why is this here? this is the Billrun class code, this should be in some excute script file.
