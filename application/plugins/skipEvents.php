@@ -31,7 +31,7 @@ class skipEventsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		$updateQuery['$set']['skip_events'] = true;
 	}
 	
-	public function beforeTriggerEvents($skipEvents, $row) {
+	public function beforeTriggerEvents(&$skipEvents, $row) {
 		if (!empty($row['skip_events'])) {
 			$skipEvents = true;
 		}
