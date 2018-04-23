@@ -2272,7 +2272,211 @@
 							"unify": [],
 							"filters": [],
 							"enabled": true
+						},
+						{
+							"file_type": "r",
+							"type": "realtime",
+							"parser": {
+								"type": "json",
+								"separator": "",
+								"structure": [
+									{
+										"name": "sid"
+									},
+									{
+										"name": "date"
+									},
+									{
+										"name": "usage"
+									},
+									{
+										"name": "volume"
+									},
+									{
+										"name": "rate"
+									},
+									{
+										"name": "d.m"
+									}
+								],
+								"csv_has_header": false,
+								"csv_has_footer": false,
+								"custom_keys": [
+									"sid",
+									"date",
+									"usage",
+									"volume",
+									"rate",
+									"d.m"
+								],
+								"line_types": {
+									"H": "/^none$/",
+									"D": "//",
+									"T": "/^none$/"
+								}
+							},
+							"processor": {
+								"type": "Realtime",
+								"date_field": "date",
+								"usaget_mapping": [
+									{
+										"src_field": "usage",
+										"pattern": "call",
+										"usaget": "call",
+										"unit": "seconds",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									},
+									{
+										"src_field": "usage",
+										"pattern": "sms",
+										"usaget": "sms",
+										"unit": "counter",
+										"volume_type": "field",
+										"volume_src": [
+											"volume"
+										]
+									}
+								],
+								"orphan_files_time": "6 hours"
+							},
+							"customer_identification_fields": {
+								"call": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								],
+								"sms": [
+									{
+										"target_key": "sid",
+										"src_key": "sid",
+										"conditions": [
+											{
+												"field": "usaget",
+												"regex": "/.*/"
+											}
+										],
+										"clear_regex": "//"
+									}
+								]
+							},
+							"rate_calculators": {
+								"retail": {
+									"call": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "d.m"
+														}
+													],
+													"operator": "$exists",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									],
+									"sms": [
+										[
+											{
+												"type": "match",
+												"rate_key": "key",
+												"line_key": "computed",
+												"computed": {
+													"line_keys": [
+														{
+															"key": "d.m"
+														}
+													],
+													"operator": "$existsFalse",
+													"type": "condition",
+													"must_met": true,
+													"projection": {
+														"on_true": {
+															"key": "rate",
+															"regex": "",
+															"value": ""
+														},
+														"on_false": {
+															"key": "condition_result",
+															"regex": "",
+															"value": ""
+														}
+													}
+												}
+											}
+										]
+									]
+								}
+							},
+							"pricing": {
+								"call": [],
+								"sms": []
+							},
+							"realtime": {
+								"postpay_charge": true
+							},
+							"response": {
+								"encode": "json",
+								"fields": [
+									{
+										"response_field_name": "requestNum",
+										"row_field_name": "request_num"
+									},
+									{
+										"response_field_name": "requestType",
+										"row_field_name": "request_type"
+									},
+									{
+										"response_field_name": "sessionId",
+										"row_field_name": "session_id"
+									},
+									{
+										"response_field_name": "returnCode",
+										"row_field_name": "granted_return_code"
+									},
+									{
+										"response_field_name": "sid",
+										"row_field_name": "sid"
+									},
+									{
+										"response_field_name": "grantedVolume",
+										"row_field_name": "usagev"
+									}
+								]
+							},
+							"unify": [],
+							"filters": [],
+							"enabled": true
 						}
+
 					],
 					"receive": "1",
 					"process": "1",
