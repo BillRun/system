@@ -106,7 +106,9 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 	
 	protected function isLineTaxable($line) {
 		$rate = $this->getRateForLine($line);
-		return ($line['usaget'] == 'flat') || !empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'] ; // all rated lines that are taxable
+		return  (!empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'])
+					|| 
+				( $line['usaget'] == 'flat' || !isset($rate['vatable']) );
 	}
 	
 	protected function isLineDataComplete($line) {
