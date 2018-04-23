@@ -176,6 +176,16 @@ db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
 	}
 );
 
+// BRCD-1402 - Add activation_date field to subscriber
+if(lastConfig.invoice_export) {
+	if(lastConfig.invoice_export.header && lastConfig.invoice_export.header.match(/^\/application\/views\/invoices/)) {
+		lastConfig.invoice_export.header = lastConfig.invoice_export.header.replace(/^\/application\/views\/invoices/,'');
+	}
+	if(lastConfig.invoice_export.footer && lastConfig.invoice_export.footer.match(/^\/application\/views\/invoices/)) {
+		lastConfig.invoice_export.footer =lastConfig.invoice_export.footer.replace(/^\/application\/views\/invoices/,'');
+	}
+}
+
 //BRCD-1374 : Add taxation support services 
 var vatableField ={
 					"select_list" : false,
@@ -191,6 +201,5 @@ var vatableField ={
 					"select_options" : ""
 	};
 lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
-
 
 db.config.insert(lastConfig);
