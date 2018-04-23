@@ -110,9 +110,6 @@ class ResetLinesModel {
 			'process_time' => array(
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
-			'aprice' => array(
-				'$exists' => true,
-			),
 		);
 	}
 
@@ -329,7 +326,7 @@ class ResetLinesModel {
 	 * 
 	 */
 	protected function aggregateLineUsage($line) {
-		if (!isset($line['usagev'])) {
+		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec);
