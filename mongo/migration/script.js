@@ -178,6 +178,7 @@ db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
 
 //BRCD-1374 : Add taxation support services 
 var vatableField ={
+					"system":true,
 					"select_list" : false,
 					"display" : true,
 					"editable" : true,
