@@ -110,6 +110,18 @@ class Tests_Ratetest extends UnitTestCase {
 		//Test num 28 p1 Duplicate mapping 2 different Computed ,but both return phone number field and And compare it to longest prefix
 		array('row' => array('stamp' => 'p1', 'aid' => 27, 'sid' => 31,'type' => 'Duplicate_mapping',"uf"=>array("sid"=>"31","phone"=>"0511234567"),'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-01-14 11:00:00+03:00'),
 			'expected' => array('I_CALL' => 'retail')),
+		//Test num 29 p1 Computed: if field d.m Exsist then   rate field vs productKay
+		array('row' => array('stamp' => 'q1', 'aid' => 27, 'sid' => 31,'type' => 'r',"uf"=>array("d"=>array("m"=>12345678)),"rate"=>"CALL",'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-01-14 11:00:00+03:00'),
+			'expected' => array('CALL' => 'retail')),
+		//Test num 30 p2 ***negative test*** Computed:if field d.m Exist  then rate field vs productKay
+		array('row' => array('stamp' => 'q2', 'aid' => 27, 'sid' => 31,'type' => 'r',"uf"=>array(),"rate"=>"CALL",'plan' => 'WITH_NOTHING', 'usaget' => 'call', 'usagev' => 20, 'urt' => '2018-01-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
+		//Test num 31 p3 Computed:if field d.m Does not Exist  then rate field vs productKay
+		array('row' => array('stamp' => 'q3', 'aid' => 27, 'sid' => 31,'type' => 'r',"uf"=>array(),"rate"=>"SMS",'plan' => 'WITH_NOTHING','usaget' => 'sms', 'usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('SMS' => 'retail')),
+		//Test num 32 p4 ***negative test*** Computed:if field d.m Does not Exist  then rate field vs productKay
+		array('row' => array('stamp' => 'q4', 'aid' => 27, 'sid' => 31,'type' => 'r',"uf"=>array("d"=>array("m"=>12345678)),"rate"=>"SMS",'plan' => 'WITH_NOTHING', 'usaget' => 'sms','usagev' => 20, 'urt' => '2018-03-14 11:00:00+03:00'),
+			'expected' => array('result' => 'Rate not found')),
 	];
 
 	public function __construct($label = false) {
