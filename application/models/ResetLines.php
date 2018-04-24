@@ -110,9 +110,6 @@ class ResetLinesModel {
 			'process_time' => array(
 				'$lt' => new MongoDate(strtotime($this->process_time_offset . ' ago')),
 			),
-			'aprice' => array(
-				'$exists' => true,
-			),
 		);
 	}
 
@@ -144,6 +141,7 @@ class ResetLinesModel {
 
 		// Go through the collection's lines and fill the queue lines.
 		foreach ($lines as $line) {
+			Billrun_Factory::dispatcher()->trigger('beforeRebalancingLines', array(&$line));
 			$this->aggregateLineUsage($line);
 			$queue_line['rebalance'] = array();
 			$stamps[] = $line['stamp'];
@@ -212,7 +210,7 @@ class ResetLinesModel {
 	 * @return array - Query to use to update lines collection.
 	 */
 	protected function getUpdateQuery($rebalanceTime) {
-		return array(
+		$updateQuery = array(
 			'$unset' => array(
 				'aid' => 1,
 				'sid' => 1,
@@ -252,6 +250,10 @@ class ResetLinesModel {
 				'rebalance' => $rebalanceTime,
 			),
 		);
+
+		Billrun_Factory::dispatcher()->trigger('beforeUpdateRebalanceLines', array(&$updateQuery));
+		
+		return $updateQuery;
 	}
 
 	/**
@@ -329,7 +331,7 @@ class ResetLinesModel {
 	 * 
 	 */
 	protected function aggregateLineUsage($line) {
-		if (!isset($line['usagev'])) {
+		if (!isset($line['usagev']) || !isset($line['aprice'])) {
 			return;
 		}
 		$billrunKey = Billrun_Billingcycle::getBillrunKeyByTimestamp($line['urt']->sec);

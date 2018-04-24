@@ -36,7 +36,7 @@ trait Billrun_Traits_Api_OperationsLock {
 	 * Locks operation from get executed again before the first one ended.
 	 *
 	 */
-	public function lock() {
+	static public function lock() {
 		$operationsColl = Billrun_Factory::db()->operationsCollection();
 		$data = static::getInsertData();
 		$newInsert = array(
