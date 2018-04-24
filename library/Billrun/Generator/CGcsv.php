@@ -45,7 +45,6 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 	}
 
 	public function load() {
-		$today = new MongoDate();
 		$paymentParams = array(
 			'dd_stamp' => $this->getStamp(),
 		);
@@ -59,8 +58,8 @@ class Billrun_Generator_CGcsv extends Billrun_Generator_Csv {
 			return $ele['aid'];
 		}, $this->customers);
 		
-		$newAccount = new Billrun_Account_Db();
-		$accountQuery = array('aid' => array('$in' => $customersAids), 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account");
+		$newAccount = Billrun_Factory::account();
+		$accountQuery = $newAccount->getQueryActiveAccounts($customersAids);
 		$accounts = $newAccount->getAccountsByQuery($accountQuery);
 		foreach ($accounts as $account){
 			$subscribers_in_array[$account['aid']] = $account;

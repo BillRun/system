@@ -121,25 +121,6 @@ class Billrun_Processor_CGfeedback extends Billrun_Processor_Updater {
 		return array('status' => $row['ret_code'], 'stage' => $stage);
 	}
 	
-	protected function updateInvoicePaidStatus($rec) {
-		$recId = $rec->getId();
-		$invoicesId = $rec->getInvoicesIdFromReceipt();
-		$query = array(
-			'invoice_id' => array('$in' => $invoicesId)
-		);
-		$update = array(
-			'$set' => array(
-				'paid' => '1',
-			),
-			'$pull' => array(
-				'waiting_payments' => array(
-					'$in' => array($recId)
-				)
-			)
-		);
-		$this->bills->update($query, $update, array('multiple' => true));
-	}
-	
 	public function skipQueueCalculators() {
 		return true;
 	}
