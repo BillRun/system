@@ -171,6 +171,16 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$params = array("user", "password", "redirect_terminal", "charging_terminal", "mid", "endpoint_url");
 		return $this->rearrangeParametres($params);
 	}
+	
+	public function getReceiverParameters() {
+		$params = array("host", "user", "password", "remote_directory");
+		return $this->rearrangeParametres($params);
+	}
+
+	public function getExportParameters() {
+		$params = array("server", "user", "pw", "dir");
+		return $this->rearrangeParametres($params);
+	}
 
 	public function authenticateCredentials($params) {
 		$params['txId'] = 1;

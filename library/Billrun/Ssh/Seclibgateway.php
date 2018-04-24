@@ -137,7 +137,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return void
 	 */
 	public function put($local, $remote) {
-		$this->getConnection()->put($remote, $local, NET_SFTP_LOCAL_FILE);
+		$this->getConnection()->put($remote, $local, \phpseclib\Net\SFTP::SOURCE_LOCAL_FILE);
 	}
 
 	/**
@@ -157,7 +157,7 @@ class Billrun_Ssh_Seclibgateway implements Billrun_Ssh_Gatewayinterface {
 	 * @return string|null
 	 */
 	public function nextLine() {
-		$value = $this->getConnection()->_get_channel_packet(NET_SSH2_CHANNEL_EXEC);
+		$value = $this->getConnection()->_get_channel_packet(\phpseclib\Net\SSH2::CHANNEL_EXEC);
 
 		return $value === true ? null : $value;
 	}
