@@ -206,8 +206,10 @@ lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
 //BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
 for (var i in lastConfig['payment_gateways']) {
 	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
-		lastConfig["payment_gateways"][i].receiver = {};
-		lastConfig["payment_gateways"][i].export = {};
+		if (typeof lastConfig['payment_gateways'][i]['receiver']  === 'undefined' && typeof lastConfig['payment_gateways'][i]['export']  === 'undefined' ) {
+			lastConfig["payment_gateways"][i].receiver = {};
+			lastConfig["payment_gateways"][i].export = {};
+		}
 	}
 }
 
