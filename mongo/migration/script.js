@@ -16,7 +16,7 @@ function addFieldToConfig(lastConf, fieldConf, entityName) {
 	if(!found) {
 		fields.push(fieldConf);
 	}
-	lastConf['rates']['fields'] = fields;
+	lastConf[entityName]['fields'] = fields;
 
 	return lastConf;
 }
