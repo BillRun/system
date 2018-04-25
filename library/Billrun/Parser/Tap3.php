@@ -29,44 +29,6 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 
 		//$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
 		$fileReadAheadLength = self::FILE_READ_AHEAD_LENGTH;
-//
-//		$this->headerRows[] = $this->parseHeader(fread($fp,  self::FILE_READ_AHEAD_LENGTH));
-//
-//		$bytes = null;
-//		while (true) {
-//			if (!feof($fp) && !isset($bytes[$maxChunklengthLength])) {
-//				$bytes .= fread($fp, $fileReadAheadLength);
-//			}
-//			if (!isset($bytes[$headerLength])) {
-//				break;
-//			}
-//			
-//			$this->setLine($bytes);
-//			$rawRow = $this->parseData('tap3', $this->getLine($fp));
-//			die();
-//					
-//			if ($rawRow) {
-//				$this->dataRows[] = $rawRow;
-//				$processedData['data'][] = $rawRow;
-//			}
-//			//Billrun_Factory::log()->log( $processor->getParser()->getLastParseLength(),  Zend_Log::DEBUG);
-//			$advance = $this->getLastParseLength();
-//			$bytes = substr($bytes, $advance <= 0 ? 1 : $advance);
-//		}
-//		$this->trailerRows[] = $this->parseTrailer($bytes);
-//
-//		return true;
-//		
-//		
-//		
-//		
-		
-		
-		
-		
-	
-
-	//	$processorData = &$processor->getData();
 		$bytes = '';
 		do {
 			$bytes .= fread($fp, self::FILE_READ_AHEAD_LENGTH);
@@ -324,61 +286,61 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 	 * @see Billrun_Calculator_Rate::getLineUsageType
 	 */
 	protected function getLineUsageType($row) {
-
-		$usage_type = null;
-
-		$record_type = $row['record_type'];
-		if (isset($row['tele_srv_code'])) {
-			$tele_service_code = $row['tele_srv_code'];
-			if ($tele_service_code == '11') {
-				if ($record_type == '9') {
-					$usage_type = 'call'; // outgoing call
-				} else if ($record_type == 'a') {
-					$usage_type = 'incoming_call'; // incoming / callback
-				}
-			} else if ($tele_service_code == '22') {
-				if ($record_type == '9') {
-					$usage_type = 'sms';
-				}
-			} else if ($tele_service_code == '21') {
-				if ($record_type == 'a') {
-					$usage_type = 'incoming_sms';
-				}
-			}
-		} else if (isset($row['bearer_srv_code'])) {
-			if ($record_type == '9') {
-				$usage_type = 'call';
-			} else if ($record_type == 'a') {
-				$usage_type = 'incoming_call';
-			}
-		} else if ($record_type == 'e') {
-			$usage_type = 'data';
-		}
-
-		return $usage_type;
+//
+//		$usage_type = null;
+//
+//		$record_type = $row['record_type'];
+//		if (isset($row['tele_srv_code'])) {
+//			$tele_service_code = $row['tele_srv_code'];
+//			if ($tele_service_code == '11') {
+//				if ($record_type == '9') {
+//					$usage_type = 'call'; // outgoing call
+//				} else if ($record_type == 'a') {
+//					$usage_type = 'incoming_call'; // incoming / callback
+//				}
+//			} else if ($tele_service_code == '22') {
+//				if ($record_type == '9') {
+//					$usage_type = 'sms';
+//				}
+//			} else if ($tele_service_code == '21') {
+//				if ($record_type == 'a') {
+//					$usage_type = 'incoming_sms';
+//				}
+//			}
+//		} else if (isset($row['bearer_srv_code'])) {
+//			if ($record_type == '9') {
+//				$usage_type = 'call';
+//			} else if ($record_type == 'a') {
+//				$usage_type = 'incoming_call';
+//			}
+//		} else if ($record_type == 'e') {
+//			$usage_type = 'data';
+//		}
+//
+//		return $usage_type;
 	}
 
 	/**
 	 * @see Billrun_Calculator_Rate::getLineVolume
 	 */
 	protected function getLineVolume($row) {
-		$volume = null;
-		switch ($row['usaget']) {
-			case 'sms' :
-			case 'incoming_sms' :
-				$volume = 1;
-				break;
-
-			case 'call' :
-			case 'incoming_call' :
-				$volume = $row['basicCallInformation']['TotalCallEventDuration'];
-				break;
-
-			case 'data' :
-				$volume = $row['download_vol'] + $row['upload_vol'];
-				break;
-		}
-		return $volume;
+//		$volume = null;
+//		switch ($row['usaget']) {
+//			case 'sms' :
+//			case 'incoming_sms' :
+//				$volume = 1;
+//				break;
+//
+//			case 'call' :
+//			case 'incoming_call' :
+//				$volume = $row['basicCallInformation']['TotalCallEventDuration'];
+//				break;
+//
+//			case 'data' :
+//				$volume = $row['download_vol'] + $row['upload_vol'];
+//				break;
+//		}
+//		return $volume;
 	}
 	
 //	protected function initExchangeRates($trailer) {
