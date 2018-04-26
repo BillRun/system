@@ -27,23 +27,18 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 		$this->headerRows = array();
 		$this->trailerRows = array();
 
-		//$maxChunklengthLength = Billrun_Factory::config()->getConfigValue('constants.ggsn_max_chunklength_length');
-		$fileReadAheadLength = self::FILE_READ_AHEAD_LENGTH;
 		$bytes = '';
 		do {
 			$bytes .= fread($fp, self::FILE_READ_AHEAD_LENGTH);
 		} while (!feof($fp));
 		$parsedData = Asn_Base::parseASNString($bytes);
 				$this->headerRows[] = $this->parseHeader($parsedData);
-		//$bytes = substr($bytes, $processor->getParser()->getLastParseLength());
-		
-		
+
 		if (!isset($this->tap3Config[$this->fileVersion])) {
-			Billrun_Factory::log("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}", Zend_Log::NOTICE);
-			throw new Exception("Processing tap3 file {$processor->filename} with non supported version : {$this->fileVersion}");
+			Billrun_Factory::log("Processing tap3 file with non supported version : {$this->fileVersion}", Zend_Log::NOTICE);
+			throw new Exception("Processing tap3 file with non supported version : {$this->fileVersion}");
 		}
 		$trailer = $this->parseTrailer($parsedData);
-		//$this->initExchangeRates($trailer);
 		if (empty($this->currentFileHeader['notification']) || !empty($this->currentFileHeader['header'])) {
 			foreach ($parsedData->getData() as $record) {
 				if (in_array($record->getType(), $this->tap3Config['config']['data_records'])) {
@@ -59,7 +54,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 				}
 			}
 		} else {
-			Billrun_Factory::log('Got notification/empty file : ' . $processor->filename . ' , moving on...', Zend_Log::INFO);
+			Billrun_Factory::log('Got notification/empty file, moving on...', Zend_Log::INFO);
 		}
 
 		$this->trailerRows[] = $trailer;
@@ -86,12 +81,10 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 	}
 
 	public function parseHeader($data) {
-	//	$asnObject = Asn_Base::parseASNString($data);
 		$header = $this->parseASNDataRecur($this->tap3Config['header'], $data, $this->tap3Config['fields']);
 		$this->currentFileHeader = $header;
 		$this->fileVersion = $this->currentFileHeader['header']['version'] . "_" . $this->currentFileHeader['header']['minor_version'];
 		if (empty($this->currentFileHeader)) {
-			//Billrun_Factory::log(print_r(Asn_Base::getDataArray($data ,true ,true),1),Zend_Log::DEBUG);
 			$header['notifcation'] = $this->parseASNDataRecur($this->tap3Config['notification'], $data, $this->tap3Config['fields']);
 			$this->fileVersion = $header['notifcation']['version'] . "_" . $header['notifcation']['minor_version'];
 		}
@@ -143,9 +136,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 		return $timeOffsets;
 	}
 	
-	
-	
-		/**
+	/**
 	 * Pull required fields from the CDR nested tree to the surface.
 	 * @param type $cdrLine the line to monipulate.
 	 */
@@ -158,108 +149,14 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 			}
 		}
 
-
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
-			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
-			if (empty($offset)) {
-				$offset = '+00:00';
-			}
-			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
-			$cdrLine['tzoffset'] = $offset;
-		}
-
-
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']) !== null && isset($cdrLine['record_type'])) {
-			$tele_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['tele_srv_code']);
-			$record_type = $cdrLine['record_type'];
-			if ($record_type == '9') {
-				if ($tele_service_code == '11') {
-					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					if ($called_number) {
-						$cdrLine['called_number'] = $called_number;
-					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
-						if (isset($dialed_digits)) {
-							$cdrLine['called_number'] = $dialed_digits;
-						}
-					}
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace'])) {
-						$cdrLine['called_place'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['CalledPlace']);
-					}
-				} else if ($tele_service_code == '22') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['SmsDestinationNumber']);
-					} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
-					} else if (isset($cdrLine['basicCallInformation']['Desination']['CalledNumber'])) { // @todo check with sefi. reference: db.lines.count({'BasicServiceUsedList.BasicServiceUsed.BasicService.BasicServiceCode.TeleServiceCode':"22",record_type:'9','basicCallInformation.Desination.DialedDigits':{$exists:false}});)
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
-					} else if (isset($cdrLine['basicCallInformation']['Destination']['CalledNumber'])) { // take the same last rule but this time with misspell fix (Destination)
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']);
-					}
-				}
-			} else if ($record_type == 'a') {
-				if ($tele_service_code == '11') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					}
-				}
-			}
-		} else if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['bearer_srv_code']) !== null && isset($cdrLine['record_type'])) {
-			$bearer_service_code = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['bearer_srv_code']);
-			$record_type = $cdrLine['record_type'];
-			$cdrLine['bearer_srv_code'] = $bearer_service_code;
-			if (in_array($bearer_service_code, array('30', '37'))) {
-				if ($record_type == '9') {
-					$called_number = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					if ($called_number) {
-						$cdrLine['called_number'] = $called_number;
-					} else {
-						$dialed_digits = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['dialed_digits']);
-						if (isset($dialed_digits)) {
-							$cdrLine['called_number'] = $dialed_digits;
-						}
-					}
-				}
-				if ($record_type == 'a') {
-					if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number'])) {
-						$cdrLine['called_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['called_number']); //$cdrLine['basicCallInformation']['Desination']['CalledNumber'];
-					}
-				}
-			}
-		}
-		if (isset($cdrLine['called_number']) && (strlen($cdrLine['called_number']) <= 10 && substr($cdrLine['called_number'], 0, 1) == "0") || (!empty($cdrLine['called_place']) && $cdrLine['called_place'] == Billrun_Factory::config()->getConfigValue('tap3.processor.local_code'))) {
-			$cdrLine['called_number'] = Billrun_Util::msisdn($cdrLine['called_number']);
-		}
-
-//		if (!Billrun_Util::getNestedArrayVal($cdrLine, $mapping['calling_number']) && isset($tele_service_code) && isset($record_type) ) {
-//			if ($record_type == 'a' && ($tele_service_code == '11' || $tele_service_code == '21')) {
-//				if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number'])) { // for some calls (incoming?) there's no calling number
-//					$cdrLine['calling_number'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['call_org_number']);
-//				} 
+//		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']) !== null) {
+//			$offset = $this->currentFileHeader['networkInfo']['UtcTimeOffsetInfoList'][Billrun_Util::getNestedArrayVal($cdrLine, $mapping['TimeOffsetCode'])];
+//			if (empty($offset)) {
+//				$offset = '+00:00';
 //			}
+//			$cdrLine['urt'] = new MongoDate(Billrun_Util::dateTimeConvertShortToIso(Billrun_Util::getNestedArrayVal($cdrLine, $mapping['localTimeStamp']), $offset));
+//			$cdrLine['tzoffset'] = $offset;
 //		}
-
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']) !== null) {
-			$cdrLine['serving_network'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['serving_network']);
-		} else {
-			$cdrLine['serving_network'] = $this->currentFileHeader['header']['sending_source'];
-		}
-
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr']) !== null) {
-			$sdrs = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr'], null, TRUE);
-			$sum = $this->sumup_arrays($sdrs, 20);
-		//	$cdrLine['sdr'] = $sum / $this->sdr_division_value;
-	//		$cdrLine['exchange_rate'] = $this->exchangeRates[Billrun_Util::getNestedArrayVal($cdrLine, $mapping['exchange_rate_code'], 0)];
-		}
-
-		if (Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) !== null) {
-			$cdrLine['sdr_tax'] = Billrun_Util::getNestedArrayVal($cdrLine, $mapping['sdr_tax']) / $this->sdr_division_value;
-		}
-
-		//save the sending source in each of the lines
-		$cdrLine['sending_source'] = $this->currentFileHeader['header']['sending_source'];
-		$cdrLine['usaget'] = $this->getLineUsageType($cdrLine);
-		$cdrLine['usagev'] = $this->getLineVolume($cdrLine);
 	}
 	
 	/**
@@ -281,77 +178,7 @@ class Billrun_Parser_Tap3 extends Billrun_Parser_Base_Binary {
 		}
 		return $sum;
 	}
-	
-	/**
-	 * @see Billrun_Calculator_Rate::getLineUsageType
-	 */
-	protected function getLineUsageType($row) {
-//
-//		$usage_type = null;
-//
-//		$record_type = $row['record_type'];
-//		if (isset($row['tele_srv_code'])) {
-//			$tele_service_code = $row['tele_srv_code'];
-//			if ($tele_service_code == '11') {
-//				if ($record_type == '9') {
-//					$usage_type = 'call'; // outgoing call
-//				} else if ($record_type == 'a') {
-//					$usage_type = 'incoming_call'; // incoming / callback
-//				}
-//			} else if ($tele_service_code == '22') {
-//				if ($record_type == '9') {
-//					$usage_type = 'sms';
-//				}
-//			} else if ($tele_service_code == '21') {
-//				if ($record_type == 'a') {
-//					$usage_type = 'incoming_sms';
-//				}
-//			}
-//		} else if (isset($row['bearer_srv_code'])) {
-//			if ($record_type == '9') {
-//				$usage_type = 'call';
-//			} else if ($record_type == 'a') {
-//				$usage_type = 'incoming_call';
-//			}
-//		} else if ($record_type == 'e') {
-//			$usage_type = 'data';
-//		}
-//
-//		return $usage_type;
-	}
 
-	/**
-	 * @see Billrun_Calculator_Rate::getLineVolume
-	 */
-	protected function getLineVolume($row) {
-//		$volume = null;
-//		switch ($row['usaget']) {
-//			case 'sms' :
-//			case 'incoming_sms' :
-//				$volume = 1;
-//				break;
-//
-//			case 'call' :
-//			case 'incoming_call' :
-//				$volume = $row['basicCallInformation']['TotalCallEventDuration'];
-//				break;
-//
-//			case 'data' :
-//				$volume = $row['download_vol'] + $row['upload_vol'];
-//				break;
-//		}
-//		return $volume;
-	}
-	
-//	protected function initExchangeRates($trailer) {
-//		if (isset($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'])) {
-//			foreach ($trailer['data']['trailer']['currency_conversion_info']['currency_conversion'] as $currency_conversion) {
-//				$this->exchangeRates[$currency_conversion['exchange_rate_code']] = $currency_conversion['exchange_rate'] / pow(10, $currency_conversion['number_of_decimalplaces']);
-//			}
-//		}
-//		$this->sdr_division_value = pow(10, $trailer['data']['trailer']['tap_decimal_places']);
-//	}
-	
 	/**
 	 * Encode an array content in utf encoding
 	 * @param $arr the array to encode.
