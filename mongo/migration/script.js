@@ -213,4 +213,26 @@ for (var i in lastConfig['payment_gateways']) {
 	}
 }
 
+//BRCD-1411 - Multiple conditions for usage type mapping.
+var fileTypes = lastConfig['file_types'];
+for (var fileType in fileTypes) {
+	if (typeof fileTypes[fileType]['processor']['usaget_mapping'] !== 'undefined') {
+		var usagetMapping = fileTypes[fileType]['processor']['usaget_mapping'];
+		for (var mapping in usagetMapping) {
+			if (typeof fileTypes[fileType]['processor']['usaget_mapping'][mapping]['conditions'] === 'undefined') {
+				var conditions = [];
+				var condition = {
+					"src_field": usagetMapping[mapping]["src_field"],
+					"pattern": usagetMapping[mapping]["pattern"],
+					"op": "$eq",
+				};
+				conditions.push(condition);
+				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
+			}
+		}
+	}
+}
+
 db.config.insert(lastConfig);
