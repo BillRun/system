@@ -513,7 +513,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return Array - the status and stage of the payment.
 	 */
-	protected function getGatewayCredentials() {
+	public function getGatewayCredentials() {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
 		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
@@ -521,6 +521,36 @@ abstract class Billrun_PaymentGateway {
 		});
 		$gatewayDetails = current($gateway);
 		return $gatewayDetails['params'];
+	}
+	
+	/**
+	 * Get the export details of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	public function getGatewayExport() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['export'];
+	}
+	
+		/**
+	 * Get the receiver details of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	public function getGatewayReceiver() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['receiver'];
 	}
 	
 	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
@@ -714,6 +744,14 @@ abstract class Billrun_PaymentGateway {
 			
 	public function getReturnUrlOnError() {
 		return $this->returnUrlOnError;
+	}
+	
+	public function getReceiverParameters() {
+		return array();
+	}
+
+	public function getExportParameters() {
+		return array();
 	}
 	
 }
