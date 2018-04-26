@@ -203,4 +203,19 @@ var vatableField ={
 	};
 lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
 
+var detailedField = {
+				"select_list" : false,
+				"display" : true,
+				"editable" : true,
+				"multiple" : false,
+				"field_name" : "detailed_invoice",
+				"unique" : false,
+				"title" : "Detailed Invoice",
+				"mandatory" : false,
+				"type" : "boolean",
+				"select_options" : ""
+};
+
+lastConfig = addFieldToConfig(lastConfig, detailedField, 'account');
+
 db.config.insert(lastConfig);
