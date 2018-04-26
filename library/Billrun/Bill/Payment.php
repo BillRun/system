@@ -608,4 +608,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		);
 	}
 	
+	public function getInvoicesIdFromReceipt() {
+		$inv = $this->data['pays']['inv'];
+		return array_keys($inv);
+	}
+	
+	public function markApproved($status) {
+		foreach ($this->getPaidBills() as $billType => $bills) {
+			foreach (array_keys($bills) as $billId) {
+				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
+				$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
+			}
+		}
+	}
 }
