@@ -262,8 +262,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		$usagevFields = is_array($this->volumeSrc) ? $this->volumeSrc : array($this->volumeSrc);
 		if (!empty($usagevFields)) {
 			foreach ($usagevFields as $usagevField) {
-				if (isset($userFields[$usagevField]) && is_numeric($userFields[$usagevField])) {
-					$volume += floatval($userFields[$usagevField]);
+				if (!is_null(Billrun_util::getIn($userFields, $usagevField)) && is_numeric(Billrun_util::getIn($userFields, $usagevField))) {
+					$volume += floatval(Billrun_util::getIn($userFields, $usagevField));
 				}
 				else {
 					Billrun_Factory::log('Usage volume field ' . $usagevField . ' is missing or invalid for file ' . basename($this->filePath), Zend_Log::ALERT);
