@@ -340,7 +340,9 @@ class Billrun_Plan extends Billrun_Service {
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
-
+        
+        
+		
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
@@ -362,6 +364,12 @@ class Billrun_Plan extends Billrun_Service {
 				$endPricing += (( ($endFratcion * date('t',$activation)) / $currentDays) - $endFratcion);
 			}
 		}
+		
+		//If the tariff is of expired service/plan don't charge anything
+		if($tariff['to'] < $startPricing && $tariff['from'] < $startPricing) {
+            return 0;
+		}
+		
 		$fullMonth = (round(($endPricing - $startPricing), 5) == 1 || $endPricing == $startPricing);
 		return array('start' => $fullMonth ? FALSE : $startPricing,
 			'end' => $fullMonth ? FALSE : $endPricing,
