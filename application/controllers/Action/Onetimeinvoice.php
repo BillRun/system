@@ -49,9 +49,6 @@ class OnetimeinvoiceAction extends ApiAction {
         $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$aid] ]);
         $aggregator->aggregate();
 
-        // 
-//        $generator = Billrun_Generator::getInstance([ 'type' => 'invoice_export',  'stamp' => $oneTimeStamp , 'accounts' => $aid ]);
-       // $pdfPath = $generator->generate();
 
         $invoice = Billrun_Factory::billrun(['aid' => $aid, 'billrun_key' => $oneTimeStamp , 'autoload'=>true]);
         $pdfPath = $invoice->getInvoicePath();
@@ -215,10 +212,7 @@ class OnetimeinvoiceAction extends ApiAction {
 	
 	protected function validateCDRFields($credit_row) {
 		$fields = Billrun_Factory::config()->getConfigValue('credit.fields', array());
-		$ret = array('type' => 'credit','billrun'=>$credit_row['billrun']);
-		if( !empty($credit_row['description']) ) {
-			$ret['description'] = $credit_row['description'];
-		}
+		$ret = $credit_row;
 		
 		foreach ($fields as $fieldName => $field) {
 			if (isset($field['mandatory']) && $field['mandatory']) {
