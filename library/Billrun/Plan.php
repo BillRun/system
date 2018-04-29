@@ -340,9 +340,7 @@ class Billrun_Plan extends Billrun_Service {
 		if (!self::validatePriceByTariff($tariff, $startOffset, $endOffset)) {
 			return 0;
 		}
-        
-        
-		
+
 		$endPricing = $endOffset;
 		$startPricing = $startOffset;
 
