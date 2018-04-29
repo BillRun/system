@@ -3,6 +3,26 @@
  * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
+// =============================== Helper functions ============================
+
+function addFieldToConfig(lastConf, fieldConf, entityName) {
+	var fields = lastConf[entityName]['fields'];
+	var found = false;
+	for (var field_key in fields) {
+		if (fields[field_key].field_name === fieldConf.field_name) {
+			found = true;
+		}
+	}
+	if(!found) {
+		fields.push(fieldConf);
+	}
+	lastConf[entityName]['fields'] = fields;
+
+	return lastConf;
+}
+
+// =============================================================================
+
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -163,6 +183,55 @@ if(lastConfig.invoice_export) {
 	}
 	if(lastConfig.invoice_export.footer && lastConfig.invoice_export.footer.match(/^\/application\/views\/invoices/)) {
 		lastConfig.invoice_export.footer =lastConfig.invoice_export.footer.replace(/^\/application\/views\/invoices/,'');
+	}
+}
+
+//BRCD-1374 : Add taxation support services 
+var vatableField ={
+					"system":true,
+					"select_list" : false,
+					"display" : true,
+					"editable" : true,
+					"multiple" : false,
+					"field_name" : "vatable",
+					"unique" : false,
+					"default_value" : "1",
+					"title" : "This service is taxable",
+					"mandatory" : false,
+					"type" : "boolean",
+					"select_options" : ""
+	};
+lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+
+//BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+		if (typeof lastConfig['payment_gateways'][i]['receiver']  === 'undefined' && typeof lastConfig['payment_gateways'][i]['export']  === 'undefined' ) {
+			lastConfig["payment_gateways"][i].receiver = {};
+			lastConfig["payment_gateways"][i].export = {};
+		}
+	}
+}
+
+//BRCD-1411 - Multiple conditions for usage type mapping.
+var fileTypes = lastConfig['file_types'];
+for (var fileType in fileTypes) {
+	if (typeof fileTypes[fileType]['processor']['usaget_mapping'] !== 'undefined') {
+		var usagetMapping = fileTypes[fileType]['processor']['usaget_mapping'];
+		for (var mapping in usagetMapping) {
+			if (typeof fileTypes[fileType]['processor']['usaget_mapping'][mapping]['conditions'] === 'undefined') {
+				var conditions = [];
+				var condition = {
+					"src_field": usagetMapping[mapping]["src_field"],
+					"pattern": usagetMapping[mapping]["pattern"],
+					"op": "$eq",
+				};
+				conditions.push(condition);
+				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
+			}
+		}
 	}
 }
 

@@ -831,5 +831,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 
 		return $filterSkipCalcs;
 	}
+	
+	public function skipQueueCalculators() {
+		return false;
+	}
 
 }

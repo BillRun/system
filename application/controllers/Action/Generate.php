@@ -66,9 +66,11 @@ class GenerateAction extends Action_Base {
 				return;
 			}
 		}
-		$this->_controller->addOutput("Exporting the file");
-		$generator->move();
-		$this->_controller->addOutput("Finished exporting");
+		if ($generator->shouldFileBeMoved()) {
+			$this->_controller->addOutput("Exporting the file");
+			$generator->move();
+			$this->_controller->addOutput("Finished exporting");
+		}
 	}
 
 }

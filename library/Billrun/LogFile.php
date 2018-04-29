@@ -67,5 +67,14 @@ class Billrun_LogFile {
 		}
 		$this->data['process_time'] = new MongoDate($time);
 	}
-
+	
+	public function setStamp() {
+		$newLog['key'] = $this->data['key'];
+		$newLog['source'] = $this->data['source'];
+		$this->data['stamp'] = md5(serialize($newLog));
+	}
+	
+	public function setSource($source) {
+		$this->data['source'] = $source;
+	}
 }

@@ -15,7 +15,6 @@ class Mongodloid_Connection {
 	protected static $instances;
 	protected $username = '';
 	protected $password = '';
-	
 	static public $availableReadPreferences = array(
 		MongoClient::RP_PRIMARY,
 		MongoClient::RP_PRIMARY_PREFERRED,
@@ -23,7 +22,6 @@ class Mongodloid_Connection {
 		MongoClient::RP_SECONDARY_PREFERRED,
 		MongoClient::RP_NEAREST,
 	);
-
 
 	/**
 	 * Method to get database instance
@@ -77,7 +75,7 @@ class Mongodloid_Connection {
 		if (!empty($this->password)) {
 			$options['password'] = $this->password;
 		}
-		
+
 		if (isset($options['readPreference'])) {
 			$readPreference = $options['readPreference'];
 			unset($options['readPreference']);

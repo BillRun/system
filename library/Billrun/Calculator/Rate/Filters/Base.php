@@ -45,8 +45,8 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if ($field === 'computed') {
 			return $this->getComputedValue($row);
 		}
-		if (isset($row['uf'][$field])) {
-			return $this->regexValue($row['uf'][$field], $regex);
+		if (isset($row['uf.' .$field])) {
+			return $this->regexValue($row['uf.' .$field], $regex);
 		}
 
 		if (isset($row[$field])) {
@@ -103,13 +103,16 @@ class Billrun_Calculator_Rate_Filters_Base {
 		if (!empty($spceialQueries[$operator]) ) {
 			$data = $row;
 			$query = array('$or' => [
-					[$firstValKey => $spceialQueries[$operator]],
-					['uf.'.$firstValKey => $spceialQueries[$operator]],
+					[$firstValKey => $spceialQueries['$exists']],
+					['uf.'.$firstValKey => $spceialQueries['$exists']],
 				]
 			);
 		}
 
 		$res = Billrun_Utils_Arrayquery_Query::exists($data, $query);
+		if($operator === '$existsFalse') {
+			$res = !$res;
+		}
 		return $this->getComputedValueResult($row, $res);
 	}
 
