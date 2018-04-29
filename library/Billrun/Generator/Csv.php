@@ -122,9 +122,9 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 		if (!empty($pad_length)){
 			$this->pad_length = $pad_length;
 		}
-		$header_numeric_fields = Billrun_Factory::config()->getConfigValue('CGcsv.header.numeric_fields');
+		$header_numeric_fields = $this->generateStructure['header']['numeric_fields'];
 		for ($key = 0; $key < count($this->pad_length); $key++) {
-			if (in_array($key,$header_numeric_fields)){ 
+			if (in_array($key,$header_numeric_fields)){
 				$this->pad_type = STR_PAD_LEFT;
 				$this->pad_string = '0';
 			}
@@ -142,7 +142,7 @@ abstract class Billrun_Generator_Csv extends Billrun_Generator {
 		if (!empty($pad_length)){
 			$this->pad_length = $pad_length;
 		}
-		$data_numeric_fields = Billrun_Factory::config()->getConfigValue('CGcsv.data.numeric_fields');
+		$data_numeric_fields = $this->generateStructure['data']['numeric_fields'];
 		for ($key = 0; $key < count($this->pad_length); $key++) {
 			if (in_array($key, $data_numeric_fields)){ 
 				$this->pad_type = STR_PAD_LEFT;

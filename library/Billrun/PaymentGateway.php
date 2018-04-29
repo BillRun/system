@@ -513,7 +513,7 @@ abstract class Billrun_PaymentGateway {
 	 * 
 	 * @return Array - the status and stage of the payment.
 	 */
-	protected function getGatewayCredentials() {
+	public function getGatewayCredentials() {
 		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
 		$gatewayName = $this->billrunName;
 		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
@@ -523,14 +523,48 @@ abstract class Billrun_PaymentGateway {
 		return $gatewayDetails['params'];
 	}
 	
-	public static function getCustomers($aids = array()) {
-		$billsColl = Billrun_Factory::db()->billsCollection();		
-		if (!empty($aids)){
-			$pipelines[] = array(
+	/**
+	 * Get the export details of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	public function getGatewayExport() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['export'];
+	}
+	
+		/**
+	 * Get the receiver details of the current payment gateway. 
+	 * 
+	 * @return Array - the status and stage of the payment.
+	 */
+	public function getGatewayReceiver() {
+		$gateways = Billrun_Factory::config()->getConfigValue('payment_gateways');
+		$gatewayName = $this->billrunName;
+		$gateway = array_filter($gateways, function($paymentGateway) use ($gatewayName) {
+			return $paymentGateway['name'] == $gatewayName;
+		});
+		$gatewayDetails = current($gateway);
+		return $gatewayDetails['receiver'];
+	}
+	
+	public static function getCustomers($aids = array(), $specificInvoices = FALSE) {
+		$billsColl = Billrun_Factory::db()->billsCollection();
+		if (!empty($aids)) {
+			$match = array(
 				'$match' => array(
 					'aid' => array('$in' => $aids),
 				),
-			);		
+			);
+			if (!empty($specificInvoices)) {
+				$match['$match']['invoice_id'] = ['$in' => $specificInvoices];
+			}
+			$pipelines[] = $match;
 		}
 		$pipelines[] = array(
 			'$sort' => array(
@@ -596,7 +630,7 @@ abstract class Billrun_PaymentGateway {
 		$res = $billsColl->aggregate($pipelines);
 		return $res;
 	}
-	
+
 	protected function rearrangeParametres($params){
 		foreach ($params as $value) {
 			$arranged[$value] = '';
@@ -710,6 +744,14 @@ abstract class Billrun_PaymentGateway {
 			
 	public function getReturnUrlOnError() {
 		return $this->returnUrlOnError;
+	}
+	
+	public function getReceiverParameters() {
+		return array();
+	}
+
+	public function getExportParameters() {
+		return array();
 	}
 	
 }

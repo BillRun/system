@@ -85,7 +85,6 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 		if ($this->hasHeader) {
 			$this->getLine($fp);
 		}
-		
 		while ($line = $this->getLine($fp)) {
 			$totalLines++;
 			$record_type = $this->getLineType($line);
@@ -153,5 +152,27 @@ abstract class Billrun_Parser_Csv extends Billrun_Parser {
 			default:
 				break;
 		}
+	}
+	
+	/**
+	 * method to set data structure of the parsed file
+	 * @param array $structure the structure of the parsed file
+	 *
+	 * @return Billrun_Parser_Fixed self instance
+	 */
+	public function setDataStructure($structure) {
+		$this->dataStructure = $structure;
+		return $this;
+	}
+	
+		/**
+	 * method to set header structure of the parsed file
+	 * @param array $structure the structure of the parsed file
+	 *
+	 * @return Billrun_Parser_Fixed self instance
+	 */
+	public function setHeaderStructure($structure) {
+		$this->headerStructure = $structure;
+		return $this;
 	}
 }

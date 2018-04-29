@@ -210,22 +210,40 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getLineUsageType($userFields) {
 		if (!empty($this->usagetMapping)) {
 			foreach ($this->usagetMapping as $usagetMapping) {
-				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field'])) {
+				if (!isset($usagetMapping['pattern'], $usagetMapping['src_field']) && !isset($usagetMapping['conditions'])) {
 					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
 					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
 					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
 					return $usagetMapping['usaget'];
 				}
-				if (isset($userFields[$usagetMapping['src_field']])) {
-					if (!Billrun_Util::isValidRegex($usagetMapping['pattern'])) {
-						$usagetMapping['pattern'] = "/^" . preg_quote($usagetMapping['pattern']) . "$/";
+
+				if (!isset($usagetMapping['conditions'])) { // backward compatibility
+					if (isset($usagetMapping['src_field'])) {
+						$usagetMapping['conditions'][0]['src_field'] = $usagetMapping['src_field'];
 					}
-					if (preg_match($usagetMapping['pattern'], $userFields[$usagetMapping['src_field']])) {
-						$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
-						$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
-						$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
-						return $usagetMapping['usaget'];
+					if (isset($usagetMapping['pattern'])) {
+						$usagetMapping['conditions'][0]['pattern'] = $usagetMapping['pattern'];
 					}
+					$usagetMapping['conditions'][0]['op'] = '$eq';
+				}
+
+				$matchedConditions = true;
+				foreach ($usagetMapping['conditions'] as $condition) {
+					if (Billrun_Util::isValidRegex($condition['pattern'])) {
+						$condition['op'] = '$regex';
+					}
+					$query = array($condition['src_field'] => array($condition['op'] => $condition['pattern']));
+					$matchedConditions = $matchedConditions && Billrun_Utils_Arrayquery_Query::exists($userFields, $query);
+					if (!$matchedConditions) {
+						break;
+					}
+				}
+
+				if (($matchedConditions)) {
+					$this->usagevUnit = isset($usagetMapping['unit']) ? $usagetMapping['unit'] : 'counter';
+					$this->volumeType = isset($usagetMapping['volume_type']) ? $usagetMapping['volume_type'] : 'field';
+					$this->volumeSrc = isset($usagetMapping['volume_src']) ? $usagetMapping['volume_src'] : array();
+					return $usagetMapping['usaget'];
 				}
 			}
 		}
