@@ -705,6 +705,9 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			$message = 'Customer API responded with ' . count($list) . ' results';
 			$subscriberSettings = Billrun_Factory::config()->getConfigValue('subscriber', array());
 			foreach ($list as $stamp => $item) {
+				if (isset($item['IRP']) && $item['IRP'] && !empty($item['prepaid'])) {
+					unset($item['prepaid']);
+				}
 				if (is_array($item)) {
 					foreach ($availableFields as $key => $field) {
 						if (isset($item[$field])) {
@@ -793,6 +796,10 @@ class Subscriber_Golan extends Billrun_Subscriber {
 			return true;
 		}
 		return false;
+	}
+	
+	public function isPrepaidAccount() {
+		return (isset($this->data['prepaid']) && $this->data['prepaid']); 
 	}
 
 }
