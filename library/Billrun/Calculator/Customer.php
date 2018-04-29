@@ -34,6 +34,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		return $lines->query(array(
 				'source' => array('$in' => array('ilds', 'premium')),
 				'unified_record_time' => array('$gt' => new MongoDate(strtotime('-7 months'))),
+				'prepaid' => array('$exists' => 0),
 				'$or' => array(
 					array('account_id' => array('$exists' => false)),
 					array('subscriber_id' => array('$exists' => false))
@@ -70,6 +71,12 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 		$subscriber['subscriber_id'] = $subsriber_details->subscriber_id; //
 
 		$current = $row->getRawData();
+
+		if(!empty($subsriber_details->getSubscriberData()['prepaid'])) {
+			$newData = array_merge($current, array('prepaid' => $subsriber_details->getSubscriberData()['prepaid']));
+			$row->setRawData($newData);
+			return true;
+		}
 
 		if (!isset($subscriber['subscriber_id']) || !isset($subscriber['account_id'])) {
 			Billrun_Factory::log()->log("subscriber_id or account_id not found. phone:" . $phone_number . " time: " . $time, Zend_Log::WARN);
