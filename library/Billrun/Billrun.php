@@ -220,6 +220,25 @@ class Billrun_Billrun {
 				->cursor()->limit(1)->current();
 		return !$data->isEmpty();
 	}
+	
+	/**
+	 * gets data from billrun collection according to received fields
+	 * 
+	 * @param int $aid
+	 * @param string $billrun_key
+	 * @param int $invoice_id
+	 * @return array
+	 */
+	public static function getBillrunData($aid, $billrun_key, $invoice_id) {
+		$billrun_coll = Billrun_Factory::db()->billrunCollection();
+		$data = $billrun_coll->query(array(
+					'aid' => (int) $aid,
+					'billrun_key' => (string) $billrun_key,
+					'invoice_id' => (int) $invoice_id,
+				))
+				->cursor()->limit(1)->current();
+		return $data->getRawData();
+	}
 
 	/**
 	 * Get an empty billrun account entry structure.
