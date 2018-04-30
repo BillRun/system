@@ -19,6 +19,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	protected $minimum_absolute_amount_for_bill= 0.005;
 	protected $invoices;
 	protected $billrunColl;
+	protected $logo = null;
 
 	public function __construct($options) {
 		$options['auto_create_dir']=false;
@@ -47,13 +48,12 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	}
 
 	public function generate() {
+		$invoices = array();
 		foreach ($this->data as $invoice) {
 			$this->createBillFromInvoice($invoice->getRawData(), array($this,'updateBillrunONBilled'));
-			$sendCycleNotification = Billrun_Factory::config()->getConfigValue('billrun.email_after_confirmation', false);
-			if ($sendCycleNotification){
-				$this->sendInvoiceByMail($invoice);
-			}
+			$invoices[] = $invoice;
 		}
+		$this->handleSendInvoicesByMail($invoices);
 		if(empty($this->invoices)) {
 			Billrun_Factory::dispatcher()->trigger('afterExportCycleReports', array($this->data ,&$this));
 		}
@@ -111,6 +111,24 @@ class Generator_BillrunToBill extends Billrun_Generator {
 	 */
 	protected function updateBillrunONBilled($data) {
 		Billrun_Factory::db()->billrunCollection()->update(array('invoice_id'=> $data['invoice_id'],'billrun_key'=>$data['billrun_key'],'aid'=>$data['aid']),array('$set'=>array('billed'=>1)));
+	}
+	
+	/**
+	 * update the billrun once the email was sent (if necessary).
+	 * @param type $data
+	 */
+	protected function updateBillrunOnEmailSent($data) {
+		$query = array(
+			'invoice_id' => $data['invoice_id'],
+			'billrun_key' => $data['billrun_key'],
+			'aid' => $data['aid']
+		);
+		$update = array(
+			'$set' => array(
+				'email_sent' => new MongoDate(),
+			),
+		);
+		Billrun_Factory::db()->billrunCollection()->update($query, $update);
 	}
 	
 	/**
@@ -184,20 +202,70 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		);
 	}
 	
-	protected function buildEmailBody($firstName, $lastName, $amount) {
-		$msg = "Hello " . $lastName . " " . $firstName . ",\n";
-		$msg .="Your total sum is: " . $amount;
-		return $msg;
+	protected function translateMessage($msg, $invoice) {
+		$replaces = array(
+			'[[date]]' => date(Billrun_Base::base_dateformat),
+			'[[invoice_id]]' => $invoice['invoice_id'],
+			'[[invoice_total]]' => $invoice['totals']['after_vat'],
+			'[[invoice_due_date]]' => date(Billrun_Base::base_dateformat, $invoice['due_date']->sec),
+			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $invoice['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $invoice['end_date']->sec),
+			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
+			'[[company_name]]' => Billrun_Factory::config()->getConfigValue('tenant.name', ''),
+		);
+
+//		This is currently disabled because email with embedded base64 images is not supported, but we might want it in the future
+//		// handle company logo
+//		if (is_null($this->logo)) {
+//			$logoContent = Billrun_Util::getCompanyLogo();
+//			$this->logo = "<img src='data:image/png;base64, " . $logoContent . "' alt='' style='width:100px;object-fit:contain;'>";
+//		}
+//		$replaces['[[company_logo]]'] = $this->logo;
+		
+		// handle subscriber fields
+		$subscriberFields = array();
+		preg_match_all('/\[\[customer_(.*?)\]\]/s', $msg, $subscriberFields);
+		foreach ($subscriberFields[0] as $index => $placeHolder) {
+			$subscriberField = $subscriberFields[1][$index];
+			$replaces[$placeHolder] = $invoice['attributes'][$subscriberField];
+		}
+		
+		return str_replace(array_keys($replaces), array_values($replaces), $msg);
+	}
+	
+	protected function buildEmailBody($invoice) {
+		$msg = Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.content', '');
+		return $this->translateMessage($msg, $invoice);
+	}
+	
+	protected function buildEmailSubject($invoice) {
+		$subject = Billrun_Factory::config()->getConfigValue('email_templates.invoice_ready.subject', '');
+		return $this->translateMessage($subject, $invoice);
+	}
+	
+	
+	protected function handleSendInvoicesByMail($invoices) {
+		$sendCycleNotification = Billrun_Factory::config()->getConfigValue('billrun.email_after_confirmation', false);
+		if (!$sendCycleNotification) {
+			return;
+		}
+		
+		foreach ($invoices as $invoice) {
+			$shippingMethod = Billrun_Util::getIn($invoice, array('attributes', 'invoice_shipping_method'), 'email');
+			if ($shippingMethod == 'email') {
+				$this->sendInvoiceByMail($invoice);
+			}
+		}
 	}
 	
 	protected function sendInvoiceByMail($invoice) {
+		if (empty($invoice['invoice_file']) || empty($invoice['attributes']['email'])) {
+			Billrun_Factory::log('sendInvoiceByMail - missing invoice file or email. Invoice data: ' . print_R($invoice->getRawData(), 1), Billrun_Log::NOTICE);
+			return;
+		}
 		$attachments = array();
-		$firstName = $invoice['attributes']['firstname'];
-		$lastName = $invoice['attributes']['lastname'];
-		$amount = $invoice['totals']['after_vat_rounded'];
 		$email = $invoice['attributes']['email'];
-		$msg = $this->buildEmailBody($firstName, $lastName, $amount);
-		$subject = "Billrun invoice for " . date(Billrun_Base::base_dateformat, $invoice['invoice_date']->sec);
+		$msg = $this->buildEmailBody($invoice);
+		$subject = $this->buildEmailSubject($invoice);
 		$invoiceData = $invoice->getRawData();
 		$invoiceFile = $this->getInvoicePDF($invoiceData);
 		if ($invoiceFile) {
@@ -208,7 +276,13 @@ class Generator_BillrunToBill extends Billrun_Generator {
 			$attachment->filename = $invoiceData['billrun_key'] . '_' . $invoiceData['aid'] . '_' . $invoiceData['invoice_id'] . ".pdf";
 			array_push($attachments, $attachment);
 		}
-		Billrun_Util::sendMail($subject, $msg, array($email), $attachments);
+		try {
+			Billrun_Util::sendMail($subject, $msg, array($email), $attachments, true);
+		} catch (Exception $ex) {
+			Billrun_Factory::log('sendInvoiceByMail - error sending email. Error: "' . $ex->getMessage() . '". Invoice data: ' . print_R($invoiceData, 1), Billrun_Log::ERR);
+			return;
+		}
+		$this->updateBillrunOnEmailSent($invoiceData);
 	}
 	
 	protected function getInvoicePDF($invoiceData) {

@@ -235,4 +235,48 @@ for (var fileType in fileTypes) {
 	}
 }
 
+// BRCD-1415 - add invoice when ready email template
+if(!lastConfig.email_templates) {
+	lastConfig.email_templates = {
+    "invoice_ready": {
+      "subject": "Your invoice is ready",
+      "content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+      "html_translation": [
+        "invoice_id",
+        "invoice_total",
+        "invoice_due_date",
+        "cycle_range",
+        "company_email",
+        "company_name"
+      ]
+    }
+  };
+}
+
+// BRCD-1415 - add system field to account (invoice_shipping_method)
+var fields = lastConfig['subscribers']['account']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "invoice_shipping_method") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"select_list":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_shipping_method",
+		"default_value":"email",
+		"show_in_list":true,
+		"title":"Invoice shipping method",
+		"mandatory":true,
+		"select_options":"email",
+		"changeable_props": ["select_options"]
+	});
+}
+lastConfig['subscribers']['account']['fields'] = fields;
+
+	
 db.config.insert(lastConfig);
