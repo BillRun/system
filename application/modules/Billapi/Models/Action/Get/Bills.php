@@ -28,7 +28,7 @@ class Models_Action_Get_Bills extends Models_Action_Get {
 	protected function enrichWithBillrunData(&$bills) {
 		$addedFields = array('email_sent');
 		foreach ($bills as &$bill) {
-			$billrunData = Billrun_Billrun::getBillrunData($bill['aid'], $bill['billrun_key'], $bill['invoice_id']);
+			$billrunData = Billrun_Billrun::getBillrunData($bill['aid'], $bill['billrun_key']);
 			foreach ($addedFields as $addedField) {
 				if (isset($billrunData[$addedField])) {
 					$bill[$addedField] = $billrunData[$addedField];

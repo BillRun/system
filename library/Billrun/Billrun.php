@@ -212,13 +212,8 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
-		$billrun_coll = Billrun_Factory::db()->billrunCollection();
-		$data = $billrun_coll->query(array(
-					'aid' => (int) $aid,
-					'billrun_key' => (string) $billrun_key,
-				))
-				->cursor()->limit(1)->current();
-		return !$data->isEmpty();
+		$data = self::getBillrunData($aid, $billrun_key, false);
+		return $data && !$data->isEmpty();
 	}
 	
 	/**
@@ -226,18 +221,17 @@ class Billrun_Billrun {
 	 * 
 	 * @param int $aid
 	 * @param string $billrun_key
-	 * @param int $invoice_id
+	 * @param boolean $rawData
 	 * @return array
 	 */
-	public static function getBillrunData($aid, $billrun_key, $invoice_id) {
+	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
-					'invoice_id' => (int) $invoice_id,
 				))
 				->cursor()->limit(1)->current();
-		return $data->getRawData();
+		return $rawData ? $data->getRawData() : $data;
 	}
 
 	/**
