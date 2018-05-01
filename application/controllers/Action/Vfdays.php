@@ -31,8 +31,11 @@ class VfdaysAction extends Action_Base {
 		}
 		$max_datetime = $request->get("max_datetime");
 		$this->plans = Billrun_Factory::config()->getConfigValue('vfdays.target_plans');
+		Billrun_Factory::log()->log("{$sid} - Quering : ".time(), Zend_Log::INFO);
 		$results = $this->count_days($sid, $year, $max_datetime);
+		Billrun_Factory::log()->log("{$sid} -  Quering Locally done : ".time(), Zend_Log::INFO);
 		$tap3_count = $this->count_days_tap3($sid, $year, $max_datetime);
+		Billrun_Factory::log()->log(" {$sid} - Quering remote done : ".time(), Zend_Log::INFO);
 		if (isset($results[0]["count"])) {
 			$days = $results[0]["count"];
 		} else {
