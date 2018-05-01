@@ -271,7 +271,7 @@ if(!found) {
 		"default_value":"email",
 		"show_in_list":true,
 		"title":"Invoice shipping method",
-		"mandatory":true,
+		"mandatory":false,
 		"select_options":"email",
 		"changeable_props": ["select_options"]
 	});

@@ -206,7 +206,7 @@ class Generator_BillrunToBill extends Billrun_Generator {
 		$replaces = array(
 			'[[date]]' => date(Billrun_Base::base_dateformat),
 			'[[invoice_id]]' => $invoice['invoice_id'],
-			'[[invoice_total]]' => $invoice['totals']['after_vat'],
+			'[[invoice_total]]' => $invoice['totals']['after_vat_rounded'],
 			'[[invoice_due_date]]' => date(Billrun_Base::base_dateformat, $invoice['due_date']->sec),
 			'[[cycle_range]]' => date(Billrun_Base::base_dateformat, $invoice['start_date']->sec) . ' - ' . date(Billrun_Base::base_dateformat, $invoice['end_date']->sec),
 			'[[company_email]]' => Billrun_Factory::config()->getConfigValue('tenant.email', ''),
