@@ -46,13 +46,21 @@ class ResetLinesAction extends ApiAction {
 		if (!$aids) {
 			return $this->setError('Illegal aid', $request);
 		}
+		if (!empty($request['query'])) {
+			$conditions = json_decode($request['query'], true);
+			if (json_last_error()) {
+				return $this->setError("Illegal query", $request);
+			}
+		}
 
 		try {
 			$rebalance_queue = Billrun_Factory::db()->rebalance_queueCollection();
 			foreach ($aids as $aid) {
-				$rebalanceLine = array( 
+				$rebalanceLine = array(
 					'aid' => $aid,
 					'billrun_key' => $billrun_key,
+					'conditions' => !empty($conditions) ? $conditions : array(),
+					'conditions_hash' => md5(serialize($conditions)),
 					'creation_date' => new MongoDate()
 				);
 				$query = array(

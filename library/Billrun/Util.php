@@ -1159,7 +1159,10 @@ class Billrun_Util {
 		}
 		$response = null;
 		try {
+			$urlHost = parse_url($url,  PHP_URL_HOST);
+			Billrun_Factory::log("Initiated HTTP request to " . $urlHost, Zend_Log::DEBUG);
 			$response = $client->request();
+			Billrun_Factory::log("Got HTTP response from " . $urlHost, Zend_Log::DEBUG);
 			$output = $response->getBody();
 		} catch (Zend_Http_Client_Exception $e) {
 			$output = null;
