@@ -178,8 +178,10 @@ class RealtimeController extends ApiController {
 			return false;
 		}
 
+		$response = $responder->getResponse();
+		Billrun_Factory::dispatcher()->trigger('realtimeAfterGetResponse', array($data, &$response));
 		$params = array('root' => 'response');
-		$response = $encoder->encode($responder->getResponse(), $params);
+		$response = $encoder->encode($response, $params);
 		$this->setOutput(array($response, 1));
 
 		return $response;

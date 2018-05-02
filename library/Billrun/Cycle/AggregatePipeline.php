@@ -15,10 +15,12 @@ class Billrun_Cycle_AggregatePipeline {
 	
 	protected $exclusionQuery = array();
 	protected $passthroughFields = array();
+	protected $subsPassthroughFields = array();
 	
 	public function __construct($options = array()) {
 		$this->exclusionQuery = Billrun_Util::getFieldVal($options['exclusion_query'], $this->exclusionQuery);
-		$this->passthroughFields = Billrun_Util::getFieldVal($options['passthrough_fields'], $this->exclusionQuery);
+		$this->passthroughFields = Billrun_Util::getFieldVal($options['passthrough_fields'], $this->passthroughFields);
+		$this->subsPassthroughFields = Billrun_Util::getFieldVal($options['subs_passthrough_fields'], $this->subsPassthroughFields);
 	}
 	
 	/**
@@ -81,7 +83,7 @@ class Billrun_Cycle_AggregatePipeline {
 					'aid' => '$aid',
 				),
 				'sub_plans' => array(
-					'$push' => array(
+					'$push' => array_merge($addedPassthroughFields['sub_push'],array(
 						'type' => '$type',
 						'sid' => '$sid',
 						'plan' => '$plan',
@@ -94,7 +96,7 @@ class Billrun_Cycle_AggregatePipeline {
 						'email' => '$email',
 						'address' => '$address',
 						'services' => '$services'
-					),
+					)),
 				),
 				'card_token' => array(
 					'$first' => '$card_token'
@@ -159,15 +161,22 @@ class Billrun_Cycle_AggregatePipeline {
 		$group = array();
 		$group2 = array();
 		$project = array();
-		foreach ($this->passthroughFields as $subscriberField) {
-			$group[$subscriberField] = array('$addToSet' => '$' . $subscriberField);
-			$group2[$subscriberField] = array('$first' => '$' . $subscriberField);
-			$project[$subscriberField] = array('$arrayElemAt' => array('$' . $subscriberField, 0));
+		foreach ($this->passthroughFields as $accountField) {
+			$group[$accountField] = array('$addToSet' => '$' . $accountField);
+			$group2[$accountField] = array('$first' => '$' . $accountField);
+			$project[$accountField] = array('$arrayElemAt' => array('$' . $accountField, 0));
+		}
+		
+		foreach ($this->subsPassthroughFields as $subscriberField) {
+			$srcField = is_array($subscriberField) ? $subscriberField['value'] : $subscriberField;
+			$sub_push[$srcField] =  '$' . $srcField;
+			$group2[$srcField] = array('$first' => '$sub_plans.' . $srcField);
+			$project[$srcField] ='$' . $srcField;;
 		}
 		if (!$project) {
 			$project = 1;
 		}
-		return array('group' => $group, 'project' => $project, 'second_group' => $group2);
+		return array('group' => $group, 'project' => $project, 'second_group' => $group2,'sub_push' => $sub_push );
 	}
 	
 		/**
