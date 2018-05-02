@@ -472,5 +472,14 @@ class Billrun_Factory {
 	public static function eventsManager($params = array()) {
 		return Billrun_EventsManager::getInstance($params);
 	}
+	
+	/**
+	 * 
+	 * @param array $params
+	 * @return Billrun_EmailSenderManager
+	 */
+	public static function emailSenderManager($params = array()) {
+		return Billrun_EmailSenderManager::getInstance($params);
+	}
 
 }
