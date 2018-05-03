@@ -14,35 +14,13 @@
  * @package  Billapi
  * @since    5.5
  */
-class Models_Action_Import_Accounts extends Models_Action {
+class Models_Action_Import_Accounts extends Models_Action_Import {
 
-	protected function runQuery() {
-		$output = array();
-		foreach ($this->update as $key => $item) {
-			$params = array(
-				'collection' => 'accounts',
-				'request' => array(
-					'action' => 'create',
-					'update' => json_encode($item),
-				),
-			);
-			try {
-				$entityModel = new Models_Accounts($params);
-				$entityModel->create();
-				$output[$key] = true;
-			} catch (Exception $exc) {
-				$output[$key] = $exc->getMessage();
-			}
-		}
-		return $output;
-
+	protected function getCollectionName() {
+		return 'accounts';
 	}
-
-	public function execute() {
-		if (!empty($this->request['update'])) {
-			$this->update = (array) json_decode($this->request['update'], true);
-		}
-		return $this->runQuery();
+	
+	protected function getEntityModel($params) {
+		return new Models_Accounts($params);
 	}
-
 }

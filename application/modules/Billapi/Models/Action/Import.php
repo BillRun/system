@@ -16,33 +16,65 @@
  */
 class Models_Action_Import extends Models_Action {
 
-	protected function runQuery() {
-		$output = array();
-		foreach ($this->update as $key => $item) {
-			$params = array(
-				'collection' => $this->getCollectionName(),
-				'request' => array(
-					'action' => 'create',
-					'update' => json_encode($item),
-				),
-			);
-			try {
-				$entityModel = new Models_Entity($params);
-				$entityModel->create();
-				$output[$key] = true;
-			} catch (Exception $exc) {
-				$output[$key] = $exc->getMessage();
-			}
-		}
-		return $output;
-
-	}
+	/**
+	 * Import opperation type
+	 * @var string create / update
+	 */
+	protected $operation = 'create';
 
 	public function execute() {
+		if (!empty($this->request['operation'])) {
+			$this->operation = $this->request['operation'];
+		}
 		if (!empty($this->request['update'])) {
 			$this->update = (array) json_decode($this->request['update'], true);
 		}
 		return $this->runQuery();
+	}
+
+	protected function runQuery() {
+		$output = array();
+		foreach ($this->update as $key => $entity) {
+			$output[$key] = $this->importEntity($entity);
+		}
+		return $output;
+	}
+
+	public function importEntity($entity) {
+		try {
+			$params = $this->createEntityImportParams($entity);
+			$entityModel = $this->getEntityModel($params);
+			$entityModel->create();
+			return true;
+		} catch (Exception $exc) {
+			return $exc->getMessage();
+		}
+	}
+
+	protected function createEntityImportParams($entity) {
+		return array(
+			'collection' => $this->getCollectionName(),
+			'request' => array(
+				'action' => $this->getOperationName(),
+				'update' => $this->getEntity($entity),
+			)
+		);
+	}
+
+	protected function getOperationName() {
+		$operations = $this->settings['operation'];
+		if ($operations && in_array($this->operation, $operations)) {
+			return $this->operation;
+		}
+		throw new Exception('Unsupported import operation');
+	}
+
+	protected function getEntity($entity) {
+		return json_encode($entity);
+	}
+
+	protected function getEntityModel($params) {
+		return new Models_Entity($params);
 	}
 
 }
