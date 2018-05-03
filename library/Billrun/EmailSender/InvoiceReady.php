@@ -81,10 +81,12 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 		$invoiceIds = !empty($this->params['invoices']) ? Billrun_Util::verify_array($this->params['invoices'], 'int') : array();
 		$invoiceQuery = !empty($invoiceIds) ? array('$in' => $invoiceIds) : array('$exists' => 1);
 		$query = array(
-			'billrun_key' => (string) $this->params['billrun_key'],
 			'billed' => 1,
 			'invoice_id' => $invoiceQuery,
 		);
+		if (!empty($this->params['billrun_key'])) {
+			$query['billrun_key'] = (string) $this->params['billrun_key'];
+		}
 		$invoices = $billrunColl->query($query)->cursor()->setReadPreference(Billrun_Factory::config()->getConfigValue('read_only_db_pref'))->timeout(10800000);
 		$ret = array();
 		foreach ($invoices as $invoice) {
