@@ -136,7 +136,7 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	public function getAttachment($data) {
 		$dataFile = $this->getInvoicePDF($data);
 		if (!$dataFile) {
-			return array();
+			return FALSE;
 		};
 		$attachment = new Zend_Mime_Part($dataFile);
 		$attachment->type = 'application/pdf';
@@ -147,17 +147,15 @@ class Billrun_EmailSender_InvoiceReady extends Billrun_EmailSender_Base {
 	}
 	
 	protected function getInvoicePDF($data) {
-		$aid = $data['aid'];
-		$billrunKey = $data['billrun_key'];
-		$dataId = $data['invoice_id'];	
-		$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
-		$fileName = $billrunKey . '_' . $aid . '_' . $dataId . ".pdf";
-		$pdf = $filesPath . $billrunKey . '/pdf/' . $fileName;
-		header('Content-disposition: inline; filename="'.$fileName.'"');
-		header('Cache-Control: public, must-revalidate, max-age=0');
-		header('Pragma: public');
-		header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
-		header('Content-Type: application/pdf');
+		$pdf = $data['invoice_file'];
+		if(!file_exists($pdf)) {
+			$aid = $data['aid'];
+			$billrunKey = $data['billrun_key'];
+			$dataId = $data['invoice_id'];	
+			$filesPath = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue('invoice_export.export','files/invoices/'));
+			$fileName = $billrunKey . '_' . $aid . '_' . $dataId . ".pdf";
+			$pdf = $filesPath . $billrunKey . '/pdf/' . $fileName;
+		}
 		$cont = file_get_contents($pdf);
 		return $cont;
 	}

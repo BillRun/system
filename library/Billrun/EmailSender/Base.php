@@ -126,6 +126,10 @@ abstract class Billrun_EmailSender_Base {
 			return false;
 		}
 		$attachment = $this->getAttachment($data);
+		if($attachment === FALSE) {
+			Billrun_Factory::log('sendEmail - error sending email, No attachment data found.  Data: ' . print_R($data, 1), Billrun_Log::ERR);
+			return false;
+		}
 		$attachments = is_array($attachment) ? $attachment : array($attachment);
 		$email = $this->getEmailAddress($data);
 		$emails = is_array($email) ? $email : array($email);
