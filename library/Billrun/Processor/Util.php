@@ -24,7 +24,7 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
 		if (!isset($userFields[$dateField])) {
 			return null;
 		}
@@ -47,6 +47,10 @@ class Billrun_Processor_Util {
 			}
 			return DateTime::createFromFormat($dateFormat, $dateValue);
 		} else {
+			$timeZone = 'USA';
+			if (!empty($timeZone)) {
+				$dateValue .= ' ' .$timeZone;
+			}
 			$date = strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);

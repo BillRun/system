@@ -71,6 +71,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected $prepricedMapping = null;
 	
+	/**
+	 * 
+	 * the time zone field defined by the user
+	 * @var type string
+	 */
+	protected $timeZone = null;
+	
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -100,6 +107,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		}
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
+		}
+		if (!empty($options['processor']['time_zone'])) {
+			$this->timeZone = $options['processor']['time_zone'];
 		}
 
 		$this->dateField = $options['processor']['date_field'];
@@ -158,7 +168,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	}
 	
 	protected function getRowDateTime($row) {
-		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat);
+		return Billrun_Processor_Util::getRowDateTime($row['uf'], $this->dateField, $this->dateFormat, $this->timeField, $this->timeFormat, $this->timeZone);
 	}
 
 	/**
