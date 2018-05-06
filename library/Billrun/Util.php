@@ -1476,6 +1476,23 @@ class Billrun_Util {
 		return Billrun_Factory::config()->getConfigValue('tenant.email', '');
 	}
 	
+	public static function getCompanyLogo($base64 = true) {
+		$gridFsColl = Billrun_Factory::db()->getDb()->getGridFS();
+		$logo = $gridFsColl->find(array('billtype' => 'logo'))->sort(array('uploadDate' => -1))->limit(1)->getNext();
+		if (!$logo) {
+			return '';
+		}
+		if (!($logo instanceof MongoGridFSFile)) {
+			$logo = new MongoGridFSFile($gridFsColl, $logo);
+		}
+		$bytes = $logo->getBytes();
+		if ($base64) {
+			return base64_encode($bytes);
+		}
+		
+		return $bytes;
+	}
+	
 	public static function getTokenToDisplay($token, $charactersToShow = 4, $characterToDisplay = '*') {
 		return str_repeat($characterToDisplay, strlen($token) - $charactersToShow) . substr($token, -$charactersToShow);
 	}

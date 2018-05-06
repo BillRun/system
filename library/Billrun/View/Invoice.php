@@ -20,7 +20,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		'incoming_call' => 60,
 		'data' => 1024*1024
 	);
-	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^0+972/'=>'0');
+	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
 	
 	/*
 	 * get and set lines of the account
