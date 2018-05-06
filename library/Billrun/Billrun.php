@@ -212,13 +212,26 @@ class Billrun_Billrun {
 	 * @return boolean true if yes, false otherwise
 	 */
 	public static function exists($aid, $billrun_key) {
+		$data = self::getBillrunData($aid, $billrun_key, false);
+		return $data && !$data->isEmpty();
+	}
+	
+	/**
+	 * gets data from billrun collection according to received fields
+	 * 
+	 * @param int $aid
+	 * @param string $billrun_key
+	 * @param boolean $rawData
+	 * @return array
+	 */
+	public static function getBillrunData($aid, $billrun_key, $rawData = true) {
 		$billrun_coll = Billrun_Factory::db()->billrunCollection();
 		$data = $billrun_coll->query(array(
 					'aid' => (int) $aid,
 					'billrun_key' => (string) $billrun_key,
 				))
 				->cursor()->limit(1)->current();
-		return !$data->isEmpty();
+		return $rawData ? $data->getRawData() : $data;
 	}
 
 	/**
