@@ -30,6 +30,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		if (!$this->isLineTaxable($current)) {
 			$newData = $current;
 			$newData['final_charge'] = $newData['aprice'];
+			$newData['tax_data'] = [ 'total_amount' => 0, 'total_tax' => 0, 'taxes'=> []]; 
 		} else {
 			if( $problemField = $this->isLineDataComplete($current) ) {
 				Billrun_Factory::log("Line {$current['stamp']} is missing/has illigeal value in fields ".  implode(',', $problemField). ' For calcaulator '.$this->getType() );

@@ -84,6 +84,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 
 		$accountsToRet = array();
 		foreach($accounts as $aid => $accountData) {
+			$accountData['attributes']['invoice_type'] = 'immediate';
 			$accountToAdd = $this->getAccount($billrunData, $accountData, intval($aid));
 			if($accountToAdd) {
 				$accountsToRet[] = $accountToAdd;
