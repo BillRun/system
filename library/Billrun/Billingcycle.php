@@ -454,7 +454,7 @@ class Billrun_Billingcycle {
 	}
 
 	public static function getLastNonRerunnableCycle() {
-		$query = array('billed' => 1);
+		$query = array('billed' => 1, 'attributes.invoice_type' => array('$ne' => 'immediate'));
 		$sort = array("billrun_key" => -1);
 		$entry = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->sort($sort)->limit(1)->current();
 		if ($entry->isEmpty()) {

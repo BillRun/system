@@ -960,6 +960,9 @@ class Billrun_Billrun {
 	 * @todo create an appropriate index on billrun collection
 	 */
 	public static function getActiveBillrun() {
+		$query = array(
+			'attributes.invoice_type' => array('$ne' => 'immediate'),
+		);
 		$now = time();
 		$sort = array(
 			'billrun_key' => -1,
@@ -968,7 +971,7 @@ class Billrun_Billrun {
 			'billrun_key' => 1,
 		);
 		$runtime_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp($now);
-		$last = Billrun_Factory::db()->billrunCollection()->query()->cursor()->limit(1)->fields($fields)->sort($sort)->current();
+		$last = Billrun_Factory::db()->billrunCollection()->query($query)->cursor()->limit(1)->fields($fields)->sort($sort)->current();
 		if ($last->isEmpty()) {
 			$active_billrun = $runtime_billrun_key;
 		} else {
