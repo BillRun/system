@@ -93,22 +93,26 @@ class CycleAction extends Action_Base {
 		$zeroPages = Billrun_Factory::config()->getConfigValue('customer.aggregator.zero_pages_limit');
 				
 		while(!Billrun_Billingcycle::isBillingCycleOver($this->billingCycleCol, $stamp, $size, $zeroPages)) {
-			$pid = pcntl_fork();
-			if ($pid == -1) {
-				die('could not fork');
+			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
+				$pid = pcntl_fork();
+				if ($pid == -1) {
+					die('could not fork');
+				}
+
+				$this->_controller->addOutput("Running on PID " . $pid);
+
+				// Parent process.
+				if ($pid) {
+					$this->executeParentProcess($processInterval);
+					continue;
+				}
 			}
-			
-			$this->_controller->addOutput("Running on PID " . $pid);
-		
-			// Parent process.
-			if ($pid) {
-				$this->executeParentProcess($processInterval);
-				continue;
-			}
-			
-			// Child process
+			// Child process / Actual aggregate  when not forking
 			$this->executeChildProcess($options);
-			break;
+			
+			if(Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
+				break;
+			}
 		}
 		
 		//Wait for all the childrens to finish  before  exiting to prevent issues with shared resources.
@@ -153,6 +157,7 @@ class CycleAction extends Action_Base {
 	 */
 	protected function getAggregator($options) {
 		$this->_controller->addOutput("Loading aggregator");
+		$options = array_merge($options,['rand'=>  microtime(true)]);
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		
 		if(!$aggregator || !$aggregator->isValid()) {
