@@ -25,18 +25,18 @@ class Billrun_Processor_Util {
 	 * @return \DateTime
 	 */
 	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
-		if (!isset($userFields[$dateField])) {
+		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
+		if (is_null($dateValue)) {
 			return null;
 		}
-		$dateValue = $userFields[$dateField];
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
 			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
 			return $datetime;
 		}
 		$withTimeField = false;
-		if (!empty($timeField) && isset($userFields[$timeField])) {
-			$dateValue .= ' ' . $userFields[$timeField];
+		if (!empty($timeField) && !is_null(Billrun_Util::getIn($userFields, $timeField))) {
+			$dateValue .= ' ' . Billrun_Util::getIn($userFields, $timeField);
 			$withTimeField = true;
 		}
 		if (!empty($dateFormat)) {
