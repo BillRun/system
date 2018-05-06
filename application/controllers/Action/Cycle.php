@@ -157,7 +157,9 @@ class CycleAction extends Action_Base {
 	 */
 	protected function getAggregator($options) {
 		$this->_controller->addOutput("Loading aggregator");
-		$options = array_merge($options,['rand'=>  microtime(true)]);
+		if(!Billrun_Factory::config()->getConfigValue('customer.aggregator.should_fork',TRUE)) {
+			$options = array_merge($options,['rand'=>  microtime(true)]);
+		}
 		$aggregator = Billrun_Aggregator::getInstance($options);
 		
 		if(!$aggregator || !$aggregator->isValid()) {
