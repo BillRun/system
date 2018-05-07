@@ -90,7 +90,7 @@ class ReportAction extends ApiAction {
 	}
 
 	protected function getPermissionLevel() {
-		return Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE;
+		return array(Billrun_Traits_Api_IUserPermissions::PERMISSION_WRITE, Billrun_Traits_Api_IUserPermissions::PERMISSION_REPORTS);
 	}
 	
 	protected function render($tpl, array $parameters = null) {
