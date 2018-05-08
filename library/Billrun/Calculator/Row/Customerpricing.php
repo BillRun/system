@@ -104,11 +104,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
-		$planSettings = array(
-			'name' => $this->row['plan'],
-			'time' => $this->row['urt']->sec,
-		);
-		$this->plan = Billrun_Factory::plan($planSettings);
+		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
+			$this->plan = null;
+		} else {
+			$planSettings = array(
+				'name' => $this->row['plan'],
+				'time' => $this->row['urt']->sec,
+			);
+			$this->plan = Billrun_Factory::plan($planSettings);
+		}
 		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
