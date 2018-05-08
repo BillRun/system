@@ -24,13 +24,12 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
 		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
 		if (is_null($dateValue)) {
 			return null;
 		}
-		$timeZoneValue = !empty($timeZone) ? new DateTimeZone(billrun_util::getIn($userFields, $timeZone)) : 'UTC';
-		$dateValue = $userFields[$dateField];
+		$timeZoneValue = !empty($timeZone) ? new DateTimeZone(billrun_util::getIn($userFields, $timeZone)) : null;
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
 			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
@@ -47,12 +46,18 @@ class Billrun_Processor_Util {
 			} else if ($withTimeField) {
 				return null;
 			}
-			return DateTime::createFromFormat($dateFormat, $dateValue, $timeZoneValue);
+			if (!is_null($timeZoneValue)) {
+				return DateTime::createFromFormat($dateFormat, $dateValue, $timeZoneValue);
+			} else {
+				return DateTime::createFromFormat($dateFormat, $dateValue);
+			}
 		} else {
 			$date = strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
-			$datetime->setTimezone($timeZoneValue);
+			if (!is_null($timeZoneValue)) {
+				$datetime->setTimezone($timeZoneValue);
+			}
 			return $datetime;
 		}
 		return null;
