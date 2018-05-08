@@ -108,8 +108,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
-		if (!empty($options['processor']['timezone'])) {
-			$this->timeZone = $options['processor']['timezone'];
+		if (!empty($options['processor']['timezone_field'])) {
+			$this->timeZone = $options['processor']['timezone_field'];
 		}
 
 		$this->dateField = $options['processor']['date_field'];
