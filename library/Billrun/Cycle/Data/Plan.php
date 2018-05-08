@@ -56,9 +56,8 @@ class Billrun_Cycle_Data_Plan extends Billrun_Cycle_Data_Line {
 			$entry['end'] = new MongoDate($chargeData['end']);
 		}
 
-		if (!empty($entry['vatable'])) {
-			$entry = $this->addTaxationToLine($entry);
-		}
+		$entry = $this->addTaxationToLine($entry);
+		
 		if (!empty($this->plan)) {
 			$entry['plan'] = $this->plan;
 		}

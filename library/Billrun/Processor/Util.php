@@ -24,8 +24,9 @@ class Billrun_Processor_Util {
 	 * @param string $timeFormat - optional, if not received use PHP default
 	 * @return \DateTime
 	 */
-	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null, $timeZone = null) {
-		if (!isset($userFields[$dateField])) {
+	public static function getRowDateTime($userFields, $dateField, $dateFormat = null, $timeField = null, $timeFormat = null) {
+		$dateValue = Billrun_Util::getIn($userFields, $dateField, null);
+		if (is_null($dateValue)) {
 			return null;
 		}
 		$timeZoneValue = !empty($timeZone) ? new DateTimeZone(billrun_util::getIn($userFields, $timeZone)) : 'UTC';
@@ -36,8 +37,8 @@ class Billrun_Processor_Util {
 			return $datetime;
 		}
 		$withTimeField = false;
-		if (!empty($timeField) && isset($userFields[$timeField])) {
-			$dateValue .= ' ' . $userFields[$timeField];
+		if (!empty($timeField) && !is_null(Billrun_Util::getIn($userFields, $timeField))) {
+			$dateValue .= ' ' . Billrun_Util::getIn($userFields, $timeField);
 			$withTimeField = true;
 		}
 		if (!empty($dateFormat)) {
