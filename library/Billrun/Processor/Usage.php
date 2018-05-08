@@ -108,8 +108,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($options['processor']['time_field'])){
 			$this->timeField = $options['processor']['time_field'];
 		}
-		if (!empty($options['processor']['time_zone'])) {
-			$this->timeZone = $options['processor']['time_zone'];
+		if (!empty($options['processor']['timezone'])) {
+			$this->timeZone = $options['processor']['timezone'];
 		}
 
 		$this->dateField = $options['processor']['date_field'];
@@ -149,7 +149,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 			return false;
 		}
 		
-		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));	
+		$row['eurt'] = $row['urt'] = new MongoDate($datetime->format('U'));
+		$row['timezone'] = $datetime->getOffset();
 		$row['usaget'] = $this->getLineUsageType($row['uf']);
 		$usagev = $this->getLineUsageVolume($row['uf']);
 		$row['usagev_unit'] = $this->usagevUnit;

@@ -28,6 +28,7 @@ class Billrun_Processor_Util {
 		if (!isset($userFields[$dateField])) {
 			return null;
 		}
+		$timeZoneValue = !empty($timeZone) ? new DateTimeZone(billrun_util::getIn($userFields, $timeZone)) : 'UTC';
 		$dateValue = $userFields[$dateField];
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
@@ -45,15 +46,12 @@ class Billrun_Processor_Util {
 			} else if ($withTimeField) {
 				return null;
 			}
-			return DateTime::createFromFormat($dateFormat, $dateValue);
+			return DateTime::createFromFormat($dateFormat, $dateValue, $timeZoneValue);
 		} else {
-			$timeZone = 'USA';
-			if (!empty($timeZone)) {
-				$dateValue .= ' ' .$timeZone;
-			}
 			$date = strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
+			$datetime->setTimezone($timeZoneValue);
 			return $datetime;
 		}
 		return null;
