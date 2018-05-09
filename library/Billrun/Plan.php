@@ -364,7 +364,7 @@ class Billrun_Plan extends Billrun_Service {
 		}
 		
 		//If the tariff is of expired service/plan don't charge anything
-		if(!static::isValueUnlimited($tariff['to']) && $tariff['to'] < $startPricing && $tariff['from'] < $startPricing) {
+		if(!static::isValueUnlimited($tariff['to']) && $tariff['to'] <= $startPricing && $tariff['from'] < $startPricing) {
             return 0;
 		}
 		
