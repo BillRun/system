@@ -492,7 +492,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 	/**
@@ -518,7 +518,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 }
