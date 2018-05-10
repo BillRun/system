@@ -273,5 +273,28 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 		}
 		return 'out_plan_' . $this->row['usaget'];
 	}
+	
+	/**
+	 * method to get the instance of the class (singleton)
+	 * 
+	 * @param type $params
+	 * 
+	 * @return Billrun_Balance
+	 */
+	static public function getInstance($params = null) {
+		$stamp = Billrun_Util::generateArrayStamp($params);
+		if (empty(self::$instance[$stamp])) {
+			if (empty($params)) {
+				$params = Yaf_Application::app()->getConfig();
+			}
+			$instance[$stamp] = new Billrun_Balance_Postpaid($params);
+		} else {
+			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
+				$instance[$stamp]->reload();
+			}
+		}
+
+		return $instance[$stamp];
+	}
 
 }
