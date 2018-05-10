@@ -87,14 +87,14 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 			} else { // fallback to default postpaid balance
 				$class = 'Billrun_Balance_Postpaid';
 			}
-			self::$instance[$stamp] = new $class($params);
+			$instance[$stamp] = new $class($params);
 		} else {
 			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
-				self::$instance[$stamp]->reload();
+				$instance[$stamp]->reload();
 			}
 		}
 
-		return self::$instance[$stamp];
+		return $instance[$stamp];
 	}
 
 	/**
