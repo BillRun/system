@@ -1195,6 +1195,7 @@ class ConfigModel {
 						$ratingUsageTypes = array_merge($ratingUsageTypes, array_keys($rates));
 					}
 					$ratingUsageTypes = array_unique($ratingUsageTypes);
+					$ratingLineKeys = array();
 					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
 						foreach ($rates as $rules) {
 							foreach ($rules as $usageRules) {
