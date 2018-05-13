@@ -12,7 +12,8 @@
 class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface_IParser, Billrun_Plugin_Interface_IProcessor {
 
 	use Billrun_Traits_AsnParsing,
-	 Billrun_Traits_FileSequenceChecking;
+	 Billrun_Traits_FileSequenceChecking,
+	 Billrun_Traits_FraudAggregation;
 
 	const HEADER_LENGTH = 54;
 	const MAX_CHUNKLENGTH_LENGTH = 4096;
@@ -30,33 +31,36 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$this->ggsnConfig = (new Yaf_Config_Ini(Billrun_Factory::config()->getConfigValue('ggsn.config_path')))->toArray();
 		$this->initParsing();
 		$this->addParsingMethods();
+		$this->initFraudAggregation();
 	}
 
 	/////////////////////////////////////////  Alerts /////////////////////////////////////////
-//	/**
-//	 * method to collect data which need to be handle by event
-//	 */
-//	public function handlerCollect($options) {
-//		if( $options['type'] != 'roaming') { 
-//			return FALSE; 
-//		}
-//		$lines = Billrun_Factory::db()->linesCollection();
-//		
-//		//@TODO  switch  these lines  once  you have the time to test it.
-//		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
-//		$charge_time = Billrun_Util::getLastChargeTime(true);
-//		
-//		$aggregateQuery = $this->getBaseAggregateQuery($charge_time);
-//
-//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting monthly data exceeders", Zend_Log::DEBUG);
-//		$dataExceedersAlerts = $this->detectDataExceeders($lines, $aggregateQuery);
-//		Billrun_Factory::log()->log("GGSN plugin of monthly usage fraud found " . count($dataExceedersAlerts) . " ", Zend_Log::INFO);
-//		Billrun_Factory::log()->log("ggsnPlugin::handlerCollect collecting hourly data exceeders", Zend_Log::DEBUG);
-//		$hourlyDataExceedersAlerts = $this->detectHourlyDataExceeders($lines, $aggregateQuery);
-//		Billrun_Factory::log()->log("GGSN plugin of hourly usage fraud found " . count($hourlyDataExceedersAlerts) . " ", Zend_Log::INFO);
-//
-//		return array_merge($dataExceedersAlerts, $hourlyDataExceedersAlerts);
-//	}
+
+	/**
+	 * method to collect data which need to be handle by event
+	 */
+	public function handlerCollect($options) {
+		if ($options['type'] != 'ggsn') {
+			return FALSE;
+		}
+
+		$events = array();
+		//@TODO  switch  these lines  once  you have the time to test it.
+		//$charge_time = new MongoDate($this->get_last_charge_time(true) - date_default_timezone_get() );
+		$charge_time = Billrun_Util::getLastChargeTime(true);
+
+		$advancedEvents = array();
+		if (isset($this->fraudConfig['groups'])) {
+			foreach ($this->fraudConfig['groups'] as $groupName => $groupIds) {
+				$baseQuery = $this->getBaseAggregateQuery($charge_time, $groupName, $groupIds, true);
+				$advancedEvents = $this->collectFraudEvents($groupName, $groupIds, $baseQuery);
+				
+				$events = array_merge($events, $advancedEvents);
+			}
+		}
+		
+		return $events;
+	}
 
 	/**
 	 * Setup the sequence checker.
@@ -98,158 +102,82 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 	}
 
 	/**
-	 * Detect data usage above an houlrly limit
-	 * @param Mongoldoid_Collection $linesCol the db lines collection
-	 * @param Array $aggregateQuery the standard query to aggregate data (see $this->getBaseAggregateQuery())
-	 * @return Array containing all the hourly data excceders.
-	 */
-//	protected function detectHourlyDataExceeders($linesCol, $aggregateQuery) {
-//		$exceeders = array();
-//		$timeWindow = strtotime("-" . Billrun_Factory::config()->getConfigValue('ggsn.hourly.timespan', '4 hours'));
-//		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.hourly.thresholds.datalimit', 150000));
-//		//	$aggregateQuery[1]['$match']['$and'] = array(array('record_opening_time' => array('$gte' => date('YmdHis', $timeWindow))),
-//		//		array('record_opening_time' => $aggregateQuery[1]['$match']['record_opening_time']));
-//		$aggregateQuery[1]['$match']['unified_record_time'] = array('$gte' => new MongoDate($timeWindow));
-//
-//		//unset($aggregateQuery[0]['$match']['sgsn_address']);
-//		//unset($aggregateQuery[1]['$match']['record_opening_time']);
-//
-//		$having = array(
-//			'$match' => array(
-//				'$or' => array(
-//					array('download' => array('$gte' => $limit)),
-//					array('upload' => array('$gte' => $limit)),
-//				),
-//			),
-//		);
-//
-//		$alerts = $linesCol->aggregate(array_merge($aggregateQuery, array($having)));
-//		foreach ($alerts as $alert) {
-//			$alert['units'] = 'KB';
-//			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
-//			$alert['threshold'] = $limit;
-//			$alert['event_type'] = 'GGSN_HOURLY_DATA';
-//			$exceeders[] = $alert;
-//		}
-//		return $exceeders;
-//	}
-
-	/**
-	 * Run arrgregation to find excess usgae of data.
-	 * @param type $lines the cdr lines db collection instance.
-	 * @param type $aggregateQuery the general aggregate query.
-	 * @return Array containing all the exceeding events.
-	 */
-//	protected function detectDataExceeders($lines, $aggregateQuery) {
-//		$limit = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.datalimit', 1000));
-//		$dataThrs = array(
-//			'$match' => array(
-//				'$or' => array(
-//					array('download' => array('$gte' => $limit)),
-//					array('upload' => array('$gte' => $limit)),
-//				),
-//			),
-//		);
-//		$dataAlerts = $lines->aggregate(array_merge($aggregateQuery, array($dataThrs)));
-//		foreach ($dataAlerts as &$alert) {
-//			$alert['units'] = 'KB';
-//			$alert['value'] = ($alert['download'] > $limit ? $alert['download'] : $alert['upload']);
-//			$alert['threshold'] = $limit;
-//			$alert['event_type'] = 'GGSN_DATA';
-//		}
-//		return $dataAlerts;
-//	}
-
-	/**
-	 * detected data duration usage exceeders.
-	 * @param type $lines the cdr lines db collection instance.
-	 * @param type $aggregateQuery the general aggregate query.
-	 * @return Array containing all the exceeding  duration events.
-	 */
-//	protected function detectDurationExceeders($lines, $aggregateQuery) {
-//		$threshold = floatval(Billrun_Factory::config()->getConfigValue('ggsn.thresholds.duration', 2400));
-//		unset($aggregateQuery[0]['$match']['$or']);
-//
-//		$durationThrs = array(
-//			'$match' => array(
-//				'duration' => array('$gte' => $threshold)
-//			),
-//		);
-//
-//		$durationAlert = $lines->aggregate(array_merge($aggregateQuery, array($durationThrs)));
-//		foreach ($durationAlert as &$alert) {
-//			$alert['units'] = 'SEC';
-//			$alert['value'] = $alert['duration'];
-//			$alert['threshold'] = $threshold;
-//			$alert['event_type'] = 'GGSN_DATA_DURATION';
-//		}
-//		return $durationAlert;
-//	}
-
-	/**
 	 * Get the base aggregation query.
 	 * @param type $charge_time the charge time of the billrun (records will not be pull before that)
 	 * @return Array containing a standard PHP mongo aggregate query to retrive  ggsn entries by imsi.
 	 */
-//	protected function getBaseAggregateQuery($charge_time) {
-//		return array(
-//			array(
-//				'$match' => array(
-//					'type' => 'ggsn',
-//					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-//				)
-//			),
-//			array(
-//				'$match' => array(
-//					//@TODO  switch to unified time once you have the time to test it
-//					'unified_record_time' => array('$gte' => new MongoDate($charge_time)),
-////					'record_opening_time' => array('$gt' => $charge_time),
-//					'deposit_stamp' => array('$exists' => false),
-//					'event_stamp' => array('$exists' => false),
-//					'sgsn_address' => array('$regex' => '^(?!62\.90\.|37\.26\.)'),
-//					'$or' => array(
-//						array('rating_group' => array('$exists' => FALSE)),
-//						array('rating_group' => 0)
-//					),
-//					'$or' => array(
-//						array('fbc_downlink_volume' => array('$gt' => 0)),
-//						array('fbc_uplink_volume' => array('$gt' => 0))
-//					),
-//				),
-//			),
-//			array(
-//				'$group' => array(
-//					"_id" => array('imsi' => '$served_imsi', 'msisdn' => '$served_msisdn'),
-//					"download" => array('$sum' => '$fbc_downlink_volume'),
-//					"upload" => array('$sum' => '$fbc_uplink_volume'),
-//					"duration" => array('$sum' => '$duration'),
-//					'lines_stamps' => array('$addToSet' => '$stamp'),
-//				),
-//			),
-//			array(
-//				'$project' => array(
-//					'_id' => 0,
-//					'download' => array('$multiply' => array('$download', 0.001)),
-//					'upload' => array('$multiply' => array('$upload', 0.001)),
-//					'duration' => 1,
-//					'imsi' => '$_id.imsi',
-//					'msisdn' => array('$substr' => array('$_id.msisdn', 5, 10)),
-//					'lines_stamps' => 1,
-//				),
-//			),
-//		);
-//	}
+	protected function getBaseAggregateQuery($charge_time, $groupName, $groupMatch, $clean = false) {
+		$ret = array(
+			'base_match' => array(
+				'$match' => array(
+					'type' => 'ggsn',
+				)
+			),
+			'where' => array(
+				'$match' => array(
+					'event_stamp' => array('$exists' => false),
+					'$or' => array(
+						array('rating_group' => array('$exists' => false)),
+						array('rating_group' => 0)
+					),
+				),
+			),
+			'group_match' => array(
+				'$match' => $groupMatch,
+			),
+			'group' => array(
+				'$group' => array(
+					"_id" => array('imsi' => '$served_imsi','sid'=>'$sid','aid'=>'$aid'),
+					"usagev" => array('$sum' => '$usagev'),
+					'aprice' => array('$sum' => '$aprice'),
+					"duration" => array('$sum' => '$duration'),
+					'lines_stamps' => array('$addToSet' => '$stamp'),
+				),
+			),
+			'translate' => array(
+				'$project' => array(
+					'_id' => 0,
+					'aid' => '$_id.aid',
+					'sid' => '$_id.sid',
+					'usagev' => array('$multiply' => array('$usagev', 0.0009765625)),
+					'aprice' => 1,
+					'imsi' => '$_id.imsi',
+					'lines_stamps' => 1,
+				),
+			),
+			'project' => array(
+				'$project' => array_merge(array(
+					'usagev' => 1,
+					'imsi' => 1,
+					'sid' => 1,
+					'aid' => 1,
+					'aprice' => 1,
+					'lines_stamps' => 1,
+						), $this->addToProject(array('group' => $groupName,))),
+			),
+		);
+		if (!$clean) {
+//			$ret['base_match']['$match']['$or'] = array(
+//				array('urt' => array('$gte' => new MongoDate($charge_time))),
+//				array('unified_record_time' => array('$gte' => new MongoDate($charge_time))),
+//			);
+			$ret['base_match']['$match']['unified_record_time'] = array('$gte' => new MongoDate($charge_time));
+			//$ret['where']['$match']['sgsn_address'] = array('$regex' => '^(?!62\.90\.|37\.26\.)');
+		}
+
+		return $ret;
+	}
 
 	/**
 	 * @see Billrun_Plugin_BillrunPluginFraud::addAlertData
 	 */
-//	protected function addAlertData(&$event) {
-//		$event['effects'] = array(
-//			'key' => 'type',
-//			'filter' => array('$in' => array('nrtrde', 'ggsn'))
-//		);
-//		return $event;
-//	}
+	protected function addAlertData(&$event) {
+		$event['effects'] = array(
+			'key' => 'type',
+		);
+		return $event;
+	}
+
 	///////////////////////////////////////////// Parser ////////////////////////////////////////////
 	/**
 	 * @see Billrun_Plugin_Interface_IParser::parseData
@@ -587,6 +515,57 @@ class ggsnPlugin extends Billrun_Plugin_Base implements Billrun_Plugin_Interface
 		$update['$inc']['balance.groups.' . $group . '.usagev'] = $row['usagev'];
 		$update['$inc']['balance.groups.' . $group . '.cost'] = $pricingData['aprice'];
 		$update['$inc']['balance.groups.' . $group . '.count'] = 1;
+	}
+	
+	
+		/**
+	 * Write all the threshold that were broken as events to the db events collection 
+	 * @param type $items the broken  thresholds
+	 * @param type $pluginName the plugin that identified the threshold breakage
+	 * @return type
+	 */
+	public function handlerAlert(&$items, $pluginName) {
+		if ($pluginName != $this->getName() || !$items) {
+			return;
+		}
+
+		$events =  Billrun_Factory::db(Billrun_Factory::config()->getConfigValue('fraud.db'))->eventsCollection();
+		$dateHorizion =date(Billrun_Base::base_dateformat,  strtotime('-6 hours'));
+		$ret = array();
+		foreach ($items as &$item) {
+			$event = new Mongodloid_Entity($item);
+			unset($event['lines_stamps']);
+
+			$newEvent = $this->addAlertData($event);
+			$newEvent['source'] = 'billing';
+			$newEvent['stamp'] = md5(serialize($newEvent));
+			$newEvent['creation_time'] = date(Billrun_Base::base_dateformat);
+			$newEvent['priority'] = Billrun_Util::getFieldVal($this->fraudConfig[$this->getName()][$event['event_type']]['priority'],10);	
+				
+			
+			$item['event_stamp'] = $newEvent['stamp'];
+			if($events->query(['sid'=>$newEvent['sid'],'event_type'=>$newEvent['event_type'],'creation_time'=>['$gt'=>$dateHorizion]])->cursor()->limit(1)->current()->isEmpty()) {
+				$ret[] = $events->save($newEvent);
+			}
+		}
+		return $ret;
+	}
+	
+	/**
+	 * method to markdown all the lines that triggered the event
+	 * 
+	 * @param array $items the lines
+	 * @param string $pluginName the plugin name which triggered the event
+	 * 
+	 * @return array affected lines
+	 */
+	public function handlerMarkDown(&$items, $pluginName) {
+		if ($pluginName != $this->getName() || !$items) {
+			return;
+		}
+
+		$ret = array();
+		return $ret;
 	}
 
 }
