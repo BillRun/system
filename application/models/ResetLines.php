@@ -299,7 +299,7 @@ class ResetLinesModel {
 					throw new Exception();
 				}
 			} catch (Exception $e) {
-				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line", Zend_Log::ERR);
+				Billrun_Factory::log("Rebalance: Batch insert failed during insertion to queue, inserting line by line, Error: " .  $e->getMessage(), Zend_Log::ERR);
 				foreach ($queue_lines as $qline) {
 					$ret = $queue_coll->insert($qline); // ok==1, err null
 					if (isset($ret['err']) && !is_null($ret['err'])) {
