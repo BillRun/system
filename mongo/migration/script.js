@@ -283,9 +283,4 @@ db.config.insert(lastConfig);
 
 
 // BRCD-1443 - Wrong billrun field after a rebalance
-db.billrun.find({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}}).forEach(
-	function(obj) {
-		obj.attributes.invoice_type = 'immediate';
-		db.billrun.save(obj);
-	}
-);
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
