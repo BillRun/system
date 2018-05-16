@@ -38,6 +38,7 @@ class Billrun_EventsManager {
 	protected $eventsSettings;
 	protected static $allowedExtraParams = array('aid' => 'aid', 'sid' => 'sid', 'stamp' => 'line_stamp', 'row' => 'row');
 	protected $notifyHash;
+	protected $reachedConstant = null;
 
 	/**
 	 *
@@ -111,6 +112,12 @@ class Billrun_EventsManager {
 				}
 				foreach ($eventValues as $eventVal) {
 					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
+						$eventValues[] = $valueAfter;
+						sort($eventValues);
+						$valueAfterKey = array_search($valueAfter, $eventValues);
+						$indexOrder = ($valueBefore < $valueAfter) ? 1 : -1;
+						$this->reachedConstant = (isset($eventValues[$valueAfterKey + $indexOrder]) && $eventValues[$valueAfterKey] == $eventValues[$valueAfterKey + $indexOrder]) 
+							? $eventValues[$valueAfterKey] : $eventValues[$valueAfterKey - $indexOrder];
 						return true;
 					}
 				}
@@ -162,6 +169,9 @@ class Billrun_EventsManager {
 			array_pop($pathArray);
 			$path = implode('.', $pathArray) . '.total';
 			$event['group_total'] = $this->getEntityValueByPath($entityAfter, $path);
+		}
+		if (!is_null($this->reachedConstant)) {
+			$event['reached_constant'] = floatval($this->reachedConstant);
 		}
 		$event['stamp'] = Billrun_Util::generateArrayStamp($event);
 		self::$collection->insert($event);
@@ -299,6 +309,6 @@ class Billrun_EventsManager {
 	protected function isConditionOnGroup($path) {
 		return (substr_count($path, 'balance.groups') > 0);
 	}
-	
+
 	
 }
