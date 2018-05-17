@@ -91,10 +91,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return int service index if service based else return 0
 	 */
 	protected function getServiceIndex() {
-		if (!isset($this->row['service_index'])) {
+		if (!isset($this->row['service_id'])) {
 			return 0;
 		}
-		return $this->row['service_index'];
+		return $this->row['service_id'];
 	}
 
 	/**
