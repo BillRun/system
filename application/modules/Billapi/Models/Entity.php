@@ -343,9 +343,24 @@ class Models_Entity {
 			$prevEntity['from'] = $this->update['from'];
 			$this->insert($prevEntity);
 		}
+		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
+		foreach ($beforeChangeRevisions as $oldRevision) {
+			$oldRevisions[] = $oldRevision;
+		}
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
+		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
-		$this->trackChanges($this->query['_id']);
+		$field = $this->getKeyField();
+		foreach ($oldRevisions as $oldRevision) {
+			foreach ($afterChangeRevisions as $newRevision) {
+				if ($oldRevision['_id']->getMongoId() != $newRevision['_id']->getMongoId()) {
+					continue;
+				}
+				
+				$key = $oldRevision[$field];
+				Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $oldRevision->getRawData(), $newRevision->getRawData());
+			}
+		}
 		return true;
 	}
 
