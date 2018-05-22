@@ -349,6 +349,9 @@ class ResetLinesModel {
 		}
 
 		if (empty($arategroups) || !$this->isInExtendedBalance($arategroups) || (isset($line['over_group']) && $line['over_group'] > 0 && isset($line['in_group']) && $line['in_group'] > 0)) {
+			if (!((isset($line['over_group']) && $line['over_group']) || (isset($line['out_group']) && $line['out_group']))) {
+				return;
+			}
 			$balanceUsaget = $line['usaget'];
 			$balanceUsagev = $line['usagev'];
 			if (isset($line['out_plan']) && $line['out_plan'] > 0) {
