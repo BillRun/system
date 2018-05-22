@@ -76,7 +76,7 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function getInstance($params = null) {
+	public static function getInstance($params = null) {
 		if (isset($params['connection_type'])) {
 			$class = 'Billrun_Balance_' . ucfirst($params['connection_type']);
 		} else { // fallback to default postpaid balance

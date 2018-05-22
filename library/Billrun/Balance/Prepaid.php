@@ -221,7 +221,7 @@ class Billrun_Balance_Prepaid extends Billrun_Balance {
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function getInstance($params = null) {
+	public static function getInstance($params = null) {
 		$stamp = Billrun_Util::generateArrayStamp($params);
 		if (empty(self::$instance[$stamp])) {
 			if (empty($params)) {

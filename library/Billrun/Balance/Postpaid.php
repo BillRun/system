@@ -281,19 +281,13 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function getInstance($params = null) {
+	public static function getInstance($params = null) {
 		$stamp = Billrun_Util::generateArrayStamp($params);
-		if (empty(self::$instance[$stamp])) {
-			if (empty($params)) {
-				$params = Yaf_Application::app()->getConfig();
-			}
-			$instance[$stamp] = new Billrun_Balance_Postpaid($params);
-		} else {
-			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
-				$instance[$stamp]->reload();
-			}
+		if (empty($params)) {
+			$params = Yaf_Application::app()->getConfig();
 		}
-
+		$instance[$stamp] = new Billrun_Balance_Postpaid($params);
+	
 		return $instance[$stamp];
 	}
 
