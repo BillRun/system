@@ -78,6 +78,13 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected $timeZone = null;
 	
+	/**
+	 * 
+	 * @param type $options
+	 * @return boolean
+	 */
+	protected $usagevTimeFormats = array('hh:mm:ss', 'mm:ss', 'seconds');
+	
 
 	public function __construct($options) {
 		parent::__construct($options);
@@ -274,6 +281,10 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($usagevFields)) {
 			foreach ($usagevFields as $usagevField) {
 				$usagev = Billrun_util::getIn($userFields, $usagevField);
+				if (in_array($this->usagevUnit, $this->usagevTimeFormats)) {
+					sscanf($usagev, "%d:%d:%d", $hours, $minutes, $seconds);
+					$usagev = isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
+				}
 				if (!is_null($usagev) && is_numeric($usagev)) {
 					$volume += floatval($usagev);
 				}
