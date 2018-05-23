@@ -83,7 +83,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * @param type $options
 	 * @return boolean
 	 */
-	protected $usagevTimeFormats = array('hh:mm:ss', 'mm:ss', 'seconds');
+	protected $usagevTimeFormats = array('hh:mm:ss', 'mm:ss');
 	
 
 	public function __construct($options) {
