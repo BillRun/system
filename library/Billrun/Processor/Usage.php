@@ -82,7 +82,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 * allowed formats for volume usage
 	 * @var type array
 	 */
-	protected $usagevTimeFormats = array('hh:mm:ss', 'mm:ss');
+	protected $usagevFormats = array('time' => array('hh:mm:ss', 'mm:ss'));
 	
 
 	public function __construct($options) {
@@ -280,9 +280,9 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 		if (!empty($usagevFields)) {
 			foreach ($usagevFields as $usagevField) {
 				$usagev = Billrun_util::getIn($userFields, $usagevField);
-				if (in_array($this->usagevUnit, $this->usagevTimeFormats)) {
-					sscanf($usagev, "%d:%d:%d", $hours, $minutes, $seconds);
-					$usagev = isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
+				$usagetype = $this->getUsageType($this->usagevUnit);
+				if (!is_null($usagev) && !is_null($usagetype)) {
+					$usagev = Billrun_Utils_Units::convertFromFormat($usagev, $this->usagevUnit, $usagetype);
 				}
 				if (!is_null($usagev) && is_numeric($usagev)) {
 					$volume += floatval($usagev);
@@ -305,5 +305,15 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	 */
 	protected function isLinePrepriced($usaget) {
 		return !empty($this->prepricedMapping[$usaget]);
+	}
+	
+	protected function getUsageType($usageunit) {
+		foreach($this->usagevFormats as $key => $usageType) {
+			$usaget = array_search($usageunit, $usageType);
+			if ($usaget) {
+				return $key;
+			}
+		}
+		return null;
 	}
 }

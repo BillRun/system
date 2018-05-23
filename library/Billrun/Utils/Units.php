@@ -218,4 +218,19 @@ class Billrun_Utils_Units {
 		return Billrun_Util::byteFormat($bytes, '', 2, true);
 	}
 	
+	public static function formatedTimeToSeconds($volume) {
+		sscanf($volume, "%d:%d:%d", $hours, $minutes, $seconds);
+		return isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
+	}
+	
+	public static function convertFromFormat($usagev, $usagevUnit, $usageType) {
+		$propertyTypesData = self::getPropertyTypeData($usageType);
+		foreach ($propertyTypesData['uom'] as $uom) {
+			if ($uom['label'] === $usagevUnit && isset($uom['functionName2'])) {
+				return self::{$uom['functionName2']}($usagev);
+			}
+		}
+		return null;
+	}
+	
 }
