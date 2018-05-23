@@ -284,3 +284,22 @@ db.config.insert(lastConfig);
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+
+// BRCD-1457 - Fix creation_time field in subscriber services
+db.subscribers.find({services:{$exists:1}}).forEach(
+	function(obj) {
+		var services = obj.services;
+		for (var service in services) {
+			if (obj['services'][service]['creation_time'] === undefined) {
+				obj['services'][service]['creation_time'] = obj.from;
+			} else if (obj['services'][service]['creation_time']['sec'] !== undefined) {
+				var sec = obj['services'][service]['creation_time']['sec'];
+				var usec = obj['services'][service]['creation_time']['usec'];
+				var milliseconds = sec * 1000 + usec;
+				obj['services'][service]['creation_time'] = new Date(milliseconds);
+			}
+		}
+		
+		db.subscribers.save(obj);
+	}
+);
