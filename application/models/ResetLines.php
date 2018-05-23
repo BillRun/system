@@ -281,12 +281,13 @@ class ResetLinesModel {
 	protected function handleStamps($stamps, $queue_coll, $queue_lines, $lines_coll, $update_aids, $rebalanceTime) {
 		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
-
+		
+		Billrun_Factory::log('Removing from queue, stamps: ' . implode(',', $stamps), Zend_Log::DEBUG);
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
 		}
-
+		Billrun_Factory::log('Starting to reset balances', Zend_Log::DEBUG);
 		$ret = $this->resetBalances($update_aids); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -316,6 +317,7 @@ class ResetLinesModel {
 				}
 			}
 		}
+		Billrun_Factory::log('Resetting lines, stamps: ' . implode(',', $stamps), Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -416,6 +418,7 @@ class ResetLinesModel {
 	}
 
 	protected function resetExtendedBalances($aids, $balancesColl) {
+		Billrun_Factory::log('Resetting extended balances, aids:' . implode(',', $aids), Zend_Log::DEBUG);
 		if (empty($this->extendedBalanceUsageSubtract)) {
 			return;
 		}
@@ -445,6 +448,7 @@ class ResetLinesModel {
 	}
 
 	protected function resetDefaultBalances($aids, $balancesColl) {
+		Billrun_Factory::log('Resetting default balances, aids:' .  implode(',', $aids), Zend_Log::DEBUG);
 		if (empty($this->balanceSubstract)) {
 			return;
 		}
