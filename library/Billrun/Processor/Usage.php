@@ -79,9 +79,8 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected $timeZone = null;
 	
 	/**
-	 * 
-	 * @param type $options
-	 * @return boolean
+	 * allowed formats for volume usage
+	 * @var type array
 	 */
 	protected $usagevTimeFormats = array('hh:mm:ss', 'mm:ss');
 	
