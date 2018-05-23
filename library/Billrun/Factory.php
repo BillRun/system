@@ -222,9 +222,9 @@ class Billrun_Factory {
 				$transport = new $className($mailerTransport['host'], $mailerTransport);
 				Zend_Mail::setDefaultTransport($transport);
 			}
-			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run'));
+			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', false);
 			if (empty($fromAddress)) {
-				$fromAddress = Billrun_Factory::config()->getConfigValue('billrun.default_email', 'no-reply@bill.run');
+				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run');
 			}
 			$fromName = Billrun_Factory::config()->getConfigValue('tenant.name', Billrun_Factory::config()->getConfigValue('mailer.from.name', 'BillRun'));
 			$mailer->setFrom($fromAddress, $fromName);
