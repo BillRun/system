@@ -278,7 +278,22 @@ if(!found) {
 }
 lastConfig['subscribers']['account']['fields'] = fields;
 
-	
+
+// BRCD-1458 - Add support for hh:mm:ss, mm:ss "units" in input processor volume stage.
+var propertyTypes = lastConfig['property_types'];
+for (var i in propertyTypes) {
+	if (propertyTypes[i]['type'] === 'time') {
+		var timeProperty = lastConfig['property_types'][i];
+		if (timeProperty['uom']) {
+			for (var j in timeProperty['uom']) {
+				if (timeProperty['uom'][j]['name'] === 'hhmmss' || timeProperty['uom'][j]['name'] === 'mmss') {
+					lastConfig['property_types'][i]['uom'][j]['convertFunction'] = 'formatedTimeToSeconds'; 
+				}
+			}
+		}
+	}
+}
+
 db.config.insert(lastConfig);
 
 
