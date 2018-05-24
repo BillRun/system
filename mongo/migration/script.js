@@ -286,7 +286,7 @@ db.config.insert(lastConfig);
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
 
 // BRCD-1457 - Fix creation_time field in subscriber services
-db.subscribers.find({services:{$exists:1}}).forEach(
+db.subscribers.find({type: 'subscriber', services:{$exists:1}}).forEach(
 	function(obj) {
 		var services = obj.services;
 		for (var service in services) {
