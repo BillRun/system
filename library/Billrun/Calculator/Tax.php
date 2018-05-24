@@ -109,7 +109,7 @@ abstract class Billrun_Calculator_Tax extends Billrun_Calculator {
 		$rate = $this->getRateForLine($line);
 		return  (!empty($line[Billrun_Calculator_Rate::DEF_CALC_DB_FIELD]) && @$rate['vatable'])
 					|| 
-				( $line['usaget'] == 'flat' && !isset($rate['vatable']) );
+				( $line['usaget'] == 'flat' && (!isset($rate['vatable']) || !empty($rate['vatable'])) );
 	}
 	
 	protected function isLineDataComplete($line) {
