@@ -1155,29 +1155,22 @@ class Models_Entity {
 		switch ($this->action) {
 			case 'permanentchange':
 				return '1970-01-02 00:00:00';
-				break;
 			case 'create':
 				return Billrun_Util::generateCurrentTime();
-				break;
 			
 			default:
 				return $this->before['from'];
-				break;
 		}
 	}
 	
 	protected function getDefaultTo() {
 		switch ($this->action) {
 			case 'permanentchange':
-				return '+100 years';
-				break;
 			case 'create':
 				return '+100 years';
-				break;
 			
 			default:
 				return $this->before['to'];
-				break;
 		}
 	}
 
