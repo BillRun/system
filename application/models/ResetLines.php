@@ -282,7 +282,7 @@ class ResetLinesModel {
 		$update = $this->getUpdateQuery($rebalanceTime);
 		$stamps_query = $this->getStampsQuery($stamps);
 		
-		Billrun_Factory::log('Removing from queue, stamps: ' . implode(',', $stamps), Zend_Log::DEBUG);
+		Billrun_Factory::log('Removing ' . count($stamps) . ' records from queue', Zend_Log::DEBUG);
 		$ret = $queue_coll->remove($stamps_query); // ok == 1, err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -316,8 +316,8 @@ class ResetLinesModel {
 					return FALSE;
 				}
 			}
-		}
-		Billrun_Factory::log('Resetting lines, stamps: ' . implode(',', $stamps), Zend_Log::DEBUG);
+		}		
+		Billrun_Factory::log('Resetting ' . count($stamps) . ' lines', Zend_Log::DEBUG);
 		$ret = $lines_coll->update($stamps_query, $update, array('multiple' => true)); // err null
 		if (isset($ret['err']) && !is_null($ret['err'])) {
 			return FALSE;
@@ -418,7 +418,6 @@ class ResetLinesModel {
 	}
 
 	protected function resetExtendedBalances($aids, $balancesColl) {
-		Billrun_Factory::log('Resetting extended balances, aids:' . implode(',', $aids), Zend_Log::DEBUG);
 		if (empty($this->extendedBalanceUsageSubtract)) {
 			return;
 		}
@@ -440,6 +439,7 @@ class ResetLinesModel {
 				$query = array(
 					'_id' => new MongoId($balanceId),
 				);
+				Billrun_Factory::log('Resetting extended balance for aid: ' .  $aid . ', balance_id: ' . $balanceId, Zend_Log::DEBUG);
 				$balancesColl->update($query, $updateData);
 			}
 		}
@@ -448,7 +448,6 @@ class ResetLinesModel {
 	}
 
 	protected function resetDefaultBalances($aids, $balancesColl) {
-		Billrun_Factory::log('Resetting default balances, aids:' .  implode(',', $aids), Zend_Log::DEBUG);
 		if (empty($this->balanceSubstract)) {
 			return;
 		}
@@ -475,6 +474,7 @@ class ResetLinesModel {
 					$query = array(
 						'_id' => $balanceToUpdate['_id'],
 					);
+					Billrun_Factory::log('Resetting default balance for sid: ' .  $sid . ', billrun: ' . $billrunKey, Zend_Log::DEBUG);
 					$ret = $balancesColl->update($query, $updateData);
 				}
 			}
