@@ -344,22 +344,17 @@ class Models_Entity {
 			$this->insert($prevEntity);
 		}
 		$beforeChangeRevisions = $this->collection->query($permanentQuery)->cursor();
-		foreach ($beforeChangeRevisions as $oldRevision) {
-			$oldRevisions[] = $oldRevision;
-		}
+		$oldRevisions = iterator_to_array($beforeChangeRevisions);
 		$this->collection->update($permanentQuery, $permanentUpdate, array('multiple' => true));
 		$afterChangeRevisions = $this->collection->query($permanentQuery)->cursor();
 		$this->fixEntityFields($this->before);
 		$field = $this->getKeyField();
-		foreach ($oldRevisions as $oldRevision) {
-			foreach ($afterChangeRevisions as $newRevision) {
-				if ($oldRevision['_id']->getMongoId() != $newRevision['_id']->getMongoId()) {
-					continue;
-				}
-				
-				$key = $oldRevision[$field];
-				Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $oldRevision->getRawData(), $newRevision->getRawData());
-			}
+		foreach ($afterChangeRevisions as $newRevision) {
+			$currentId = $newRevision['_id']->getMongoId()->{'$id'};
+			$oldRevision = $oldRevisions[$currentId];
+			
+			$key = $oldRevision[$field];
+			Billrun_AuditTrail_Util::trackChanges($this->action, $key, $this->collectionName, $oldRevision->getRawData(), $newRevision->getRawData());
 		}
 		return true;
 	}
