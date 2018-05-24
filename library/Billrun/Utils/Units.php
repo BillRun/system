@@ -226,8 +226,8 @@ class Billrun_Utils_Units {
 	public static function convertFromFormat($usagev, $usagevUnit, $usageType) {
 		$propertyTypesData = self::getPropertyTypeData($usageType);
 		foreach ($propertyTypesData['uom'] as $uom) {
-			if ($uom['label'] === $usagevUnit && isset($uom['functionName2'])) {
-				return self::{$uom['functionName2']}($usagev);
+			if ($uom['label'] === $usagevUnit && isset($uom['convertFunction'])) {
+				return self::{$uom['convertFunction']}($usagev);
 			}
 		}
 		return null;
