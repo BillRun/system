@@ -310,7 +310,7 @@ class Billrun_Processor_Usage extends Billrun_Processor {
 	protected function getUsageType($usageunit) {
 		foreach($this->usagevFormats as $key => $usageType) {
 			$usaget = array_search($usageunit, $usageType);
-			if ($usaget) {
+			if (!empty($usaget)) {
 				return $key;
 			}
 		}
