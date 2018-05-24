@@ -55,6 +55,9 @@ class Billrun_Utils_Units {
 		if (!$uom) {
 			return $volume;
 		}
+		if (isset($uom['convertFunction']) && method_exists(get_class(), $uom['function_name']) && $toBaseUnit) {
+			return self::{$uom['convertFunction']}($volume);
+		}
 		
 		if (isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) {
 			return call_user_func_array(array(get_class(), $uom['function_name']), array($volume, $uom));
@@ -221,16 +224,6 @@ class Billrun_Utils_Units {
 	public static function formatedTimeToSeconds($volume) {
 		sscanf($volume, "%d:%d:%d", $hours, $minutes, $seconds);
 		return isset($seconds) ? $hours * 3600 + $minutes * 60 + $seconds : $hours * 60 + $minutes;
-	}
-	
-	public static function convertFromFormat($usagev, $usagevUnit, $usageType) {
-		$propertyTypesData = self::getPropertyTypeData($usageType);
-		foreach ($propertyTypesData['uom'] as $uom) {
-			if ($uom['label'] === $usagevUnit && isset($uom['convertFunction'])) {
-				return self::{$uom['convertFunction']}($usagev);
-			}
-		}
-		return null;
 	}
 	
 }
