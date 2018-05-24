@@ -333,14 +333,14 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 				}
 			}
 			$key = $translationRules['src_key'];
-			if (isset($row['uf'][$key])) {
+			if (isset($row['uf.' .$key])) {
 				if (isset($translationRules['clear_regex'])) {
-					$params[] = array($translationRules['target_key'] => preg_replace($translationRules['clear_regex'], '', $row['uf'][$key]));
+					$params[] = array($translationRules['target_key'] => preg_replace($translationRules['clear_regex'], '', $row['uf.' .$key]));
 				} else {
 					if ($translationRules['target_key'] === 'msisdn') {
-						$params[] = array($translationRules['target_key'] => Billrun_Util::msisdn($row['uf'][$key]));
+						$params[] = array($translationRules['target_key'] => Billrun_Util::msisdn($row['uf.' .$key]));
 					} else {
-						$params[] = array($translationRules['target_key'] => $row['uf'][$key]);
+						$params[] = array($translationRules['target_key'] => $row['uf.' .$key]);
 					}
 				}
 				Billrun_Factory::log("found identification for row: {$row['stamp']} from {$key} to " . $translationRules['target_key'] . ' with value: ' . end($params)[$translationRules['target_key']], Zend_Log::DEBUG);
@@ -492,7 +492,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], false, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 	/**
@@ -518,7 +518,7 @@ class Billrun_Calculator_Customer extends Billrun_Calculator {
 			}
 		}
 		$planIncludedServices = $this->getPlanIncludedServices($subscriber['plan'], $row['urt'], true, $subscriber);
-		return array_merge($retServices, $planIncludedServices);
+		return array_merge($planIncludedServices, $retServices);
 	}
 	
 }

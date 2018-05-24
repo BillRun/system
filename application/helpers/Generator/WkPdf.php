@@ -25,6 +25,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $servicesColl;
 	protected $template;
 	protected $is_fake_generation = FALSE;
+	protected $is_onetime = FALSE;
+	
 
 	/**
 	 *
@@ -34,6 +36,9 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	protected $billrunColl;
 
 	public function __construct($options) {
+		if(!empty($options['is_onetime'])) {
+			$options['auto_create_dir'] = false;
+		}
 		parent::__construct($options);
 		$this->template = array(
 			'line' => array(
@@ -81,12 +86,16 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		$this->logo_path = $this->getLogoPath();
 		$this->billrun_footer_logo_path = APPLICATION_PATH . "/application/views/invoices/theme/logo.png";
 		$this->wkpdf_exec = Billrun_Util::getFieldVal($options['exec'], Billrun_Factory::config()->getConfigValue('wkpdf.exec', 'wkhtmltopdf'));
-		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.view_path', '/views/invoices/') ;
+		$view_type = empty($options['is_onetime']) ? 'view_path' : 'onetime_view_path';
+		$this->view_path = Billrun_Factory::config()->getConfigValue('application.directory') . Billrun_Factory::config()->getConfigValue(self::$type . '.'.$view_type, '/views/invoices/') ;
 		$this->linesColl = Billrun_Factory::db()->linesCollection();
 		$this->plansColl = Billrun_Factory::db()->plansCollection();
 		$this->ratesColl = Billrun_Factory::db()->ratesCollection();
 		$this->servicesColl = Billrun_Factory::db()->servicesCollection();
-
+		if(!empty($options['is_onetime']) ) {
+			$this->is_onetime =$options['is_onetime'];
+			$this->export_directory = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export') . DIRECTORY_SEPARATOR.'one_time'. DIRECTORY_SEPARATOR . $this->stamp);
+		}
 		$this->paths = array(
 			'html' => $this->export_directory . DIRECTORY_SEPARATOR . 'html/',
 			'pdf' => (empty(Billrun_Util::getFieldVal($options['temp_pdf'], FALSE)) ? $this->export_directory : $this->getTempDir($this->stamp)) . DIRECTORY_SEPARATOR . 'pdf/',
@@ -99,8 +108,8 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		);
 		$enableCustomHeader = Billrun_Factory::config()->getConfigValue(self::$type . '.status.header', false);
 		$enableCustomFooter = Billrun_Factory::config()->getConfigValue(self::$type . '.status.footer', false);
-		$this->header_path =  APPLICATION_PATH . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/application/views/invoices/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/application/views/invoices/header/header_tpl.html') ) );
-		$this->footer_path =  APPLICATION_PATH . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/application/views/invoices/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/application/views/invoices/footer/footer_tpl.html' ) ) );
+		$this->header_path =  $this->view_path . Billrun_Util::getFieldVal($options['header_tpl'], ($enableCustomHeader ? '/header/header_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.header', '/header/header_tpl.html') ) );
+		$this->footer_path =  $this->view_path . Billrun_Util::getFieldVal($options['footer_tpl'], ($enableCustomFooter ? '/footer/footer_tpl.html' : Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '/footer/footer_tpl.html' ) ) );
 		$this->custom = array(
 			'header' => $enableCustomHeader === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.header', '') : false,
 			'footer' => $enableCustomFooter === true ? Billrun_Factory::config()->getConfigValue(self::$type . '.footer', '') : false,
@@ -180,7 +189,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 		if (!empty($this->accountsToInvoice)) {
 			$query['aid'] = array('$in' => $this->accountsToInvoice);
 		}
-		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['urt'=>1]);
+		$this->billrun_data = $billrun->query($query)->cursor()->limit($this->limit)->skip($this->limit * $this->page)->sort(['aid'=>1]);
 	}
 
 	public function setData($billrunData) {
@@ -192,7 +201,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	 * @param type $account the account to generate an invoice for.
 	 */
 	public function generateAccountInvoices($account, $lines = FALSE) {
-
+		Billrun_Factory::dispatcher()->trigger('beforeGeneratorEntity',array($this, &$account,&$lines));
 		$this->addFolder($this->paths['html']);
 		$this->addFolder($this->paths['pdf']);
 		$this->addFolder($this->paths['tmp']);
@@ -232,6 +241,7 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 
 		chmod($pdf, $this->filePermissions);
 		$this->updateInvoicePropertyToBillrun($account, $pdf);
+		Billrun_Factory::dispatcher()->trigger('afterGeneratorEntity',array($this, &$account,&$lines));
 	}
 
 	protected function accountSpecificViewParams($billrunData) {
@@ -300,6 +310,10 @@ class Generator_WkPdf extends Billrun_Generator_Pdf {
 	public function getHeaderDate() {
 		$date_seperator = Billrun_Factory::config()->getConfigValue(self::$type . '.date_seperator', '/');
 		return date('d' . $date_seperator . 'm' . $date_seperator . 'Y');
+	}
+	
+	public function isOnetime() {
+		return $this->is_onetime;
 	}
 
 	protected function getInvoiceHeaderContent() {

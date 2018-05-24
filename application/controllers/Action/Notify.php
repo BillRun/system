@@ -21,9 +21,32 @@ class NotifyAction extends Action_Base {
 		if (($options = $this->_controller->getInstanceOptions($possibleOptions)) === FALSE) {
 			return;
 		}
-		$this->getController()->addOutput("Notify on events");
-		Billrun_Factory::eventsManager()->notify();
+		$extraParams = $this->_controller->getParameters();
+		if (!empty($extraParams)) {
+			$options = array_merge($extraParams, $options);
+		}
+
+		$this->getController()->addOutput("Notify on " . $options['type']);
+		switch ($options['type']) {
+			case 'email':
+				$this->notifyEmail($options);
+			case 'events':
+			default:
+				$this->notifyEvents();
+		}
 		$this->getController()->addOutput("Notifying Done");
+	}
+	
+	protected function notifyEvents() {
+		Billrun_Factory::eventsManager()->notify();
+	}
+	
+	protected function notifyEmail($options = array()) {
+		if ($options['email_type'] == 'invoiceReady' && (empty($options['invoices']) && empty($options['billrun_key']))) {
+			$this->getController()->addOutput("Notifying InvoiceReady email from CLI must contain invoices");
+			return false;
+		}
+		Billrun_Factory::emailSenderManager($options)->notify();
 	}
 
 }

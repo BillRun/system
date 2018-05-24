@@ -86,6 +86,11 @@ class Models_Subscribers extends Models_Entity {
 			if (!isset($service['service_id'])) {
 				$service['service_id'] = hexdec(uniqid());
 			}
+
+			if (!isset($service['creation_time'])) {
+				$service['creation_time'] = new MongoDate();
+			}
+
 		}
 	}
 	
@@ -292,23 +297,27 @@ class Models_Subscribers extends Models_Entity {
 	/**
 	 * method to keep maintenance of subscriber fields.
 	 * 
-	 * @param MongoCursor $revisions array of the subscriber revisions
+	 * @param array $revisionsQuery query to get the correct revisions
 	 */
-	protected function fixSubscriberFields($revisions) {
+	protected function fixSubscriberFields($revisionsQuery) {
 		$needUpdate = array();
 		$previousRevision = array();
 		$indicator = 0; 
 		$plansDeactivation = array();
 		$previousPlan = '';
-		$subscriberDeactivation = $revisions->sort(array('to' => -1))->current()['to'];
-		foreach ($revisions as $revision) {
+		$revisionsFrom = $this->collection->query($revisionsQuery)->cursor()->sort(array('from' => 1));
+		$subscriberDeactivation = $this->collection->query($revisionsQuery)->cursor()->sort(array('to' => -1))->current()['to'];
+		$subscriberActivation = $revisionsFrom->current()['from'];
+		foreach ($revisionsFrom as $revision) {
 			$revisionsArray[] = $revision->getRawData();
 		}
-		$sortedByFrom = array_reverse($revisionsArray);
-		foreach ($sortedByFrom as &$revision) {
+		foreach ($revisionsArray as &$revision) {
 			$revisionId = $revision['_id']->{'$id'};
 			if (empty($revision['deactivation_date']) || $subscriberDeactivation != $revision['deactivation_date']) {
 				$needUpdate[$revisionId]['deactivation_date'] = $subscriberDeactivation;
+			}
+			if (empty($revision['activation_date']) || $subscriberActivation != $revision['activation_date']) {
+				$needUpdate[$revisionId]['activation_date'] = $subscriberActivation;
 			}
 			$currentPlan = $revision['plan'];
 			if ($currentPlan != $previousPlan && (empty($previousRevision) || $previousRevision['to'] == $revision['from']) || 
@@ -331,7 +340,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 	
 		foreach($plansDeactivation as $index => $deactivationDate) {
-			foreach($sortedByFrom as $revision2) {
+			foreach($revisionsArray as $revision2) {
 				$revisionId = $revision2['_id']->{'$id'};
 				if ($revision2['indicator'] == $index && (!isset($revision2['plan_deactivation']) || $revision2['plan_deactivation'] != $deactivationDate)) {
 					$needUpdate[$revisionId]['plan_deactivation'] = $deactivationDate;
@@ -355,28 +364,27 @@ class Models_Subscribers extends Models_Entity {
 	 * @param int $entity subscriber revision.
 	 * @param int $aid - account id 
 	 */
-	protected function getSubscriberRevisions($entity, $aid) {
+	protected function getSubscriberRevisionsQuery($entity, $aid) {
 		$query = array();
 		foreach (Billrun_Util::getFieldVal($this->config['duplicate_check'], []) as $fieldName) {
 			$query[$fieldName] = $entity[$fieldName];
 		}
 		$query['aid'] = $aid;
-		$revisions = $this->collection->query($query)->cursor();
-		return $revisions;
+		return $query;
 	}
 	
 	protected function fixEntityFields($entity) {
 		if (is_null($entity)) { // create action
-			$update['$set']['plan_activation'] = $this->update['from'];
+			$update['$set']['plan_activation'] = $update['$set']['activation_date'] = $this->update['from'];
 			$update['$set']['plan_deactivation'] = $update['$set']['deactivation_date'] = $this->update['to'];
 			$this->collection->update(array('_id' => $this->update['_id']), $update);
 			return;
 		}
-		$revisions = $this->getSubscriberRevisions($entity, $entity['aid']);
-		$this->fixSubscriberFields($revisions);
+		$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $entity['aid']);
+		$this->fixSubscriberFields($revisionsQuery);
 		if ($entity['aid'] != $this->update['aid']) {
-			$revisions = $this->getSubscriberRevisions($entity, $this->update['aid']);
-			$this->fixSubscriberFields($revisions);
+			$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $this->update['aid']);
+			$this->fixSubscriberFields($revisionsQuery);
 		}
 	}
 	

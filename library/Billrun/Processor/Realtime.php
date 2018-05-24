@@ -55,6 +55,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!$datetime) {
 			$row['urt'] = new MongoDate();
 		} else {
+			$row['timezone'] = $datetime->getOffset();
 			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
 		$row['eurt'] = $row['urt'];

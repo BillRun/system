@@ -122,7 +122,7 @@ class Models_Action_Get extends Models_Action {
 	 * @return array
 	 */
 	protected function getDateFields() {
-		return array('from', 'to');
+		return array('from', 'to', 'creation_time');
 	}
 	
 	/**

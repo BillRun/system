@@ -67,9 +67,9 @@ class Billrun_HebrewCal {
 		'08/27' => HEBCAL_WORKDAY, // Yom HaShoah
 		// Yom Hazikaron
 		'09/03' => HEBCAL_WORKDAY, // Yom Hazikaron evening
-		'09/04' => HEBCAL_WORKDAY, // Yom Hazikaron
+		'09/04' => HEBCAL_SHORTDAY, // Yom Hazikaron
 		// Yom Ha'atzmaut
-		'09/05' => HEBCAL_WORKDAY, // Yom Ha'atzmaut
+		'09/05' => HEBCAL_HOLIDAY, // Yom Ha'atzmaut
 		//Lag Baommer
 		'09/17' => HEBCAL_WORKDAY, // Lag Baommer evening
 		'09/18' => HEBCAL_WORKDAY, // Lag Baommer

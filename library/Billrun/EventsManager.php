@@ -120,13 +120,9 @@ class Billrun_EventsManager {
 				$rawValueBefore = Billrun_Util::getIn($entityBefore, $rawEventSettings['path'], 0);
 				$rawValueAfter = Billrun_Util::getIn($entityAfter, $rawEventSettings['path'], 0);
 				$eventValue = $rawEventSettings['value'];
-				$valueBefore = ceil($rawValueBefore / $eventValue);
-				$valueAfter = ceil($rawValueAfter / $eventValue);
-				$triggerEquality = $rawValueAfter / $eventValue;
-				$whole = floor($triggerEquality);
-				$fraction = $triggerEquality - $whole;
-				return ((intval($valueBefore) != intval($valueAfter) && $rawValueAfter > $eventValue) ||
-					($fraction == 0 && $rawValueAfter != 0 && $rawValueAfter > $rawValueBefore));
+				$valueBefore = floor($rawValueBefore / $eventValue);
+				$valueAfter = floor($rawValueAfter / $eventValue);
+				return (intval($valueBefore) != intval($valueAfter));
 			default:
 				return FALSE;
 		}

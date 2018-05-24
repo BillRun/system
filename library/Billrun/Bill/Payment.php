@@ -461,7 +461,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
 		}
-		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids));
+		$customers = iterator_to_array(Billrun_PaymentGateway::getCustomers(self::$aids, $chargeOptions['invoices'] ?: FALSE));
 		$involvedAccounts = array();
 		$options = array('collect' => true, 'payment_gateway' => TRUE);
 		$customers_aid = array_map(function($ele) {
@@ -488,7 +488,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
 			$paymentParams['amount'] = $customer['due'];
 			$gatewayDetails['amount'] = $customer['due'];
-			$gatewayDetails['currency'] = $customer['currency'];
+			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
@@ -608,4 +608,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		);
 	}
 	
+	public function getInvoicesIdFromReceipt() {
+		$inv = $this->data['pays']['inv'];
+		return array_keys($inv);
+	}
+	
+	public function markApproved($status) {
+		foreach ($this->getPaidBills() as $billType => $bills) {
+			foreach (array_keys($bills) as $billId) {
+				$billObj = Billrun_Bill::getInstanceByTypeAndid($billType, $billId);
+				$billObj->updatePendingBillToConfirmed($this->getId(), $status)->save();
+			}
+		}
+	}
 }

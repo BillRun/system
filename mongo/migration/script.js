@@ -3,6 +3,26 @@
  * Please try to avoid using migration script and instead make special treatment in the code!
  */
 
+// =============================== Helper functions ============================
+
+function addFieldToConfig(lastConf, fieldConf, entityName) {
+	var fields = lastConf[entityName]['fields'];
+	var found = false;
+	for (var field_key in fields) {
+		if (fields[field_key].field_name === fieldConf.field_name) {
+			found = true;
+		}
+	}
+	if(!found) {
+		fields.push(fieldConf);
+	}
+	lastConf[entityName]['fields'] = fields;
+
+	return lastConf;
+}
+
+// =============================================================================
+
 // BRCD-1077 Add new custom 'tariff_category' field to Products(Rates).
 var lastConfig = db.config.find().sort({_id: -1}).limit(1).pretty()[0];
 delete lastConfig['_id'];
@@ -140,4 +160,127 @@ for (var paymentGateway in paymentGateways) {
 	}
 }
 
+// BRCD-1390 - Add activation_date field to subscriber
+db.subscribers.find({activation_date:{$exists:0}, type:'subscriber'}).forEach(
+	function(obj) {
+		var activationDate = -1;
+		db.subscribers.find({sid:obj.sid, aid:obj.aid, activation_date:{$exists:0}}).sort({'from': 1}).forEach(
+			function(obj2) {
+				if (activationDate == -1) {
+					activationDate = obj2.from;
+				}
+				obj2.activation_date = activationDate;
+				db.subscribers.save(obj2);
+			}
+		);
+	}
+);
+
+// BRCD-1402 - Add activation_date field to subscriber
+if(lastConfig.invoice_export) {
+	if(lastConfig.invoice_export.header && lastConfig.invoice_export.header.match(/^\/application\/views\/invoices/)) {
+		lastConfig.invoice_export.header = lastConfig.invoice_export.header.replace(/^\/application\/views\/invoices/,'');
+	}
+	if(lastConfig.invoice_export.footer && lastConfig.invoice_export.footer.match(/^\/application\/views\/invoices/)) {
+		lastConfig.invoice_export.footer =lastConfig.invoice_export.footer.replace(/^\/application\/views\/invoices/,'');
+	}
+}
+
+//BRCD-1374 : Add taxation support services 
+var vatableField ={
+					"system":true,
+					"select_list" : false,
+					"display" : true,
+					"editable" : true,
+					"multiple" : false,
+					"field_name" : "vatable",
+					"unique" : false,
+					"default_value" : "1",
+					"title" : "This service is taxable",
+					"mandatory" : false,
+					"type" : "boolean",
+					"select_options" : ""
+	};
+lastConfig = addFieldToConfig(lastConfig, vatableField, 'services')
+
+//BRCD-1272 - Generate Creditguard transactions in csv file + handle rejections file
+for (var i in lastConfig['payment_gateways']) {
+	if (lastConfig["payment_gateways"][i]['name'] == "CreditGuard") {
+		if (typeof lastConfig['payment_gateways'][i]['receiver']  === 'undefined' && typeof lastConfig['payment_gateways'][i]['export']  === 'undefined' ) {
+			lastConfig["payment_gateways"][i].receiver = {};
+			lastConfig["payment_gateways"][i].export = {};
+		}
+	}
+}
+
+//BRCD-1411 - Multiple conditions for usage type mapping.
+var fileTypes = lastConfig['file_types'];
+for (var fileType in fileTypes) {
+	if (typeof fileTypes[fileType]['processor']['usaget_mapping'] !== 'undefined') {
+		var usagetMapping = fileTypes[fileType]['processor']['usaget_mapping'];
+		for (var mapping in usagetMapping) {
+			if (typeof fileTypes[fileType]['processor']['usaget_mapping'][mapping]['conditions'] === 'undefined') {
+				var conditions = [];
+				var condition = {
+					"src_field": usagetMapping[mapping]["src_field"],
+					"pattern": usagetMapping[mapping]["pattern"],
+					"op": "$eq",
+				};
+				conditions.push(condition);
+				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
+			}
+		}
+	}
+}
+
+// BRCD-1415 - add invoice when ready email template
+if(!lastConfig.email_templates) {
+	lastConfig.email_templates = {
+    "invoice_ready": {
+      "subject": "Your invoice is ready",
+      "content": "<pre>\nHello [[customer_firstname]],\n\nThe invoice for [[cycle_range]] is ready and is attached to this email.\nFor any questions, please contact us at [[company_email]].\n\n[[company_name]]</pre>\n",
+      "html_translation": [
+        "invoice_id",
+        "invoice_total",
+        "invoice_due_date",
+        "cycle_range",
+        "company_email",
+        "company_name"
+      ]
+    }
+  };
+}
+
+// BRCD-1415 - add system field to account (invoice_shipping_method)
+var fields = lastConfig['subscribers']['account']['fields'];
+var found = false;
+for (var field_key in fields) {
+	if (fields[field_key].field_name === "invoice_shipping_method") {
+		found = true;
+	}
+}
+if(!found) {
+	fields.push({
+		"system":false,
+		"select_list":true,
+		"display":true,
+		"editable":true,
+		"field_name":"invoice_shipping_method",
+		"default_value":"email",
+		"show_in_list":true,
+		"title":"Invoice shipping method",
+		"mandatory":false,
+		"select_options":"email",
+		"changeable_props": ["select_options"]
+	});
+}
+lastConfig['subscribers']['account']['fields'] = fields;
+
+	
 db.config.insert(lastConfig);
+
+
+// BRCD-1443 - Wrong billrun field after a rebalance
+db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});

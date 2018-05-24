@@ -29,6 +29,14 @@ class Billrun_Cycle_Data_Service extends Billrun_Cycle_Data_Plan {
 		$this->foreignFields = $this->getForeignFields(array('service' => $options), $this->stumpLine, TRUE);
 	}
 	
+	protected function getCharges($options) {
+		if( $this->planIncluded && !Billrun_Factory::config()->getConfigValue('customer.aggregator.charge_included_service',TRUE)) {
+			return [ 'charge' => 0 ];
+		}
+			
+		return parent::getCharges($options);
+	}
+	
 	/**
 	 * Translate the plan values to service values.
 	 * @return type

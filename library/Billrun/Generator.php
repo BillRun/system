@@ -121,6 +121,14 @@ abstract class Billrun_Generator extends Billrun_Base {
 		} else {
 			$this->export_dir = Billrun_Util::getBillRunSharedFolderPath(Billrun_Factory::config()->getConfigValue(static::$type . '.export.dir'));
 		}
+		
+		if(!empty($options['page'])) {
+			$this->page = intval($options['page']);
+		}
+		
+		if(!empty($options['size'])) {
+			$this->limit = intval($options['size']);
+		}
 	}
 
 	public function getExportDirectory() {
@@ -160,7 +168,7 @@ abstract class Billrun_Generator extends Billrun_Base {
 	 */
 	public function move(){
 		if (!is_null($this->ssh)){
-			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename, NET_SFTP_LOCAL_FILE); // instead of test 2&3 put the name of the generated file.
+			$this->ssh->put($this->export_directory . '/' . $this->filename, $this->export_dir . '/' . $this->filename); // instead of test 2&3 put the name of the generated file.
 		}
 		else{
 			if ($this->move_exported) {
@@ -178,6 +186,10 @@ abstract class Billrun_Generator extends Billrun_Base {
 			mkdir($path, octdec(Billrun_Factory::config()->getConfigValue(static::$type.'.new_folder_permissions','0775')), true);
 			umask($old_umask);
 		}
+	}
+	
+	public function shouldFileBeMoved() {
+		return true;
 	}
 	
 }
