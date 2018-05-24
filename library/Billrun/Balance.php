@@ -76,25 +76,14 @@ abstract class Billrun_Balance extends Mongodloid_Entity {
 	 * 
 	 * @return Billrun_Balance
 	 */
-	static public function getInstance($params = null) {
-		$stamp = Billrun_Util::generateArrayStamp($params);
-		if (empty(self::$instance[$stamp])) {
-			if (empty($params)) {
-				$params = Yaf_Application::app()->getConfig();
-			}
-			if (isset($params['connection_type'])) {
-				$class = 'Billrun_Balance_' . ucfirst($params['connection_type']);
-			} else { // fallback to default postpaid balance
-				$class = 'Billrun_Balance_Postpaid';
-			}
-			self::$instance[$stamp] = new $class($params);
-		} else {
-			if (isset($params['balance_db_refresh']) && $params['balance_db_refresh']) {
-				self::$instance[$stamp]->reload();
-			}
+	public static function getInstance($params = null) {
+		if (isset($params['connection_type'])) {
+			$class = 'Billrun_Balance_' . ucfirst($params['connection_type']);
+		} else { // fallback to default postpaid balance
+			$class = 'Billrun_Balance_Postpaid';
 		}
-
-		return self::$instance[$stamp];
+		
+		return call_user_func($class .'::getInstance', $params); 
 	}
 
 	/**
