@@ -309,7 +309,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 		} else if (isset($options['aggregator']['stamp']) && (Billrun_Util::isBillrunKey($options['aggregator']['stamp']))) {
 			$this->stamp = $options['aggregator']['stamp'];
 		} else {
-			$next_billrun_key = Billrun_Billrun::getBillrunKeyByTimestamp(time());
+			$next_billrun_key = Billrun_Billingcycle::getBillrunKeyByTimestamp(time());
 			$current_billrun_key = Billrun_Billrun::getPreviousBillrunKey($next_billrun_key);
   			$this->stamp = $current_billrun_key;
 		}
@@ -544,7 +544,7 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 			$billrunKey = $this->billrun->key();
 			self::removeBeforeAggregate($billrunKey, $aids);
 		}
-		}
+	}
 
 
 	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
