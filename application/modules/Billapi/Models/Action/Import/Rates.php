@@ -31,23 +31,27 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	 * 2. Update Plan revision
 	 * 
 	 */
-	protected function getImportParams($entity) {
-		if($this->isExistingEntity($entity)) {
-			$this->setImportOperation('permanentchange');
-		}
-		return parent::getImportParams($entity);
-	}
 	
-	protected function isExistingEntity($entity) {
-		$key = $entity['key'];
-		if (in_array($key, $this->exists_rates)) {
-			return true;
-		} else {
-			$query = array('key' => $key);
-			if(Billrun_Factory::db()->ratesCollection()->query($query)->count() > 0) {
-				$this->exists_rates[] = $key;
-				return true;
-			}
-		}
-	}
+	/**
+	 * Allow to import rates revisiona in CREATE import type
+	 */
+//	protected function getImportParams($entity) {
+//		if($this->isExistingEntity($entity)) {
+//			$this->setImportOperation('permanentchange');
+//		}
+//		return parent::getImportParams($entity);
+//	}
+	
+//	protected function isExistingEntity($entity) {
+//		$key = $entity['key'];
+//		if (in_array($key, $this->exists_rates)) {
+//			return true;
+//		} else {
+//			$query = array('key' => $key);
+//			if(Billrun_Factory::db()->ratesCollection()->query($query)->count() > 0) {
+//				$this->exists_rates[] = $key;
+//				return true;
+//			}
+//		}
+//	}
 }
