@@ -493,7 +493,7 @@ class Billrun_Plan extends Billrun_Service {
 	 * calcualte the date based on monthly difference from activation.
 	 * @return the unix time of the  monthly fraction from activation.
 	 */
-	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE) {
+	public static function monthDiffToDate($cycleFraction , $activationTime , $isStart = TRUE, $deactivationTime = FALSE,$deactivated = FALSE) {
 		if(empty($cycleFraction) ) {
 			return $isStart ? $activationTime : $deactivationTime;
 		}
@@ -525,7 +525,7 @@ class Billrun_Plan extends Billrun_Service {
 			$daysInMonth = $resultDate->format('t');
 			$roundedDays = floor(round($daysInMonth *  $endFraction ,6));
 			$resultDate->modify($roundedDays.' day');
-			if($resultDate->format('t') != $resultDate->format('d') && $resultDate->format('d') != "01") {
+			if($resultDate->format('t') != $resultDate->format('d') && $resultDate->format('d') != "01" && empty($deactivated)) {
 				$resultDate->modify('-1 day');
 			}
 		}
