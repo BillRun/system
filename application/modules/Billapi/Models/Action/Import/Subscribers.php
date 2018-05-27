@@ -24,7 +24,7 @@ class Models_Action_Import_Subscribers extends Models_Action_Import {
 		return new Models_Subscribers($params);
 	}
 	
-	protected function getEntity($entity) {
+	protected function getEntityData($entity) {
 		if(empty($entity['__LINKER__'])) {
 			throw new Exception('Missing mandatory update parameter linker');
 		}

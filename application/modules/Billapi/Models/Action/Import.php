@@ -18,13 +18,12 @@ class Models_Action_Import extends Models_Action {
 
 	/**
 	 * Import opperation type
-	 * @var string create / update
 	 */
 	protected $operation = 'create';
 
 	public function execute() {
 		if (!empty($this->request['operation'])) {
-			$this->operation = $this->request['operation'];
+			$this->setImportOperation($this->request['operation']);
 		}
 		if (!empty($this->request['update'])) {
 			$this->update = (array) json_decode($this->request['update'], true);
@@ -35,41 +34,58 @@ class Models_Action_Import extends Models_Action {
 	protected function runQuery() {
 		$output = array();
 		foreach ($this->update as $key => $entity) {
+			if($this->request['operation'] !== $this->getImportOperation()) {
+				$this->setImportOperation($this->request['operation']);
+			}
 			$output[$key] = $this->importEntity($entity);
 		}
 		return $output;
 	}
 
-	public function importEntity($entity) {
+	protected function importEntity($entity) {
 		try {
-			$params = $this->createEntityImportParams($entity);
+			$params = $this->getImportParams($entity);
 			$entityModel = $this->getEntityModel($params);
-			$entityModel->create();
+			$action = strtolower($params['request']['action']);
+			$entityModel->{$action}();
 			return true;
 		} catch (Exception $exc) {
 			return $exc->getMessage();
 		}
 	}
 
-	protected function createEntityImportParams($entity) {
-		return array(
+	protected function setImportOperation($operation) {
+		$operations = $this->settings['operation'];
+		if ($operations && in_array($operation, $operations)) {
+			$this->operation = $operation;
+		} else {
+			throw new Exception('Unsupported import operation');
+		}
+	}
+	
+	protected function getImportParams($entity) {
+		$params = array(
 			'collection' => $this->getCollectionName(),
 			'request' => array(
-				'action' => $this->getOperationName(),
-				'update' => $this->getEntity($entity),
+				'action' => $this->getImportOperation(),
+				'update' => $this->getEntityData($entity),
 			)
 		);
-	}
-
-	protected function getOperationName() {
-		$operations = $this->settings['operation'];
-		if ($operations && in_array($this->operation, $operations)) {
-			return $this->operation;
+		if($this->getImportOperation() == 'permanentchange') {
+			$query = array(
+				'effective_date' => empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'],
+				'key' => $entity['key']
+			);
+			$params['request']['query'] = json_encode($query);
 		}
-		throw new Exception('Unsupported import operation');
+		return $params;
 	}
 
-	protected function getEntity($entity) {
+	protected function getImportOperation() {
+		return $this->operation;
+	}
+
+	protected function getEntityData($entity) {
 		return json_encode($entity);
 	}
 
