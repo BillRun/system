@@ -352,10 +352,6 @@ class ReportModel {
 						case 'last_confirmed_end':
 							$condition['value'] = 'last_confirmed';
 							break;
-						case 'confirmed_start':
-						case 'confirmed_end':
-							$condition['value'] = 'confirmed';
-							break;
 						default: $styledValue = $format['value'];
 					}
 					if (isset($condition['start_end'])) {
