@@ -228,8 +228,8 @@ class Models_Entity {
 		} else {
 			$uniqueQuery = array($field => $val); // not revisions of same entity, but has same unique value
 		}
-		$startTime = strtotime(isset($data['from'])? $data['from'] : ($this->action == 'permanentchange'? '1970-01-02 00:00:00' : $this->before['from']));
-		$endTime = strtotime(isset($data['to'])? $data['to'] : ($this->action == 'permanentchange'? '+100 years' : $this->before['to']));
+		$startTime = strtotime(isset($data['from'])? $data['from'] : $this->getDefaultFrom());
+		$endTime = strtotime(isset($data['to'])? $data['to'] : $this->getDefaultTo());
 		$overlapingDatesQuery = Billrun_Utils_Mongo::getOverlappingWithRange('from', 'to', $startTime, $endTime);
 		$query = array('$and' => array($uniqueQuery, $overlapingDatesQuery));
 		if ($nonRevisionsQuery) {
@@ -1149,6 +1149,29 @@ class Models_Entity {
 
 	protected function fixEntityFields($entity) {
 		return;
+	}
+	
+	protected function getDefaultFrom() {
+		switch ($this->action) {
+			case 'permanentchange':
+				return '1970-01-02 00:00:00';
+			case 'create':
+				return Billrun_Util::generateCurrentTime();
+			
+			default:
+				return $this->before['from'];
+		}
+	}
+	
+	protected function getDefaultTo() {
+		switch ($this->action) {
+			case 'permanentchange':
+			case 'create':
+				return '+100 years';
+			
+			default:
+				return $this->before['to'];
+		}
 	}
 
 }
