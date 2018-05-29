@@ -329,13 +329,43 @@ class ReportModel {
 			case 'default_empty': {
 				if ($value !== "" && !is_null($value)){
 					$styledValue = $value;
-				} else if ($format['value'] === 'current_time') {
-					$styledValue = $this->currentTime();
 				} else {
-					$styledValue = $format['value'];
+					$condition = array();
+					if (strpos($format['value'], 'start') != false) {
+						$condition['start_end'] = 'start';
+					} else if (strpos($format['value'], 'end') != false) {
+						$condition['start_end'] = 'end';
+					}
+					switch($format['value']) {
+						case 'current_time':
+							$styledValue = $this->currentTime();
+							break;
+						case 'current_start':
+						case 'current_end':
+							$condition['value'] = 'current';
+							break;
+						case 'first_unconfirmed_start':
+						case 'first_unconfirmed_end':
+							$condition['value'] = 'first_unconfirmed';
+							break;
+						case 'last_confirmed_start':
+						case 'last_confirmed_end':
+							$condition['value'] = 'last_confirmed';
+							break;
+						default: $styledValue = $format['value'];
+					}
+					if (isset($condition['start_end'])) {
+						if (!isset($this->cacheFormatStyle[$condition['value'] .'_' .$condition['start_end']])) {
+							$styledValue = $condition['start_end'] == 'start' ? 
+								Billrun_Billingcycle::getStartTime($this->formatInputMatchValue($condition, 'billrun', null)):
+								Billrun_Billingcycle::getEndTime($this->formatInputMatchValue($condition, 'billrun', null));
+							$this->cacheFormatStyle[$condition['value'] .$condition['start_end']] = date('m/d/Y H:i:s', $styledValue);
+						}
+						$styledValue = $this->cacheFormatStyle[$condition['value'] .$condition['start_end']];
+					}
+					$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
+					return $styledValue;
 				}
-				$this->cacheFormatStyle[$format['op']][$format['value']][$cacheKey] = $styledValue;
-				return $styledValue;
 			}
 			default:
 				return $value;
