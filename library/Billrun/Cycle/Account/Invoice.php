@@ -355,7 +355,8 @@ class Billrun_Cycle_Account_Invoice {
     //======================================================
     
 	function isAccountActive() {
-		return $this->subscribers || $this->data['subs'];
+		$hasUsageLines = !$this->lines->query(['aid'=>$this->aid,'billrun'=>$this->key,'usaget'=>['$nin'=>['flat']]])->cursor()->limit(1)->current()->isEmpty();
+		return !empty(array_filter($this->subscribers ,function($sub){ return !empty($sub->getData()['sid']);})) || !empty(array_filter($this->data['subs'] ,function($sub){ return !empty($sub['sid']);})) || $hasUsageLines;
 	}
 
 	public function getAid() {
