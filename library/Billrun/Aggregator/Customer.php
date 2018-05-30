@@ -414,6 +414,16 @@ class Billrun_Aggregator_Customer extends Billrun_Cycle_Aggregator {
 
 			if ($type === 'account') {
 				$accounts[$aid]['attributes'] = $this->constructAccountAttributes($subscriberPlan);
+				$raw = $subscriberPlan['id'];
+				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.account.passthrough_data',array()) as $dstField => $srcField) {
+					if(is_array($srcField) && method_exists($this, $srcField['func'])) {
+						$raw[$dstField] = $this->{$srcField['func']}($subscriberPlan[$srcField['value']]);
+					} else if(!empty($subscriberPlan['passthrough'][$srcField])) {
+						$raw[$srcField] = $subscriberPlan['passthrough'][$srcField];
+					}
+				}
+				$raw['sid']=0;
+				$accounts[$aid]['subscribers'][$raw['sid']][] = $raw;
 			} else if (($type === 'subscriber')) {
 				$raw = $subscriberPlan['id'];
 				foreach(Billrun_Factory::config()->getConfigValue('customer.aggregator.subscriber.passthrough_data',array()) as $dstField => $srcField) {
