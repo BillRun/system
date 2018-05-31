@@ -55,8 +55,8 @@ class Billrun_Utils_Units {
 		if (!$uom) {
 			return $volume;
 		}
-		if (isset($uom['convertFunction']) && method_exists(get_class(), $uom['function_name']) && $toBaseUnit) {
-			return self::{$uom['convertFunction']}($volume);
+		if (isset($uom['convertFunction']) && method_exists(get_class(), $uom['convertFunction']) && $toBaseUnit) {
+			return call_user_func_array(array(get_class(),$uom['convertFunction']), array($volume));
 		}
 		
 		if (isset($uom['function_name']) && method_exists(get_class(), $uom['function_name'])) {
