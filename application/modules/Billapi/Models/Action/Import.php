@@ -86,6 +86,9 @@ class Models_Action_Import extends Models_Action {
 	}
 
 	protected function getEntityData($entity) {
+		if (empty($entity['from']) && !empty($entity['effective_date'])) {
+			$entity['from'] = $entity['effective_date'];
+		}
 		return json_encode($entity);
 	}
 
