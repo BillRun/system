@@ -74,7 +74,7 @@ class Models_Action_Import extends Models_Action {
 		if($this->getImportOperation() == 'permanentchange') {
 			$query = array(
 				'effective_date' => empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'],
-				'key' => $entity['key']
+				$entity['__UPDATER__']['field'] => $entity['__UPDATER__']['value']
 			);
 			$params['request']['query'] = json_encode($query);
 		}

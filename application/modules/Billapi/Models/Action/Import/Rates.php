@@ -35,6 +35,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	protected function runQuery() {
 		$rates = array();
 		foreach ($this->update as $rate) {
+			// TODO: in update key not exist
 			if (empty($rates[$rate['key']])) {
 				$rates[$rate['key']] = array();
 			}
@@ -49,11 +50,40 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 	}
 	
 	protected function importEntity($entity) {
+		// TODO: in update key not exist
 		$unique_plan_rates = count(array_unique($this->rates_by_plan[$entity['key']]));
 		$plan_rates = count($this->rates_by_plan[$entity['key']]);
 		if($this->getImportOperation() == 'create' && $unique_plan_rates != $plan_rates){
 			return 'Create revision not allowd with import action Create, please use Update';
 		}
+		
+		$existingRate = null;
+		$key = $entity['key'];
+		
+		if($this->getImportOperation() == 'permanentchange') {
+			if (empty($entity['__UPDATER__'])) {
+				throw new Exception('Missing mandatory update parameter updater');
+			}
+			$rateQuery = array(
+				$entity['__UPDATER__']['field'] => $entity['__UPDATER__']['value'],
+			);			
+			$existingRate = Billrun_Factory::db()->ratesCollection()->query($rateQuery)->cursor()->current();
+			if(!$existingRate || $existingRate->isEmpty()) {
+				throw new Exception("Product {$entity['__UPDATER__']['value']} does not exist");
+			}
+			$key = $existingRate['key'];
+			if (!empty($entity['rates'])) {
+				$usagetype = reset(array_keys($existingRate['rates']));
+				foreach ($entity['rates'] as $usaget => $rates) {
+					if($usaget == "_KEEP_SOURCE_USAGE_TYPE_") {
+						$entity['rates'][$usagetype] = $rates;
+						unset($entity['rates']["_KEEP_SOURCE_USAGE_TYPE_"]);
+					}
+				}
+			}
+		}
+		
+		
 		foreach ($entity['rates'] as $usaget => $rates) {
 			if($rates) {
 				$plans = array_keys($rates);
@@ -66,7 +96,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 								'name' => $plan_name
 							);
 							$update = array(
-								"rates.{$entity['key']}" => array(
+								"rates.{$key}" => array(
 									$usaget => $rates[$plan_name]
 								),
 								'from' => $entity['from']
