@@ -47,8 +47,7 @@ class PlansModel extends TabledateModel {
 		unset($params['duplicate_rates']);
 		$entity = parent::update($params);
 		if ($duplicate) {
-			$new_id = $entity['_id']->getMongoID();
-			self::duplicate_rates($source_id, $new_id);
+			self::duplicate_rates($source_id, $params['name']);
 		}
 		return $entity;
 	}
@@ -58,15 +57,14 @@ class PlansModel extends TabledateModel {
 	 * @param type $source_id
 	 * @param type $new_id
 	 */
-	public function duplicate_rates($source_id, $new_id) {
+	public function duplicate_rates($source_id, $newPlanName) {
 		$rates_col = Billrun_Factory::db()->ratesCollection();
-		$source_ref = MongoDBRef::create("plans", new mongoId($source_id));
-		$dest_ref = MongoDBRef::create("plans", $new_id);
+		$oldPlanName = Billrun_Factory::db()->plansCollection()->query(array('_id' => new mongoId($source_id)))->cursor()->current()['name'];
 		$usage_types = Billrun_Factory::config()->getConfigValue('admin_panel.line_usages');
 		foreach ($usage_types as $type => $string) {
-			$attribute = "rates." . $type . ".plans";
-			$query = array($attribute => $source_ref);
-			$update = array('$push' => array($attribute => $dest_ref));
+			$attribute = "rates." . $type . ".groups";
+			$query = array($attribute => $oldPlanName);
+			$update = array('$push' => array($attribute => array('$each' => array($newPlanName), '$position' => 0)));
 			$params = array("multiple" => 1);
 			$rates_col->update($query, $update, $params);
 		}

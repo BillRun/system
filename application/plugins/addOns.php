@@ -217,7 +217,7 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 	 */
 	public function planGroupRule(&$rateUsageIncluded, &$groupSelected, $limits, $plan, $usageType, $rate, $subscriberBalance) {
 		$national = $plan->get('include.groups.' . $groupSelected . '.limits.national');
-		if (empty($national) || !$national || !isset($this->lineType)) {
+		if (empty($national) || !$national) {
 			return;
 		}	
 		$matchedPackages = array_filter($this->ownedPackages, function($package) use ($usageType, $rate) {
@@ -225,25 +225,29 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		});	
 		if (isset($limits['base_usage']) && $limits['base_usage'] && isset($plan->get('include.groups.' . $groupSelected)[$usageType])) {
 			$baseUsagePlanIncluded = $plan->get('include.groups.' . $groupSelected)[$usageType];
-			$usedDataInBasePlan = isset($subscriberBalance->get('balance.totals.base_plan_data')['usagev']) ? $subscriberBalance->get('balance.totals.base_plan_data.usagev') : 0;
-			$currentVolume = $usedDataInBasePlan + $this->row['usagev'];
+			$usedUsageInBasePlan = isset($subscriberBalance->get('balance.groups.' . $groupSelected . '.' .$usageType)['usagev']) ? $subscriberBalance->get('balance.groups.' . $groupSelected . '.' .$usageType . '.usagev') : 0;
+			$currentVolume = $usedUsageInBasePlan + $this->row['usagev'];
+			$baseUsagePlanIncluded = ($baseUsagePlanIncluded == 'UNLIMITED') ? PHP_INT_MAX : $baseUsagePlanIncluded;
 			if ($currentVolume <= $baseUsagePlanIncluded) {
 				$this->isBaseUsage = true;
 				$this->basePlanCurrentUse = $this->row['usagev'];
 				return;
 			}
-			if ($usedDataInBasePlan == $baseUsagePlanIncluded) {
+			if ($usedUsageInBasePlan == $baseUsagePlanIncluded) {
 				$groupSelected = FALSE;
 				return;
 			}
 			$this->extraUsage = $currentVolume - $baseUsagePlanIncluded;
-			$this->basePlanCurrentUse = $baseUsagePlanIncluded - $usedDataInBasePlan;
+			$this->basePlanCurrentUse = $baseUsagePlanIncluded - $usedUsageInBasePlan;
 			array_push($this->partialBaseUsage, array('group' => $groupSelected, 'usage' => $this->basePlanCurrentUse));
 			$this->isBaseUsage = true;
 			if (empty($matchedPackages)) {
 				return;
 			}
 			$groupSelected = FALSE;
+			return;
+		}
+		if (!isset($this->lineType)) {
 			return;
 		}
 		if (empty($matchedPackages) || !$this->checkPackageCorrelation($groupSelected, $matchedPackages)) {
@@ -436,17 +440,14 @@ class addOnsPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if (!$this->isBaseUsage) {
 			return;
 		}
+		$usaget = $row['usaget'];
 		if (!empty($this->partialBaseUsage)) {
 			foreach ($this->partialBaseUsage as $groupUsage) {
 				$groupName = $groupUsage['group'];
-				$update['$inc']['balance.groups.' . $groupName . '.data.usagev'] = $groupUsage['usage'];
-				$update['$inc']['balance.groups.' . $groupName . '.data.count'] = 1;
+				$update['$inc']['balance.groups.' . $groupName . '.' . $usaget . '.usagev'] = $groupUsage['usage'];
+				$update['$inc']['balance.groups.' . $groupName . '.' . $usaget . '.count'] = 1;
 			}
 		}
-	
-		$update['$inc']['balance.totals.base_plan_data.usagev'] = $this->basePlanCurrentUse;
-		$update['$inc']['balance.totals.base_plan_data.cost'] = 0;
-		$update['$inc']['balance.totals.base_plan_data.count'] = 1;
 	}
 	
 	protected function checkPackageCorrelation($groupSelected, $matchedPackages) {
