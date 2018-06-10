@@ -20,7 +20,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		'incoming_call' => 60,
 		'data' => 1024*1024
 	);
-	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^0+972/'=>'0');
+	protected $destinationsNumberTransforms = array( '/B/'=>'*','/A/'=>'#','/^972/'=>'0');
 	
 	/*
 	 * get and set lines of the account
@@ -181,7 +181,7 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 		return (preg_match('/^[\d.]+$/', $volume) && $volume ?  number_format($volume,$precision) : $volume )." ". ($showUnits ? Billrun_Utils_Units::getUnitLabel($usaget, $unit) : '');
 	}
 
-	public function getRateTariff($rateName, $usaget) {
+	public function getRateTariff($rateName, $usaget,$addTax = FALSE ) {
 		if(!empty($rateName)) {
 			$rate = Billrun_Rates_Util::getRateByName($rateName, $this->data['end_date']->sec);
 			if(!empty($rate)) {
@@ -189,7 +189,12 @@ class Billrun_View_Invoice extends Yaf_View_Simple {
 			
 			}
 		}
-		return (empty($tariff) ? 0 : Billrun_Tariff_Util::getTariffForVolume($tariff, 0))  * Billrun_Util::getFieldVal($this->tariffMultiplier[$usaget], 1);
+		$retTariff = (empty($tariff) ? 0 : Billrun_Tariff_Util::getTariffForVolume($tariff, 0))  * Billrun_Util::getFieldVal($this->tariffMultiplier[$usaget], 1);
+		if($addTax) {
+			$taxCalc = Billrun_Calculator::getInstance(['type'=>'tax']);
+			$retTariff = $taxCalc->addTax($retTariff);
+		}
+		return $retTariff;
 	}
 
 	public function getPlanDescription($subscriberiptionData) {

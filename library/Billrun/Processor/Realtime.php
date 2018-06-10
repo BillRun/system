@@ -46,7 +46,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 			return false;
 		}
 		$row['usagev_unit'] = $this->usagevUnit;
-		$row['usagev'] = Billrun_Utils_Units::convertVolumeUnits($usagev, $row['usaget'], $this->usagevUnit, true);
+		$row['usagev'] = $usagev;
 		if ($this->isLinePrepriced($row['usaget'])) {
 			$row['prepriced'] = true;
 		}
@@ -55,6 +55,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 		if (!$datetime) {
 			$row['urt'] = new MongoDate();
 		} else {
+			$row['timezone'] = $datetime->getOffset();
 			$row['urt'] = new MongoDate($datetime->format('U'));
 		}
 		$row['eurt'] = $row['urt'];
@@ -103,7 +104,7 @@ class Billrun_Processor_Realtime extends Billrun_Processor_Usage {
 
 	protected function getLineVolume($row, $config) {
 		if ($row['request_type'] == Billrun_Factory::config()->getConfigValue('realtimeevent.requestType.POSTPAY_CHARGE_REQUEST')) {
-			return $this->getLineUsageVolume($row['uf'], true);
+			return $this->getLineUsageVolume($row['uf'], $row['usaget'], true);
 		}
 		if (isset($config['realtime']['default_values'][$row['record_type']])) {
 			return floatval($config['realtime']['default_values'][$row['record_type']]);

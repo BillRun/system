@@ -64,7 +64,7 @@ class Billrun_Calculator_Rate_Credit extends Billrun_Calculator_Rate_Usage {
 		}
 		$rate->collection(Billrun_Factory::db()->ratesCollection());
 		$current = $row->getRawData();
-		$newData = array_merge($current, $this->getForeignFields(array('rate' => $rate), $current));
+		$newData = array_merge($current, $this->getForeignFields(array('rate' => $rate), $current), $this->getAddedValues('retail', $rate, $row));
 		if (!isset($newData['rates'])) {
 			$newData['rates'] = array();
 		}

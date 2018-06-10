@@ -14,4 +14,5 @@ interface Billrun_Traits_Api_IUserPermissions {
 	const PERMISSION_READ = "read";
 	const PERMISSION_WRITE = "write";
 	const PERMISSION_ADMIN = "admin";
+	const PERMISSION_REPORTS = "reports";
 }
