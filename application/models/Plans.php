@@ -45,21 +45,28 @@ class PlansModel extends TabledateModel {
 		unset($params['source_id']); // we don't save because admin ref issues
 		$duplicate = $params['duplicate_rates'];
 		unset($params['duplicate_rates']);
+		$oldPlanName = Billrun_Factory::db()->plansCollection()->query(array('_id' => new mongoId($source_id)))->cursor()->current()['name'];
+		$newPlanName = $params['name'];
+		if ($newPlanName != $oldPlanName && isset($params['include']['groups'][$oldPlanName])) {
+			$params['include']['groups'][$newPlanName] = $params['include']['groups'][$oldPlanName];
+			unset($params['include']['groups'][$oldPlanName]);
+		}
 		$entity = parent::update($params);
 		if ($duplicate) {
-			self::duplicate_rates($source_id, $params['name']);
+			if ($newPlanName != $oldPlanName) {
+				self::duplicate_rates($oldPlanName, $newPlanName);
+			}
 		}
 		return $entity;
 	}
 
 	/**
 	 * for every rate who has ref to original plan add ref to new plan
-	 * @param type $source_id
-	 * @param type $new_id
+	 * @param type $oldPlanName
+	 * @param type $newPlanName
 	 */
-	public function duplicate_rates($source_id, $newPlanName) {
+	public function duplicate_rates($oldPlanName, $newPlanName) {
 		$rates_col = Billrun_Factory::db()->ratesCollection();
-		$oldPlanName = Billrun_Factory::db()->plansCollection()->query(array('_id' => new mongoId($source_id)))->cursor()->current()['name'];
 		$usage_types = Billrun_Factory::config()->getConfigValue('admin_panel.line_usages');
 		foreach ($usage_types as $type => $string) {
 			$attribute = "rates." . $type . ".groups";
