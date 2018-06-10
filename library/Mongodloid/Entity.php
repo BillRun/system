@@ -198,7 +198,7 @@ class Mongodloid_Entity implements ArrayAccess {
 		}
 		$key = func_get_arg(0);
 
-		if ($key == '_id') {
+		if ($key === '_id') {
 			return $this->getId();
 		}
 

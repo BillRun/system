@@ -104,11 +104,15 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 
 	protected function init() {
 		$this->rate = $this->getRowRate($this->row);
-		$planSettings = array(
-			'name' => $this->row['plan'],
-			'time' => $this->row['urt']->sec,
-		);
-		$this->plan = Billrun_Factory::plan($planSettings);
+		if ($this->row['sid'] == 0 && $this->row['type'] == 'credit') { // TODO: this is a hack for credit on account level, needs to be fixed in customer calculator
+			$this->plan = null;
+		} else {
+			$planSettings = array(
+				'name' => $this->row['plan'],
+				'time' => $this->row['urt']->sec,
+			);
+			$this->plan = Billrun_Factory::plan($planSettings);
+		}
 		$this->servicesUsed = array();
 		$this->setCallOffset(isset($this->row['call_offset']) ? $this->row['call_offset'] : 0);
 		// max recursive retryes for value=oldValue tactic
@@ -799,7 +803,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usagev = 0;
 		$usedUsagevFields = is_array($config['realtime']['used_usagev_field']) ? $config['realtime']['used_usagev_field'] : array($config['realtime']['used_usagev_field']);
 		foreach ($usedUsagevFields as $usedUsagevField) {
-			$usagev += isset($this->row['uf'][$usedUsagevField]) ? $this->row['uf'][$usedUsagevField] : 0;
+			$usedUsage = Billrun_util::getIn($this->row['uf'], $usedUsagevField);
+			$usagev += !is_null($usedUsage) ? $usedUsage : 0;
 		}
 
 		$this->handleAccumulativeUsagev($usagev, $lineToRebalance, $config);
@@ -982,8 +987,8 @@ class Billrun_Calculator_Row_Customerpricing extends Billrun_Calculator_Row {
 		$usageType = $this->row['usaget'];
 		$prepricedMapping = Billrun_Factory::config()->getFileTypeSettings($this->row['type'], true)['pricing'];
 		$apriceField = isset($prepricedMapping[$usageType]['aprice_field']) ? $prepricedMapping[$usageType]['aprice_field'] : null;
-		if (isset($userFields[$apriceField]) && is_numeric($userFields[$apriceField])) {
-			$aprice = $userFields[$apriceField];
+		$aprice = Billrun_util::getIn($userFields, $apriceField);
+		if (!is_null($aprice) && is_numeric($aprice)) {
 			$apriceMult = isset($prepricedMapping[$usageType]['aprice_mult']) ? $prepricedMapping[$usageType]['aprice_mult'] : null;
 			if (!is_null($apriceMult) && is_numeric($apriceMult)) {
 				$aprice *= $apriceMult;

@@ -66,11 +66,13 @@ class Billrun_Receiver_Ftp extends Billrun_Receiver {
 			if (!empty($config['remote_directory']) && substr($config['remote_directory'], -1) != DIRECTORY_SEPARATOR) {
 				$config['remote_directory'] .= DIRECTORY_SEPARATOR;
 			}
-
+			
+			Billrun_Factory::log()->log("Connecting to FTP server: " . $config['host'], Zend_Log::INFO);
 			$this->ftp = Zend_Ftp::connect($config['host'], $config['user'], $config['password']);
 			$this->ftp->setPassive(isset($config['passive']) ? $config['passive'] : false);
 			$this->ftp->setMode(2); // setting ftp mode to binary
-
+			
+			Billrun_Factory::log()->log("Success: Connected to: " . $config['host'], Zend_Log::INFO);
 			$hostRet = array();
 			Billrun_Factory::dispatcher()->trigger('beforeFTPReceive', array($this, $hostName));
 			try {

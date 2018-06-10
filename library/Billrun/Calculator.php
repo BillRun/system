@@ -96,12 +96,12 @@ abstract class Billrun_Calculator extends Billrun_Base {
 			$this->months_limit = $options['months_limit'];
 		}
 
-		if (!isset($options['autoload']) || $options['autoload']) {
-			$this->load();
-		}
-
 		if (isset($options['autosort'])) {
 			$this->autosort = $options['autosort'];
+		}
+
+		if (!isset($options['autoload']) || $options['autoload']) {
+			$this->load();
 		}
 
 		if (Billrun_Util::getFieldVal($options['calculator']['rates_query'], false)) {
