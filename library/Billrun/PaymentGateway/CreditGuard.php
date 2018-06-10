@@ -215,6 +215,7 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		}
 		$xmlObj = simplexml_load_string($result);
 		$codeResult = (string) $xmlObj->response->result;
+		$this->transactionId = (string) $xmlObj->response->tranId;
 		return $codeResult;
 	}
 
