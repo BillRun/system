@@ -835,5 +835,9 @@ abstract class Billrun_Processor extends Billrun_Base {
 	public function skipQueueCalculators() {
 		return false;
 	}
+	
+	public function filterUfFields($row) {
+		$uf = $row['uf'];
+	}
 
 }
