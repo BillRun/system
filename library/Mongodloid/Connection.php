@@ -144,7 +144,7 @@ class Mongodloid_Connection {
 	}
 	
 	public static function clearInstances() {
-		unset(self::$instances);
+		self::$instances = array();
 	}
 
 	protected function __construct($server = '', $persistent = false) {
