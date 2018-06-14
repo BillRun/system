@@ -59,6 +59,7 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 		
 		$existingRate = null;
 		$key = $entity['key'];
+		$from = empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'];
 		
 		if($this->getImportOperation() == 'permanentchange') {
 			if (empty($entity['__UPDATER__'])) {
@@ -92,14 +93,14 @@ class Models_Action_Import_Rates extends Models_Action_Import {
 					foreach ($plans as $plan_name) {
 						if($plan_name !== 'BASE'){
 							$query = array(
-								'effective_date' => empty($entity['effective_date']) ? $entity['from'] : $entity['effective_date'],
+								'effective_date' => $from,
 								'name' => $plan_name
 							);
 							$update = array(
 								"rates.{$key}" => array(
 									$usaget => $rates[$plan_name]
 								),
-								'from' => $entity['from']
+								'from' => $from
 							);
 							$params = array(
 								'collection' => 'plans',
