@@ -23,12 +23,16 @@ class LinesModel extends TableModel {
 	 */
 	protected $garbage = false;
 	protected $lines_coll = null;
+	protected $longQuery;
 	
 	public function __construct(array $params = array()) {
 		if ($params['db'] == 'archive') {
 			$params['collection'] = $params['collection'];
 		} else {
 			$params['collection'] = Billrun_Factory::db()->lines;
+		}
+		if (isset($params['long_query'])) {
+			$this->longQuery = $params['long_query'];
 		}
 		parent::__construct($params);
 		$this->search_key = "stamp";
@@ -91,7 +95,9 @@ class LinesModel extends TableModel {
 	public function getData($filter_query = array()) {
 		$cursor = $this->collection->query($filter_query)->cursor()
 			->sort($this->sort)->skip($this->offset())->limit($this->size);
-
+		if ($this->longQuery) {
+			$cursor->timeout(-1);
+		}
 		if (isset($filter_query['$and']) && $this->filterExists($filter_query['$and'], array('aid', 'sid', 'stamp'))) {
 			$this->_count = $cursor->count(false);
 		} else {

@@ -498,10 +498,12 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		$table = 'lines';
 		$sort = $this->applySort($table);
+		$longQuery = $this->isLongQuery($table);
 		$options = array(
 			'collection' => $collection_name,
 			'db' => $db_name,
 			'sort' => $sort,
+			'long_query' => $longQuery
 		);
 		self::initModel($table, $options);
 
@@ -1063,6 +1065,16 @@ class AdminController extends Yaf_Controller_Abstract {
 		}
 		return $sort;
 	}
+	
+	protected function isLongQuery($table) {
+		$session = $this->getSession($table);
+		$longQuery = $this->getSetVar($session, 'long_query', 'long_query', false);
+		if (!empty($longQuery)) {
+			$longQuery = true;
+		}
+		return $longQuery;
+	}
+
 
 	/**
 	 * 
