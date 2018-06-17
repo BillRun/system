@@ -257,12 +257,13 @@ class Billrun_Calculator_CustomerPricing extends Billrun_Calculator {
 		return $balance;
 	}
 
-	/**
+	/** Deprecated should not work
 	 * get subscriber plan object
 	 * identification using the balance collection
 	 * 
 	 * @param array $sub_balance the subscriber balance
 	 * @return type
+	 * @deprecated
 	 */
 	protected function getPlan($sub_balance) {
 		$subscriber_current_plan = $this->getBalancePlan($sub_balance);

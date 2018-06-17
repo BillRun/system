@@ -40,7 +40,7 @@ class BalancesModel extends TableModel {
 			'aid' => array('$gte' => (int) $from_account_id, '$lte' => (int) $to_account_id),
 			'billrun_month' => $billrun,
 			'balance.totals.total_local_data.usagev' => array('$gt' => (float) $data_usage_bytes),
-			'current_plan' => Billrun_Factory::db()->plansCollection()->createRef($id),
+			'balance.groups.' . $plan => array('$exists' => 1),
 		);
 //		print_R($query);die;
 		return $this->collection->query($query)->cursor()->hint(array('aid' => 1, 'billrun_month' => 1))->limit($this->size);

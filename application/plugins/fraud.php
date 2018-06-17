@@ -310,6 +310,10 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 			}
 		}
 
+		if ($rule['threshold'] == 'from_plan') {
+			$rule['sumFields'][] = 'groups.' . $row['plan'] . '.data.usagev';
+		}
+
 		// calculate before and after usage
 		// first check if the rule is based on groups usage
 		if (!empty($rule['sumFields']) && is_array($rule['sumFields'])) {
@@ -343,12 +347,8 @@ class fraudPlugin extends Billrun_Plugin_BillrunPluginBase {
 		if ($rule['threshold'] == 'from_plan') {
 			$plan = Billrun_Factory::plan(array('name' => $row['plan'], 'time' => $row['urt']->sec, 'disableCache' => true));
 			$percentage = isset($rule['percentage']) ? $rule['percentage'] : 1;
-			if (isset($rule['group'])) {
-				$groupName = $rule['group'];
-				$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);
-			} else {
-				Billrun_Log::getInstance()->log("Missing group at rule where threshold is taken from plan group", Zend_log::WARN);
-			}
+			$groupName = $row['plan'];
+			$threshold = (float) floor($plan->get('include.groups.' . $groupName)[$usaget] * $percentage);	
 		} else {
 			$threshold = $rule['threshold'];
 		}
