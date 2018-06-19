@@ -209,7 +209,7 @@ class Billrun_Cycle_Account_Invoice {
 	 * Closes the billrun in the db by creating a unique invoice id
 	 * @param int $invoiceId minimum invoice id to start from
 	 */
-	public function close($invoiceId,$isFake = FALSE) {
+	public function close($invoiceId,$isFake = FALSE,$customCollName = FALSE) {
 		if(!$this->isAccountActive()) {
 			Billrun_Factory::log("Deactivated account: " . $this->aid, Zend_Log::INFO);
 			return;
@@ -218,7 +218,7 @@ class Billrun_Cycle_Account_Invoice {
 		
 		$rawDataWithSubs = $this->setSubscribers($invoiceRawData);
 		if (!$isFake ) {
-			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId);
+			$newRawData = $this->setInvoiceID($rawDataWithSubs, $invoiceId, $customCollName);
 		} else {
 			$rawDataWithSubs['invoice_id'] = $invoiceId;
 			$newRawData = $rawDataWithSubs;
@@ -249,10 +249,10 @@ class Billrun_Cycle_Account_Invoice {
 	 * @param integer $invoiceId - Min invoice id
 	 * @return array Raw data with the invoice id
 	 */
-	protected function setInvoiceID(array $invoiceRawData, $invoiceId) {
+	protected function setInvoiceID(array $invoiceRawData, $invoiceId, $customCollName = FALSE) {
 		if( !$this->overrideMode || !isset($invoiceRawData['invoice_id'])  ) {
 			$autoIncKey = $invoiceRawData['billrun_key'] . "_" . $invoiceRawData['aid'];
-			$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId);
+			$currentId = $this->billrun_coll->createAutoInc($autoIncKey, $invoiceId, $customCollName);
 			$invoiceRawData['invoice_id'] = $currentId;
 		}
 		return $invoiceRawData;
