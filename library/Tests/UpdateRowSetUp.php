@@ -21,42 +21,42 @@ class Tests_UpdateRowSetUp {
 	 * 
 	 * @var array
 	 */
-	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates', 'lines', 'balances'];
-	protected $importData = ['plans', 'services', 'subscribers', 'rates'];
+	protected $collectionToClean = ['discounts','balances','plans', 'services', 'subscribers', 'rates', 'lines','bills','billing_cycle','billrun','counters'];
+	protected $importData =		   ['discounts','balances','plans', 'services', 'subscribers', 'rates', 'lines','bills','billing_cycle','billrun','counters'];
 	protected $backUpData = array();
-	protected $config;
+	public $config;
 	protected $configCollection;
-	protected $data;
+	public $data;
+	protected $unitTestName;
+	protected $dataPath = '/data/';
 
-	//protected $config;
-	public function __construct() {
-		
+	public function __construct($unitTestName = null) {
+		$this->unitTestName = $unitTestName;
+		if (isset($this->unitTestName)) {
+			$this->dataPath = "/{$this->unitTestName}Data/";
+		}
 	}
 
 	/**
 	 * executes set up for update row test
 	 */
 	public function setColletions() {
-		$this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
 		array_unshift($collectionsToSet, 'config');
 		foreach ($collectionsToSet as $file) {
-
-			$dataAsText = file_get_contents(dirname(__FILE__) . '/data/' . $file . '.json');
+			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
 			$parsedData = json_decode($dataAsText, true);
 			if ($parsedData === null) {
 				echo('Cannot decode <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
 				continue;
 			}
-			$data = $this->fixDates($parsedData['data']);
+			$data = $this->fixData($parsedData['data']);
 			$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 			$coll->batchInsert($data);
 		}
-
-		/* $dir = dirname(__FILE__).'/data';
-		  $files1 = scandir($dir); */
+		$this->loadConfig();
 	}
 
 	public function restoreColletions() {
@@ -97,6 +97,57 @@ class Tests_UpdateRowSetUp {
 		return $arr;
 	}
 
+	/* convert :
+	 * DBRefblabla":{
+	 * 		"collection":"plan",
+	 * 		"ObjectId":"5aeee54905e68c5b1f45f9f4"
+	 * 	},
+	 * TO  "blabla": DBRef("plans", ObjectId("5aeee54905e68c5b1f45f9f4")),
+	 */
+
+	public function fixDbRef($data) {
+		foreach ($data as $key => $value) {
+		
+			if (preg_match("/DBRef/", $key)) {
+				$newRef = preg_replace("/^DBRef/", "", $key);
+				$data[$newRef] = $data[$key];
+				$data[$newRef] = MongoDB::createDBRef($data[$newRef]['collection'], new MongoID($data[$newRef]['ObjectId']));
+				unset($data[$key]);
+			}
+				if (is_array($value) && count($value) > 0) {
+				$data[$key] = $this->fixDbRef($value);
+			}
+		}
+
+		return $data;
+	}
+
+	/*
+	 * 	converte "OBJID":"blablablablabal"  to   "_id": ObjectId("blablablablabal")
+	 */
+
+	public function fixDBobjID($data) {
+		if (isset($data['OBJID'])) {
+			$data['_id'] = $data['OBJID'];
+			$data['_id'] = new MongoID($data['OBJID']);
+			unset($data['OBJID']);
+		}
+		return $data;
+	}
+
+	public function fixData($data) {
+		foreach ($data as $key => $jsonFile) {
+			$data[$key] = $this->fixArrayDates($jsonFile);
+		}
+		foreach ($data as $key => $jsonFile) {
+			$data[$key] = $this->fixDBobjID($jsonFile);
+		}
+		foreach ($data as $key => $jsonFile) {
+			$data[$key] = $this->fixDbRef($jsonFile);
+		}
+		return $data;
+	}
+
 	/**
 	 * @param array $colNames array of collectins names to clean
 	 */
@@ -118,7 +169,7 @@ class Tests_UpdateRowSetUp {
 		}
 	}
 
-	protected function loadConfig() {
+	public function loadConfig() {
 		$this->config = Billrun_Factory::db()->configCollection();
 		$ret = $this->config->query()
 			->cursor()
@@ -127,12 +178,21 @@ class Tests_UpdateRowSetUp {
 			->current()
 			->getRawData();
 		$this->data = $ret;
+		
 	}
 
 	public function setConfig() {
 		unset($this->data['_id']);
 		$this->config->insert($this->data);
 	}
+	
+	public function changeConfig($key,$value){
+		$orignalData = $this->data;
+		Billrun_Util::setIn($this->data, $key, $value);
+		$this->setConfig();
+		$this->data = $orignalData ;
+	}
+
 
 	protected function restoreCollection() {
 		foreach ($this->backUpData as $colName => $items) {

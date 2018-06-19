@@ -483,7 +483,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$message .= '<b> Result: </b> <br>';
 		$message .= '— aprice: ' . $returnRow['aprice'];
 
-		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon)) {
+		if (Billrun_Util::isEqual($returnRow['aprice'], $aprice, $epsilon	)) {
 
 			$message .= $this->pass;
 		} else {
