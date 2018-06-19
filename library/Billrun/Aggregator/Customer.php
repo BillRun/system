@@ -255,33 +255,37 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 				if ($account_billrun->subscriberExists($sid)) {
 					Billrun_Factory::log()->log("Billrun " . $billrun_key . " already exists for subscriber " . $sid, Zend_Log::ALERT);
 					continue;
-				}
-				$next_plan_name = $subscriber->getNextPlanName();
-				if (is_null($next_plan_name) || $next_plan_name == "NULL") {
+				}	
+				$offers = $subscriber->getPlans();
+				$lastOffer = $this->getLastOffer($offers);
+				if (!empty($lastOffer) && strtotime($lastOffer['end_date']) < Billrun_Util::getEndTime($billrun_key)) {
 					$subscriber_status = "closed";
-
-					$current_plan_name = $subscriber->getCurrentPlanName();
-					if (is_null($current_plan_name) || $current_plan_name == "NULL") {
-						Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
-						$deactivated_subscribers[] = array("sid" => $sid);
-					}
+				}
+				
+				if (is_null($offers)) {
+					Billrun_Factory::log()->log("Subscriber " . $sid . " has current plan null and next plan null", Zend_Log::INFO);
+					$subscriber_status = "closed";
+					$deactivated_subscribers[] = array("sid" => $sid);
 				} 
-				$plan_to_charge = $subscriber->chargeByPlan();
-				if (!is_null($plan_to_charge) && $plan_to_charge != "NULL") {
+				
+				if (!empty($offers)) {
 					$subscriber_status = "open";
 					$subscriber->setBillrunKey($billrun_key);
-					Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
-					$fraction_of_month = $subscriber->calcFractionOfMonth($subscriber->getActivationStartDay(), $subscriber->getActivationEndDay(), $sid);
-					$flat_price = $subscriber->getFlatPrice($fraction_of_month);
-					Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
-					if (is_null($flat_price)) {
-						Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
-						continue;
+					foreach ($offers as $offer) {
+						Billrun_Factory::log("Getting flat price for subscriber $sid", Zend_log::INFO);
+						$subscriber->setPlanName($offer['plan']);
+						$subscriber->setPlanId($offer['id']);
+						$flat_price = $subscriber->getFlatPrice($offer['fraction']);
+						Billrun_Factory::log("Finished getting flat price for subscriber $sid", Zend_log::INFO);
+						if (is_null($flat_price)) {
+							Billrun_Factory::log()->log("Couldn't find flat price for subscriber " . $sid . " for billrun " . $billrun_key, Zend_Log::ALERT);
+							continue;
+						}
+						Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
+						$flat = $this->saveFlatLine($subscriber, $billrun_key, $offer);
+						$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat));
+						Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 					}
-					Billrun_Factory::log('Adding flat line to subscriber ' . $sid, Zend_Log::INFO);
-					$flat = $this->saveFlatLine($subscriber, $billrun_key);
-					$manual_lines = array_merge($manual_lines, array($flat['stamp'] => $flat));
-					Billrun_Factory::log('Finished adding flat line to subscriber ' . $sid, Zend_Log::INFO);
 				}
 				$manual_lines = array_merge($manual_lines, $this->saveCreditLines($subscriber, $billrun_key));
 				$manual_lines = array_merge($manual_lines, $this->saveServiceLines($subscriber, $billrun_key));
@@ -342,8 +346,8 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 	 * @param string $billrun_key the billrun for which to add the flat line
 	 * @return array the inserted line or the old one if it already exists
 	 */
-	protected function saveFlatLine($subscriber, $billrun_key) {
-		$flat_entry = $subscriber->getFlatEntry($billrun_key, true);
+	protected function saveFlatLine($subscriber, $billrun_key, $offer) {
+		$flat_entry = $subscriber->getFlatEntry($billrun_key, true, $offer);
 		try {
 			$this->lines->insert($flat_entry->getRawData(), array("w" => 1));
 		} catch (Exception $e) {
@@ -548,5 +552,20 @@ class Billrun_Aggregator_Customer extends Billrun_Aggregator {
 		return $next_page;
 	}
 	
+	protected function getLastOffer($offers) {
+		if (empty($offers)) {
+			return array();
+		}
+		$lastOffer = array();
+		foreach ($offers as $offer) {
+			if (empty($lastOffer)) {
+				$lastOffer = $offer;
+			}
+			if ($offer['end_date'] > $lastOffer['end_date']) {
+				$lastOffer = $offer;
+			}
+		}
+		return $lastOffer;
+	}
 
 }

@@ -120,18 +120,10 @@ class Billrun_Billrun {
 	 * @return Billrun_Billrun the current instance of the billrun entry.
 	 */
 	public function addSubscriber($subscriber, $status) {
-		$current_plan_name = $subscriber->plan;
-		if (is_null($current_plan_name) || $current_plan_name == "NULL") {
+		$plans = $subscriber->getPlans();
+		if (is_null($plans)) {
 			Billrun_Factory::log()->log("Null current plan for subscriber $subscriber->sid", Zend_Log::INFO);
-			$current_plan_ref = null;
-		} else {
-			$current_plan_ref = $subscriber->getPlan()->createRef();
-		}
-		$next_plan = $subscriber->getNextPlan();
-		if (is_null($next_plan)) {
-			$next_plan_ref = null;
-		} else {
-			$next_plan_ref = $next_plan->createRef();
+			$plans = array();
 		}
 		$subscribers = $this->data['subs'];
 		$subscriber_entry = $this->getEmptySubscriberBillrunEntry($subscriber->sid);
@@ -143,18 +135,18 @@ class Billrun_Billrun {
 			$subscriber_entry['freeze_start_date'] = $subscriber->getFreezeStartDay();
 			$subscriber_entry['freeze_end_date'] = $subscriber->getFreezeEndDay();
 		}
-		$subscriber_entry['current_plan'] = $current_plan_ref;
-		$subscriber_entry['next_plan'] = $next_plan_ref;
-		$subscriber_entry['offer_id_next'] = $subscriber->offer_id_next;
-		$subscriber_entry['offer_id_curr'] = $subscriber->offer_id_curr;
 		foreach ($subscriber->getExtraFieldsForBillrun() as $field => $save) {
 			if ($field == !$save) {
 				continue;
 			}
 			$subscriber_entry[$field] = $subscriber->{$field};
 		}
+		foreach ($plans as $key => $plan) {
+			$subscriber->setPlanName($plan['plan']);
+			$subscriber_entry['plans'][$key]['current_plan'] = $subscriber->getPlan()->createRef();
+		}
 		$subscribers[] = $subscriber_entry;
-		$this->data['subs'] = $subscribers;
+		$this->data['subs'] = $subscribers; 
 		return $this;
 	}
 
@@ -487,13 +479,13 @@ class Billrun_Billrun {
 	protected function addLineToSubscriber($counters, $row, $pricingData, $vatable, $billrun_key, &$sraw) {
 		$usage_type = self::getGeneralUsageType($row['usaget']);
 		list($plan_key, $category_key, $zone_key) = self::getBreakdownKeys($row, $pricingData, $vatable);
-		$zone = &$sraw['breakdown'][$plan_key][$category_key][$zone_key];
+		$zone = &$sraw['breakdown'][$row['plan']][$plan_key][$category_key][$zone_key];
 
 		if ($plan_key != 'credit') {
 			if (!empty($counters)) {
 				if (isset($pricingData['over_plan']) && $pricingData['over_plan'] < current($counters)) { // volume is partially priced (in & over plan)
 					$volume_priced = $pricingData['over_plan'];
-					$planZone = &$sraw['breakdown']['in_plan'][$category_key][$zone_key];
+					$planZone = &$sraw['breakdown'][$row['plan']]['in_plan'][$category_key][$zone_key];
 					$planZone['totals'][key($counters)]['usagev'] = $this->getFieldVal($planZone['totals'][key($counters)]['usagev'], 0) + current($counters) - $volume_priced; // add partial usage to flat
 					$planZone['totals'][key($counters)]['cost'] = $this->getFieldVal($planZone['totals'][key($counters)]['cost'], 0);
 					$planZone['totals'][key($counters)]['count'] = $this->getFieldVal($planZone['totals'][key($counters)]['count'], 0) + 1;
