@@ -160,7 +160,7 @@ class Billrun_EventsManager {
 				$eventValue = $rawEventSettings['value'];
 				$valueBefore = floor($rawValueBefore / $eventValue);
 				$valueAfter = floor($rawValueAfter / $eventValue);
-				if (!(intval($valueBefore) != intval($valueAfter))) {
+				if (intval($valueBefore) == intval($valueAfter)) {
 					return false;
 				}
 				$thresholdIncreasing = $rawValueAfter - ($rawValueAfter % $eventValue);
