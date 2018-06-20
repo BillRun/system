@@ -1241,11 +1241,9 @@ class ConfigModel {
 			throw new Exception('No file structure supplied');
 		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys =  array_column(array_filter($parserSettings['structure'], function($field) {
-				return $field['checked'] === true;
-			}),'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 		} else if ($parserSettings['type'] == 'separator') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			if (empty($parserSettings['separator'])) {
 				throw new Exception('Missing CSV separator');
 			}
@@ -1253,7 +1251,7 @@ class ConfigModel {
 				throw new Exception('Illegal seprator ' . $parserSettings['separator']);
 			}
 		} else {
-			$customKeys = array_column($parserSettings['structure'], 'name');
+			$customKeys =  $this->getCustomKeys($parserSettings['structure']);
 			$customLengths = array_column($parserSettings['structure'], 'width');
 			if ($customLengths != array_filter($customLengths, function($length) {
 					return Billrun_Util::IsIntegerValue($length);
@@ -1576,6 +1574,12 @@ class ConfigModel {
 			$query['$or'][] = array($mandatoryField => array('$exists' => false));
 		}
 		return !Billrun_Factory::db()->getCollection($model)->query($query)->cursor()->current()->isEmpty();
+	}
+	
+	protected function getCustomKeys($parserStructure) {
+		 array_column(array_filter($parserStructure, function($field) {
+				return $field['checked'] === true;
+			}),'name');
 	}
 
 }
