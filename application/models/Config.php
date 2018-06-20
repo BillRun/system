@@ -1241,7 +1241,9 @@ class ConfigModel {
 			throw new Exception('No file structure supplied');
 		}
 		if ($parserSettings['type'] == 'json') {
-			$customKeys =  array_column($parserSettings['structure'], 'name');
+			$customKeys =  array_column(array_filter($parserSettings['structure'], function($field) {
+				return $field['checked'] === true;
+			}),'name');
 		} else if ($parserSettings['type'] == 'separator') {
 			$customKeys =  array_column($parserSettings['structure'], 'name');
 			if (empty($parserSettings['separator'])) {
