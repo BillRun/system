@@ -275,6 +275,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				$planObj = $this->getPlanById(strval($planCurrentPlan['$id']));
 				$planPrice = $plan['fraction'] * $planObj['price'];
 				$this->writer->writeElement('GIFTID_GIFTNAME', $plan['plan']);
+				$this->writer->writeElement('GIFTID_OFFER_ID', $plan['id']);
 				$this->writer->writeElement('GIFTID_START_DATE',  date("Y/m/d H:i:s", strtotime($plan['start_date'])));
 				$this->writer->writeElement('GIFTID_END_DATE', date("Y/m/d H:i:s", strtotime($plan['end_date'])));
 				$this->writer->writeElement('GIFTID_PRICE', $planPrice);
@@ -367,6 +368,8 @@ class Generator_Golanxml extends Billrun_Generator {
 
 			foreach ($plansInCycle as $key => $planInCycle) {
 				if (isset($planInCycle['include']['groups'])) {
+					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE_BY_PLAN');
+					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
@@ -427,6 +430,7 @@ class Generator_Golanxml extends Billrun_Generator {
 						}
 						$this->writer->endElement(); // end SUBSCRIBER_GROUP_USAGE
 					}
+					$this->writer->endElement();
 				}	
 			}
 
