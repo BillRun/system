@@ -489,7 +489,7 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 			$involvedAccounts[] = $paymentParams['aid'] = $customer['aid'];
 			$paymentParams['billrun_key'] = $customer['billrun_key'];
-			$paymentParams['amount'] = $customer['due'];
+			$paymentParams['amount'] = abs($customer['due']);
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
