@@ -55,7 +55,9 @@ class Billrun_Processor_Util {
 			$date = !is_null($timeZoneValue) ? strtotime($dateValue .' ' .$timeZoneValue->getName()) : strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
-			$datetime->setTimezone($timeZoneValue);
+			if (!is_null($timeZoneValue)) {
+				$datetime->setTimezone($timeZoneValue);
+			}
 			return $datetime;
 		}
 		return null;
