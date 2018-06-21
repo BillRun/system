@@ -1,0 +1,69 @@
+<?php
+$conditions = !empty($discounts) ? json_decode($discounts['conditions'], true) : array();
+$query['sid'] = $subscriber['sid'];
+$query['billrun'] = $data['billrun_key'];
+$query = array_merge($query, $conditions);
+$lines = !empty($conditions) ? $this->linesColl->query($query) : array();
+$totalCost = number_format($discounts['cost'], 2);
+?>
+<div class="section__group" style="page-break-inside: avoid !important;">
+	<div class="section__group-inner">
+		<h2 class="orange">זיכויים והטבות</h2>
+
+		<p>הטבות והנחות שונות שקיבלתם מאיתנו</p>
+	</div><!-- /.section__group-inner -->
+
+	<div class="table table--secondary col--4">
+		<table>
+			<thead>
+				<tr>
+					<th class="orange">תיאור</th><!-- /.orange -->
+
+					<th class="orange"></th><!-- /.orange -->
+
+					<th class="orange"></th><!-- /.orange -->
+
+					<th class="orange">הסכום לחיוב <br> כולל מע״מ</th><!-- /.orange -->
+				</tr>
+			</thead>
+
+			<tbody>
+				<?php
+				foreach ($lines as $line) {
+					$name = isset($line['description']) ? $line['description'] : Billrun_Rates_Util::getRateByRef($line['arate'])['description'];
+					$finalCharge = number_format($line['final_charge'], 2);
+					echo "<tr>
+							<td>
+								<p>$name</p>
+							</td>
+
+							<td></td>
+
+							<td></td>
+
+							<td>
+								<p class='number'><span>$finalCharge ₪</span></p>
+							</td>
+						</tr>";
+				}
+
+				echo "<tr>
+						<td>
+							<p>
+								<strong>סה״כ זיכויים והטבות</strong>
+							</p>
+						</td>
+
+						<td></td>
+
+						<td></td>
+
+						<td>
+							<p class='number'><strong>$totalCost ₪</strong></p>
+						</td>
+					</tr>";
+				?>
+			</tbody>
+		</table>
+	</div><!-- /.table-/-secondary -->
+</div><!-- /.section__group -->

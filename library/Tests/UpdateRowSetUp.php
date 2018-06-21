@@ -21,8 +21,8 @@ class Tests_UpdateRowSetUp {
 	 * 
 	 * @var array
 	 */
-	protected $collectionToClean = ['discounts','balances','plans', 'services', 'subscribers', 'rates', 'lines','bills','billing_cycle','billrun','counters'];
-	protected $importData =		   ['discounts','balances','plans', 'services', 'subscribers', 'rates', 'lines','bills','billing_cycle','billrun','counters'];
+	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates','lines','balances'];
+	protected $importData =		   ['plans', 'services', 'subscribers', 'rates'];
 	protected $backUpData = array();
 	public $config;
 	protected $configCollection;
@@ -30,13 +30,16 @@ class Tests_UpdateRowSetUp {
 	protected $unitTestName;
 	protected $dataPath = '/data/';
 
-	public function __construct($unitTestName = null) {
+	public function __construct($unitTestName = null,$configToLoad = null) {
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
 		}
+		if(isset($configToLoad)){
+			$this->collectionToClean = array_merge($this->collectionToClean,$configToLoad);
+			$this->importData = $this->collectionToClean ;
+		}
 	}
-
 	/**
 	 * executes set up for update row test
 	 */
@@ -49,7 +52,7 @@ class Tests_UpdateRowSetUp {
 			$dataAsText = file_get_contents(dirname(__FILE__) . $this->dataPath . $file . '.json');
 			$parsedData = json_decode($dataAsText, true);
 			if ($parsedData === null) {
-				echo('Cannot decode <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
+				echo(' <span style="color:#ff3385; font-style: italic;">' . $file . '.json. </span> <br>');
 				continue;
 			}
 			$data = $this->fixData($parsedData['data']);

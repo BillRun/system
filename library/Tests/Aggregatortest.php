@@ -203,7 +203,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
 		$this->balancesCol = Billrun_Factory::db()->discountsCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'));
+		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'),['balances','lines','bills','billing_cycle','billrun','counters']);
 		$this->init->setColletions();
 		$this->loadConfig();
 	}

@@ -1,0 +1,96 @@
+<?php
+$subscriberOutPlanUsage = isset($subscriber['breakdown']['out_plan_usages']) ? $subscriber['breakdown']['out_plan_usages'] : array();
+
+$titles = array(
+	'local_calls' =>'שיחות למספרים נייחים וניידים (דק׳)',
+	'local_sms' => 'הודעות טקסט (יח׳)',
+	'local_mms' => 'הודעות מולטימדיה (יח׳)',
+	'data' => 'גלישה סלולארית (MB)',
+	'roaming_calls' =>'שיחות למספרים נייחים וניידים  בחו"ל(דק׳)',
+	'roaming_sms' => 'הודעות טקסט  בחו"ל(יח׳)',
+	'roaming_mms' => 'הודעות מולטימדיה בחו"ל(יח׳)',
+	'roaming' => 'גלישה סלולארית בחו"ל (MB)',
+	
+);
+
+$hasUsage = !empty(array_filter($subscriberOutPlanUsage, function($usage) use ($titles) {
+	return $usage['usagev'] > 0 && in_array($usage['type'],array_keys($titles));
+}));
+
+if(!function_exists('getRateTariff')) {
+	function getRateTariff($rateName, $usaget ,$tariffMultiplier ,$addTax = FALSE ) {
+		if(!empty($rateName)) {
+			$rate = Billrun_Rates_Util::getRateByName($rateName, time());
+			if(!empty($rate)) {
+				$tariff = Billrun_Rates_Util::getTariff($rate, $usaget);
+			
+			}
+		}
+		
+		$retTariff = (empty($tariff) ? 0 : ( $tariff['rate'][0]['to'] == 1 ? $tariff['rate'][0]['price'] / Billrun_Util::getFieldVal($tariffMultiplier,1) : ($tariff['rate'][0]['price'] / $tariff['rate'][0]['interval'])) )  * Billrun_Util::getFieldVal($tariffMultiplier, 1);
+		if($addTax) {
+			$taxCalc = Billrun_Calculator::getInstance(['type'=>'tax']);
+			$retTariff = $taxCalc->addTax($retTariff);
+		}
+		return $retTariff;
+	}
+}
+?>
+<div class="section__group" style="page-break-inside: avoid !important;margin-top: 2em; <?php echo $hasUsage ? '' :  'display:none;' ?>" >
+	<div class="section__group-inner">
+		<h2 class="orange">חיובים משתנים</h2>
+
+		<p>חיובים על שימושים החורגים מהחבילה הקבועה ומשתנים מחודש לחודש. למשל: שליחת הודעות MMS</p>
+	</div><!-- /.section__group-inner -->
+
+	<div class="table table--secondary col--4">
+		<table>
+			<thead>
+				<tr>
+					<th class="orange">תיאור</th><!-- /.orange -->
+
+					<th class="orange">משך / כמות</th><!-- /.orange -->
+
+					<th class="orange">תעריף</th><!-- /.orange -->
+
+					<th class="orange">הסכום לחיוב <br> כולל מע״מ</th><!-- /.orange -->
+				</tr>
+			</thead>
+
+			<tbody>
+				<?php 
+				foreach($subscriberOutPlanUsage as $outPlanUsage) {
+					$rateQuery = Billrun_Utils_Mongo::getDateBoundQuery();
+					$rateQuery['key'] = $outPlanUsage['rate'];
+					$rate =   Billrun_Factory::db()->ratesCollection()->query($rateQuery)->cursor()->current();
+				?>
+					<tr style="<?php echo empty($outPlanUsage['usagev']) ? 'display:none;' :''?>">
+						<td>
+							<p><?php echo empty($rate['description']) ? $titles[$outPlanUsage['type']] : $rate['description']; ?></p>
+						</td>
+
+						<td><?php echo $this->getFormatedUsage($outPlanUsage['usagev'],$outPlanUsage['usaget']) ?></td>
+
+						<td>
+							<p class="number"><span><?php echo  $this->getFormatedPrice(getRateTariff($outPlanUsage['rate'],$outPlanUsage['usaget'],Billrun_Util::getFieldVal($this->tariffMultiplier[$outPlanUsage['usaget']],1)), 3) ?></span></p>
+						</td>
+
+						<td>
+							<p class="number"><span><?php echo  $this->getFormatedPrice($outPlanUsage['cost']); ?></span></p>
+						</td>
+					</tr>
+				<?php } ?>
+
+				<tr>
+					<td colspan="3">
+							<strong>סה״כ חיובים משתנים</strong>
+					</td>
+
+					<td>
+						<p class="number"><strong><?php echo  $this->getFormatedPrice($subscriber['totals']['usage']['after_vat']); ?></strong></p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div><!-- /.table-/-secondary -->
+</div><!-- /.section__group -->
