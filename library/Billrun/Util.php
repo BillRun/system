@@ -1721,7 +1721,7 @@ class Billrun_Util {
 				$replace = is_numeric($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
-				$str = str_replace('[[ '.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
+				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
 			} else {
 				Billrun_Factory::log("Couldn't translate {$key} to ".print_r($translation,1),Zend_log::WARN);
 			}
@@ -1729,6 +1729,13 @@ class Billrun_Util {
 		return $str;
 	}
 	
+	/**
+	 * Deeply unsets an array value.
+	 * 
+	 * @param type $arr - reference to the array
+	 * @param mixed $keys - array or string separated by dot (.) "path" to unset
+	 * @param mixed $value - new value to unset
+	 */
 	public static function unsetIn(&$arr, $keys, $value) {
 		if (!is_array($arr)) {
 			return;
