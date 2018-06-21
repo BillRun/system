@@ -1721,11 +1721,27 @@ class Billrun_Util {
 				$replace = is_numeric($translation) ? '"[['.$key.']]"' : '[['.$key.']]';
 				$str = str_replace($replace, $translation, $str);
 			} elseif ($self !== NULL && method_exists($self, $translation["class_method"])) {
-				$str = str_replace('[['.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
+				$str = str_replace('[[ '.$key.']]', call_user_func( array($self, $translation["class_method"]) ), $str);
 			} else {
 				Billrun_Factory::log("Couldn't translate {$key} to ".print_r($translation,1),Zend_log::WARN);
 			}
 		}
 		return $str;
+	}
+	
+	public static function unsetIn(&$arr, $keys, $value) {
+		if (!is_array($arr)) {
+			return;
+		}
+		if (!is_array($keys)) {
+			$keys = explode('.', $keys);
+		}
+		$current = &$arr;
+		foreach($keys as $key) {
+			$current = &$current[$key];
+		}
+		if (!is_null($current[$value])) {
+			unset($current[$value]);
+		}
 	}
 }
