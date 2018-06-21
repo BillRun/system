@@ -723,7 +723,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	 * @param string $billrun_key
 	 * @return array
 	 */
-	public function getFlatEntry($billrun_key, $retEntity = false, $offer = false) {
+	public function getFlatEntry($billrun_key, $retEntity = false, $offer = false) { // TODO: take all flat properties from offer if offer not empty.
 		$billrun_end_time = Billrun_Util::getEndTime($billrun_key);
 		if (empty($offer) || !isset($offer['fraction'])) {
 			$fraction = $this->calcFractionOfMonth($this->getActivationStartDay(), $this->getActivationEndDay(), $this->sid);
@@ -881,9 +881,12 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	public function isPrepaidAccount() {
 		return (isset($this->data['prepaid']) && $this->data['prepaid']); 
 	}
-	
+
 	protected function getPlanNames($plans) {
-		return array_column($plans, 'plan');
+		foreach ($plans as $plan) {
+			$planNames[] = $plan['plan'];
+		}
+		return $planNames;
 	}
 
 }
