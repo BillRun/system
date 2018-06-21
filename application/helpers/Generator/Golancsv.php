@@ -317,7 +317,7 @@ class Generator_Golancsv extends Billrun_Generator {
 	 */
 	protected function getCurPackage($subscriber) {
 		$lastOffer = $this->getLastOffer($subscriber['plans']);
-		$current_plan_ref = $lastOffer['current_plan'];
+		$current_plan_ref = !empty($lastOffer) ? $lastOffer['current_plan'] : null;
 		if (MongoDBRef::isRef($current_plan_ref)) {
 			$current_plan = $this->getPlanById(strval($current_plan_ref['$id']));
 			$current_plan_name = $current_plan['name'];

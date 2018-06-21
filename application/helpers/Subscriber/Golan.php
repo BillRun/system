@@ -557,13 +557,13 @@ class Subscriber_Golan extends Billrun_Subscriber {
 	}
 
 	public function getPlan() {
-	//	if (is_null($this->plan)) {
+		if (is_null($this->plan) || (!is_null($this->plan) && ($this->data['plan'] != $this->plan->getName()))) {
 			$params = array(
 				'name' => $this->data['plan'],
 				'time' => $this->time,
 			);
 			$this->plan = new Billrun_Plan($params);
-		//}
+		}
 		return $this->plan;
 	}
 	
