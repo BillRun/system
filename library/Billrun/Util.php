@@ -1511,7 +1511,7 @@ class Billrun_Util {
 	}
 	
 	public static function getCmdCommand($options, $params = array()) {
-		$cmd = 'php -t ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		$cmd = 'php -t ' . APPLICATION_PATH . ' public/index.php ' . Billrun_Util::getCmdEnvParams();
 		if (!is_array($options)) {
 			$options = array($options);
 		}
@@ -1519,7 +1519,7 @@ class Billrun_Util {
 			$cmd .= ' ' . $option;
 		}
 		foreach ($params as $paramKey => $paramVal) {
-			$cmd .= ' ' . $paramKey . '=' . $paramVal;
+			$cmd .= ' ' . $paramKey . '="' . $paramVal . '"';
 		}
 		return $cmd;
 	}
