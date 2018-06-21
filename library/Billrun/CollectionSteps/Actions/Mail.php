@@ -16,7 +16,7 @@
 class Billrun_CollectionSteps_Actions_Mail implements Billrun_CollectionSteps_TaskStrategy {
 
 	public function run($task) {
-		$collection = Billrun_Bill::getTotalDueForAccount($task['aid'], false);
+		$collection = Billrun_Bill::getTotalDueForAccount($task['aid']);
 		$account = $this->getAccount($task['aid']);
 		$params = array(
 			'account' => $account,

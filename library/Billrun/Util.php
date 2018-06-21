@@ -1510,6 +1510,20 @@ class Billrun_Util {
 		return $ret;
 	}
 	
+	public static function getCmdCommand($options, $params = array()) {
+		$cmd = 'php -t ' . APPLICATION_PATH . '/public/index.php ' . Billrun_Util::getCmdEnvParams();
+		if (!is_array($options)) {
+			$options = array($options);
+		}
+		foreach ($options as $option) {
+			$cmd .= ' ' . $option;
+		}
+		foreach ($params as $paramKey => $paramVal) {
+			$cmd .= ' ' . $paramKey . '=' . $paramVal;
+		}
+		return $cmd;
+	}
+	
 	public static function IsIntegerValue($value) {
 		return is_numeric($value) && ($value == intval($value));
 	}
