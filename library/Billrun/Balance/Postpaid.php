@@ -91,10 +91,10 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 	 * @return int service index if service based else return 0
 	 */
 	protected function getServiceIndex() {
-		if (!isset($this->row['service_index'])) {
+		if (!isset($this->row['service_id'])) {
 			return 0;
 		}
-		return $this->row['service_index'];
+		return $this->row['service_id'];
 	}
 
 	/**
@@ -272,6 +272,21 @@ class Billrun_Balance_Postpaid extends Billrun_Balance {
 			return $this->row['usaget'];
 		}
 		return 'out_plan_' . $this->row['usaget'];
+	}
+	
+	/**
+	 * method to get the instance of the class (singleton)
+	 * 
+	 * @param type $params
+	 * 
+	 * @return Billrun_Balance
+	 */
+	public static function getInstance($params = null) {
+		if (empty($params)) {
+			$params = Yaf_Application::app()->getConfig();
+		}
+	
+		return new Billrun_Balance_Postpaid($params);
 	}
 
 }

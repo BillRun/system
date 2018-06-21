@@ -58,6 +58,9 @@ class Billrun_Helpers_QueueCalculators {
 			$calc = Billrun_Calculator::getInstance(array_merge($this->options, $calc_options));
 			$calc->prepareData(array_diff_key($data['data'], $this->stuckInQueue));
 			foreach ($data['data'] as $key => &$line) {
+				if ($index == 0 && $this->realtime) {
+					$line['granted_return_code'] = Billrun_Factory::config()->getConfigValue('realtime.granted_code.ok', 1);
+				}
 				if (isset($queue_data[$line['stamp']]) && $queue_data[$line['stamp']]['calc_name'] == $calc_name_in_queue[$index]) {
 					$line['realtime'] = $this->realtime;
 					$entity = new Mongodloid_Entity($line);

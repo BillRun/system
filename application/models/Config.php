@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
         
 	/**
 	 * reserved names of File Types.
@@ -1195,6 +1195,7 @@ class ConfigModel {
 						$ratingUsageTypes = array_merge($ratingUsageTypes, array_keys($rates));
 					}
 					$ratingUsageTypes = array_unique($ratingUsageTypes);
+					$ratingLineKeys = array();
 					foreach ($fileSettings['rate_calculators'] as $category => $rates) {
 						foreach ($rates as $rules) {
 							foreach ($rules as $usageRules) {
@@ -1232,7 +1233,7 @@ class ConfigModel {
 		if (empty($parserSettings['type'])) {
 			throw new Exception('No parser type selected');
 		}
-		$allowedParsers = array('separator', 'fixed', 'json');
+		$allowedParsers = array('separator', 'fixed', 'json', 'ggsn', 'tap3');
 		if (!in_array($parserSettings['type'], $allowedParsers)) {
 			throw new Exception('Parser must be one of: ' . implode(',', $allowedParsers));
 		}

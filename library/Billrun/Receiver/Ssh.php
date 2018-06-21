@@ -64,16 +64,17 @@ class Billrun_Receiver_Ssh extends Billrun_Receiver {
 			
 			$ssh_path = isset($config['remote_directory']) ? $config['remote_directory'] : '/';
 			$this->filenameRegex = isset($config['filename_regex']) ? $config['filename_regex'] : '/.*/';
-			
 			$this->ssh = new Billrun_Ssh_Seclibgateway($hostAndPort, $auth, array());
+			Billrun_Factory::log()->log("Connecting to SFTP server: " . $this->ssh->getHost() , Zend_Log::INFO);
 			$this->ssh->connect($config['user']);
 			
 			 if (!$this->ssh->connected()){
 				 Billrun_Factory::log()->log("SSH: Can't connect to server", Zend_Log::ALERT);
 				 return $ret;
 			 }
-			
+			Billrun_Factory::log()->log("Success: Connected to: " . $this->ssh->getHost() , Zend_Log::INFO);
 			try {
+				Billrun_Factory::log()->log("Searching for files: ", Zend_Log::INFO);
 				$files = $this->ssh->getListOfFiles($ssh_path, true);
 	
 				$type = static::$type;
