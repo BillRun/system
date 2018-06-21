@@ -1738,7 +1738,9 @@ class Billrun_Util {
 		}
 		$current = &$arr;
 		foreach($keys as $key) {
+			if (!is_null($current[$key])) {
 			$current = &$current[$key];
+			}
 		}
 		if (!is_null($current[$value])) {
 			unset($current[$value]);
