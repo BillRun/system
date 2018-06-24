@@ -22,7 +22,7 @@ class Tests_UpdateRowSetUp {
 	 * @var array
 	 */
 	protected $collectionToClean = ['plans', 'services', 'subscribers', 'rates','lines','balances'];
-	protected $importData =		   ['plans', 'services', 'subscribers', 'rates'];
+	protected $importData =		   ['plans', 'services', 'subscribers', 'rates','lines','balances'];
 	protected $backUpData = array();
 	public $config;
 	protected $configCollection;
@@ -30,20 +30,21 @@ class Tests_UpdateRowSetUp {
 	protected $unitTestName;
 	protected $dataPath = '/data/';
 
-	public function __construct($unitTestName = null,$configToLoad = null) {
+	public function __construct($unitTestName = null,$dataToLoad = null) {
 		$this->unitTestName = $unitTestName;
 		if (isset($this->unitTestName)) {
 			$this->dataPath = "/{$this->unitTestName}Data/";
 		}
-		if(isset($configToLoad)){
-			$this->collectionToClean = array_merge($this->collectionToClean,$configToLoad);
-			$this->importData = $this->collectionToClean ;
+		if(isset($dataToLoad)){
+			$this->collectionToClean = array_merge($this->collectionToClean,$dataToLoad);
+			$this->importData =   array_merge($this->importData,$dataToLoad);
 		}
 	}
 	/**
 	 * executes set up for update row test
 	 */
 	public function setColletions() {
+		$this->loadConfig();
 		$this->backUpCollection($this->importData);
 		$this->cleanCollection($this->collectionToClean);
 		$collectionsToSet = $this->importData;
@@ -59,7 +60,7 @@ class Tests_UpdateRowSetUp {
 			$coll = Billrun_Factory::db()->{$parsedData['collection']}();
 			$coll->batchInsert($data);
 		}
-		$this->loadConfig();
+		
 	}
 
 	public function restoreColletions() {

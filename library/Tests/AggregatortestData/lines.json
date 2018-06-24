@@ -77,11 +77,10 @@
 							"tariff_category": "retail",
 							"key": "CALL",
 							"add_to_retail": false,
-							"DBRefrate": {
+							"DBRefarate": {
 								"collection": "rates",
 								"ObjectId": "5aeee54905e68c5b1f45f9f4"
 							},
-
 							"pricing": {
 								"out_group": 100,
 								"out_plan": 100,
@@ -114,6 +113,7 @@
 					},
 					"final_charge": 117
 				},
+
 				{
 					"OBJID": "5af44ef905e68c4b3278729a",
 					"uf": {
@@ -336,7 +336,6 @@
 						"collection": "rates",
 						"ObjectId": "5aeee54905e68c5b1f45f9f4"
 					},
-
 					"arate_key": "CALL",
 					"rates": [
 						{
@@ -358,7 +357,6 @@
 											"collection": "balances",
 											"ObjectId": "5af44ef9f3140f9783a80137"
 										},
-
 										"usagesb": 50
 									}
 								],
@@ -513,7 +511,6 @@
 											"collection": "balances",
 											"ObjectId": "5af44f41f3140f9783a80179"
 										},
-
 										"usagesb": 0
 									}
 								],
@@ -633,7 +630,6 @@
 						"collection": "rates",
 						"ObjectId": "5aeee54905e68c5b1f45f9f4"
 					},
-
 					"arate_key": "CALL",
 					"rates": [
 						{
@@ -655,7 +651,6 @@
 											"collection": "balances",
 											"ObjectId": "5af44f41f3140f9783a80174"
 										},
-
 										"usagesb": 0
 									}
 								],

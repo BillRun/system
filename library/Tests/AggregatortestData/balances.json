@@ -8,8 +8,8 @@
 					"priority": 0,
 					"sid": 10,
 					"start_period": "default",
-					"from": "time*2018-03-31T21:00:00Z",
-					"to": "time*2018-04-30T21:00:00Z",
+					"from": "time*2018-04-30T21:00:00Z",
+					"to": "time*2018-05-30T21:00:00Z",
 					"DBRefcurrent_plan": {
 						"collection": "plans",
 						"ObjectId": "5aeec10905e68c1a29770a9b"

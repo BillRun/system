@@ -130,7 +130,7 @@ class Tests_Ratetest extends UnitTestCase {
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'Rate_Usage', 'autoload' => false));
-		$this->init = new Tests_UpdateRowSetUp();
+		$this->init = new Tests_UpdateRowSetUp(null,['lines','balances']);
 		$this->init->setColletions();
 		Billrun_Config::getInstance()->loadDbConfig();
 	}

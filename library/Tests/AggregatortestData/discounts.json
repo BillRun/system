@@ -3,7 +3,6 @@
 	"data": [
 		{
 			"OBJID": "5aeeb4c105e68c6d4d758032",
-			
 			"from": "time*2018-03-31T21:00:00Z",
 			"key": "TT",
 			"description": "ttt",
@@ -18,8 +17,6 @@
 			},
 			"to": "time*2167-05-06T08:54:41Z",
 			"creation_time": "time*2018-03-31T21:00:00Z"
-		
-
 		},
 		{
 			"OBJID": "5af452a805e68c420108665f",

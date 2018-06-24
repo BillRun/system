@@ -179,16 +179,16 @@ class Tests_Aggregatore extends UnitTestCase {
 		/* 	vat 0 
 		 * Currently vat change is not supported
 		 *  */
-//		array(
-//			'preRun' => array('changeConfig',),
-//			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
-//			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
-//			'line' => array('types' => array('flat')),
-//			)),
+		array(
+			'preRun' => array('changeConfig',),
+			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
+			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
+			'line' => array('types' => array('flat')),
+			)),
 		/* run full cycle */
-		array('test' => array('test_number' => 21, 'aid'=>0, 'options' => array("stamp" => "201806","page" => 0,"size" => 10000000 ,)),
-			  'expected' => array(),
-			  'postRun' => array('fullCycle'))
+//		array('test' => array('test_number' => 21, 'aid'=>0, 'options' => array("stamp" => "201806","page" => 0,"size" => 10000000 ,)),
+//			  'expected' => array(),
+//			  'postRun' => array('fullCycle'))
 	);
 
 	public function __construct($label = false) {
@@ -203,7 +203,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
 		$this->balancesCol = Billrun_Factory::db()->discountsCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'),['balances','lines','bills','billing_cycle','billrun','counters']);
+		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'),['bills','billing_cycle','billrun','counters','discounts']);
 		$this->init->setColletions();
 		$this->loadConfig();
 	}
@@ -261,7 +261,7 @@ class Tests_Aggregatore extends UnitTestCase {
 			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
-		print_r($this->message);
+		print_r($this->message);die;
 		$this->init->restoreColletions();
 	}
 

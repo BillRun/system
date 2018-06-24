@@ -434,7 +434,7 @@ class Tests_Updaterowt extends UnitTestCase {
 		$this->plansCol = Billrun_Factory::db()->plansCollection();
 		$this->linesCol = Billrun_Factory::db()->linesCollection();
 		$this->calculator = Billrun_Calculator::getInstance(array('type' => 'customerPricing', 'autoload' => false));
-		$this->init = new Tests_UpdateRowSetUp();
+		$this->init = new Tests_UpdateRowSetUp(null,['lines','balances']);
 		$this->init->setColletions();
 		Billrun_Config::getInstance()->loadDbConfig();
 	}
@@ -452,7 +452,7 @@ class Tests_Updaterowt extends UnitTestCase {
 			print ($result[1]);
 			print('<p style="border-top: 1px dashed black;"></p>');
 		}
-		$this->init->restoreColletions();
+ 		$this->init->restoreColletions();
 		//$this->assertTrue(True);
 	}
 
