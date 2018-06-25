@@ -246,7 +246,7 @@ class Generator_Golanxml extends Billrun_Generator {
 			if ($subscriber['subscriber_status'] == 'open' && (!is_array($subscriber_flat_costs) || empty($subscriber_flat_costs))) {
 				Billrun_Factory::log('Missing flat costs for subscriber ' . $sid, Zend_Log::INFO);
 			}
-			
+			$planById = array();
 			$this->writer->startElement('SUBSCRIBER_INF');
 			$this->writer->startElement('SUBSCRIBER_DETAILS');
 			$this->writer->writeElement('SUBSCRIBER_ID', $subscriber['sid']);
@@ -260,6 +260,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				if (empty($plansInCycle)) {
 					$plansInCycle = null;
 				}
+				$planById[$plan['plan']] = $plan['id'];
 				$this->writer->writeElement('OFFER_ID_' . $key, $plan['id']);		
 			}
 			$this->writer->endElement();
@@ -370,6 +371,7 @@ class Generator_Golanxml extends Billrun_Generator {
 				if (isset($planInCycle['include']['groups'])) {
 					$this->writer->startElement('SUBSCRIBER_GROUP_USAGE_BY_PLAN');
 					$this->writer->writeElement('PLAN_NAME', $planInCycle['name']);
+					$this->writer->writeElement('OFFER_ID', $planById[$planInCycle['name']]);
 					foreach ($planInCycle['include']['groups'] as $group_name => $group) {
 						$this->writer->startElement('SUBSCRIBER_GROUP_USAGE');
 						$this->writer->writeElement('GROUP_NAME', $group_name);
@@ -1317,7 +1319,10 @@ EOI;
 	}
 	
 	protected function getPlanNames($plans) {
-		return array_column($plans, 'plan');
+		foreach ($plans as $plan) {
+			$plansNames[] = $plan['plan'];
+		}
+		return array_unique($plansNames);
 	}
 
 	/**

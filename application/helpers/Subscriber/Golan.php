@@ -363,7 +363,7 @@ class Subscriber_Golan extends Billrun_Subscriber {
 								$concat['data']['plans'] = $offers;
 							}											
 							if ($sid) {
-								$concat['data']['plan'] = !is_null($subscriber['offers']) ? $this->getPlanNames($concat['data']['plans']) : null;
+								$concat['data']['plan'] = !is_null($subscriber['offers']) ? end($this->getPlanNames($concat['data']['plans'])) : null;
 							} else {
 								$concat['data']['plan'] = 'ACCOUNT';
 							}
