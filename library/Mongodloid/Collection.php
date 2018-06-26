@@ -484,8 +484,8 @@ class Mongodloid_Collection {
 		$collection_name = $this->getName();
 		//check for existing seq
 		if (!empty($params)) {
-			$hash = md5(serialize($params));
-			$existingSec = $countersColl->query(array('coll' => $collection_name, 'hash' => $hash))->cursor()->limit(1)->current()->get('seq');
+			$key = serialize($params);
+			$existingSec = $countersColl->query(array('coll' => $collection_name, 'key' => $key))->cursor()->limit(1)->current()->get('seq');
 			if (!is_null($existingSec)) {
 				return $existingSec;
 			}
@@ -512,7 +512,7 @@ class Mongodloid_Collection {
 			);
 			
 			if (!empty($params)) {
-				$insert['hash'] = $hash;
+				$insert['key'] = $key;
 			}
 			
 			try {
