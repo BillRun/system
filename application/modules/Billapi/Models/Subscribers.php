@@ -382,7 +382,7 @@ class Models_Subscribers extends Models_Entity {
 		}
 		$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $entity['aid']);
 		$this->fixSubscriberFields($revisionsQuery);
-		if ($entity['aid'] != $this->update['aid']) {
+		if (isset($this->update['aid']) && $entity['aid'] != $this->update['aid']) {
 			$revisionsQuery = $this->getSubscriberRevisionsQuery($entity, $this->update['aid']);
 			$this->fixSubscriberFields($revisionsQuery);
 		}

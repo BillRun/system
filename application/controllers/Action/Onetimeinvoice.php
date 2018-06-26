@@ -46,7 +46,7 @@ class OnetimeinvoiceAction extends ApiAction {
         }
         
         // run aggregate on cdrs generate invoice
-        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$aid] ]);
+        $aggregator = Billrun_Aggregator::getInstance([ 'type' => 'customeronetime',  'stamp' => $oneTimeStamp , 'force_accounts' => [$aid], 'invoice_subtype' => Billrun_Util::getFieldVal($request['type'], 'regular') ]);
         $aggregator->aggregate();
 
 

@@ -222,14 +222,16 @@ class Billrun_Factory {
 				$transport = new $className($mailerTransport['host'], $mailerTransport);
 				Zend_Mail::setDefaultTransport($transport);
 			}
-
-			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run'));
+			$fromAddress = Billrun_Factory::config()->getConfigValue('tenant.email', '');
+			if (empty($fromAddress)) {
+				$fromAddress = Billrun_Factory::config()->getConfigValue('mailer.from.address', 'no-reply@bill.run');
+			}
 			$fromName = Billrun_Factory::config()->getConfigValue('tenant.name', Billrun_Factory::config()->getConfigValue('mailer.from.name', 'BillRun'));
 			$mailer->setFrom($fromAddress, $fromName);
 			return $mailer;
 			//$mail->setDefaultTransport($transport);
 		} catch (Exception $e) {
-			self::log("Can't instantiat mail object. Please check your settings", Zend_Log::ALERT);
+			self::log("Can't instantiate mail object. Please check your settings", Zend_Log::ALERT);
 			return false;
 		}
 	}

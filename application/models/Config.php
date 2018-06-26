@@ -34,7 +34,7 @@ class ConfigModel {
 	 */
 	protected $options;
 	protected $fileClassesOrder = array('file_type', 'parser', 'processor', 'customer_identification_fields', 'rate_calculators', 'pricing', 'receiver');
-	protected $ratingAlgorithms = array('match', 'longestPrefix');
+	protected $ratingAlgorithms = array('match', 'longestPrefix', 'equalFalse');
         
 	/**
 	 * reserved names of File Types.
