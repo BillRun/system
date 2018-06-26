@@ -68,7 +68,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		/* Account with two subscribes 1st from begin the cycle and the 2nd from mid-cycle(for   no prorated plan)(aid:13 ,sids :15,16 plan_b(from 01/15/18 & 15/05/18)) */
 		array('test' => array('test_number' => 7, "aid" => 13, 'sid' => array(15, 16), 'function' => array('basicComper', 'sumSids', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(13))),
 			'expected' => array('billrun' => array('invoice_id' => 106, 'billrun_key' => '201806', 'aid' => 13, 'after_vat' => array("15" => 117, "16" => 117), 'total' => 234, 'vatable' => 200, 'vat' => 17),
-				'line' => array('types' => array('credit', 'flat')))
+				'line' => array('types' => array('flat')))
 		),
 		/* Move subscriber between account(sid:20 ,first:aid:19,lest aid 21)(from 01/15/18 & 15/05/18) */
 		/* part a */
@@ -87,8 +87,8 @@ class Tests_Aggregatore extends UnitTestCase {
 				'line' => array('types' => array('flat')))
 		),
 		/* Account with two subscribers 1 closed in mid-cycle(aid 27 ,sids 28 29 ,29 should closed on 15/05/18) */
-		array('test' => array('test_number' => 11, "aid" => 27, 'sid' => array(28, 29), 'function' => array('basicComper', 'sumSids','subsPrice', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(27))),
-			'expected' => array('billrun' => array('invoice_id' => 110, 'billrun_key' => '201806', 'aid' => 27, 'after_vat' => array("28" => 117, "29" => 52.83870967741935), 'total' => 169.838709677, 'vatable' => 145.1612903225806, 'vat' => 17),
+		array('test' => array('test_number' => 11, "aid" => 27, 'sid' => array(28, 29), 'function' => array('basicComper', 'sumSids', 'subsPrice', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(27))),
+			'expected' => array('billrun' => array('invoice_id' => 110, 'billrun_key' => '201806', 'aid' => 27, 'after_vat' => array("28" => 117, "29" => 52.8387096774193), 'total' => 169.838709677, 'vatable' => 145.1612903225806, 'vat' => 17),
 				'line' => array('types' => array('flat')))
 		),
 		/* Subscriber with plan with  service included (aid:30 ,sid:31,plan_d included service_a) */
@@ -145,9 +145,11 @@ class Tests_Aggregatore extends UnitTestCase {
 		/* force_accounts shouldn't recreate a confirmed invoice (check by the billrun _id?)(aid:50 ,sid:51)
 		 * part 1
 		 *  */
-		array('test' => array('test_number' => 19, "aid" => 50, 'sid' => 51, 'function' => array('basicComper', 'lineExists', 'linesVSbillrun', 'confirm'), 'options' => array("stamp" => "201806", "force_accounts" => array(50))),
-			'expected' => array('billrun' => array('invoice_id' => 119, 'billrun_key' => '201806', 'aid' => 50),
-				'line' => array('types' => array('flat',)))
+		array(
+			'test' => array('test_number' => 19, "aid" => 50, 'sid' => 51, 'function' => array('basicComper', 'lineExists', 'linesVSbillrun'), 'options' => array("stamp" => "201806", "force_accounts" => array(50))),
+			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201806', 'aid' => 50),
+				'line' => array('types' => array('flat',))),
+			'postRun' => ('confirm'),
 		),
 		/*
 		 * part 2 ********now this case will cause to run full cycle
@@ -159,36 +161,65 @@ class Tests_Aggregatore extends UnitTestCase {
 //		),
 		/* Included service limited to X cycles - verify no charge / line since the X+1 cycle */
 		array('test' => array('test_number' => 20, "aid" => 52, 'sid' => 53, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201805", "force_accounts" => array(52))),
-			'expected' => array('billrun' => array('invoice_id' => 120, 'billrun_key' => '201805', 'aid' => 52, 'after_vat' => array("52" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 119, 'billrun_key' => '201805', 'aid' => 52, 'after_vat' => array("52" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat', 'service')))
 		),
 		array('test' => array('test_number' => 20, "aid" => 52, 'sid' => 53, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(52))),
-			'expected' => array('billrun' => array('invoice_id' => 121, 'billrun_key' => '201806', 'aid' => 52, 'after_vat' => array("52" => 0), 'total' => 0, 'vatable' => 0, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 120, 'billrun_key' => '201806', 'aid' => 52, 'after_vat' => array("52" => 0), 'total' => 0, 'vatable' => 0, 'vat' => 17),
 				'line' => array('types' => array('flat',)))
 		),
 		/* Account with subscriber who closed on mid-cycle + one second    (aid:17,sid:18,plan_f service CALL on 15/05/18 00:00:01) */
 		array('test' => array('test_number' => 21, "aid" => 17, 'sid' => 18, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(17))),
-			'expected' => array('billrun' => array('invoice_id' => 122, 'billrun_key' => '201806', 'aid' => 17, 'after_vat' => array("18" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 103.2258064516129, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 121, 'billrun_key' => '201806', 'aid' => 17, 'after_vat' => array("18" => 120.77419354838709), 'total' => 120.77419354838709, 'vatable' => 103.2258064516129, 'vat' => 17),
 				'line' => array('types' => array('flat', 'service')))
 		),
 		/* Vatable / Non vatable services(aid:46 ,sid:47 paln_b,service not_taxable) */
-		array('test' => array('test_number' => 21, "aid" => 46, 'sid' => 47, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201806", "force_accounts" => array(46))),
-			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201806', 'aid' => 46, 'after_vat' => array("47" => 217), 'total' => 217, 'vatable' => 100, 'vat' => 17),
+		array('test' => array('test_number' => 21, "aid" => 46, 'sid' => 47, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(46))),
+			'expected' => array('billrun' => array('invoice_id' => 122, 'billrun_key' => '201808', 'aid' => 46, 'after_vat' => array("47" => 217), 'total' => 217, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat', 'service')))
 		),
-		/* 	vat 0 
-		 * Currently vat change is not supported
-		 *  */
+		/* Check upfront charge
+		 */
+		array('test' => array('test_number' => 22, "aid" => 56, 'sid' => 57, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(56))),
+			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201807', 'aid' => 56, 'after_vat' => array("57" => 159.9), 'total' => 159.9, 'vatable' => 136.666666667, 'vat' => 17),
+				'line' => array('types' => array('flat')))
+		),
+		/* Service Include in plan should be zero if configured to be free */
 		array(
-			'preRun' => array('changeConfig',),
-			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
-			'expected' => array('billrun' => array('invoice_id' => 118, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
-			'line' => array('types' => array('flat')),
-			)),
-		/* run full cycle */
-//		array('test' => array('test_number' => 21, 'aid'=>0, 'options' => array("stamp" => "201806","page" => 0,"size" => 10000000 ,)),
-//			  'expected' => array(),
-//			  'postRun' => array('fullCycle'))
+			'preRun' => ('charge_included_service'),
+			'test' => array('test_number' => 23, "aid" => 58, 'sid' => 59, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(58))),
+			'expected' => array('billrun' => array('invoice_id' => 124, 'billrun_key' => '201807', 'aid' => 58, 'after_vat' => array("59" => 117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+				'line' => array('types' => array('flat'))),
+			'postRun' => ('charge_not_included_service'),
+		),
+		/* Change cycle day tests */
+		array(
+			'preRun' => array('changeConfig'),
+			'test' => array('test_number' => 24, "aid" => 60, 'sid' => 61, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 5), 'options' => array("stamp" => "201810", "force_accounts" => array(60))),
+			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201810', 'aid' => 60, 'after_vat' => array("61" => 3.7741935483870965), 'total' => 3.7741935483870965, 'vatable' => 3.225806451612903, 'vat' => 17),
+				'line' => array('types' => array('flat'))),
+		),
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 25, "aid" => 3, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'),  'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1),'options' => array("stamp" => "201805", "force_accounts" => array(3))),
+			'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805','aid' => 3, 'after_vat' => array("4" => 105.3), 'total' =>105.3 , 'vatable' => 90, 'vat' => 17),
+				'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
+			'postRun' => array()),
+////		/* 	vat 0 
+//		 * Currently vat change is not supported
+//		 *  */
+//		array(
+//			'preRun' => array('changeConfig',),
+//			'test' => array('test_number' => 17, "aid" => 48, 'sid' => 49, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'taxation.vat.v', 'value' => 0), 'options' => array("stamp" => "201809", "force_accounts" => array(48))),
+//			'expected' => array('billrun' => array('invoice_id' => 123, 'billrun_key' => '201809', 'aid' => 48, 'after_vat' => array("49" => 100), 'total' => 100, 'vatable' => 100, 'vat' => 0),
+//				'line' => array('types' => array('flat')),
+//			)),
+////		/* run full cycle */
+		array(
+			'preRun' => ('changeConfig'),
+			'test' => array('test_number' => 21, 'aid' => 0,'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'expected' => array(),
+			'postRun' => array('fullCycle'))
 	);
 
 	public function __construct($label = false) {
@@ -203,7 +234,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->subscribersCol = Billrun_Factory::db()->subscribersCollection();
 		$this->balancesCol = Billrun_Factory::db()->discountsCollection();
 		$this->billrunCol = Billrun_Factory::db()->billrunCollection();
-		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'),['bills','billing_cycle','billrun','counters','discounts']);
+		$this->init = new Tests_UpdateRowSetUp(basename(__FILE__, '.php'), ['bills', 'billing_cycle', 'billrun', 'counters', 'discounts']);
 		$this->init->setColletions();
 		$this->loadConfig();
 	}
@@ -222,7 +253,7 @@ class Tests_Aggregatore extends UnitTestCase {
 	public function testUpdateRow() {
 
 		foreach ($this->tests as $key => $row) {
-			
+
 			$aid = $row['test']['aid'];
 			/* run fenctions before the test begin */
 			if (isset($row['preRun']) && !empty($row['preRun'])) {
@@ -261,13 +292,14 @@ class Tests_Aggregatore extends UnitTestCase {
 			}
 			$this->message .= '<p style="border-top: 1px dashed black;"></p>';
 		}
-		print_r($this->message);die;
+		print_r($this->message);
+		die;
 		$this->init->restoreColletions();
 	}
 
 	protected function runT($row) {
-		
-		$id = isset($row['test']['aid']) ? $row['test']['aid'] : 0 ;
+
+		$id = isset($row['test']['aid']) ? $row['test']['aid'] : 0;
 		$billrun = (isset($row['test']['options']['stamp'])) ? $row['test']['options']['stamp'] : $this->defaultOptions['stamp'];
 		$this->aggregator($row);
 		$billrun = $this->billrunCol->query(array('aid' => $id, "billrun_key" => $billrun))->cursor()->current();
@@ -426,6 +458,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		} else {
 			$this->message .= "lines wasn't created for account {$row['test']['aid']} becouse of this account isn't exsit" . $this->pass;
 		}
+		return $passed;
 	}
 
 	public function changeConfig($key, $row) {
@@ -434,6 +467,16 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->init->changeConfig($key, $value);
 		$this->loadConfig();
 	}
+
+	/* "billrun": {'billrun.charging_day.v'
+	  "charging_day": {
+	  "v": "4",
+	  "t": "Number",
+	  "range": {
+	  "min": 1,
+	  "max": 28
+	  }
+	  }, */
 
 	public function duplicateAccounts($key, $returnBillrun, $row) {
 		$this->message .= "<b>duplicate billruns: </b> <br>";
@@ -451,7 +494,7 @@ class Tests_Aggregatore extends UnitTestCase {
 
 	/* confirm specific invoice */
 
-	public function confirm($key, $returnBillrun, $row) {
+	public function confirm($returnBillrun, $row) {
 		$options['type'] = (string) 'billrunToBill';
 		$options['stamp'] = (string) $row['test']['options']['stamp'];
 		$options['invoices'] = (string) $returnBillrun['invoice_id'];
@@ -466,16 +509,14 @@ class Tests_Aggregatore extends UnitTestCase {
 		$passed = true;
 		$this->message .= "<b> price per sid :</b> <br>";
 		$invalidSubs = array();
-		$invalidSubs = array_filter($returnBillrun['subs'], function($sub) use ($row) {
-			if ($sub['sid'] != 0) {
-				return $sub['totals']['after_vat'] != $row['expected']['billrun']['after_vat'][$sub['sid']];
+		foreach ($returnBillrun['subs'] as $sub) {
+			if (!Billrun_Util::isEqual($sub['totals']['after_vat'], $row['expected']['billrun']['after_vat'][$sub['sid']], 0.000001)) {
+				$passed = false;
+				$this->message .= "sid {$sub['sid']} has worng price ,<b>result</b> : {$sub['totals']['after_vat']} <b>expected</b> :{$row['expected']['billrun']['after_vat'][$sub['sid']]} " . $this->fail;
 			}
-		});
-		if (count($invalidSubs) > 0) {
-			$passed = false;
-			$this->message .= count($invalidSubs) . "are worng".$this->fail;
-		} else {
-			$this->message .= "all sids price are wel".$this->pass;
+		}
+		if ($passed) {
+			$this->message .= "all sids price are wel" . $this->pass;
 		}
 		return $passed;
 	}
@@ -520,7 +561,6 @@ class Tests_Aggregatore extends UnitTestCase {
 
 	public function rounded($key, $returnBillrun, $row) {
 		$this->message .= "<b> rounding :</b> <br>";
-		//round(, 2);
 		$passed = true;
 		if (round($returnBillrun['totals']['after_vat_rounded'], 2) == round($returnBillrun['totals']['after_vat'], 2)) {
 			$this->message .= "'totals.after_vat_rounded' is rounding of 'totals.after_vat' :</b>" . $this->pass;
@@ -531,12 +571,12 @@ class Tests_Aggregatore extends UnitTestCase {
 		return $passed;
 	}
 
-	
-
 	public function removeBillrun($key, $row) {
 		Billrun_Aggregator_Customer::removeBeforeAggregate('201806', [42]);
 	}
+
 	/* check that billrun not run full cycle by checking if aid 54 is run */
+
 	public function billrunExists($key, $row) {
 		$billrun = $this->billrunCol->query(array('aid' => 54, "billrun_key" => '201806'))->cursor();
 		$sumBillruns = $billrun->count();
@@ -545,7 +585,7 @@ class Tests_Aggregatore extends UnitTestCase {
 			$this->message .= '<b style="color:red;">aggregate run full cycle</b>' . $this->fail;
 		}
 	}
-	
+
 	public function fullCycle($key, $row) {
 		$billrun = $this->billrunCol->query(array('aid' => 54, "billrun_key" => '201806'))->cursor()->current();
 		$retallLines = $billrun->getRawData();
@@ -556,6 +596,16 @@ class Tests_Aggregatore extends UnitTestCase {
 			$this->assertTrue(false);
 			$this->message .= '<b>aggregate not run full cycle</b>' . $this->fail;
 		}
+	}
+
+	//charge_included_service=0
+	public function charge_included_service($key, $row) {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_included_service.ini');
+	}
+
+	//charge_included_service=1
+	public function charge_not_included_service($key, $row) {
+		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_not_included_service.ini');
 	}
 
 }

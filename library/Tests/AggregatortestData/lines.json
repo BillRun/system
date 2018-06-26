@@ -7,13 +7,13 @@
 					"OBJID": "5aeee57b05e68c02d035e1f6",
 					"uf": {
 						"sid": 10,
-						"date": "2018-04-18 10:10:10",
+						"date": "2018-05-18 10:10:10",
 						"usage": "call",
 						"rate": "CALL",
 						"volume": 100
 					},
 					"source": "realtime",
-					"type": "rr",
+					"type": "r",
 					"skip_calc": [
 						"unify"
 					],
@@ -25,8 +25,8 @@
 					"usagev_unit": "seconds",
 					"usagev": 100,
 					"process_time": "time*2018-05-06T11:22:35.096Z",
-					"urt": "time*2018-04-18T07:10:10Z",
-					"eurt": "time*2018-04-18T07:10:10Z",
+					"urt": "time*2018-05-18T07:10:10Z",
+					"eurt": "time*2018-05-18T07:10:10Z",
 					"realtime": true,
 					"subscriber": {
 						"aid": 9,
