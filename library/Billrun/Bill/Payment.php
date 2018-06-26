@@ -457,6 +457,9 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 		if (!empty($chargeOptions['aids'])) {
 			self::$aids = Billrun_Util::verify_array($chargeOptions['aids'], 'int');
 		}
+		if (!empty($chargeOptions['invoices'])) {
+			$chargeOptions['invoices'] = Billrun_Util::verify_array($chargeOptions['invoices'], 'int');
+		}
 		if (!static::lock()) {
 			Billrun_Factory::log("Charging is already running", Zend_Log::NOTICE);
 			return;
@@ -491,8 +494,15 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
 			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
+
+			if (!empty($chargeOptions['invoices'])) {
+				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
+			}
 			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
 			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
+			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
+			}
 			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
 		}
 		

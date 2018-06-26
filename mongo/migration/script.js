@@ -228,7 +228,7 @@ for (var fileType in fileTypes) {
 				};
 				conditions.push(condition);
 				fileTypes[fileType]['processor']['usaget_mapping'][mapping]["conditions"] = conditions;
-				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];
+				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["src_field"];	
 				delete fileTypes[fileType]['processor']['usaget_mapping'][mapping]["pattern"];
 			}
 		}
@@ -278,9 +278,25 @@ if(!found) {
 }
 lastConfig['subscribers']['account']['fields'] = fields;
 
-	
-db.config.insert(lastConfig);
 
+// BRCD-1458 - Add support for hh:mm:ss, mm:ss "units" in input processor volume stage.
+var propertyTypes = lastConfig['property_types'];
+for (var i in propertyTypes) {
+	if (propertyTypes[i]['type'] === 'time') {
+		var timeProperty = lastConfig['property_types'][i];
+		if (timeProperty['uom']) {
+			for (var j in timeProperty['uom']) {
+				if (timeProperty['uom'][j]['name'] === 'hhmmss' || timeProperty['uom'][j]['name'] === 'mmss') {
+					lastConfig['property_types'][i]['uom'][j]['convertFunction'] = 'formatedTimeToSeconds'; 
+				}
+			}
+		}
+	}
+}
 
 // BRCD-1443 - Wrong billrun field after a rebalance
 db.billrun.update({'attributes.invoice_type':{$ne:'immediate'}, billrun_key:{$regex:/^[0-9]{14}$/}},{$set:{'attributes.invoice_type': 'immediate'}},{multi:1});
+
+db.rebalance_queue.ensureIndex({"creation_date": 1}, {unique: false, "background": true})
+
+db.config.insert(lastConfig);

@@ -478,10 +478,10 @@ class Mongodloid_Collection {
 	 * 
 	 * @return int the incremented value
 	 */
-	public function createAutoInc($oid, $init_id = 1, $params = array()) {
+	public function createAutoInc($oid, $init_id = 1, $collName = FALSE, $params = array()) {
 
 		$countersColl = $this->_db->getCollection('counters');
-		$collection_name = $this->getName();
+		$collection_name = !empty($collName) ? $collName : $this->getName();
 		//check for existing seq
 		if (!empty($params)) {
 			$key = serialize($params);

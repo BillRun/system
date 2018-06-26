@@ -30,7 +30,7 @@ class Billrun_Plans_Charge_Arrears_Month extends Billrun_Plans_Charge_Base {
 			if (!empty($price)) {
 				$charges[] = array('value' => $price['price'] * $quantity,
 					'start' => Billrun_Plan::monthDiffToDate($price['start'], $this->activation),
-					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE),
+					'end' => Billrun_Plan::monthDiffToDate($price['end'], $this->activation, FALSE, $this->cycle->end() >= $this->deactivation ? $this->deactivation : FALSE, $this->deactivation && $this->cycle->end() > $this->deactivation ),
 					'cycle' => $tariff['from'],
 					'full_price' => floatval($tariff['price']) );
 					

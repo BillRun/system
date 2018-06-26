@@ -29,7 +29,11 @@ class Billrun_Processor_Util {
 		if (is_null($dateValue)) {
 			return null;
 		}
-		$timeZoneValue = !empty($timeZone) ? new DateTimeZone(billrun_util::getIn($userFields, $timeZone)) : null;
+		if (!empty($timeZone)) {
+			if (!empty($value = billrun_util::getIn($userFields, $timeZone))) {
+				$timeZoneValue = new DateTimeZone($value);
+			} else $timeZoneValue = null;
+		}
 		if (Billrun_Util::IsUnixTimestampValue($dateValue)) {
 			$dateIntValue = intval($dateValue);
 			$datetime  = date_create_from_format('U.u', $dateIntValue . "." . round(($dateValue - $dateIntValue) * 1000));
@@ -52,7 +56,7 @@ class Billrun_Processor_Util {
 				return DateTime::createFromFormat($dateFormat, $dateValue);
 			}
 		} else {
-			$date = strtotime($dateValue);
+			$date = !is_null($timeZoneValue) ? strtotime($dateValue .' ' .$timeZoneValue->getName()) : strtotime($dateValue);
 			$datetime = new DateTime();
 			$datetime->setTimestamp($date);
 			if (!is_null($timeZoneValue)) {

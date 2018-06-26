@@ -38,14 +38,14 @@ class Billrun_Cycle_Account extends Billrun_Cycle_Common {
 	 * Write the invoice to the Billrun collection
 	 * @param int $min_id minimum invoice id to start from
 	 */
-	public function writeInvoice($min_id, $isFake = FALSE) {
+	public function writeInvoice($min_id, $isFake = FALSE, $customCollName = FALSE) {
 		foreach ($this->records as $subscriber) {
 			$subInvoice = $subscriber->getInvoice();
 			$this->invoice->addSubscriber($subInvoice);
 		}
 		$this->invoice->updateTotals();
 		$this->invoice->applyDiscounts();
-		$this->invoice->close($min_id, $isFake);
+		$this->invoice->close($min_id, $isFake, $customCollName);
 	}
 	
 	/**

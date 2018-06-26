@@ -12,6 +12,11 @@
  * @author eran
  */
 class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
+	
+	protected $subInvoiceType = 'regular';
+	protected $invoicingConfig = array();
+	
+	
 	public function __construct($options = array()) {
 		parent::__construct($options);
 		$aggregateOptions = array(
@@ -23,12 +28,37 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 			// Get the aid exclusion query
 			$aggregateOptions['exclusion_query'] = $this->billrun->existingAccountsQuery();
 		}
+		if(!empty($options['invoice_subtype'])) {
+			$this->subInvoiceType = Billrun_Util::getFieldVal($options['invoice_subtype'], 'regular'); 
+		}
+		$this->invoicingConfig = Billrun_Factory::config()->getConfigValue('onetimeinvoice.invoice_type_config', array());
+		$this->min_invoice_id = intval(Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['min_invoice_id'], $this->min_invoice_id ));
 		$this->aggregationLogic = new Billrun_Cycle_Onetime_AggregatePipeline($aggregateOptions);
 	}
 	
 	public static function removeBeforeAggregate($billrunKey, $aids = array()) {
 		Billrun_Factory::log("Doesn't  remove anything  in one time invoice");
 		return ;
+	}
+	
+	
+	protected function aggregatedEntity($aggregatedResults, $aggregatedEntity) {
+			Billrun_Factory::dispatcher()->trigger('beforeAggregateAccount', array($aggregatedEntity));
+			$customCollName = Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['collection_name'], 'billrun');
+			if(!$this->isFakeCycle()) {
+				$aggregatedEntity->writeInvoice( $this->min_invoice_id, FALSE, $customCollName );
+				Billrun_Factory::log('Writing the invoice data to DB for AID : '.$aggregatedEntity->getInvoice()->getAid());
+				//Save Account services / plans
+				$this->saveLines($aggregatedResults);
+				//Save Account discounts.
+				$this->saveLines($aggregatedEntity->getAppliedDiscounts());
+				//Save the billrun document
+				$aggregatedEntity->save();
+			} else {
+				$aggregatedEntity->writeInvoice( 0 , $this->isFakeCycle() , $customCollName  );
+			}
+			Billrun_Factory::dispatcher()->trigger('afterAggregateAccount', array($aggregatedEntity, $aggregatedResults, $this));
+			return $aggregatedResults;
 	}
 	
 	/**
@@ -85,6 +115,7 @@ class Billrun_Aggregator_Customeronetime  extends Billrun_Aggregator_Customer {
 		$accountsToRet = array();
 		foreach($accounts as $aid => $accountData) {
 			$accountData['attributes']['invoice_type'] = 'immediate';
+			$accountData['attributes']['invoice_subtype'] = Billrun_Util::getFieldVal($this->invoicingConfig[$this->subInvoiceType]['name'],'regular');;
 			$accountToAdd = $this->getAccount($billrunData, $accountData, intval($aid));
 			if($accountToAdd) {
 				$accountsToRet[] = $accountToAdd;
