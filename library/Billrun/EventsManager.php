@@ -140,14 +140,14 @@ class Billrun_EventsManager {
 				} else {
 					$eventValues = array($eventValue);
 				}
+				if ($valueBefore < $valueAfter) {
+					rsort($eventValues);
+				} else {
+					sort($eventValues);
+				}			
 				foreach ($eventValues as $eventVal) {
 					if (($valueBefore < $eventVal && $eventVal <= $valueAfter) || ($valueBefore > $eventVal && $valueAfter <= $eventVal)) {
-						$eventValues[] = $valueAfter;
-						sort($eventValues);
-						$valueAfterKey = array_search($valueAfter, $eventValues);
-						$indexOrder = ($valueBefore < $valueAfter) ? 1 : -1;
-						$extraValues['reached_constant'] = (isset($eventValues[$valueAfterKey + $indexOrder]) && $eventValues[$valueAfterKey] == $eventValues[$valueAfterKey + $indexOrder]) 
-							? intval($eventValues[$valueAfterKey]) : intval($eventValues[$valueAfterKey - $indexOrder]);
+						$extraValues['reached_constant'] = $eventVal;
 
 						return $extraValues;
 					}
