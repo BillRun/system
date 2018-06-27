@@ -44,7 +44,7 @@ class Tests_Aggregatore extends UnitTestCase {
 	protected $pass = ' <span style="color:#00cc99; font-size: 80%;"> passed </span></br>';
 	protected $tests = array(
 		/* test 1 Account with single subscriber with a plan (aid:3,sid:4,plan_a) */
-		array('test' => array('test_number' => 1, "aid" => 3, 'function' => array('basicComper', 'lineExists'), 'options' => array("stamp" => "201805", "force_accounts" => array(3))),
+		array('test' => array('test_number' => 1, "aid" => 3, 'function' => array('basicComper','invoice_exist', 'lineExists'),'invoice_path'=>'201805_3_101.pdf', 'options' => array('generate_pdf'=>1,"stamp" => "201805", "force_accounts" => array(3))),
 			'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3),
 				'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
 			'postRun' => array()),
@@ -210,18 +210,18 @@ class Tests_Aggregatore extends UnitTestCase {
 		/*   Subscriber with some units (aid:62,sid:63 ,service:iphonex)*/
 		array(
 			'test' => array('test_number' => 26, "aid" => 62, 'sid' => 63, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(62))),
-			'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201807', 'aid' => 62, 'after_vat' => array("63" => 2457), 'total' => 2457, 'vatable' => 2100, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201807', 'aid' => 62, 'after_vat' => array("63" => 2457), 'total' => 2457, 'vatable' => 2100, 'vat' => 17),
 				'line' => array('types' => array('flat','service'))),
 		),
 		array(
 			'test' => array('test_number' => 26, "aid" => 62, 'sid' => 63, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(62))),
-			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201808', 'aid' => 62, 'after_vat' => array("63" =>117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201808', 'aid' => 62, 'after_vat' => array("63" =>117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
 				'line' => array('types' => array('flat'))),
 		),
 		/*Check charge of a subscriber that reopened the same plan in the same cycle */
 		array(
 			'test' => array('test_number' => 27, "aid" => 64, 'sid' => 65, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(64))),
-			'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201807', 'aid' => 64, 'after_vat' => array("65" =>89.7), 'total' => 89.7, 'vatable' => 76.666666667, 'vat' => 17),
+			'expected' => array('billrun' => array('invoice_id' => 127, 'billrun_key' => '201807', 'aid' => 64, 'after_vat' => array("65" =>89.7), 'total' => 89.7, 'vatable' => 76.666666667, 'vat' => 17),
 				'line' => array('types' => array('flat'))),
 		),
 ////		/* 	vat 0 
@@ -486,16 +486,7 @@ class Tests_Aggregatore extends UnitTestCase {
 		$this->loadConfig();
 	}
 
-	/* "billrun": {'billrun.charging_day.v'
-	  "charging_day": {
-	  "v": "4",
-	  "t": "Number",
-	  "range": {
-	  "min": 1,
-	  "max": 28
-	  }
-	  }, */
-
+	
 	public function duplicateAccounts($key, $returnBillrun, $row) {
 		$this->message .= "<b>duplicate billruns: </b> <br>";
 		$passed = true;
@@ -624,6 +615,19 @@ class Tests_Aggregatore extends UnitTestCase {
 	//charge_included_service=1
 	public function charge_not_included_service($key, $row) {
 		Billrun_Factory::config()->addConfig(APPLICATION_PATH . '/library/Tests/conf/charge_not_included_service.ini');
+	}
+	
+	public function invoice_exist($key, $returnBillrun, $row){
+		$this->message .= "<b> invoice exist :</b> <br>";
+		$passed = true;
+		$path = APPLICATION_PATH.'/shared/test/files/invoices/'.$row['test']['options']['stamp'].'/pdf/'.$row['test']['invoice_path'];
+		if(!file_exists($path)){
+			$passed = false;
+			$this->message .= 'the invoice is not found'.$this->fail;
+		} else {
+				$this->message .= 'the invoice created'.$this->pass;
+		}
+		return $passed;
 	}
 
 }
