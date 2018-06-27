@@ -192,19 +192,38 @@ class Tests_Aggregatore extends UnitTestCase {
 				'line' => array('types' => array('flat'))),
 			'postRun' => ('charge_not_included_service'),
 		),
-		/* Change cycle day tests */
+		/* Change cycle day tests 
+		 * Currently charge_day change is not supported
+		*/
+//		array(
+//			'preRun' => array('changeConfig'),
+//			'test' => array('test_number' => 24, "aid" => 60, 'sid' => 61, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 5), 'options' => array("stamp" => "201810", "force_accounts" => array(60))),
+//			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201810', 'aid' => 60, 'after_vat' => array("61" => 3.7741935483870965), 'total' => 3.7741935483870965, 'vatable' => 3.225806451612903, 'vat' => 17),
+//				'line' => array('types' => array('flat'))),
+//		),
+//		array(
+//			'preRun' => array('changeConfig','loadConfig'),
+//			'test' => array('test_number' => 25, "aid" => 3, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201805", "force_accounts" => array(3))),
+//			'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805', 'aid' => 3, 'after_vat' => array("4" => 105.3), 'total' => 105.3, 'vatable' => 90, 'vat' => 17),
+//				'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
+//			),
+		/*   Subscriber with some units (aid:62,sid:63 ,service:iphonex)*/
 		array(
-			'preRun' => array('changeConfig'),
-			'test' => array('test_number' => 24, "aid" => 60, 'sid' => 61, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 5), 'options' => array("stamp" => "201810", "force_accounts" => array(60))),
-			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201810', 'aid' => 60, 'after_vat' => array("61" => 3.7741935483870965), 'total' => 3.7741935483870965, 'vatable' => 3.225806451612903, 'vat' => 17),
-				'line' => array('types' => array('flat'))),
+			'test' => array('test_number' => 26, "aid" => 62, 'sid' => 63, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(62))),
+			'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201807', 'aid' => 62, 'after_vat' => array("63" => 2457), 'total' => 2457, 'vatable' => 2100, 'vat' => 17),
+				'line' => array('types' => array('flat','service'))),
 		),
 		array(
-			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 25, "aid" => 3, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'),  'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1),'options' => array("stamp" => "201805", "force_accounts" => array(3))),
-			'expected' => array('billrun' => array('invoice_id' => 101, 'billrun_key' => '201805','aid' => 3, 'after_vat' => array("4" => 105.3), 'total' =>105.3 , 'vatable' => 90, 'vat' => 17),
-				'line' => array('types' => array('flat', 'credit'), 'final_charge' => (-10))),
-			'postRun' => array()),
+			'test' => array('test_number' => 26, "aid" => 62, 'sid' => 63, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201808", "force_accounts" => array(62))),
+			'expected' => array('billrun' => array('invoice_id' => 125, 'billrun_key' => '201808', 'aid' => 62, 'after_vat' => array("63" =>117), 'total' => 117, 'vatable' => 100, 'vat' => 17),
+				'line' => array('types' => array('flat'))),
+		),
+		/*Check charge of a subscriber that reopened the same plan in the same cycle */
+		array(
+			'test' => array('test_number' => 27, "aid" => 64, 'sid' => 65, 'function' => array('basicComper', 'totalsPrice', 'lineExists', 'linesVSbillrun', 'rounded'), 'options' => array("stamp" => "201807", "force_accounts" => array(64))),
+			'expected' => array('billrun' => array('invoice_id' => 126, 'billrun_key' => '201807', 'aid' => 64, 'after_vat' => array("65" =>89.7), 'total' => 89.7, 'vatable' => 76.666666667, 'vat' => 17),
+				'line' => array('types' => array('flat'))),
+		),
 ////		/* 	vat 0 
 //		 * Currently vat change is not supported
 //		 *  */
@@ -217,7 +236,7 @@ class Tests_Aggregatore extends UnitTestCase {
 ////		/* run full cycle */
 		array(
 			'preRun' => ('changeConfig'),
-			'test' => array('test_number' => 21, 'aid' => 0,'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
+			'test' => array('test_number' => 21, 'aid' => 0, 'overrideConfig' => array('key' => 'billrun.charging_day.v', 'value' => 1), 'options' => array("stamp" => "201806", "page" => 0, "size" => 10000000,)),
 			'expected' => array(),
 			'postRun' => array('fullCycle'))
 	);
