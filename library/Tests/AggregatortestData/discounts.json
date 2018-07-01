@@ -36,7 +36,27 @@
 			},
 			"to": "time*2167-05-10T15:09:44Z",
 			"creation_time": "time*2017-12-31T22:00:00Z"
+		},
+		{
+			"OBJID":"5b34bee305e68c7fa55cb902",
+			"from": "time*2018-01-28T22:00:00Z",
+			"key": "D",
+			"description": "d",
+			"params": {
+				"service": [
+					"NOT_TAXABLE"
+				]
+			},
+			"discount_type": "monetary",
+			"discount_subject": {
+				"service": {
+					"NOT_TAXABLE": "10"
+				}
+			},
+			"to": "time*2167-06-28T11:56:35Z",
+			"creation_time": "time*2018-01-28T22:00:00Z"
 		}
+
 
 	]
 }
