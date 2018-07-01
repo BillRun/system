@@ -142,6 +142,9 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 			$this->saveDetails['personal_id'] = (string) $xmlObj->response->inquireTransactions->row->personalId;
 			$this->saveDetails['auth_number'] = (string) $xmlObj->response->inquireTransactions->row->authNumber;
 			$cardNum = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->cardNo;
+			$retParams['action'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->customerData->userData2;
+			$retParams['transferred_amount'] = $this->convertReceivedAmount((int) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->total);
+			$retParams['transaction_status'] = (string) $xmlObj->response->inquireTransactions->row->cgGatewayResponseXML->ashrait->response->doDeal->status;
 			$fourDigits = substr($cardNum, -4);
 			$retParams['four_digits'] = $this->saveDetails['four_digits'] = $fourDigits;
 			$retParams['expiration_date'] = (string) $xmlObj->response->inquireTransactions->row->cardExpiration;
@@ -293,6 +296,10 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 		$amount = round($amount, 2);
 		return $amount * 100;
 	}
+	
+	protected function convertReceivedAmount($amount) {
+		return $amount / 100;
+	}
 
 	protected function isNeedAdjustingRequest(){
 		return true;
@@ -320,5 +327,65 @@ class Billrun_PaymentGateway_CreditGuard extends Billrun_PaymentGateway {
 	
 	protected function handleTokenRequestError($response, $params) {
 		return false;
+	}
+	
+	protected function buildSinglePaymentArray($params) {
+		$credentials = $this->getGatewayCredentials();
+		$this->conf['amount'] = (int) $this->convertAmountToSend($params['amount']);
+		$this->conf['aid'] = $params['aid'];
+		$this->conf['ok_page'] = $params['ok_page'];
+		$this->conf['return_url'] = $params['return_url'];
+		$today = new MongoDate();
+		$account = $this->subscribers->query(array('aid' => (int) $params['aid'], 'from' => array('$lte' => $today), 'to' => array('$gte' => $today), 'type' => "account"))->cursor()->current();
+		$this->conf['language'] = isset($account['pay_page_lang']) ? $account['pay_page_lang'] : "ENG";
+		$addFailPage = $params['fail_page'] ? '<errorUrl>' . $params['fail_page']  . '</errorUrl>' : '';
+
+		return $post_array = array(
+			'user' => $credentials['user'],
+			'password' => $credentials['password'],
+			/* Build Ashrait XML to post */
+			'int_in' => '<ashrait>                                      
+							<request>
+								 <version>1001</version>
+								 <language>' . $this->conf['language'] . '</language>
+								 <dateTime/>
+								 <command>doDeal</command>
+								 <doDeal>
+										  <successUrl>' . $this->conf['ok_page'] . '</successUrl>
+										  '. $addFailPage  .'
+										  <terminalNumber>' . $credentials['redirect_terminal'] . '</terminalNumber>
+										  <mainTerminalNumber/>
+										  <cardNo>CGMPI</cardNo>
+										  <total>' . $this->conf['amount'] . '</total>
+										  <transactionType>Debit</transactionType>
+										  <creditType>RegularCredit</creditType>
+										  <currency>ILS</currency>
+										  <transactionCode>Phone</transactionCode>
+										  <authNumber/>
+										  <numberOfPayments/>
+										  <firstPayment/>
+										  <periodicalPayment/>
+										  <validation>TxnSetup</validation>
+										  <dealerNumber/>
+										  <user>something</user>
+										  <mid>' . (int) $credentials['mid'] . '</mid>
+										  <uniqueid>' . time() . rand(100, 1000) . '</uniqueid>
+										  <mpiValidation>AutoComm</mpiValidation>
+										  <customerData>
+										   <userData1>' . $this->conf['aid'] . '</userData1>
+										   <userData2>SinglePayment</userData2>
+										   <userData3/>
+										   <userData4/>
+										   <userData5/>
+										   <userData6/>
+										   <userData7/>
+										   <userData8/>
+										   <userData9/>
+										   <userData10/>
+										  </customerData>
+								 </doDeal>
+							</request>
+						   </ashrait>'
+		);
 	}
 }

@@ -66,6 +66,12 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			if (isset($options['gateway_details'])){
 				$this->data['gateway_details'] = $options['gateway_details'];
 			}
+			if (isset($options['transaction_status'])) {
+				$this->data['transaction_status'] = $options['transaction_status'];
+			}
+			if (isset($options['transaction_type'])) {
+				$this->data['transaction_type'] = $options['transaction_type'];
+			}
 			if (isset($options['pays']['inv'])) {
 				foreach ($options['pays']['inv'] as $invoiceId => $amount) {
 					$options['pays']['inv'][$invoiceId] = floatval($amount);
@@ -492,18 +498,13 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			$paymentParams['amount'] = $customer['due'];
 			$gatewayDetails['amount'] = $customer['due'];
 			$gatewayDetails['currency'] = !empty($customer['currency']) ? $customer['currency'] : Billrun_Factory::config()->getConfigValue('pricing.currency');
-			$gatewayName = $gatewayDetails['name'];
 			$paymentParams['gateway_details'] = $gatewayDetails;
 
 			if (!empty($chargeOptions['invoices'])) {
 				$paymentParams['pays']['inv'][current($chargeOptions['invoices'])] = $paymentParams['amount'];
 			}
-			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);
-			$paymentResponse = Billrun_Bill::pay($customer['payment_method'], array($paymentParams), $options);
-			if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
-				Billrun_Factory::log("Successful charging of account " . $customer['aid'] . ". Amount: " . $customer['due'], Zend_Log::INFO);
-			}
-			self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayName);
+			Billrun_Factory::log("Starting to pay bills", Zend_Log::INFO);			
+			self::payAndUpdateStatus($customer['payment_method'], $paymentParams, $gatewayDetails, $options);
 		}
 		
 		if (!static::release()) {
@@ -631,4 +632,17 @@ abstract class Billrun_Bill_Payment extends Billrun_Bill {
 			}
 		}
 	}
+	
+	public function getSinglePaymentStatus() {
+		return !empty($this->data['transaction_status']) ? $this->data['transaction_status'] : null;
+	}
+	
+	public static function payAndUpdateStatus($paymentMethod, $paymentParams, $gatewayDetails, $options = array()) {
+		$paymentResponse = Billrun_Bill::pay($paymentMethod, array($paymentParams), $options);
+		if (isset($paymentResponse['response']['status']) && $paymentResponse['response']['status'] === '000') {
+			Billrun_Factory::log("Received payment for account " . $paymentParams['aid'] . ". Amount: " . $gatewayDetails['amount'], Zend_Log::INFO);
+		}
+		self::updateAccordingToStatus($paymentResponse['response'], $paymentResponse['payment'][0], $gatewayDetails['name']);
+	}
+
 }
